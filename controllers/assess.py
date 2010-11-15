@@ -263,7 +263,7 @@ def shn_rat_rheader(r, tabs=[]):
 #==============================================================================
 def shn_assess_rheader(jr, tabs=[]):
 
-    """ @todo: fix docstring """
+    """ @todo: docstring """
 
     if jr.representation == "html":
         rheader_tabs = shn_rheader_tabs(jr, tabs)
@@ -287,6 +287,14 @@ def assess():
 
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
+
+    # Pre-processor
+    def shn_assess_prep(r):
+        if response.s3.mobile and r.method == "create" and r.representation in shn_interactive_view_formats:
+            # redirect to mobile-specific form:
+            redirect(URL(r=request, f="assess_short_mobile"))
+        return True
+    response.s3.prep = shn_assess_prep
 
     table.incident_id.comment = DIV(_class="tooltip",
                                      _title=T("Incident") + "|" + T("Optional link to an Incident which this Assessment was triggered by."))

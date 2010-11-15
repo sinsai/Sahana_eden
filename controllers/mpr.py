@@ -159,7 +159,7 @@ def index():
     else:
         add_btn = None
 
-    # REST controller
+    # REST controllerperson
     output = s3_rest_controller("pr", "person",
                                 module_name=module_name,
                                 add_btn=add_btn)
@@ -274,8 +274,8 @@ def person():
                 response.s3.actions.append(
                     dict(label=str(label), _class="action-btn", url=str(linkto)))
             elif r.component_name == "presence":
-                if "showaddbtn" in output:
-                    del output["showaddbtn"]
+                if "showadd_btn" in output:
+                    del output["showadd_btn"]
         return output
     response.s3.postp = person_postp
 

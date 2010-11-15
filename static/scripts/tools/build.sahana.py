@@ -27,7 +27,7 @@ def mergeCSS(inputFilenames, outputFilename):
     return outputFilename
 
 def cleanline(theLine):
-    # Kills line breaks, tabs, and double spaces
+    """ Kills line breaks, tabs, and double spaces """
     p = re.compile("(\n|\r|\t|\f|\v)+")
     m = p.sub("", theLine)
 
@@ -84,7 +84,7 @@ def compressCSS(inputFilename, outputFilename):
 mfbase = "../../mfbase"
 
 def dojs(dogis = False):
-    """ Minifies the js"""
+    """ Minifies the js """
     # Define which files we want to include
     # also need to amend sahana.js.cfg
     configDictCore = {
@@ -92,7 +92,6 @@ def dojs(dogis = False):
         "T2":                           "..",
         "S3":                           ".."
     }
-
 
     configFilename = "sahana.js.cfg"
     outputFilename = "S3.min.js"
@@ -193,8 +192,8 @@ def dojs(dogis = False):
         print "Moving new GeoExt JS files"
         shutil.move("GeoExt.js", "../gis")
 
-def docss(dogis = True):
-    """Compresses the  CSS files"""
+def docss():
+    """ Compresses the  CSS files """
     listCSS = [
         "../../styles/S3/sahana.css",
         "../../styles/S3/jquery.autocomplete.css",
@@ -208,8 +207,17 @@ def docss(dogis = True):
         "../../styles/T2/t2.css",
         "../../styles/web2py/calendar.css",
         "../../styles/S3/s3.multiselect.widget.css",
-        "../../styles/S3/jquery.multiSelect.css"
+        "../../styles/S3/jquery.multiSelect.css",
+        "../../styles/gis/gis.css",
+        "../../styles/gis/cdauth.css",
+        "../../styles/gis/popup.css",
+        "../../styles/gis/layerlegend.css",
+        #mfbase+"/ext/resources/css/ext-all.css", # would need to copy images if included here
+        "../../styles/gis/google.css",
+        #"../../styles/gis/style.css",
+        "../../styles/gis/ie6-style.css"
     ]
+
     outputFilenameCSS = "sahana.min.css"
 
     # Merge CSS files
@@ -227,36 +235,6 @@ def docss(dogis = True):
     except:
         pass
     shutil.move(outputFilenameCSS, "../../styles/S3")
-
-    if dogis:
-        listCSSGIS = [
-            "../../styles/gis/gis.css",
-            "../../styles/gis/cdauth.css",
-            "../../styles/gis/popup.css",
-            "../../styles/gis/layerlegend.css",
-            #mfbase+"/ext/resources/css/ext-all.css", # would need to copy images if included here
-            "../../styles/gis/google.css",
-            #"../../styles/gis/style.css",
-            "../../styles/gis/ie6-style.css"
-        ]
-        outputFilenameCSSGIS = "gis.min.css"
-    
-        # Merge GIS CSS files
-        print "Merging GIS styles."
-        mergedCSSGIS = mergeCSS(listCSSGIS, outputFilenameCSSGIS)
-
-        # Compress GIS CSS files
-        print "Writing to %s." % outputFilenameCSSGIS
-        compressCSS(mergedCSSGIS, outputFilenameCSSGIS)
-
-
-        # Move files to correct locations
-        print "Deleting %s." % outputFilenameCSSGIS
-        try:
-            os.remove("../../styles/gis/%s" % outputFilenameCSSGIS)
-        except:
-            pass
-        shutil.move(outputFilenameCSSGIS, "../../styles/gis")
 
 def main(argv):
     try:

@@ -1412,14 +1412,7 @@ class GIS(object):
         #####
         # CSS
         #####
-        if session.s3.debug:
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/ie6-style.css"), _media="screen", _charset="utf-8") )
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/google.css"), _media="screen", _charset="utf-8") )
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/geoext-all-debug.css"), _media="screen", _charset="utf-8") )
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/cdauth.css"), _media="screen", _charset="utf-8") )
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.css"), _media="screen", _charset="utf-8") )
-        else:
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.min.css"), _media="screen", _charset="utf-8") )
+        # All Loaded as-standard to avoid delays in page loading
 
         ######
         # HTML
@@ -3535,8 +3528,6 @@ OpenLayers.Util.extend( selectPdfControl, {
                 layer_coordinategrid = """
         map.addLayer(new OpenLayers.Layer.cdauth.CoordinateGrid(null, { name: '""" + name_safe + """', shortName: 'grid' """ + visibility + """ }));
         """
-            else:
-                layer_coordinategrid = ""
 
         #############
         # Main script

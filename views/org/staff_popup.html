@@ -26,13 +26,5 @@ $(function() {
     load_offices(false);
     
 });
-
-// If submission succesful
-{{if response.flash or response.confirmation:}}
-    // Refresh the staff list
-    //var url = '{{=URL(r=request, c="org", f="dashboard") + "/" + str(session.s3.organisation_id)}}';    
-    //self.parent.$('#org_staff_list').load(url + ' #org_staff_list'); 
-{{pass}}
-
 //]]></script>
 

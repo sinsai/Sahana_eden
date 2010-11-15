@@ -753,7 +753,8 @@ def search():
 
     import gluon.contrib.simplejson as json
     # JQuery Autocomplete uses 'q' instead of 'value'
-    value = request.vars.q
+    # JQuery UI Autocomplete uses 'term' instead of 'value'
+    value = request.vars.term or request.vars.q
     if value:
         item = person_search(value)
         item = json.dumps(item)

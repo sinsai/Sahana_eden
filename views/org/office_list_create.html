@@ -2,7 +2,8 @@
 {{include "_list_create.html"}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
-    {{entity_id = "org_office_organisation_id"}}
+    // Organisation Autocomplete
+    {{entity_id = request.controller + "_" + request.function + "_organisation_id"}}
     {{urlpath_c = "org"}}
     {{urlpath_f = "organisation"}}
     {{urlvar_field = "name"}}

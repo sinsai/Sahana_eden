@@ -7,7 +7,9 @@
 
 """
 
+from lxml import etree
 from gluon.sqlhtml import *
+from gluon.html import URL
 from s3utils import *
 
 # -----------------------------------------------------------------------------
@@ -16,15 +18,21 @@ class S3AutocompleteWidget:
     @author: Fran Boon (fran@aidiq.com)
 
     Renders a SELECT as an INPUT field with AJAX Autocomplete
+    
+    # @ToDo handle PostProcess (for offices_by_org.js)
+    # @ToDo versions for Persons & Locations
     """
     def __init__(self,
+                 request,
                  prefix,
                  resourcename,
-                 fieldname,
+                 fieldname="name",
                  min_length=2):
 
+        self.request = request
         self.prefix = prefix
         self.resourcename = resourcename
+        self.fieldname = fieldname
         self.min_length = min_length
 
     def __call__(self ,field, value, **attributes):
@@ -33,10 +41,58 @@ class S3AutocompleteWidget:
             value = (value != None and str(value)) or "",
             )
         attr = StringWidget._attributes(field, default, **attributes)
+
+        # Hide the real field
         attr["_class"] = attr["_class"] + " hidden"
+        
+        real_input = str(field).replace(".", "_")
+        dummy_input = "dummy_%s" % real_input
+        fieldname = self.fieldname
+        url = URL(r=self.request, c=self.prefix, f=self.resourcename, args="search.json", vars={"filter":"~", "field":fieldname})
+        
+        js_autocomplete = """
+        $('#%s').autocomplete({
+            source: '%s',
+            minLength: %d,
+            focus: function( event, ui ) {
+                $( '#%s' ).val( ui.item.%s );
+                return false;
+            },
+            select: function( event, ui ) {
+                $( '#%s' ).val( ui.item.%s );
+                $( '#%s' ).val( ui.item.id );
+                return false;
+            }
+        })
+        .data( 'autocomplete' )._renderItem = function( ul, item ) {
+            return $( '<li></li>' )
+                .data( 'item.autocomplete', item )
+                .append( '<a>' + item.%s + '</a>' )
+                .appendTo( ul );
+        };
+        """ % (dummy_input, url, self.min_length, dummy_input, fieldname, dummy_input, fieldname, real_input, fieldname)
+        
+        if value:
+            text = str(field.represent(default["value"]))
+            if "<" in text:
+                # Strip Markup
+                try:
+                    markup = etree.XML(text)
+                    text = markup.xpath(".//text()")
+                    if text:
+                        text = " ".join(text)
+                    else:
+                        text = ""
+                except etree.XMLSyntaxError:
+                    pass
+            represent = text
+        else:
+            represent = ""
+        
         return TAG[""](
-                        INPUT(_id="dummy_%s" % (str(field).replace(".", "_"))),
-                        INPUT(**attr)
+                        INPUT(_id=dummy_input, _value=represent),
+                        INPUT(**attr),
+                        SCRIPT(js_autocomplete)
                       )
 
 # -----------------------------------------------------------------------------
@@ -490,7 +546,7 @@ class S3MultiSelectWidget(FormWidget):
                     # We should put a check here to make sure we don't double display rows
                     if id:
                         row = db(link_table.id == id).select()
-                        if len(row) > 0:    # If is NOT true, it indicates that a error has occured
+                        if len(row) > 0:    # If is NOT true, it indicates that an error has occurred
                             widget_rows.append(self._generate_row(widget_id,
                                                                   id,
                                                                   column_fields = column_fields,
@@ -541,7 +597,7 @@ class S3MultiSelectWidget(FormWidget):
                                     ColumnFields = column_fields
                                     )
         js_delete_click = "$('." + widget_id + "_delete" + "').live('click', function () {" + \
-                       "S3MultiselectWidgetDeleteClick(this," +  str(js_delete_click_args) + ")});"
+                          "S3MultiselectWidgetDeleteClick(this," +  str(js_delete_click_args) + ")});"
 
         # When the form is submitted, click the "add button" - just in case the user forgot to
         js_submit =  "$('form').submit( function() {" + \
@@ -595,10 +651,10 @@ class S3MultiSelectWidget(FormWidget):
 
         # Delete button
         row_field_cells.append(TD(A(DIV(_class = "s3_multiselect_widget_delete_button"),
-                                    _class = "s3_multiselect_widget_delete " + widget_id + "_delete",
-                                    _href = "javascript: void(0)",
-                                    **delete_attr),
-                                  _class = "s3_multiselect_widget_delete_button")
+                                  _class = "s3_multiselect_widget_delete " + widget_id + "_delete",
+                                  _href = "javascript: void(0)",
+                                  **delete_attr),
+                               _class = "s3_multiselect_widget_delete_button")
                                )
 
         return TR(*row_field_cells)

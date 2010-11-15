@@ -222,10 +222,6 @@ def shn_shelter_prep(r):
         # Don't send the locations list to client (pulled by AJAX instead)
         r.table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
         
-        # Experiment with new Autocomplete Widget
-        #r.table.document_id.widget = SQLFORM.widgets.autocomplete(request, db.doc_document.name, id_field=db.doc_document.id)
-        #r.table.document_id.widget = S3AutocompleteWidget("doc", "document", "name")
-        
         # Remember this is html or popup.
         response.cr_shelter_request_was_html_or_popup = True
 

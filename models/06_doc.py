@@ -105,6 +105,7 @@ document_id = S3ReusableField("document_id",
                               label = DOCUMENT,
                               comment = document_comment,
                               ondelete = "RESTRICT",
+                              widget = S3AutocompleteWidget(request, module, resourcename)
                              )
 #==============================================================================
 resourcename = "image"

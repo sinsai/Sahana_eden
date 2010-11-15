@@ -11,8 +11,6 @@ $(function() {
     // Populate the Dummy Input from the real one
     var oldvalue = $('#{{=entity_id}} > option[selected="selected"]').html();
     $('#{{=dummy_input}}').val(oldvalue);
-    
-    {{include "cr/shelter_optional_data.js"}}
 });
 //]]></script>
 {{include "gis/location_autocomplete.js"}}

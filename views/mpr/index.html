@@ -40,14 +40,14 @@
             {{except:}}
             {{pass}}
         </div>
-{{if auth.shn_logged_in():}}
-        <p>&nbsp;</p>
+{{try:}}
+{{if add_btn:}}
+<p>&nbsp;</p>
 {{=T("If you cannot find the record of the person you want to report missing, you can add it by clicking 'Add Person' below:")}}
-        <p>&nbsp;</p>
-        {{try:}}
-        {{=add_btn}}
-        {{except:}}
-        {{pass}}
+<p>&nbsp;</p>
+{{=add_btn}}
+{{pass}}
+{{except:}}
 {{pass}}
         {{include "dataTables.html"}}
     </div>

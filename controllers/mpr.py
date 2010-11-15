@@ -152,8 +152,17 @@ def index():
     response.s3.prep = prep
     response.s3.postp = postp
 
-    # REST controller
-    output = s3_rest_controller("pr", "person", module_name=module_name)
+    if auth.shn_logged_in():
+        add_btn = A(T("Add Person"),
+                    _class="action-btn",
+                    _href=URL(r=request, f="person", args="create"))
+    else:
+        add_btn = None
+
+    # REST controllerperson
+    output = s3_rest_controller("pr", "person",
+                                module_name=module_name,
+                                add_btn=add_btn)
 
     # Set view, update menu and return output
     response.view = "mpr/index.html"
@@ -265,8 +274,8 @@ def person():
                 response.s3.actions.append(
                     dict(label=str(label), _class="action-btn", url=str(linkto)))
             elif r.component_name == "presence":
-                if "showaddbtn" in output:
-                    del output["showaddbtn"]
+                if "showadd_btn" in output:
+                    del output["showadd_btn"]
         return output
     response.s3.postp = person_postp
 

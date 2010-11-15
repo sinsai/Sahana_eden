@@ -354,7 +354,7 @@ def pr_person_onvalidation(form):
 s3xrc.model.configure(table,
     main="first_name",
     extra="last_name",
-    listadd=False,
+    #listadd=False,
     super_entity=db.pr_pentity,
     onvalidation=lambda form: pr_person_onvalidation(form),
     list_fields = [

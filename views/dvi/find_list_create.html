@@ -1,4 +1,4 @@
-{{extend 'layout.html'}}
+{{extend "layout.html"}}
 {{try:}}
  {{=H2(title)}}
 {{except:}}
@@ -13,7 +13,7 @@
  {{=H3(subtitle)}}
 {{except:}}
 {{pass}}
-{{include 'formats.html'}}
+{{include "formats.html"}}
 <div id='table-container'>
 {{try:}}
  {{=items}}
@@ -28,11 +28,11 @@
 <div class='form-container'>
 {{try:}}
  {{=form}}
- {{include 'key.html'}}
+ {{include "key.html"}}
 {{except:}}
 {{pass}}
 </div>
-{{include 'pagenav.html'}}
-{{include 'searchbox.html'}}
-{{include 'colorbox.html'}}
-{{include 'dataTables.html'}}
+{{include "pagenav.html"}}
+{{include "searchbox.html"}}
+{{include "colorbox.html"}}
+{{include "dataTables.html"}}

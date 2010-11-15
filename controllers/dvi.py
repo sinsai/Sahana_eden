@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 
-""" DVI Disaster Victim Identification, Controllers
-    (Part of VITA)
+""" VITA Disaster Victim Identification, Controllers
 
     @author: nursix
     @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
-    @version: 1.0.0
 
 """
 

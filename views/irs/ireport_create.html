@@ -13,11 +13,6 @@ $(function() {
     // Populate the Dummy Input from the real one
     var oldvalue = $('#{{=real_input}} > option[selected="selected"]').html();
     $('#{{=dummy_input}}').val(oldvalue);
-    // Re-populate the real Input when the Dummy is selected
-    $('#{{=dummy_input}}').result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $('#{{=real_input}}').val(newvalue);
-    });
     
     // Reference AutoComplete
     {{entity_id = request.controller + "_" + request.function + "_document_id"}}

@@ -35,7 +35,7 @@
         copy_dummy = function(event){
            var newvalue = $('#{{=dummy_input}} option:selected').val();
            $('#{{=entity_id}}').val(newvalue);
-         };
+        };
         $('#{{=dummy_input}}').change(copy_dummy); 
     {{else:}}
         $('#{{=entity_id}}').after("<input id='{{=dummy_input}}' class='ac_input' value='{{=default_value}}' size=50 />");
@@ -50,12 +50,6 @@
     var represent = $('#{{=entity_id}} > [selected]').html();
     $('#{{=dummy_input}}').val(represent);
     
-    // Populate the real Input when the Dummy is selected
-    $('#{{=dummy_input}}').result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $('#{{=entity_id}}').val(newvalue);
-        {{try:}}{{=post_process}}{{except:}}{{pass}}
-    }); 
     {{entity_id = None}}
     {{default_value = None}}
     {{dummy_select = False}}

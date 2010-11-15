@@ -11,6 +11,35 @@ from gluon.sqlhtml import *
 from s3utils import *
 
 # -----------------------------------------------------------------------------
+class S3AutocompleteWidget:
+    """
+    @author: Fran Boon (fran@aidiq.com)
+
+    Renders a SELECT as an INPUT field with AJAX Autocomplete
+    """
+    def __init__(self,
+                 prefix,
+                 resourcename,
+                 fieldname,
+                 min_length=2):
+
+        self.prefix = prefix
+        self.resourcename = resourcename
+        self.min_length = min_length
+
+    def __call__(self ,field, value, **attributes):
+        default = dict(
+            _type = "text",
+            value = (value != None and str(value)) or "",
+            )
+        attr = StringWidget._attributes(field, default, **attributes)
+        attr["_class"] = attr["_class"] + " hidden"
+        return TAG[""](
+                        INPUT(_id="dummy_%s" % (str(field).replace(".", "_"))),
+                        INPUT(**attr)
+                      )
+
+# -----------------------------------------------------------------------------
 class S3CheckboxesWidget(OptionsWidget):
     """
     @author: Michael Howden (michael@aidiq.com)

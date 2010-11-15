@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-""" VITA Sahana-Eden Person Data Toolkit
+""" VITA Person Finder Toolkit
 
     @version: 1.0.0
     @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}

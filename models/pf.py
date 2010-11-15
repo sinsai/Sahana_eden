@@ -1,22 +1,20 @@
 # -*- coding: utf-8 -*-
 
-""" MPR Missing Persons Registry, Models
-    (Part of VITA)
+""" VITA Person Finder, Models
 
     @author: nursix
     @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
-    @version: 1.0.0
 
 """
 
-module = "mpr"
+module = "pf"
 
 if deployment_settings.has_module(module):
 
     # *************************************************************************
     # Missing report
     #
-    shn_mpr_reporter_comment = \
+    shn_pf_reporter_comment = \
         DIV(A(ADD_PERSON,
             _class="colorbox",
             _href=URL(r=request, c="pr", f="person", args="create", vars=dict(format="popup")),
@@ -35,7 +33,7 @@ if deployment_settings.has_module(module):
                                represent = lambda id: (id and
                                                        [shn_pr_person_represent(id)] or
                                                        ["None"])[0],
-                               comment = shn_mpr_reporter_comment,
+                               comment = shn_pf_reporter_comment,
                                ondelete = "RESTRICT")
 
     # -------------------------------------------------------------------------
@@ -83,7 +81,7 @@ if deployment_settings.has_module(module):
                               joinby=dict(pr_person="person_id"))
 
 
-    def shn_mpr_report_onaccept(form):
+    def shn_pf_report_onaccept(form):
 
         table = db.pr_person
 
@@ -128,7 +126,7 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.configure(table,
         deletable=False,
-        onaccept = lambda form: shn_mpr_report_onaccept(form),
+        onaccept = lambda form: shn_pf_report_onaccept(form),
         list_fields = [
             "id",
             "reporter"

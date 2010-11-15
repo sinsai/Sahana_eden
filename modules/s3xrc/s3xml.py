@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - XML/JSON Toolkit
 
-    @version: 2.2.2
+    @version: 2.2.3
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 

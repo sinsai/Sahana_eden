@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - CRUD Method Handlers
 
-    @version: 2.2.2
+    @version: 2.2.3
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -1198,7 +1198,7 @@ class S3CRUDHandler(S3MethodHandler):
                 squery = self.ssp_filter(table, fields, left=left)
                 if squery is not None:
                     self.resource.add_filter(squery)
-                    displayrows = self.resource.count()
+                    displayrows = self.resource.count(left=left)
 
             # SSPag sorting
             if vars.iSortingCols and orderby is None:

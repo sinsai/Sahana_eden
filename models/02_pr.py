@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 
-""" PR Person Registry, Models
-    (Part of VITA)
+""" VITA Person Registry, Models
 
     @author: nursix
     @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
-    @version: 1.0.0
 
 """
 

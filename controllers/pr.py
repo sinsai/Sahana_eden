@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 
-""" PR Person Registry, Controllers
-    (Part of VITA)
+""" VITA Person Registry, Controllers
 
     @author: nursix
     @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
-    @version: 1.0.0
 
 """
 

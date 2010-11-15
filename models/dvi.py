@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 
-""" DVI - Disaster Victim Identification, Models
-   (Part of VITA)
+""" VITA Disaster Victim Identification, Models
 
     @author: nursix
     @author: khushbu
     @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
-    @version: 1.0.0
 
 """
 

@@ -1,24 +1,9 @@
 <script type="text/javascript">//<![CDATA[
 $(function() {
-    // Organisation Autocomplete
-    {{entity_id = request.controller + "_" + request.function + "_organisation_id"}}
-    {{urlpath_c = "org"}}
-    {{urlpath_f = "organisation"}}
-    {{urlvar_field = "name"}}
-    {{include "auto_input.js"}}
-
-    // Donor Autocomplete
-    {{entity_id = request.controller + "_" + request.function + "_donor_id"}}
-    {{urlpath_c = "org"}}
-    {{urlpath_f = "organisation"}}
-    {{urlvar_field = "name"}}
-    {{include "auto_input.js"}}
-
     // Person AutoComplete
     {{entity_id = request.controller + "_" + request.function + "_person_id"}}
     {{is_person = True}}
     {{include "auto_input.js"}}
-
 });
 //]]></script>
 {{include "gis/location_autocomplete.js"}}

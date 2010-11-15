@@ -27,12 +27,14 @@ class S3AutocompleteWidget:
                  prefix,
                  resourcename,
                  fieldname="name",
+                 post_process = "",
                  min_length=2):
 
         self.request = request
         self.prefix = prefix
         self.resourcename = resourcename
         self.fieldname = fieldname
+        self.post_process = post_process
         self.min_length = min_length
 
     def __call__(self ,field, value, **attributes):
@@ -61,6 +63,7 @@ class S3AutocompleteWidget:
             select: function( event, ui ) {
                 $( '#%s' ).val( ui.item.%s );
                 $( '#%s' ).val( ui.item.id );
+                """ % (dummy_input, url, self.min_length, dummy_input, fieldname, dummy_input, fieldname, real_input) + self.post_process + """
                 return false;
             }
         })
@@ -70,7 +73,7 @@ class S3AutocompleteWidget:
                 .append( '<a>' + item.%s + '</a>' )
                 .appendTo( ul );
         };
-        """ % (dummy_input, url, self.min_length, dummy_input, fieldname, dummy_input, fieldname, real_input, fieldname)
+        """ % (fieldname)
         
         if value:
             text = str(field.represent(default["value"]))

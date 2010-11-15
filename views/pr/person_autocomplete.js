@@ -4,13 +4,13 @@
         minLength: 2,
         focus: function( event, ui ) {
             var name = '';
-            if (data[i].first_name != null) {
+            if (ui.item.first_name != null) {
                 name += ui.item.first_name + ' ';
             }
-            if (data[i].middle_name != null) {
+            if (ui.item.middle_name != null) {
                 name += ui.item.middle_name + ' ';
             }
-            if (data[i].last_name != null) {
+            if (ui.item.last_name != null) {
                 name += ui.item.last_name;
             }
             $( '#{{=dummy_input}}' ).val( name );
@@ -33,7 +33,7 @@
             return false;
         }
     })
-    .data( "autocomplete" )._renderItem = function( ul, item ) {
+    .data( 'autocomplete' )._renderItem = function( ul, item ) {
         var name = '';
         if (item.first_name != null) {
             name += item.first_name + ' ';
@@ -44,8 +44,8 @@
         if (item.last_name != null) {
             name += item.last_name;
         }
-        return $( "<li></li>" )
-            .data( "item.autocomplete", item )
-            .append( "<a>" + name + "</a>" )
+        return $( '<li></li>' )
+            .data( 'item.autocomplete', item )
+            .append( '<a>' + name + '</a>' )
             .appendTo( ul );
     };

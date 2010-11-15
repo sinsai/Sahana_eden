@@ -822,7 +822,7 @@ $(function() {
             return false;
         }
     })
-    .data( "autocomplete" )._renderItem = function( ul, item ) {
+    .data( 'autocomplete' )._renderItem = function( ul, item ) {
         var name = item.name;
         {{try:}}
         {{test = _gis.location_hierarchy["L1"]}}
@@ -855,9 +855,9 @@ $(function() {
         }
         {{except:}}
         {{pass}}
-        return $( "<li></li>" )
-            .data( "item.autocomplete", item )
-            .append( "<a>" + name + "</a>" )
+        return $( '<li></li>' )
+            .data( 'item.autocomplete', item )
+            .append( '<a>' + name + '</a>' )
             .appendTo( ul );
     };
     $('#gis_location_name').change(function() {

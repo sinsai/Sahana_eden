@@ -19,8 +19,7 @@ class S3AutocompleteWidget:
 
     Renders a SELECT as an INPUT field with AJAX Autocomplete
     
-    # @ToDo handle PostProcess (for offices_by_org.js)
-    # @ToDo versions for Persons & Locations
+    # @ToDo version for Locations
     """
     def __init__(self,
                  request,
@@ -74,6 +73,114 @@ class S3AutocompleteWidget:
                 .appendTo( ul );
         };
         """ % (fieldname)
+        
+        if value:
+            text = str(field.represent(default["value"]))
+            if "<" in text:
+                # Strip Markup
+                try:
+                    markup = etree.XML(text)
+                    text = markup.xpath(".//text()")
+                    if text:
+                        text = " ".join(text)
+                    else:
+                        text = ""
+                except etree.XMLSyntaxError:
+                    pass
+            represent = text
+        else:
+            represent = ""
+        
+        return TAG[""](
+                        INPUT(_id=dummy_input, _value=represent),
+                        INPUT(**attr),
+                        SCRIPT(js_autocomplete)
+                      )
+
+# -----------------------------------------------------------------------------
+class S3PersonAutocompleteWidget:
+    """
+    @author: Fran Boon (fran@aidiq.com)
+
+    Renders a pr_person SELECT as an INPUT field with AJAX Autocomplete
+    
+    Differs from the S3AutocompleteWidget in that it uses 3 name fields
+    """
+    def __init__(self,
+                 request,
+                 post_process = "",
+                 min_length=2):
+
+        self.request = request
+        self.post_process = post_process
+        self.min_length = min_length
+
+    def __call__(self ,field, value, **attributes):
+        default = dict(
+            _type = "text",
+            value = (value != None and str(value)) or "",
+            )
+        attr = StringWidget._attributes(field, default, **attributes)
+
+        # Hide the real field
+        attr["_class"] = attr["_class"] + " hidden"
+        
+        real_input = str(field).replace(".", "_")
+        dummy_input = "dummy_%s" % real_input
+        url = URL(r=self.request, c="pr", f="person", args="search.json", vars={"filter":"~", "field":"first_name", "field2":"middle_name", "field3":"last_name"})
+        
+        js_autocomplete = """
+        $('#%s').autocomplete({
+            source: '%s',
+            minLength: %d,
+            focus: function( event, ui ) {
+                var name = '';
+                if (ui.item.first_name != null) {
+                    name += ui.item.first_name + ' ';
+                }
+                if (ui.item.middle_name != null) {
+                    name += ui.item.middle_name + ' ';
+                }
+                if (ui.item.last_name != null) {
+                    name += ui.item.last_name;
+                }
+                $( '#%s' ).val( name );
+                return false;
+            },
+            select: function( event, ui ) {
+                var name = '';
+                if (ui.item.first_name != null) {
+                    name += ui.item.first_name + ' ';
+                }
+                if (ui.item.middle_name != null) {
+                    name += ui.item.middle_name + ' ';
+                }
+                if (ui.item.last_name != null) {
+                    name += ui.item.last_name;
+                }
+                $( '#%s' ).val( name );
+                $( '#%s' ).val( ui.item.id );
+                """ % (dummy_input, url, self.min_length, dummy_input, dummy_input, real_input) + self.post_process + """
+                return false;
+            }
+        })
+        .data( 'autocomplete' )._renderItem = function( ul, item ) {
+            var name = '';
+            if (item.first_name != null) {
+                name += item.first_name + ' ';
+            }
+            if (item.middle_name != null) {
+                name += item.middle_name + ' ';
+            }
+            if (item.last_name != null) {
+                name += item.last_name;
+            }
+            return $( '<li></li>' )
+                .data( 'item.autocomplete', item )
+                .append( '<a>' + name + '</a>' )
+                .appendTo( ul );
+        };
+        """
         
         if value:
             text = str(field.represent(default["value"]))

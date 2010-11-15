@@ -16,18 +16,8 @@
         {{default_value = ""}}
     {{pass}}
 
-    {{try:}} 
-        {{is_person}}
-    {{except:}}
-        {{is_person = False}}
-    {{pass}}
-
     $('#{{=entity_id}}').after("<input id='{{=dummy_input}}' class='ac_input' value='{{=default_value}}' size=50 />");
-    {{if is_person:}}
-        {{include "pr/person_autocomplete.js"}}
-    {{else:}}
-        {{include "autocomplete.js"}}
-    {{pass}}
+    {{include "autocomplete.js"}}
 
     // Populate the dummy Input at start (Update forms)
     var represent = $('#{{=entity_id}} > [selected]').html();
@@ -35,5 +25,4 @@
     
     {{entity_id = None}}
     {{default_value = None}}
-    {{is_person = False}}
 {{pass}}

@@ -1,17 +1,5 @@
 <script type="text/javascript">//<![CDATA[
 $(function() {
-    // Person AutoComplete
-    {{entity_id = request.controller + "_" + request.function + "_person_id"}}
-    {{dummy_input = "dummy_" + entity_id}}
-    // Hide the real Input Field
-    $('#{{=entity_id}}').hide();
-    // Add a dummy field
-    $('#{{=entity_id}}').after("<input id='{{=dummy_input}}' class='ac_input' size=50 />");
-    {{include "pr/person_autocomplete.js"}}
-    // Populate the Dummy Input from the real one
-    var oldvalue = $('#{{=entity_id}} > option[selected="selected"]').html();
-    $('#{{=dummy_input}}').val(oldvalue);
-    
     {{include "cr/shelter_optional_data.js"}}
 });
 //]]></script>

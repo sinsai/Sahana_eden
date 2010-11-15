@@ -3,12 +3,7 @@
 {{include "org/offices_by_org.js"}}
 
 $(function() {
-    // Person AutoComplete
-    {{entity_id = request.controller + "_" + request.function + "_person_id"}}
-    {{is_person = True}}
-    {{include "auto_input.js"}}
-    
-    // Offices Selector
+   // Offices Selector
     var options = "<option value=''>{{=T("Select an Organization to see a list of offices")}}</option>";
     $('#org_staff_office_id').html(options);
 

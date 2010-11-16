@@ -1111,6 +1111,10 @@ class S3CRUDHandler(S3MethodHandler):
             # Store the query for SSPag
             session.s3.filter = request.get_vars
 
+            # Apply filter
+            if response.s3.filter is not None:
+                self.resource.add_filter(response.s3.filter)
+
             # Add add-form (do this before retrieving the list!)
             if listadd:
                 # Add-form
@@ -1189,6 +1193,10 @@ class S3CRUDHandler(S3MethodHandler):
             # Get the master query for SSPag
             if session.s3.filter is not None:
                 self.resource.build_query(vars=session.s3.filter)
+
+            # Apply filter
+            if response.s3.filter is not None:
+                self.resource.add_filter(response.s3.filter)
 
             displayrows = totalrows = self.resource.count()
             left = []

@@ -624,6 +624,8 @@
 'Check outbox for the message status': 'Check outbox for the message status',
 'Check to delete': 'Check to delete',
 'Check to delete:': 'Check to delete:',
+'Check-In': 'Check-In',
+'Check-Out': 'Check-Out',
 'Checklist': 'Checklist',
 'Checklist created': 'Checklist created',
 'Checklist deleted': 'Checklist deleted',

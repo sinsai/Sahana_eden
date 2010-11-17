@@ -3068,6 +3068,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                     except (AttributeError, KeyError):
                         popup_label = feature.name
 
+                    # Allows map API to be used with Storage instead of Rows
+                    if not popup_label:
+                        popup_label = feature.name
                     # Deal with apostrophes in Feature Names
                     fname = re.sub("'", "\\'", popup_label)
 

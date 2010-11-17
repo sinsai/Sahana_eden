@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="selenium.base" href="http://127.0.0.1:8000/" />
+<title>Create Test Account</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">Create Test Account</td></tr>
+</thead><tbody>
+<!--*** NOTE this script needs to be run by a user with Administrator privileges. END NOTE ***-->
+<!--This script creates a test account with the user name of testing@example.com the account is given administrator rights and will be used throughout the testing suite.-->
+<!--The user testing@example.com will be deleted by the "Delete Test Account" test case.-->
+<tr>
+	<td>open</td>
+	<td>/eden/admin/user</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertElementPresent</td>
+	<td>show-add-btn</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>show-add-btn</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>auth_user_first_name</td>
+	<td>Testing</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>auth_user_last_name</td>
+	<td>User</td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>auth_user_language</td>
+	<td>label=English</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>auth_user_email</td>
+	<td>testing@example.com</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>auth_user_password</td>
+	<td>testing</td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>//input[@value='Save']</td>
+	<td></td>
+</tr>
+<!--Now that the user has been created search for this user using the list filter so that the "Administrator" roll can be added to it.-->
+<!--The serach filter is part of the http://datatables.net/ JavaScript getting it to work with Selenium needs a bit of care.-->
+<!--Entering text in the filter textbox doesn't always trigger off the filtering and it is not possible with this method to clear the filter.-->
+<!--The solution is to put in a call to the DataTables API, namely the fnFilter function-->
+<!--However, the first time that the fnFilter() is called in the testing suite it doesn't complete the processing, hence it is called twice.-->
+<tr>
+	<td>runScript</td>
+	<td>oTable = $('#list').dataTable();&nbsp;&nbsp;oTable.fnFilter( '' );</td>
+	<td></td>
+</tr>
+<tr>
+	<td>runScript</td>
+	<td>oTable = $('#list').dataTable();&nbsp;&nbsp;oTable.fnFilter( 'testing@example.com' );</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForText</td>
+	<td>//div[@class='dataTables_info']</td>
+	<td>*1 entries*</td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Open</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>//div[@id='content']/a[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>auth_membership_group_id</td>
+	<td></td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>auth_membership_group_id</td>
+	<td>label=1: Administrator</td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>//input[@value='Add']</td>
+	<td></td>
+</tr>
+<!--Log out from the current "Administrator" user and log back in for the remianing test cases as testing@example.com-->
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Logout</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>auth_user_email</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>auth_user_email</td>
+	<td>testing@example.com</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>auth_user_password</td>
+	<td>testing</td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>//input[@value='Submit']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyText</td>
+	<td>//*[@class=&quot;col1&quot;]</td>
+	<td>*Logged in*</td>
+</tr>
+</tbody></table>
+</body>
+</html>

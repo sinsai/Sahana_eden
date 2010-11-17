@@ -3,19 +3,17 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head profile="http://selenium-ide.openqa.org/profiles/test-case">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<link rel="selenium.base" href="" />
-<title>Register</title>
+<link rel="selenium.base" href="http://127.0.0.1:8000/" />
+<title>register_login</title>
 </head>
 <body>
 <table cellpadding="1" cellspacing="1" border="1">
 <thead>
-<tr><td rowspan="1" colspan="3">Register</td></tr>
+<tr><td rowspan="1" colspan="3">register_login</td></tr>
 </thead><tbody>
-
-<!-- Register -->
 <tr>
 	<td>open</td>
-	<td>/sahana</td>
+	<td>/eden/default/user/</td>
 	<td></td>
 </tr>
 <tr>
@@ -24,95 +22,65 @@
 	<td></td>
 </tr>
 <tr>
-    <td>storeRandom</td>
-    <td>8</td>
-    <td>user</td>
+	<td>assertText</td>
+	<td>//h2</td>
+	<td>Register</td>
 </tr>
 <tr>
-    <td>storeRandom</td>
-    <td>8</td>
-    <td>domain</td>
-</tr>
-<tr>
-    <td>store</td>
-    <td>${user}@${domain}.com</td>
-    <td>email</td>
+	<td>click</td>
+	<td>auth_user_first_name</td>
+	<td></td>
 </tr>
 <tr>
 	<td>type</td>
 	<td>auth_user_first_name</td>
-    <td>${user}</td>
+	<td>Functional</td>
 </tr>
 <tr>
 	<td>type</td>
 	<td>auth_user_last_name</td>
-    <td>${user}</td>
+	<td>Tester</td>
 </tr>
 <tr>
 	<td>type</td>
 	<td>auth_user_email</td>
-    <td>${email}</td>
-</tr>
-<tr>
-    <td>storeRandom</td>
-    <td>8</td>
-    <td>password</td>
+	<td>FT@SahanaEden.org</td>
 </tr>
 <tr>
 	<td>type</td>
 	<td>auth_user_password</td>
-	<td>${password}</td>
-</tr>
-<tr>
-	<td>clickAndWait</td>
-	<td>//input[@type='submit']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyTextPresent</td>
-	<td>Logged in</td>
-	<td></td>
-</tr>
-
-<!-- Logout -->
-<tr>
-	<td>clickAndWait</td>
-	<td>link=Logout</td>
-	<td></td>
-</tr>
-<tr>
-	<td>verifyTextPresent</td>
-	<td>Logged out</td>
-	<td></td>
-</tr>
-
-<!-- Login -->
-<tr>
-	<td>clickAndWait</td>
-	<td>link=Login</td>
-	<td></td>
+	<td>testing</td>
 </tr>
 <tr>
 	<td>type</td>
-	<td>auth_user_email</td>
-	<td>${email}</td>
-</tr>
-<tr>
-	<td>type</td>
-	<td>auth_user_password</td>
-	<td>${password}</td>
+	<td>password_two</td>
+	<td>testing</td>
 </tr>
 <tr>
 	<td>clickAndWait</td>
-	<td>//input[@type='submit']</td>
+	<td>//input[@value='Submit']</td>
 	<td></td>
 </tr>
 <tr>
-	<td>verifyTextPresent</td>
-	<td>Logged in</td>
+	<td>verifyTitle</td>
+	<td></td>
 	<td></td>
 </tr>
-
+<tr>
+	<td>verifyText</td>
+	<td>//*[@class=&quot;col1&quot;]</td>
+	<td>*Registration successful*</td>
+</tr>
+<tr>
+	<td>verifyText</td>
+	<td>//*[@class=&quot;col1&quot;]</td>
+	<td>*Logged in*</td>
+</tr>
+<tr>
+	<td>verifyTextPresent</td>
+	<td></td>
+	<td>zzwwerrorwwzz</td>
+</tr>
 </tbody></table>
 </body>
 </html>

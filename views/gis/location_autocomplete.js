@@ -880,27 +880,82 @@ $(function() {
     // GeoCoder widget
     widget = "<a id='geocoder-results-button' href='#'>{{=T("Geocoder Search")}}</a> ({{=T("Type an address above and use the geocoder to complete it.")}})";
     row2 = "<tr id='gis_location_geocoder__row'><td>" + widget + '</td><td></td></tr>';
-    // Enable when ready
     $(location_id_row).before(row2);
 
-    function geoCoderResultsHandler(selectedAddress) {
-        //s3_debug('Selected place: ', selectedAddress);
-        var street_addr = selectedAddress.AddressDetails.Country.
-            AdministrativeArea.SubAdministrativeArea.Locality.
-            Thoroughfare.ThoroughfareName;
-        var zipcode = selectedAddress.AddressDetails.Country.
-            AdministrativeArea.SubAdministrativeArea.Locality.
-            PostalCode.PostalCodeNumber;
+    // This is a generic method to find a specific value for an object
+    // inside of the nested Google placemark objects.  It's recursive.
+    function getGoogleValue(placemark, searchValue) {
+        //s3_debug('Searching...', placemark, searchValue);
+        for (key in placemark) {
+            if (key == searchValue) {
+                return placemark[key];
+            }
+            else if (typeof(placemark[key]) == 'object') {
+                return getGoogleValue(placemark[key], searchValue);
+            }
+        }
+        return ''
+    }
+
+    /* This is a specific function to find the "ThoroughfareName" in the
+    /* placemark.  For some reason using the above function will read
+    /* everything in the "Locality" object except the Thoroughfare, which
+    /* contains the ThoroughfareName.  It will even read the PostalCode,
+    /* which is also referenced below.  The 'in' operator simply doesn't
+    /* see Thoroughfare in the Locality.  Incidentally, Google makes it so
+    /* the "Locality" object appears under SubAdministrativeArea usually, but
+    /* SubAdministrativeArea doesn't always appear under an AdministrativeArea,
+    /* thus the need for these recursive functions. */
+    function getGoogleThoroughfareName(placemark) {
+        //s3_debug('Object: ', placemark);
+        localityPlacemark = getGoogleValue(placemark, 'Locality');
+        // Search for a 'DependentLocality' if Locality wasn't found at all
+        if(localityPlacemark == '' || localityPlacemark == undefined) {
+            localityPlacemark = getGoogleValue(placemark, 'DependentLocality');
+        }
+        // If the locality has a dependentlocality, use that...
+        if (localityPlacemark['DependentLocality'] != undefined)
+            localityPlacemark = localityPlacemark['DependentLocality'];
+        if (localityPlacemark['Thoroughfare'] != undefined) {
+            localityPlacemark = localityPlacemark['Thoroughfare'];
+            if (localityPlacemark['ThoroughfareName'] != undefined) {
+                //s3_debug('Found ThoroughfareName: ', placemark['ThoroughfareName']);
+                // Finally return the street address
+                return localityPlacemark['ThoroughfareName'];
+            }
+        }
+        return ''
+    }
+
+     function geoCoderResultsHandler(selectedAddress) {
+        $('#gis_location_lat').val(selectedAddress.Point.coordinates[0]);
+        $('#gis_location_lon').val(selectedAddress.Point.coordinates[1]);
+
+        /* Note, these calls are how the street_addr and zipcode could normally
+         * be found, but sometimes SubAdminArea doesn't appear under an 
+         * AdminArea, so the methods above are needed. */
+        /*street_addr = selectedAddress.AddressDetails.Country.
+                AdministrativeArea.SubAdministrativeArea.Locality.
+                Thoroughfare.ThoroughfareName;
+        zipcode = selectedAddress.AddressDetails.Country.
+                AdministrativeArea.SubAdministrativeArea.Locality.
+                PostalCode.PostalCodeNumber;*/
+
+        var street_addr = getGoogleThoroughfareName(selectedAddress);
+        if (!street_addr) {
+            alert('{{=T("Unfortunately there was not a usable street address for your selection.  Latitude and Longitude values were found, and have been entered below.")}}');
+            return;
+        }
+        var successfulEntries = '{{=T("Latitude, Longitude, Street Address")}}';
+        var zipcode = getGoogleValue(selectedAddress, 'PostalCodeNumber');
         var country = selectedAddress.AddressDetails.Country.CountryName;
         if (zipcode) {
             street_addr += ' ' + zipcode;
+            successfulEntries += ', Postal code';
         }
-        //s3_debug('Geocoder selected country:', country);
-        //s3_debug('Geocoder selected addr:', street_addr);
-        $('#gis_location_lat').val(selectedAddress.Point.coordinates[0]);
-        $('#gis_location_lon').val(selectedAddress.Point.coordinates[1]);
         $('#gis_location_addr_street').val(street_addr);
-        $('#gis_location_l0').val(country);
+        //$('#gis_location_l0').val(country);
+        //alert('{{=T("Successfully changed")}}: ' + successfulEntries);
     }
 
     var geoCodeButton = Ext.get('geocoder-results-button');

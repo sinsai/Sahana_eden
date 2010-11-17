@@ -26,7 +26,8 @@ def shn_menu():
             menu_project = [
                     ["%s %s" % (T("Project") + ":", selection.code), False, URL(r=request, f="project", args=[project_id]),[
                         [T("Tasks"), False, URL(r=request, f="project", args=[project_id, "task"])],
-                        [T("Staff"), False, URL(r=request, f="project", args=[project_id, "staff"])],
+                        # Staff cannot be a component of Project since staff may be assigned to many projects
+                        #[T("Staff"), False, URL(r=request, f="project", args=[project_id, "staff"])],
                     ]]
             ]
             menu.extend(menu_project)

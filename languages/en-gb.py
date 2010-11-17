@@ -1681,6 +1681,7 @@
 'Item deleted': 'Item deleted',
 'Item updated': 'Item updated',
 'Items': 'Items',
+'Japanese': 'Japanese',
 'Jerry can': 'Jerry can',
 'Jew': 'Jew',
 'Job Title': 'Job Title',

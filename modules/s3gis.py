@@ -2370,7 +2370,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     """
             if openstreetmap.Haiti:
                 layers_openstreetmap += """
-        var osmht = new OpenLayers.Layer.TMS( '""" + openstreetmap.Haiti + """', 'http://geo.eden.sahanafoundation.org/tiles/', {type: 'png', getURL: osm_getTileURL } );
+        var osmht = new OpenLayers.Layer.TMS( '""" + openstreetmap.Haiti + """', 'http://haiti.oxfam.org.uk/tiles/', {type: 'png', getURL: osm_getTileURL } );
         map.addLayer(osmht);
                     """
         else:

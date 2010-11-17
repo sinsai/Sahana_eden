@@ -4,7 +4,7 @@
 
     @version: 2.2.3
 
-    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
+    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
@@ -240,7 +240,8 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
-    def tostring(self, tree, pretty_print=False):
+    @staticmethod
+    def tostring(tree, pretty_print=False):
 
         """ Convert an element tree into XML as string
 
@@ -312,7 +313,8 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
-    def xml_encode(self, obj):
+    @classmethod
+    def xml_encode(cls, obj):
 
         """ Encodes a Python string into an XML text node
 
@@ -321,13 +323,14 @@ class S3XML(object):
         """
 
         if obj:
-            for (x,y) in self.PY2XML:
+            for (x,y) in cls.PY2XML:
                 obj = obj.replace(x, y)
         return obj
 
 
     # -------------------------------------------------------------------------
-    def xml_decode(self, obj):
+    @classmethod
+    def xml_decode(cls, obj):
 
         """ Decodes an XML text node into a Python string
 
@@ -336,7 +339,7 @@ class S3XML(object):
         """
 
         if obj:
-            for (x,y) in self.XML2PY:
+            for (x,y) in cls.XML2PY:
                 obj = obj.replace(y, x)
         return obj
 
@@ -694,7 +697,8 @@ class S3XML(object):
 
     # Data import =============================================================
 
-    def select_resources(self, tree, tablename):
+    @classmethod
+    def select_resources(cls, tree, tablename):
 
         """ Selects resources from an element tree
 
@@ -707,7 +711,7 @@ class S3XML(object):
 
         if isinstance(tree, etree._ElementTree):
             root = tree.getroot()
-            if not root or not root.tag == self.TAG.root:
+            if not root or not root.tag == cls.TAG.root:
                 return resources
         else:
             root = tree
@@ -715,10 +719,8 @@ class S3XML(object):
         if root is None or not len(root):
             return resources
 
-        expr = './%s[@%s="%s"]' % (
-               self.TAG.resource,
-               self.ATTRIBUTE.name,
-               tablename)
+        expr = './%s[@%s="%s"]' % \
+               (cls.TAG.resource, cls.ATTRIBUTE.name, tablename)
 
         resources = root.xpath(expr)
         return resources
@@ -950,7 +952,8 @@ class S3XML(object):
 
     # Data model helpers ======================================================
 
-    def get_field_options(self, table, fieldname):
+    @classmethod
+    def get_field_options(cls, table, fieldname):
 
         """ Get options of a field as <select>
 
@@ -959,7 +962,7 @@ class S3XML(object):
 
         """
 
-        select = etree.Element(self.TAG.select)
+        select = etree.Element(cls.TAG.select)
 
         if fieldname in table.fields:
             field = table[fieldname]
@@ -967,8 +970,8 @@ class S3XML(object):
             return select
 
         requires = field.requires
-        select.set(self.ATTRIBUTE.id, "%s_%s" % (table._tablename, fieldname))
-        select.set(self.ATTRIBUTE.name, fieldname)
+        select.set(cls.ATTRIBUTE.id, "%s_%s" % (table._tablename, fieldname))
+        select.set(cls.ATTRIBUTE.name, fieldname)
 
         if not isinstance(requires, (list, tuple)):
             requires = [requires]
@@ -982,10 +985,10 @@ class S3XML(object):
             except:
                 pass
             for (value, text) in options:
-                value = self.xml_encode(str(value).decode("utf-8"))
-                text = self.xml_encode(str(text).decode("utf-8"))
-                option = etree.SubElement(select, self.TAG.option)
-                option.set(self.ATTRIBUTE.value, value)
+                value = cls.xml_encode(str(value).decode("utf-8"))
+                text = cls.xml_encode(str(text).decode("utf-8"))
+                option = etree.SubElement(select, cls.TAG.option)
+                option.set(cls.ATTRIBUTE.value, value)
                 option.text = text
 
         return select
@@ -1063,7 +1066,8 @@ class S3XML(object):
 
     # JSON toolkit ============================================================
 
-    def __json2element(self, key, value, native=False):
+    @classmethod
+    def __json2element(cls, key, value, native=False):
 
         """ Converts a data field from JSON into an element
 
@@ -1075,33 +1079,34 @@ class S3XML(object):
         """
 
         if isinstance(value, dict):
-            return self.__obj2element(key, value, native=native)
+            return cls.__obj2element(key, value, native=native)
 
         elif isinstance(value, (list, tuple)):
-            if not key == self.TAG.item:
+            if not key == cls.TAG.item:
                 _list = etree.Element(key)
             else:
-                _list = etree.Element(self.TAG.list)
+                _list = etree.Element(cls.TAG.list)
             for obj in value:
-                item = self.__json2element(self.TAG.item, obj,
+                item = cls.__json2element(cls.TAG.item, obj,
                                            native=native)
                 _list.append(item)
             return _list
 
         else:
             if native:
-                element = etree.Element(self.TAG.data)
-                element.set(self.ATTRIBUTE.field, key)
+                element = etree.Element(cls.TAG.data)
+                element.set(cls.ATTRIBUTE.field, key)
             else:
                 element = etree.Element(key)
             if not isinstance(value, (str, unicode)):
                 value = str(value)
-            element.text = self.xml_encode(value)
+            element.text = cls.xml_encode(value)
             return element
 
 
     # -------------------------------------------------------------------------
-    def __obj2element(self, tag, obj, native=False):
+    @classmethod
+    def __obj2element(cls, tag, obj, native=False):
 
         """ Converts a JSON object into an element
 
@@ -1114,58 +1119,59 @@ class S3XML(object):
         prefix = name = resource = field = None
 
         if not tag:
-            tag = self.TAG.object
+            tag = cls.TAG.object
 
         elif native:
-            if tag.startswith(self.PREFIX.reference):
-                field = tag[len(self.PREFIX.reference) + 1:]
-                tag = self.TAG.reference
-            elif tag.startswith(self.PREFIX.options):
-                resource = tag[len(self.PREFIX.options) + 1:]
-                tag = self.TAG.options
-            elif tag.startswith(self.PREFIX.resource):
-                resource = tag[len(self.PREFIX.resource) + 1:]
-                tag = self.TAG.resource
-            elif not tag == self.TAG.root:
+            if tag.startswith(cls.PREFIX.reference):
+                field = tag[len(cls.PREFIX.reference) + 1:]
+                tag = cls.TAG.reference
+            elif tag.startswith(cls.PREFIX.options):
+                resource = tag[len(cls.PREFIX.options) + 1:]
+                tag = cls.TAG.options
+            elif tag.startswith(cls.PREFIX.resource):
+                resource = tag[len(cls.PREFIX.resource) + 1:]
+                tag = cls.TAG.resource
+            elif not tag == cls.TAG.root:
                 field = tag
-                tag = self.TAG.data
+                tag = cls.TAG.data
 
         element = etree.Element(tag)
 
         if native:
             if resource:
-                if tag == self.TAG.resource:
-                    element.set(self.ATTRIBUTE.name, resource)
+                if tag == cls.TAG.resource:
+                    element.set(cls.ATTRIBUTE.name, resource)
                 else:
-                    element.set(self.ATTRIBUTE.resource, resource)
+                    element.set(cls.ATTRIBUTE.resource, resource)
             if field:
-                element.set(self.ATTRIBUTE.field, field)
+                element.set(cls.ATTRIBUTE.field, field)
 
         for k in obj:
             m = obj[k]
             if isinstance(m, dict):
-                child = self.__obj2element(k, m, native=native)
+                child = cls.__obj2element(k, m, native=native)
                 element.append(child)
             elif isinstance(m, (list, tuple)):
                 #l = etree.SubElement(element, k)
                 for _obj in m:
-                    child = self.__json2element(k, _obj, native=native)
+                    child = cls.__json2element(k, _obj, native=native)
                     element.append(child)
             else:
-                if k == self.PREFIX.text:
-                    element.text = self.xml_encode(m)
-                elif k.startswith(self.PREFIX.attribute):
-                    a = k[len(self.PREFIX.attribute):]
-                    element.set(a, self.xml_encode(m))
+                if k == cls.PREFIX.text:
+                    element.text = cls.xml_encode(m)
+                elif k.startswith(cls.PREFIX.attribute):
+                    a = k[len(cls.PREFIX.attribute):]
+                    element.set(a, cls.xml_encode(m))
                 else:
-                    child = self.__json2element(k, m, native=native)
+                    child = cls.__json2element(k, m, native=native)
                     element.append(child)
 
         return element
 
 
     # -------------------------------------------------------------------------
-    def json2tree(self, source, format=None):
+    @classmethod
+    def json2tree(cls, source, format=None):
 
         """ Converts JSON into an element tree
 
@@ -1178,16 +1184,16 @@ class S3XML(object):
             root_dict = json.load(source)
         except (ValueError,):
             e = sys.exc_info()[1]
-            raise HTTP(400, body=self.json_message(False, 400, e))
+            raise HTTP(400, body=cls.json_message(False, 400, e))
 
         native=False
 
         if not format:
-            format=self.TAG.root
+            format=cls.TAG.root
             native=True
 
         if root_dict and isinstance(root_dict, dict):
-            root = self.__obj2element(format, root_dict, native=native)
+            root = cls.__obj2element(format, root_dict, native=native)
             if root:
                 return etree.ElementTree(root)
 
@@ -1195,7 +1201,8 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
-    def __element2json(self, element, native=False):
+    @classmethod
+    def __element2json(cls, element, native=False):
 
         """ Converts an element into JSON
 
@@ -1204,13 +1211,13 @@ class S3XML(object):
 
         """
 
-        if element.tag == self.TAG.list:
+        if element.tag == cls.TAG.list:
             obj = []
             for child in element:
                 tag = child.tag
                 if tag[0] == "{":
                     tag = tag.rsplit("}",1)[1]
-                child_obj = self.__element2json(child, native=native)
+                child_obj = cls.__element2json(child, native=native)
                 if child_obj:
                     obj.append(child_obj)
             return obj
@@ -1222,19 +1229,19 @@ class S3XML(object):
                     tag = tag.rsplit("}",1)[1]
                 collapse = True
                 if native:
-                    if tag == self.TAG.resource:
-                        resource = child.get(self.ATTRIBUTE.name)
-                        tag = "%s_%s" % (self.PREFIX.resource, resource)
+                    if tag == cls.TAG.resource:
+                        resource = child.get(cls.ATTRIBUTE.name)
+                        tag = "%s_%s" % (cls.PREFIX.resource, resource)
                         collapse = False
-                    elif tag == self.TAG.options:
-                        resource = child.get(self.ATTRIBUTE.resource)
-                        tag = "%s_%s" % (self.PREFIX.options, resource)
-                    elif tag == self.TAG.reference:
-                        tag = "%s_%s" % (self.PREFIX.reference,
-                                         child.get(self.ATTRIBUTE.field))
-                    elif tag == self.TAG.data:
-                        tag = child.get(self.ATTRIBUTE.field)
-                child_obj = self.__element2json(child, native=native)
+                    elif tag == cls.TAG.options:
+                        resource = child.get(cls.ATTRIBUTE.resource)
+                        tag = "%s_%s" % (cls.PREFIX.options, resource)
+                    elif tag == cls.TAG.reference:
+                        tag = "%s_%s" % (cls.PREFIX.reference,
+                                         child.get(cls.ATTRIBUTE.field))
+                    elif tag == cls.TAG.data:
+                        tag = child.get(cls.ATTRIBUTE.field)
+                child_obj = cls.__element2json(child, native=native)
                 if child_obj:
                     if not tag in obj:
                         if isinstance(child_obj, list) or not collapse:
@@ -1249,30 +1256,31 @@ class S3XML(object):
             attributes = element.attrib
             for a in attributes:
                 if native:
-                    if a == self.ATTRIBUTE.name and \
-                       element.tag == self.TAG.resource:
+                    if a == cls.ATTRIBUTE.name and \
+                       element.tag == cls.TAG.resource:
                         continue
-                    if a == self.ATTRIBUTE.resource and \
-                       element.tag == self.TAG.options:
+                    if a == cls.ATTRIBUTE.resource and \
+                       element.tag == cls.TAG.options:
                         continue
-                    if a == self.ATTRIBUTE.field and \
-                    element.tag in (self.TAG.data, self.TAG.reference):
+                    if a == cls.ATTRIBUTE.field and \
+                    element.tag in (cls.TAG.data, cls.TAG.reference):
                         continue
-                obj[self.PREFIX.attribute + a] = \
-                    self.xml_decode(attributes[a])
+                obj[cls.PREFIX.attribute + a] = \
+                    cls.xml_decode(attributes[a])
 
             if element.text:
-                obj[self.PREFIX.text] = self.xml_decode(element.text)
+                obj[cls.PREFIX.text] = cls.xml_decode(element.text)
 
             if len(obj) == 1 and obj.keys()[0] in \
-               (self.PREFIX.text, self.TAG.item, self.TAG.list):
+               (cls.PREFIX.text, cls.TAG.item, cls.TAG.list):
                 obj = obj[obj.keys()[0]]
 
             return obj
 
 
     # -------------------------------------------------------------------------
-    def tree2json(self, tree, pretty_print=False):
+    @classmethod
+    def tree2json(cls, tree, pretty_print=False):
 
         """ Converts an element tree into JSON
 
@@ -1283,12 +1291,12 @@ class S3XML(object):
 
         root = tree.getroot()
 
-        if root.tag == self.TAG.root:
+        if root.tag == cls.TAG.root:
             native = True
         else:
             native = False
 
-        root_dict = self.__element2json(root, native=native)
+        root_dict = cls.__element2json(root, native=native)
 
         if pretty_print:
             js = json.dumps(root_dict, indent=4)
@@ -1298,8 +1306,8 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
-    def json_message(self,
-                     success=True,
+    @staticmethod
+    def json_message(success=True,
                      status_code="200",
                      message=None,
                      tree=None):

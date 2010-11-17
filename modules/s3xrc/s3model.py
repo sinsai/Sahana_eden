@@ -4,7 +4,7 @@
 
     @version: 2.2.3
 
-    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
+    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @author: nursix
     @contact: dominic AT nursix DOT org
@@ -71,35 +71,6 @@ class S3ResourceComponent(object):
             self.attr.deletable = True
         if not "editable" in self.attr:
             self.attr.editable = True
-
-
-    # Configuration ===========================================================
-
-    def set_attr(self, name, value):
-
-        """ Sets an attribute for a component
-
-            @param name: attribute name
-            @param value: attribute value
-
-        """
-
-        self.attr[name] = value
-
-
-    # -------------------------------------------------------------------------
-    def get_attr(self, name):
-
-        """ Reads an attribute of the component
-
-            @param name: attribute name
-
-        """
-
-        if name in self.attr:
-            return self.attr[name]
-        else:
-            return None
 
 
 # *****************************************************************************
@@ -241,37 +212,6 @@ class S3ResourceModel(object):
                         return True
 
         return False
-
-
-    # -------------------------------------------------------------------------
-    def set_attr(self, component_name, name, value):
-
-        """ Sets an attribute for a component
-
-            @param component_name: name of the component (without prefix)
-            @param name: name of the attribute
-            @param value: value for the attribute
-
-            @todo 2.3: deprecate?
-
-        """
-
-        return self.components[component_name].set_attr(name, value)
-
-
-    # -------------------------------------------------------------------------
-    def get_attr(self, component_name, name):
-
-        """ Retrieves an attribute value of a component
-
-            @param component_name: name of the component (without prefix)
-            @param name: name of the attribute
-
-            @todo 2.3: deprecate?
-
-        """
-
-        return self.components[component_name].get_attr(name)
 
 
     # Resource Methods ========================================================
@@ -438,7 +378,8 @@ class S3ResourceModel(object):
 
 
     # -------------------------------------------------------------------------
-    def super_key(self, super):
+    @staticmethod
+    def super_key(super):
 
         """ Get the name of the key for a super-entity
 

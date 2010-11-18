@@ -14,6 +14,115 @@
 application = "project"
 if deployment_settings.has_module("project"):
     #==============================================================================
+    # Need Type
+    # Component of assses_assess too
+    resourcename = "need_type"
+    tablename = "%s_%s" % (application, resourcename)
+    table = db.define_table(tablename,
+                            Field("name", length=128, notnull=True, unique=True),
+                            cluster_id(),
+                            migrate=migrate, *s3_meta_fields()
+                            )        
+    
+    # CRUD strings
+    ADD_BASELINE_TYPE = T("Add Need Type")
+    LIST_BASELINE_TYPE = T("List Need Types")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_BASELINE_TYPE,
+        title_display = T("Need Type Details"),
+        title_list = LIST_BASELINE_TYPE,
+        title_update = T("Edit Need Type"),
+        title_search = T("Search Need Type"),
+        subtitle_create = T("Add New Need Type"),
+        subtitle_list = T("Need Types"),
+        label_list_button = LIST_BASELINE_TYPE,
+        label_create_button = ADD_BASELINE_TYPE,
+        label_delete_button = T("Delete Need Type"),
+        msg_record_created = T("Need Type added"),
+        msg_record_modified = T("Need Type updated"),
+        msg_record_deleted = T("Need Type deleted"),
+        msg_list_empty = T("No Need Types currently registered"))  
+    
+    def need_type_comment():
+        if auth.has_membership(auth.id_group("'Administrator'")):
+            return DIV(A(ADD_BASELINE_TYPE,
+                         _class="colorbox",
+                         _href=URL(r=request, c="assess", f="need_type", args="create", vars=dict(format="popup")),
+                         _target="top",
+                         _title=ADD_BASELINE_TYPE
+                         )
+                       )
+        else:
+            return None    
+
+    need_type_id = S3ReusableField("need_type_id", db.project_need_type, sortby="name",
+                                       requires = IS_NULL_OR(IS_ONE_OF(db, "project_need_type.id","%(name)s", sort=True)),
+                                       represent = lambda id: shn_get_db_field_value(db = db,
+                                                                                     table = "project_need_type",
+                                                                                     field = "name",
+                                                                                     look_up = id),
+                                       label = T("Need Type"),
+                                       comment = need_type_comment(),
+                                       ondelete = "RESTRICT"
+                                       ) 
+    
+    def shn_need_type_represent(id):
+        return shn_get_db_field_value(db = db,
+                                      table = "project_need_type",
+                                      field = "name",
+                                      look_up = id)   
+         
+    #This should be moved to zz_1st_run / CSV 
+    if not db(table.id > 0).count():
+        table.insert( name = T("People Needing Food") )
+        table.insert( name = T("People Needing Water") )
+        table.insert( name = T("People Needing Shelter") )
+    
+    #==============================================================================
+    # Need
+    resourcename = "need"
+    tablename = "%s_%s" % (application, resourcename)
+    table = db.define_table(tablename,
+                            assess_id(),
+                            need_type_id(),
+                            Field("value", "double"),
+                            comments(),
+                            migrate=migrate, *s3_meta_fields()
+                            )        
+    
+    # Hide FK fields in forms
+    table.assess_id.readable = table.assess_id.writable = False    
+    
+    table.value.label = "#"
+    table.value.represent = lambda value: "%d" % value
+    
+    # CRUD strings
+    ADD_BASELINE = T("Add Need")
+    LIST_BASELINE = T("List Needs")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_BASELINE,
+        title_display = T("Needs Details"),
+        title_list = LIST_BASELINE,
+        title_update = T("Edit Need"),
+        title_search = T("Search Needs"),
+        subtitle_create = T("Add New Need"),
+        subtitle_list = T("Needs"),
+        label_list_button = LIST_BASELINE,
+        label_create_button = ADD_BASELINE,
+        label_delete_button = T("Delete Need"),
+        msg_record_created = T("Need added"),
+        msg_record_modified = T("Need updated"),
+        msg_record_deleted = T("Need deleted"),
+        msg_list_empty = T("No Needs currently registered"))     
+    
+    # Need as component of assessments
+    s3xrc.model.add_component(application, resourcename,
+                              multiple=True,
+                              joinby=dict(assess_assess="assess_id"),
+                              deletable=True,
+                              editable=True)      
+        
+    #==============================================================================
     # Projects:
     #   the projects which each organization is engaged in
     #
@@ -258,7 +367,7 @@ if deployment_settings.has_module("project"):
     
     #==============================================================================
     # Activity Type
-    #
+    # Redundant???
     resourcename = "activity_type"
     tablename = "%s_%s" % (application, resourcename)
     table = db.define_table(tablename,
@@ -314,6 +423,7 @@ if deployment_settings.has_module("project"):
                                            ),
                             organisation_id(),
                             cluster_id(),
+                            need_type_id(),
                             #cluster_subsector_id(),
                             #Field("quantity"),
                             #Field("unit"), # Change to link to supply

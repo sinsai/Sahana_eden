@@ -304,10 +304,8 @@ if deployment_settings.has_module(module):
         name = cache.ram("pr_group_%s" % id, lambda: _represent(id))
         return name
 
-    # TODO: Is this in use?  Have project location fields changed, since a
-    # project could have multiple locations?
     # -------------------------------------------------------------------------
-    def shn_project_project_search_location(xrequest, **attr):
+    def shn_vol_project_search_location(xrequest, **attr):
         """ Form function to search projects by location """
 
         if attr is None:
@@ -322,10 +320,7 @@ if deployment_settings.has_module(module):
             if request.vars._next:
                 next = str.lower(request.vars._next)
             else:
-                next = str.lower(URL(r=request, c="org", f="project", args="[id]"))
-
-            # Custom view
-            response.view = "%s/project_search.html" % xrequest.prefix
+                next = str.lower(URL(r=request, c="project", f="project", args="[id]"))
 
             # Title and subtitle
             title = T("Search for a Project")
@@ -382,7 +377,7 @@ if deployment_settings.has_module(module):
             except:
                 label_create_button = s3.crud_strings.label_create_button
 
-            add_btn = A(label_create_button, _href=URL(r=request, c="org", f="project", args="create"), _class="action-btn")
+            add_btn = A(label_create_button, _href=URL(r=request, c="project", f="project", args="create"), _class="action-btn")
 
             output.update(dict(items=items, add_btn=add_btn))
 
@@ -393,7 +388,7 @@ if deployment_settings.has_module(module):
             redirect(URL(r=request))
 
     # Plug into REST controller
-    s3xrc.model.set_method(module, "project", method="search_location", action=shn_project_project_search_location )
+    s3xrc.model.set_method(module, "project", method="search_location", action=shn_vol_project_search_location )
 
     # -------------------------------------------------------------------------
     # Unused Code

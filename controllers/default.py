@@ -55,6 +55,11 @@ def index():
                         ),
                     _href = URL( r=request, c="assess", f= "basic_assess")
                     ),
+                  A(DIV(T("Mobile Assess."),
+                        _class = "menu_box"
+                        ),
+                    _href = URL( r=request, c="assess", f= "mobile_basic_assess")
+                    ),                      
                   A(DIV(T("Warehouses"),
                         _class = "menu_box"
                         ),
@@ -104,11 +109,11 @@ def index():
                   _id = "menu_div_response"
                   )
     
-    div_additional = DIV(A(DIV(T("Mobile Assess."),
-                           _class = "menu_box"
-                           ),
-                        _href = URL( r=request, c="assess", f= "mobile_basic_assess")
-                       ))    
+    #div_additional = DIV(A(DIV(T("Mobile Assess."),
+    #                       _class = "menu_box"
+    #                       ),
+    #                    _href = URL( r=request, c="assess", f= "mobile_basic_assess")
+    #                   ))    
 
     modules = deployment_settings.modules
 
@@ -127,7 +132,7 @@ def index():
 
     self_registration = deployment_settings.get_security_self_registration()
 
-    response.title = T("Sahana FOSS Disaster Management System")
+    title = T("Sahana Eden Open Source Disaster Management Platform")
     login_form = None
     register_form = None
 
@@ -141,12 +146,13 @@ def index():
             request.args = ["register"]
             register_form = auth()
 
-    return dict( div_sit = div_sit,
+    return dict(title = title,
+                div_sit = div_sit,
                 div_arrow_1 = div_arrow_1,
                 div_dec = div_dec,
                 div_arrow_2 = div_arrow_2,
                 div_res = div_res,
-                div_additional = div_additional,
+                #div_additional = div_additional,
                 module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel, self_registration=self_registration, login_form=login_form, register_form=register_form)
 
 

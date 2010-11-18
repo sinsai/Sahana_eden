@@ -1,7 +1,6 @@
 {{extend "layout.html"}}
 <div id='home'>
-<h2>{{=T("Welcome to the Sahana Eden Disaster Management Platform")}}</h2>
-{{if 2 in session.s3.roles:}}
+<h2>{{=title}}</h2>
 <div>
 {{=div_sit}}
 {{=div_arrow_1}}
@@ -9,40 +8,24 @@
 {{=div_arrow_2}}
 {{=div_res}}
 </div>
-    <p class = "menu_text">
-    {{=div_additional}}
-    {{=T("For more details on the Sahana Eden system, see the")}} <a href="http://eden.sahanafoundation.org">{{=T("Sahana Eden Website")}}</a>
-    <br/>{{=T("For live help from the Sahana community on using this application, go to")}} <a href="http://eden.sahanafoundation.org/wiki/Chat">{{=T("Sahana Community Chat")}}</a>
-    </p>
-    <p>
-    {{=T("Administrator")}}: {{=admin_name}}
-    <br/>{{=T("Email")}}: {{=admin_email}}
-    <br/>{{=T("Telephone")}}: {{=admin_tel}}
-    </p>
-{{include "rssviewer.html"}}
 </div>
-{{else:}}
+{{if 2 not in session.s3.roles:}}
   <div id='login_form'>
-    <p>
-    {{=T("Sahana Eden is a family of applications that provide solutions to coordination and collaboration for organisations working in disaster management.")}}
-    </p>
     <p>
     {{=XML(T("Registered users can") + " <b>" + T("login") + "</b> " + T("to access the system"))}}:
     </p>
     {{=H3(T("Login"))}}
     {{include "auth/_login.html"}}
   </div>
-{{if self_registration:}}
-  <div id='register_form' class='hide'>
-    <p>
-    {{=XML(T("If you would like to help, then please") + " <b>" + T("sign-up now") + "</b>")}}:
-    </p>
-    {{=H3(T("Register"))}}
-    {{include "auth/_register.html"}}
-  </div>
-{{pass}}
-{{include "rssviewer.html"}}
-</div>
+  {{if self_registration:}}
+    <div id='register_form' class='hide'>
+      <p>
+      {{=XML(T("If you would like to help, then please") + " <b>" + T("sign-up now") + "</b>")}}:
+      </p>
+      {{=H3(T("Register"))}}
+      {{include "auth/_register.html"}}
+    </div>
+   {{pass}}
 <script type="text/javascript">//<![CDATA[
 $(document).ready(function() {
     // Change register/login links to avoid page reload, back make back button work.
@@ -73,3 +56,16 @@ $(document).ready(function() {
 });
 //]]></script>
 {{pass}}
+<div>
+    <p class = "menu_text">
+    {{=T("For more details on the Sahana Eden system, see the")}} <a href="http://eden.sahanafoundation.org">{{=T("Sahana Eden Website")}}</a>
+    <br/>{{=T("For live help from the Sahana community on using this application, go to")}} <a href="http://eden.sahanafoundation.org/wiki/Chat">{{=T("Sahana Community Chat")}}</a>
+    </p>
+    <p>
+    {{=T("Administrator")}}: {{=admin_name}}
+    <br/>{{=T("Email")}}: {{=admin_email}}
+    <br/>{{=T("Telephone")}}: {{=admin_tel}}
+    </p>
+</div>
+{{include "rssviewer.html"}}
+</div>

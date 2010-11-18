@@ -3,7 +3,7 @@
 """ Assessment - Model
 
     @author: Fran Boon
-    @author: Dominic König
+    @author: Dominic KÃ¶nig
     @author: Michael Howden
 
     This module currently contains 2 types of Assessments
@@ -76,6 +76,11 @@ if deployment_settings.has_module(module):
                               joinby=dict(org_organisation="organisation_id")
                               )    
     
+    # Hide Add Assessment functionality. Users should only add assessments through the Basic Assessment.
+    s3xrc.model.configure(table,
+                          listadd=False,
+                          insertable=False)    
+    
     #==============================================================================
     # Baseline Type
     resourcename = "baseline_type"
@@ -147,7 +152,7 @@ if deployment_settings.has_module(module):
     LIST_BASELINE = T("List Baselines")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_BASELINE,
-        title_display = T("Impact Baselines"),
+        title_display = T("Baselines Details"),
         title_list = LIST_BASELINE,
         title_update = T("Edit Baseline"),
         title_search = T("Search Baselines"),
@@ -166,8 +171,7 @@ if deployment_settings.has_module(module):
                               multiple=True,
                               joinby=dict(assess_assess="assess_id"),
                               deletable=True,
-                              editable=True)      
-    
+                              editable=True)         
 
     #==============================================================================
     # Summary
@@ -220,7 +224,7 @@ if deployment_settings.has_module(module):
     LIST_ASSESS_SUMMARY = T("List Assessment Summaries")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_ASSESS_SUMMARY,
-        title_display = T("Impact Assessment Summaries"),
+        title_display = T("Assessment Summary Details"),
         title_list = LIST_ASSESS_SUMMARY,
         title_update = T("Edit Assessment Summary"),
         title_search = T("Search Assessment Summaries"),
@@ -239,8 +243,7 @@ if deployment_settings.has_module(module):
                               multiple=True,
                               joinby=dict(assess_assess="assess_id"),
                               deletable=True,
-                              editable=True)      
-    
+                              editable=True)        
     
     #==============================================================================    
     # Rapid Assessment Tool
@@ -397,23 +400,23 @@ if deployment_settings.has_module(module):
 
 
     # CRUD strings
-    ADD_ASSESSMENT = T("Add Assessment")
-    LIST_ASSESSMENTS = T("List Assessments")
+    ADD_ASSESSMENT = T("Add Rapid Assessment")
+    LIST_ASSESSMENTS = T("List Rapid Assessments")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_ASSESSMENT,
-        title_display = T("Assessment Details"),
+        title_display = T("Rapid Assessment Details"),
         title_list = LIST_ASSESSMENTS,
-        title_update = T("Edit Assessment"),
-        title_search = T("Search Assessments"),
-        subtitle_create = T("Add New Assessment"),
-        subtitle_list = T("Assessments"),
+        title_update = T("Edit Rapid Assessment"),
+        title_search = T("Search Rapid Assessments"),
+        subtitle_create = T("Add New Rapid Assessment"),
+        subtitle_list = T("Rapid Assessments"),
         label_list_button = LIST_ASSESSMENTS,
         label_create_button = ADD_ASSESSMENT,
-        label_delete_button = T("Delete Assessment"),
-        msg_record_created = T("Assessment added"),
-        msg_record_modified = T("Assessment updated"),
-        msg_record_deleted = T("Assessment deleted"),
-        msg_list_empty = T("No Assessments currently registered"))
+        label_delete_button = T("Delete Rapid Assessment"),
+        msg_record_created = T("Rapid Assessment added"),
+        msg_record_modified = T("Rapid Assessment updated"),
+        msg_record_deleted = T("Rapid Assessment deleted"),
+        msg_list_empty = T("No Rapid Assessments currently registered"))
 
 
     # -------------------------------------------------------------------------
@@ -484,7 +487,6 @@ if deployment_settings.has_module(module):
     s3xrc.model.configure(table,
                           listadd=False,
                           onaccept=lambda form: rat_assessment_onaccept(form))
-
 
     # Section 2: Demographic --------------------------------------------------
 

@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - XML/JSON Toolkit
 
-    @version: 2.2.2
+    @version: 2.2.3
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -707,7 +707,7 @@ class S3XML(object):
 
         if isinstance(tree, etree._ElementTree):
             root = tree.getroot()
-            if not root.tag == self.TAG.root:
+            if not root or not root.tag == self.TAG.root:
                 return resources
         else:
             root = tree
@@ -1311,7 +1311,7 @@ class S3XML(object):
             @param message: the message text
             @param tree: result tree to enclose
 
-            @todo 2.2: extend to report number of results/successful imports
+            @todo 2.3: extend to report number of results/successful imports
 
         """
 

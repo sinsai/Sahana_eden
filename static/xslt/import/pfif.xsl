@@ -7,7 +7,7 @@
 
          PFIF 1.2 Import Templates for S3XRC
 
-         Version 0.2 / 2010-07-25 / by nursix
+         Version 0.3 / 2010-07-25 / by nursix
 
          Copyright (c) 2010 Sahana Software Foundation
 
@@ -32,6 +32,8 @@
          FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
          OTHER DEALINGS IN THE SOFTWARE.
 
+        @todo: automatically report persons missing if no explicit found-note?
+
     *********************************************************************** -->
     <xsl:output method="xml"/>
 
@@ -40,17 +42,15 @@
 
     <!-- ****************************************************************** -->
     <xsl:template match="/">
-        <xsl:apply-templates select="pfif:pfif"/>
-    </xsl:template>
-
-    <xsl:template match="pfif:pfif">
         <s3xrc>
             <xsl:attribute name="domain">
                 <xsl:value-of select="$domain"/>
             </xsl:attribute>
-            <xsl:apply-templates select="./pfif:person"/>
+            <xsl:apply-templates select=".//pfif:person"/>
         </s3xrc>
     </xsl:template>
+
+    <xsl:template match="text()"/>
 
     <!-- ****************************************************************** -->
     <!-- pfif:person -->
@@ -64,6 +64,11 @@
             <resource name="pr_person">
                 <xsl:attribute name="uuid">
                     <xsl:value-of select="$uuid"/>
+                </xsl:attribute>
+                <xsl:attribute name="modified_on">
+                    <xsl:call-template name="pfif2datetime">
+                        <xsl:with-param name="datetime" select="./pfif:entry_date/text()"/>
+                    </xsl:call-template>
                 </xsl:attribute>
                 <data field="last_name">
                     <xsl:value-of select="./pfif:last_name/text()"/>
@@ -154,13 +159,13 @@
             <xsl:choose>
                 <xsl:when test="normalize-space(./pfif:found/text())='false'">
                     <data field="presence_condition">
-                        <xsl:attribute name="value">8</xsl:attribute>
+                        <xsl:attribute name="value">99</xsl:attribute>
                         <xsl:text>Missing</xsl:text>
                     </data>
                 </xsl:when>
                 <xsl:otherwise>
                     <data field="presence_condition">
-                        <xsl:attribute name="value">4</xsl:attribute>
+                        <xsl:attribute name="value">12</xsl:attribute>
                         <xsl:text>Found</xsl:text>
                     </data>
                 </xsl:otherwise>

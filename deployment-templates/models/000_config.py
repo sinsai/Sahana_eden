@@ -230,8 +230,8 @@ deployment_settings.modules = Storage(
                 pr_group_membership = {"importer" : True},
             )
         ),
-    mpr = Storage(
-            name_nice = T("Missing Persons"),
+    pf = Storage(
+            name_nice = T("Person Finder"),
             description = T("Helps to report and search for Missing Persons"),
             module_type = 10,
         ),

@@ -740,8 +740,9 @@ def shn_search(r, **attr):
         _table = r.table
 
         # JQuery Autocomplete uses "q" instead of "value"
-        value = _vars.value or _vars.q or None
-
+        # JQueryUI Autocomplete uses "term" instead of "value"
+        value = _vars.value or _vars.term or _vars.q or None
+        
         if _vars.field and _vars.filter and value:
             field = str.lower(_vars.field)
             _field = _table[field]

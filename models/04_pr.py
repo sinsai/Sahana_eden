@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 
-""" PR Person Registry, Additional Models
-    (Part of VITA)
+""" VITA Person Registry, Additional Models
 
     @author: nursix
     @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
-    @version: 1.0.0
 
 """
 
@@ -351,6 +349,8 @@ table.closed.writable = False
 #table.closed.represent = lambda opt: opt and "closed" or ""
 
 table.proc_desc.label = T("Procedure")
+table.proc_desc.comment = DIV(DIV(_class="tooltip",
+        _title=T("Procedure") + "|" + T('Describe the procedure which this record relates to (e.g. "medical examination")')))
 
 table.shelter_id.readable = False
 table.shelter_id.writable = False

@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 
-""" PR Person Registry, Models
-    (Part of VITA)
+""" VITA Person Registry, Models
 
     @author: nursix
     @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
-    @version: 1.0.0
 
 """
 
@@ -317,7 +315,9 @@ person_id = S3ReusableField("person_id", db.pr_person,
                                         [shn_pr_person_represent(id)] or [NONE])[0],
                             label = T("Person"),
                             comment = shn_person_id_comment,
-                            ondelete = "RESTRICT")
+                            ondelete = "RESTRICT",
+                            widget = S3PersonAutocompleteWidget(request)
+                            )
 
 # -----------------------------------------------------------------------------
 def pr_person_onvalidation(form):
@@ -354,7 +354,7 @@ def pr_person_onvalidation(form):
 s3xrc.model.configure(table,
     main="first_name",
     extra="last_name",
-    listadd=False,
+    #listadd=False,
     super_entity=db.pr_pentity,
     onvalidation=lambda form: pr_person_onvalidation(form),
     list_fields = [

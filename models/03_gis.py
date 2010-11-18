@@ -576,7 +576,7 @@ def gis_location_onaccept(form):
     # Associating path for the new node once it is inserted
     parent = form.vars.parent
     level = form.vars.level
-    gis.update_location_tree(parent,level,form.vars.id)    
+    gis.update_location_tree(parent, level, form.vars.id)    
     return
 
 def gis_location_onvalidation(form):
@@ -684,77 +684,13 @@ def s3_gis_location_simple(r, **attr):
 # Plug into REST controller
 s3xrc.model.set_method(module, "location", method="simple", action=s3_gis_location_simple )
 
-# -----------------------------------------------------------------------------
-def s3_gis_location_search_simple(r, **attr):
-
-    """ Simple search form for locations """
-
-    resource = r.resource
-    table = resource.table
-
-    r.id = None
-
-    # Check permission
-    if not shn_has_permission("read", table):
-        r.unauthorised()
-
-    if r.representation == "html":
-
-        # Check for redirection
-        next = r.request.vars.get("_next", None)
-        if not next:
-            next = URL(r=request, f="location", args="[id]")
-
-        # Select form
-        form = FORM(TABLE(
-                TR(T("Name" + ": "),
-                   INPUT(_type="text", _name="label", _size="40"),
-                   DIV(DIV(_class="tooltip",
-                           _title=T("Name") + "|" + T("To search for a location, enter the name. You may use % as wildcard. Press 'Search' without input to list all locations.")))),
-                TR("", INPUT(_type="submit", _value=T("Search")))))
-
-        output = dict(form=form, vars=form.vars)
-
-        # Accept action
-        items = None
-        if form.accepts(request.vars, session):
-
-            if form.vars.label == "":
-                form.vars.label = "%"
-
-            # Search
-            results = s3xrc.search_simple(table,
-                        fields = ["name",
-                                  # @ToDo: http://eden.sahanafoundation.org/wiki/S3XRC_Roadmap#Version2.1
-                                  #"name_l10n"
-                                  ],
-                        label = form.vars.label)
-
-            # Get the results
-            if results:
-                resource.build_query(id=results)
-                report = resource.crud(r, method="list", **attr)["items"]
-                r.next = None
-            else:
-                report = T("No matching records found.")
-
-            output.update(items=report)
-
-        # Title and subtitle
-        title = T("Search for a Location")
-        subtitle = T("Matching Records")
-
-        # Add-button
-        label_create_button = shn_get_crud_string("gis_location", "label_create_button")
-        add_btn = A(label_create_button, _class="action-btn",
-                    _href=URL(r=request, f="location", args="create"))
-
-        output.update(title=title, subtitle=subtitle, add_btn=add_btn)
-        response.view = "search_simple.html"
-        return output
-
-    else:
-        raise HTTP(501, body=s3xrc.ERROR.BAD_FORMAT)
+s3_gis_location_search_simple = s3xrc.search_simple(
+    label=T("Name"),
+    comment=T("To search for a location, enter the name. You may use % as wildcard. Press 'Search' without input to list all locations."),
+    fields=["name",
+            # @ToDo: http://eden.sahanafoundation.org/wiki/S3XRC_Roadmap#Version2.1
+            #"name_l10n"
+            ])
 
 # Plug into REST controller
 s3xrc.model.set_method(module, "location", method="search_simple", action=s3_gis_location_search_simple )
@@ -946,7 +882,7 @@ s3xrc.model.configure(table, deletable=False)
 # -----------------------------------------------------------------------------
 # GIS Layers
 #gis_layer_types = ["bing", "shapefile", "scan"]
-gis_layer_types = ["openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wfs", "wms", "xyz", "yahoo"]
+gis_layer_types = ["coordinate", "openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wfs", "wms", "xyz", "yahoo"]
 gis_layer_openstreetmap_subtypes = gis.layer_subtypes("openstreetmap")
 gis_layer_google_subtypes = gis.layer_subtypes("google")
 gis_layer_yahoo_subtypes = gis.layer_subtypes("yahoo")
@@ -965,10 +901,17 @@ for layertype in gis_layer_types:
     resourcename = "layer_" + layertype
     tablename = "%s_%s" % (module, resourcename)
     # Create Type-specific Layer tables
-    if layertype == "openstreetmap":
+    if layertype == "coordinate":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_openstreetmap_subtypes, zero=None))
+                     Field("visible", "boolean", default=False, label=T("On by default?")),
+                    )
+        table = db.define_table(tablename, t, migrate=migrate)
+    elif layertype == "openstreetmap":
+        t = db.Table(db, table,
+                     gis_layer,
+                     Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_openstreetmap_subtypes, zero=None)),
+                     Field("visible", "boolean", default=False, label=T("On by default?")),
                     )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "georss":
@@ -993,7 +936,10 @@ for layertype in gis_layer_types:
                      gis_layer,
                      Field("visible", "boolean", default=False, label=T("On by default?")),
                      #Field("url", label=T("Location")),
-                     track_id(),
+                     track_id(), # @ToDo remove this layer of complexity: Inlcude the upload field within the Layer
+                     Field("waypoints", "boolean", default=True, label=T("Display Waypoints?")),
+                     Field("tracks", "boolean", default=True, label=T("Display Tracks?")),
+                     Field("routes", "boolean", default=False, label=T("Display Routes?")),
                      marker_id()
                     )
         table = db.define_table(tablename, t, migrate=migrate)

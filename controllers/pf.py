@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 
-""" MPR Missing Person Registry, Controllers
-    (Part of VITA)
+""" VITA Person Finder, Controllers
 
     @author: nursix
     @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
-    @version: 1.0.0
 
 """
 
@@ -58,15 +56,15 @@ def index():
         module_name = T("Missing Persons")
 
     # Override prefix and resourcename
-    prefix = "pr"
+    _prefix = "pr"
     resourcename = "person"
 
     # Choose table
-    tablename = "%s_%s" % (prefix, resourcename)
+    tablename = "%s_%s" % (_prefix, resourcename)
     table = db[tablename]
 
     # Configure redirection and list fields
-    report_url = URL(r=request, c="mpr", f=resourcename,
+    report_url = URL(r=request, c="pf", f=resourcename,
                      args=["[id]", "missing_report"])
     s3xrc.model.configure(table,
                           create_next =report_url,
@@ -152,11 +150,20 @@ def index():
     response.s3.prep = prep
     response.s3.postp = postp
 
-    # REST controller
-    output = s3_rest_controller("pr", "person", module_name=module_name)
+    if auth.shn_logged_in():
+        add_btn = A(T("Add Person"),
+                    _class="action-btn",
+                    _href=URL(r=request, f="person", args="create"))
+    else:
+        add_btn = None
+
+    # REST controllerperson
+    output = s3_rest_controller("pr", "person",
+                                module_name=module_name,
+                                add_btn=add_btn)
 
     # Set view, update menu and return output
-    response.view = "mpr/index.html"
+    response.view = "pf/index.html"
     shn_menu()
     return output
 
@@ -186,7 +193,7 @@ def person():
 
     s3xrc.model.configure(table,
         # Redirect to missing report when a new person has been added
-        create_next = URL(r=request, c="mpr", f="person", args=["[id]", "missing_report"]),
+        create_next = URL(r=request, c="pf", f="person", args=["[id]", "missing_report"]),
         list_fields=["id",
                      "first_name",
                      "middle_name",
@@ -205,9 +212,9 @@ def person():
                 db.pr_presence.reporter.default = person.id
                 db.pr_presence.reporter.writable = False
                 db.pr_presence.reporter.comment = None
-                db.mpr_missing_report.reporter.default = person.id
-                db.mpr_missing_report.reporter.writable = False
-                db.mpr_missing_report.reporter.comment = None
+                db.pf_missing_report.reporter.default = person.id
+                db.pf_missing_report.reporter.writable = False
+                db.pf_missing_report.reporter.comment = None
 
         # Copy config
         if r.component_name == "config":
@@ -230,6 +237,10 @@ def person():
                     table.presence_condition.default = condition
                     table.presence_condition.readable = False
                     table.presence_condition.writable = False
+                    if condition in vita.PERSISTANT_PRESENCE or \
+                       condition in vita.ABSENCE:
+                        s3xrc.model.configure(table,
+                            mark_required=["location_id", "shelter_id"])
                     table.orig_id.readable = False
                     table.orig_id.writable = False
                     table.dest_id.readable = False
@@ -260,6 +271,9 @@ def person():
                              vars=dict(condition=vita.CONFIRMED))
                 response.s3.actions.append(
                     dict(label=str(label), _class="action-btn", url=str(linkto)))
+            elif r.component_name == "presence":
+                if "showadd_btn" in output:
+                    del output["showadd_btn"]
         return output
     response.s3.postp = person_postp
 
@@ -269,15 +283,15 @@ def person():
     db.pr_person.missing.default = True
 
     # Disable person_id in missing report
-    db.mpr_missing_report.person_id.readable = False
-    db.mpr_missing_report.person_id.writable = False
+    db.pf_missing_report.person_id.readable = False
+    db.pf_missing_report.person_id.writable = False
 
     # Show only missing persons in list views
     if len(request.args) == 0:
         response.s3.filter = (db.pr_person.missing == True)
 
     # Resource header and tab list
-    mpr_tabs = [(T("Missing Report"), "missing_report"),
+    pf_tabs = [(T("Missing Report"), "missing_report"),
                 (T("Person Details"), None),
                 (T("Physical Description"), "physical_description"),
                 (T("Images"), "image"),
@@ -286,7 +300,7 @@ def person():
                 (T("Contact Data"), "pe_contact"),
                 (T("Presence Log"), "presence")]
 
-    rheader = lambda r: shn_pr_rheader(r, tabs=mpr_tabs)
+    rheader = lambda r: shn_pr_rheader(r, tabs=pf_tabs)
 
     # REST controller
     output = s3_rest_controller("pr", resourcename, rheader=rheader)

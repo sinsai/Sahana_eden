@@ -277,22 +277,22 @@ class GIS(object):
             Return a list of all GIS Features which are children of the requested feature
             @ Using Materialized path for retrieving the children
             @author: Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
-            
+
             This has been chosen over Modified Preorder Tree Traversal for greater efficiency:
             http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
         """
-        
+
         db = self.db
         list = []
         table = db.gis_location
         parent_path = db(table.id == parent_id).select(table.path)
         if(parent_path[0].path == None):
             path = str(parent_id)
-        else:    
+        else:
             path = parent_path[0].path
         for row in db(table.path.like(path + "/%")).select():
             list.append(row.id)
-             
+
         return list
 
     # -----------------------------------------------------------------------------
@@ -383,7 +383,7 @@ class GIS(object):
                 query = (db["%s_%s" % (module, resource)].deleted == False)
             else:
                 query = (db["%s_%s" % (module, resource)].id > 0)
-            
+
             if filter:
                 query = query & (db[filter.tablename].id == filter.id)
 
@@ -402,7 +402,7 @@ class GIS(object):
             else:
                 # Polygons & Categorised resources
                 locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon, db["%s_%s" % (module, resource)].category)
-                
+
             if resource in gis_categorised_resources:
                 for i in range(0, len(locations)):
                     locations[i].popup_label = locations[i].name + "-" + popup_label
@@ -410,9 +410,9 @@ class GIS(object):
             else:
                 for i in range(0, len(locations)):
                     locations[i].popup_label = locations[i].name + "-" + popup_label
-            
+
             popup_url = URL(r=request, c=module, f=resource, args="read.plain?%s.location_id=" % resource)
-            
+
             if not marker and not resource in gis_categorised_resources:
                 # Add the marker here so that we calculate once/layer not once/feature
                 table_fclass = db.gis_feature_class
@@ -421,13 +421,13 @@ class GIS(object):
                 marker = db(query).select(db.gis_feature_class.id, limitby=(0, 1), cache=cache).first()
                 if marker:
                     marker = marker.id
-            
+
             try:
                 marker = db(db.gis_marker.name == marker).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, db.gis_marker.id, limitby=(0, 1), cache=cache).first()
                 layer = {"name":layername, "query":locations, "active":active, "marker":marker, "popup_url": popup_url, "polygons": polygons}
             except:
                 layer = {"name":layername, "query":locations, "active":active, "popup_url": popup_url, "polygons": polygons}
-        
+
             return layer
 
         except:
@@ -444,7 +444,7 @@ class GIS(object):
 
         # km
         RADIUS_EARTH = 6378.137
-        
+
         if deployment_settings.gis.spatialdb and deployment_settings.database.db_type == "postgres":
             # Use Postgres routine
             import psycopg2
@@ -456,13 +456,13 @@ class GIS(object):
 
             # Convert km to degrees (since we're using the_geom not the_geog)
             # @ToDo
-            
+
             # This function call will automatically include a bounding box comparison that will make use of any indexes that are available on the geometries.
             conn = psycopg2.connect("dbname=%s user=%s password=%s host=%s port=%i" % (dbname, username, password, host, port))
             cursor = conn.cursor()
             query_string = cursor.mogrify("SELECT * FROM gis_location WHERE ST_DWithin (ST_GeomFromText ('POINT (%s, %s)', 4326), the_geom, %s);", [lat, lon, radius])
             cursor.execute(query_string)
-            
+
         elif SHAPELY:
             # Use Shapely routine
             # Is there one?
@@ -770,22 +770,27 @@ class GIS(object):
                 level = "L5"
                 name = name5
                 parent = name4
+                grandparent = name3
             elif name4:
                 level = "L4"
                 name = name4
                 parent = name3
+                grandparent = name2
             elif name3:
                 level = "L3"
                 name = name3
                 parent = name2
+                grandparent = name1
             elif name2:
                 level = "L2"
                 name = name2
                 parent = name1
+                grandparent = name0
             else:
                 level = "L1"
                 name = name1
                 parent = name0
+                grandparent = ""
 
             if name == "Name Unknown" or parent == "Name Unknown":
                 # Skip these locations
@@ -823,17 +828,25 @@ class GIS(object):
                 if parent == "Jammu Kashmir":
                     parent = "Pakistan"
 
-                _parent = db(_locations.name == parent).select(_locations.id, limitby=(0, 1), cache=cache).first()
+                if grandparent:
+                    _grandparent = db(_locations.name == grandparent).select(_locations.id, limitby=(0, 1), cache=cache).first()
+                    if _grandparent:
+                        _parent = db((_locations.name == parent) & (_locations.parent == _grandparent.id)).select(_locations.id, limitby=(0, 1), cache=cache).first()
+                    else:
+                        _parent = db(_locations.name == parent).select(_locations.id, limitby=(0, 1), cache=cache).first()
+                else:
+                    _parent = db(_locations.name == parent).select(_locations.id, limitby=(0, 1), cache=cache).first()
                 if _parent:
-                    parent = _parent.id
+                    parent_id = _parent.id
                 else:
                     s3_debug("Location", name)
                     s3_debug("Parent cannot be found", parent)
                     parent = ""
 
             # Check for duplicates
-            query = (_locations.name == name) & (_locations.level == level) & (_locations.parent == parent)
+            query = (_locations.name == name) & (_locations.level == level) & (_locations.parent == parent_id)
             duplicate = db(query).select()
+
             if duplicate:
                 s3_debug("Location", name)
                 s3_debug("Duplicate - updating...")
@@ -845,9 +858,9 @@ class GIS(object):
             else:
                 # Create new entry in database
                 if uuid:
-                    _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type, uuid=uuid)
+                    _locations.insert(name=name, level=level, parent=parent_id, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type, uuid=uuid)
                 else:
-                    _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type)
+                    _locations.insert(name=name, level=level, parent=parent_id, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type)
 
         # Better to give user control, can then dry-run
         #db.commit()
@@ -1028,10 +1041,10 @@ class GIS(object):
         """ Return a lit of the subtypes available for a Layer """
 
         if layer == "openstreetmap":
-            #return ["Mapnik", "Osmarender", "Aerial"]
-            return ["Mapnik", "Osmarender", "Taiwan"]
+            #return ["Mapnik", "CycleMap", "Labels", "Relief", "Osmarender", "Aerial", "Taiwan", "Haiti"]
+            return ["Mapnik", "CycleMap", "Labels", "Relief", "Osmarender", "Taiwan", "Haiti"]
         elif layer == "google":
-            return ["Satellite", "Maps", "Hybrid", "Terrain"]
+            return ["Satellite", "Maps", "Hybrid", "Terrain", "MapMaker", "MapMakerHybrid"]
         elif layer == "yahoo":
             return ["Satellite", "Maps", "Hybrid"]
         elif layer == "bing":
@@ -1075,11 +1088,11 @@ class GIS(object):
         return res
 
     # -----------------------------------------------------------------------------
-    def update_location_tree(self,parent,level,location_id):
+    def update_location_tree(self, parent, level, location_id):
         """
             Update the Tree for GIS Locations:
             @author: Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
-            @summary: Using Materialized path for each node in the tree 
+            @summary: Using Materialized path for each node in the tree
             http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
         """
 
@@ -1399,13 +1412,7 @@ class GIS(object):
         #####
         # CSS
         #####
-        if session.s3.debug:
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/ie6-style.css"), _media="screen", _charset="utf-8") )
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/google.css"), _media="screen", _charset="utf-8") )
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/geoext-all-debug.css"), _media="screen", _charset="utf-8") )
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.css"), _media="screen", _charset="utf-8") )
-        else:
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.min.css"), _media="screen", _charset="utf-8") )
+        # All Loaded as-standard to avoid delays in page loading
 
         ######
         # HTML
@@ -1453,17 +1460,16 @@ class GIS(object):
         #########
         if session.s3.debug:
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/openlayers/lib/OpenLayers.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
+            #html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/MP.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/cdauth.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/usng2.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
+            #html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/osm_styles.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt/lib/GeoExt.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt/ux/GeoNamesSearchCombo.js")))
         else:
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt.js")))
 
         if print_tool:
@@ -2288,11 +2294,13 @@ OpenLayers.Util.extend( selectPdfControl, {
         # OpenStreetMap
         gis_layer_openstreetmap_subtypes = self.layer_subtypes("openstreetmap")
         openstreetmap = Storage()
-        openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled == True).select()
+        osm_visible = Storage()
+        openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled == True).select(db.gis_layer_openstreetmap.name, db.gis_layer_openstreetmap.subtype, db.gis_layer_openstreetmap.visible)
         for layer in openstreetmap_enabled:
             for subtype in gis_layer_openstreetmap_subtypes:
                 if layer.subtype == subtype:
                     openstreetmap["%s" % subtype] = layer.name
+                    osm_visible["%s" % subtype] = layer.visible
 
         if openstreetmap:
             functions_openstreetmap = """
@@ -2320,6 +2328,31 @@ OpenLayers.Util.extend( selectPdfControl, {
         var mapnik = new OpenLayers.Layer.TMS( '""" + openstreetmap.Mapnik + """', ['http://a.tile.openstreetmap.org/', 'http://b.tile.openstreetmap.org/', 'http://c.tile.openstreetmap.org/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
         map.addLayer(mapnik);
                     """
+            if openstreetmap.CycleMap:
+                layers_openstreetmap += """
+        var cyclemap = new OpenLayers.Layer.TMS( '""" + openstreetmap.CycleMap + """', ['http://a.tile.opencyclemap.org/cycle/', 'http://b.tile.opencyclemap.org/cycle/', 'http://c.tile.opencyclemap.org/cycle/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.opencyclemap.org/">OpenCycleMap</a>' } );
+        map.addLayer(cyclemap);
+                    """
+            if openstreetmap.Labels:
+                if osm_visible.Labels:
+                    visibility = ""
+                else:
+                    visibility = "osm_labels.setVisibility(false);"
+                layers_openstreetmap += """
+        var osm_labels = new OpenLayers.Layer.TMS( '""" + openstreetmap.Labels + """', ['http://tiler1.censusprofiler.org/labelsonly/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, isBaseLayer: false, attribution: 'Labels overlay CC-by-SA by <a href="http://oobrien.com/oom/">OpenOrienteeringMap</a>/<a href="http://www.openstreetmap.org/">OpenStreetMap</a> data' } );
+        """ + visibility + """
+        map.addLayer(osm_labels);
+                    """
+            if openstreetmap.Relief:
+                if osm_visible.Relief:
+                    visibility = ""
+                else:
+                    visibility = "osm_relief.setVisibility(false);"
+                layers_openstreetmap += """
+        var osm_relief = new OpenLayers.Layer.TMS( '""" + openstreetmap.Relief + """', ['http://toolserver.org/~cmarqu/hill/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, isBaseLayer: false, attribution: 'Relief by <a href="http://hikebikemap.de/">Hike &amp; Bike Map</a>' } );
+        """ + visibility + """
+        map.addLayer(osm_relief);
+                    """
             if openstreetmap.Osmarender:
                 layers_openstreetmap += """
         var osmarender = new OpenLayers.Layer.TMS( '""" + openstreetmap.Osmarender + """', ['http://a.tah.openstreetmap.org/Tiles/tile/', 'http://b.tah.openstreetmap.org/Tiles/tile/', 'http://c.tah.openstreetmap.org/Tiles/tile/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
@@ -2334,6 +2367,11 @@ OpenLayers.Util.extend( selectPdfControl, {
                 layers_openstreetmap += """
         var osmtw = new OpenLayers.Layer.TMS( '""" + openstreetmap.Taiwan + """', 'http://tile.openstreetmap.tw/tiles/', {type: 'png', getURL: osm_getTileURL } );
         map.addLayer(osmtw);
+                    """
+            if openstreetmap.Haiti:
+                layers_openstreetmap += """
+        var osmht = new OpenLayers.Layer.TMS( '""" + openstreetmap.Haiti + """', 'http://geo.eden.sahanafoundation.org/tiles/', {type: 'png', getURL: osm_getTileURL } );
+        map.addLayer(osmht);
                     """
         else:
             functions_openstreetmap = ""
@@ -2372,6 +2410,16 @@ OpenLayers.Util.extend( selectPdfControl, {
                     layers_google += """
         var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: G_PHYSICAL_MAP, 'sphericalMercator': true } )
         map.addLayer(googleterrain);
+                    """
+                if google.MapMaker:
+                    layers_google += """
+        var googlemapmaker = new OpenLayers.Layer.Google( '""" + google.MapMaker + """' , {type: G_MAPMAKER_NORMAL_MAP, 'sphericalMercator': true } )
+        map.addLayer(googlemapmaker);
+                    """
+                if google.MapMakerHybrid:
+                    layers_google += """
+        var googlemapmakerhybrid = new OpenLayers.Layer.Google( '""" + google.MapMakerHybrid + """' , {type: G_MAPMAKER_HYBRID_MAP, 'sphericalMercator': true } )
+        map.addLayer(googlemapmakerhybrid);
                     """
 
             # Yahoo
@@ -2735,7 +2783,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     name = feature.cluster[i].attributes.name;
                     fid = feature.cluster[i].fid;
                     """ + uuid_from_fid + """
-                    if ( feature.cluster[i].popup_url.match("<id>") != null ) {                   
+                    if ( feature.cluster[i].popup_url.match("<id>") != null ) {
                         url = feature.cluster[i].popup_url.replace("<id>", uuid)
                     }
                     else {
@@ -2773,12 +2821,12 @@ OpenLayers.Util.extend( selectPdfControl, {
                 // call AJAX to get the contentHTML
                 var fid = feature.fid;
                 """ + uuid_from_fid + """
-                if ( popup_url.match("<id>") != null ) {                    
+                if ( popup_url.match("<id>") != null ) {
                     popup_url = popup_url.replace("<id>", uuid)
                 }
                 else {
                     popup_url = popup_url + uuid;
-                }               
+                }
                 loadDetails(popup_url, id, popup);
             }
         }
@@ -3073,6 +3121,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             # No Feature Layers requested
             pass
 
+        layer_coordinategrid = ""
         layers_georss = ""
         layers_gpx = ""
         layers_kml = ""
@@ -3214,8 +3263,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             gpx_enabled = db(db.gis_layer_gpx.enabled == True).select()
             if gpx_enabled:
                 layers_gpx += """
-        var georssLayers = new Array();
-        var format_gpx = new OpenLayers.Format.GPX();
+        var gpxLayers = new Array();
         function onGpxFeatureSelect(event) {
             // unselect any previous selections
             tooltipUnselect(event);
@@ -3227,10 +3275,13 @@ OpenLayers.Util.extend( selectPdfControl, {
                     name = layer["name"]
                     track = db(db.gis_track.id == layer.track_id).select(db.gis_track.track, limitby=(0, 1)).first()
                     if track:
-                        url = track.track
+                        url = URL(r=request, c="default", f="download") + "/" + track.track
                     else:
                         url = ""
                     visible = layer["visible"]
+                    waypoints = layer["waypoints"]
+                    tracks = layer["tracks"]
+                    routes = layer["routes"]
                     marker_id = layer["marker_id"]
                     if marker_id:
                         marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
@@ -3244,6 +3295,25 @@ OpenLayers.Util.extend( selectPdfControl, {
                         visibility = "gpxLayer" + name_safe + ".setVisibility(true);"
                     else:
                         visibility = "gpxLayer" + name_safe + ".setVisibility(false);"
+                    gpx_format = "extractAttributes:true"
+                    if not waypoints:
+                        gpx_format += ", extractWaypoints:false"
+                        style_marker = """
+        style_marker.externalGraphic = '';
+        """
+                    else:
+                        style_marker = """
+        style_marker.graphicOpacity = 1;
+        style_marker.graphicWidth = i.width;
+        style_marker.graphicHeight = i.height;
+        style_marker.graphicXOffset = -(i.width / 2);
+        style_marker.graphicYOffset = -i.height;
+        style_marker.externalGraphic = iconURL;
+        """
+                    if not tracks:
+                        gpx_format += ", extractTracks:false"
+                    if not routes:
+                        gpx_format += ", extractRoutes:false"
                     layers_gpx += """
         iconURL = '""" + marker_url + """';
         // Pre-cache this image
@@ -3253,12 +3323,10 @@ OpenLayers.Util.extend( selectPdfControl, {
         i.src = iconURL;
         // Needs to be uniquely instantiated
         var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
-        style_marker.graphicOpacity = 1;
-        style_marker.graphicWidth = i.width;
-        style_marker.graphicHeight = i.height;
-        style_marker.graphicXOffset = -(i.width / 2);
-        style_marker.graphicYOffset = -i.height;
-        style_marker.externalGraphic = iconURL;
+        """ + style_marker + """
+        style_marker.strokeColor = 'blue';
+        style_marker.strokeWidth = 6;
+        style_marker.strokeOpacity = 0.5;
         var gpxLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
             '""" + name_safe + """',
             {
@@ -3267,7 +3335,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 style: style_marker,
                 protocol: new OpenLayers.Protocol.HTTP({
                     url: '""" + url + """',
-                    format: format_gpx
+                    format: new OpenLayers.Format.GPX({""" + gpx_format + """})
                 })
             }
         );
@@ -3446,6 +3514,21 @@ OpenLayers.Util.extend( selectPdfControl, {
         allLayers = allLayers.concat(kmlLayers);
         """
 
+            # Coordinate Grid
+            coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select(db.gis_layer_coordinate.name, db.gis_layer_coordinate.visible)
+            if coordinate_enabled:
+                layer = coordinate_enabled.first()
+                name = layer["name"]
+                # Generate HTML snippet
+                name_safe = re.sub("\W", "_", name)
+                if "visible" in layer and layer["visible"]:
+                    visibility = ""
+                else:
+                    visibility = ", visibility: false"
+                layer_coordinategrid = """
+        map.addLayer(new OpenLayers.Layer.cdauth.CoordinateGrid(null, { name: '""" + name_safe + """', shortName: 'grid' """ + visibility + """ }));
+        """
+
         #############
         # Main script
         #############
@@ -3561,6 +3644,9 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         // KML
         """ + layers_kml + """
+
+        // CoordinateGrid
+        """ + layer_coordinategrid + """
     }
 
     """ + functions_openstreetmap + """
@@ -3676,6 +3762,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + mouse_position + """
         map.addControl(new OpenLayers.Control.Permalink());
         map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
+        map.addControl(new OpenLayers.Control.cdauth.GeoLocation());
 
         // Popups
         // onClick Popup
@@ -3828,7 +3915,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             zoom = config.zoom
             _locations = db.gis_location
             fields = [_locations.id, _locations.uuid, _locations.name, _locations.lat, _locations.lon, _locations.level, _locations.parent, _locations.addr_street]
-            location = db((db[tablename].id == r.id) & (_locations.id == db[tablename].location_id)).select(limitby=(0, 1), *fields).first()
+            if tablename == "gis_location":
+                location = db(db[tablename].id == r.id).select(limitby=(0, 1), *fields).first()
+            else:
+                location = db((db[tablename].id == r.id) & (_locations.id == db[tablename].location_id)).select(limitby=(0, 1), *fields).first()
             if location and location.lat is not None and location.lon is not None:
                 lat = location.lat
                 lon = location.lon
@@ -3841,7 +3931,10 @@ OpenLayers.Util.extend( selectPdfControl, {
                              id = r.id
                             )
             layer = self.get_feature_layer(prefix, name, layername, popup_label, filter=filter)
-            feature_queries = [layer]
+            if layer:
+                feature_queries = [layer]
+            else:
+                feature_queries = []
             _map = self.show_map(lat = lat,
                                  lon = lon,
                                  # Same as a single zoom on a cluster

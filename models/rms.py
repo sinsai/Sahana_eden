@@ -36,17 +36,17 @@ if deployment_settings.has_module(module):
 
     #def shn_req_aid_represent(id):
         #return  A(T("Make Pledge"), _href=URL(r=request, f="req", args=[id, "pledge"]))
-        
+
     # 2010-10-31 Michael Howden: The request resource is undergoing a significant re-design.
     # A large number of fields are being commented out. Eventually they should be removed
-    # (Once the re-design is accepted)    
+    # (Once the re-design is accepted)
 
     resourcename = "req"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             super_link(db.sit_situation),
                             Field("datetime", "datetime"),  # 'timestamp' is a reserved word in Postgres
-                            location_id(),                            
+                            location_id(),
                             person_id("requestor_person_id"),
                             hospital_id(),    # @ToDo Check if the module is enabled for adding FK: check CR for an example
                             shelter_id(),     # @ToDo Check if the module is enabled for adding FK: check CR for an example
@@ -72,12 +72,12 @@ if deployment_settings.has_module(module):
 
     table.datetime.requires = IS_DATETIME()
     table.datetime.label = T("Date & Time")
-    
+
     table.from_inventory_store_id.label = T("From Warehouse")
-    
+
     #This is only set by rms/store_for_req
     #table.from_inventory_store_id.readable = table.from_inventory_store_id.writable = False
-    
+
     table.message.requires = IS_NOT_EMPTY()
 
     # Hide fields from user:
@@ -103,7 +103,6 @@ if deployment_settings.has_module(module):
     table.type.requires = IS_IN_SET(rms_type_opts)
     table.type.represent = lambda type: type and rms_type_opts[type]
     table.type.label = T("Request Type")
-    table.type.comment = SPAN("*", _class="req")
 
     #rms_req_source_type = { 1 : "Manual",
     #                        2 : "SMS",
@@ -139,13 +138,13 @@ if deployment_settings.has_module(module):
                     requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req.id", "%(message)s")),
                     represent = lambda id: (id and [db(db.rms_req.id == id).select(limitby=(0, 1)).first().message] or ["None"])[0],
                     label = T("Request"),
-                    comment = DIV(A(ADD_REQUEST, 
-                                    _class="colorbox", 
-                                    _href=URL(r=request, c="rms", f="req", args="create", vars=dict(format="popup")), 
-                                    _target="top", 
+                    comment = DIV(A(ADD_REQUEST,
+                                    _class="colorbox",
+                                    _href=URL(r=request, c="rms", f="req", args="create", vars=dict(format="popup")),
+                                    _target="top",
                                     _title=ADD_REQUEST
-                                    ), 
-                                  DIV( _class="tooltip", 
+                                    ),
+                                  DIV( _class="tooltip",
                                        _title=T("Add Request") + "|" + T("The Request this record is associated with.")
                                        )
                                   ),
@@ -155,7 +154,7 @@ if deployment_settings.has_module(module):
     def rms_req_onaccept(form):
         # Send a Message to the Inventory Managers when a new Request comes in
         # Q: How to tell whether this is a new request?
-        
+
         # Hack: Send to all people in the Organisation
         try:
             org_pe_id = db(db.org_organisation.id == form.vars.organisation_id).select(db.org_organisation.pe_id, limitby=(0, 1)).first().pe_id
@@ -173,6 +172,7 @@ if deployment_settings.has_module(module):
             pass
 
     s3xrc.model.configure(table,
+                          mark_required=["type"],
                           super_entity=db.sit_situation,
                           onaccept = lambda form: rms_req_onaccept(form),
                           )

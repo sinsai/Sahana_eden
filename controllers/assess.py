@@ -3,7 +3,7 @@
 """ Assessments - Controller
 
     @author: Fran Boon
-    @author: Dominic König
+    @author: Dominic KÃ¶nig
     @author: Michael Howden (michael@sahanafoundation.org)
     @date-created: 2010-08-25
 
@@ -263,7 +263,7 @@ def shn_rat_rheader(r, tabs=[]):
 #==============================================================================
 def shn_assess_rheader(jr, tabs=[]):
 
-    """ @todo: fix docstring """
+    """ @todo: docstring """
 
     if jr.representation == "html":
         rheader_tabs = shn_rheader_tabs(jr, tabs)
@@ -288,6 +288,14 @@ def assess():
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
+    # Pre-processor
+    def shn_assess_prep(r):
+        if response.s3.mobile and r.method == "create" and r.representation in shn_interactive_view_formats:
+            # redirect to mobile-specific form:
+            redirect(URL(r=request, f="assess_short_mobile"))
+        return True
+    response.s3.prep = shn_assess_prep
+
     table.incident_id.comment = DIV(_class="tooltip",
                                      _title=T("Incident") + "|" + T("Optional link to an Incident which this Assessment was triggered by."))
 
@@ -311,7 +319,7 @@ def impact_type():
 
     prefix = "impact"
     resourcename = "type"
-    
+
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
@@ -369,7 +377,7 @@ def basic_assess():
                            ("impact", 4),
                            ("impact", 5),
                            ("impact", 6),
-                           ("impact", 7),                           
+                           ("impact", 7),
                            ("assess", "comments"),
                            )
         form, form_accepted, assess_id = custom_assess(custom_assess_fields, location_id = irs_location_id)
@@ -381,19 +389,19 @@ def basic_assess():
                            ("impact", 4),
                            ("impact", 5),
                            ("impact", 6),
-                           ("impact", 7),                           
+                           ("impact", 7),
                            ("assess", "comments"),
                            )
         form, form_accepted, assess_id = custom_assess(custom_assess_fields)
-                
-    
-    
+
+
+
     if form_accepted:
          response.confirmation = T("Basic Assessment Reported")
          redirect(URL(r = request, f = "assess", args = [assess_id, "impact"]))
     return dict(title = T("Basic Assessment"),
                 location = location,
-                form = form)    
+                form = form)
 
 def mobile_basic_assess():
     custom_assess_fields = (("assess", "location_id", "auto"),
@@ -403,12 +411,12 @@ def mobile_basic_assess():
                        ("impact", 4),
                        ("impact", 5),
                        ("impact", 6),
-                       ("impact", 7),                           
+                       ("impact", 7),
                        ("assess", "comments"),
                        )
-    
+
     form, form_accepted, assess_id = custom_assess(custom_assess_fields)
-    
+
     if form_accepted:
         form = FORM(H1("Sahana Eden"),
                     H2(T("Short Assessment")),
@@ -417,7 +425,7 @@ def mobile_basic_assess():
                       _href = URL(r=request)
                       ),
                     _class = "mobile",
-                    )    
+                    )
     return dict(form = form)
 
 def color_code_severity_widget(widget, name):
@@ -485,12 +493,12 @@ def custom_assess(custom_assess_fields, location_id = None):
                                                        _name = name + "_severity"
                                                        )
             severity_widget = color_code_severity_widget(severity_widget, name + "_severity")
-            
+
             widget = DIV(value_widget,
                          DIV(T("Severity:")),
                          severity_widget,
                          XML("&nbsp"))
-        
+
 
         elif field[0] == "summary":
             label = "%s:" % shn_org_cluster_subsector_represent( field[1] )
@@ -526,21 +534,21 @@ def custom_assess(custom_assess_fields, location_id = None):
                     record_dict[field[1]] = request.vars[name]
             if "custom_assess_location_id" in request.vars:
                 #Auto
-                if "gis_location_lat" in request.vars:                    
+                if "gis_location_lat" in request.vars:
                     location_dict = {}
                     location_dict["lat"] = request.vars["gis_location_lat"]
                 if "gis_location_lon" in request.vars:
                     location_dict["lon"] = request.vars["gis_location_lon"]
-                location_dict["name"] = request.vars["custom_assess_location_id"]                    
+                location_dict["name"] = request.vars["custom_assess_location_id"]
                 record_dict["location_id"] = db.gis_location.insert(**location_dict)
             if "location_id" in request.vars:
                 #Location Select
-                record_dict["location_id"] = request.vars["location_id"]  
-                
+                record_dict["location_id"] = request.vars["location_id"]
+
             if location_id:
                 #Location_id was passed to function
-                record_dict["location_id"] =location_id        
-                
+                record_dict["location_id"] =location_id
+
             assess_id = db.assess_assess.insert(**record_dict)
 
             fk_dict = dict(baseline = "baseline_type_id",
@@ -567,25 +575,25 @@ def custom_assess(custom_assess_fields, location_id = None):
                     if field[0] == "impact":
                         severity = int(request.vars[name + "_severity"])
                         record_dict["severity"] = severity
-                        
+
                         if not record_dict["value"] and not record_dict["severity"]:
-                            #Do not record impact if there is no data for it. 
+                            #Do not record impact if there is no data for it.
                             #Should we still average severity though? Now not doing this
-                            continue                        
-                        
-                        #record the Severity per cluster 
+                            continue
+
+                        #record the Severity per cluster
                         cluster_id = \
                             shn_get_db_field_value(db = db,
                                                    table = "impact_type",
                                                    field = "cluster_id",
-                                                   look_up = field[1]) 
+                                                   look_up = field[1])
                         if cluster_id in cluster_summary.keys():
                             cluster_summary[cluster_id].append(severity)
                         elif cluster_id:
                             cluster_summary[cluster_id] = [severity]
-                            
+
                     db[component_dict[ field[0] ] ].insert(**record_dict)
-            
+
             #Add cluster summaries @TODO - make sure that this doesn't happen if there are clusters in the assess
             for cluster_id in cluster_summary.keys():
                 severity_values = cluster_summary[cluster_id]

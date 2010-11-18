@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Data Model Extensions
 
-    @version: 2.2.2
+    @version: 2.2.3
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -252,7 +252,7 @@ class S3ResourceModel(object):
             @param name: name of the attribute
             @param value: value for the attribute
 
-            @todo 2.2: deprecate?
+            @todo 2.3: deprecate?
 
         """
 
@@ -267,7 +267,7 @@ class S3ResourceModel(object):
             @param component_name: name of the component (without prefix)
             @param name: name of the attribute
 
-            @todo 2.2: deprecate?
+            @todo 2.3: deprecate?
 
         """
 

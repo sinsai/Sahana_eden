@@ -26,7 +26,7 @@
 <div>
     {{=H5(T("You must be logged in to report persons missing or found."))}}
     &nbsp;
-    {{=A(T("Login"), _href="/%s/default/user/login?_next=/%s/mpr/index" % (request.application, request.application), _class="action-btn")}}
+    {{=A(T("Login"), _href="/%s/default/user/login?_next=/%s/pf/index" % (request.application, request.application), _class="action-btn")}}
 </div>
 {{pass}}
 <div style="margin:20px auto; width:96%; max-width:1000px;" >
@@ -40,14 +40,14 @@
             {{except:}}
             {{pass}}
         </div>
-{{if auth.shn_logged_in():}}
-        <p>&nbsp;</p>
+{{try:}}
+{{if add_btn:}}
+<p>&nbsp;</p>
 {{=T("If you cannot find the record of the person you want to report missing, you can add it by clicking 'Add Person' below:")}}
-        <p>&nbsp;</p>
-        {{try:}}
-        {{=add_btn}}
-        {{except:}}
-        {{pass}}
+<p>&nbsp;</p>
+{{=add_btn}}
+{{pass}}
+{{except:}}
 {{pass}}
         {{include "dataTables.html"}}
     </div>

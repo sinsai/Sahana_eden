@@ -16,6 +16,8 @@
 #*   *       *       *       *       web2py *msg/process_text_via_twitter
 # Collect incoming emails every 15 minutes
 #*/15  *       *       *       *       web2py *applications/eden/cron/email_receive.py
+# Collect the incoming subscribed tweets every 15 minutes
+#*/15   *       *       *       *       web2py *msg/search_results
 # Process Import Jobs (deprecated)
 #*/5    *       *       *       *       web2py *applications/eden/cron/import_job_do_processing.py
 #*/5    *       *       *       *       web2py *applications/eden/cron/import_job_do_import.py

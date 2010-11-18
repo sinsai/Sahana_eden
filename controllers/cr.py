@@ -164,7 +164,7 @@ def shelter():
     shelter_tabs = [(T("Basic Details"), None),
                     (T("Assessments"), "rat"),
                     (T("People"), "presence"),
-                    (T("Inventory"), "store"),  # table is inventory_store
+                    (T("Warehouse"), "store"),  # table is inventory_store
                     (T("Requests"), "req"),
                    ]
 
@@ -221,7 +221,7 @@ def shn_shelter_prep(r):
     if r.representation in shn_interactive_view_formats:
         # Don't send the locations list to client (pulled by AJAX instead)
         r.table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
-
+        
         # Remember this is html or popup.
         response.cr_shelter_request_was_html_or_popup = True
 

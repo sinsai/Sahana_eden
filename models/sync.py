@@ -101,10 +101,7 @@ sync_peer_types = {
     99: T("Other")
 }
 
-formats = [f for f in s3xrc.xml_export_formats]
-formats += [f for f in s3xrc.xml_import_formats if f not in formats]
-formats += [f for f in s3xrc.json_export_formats if f not in formats]
-formats += [f for f in s3xrc.json_import_formats if f not in formats]
+formats = ["xml", "json"]
 
 resourcename = "peer"
 tablename = "%s_%s" % (prefix, resourcename)

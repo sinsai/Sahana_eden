@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    Inventory
+    Inventory (Warehouse) Management
 
     @author: Michael Howden (michael@sahanafoundation.org)
     @date-created: 2010-08-16
@@ -19,17 +19,17 @@ if deployment_settings.has_module("logs"):
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             organisation_id(),
-                            location_id(),                            
+                            location_id(),
                             #document_id(),
-                            person_id("contact_person_id"                 
-                                      ),                            
+                            person_id("contact_person_id"
+                                      ),
                             super_link(db.org_site),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
 
     table.location_id.requires = IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True)
-    
+
     table.contact_person_id.label = T("Contact Person")
     s3xrc.model.configure(table, mark_required=["location_id"])
 
@@ -63,7 +63,7 @@ if deployment_settings.has_module("logs"):
         )
 
     # Reusable Field
-    inventory_store_id = S3ReusableField("inventory_store_id", db.inventory_store, sortby="name",
+    inventory_store_id = S3ReusableField("inventory_store_id", db.inventory_store,
                 requires = IS_NULL_OR(IS_ONE_OF(db, "inventory_store.id", inventory_store_represent, orderby="inventory_store.id", sort=True)),
                 represent = lambda id: shn_gis_location_represent(shn_get_db_field_value(db=db, table="inventory_store", field="location_id", look_up=id)),
                 label = T("Warehouse"),
@@ -100,23 +100,23 @@ if deployment_settings.has_module("logs"):
 
 
     # CRUD strings
-    ADD_INVENTORY_ITEM = T("Add Inventory Item")
-    LIST_INVENTORY_ITEMS = T("List Inventory Items")
+    ADD_INVENTORY_ITEM = T("Add Warehouse Item")
+    LIST_INVENTORY_ITEMS = T("List Warehouse Items")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_INVENTORY_ITEM,
-        title_display = T("Inventory Item Details"),
+        title_display = T("Warehouse Item Details"),
         title_list = LIST_INVENTORY_ITEMS,
-        title_update = T("Edit Inventory Item"),
-        title_search = T("Search Inventory Items"),
-        subtitle_create = T("Add New Inventory Item"),
-        subtitle_list = T("Inventory Items"),
+        title_update = T("Edit Warehouse Item"),
+        title_search = T("Search Warehouse Items"),
+        subtitle_create = T("Add New Warehouse Item"),
+        subtitle_list = T("Warehouse Items"),
         label_list_button = LIST_INVENTORY_ITEMS,
         label_create_button = ADD_INVENTORY_ITEM,
-        label_delete_button = T("Delete Inventory Item"),
-        msg_record_created = T("Inventory Item added"),
-        msg_record_modified = T("Inventory Item updated"),
-        msg_record_deleted = T("Inventory Item deleted"),
-        msg_list_empty = T("No Inventory Items currently registered"))
+        label_delete_button = T("Delete Warehouse Item"),
+        msg_record_created = T("Warehouse Item added"),
+        msg_record_modified = T("Warehouse Item updated"),
+        msg_record_deleted = T("Warehouse Item deleted"),
+        msg_list_empty = T("No Warehouse Items currently registered"))
 
     # Items as component of Stores
     s3xrc.model.add_component(module, resourcename,
@@ -137,7 +137,7 @@ if deployment_settings.has_module("logs"):
                     [T("List"), False, URL(r=request, c="logs", f="distrib")],
                     [T("Add"), False, URL(r=request, c="logs", f="distrib", args="create")],
                 ]],
-                [T("Relief Items"), False, URL(r=request, c="supply", f="item"),
+                [T("Catalog Items"), False, URL(r=request, c="supply", f="item"),
                 [
                     [T("List"), False, URL(r=request, c="supply", f="item")],
                     [T("Add"), False, URL(r=request, c="supply", f="item", args="create")],

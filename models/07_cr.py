@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-""" Camp Registry, model
+"""
+    Shelter (Camp) Registry, model
 
     @author: Pat Tressel
 
@@ -180,7 +181,8 @@ if deployment_settings.has_module(module):
                                  ondelete = "RESTRICT",
                                  comment = DIV(A(ADD_SHELTER, _class="colorbox", _href=URL(r=request, c="cr", f="shelter", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SHELTER),
                                            DIV( _class="tooltip", _title=T("Shelter") + "|" + T("The Shelter this Request is from (optional)."))),
-                                 label = T("Shelter")
+                                 label = T("Shelter"),
+                                 widget = S3AutocompleteWidget(request, module, resourcename)
                                 )
 
     # Add Shelters as component of Services, Types, Locations as a simple way

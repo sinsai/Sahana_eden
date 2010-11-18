@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Controller
 
-    @version: 2.2.2
+    @version: 2.2.3
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -36,8 +36,7 @@
 
 """
 
-__all__ = ["S3ResourceController",
-           "S3Vector"]
+__all__ = ["S3ResourceController", "S3Vector"]
 
 import sys, datetime, time
 
@@ -66,13 +65,7 @@ class S3ResourceController(object):
         @param messages: a function to retrieve message URLs tagged for a resource
         @param attr: configuration settings
 
-        @keyword xml_export_formats: XML export format configuration (see 00_settings.py)
-        @keyword xml_import_formats: XML import format configuration (see 00_settings.py)
-        @keyword json_export_formats: JSON export format configuration (see 00_settings.py)
-        @keyword json_import_formats: JSON import format configuration (see 00_settings.py)
-
-        @todo 2.2: move formats into settings
-        @todo 2.2: error messages internationalization!
+        @todo 2.3: error messages internationalization!
 
     """
 
@@ -81,10 +74,6 @@ class S3ResourceController(object):
 
     HOOKS = "s3"
     RCVARS = "rcvars"
-
-    XSLT_FILE_EXTENSION = "xsl"
-    XSLT_IMPORT_TEMPLATES = "static/xslt/import" #@todo 2.2: move into settings
-    XSLT_EXPORT_TEMPLATES = "static/xslt/export" #@todo 2.2: move into settings
 
     ACTION = Storage(
         create="create",
@@ -119,10 +108,10 @@ class S3ResourceController(object):
 
     def __init__(self,
                  environment,
-                 domain=None, # @todo 2.2: read fromm environment
-                 base_url=None, # @todo 2.2: read from environment
-                 rpp=None, # @todo 2.2: move into settings
-                 messages=None, # @todo 2.2: move into settings
+                 domain=None, # @todo 2.3: read fromm environment
+                 base_url=None, # @todo 2.3: read from environment
+                 rpp=None, # @todo 2.3: move into settings
+                 messages=None, # @todo 2.3: move into settings
                  **attr):
 
         # Environment
@@ -137,13 +126,16 @@ class S3ResourceController(object):
         self.request = environment.request
         self.response = environment.response
 
+        self.migrate = environment.migrate
+
         # Settings
-        self.s3 = environment.s3 #@todo 2.2: rename variable?
-        #self.settings = self.s3.<what?> @todo 2.2
+        self.s3 = environment.s3 #@todo 2.3: rename variable?
 
         self.domain = domain
         self.base_url = base_url
         self.download_url = "%s/default/download" % base_url
+
+        self.rlink_tablename = "s3_rlink"
 
         if rpp:
             self.ROWSPERPAGE = rpp
@@ -158,7 +150,9 @@ class S3ResourceController(object):
         self.auth = environment.auth            # Auth
         self.gis = environment.gis              # GIS
 
-        self.model = S3ResourceModel(self.db)   # Resource Model, @todo 2.2: reduce parameter list to (self)?
+        self.query_builder = S3QueryBuilder(self) # Query Builder
+
+        self.model = S3ResourceModel(self.db)   # Resource Model, @todo 2.: reduce parameter list to (self)?
         self.crud = S3CRUDHandler(self)         # CRUD Handler
         self.xml = S3XML(self)                  # XML Toolkit
 
@@ -169,21 +163,19 @@ class S3ResourceController(object):
         self.sync_resolve = None                    # Sync Resolver
         self.sync_log = None                        # Sync Logger
 
-        # Import/Export formats, @todo 2.2: move into settings
-        attr = Storage(attr)
+        # JSON formats, content-type headers
+        self.json_formats = []
+        self.content_type = Storage()
 
-        self.xml_import_formats = attr.get("xml_import_formats", ["xml"])
-        self.xml_export_formats = attr.get("xml_export_formats",
-                                           dict(xml="application/xml"))
-
-        self.json_import_formats = attr.get("json_import_formats", ["json"])
-        self.json_export_formats = attr.get("json_export_formats",
-                                            dict(json="text/x-json"))
+        # XSLT Paths
+        self.XSLT_FILE_EXTENSION = "xsl"
+        self.XSLT_IMPORT_TEMPLATES = "static/xslt/import"
+        self.XSLT_EXPORT_TEMPLATES = "static/xslt/export"
 
         self.exporter = S3Exporter(self)    # Resource Exporter
         self.importer = S3Importer(self)    # Resource Importer
 
-        # Method Handlers, @todo 2.2: deprecate?
+        # Method Handlers, @todo 2.3: deprecate?
         self.__handler = Storage()
 
 
@@ -461,7 +453,7 @@ class S3ResourceController(object):
 
         """ Set the default handler for a resource method
 
-            @todo 2.2: deprecate?
+            @todo 2.3: deprecate?
 
         """
 
@@ -473,7 +465,7 @@ class S3ResourceController(object):
 
         """ Get the default handler for a resource method
 
-            @todo 2.2: deprecate?
+            @todo 2.3: deprecate?
 
         """
 
@@ -487,8 +479,7 @@ class S3ResourceController(object):
                   filter=None,
                   vars=None,
                   parent=None,
-                  components=None,
-                  storage=None):
+                  components=None):
 
         """ Wrapper function for S3Resource, creates a resource
 
@@ -500,7 +491,6 @@ class S3ResourceController(object):
             @param vars: dict of URL query parameters
             @param parent: the parent resource (if this is a component)
             @param components: list of component (names)
-            @param storage: the data store (None for DB)
 
         """
 
@@ -510,8 +500,7 @@ class S3ResourceController(object):
                               filter=filter,
                               vars=vars,
                               parent=parent,
-                              components=components,
-                              storage=storage)
+                              components=components)
 
         # Set default handlers
         for method in self.__handler:
@@ -750,7 +739,7 @@ class S3ResourceController(object):
 
             @returns: a list of matching elements
 
-            @todo 2.2: implement this and use in import_tree()
+            @todo 2.3: implement this and use in import_tree()
 
         """
 
@@ -1300,10 +1289,10 @@ class S3Vector(object):
                  mtime=None,
                  rmap=None,
                  directory=None,
-                 permit=None, # @todo 2.2: read from manager
-                 audit=None, # @todo 2.2: read from manager
-                 sync=None, # @todo 2.2: read from manager
-                 log=None, # @todo 2.2: read from manager
+                 permit=None, # @todo 2.3: read from manager
+                 audit=None, # @todo 2.3: read from manager
+                 sync=None, # @todo 2.3: read from manager
+                 log=None, # @todo 2.3: read from manager
                  onvalidation=None,
                  onaccept=None):
 
@@ -1423,8 +1412,8 @@ class S3Vector(object):
 
         """ Commits the vector to the database
 
-            @todo 2.2: propagate onvalidation errors properly to the element
-            @todo 2.2: propagate import errors properly to the importer
+            @todo 2.3: propagate onvalidation errors properly to the element
+            @todo 2.3: propagate import errors properly to the importer
 
         """
 
@@ -1638,6 +1627,493 @@ class S3Vector(object):
                 self.db(self.table.id == self.id).update(**{field:values})
             else:
                 self.db(self.table.id == self.id).update(**{field:value})
+
+
+# *****************************************************************************
+class S3ResourceLinker(object):
+
+    """ Hyperlink between resources """
+
+    def __init__(self, manager):
+
+        db = self.manager.db
+        tablename = self.manager.rlink_tablename
+        migrate = self.manager.migrate
+
+        self.table = db.get(tablename, None)
+        if not self.table:
+            self.table = db.define_table(tablename,
+                                         Field("class"),
+                                         Field("origin_table"),
+                                         Field("origin_id"),
+                                         Field("target_table"),
+                                         Field("target_id"),
+                                         migrate=migrate)
+
+    def link(self):
+        pass
+
+    def unlink(self):
+        pass
+
+    def get_origin_query(self):
+        pass
+
+    def get_origin(self):
+        pass
+
+    def get_target_query(self):
+        pass
+
+    def get_target(self):
+        pass
+
+
+# *****************************************************************************
+class S3QueryBuilder(object):
+
+    """ Query Builder
+
+        @param manager: the resource controller
+
+    """
+
+    def __init__(self, manager):
+
+        self.manager = manager
+
+    # -------------------------------------------------------------------------
+    def parse_url_rlinks(self, resource, vars):
+
+        """ Parse URL resource link queries
+
+            @param resource: the resource
+            @param vars: dict of URL vars
+
+        """
+
+        return None
+
+
+    # -------------------------------------------------------------------------
+    def parse_url_context(self, resource, vars):
+
+        """ Parse URL context queries
+
+            @param resource: the resource
+            @param vars: dict of URL vars
+
+        """
+
+        table = resource.table
+        components = resource.components
+
+        c = Storage()
+        for k in vars:
+            if k[:8] == "context.":
+                context_name = k[8:]
+                context = vars[k]
+                if not isinstance(context, str):
+                    continue
+                if context.find(".") > 0:
+                    rname, field = context.split(".", 1)
+                    if rname in components:
+                        table = components[rname].component.table
+                    else:
+                        continue
+                else:
+                    rname = resource.name
+                    field = context
+                if field in table.fields:
+                    fieldtype = str(table[field].type)
+                else:
+                    continue
+                multiple = False
+                if fieldtype.startswith("reference"):
+                    ktablename = fieldtype[10:]
+                elif fieldtype.startswith("list:reference"):
+                    ktablename = fieldtype[15:]
+                    multiple = True
+                else:
+                    continue
+                c[context_name] = Storage(rname = rname,
+                                          field = field,
+                                          table = ktablename,
+                                          multiple = multiple)
+            else:
+                continue
+        return c
+
+
+    # -------------------------------------------------------------------------
+    def parse_url_query(self, resource, vars):
+
+        """ Parse URL query
+
+            @param resource: the resource
+            @param vars: dict of URL vars
+
+        """
+
+        c = self.parse_url_context(resource, vars)
+        q = Storage(context=c)
+
+        for k in vars:
+            if k.find(".") > 0:
+                rname, field = k.split(".", 1)
+                if rname == "context":
+                    continue
+                elif rname == resource.name:
+                    table = resource.table
+                elif rname in resource.components:
+                    table = resource.components[rname].component.table
+                elif rname in c.keys():
+                    table = self.db.get(c[rname].table, None)
+                    if not table:
+                        continue
+                else:
+                    continue
+                if field.find("__") > 0:
+                    field, op = field.split("__", 1)
+                else:
+                    op = "eq"
+                if field == "uid":
+                    field = self.manager.UID
+                if field not in table.fields:
+                    continue
+                else:
+                    ftype = str(table[field].type)
+                    values = vars[k]
+                    if op in ("lt", "le", "gt", "ge"):
+                        if ftype not in ("integer", "double", "date", "time", "datetime"):
+                            continue
+                        if not isinstance(values, (list, tuple)):
+                            values = [values]
+                        vlist = []
+                        for v in values:
+                            if v.find(",") > 0:
+                                v = v.split(",", 1)[-1]
+                            vlist.append(v)
+                        values = vlist
+                    elif op == "eq":
+                        if isinstance(values, (list, tuple)):
+                            values = values[-1]
+                        if values.find(",") > 0:
+                            values = values.split(",")
+                        else:
+                            values = [values]
+                    elif op == "ne":
+                        if not isinstance(values, (list, tuple)):
+                            values = [values]
+                        vlist = []
+                        for v in values:
+                            if v.find(",") > 0:
+                                v = v.split(",")
+                                vlist.extend(v)
+                            else:
+                                vlist.append(v)
+                        values = vlist
+                    elif op in ("like", "unlike"):
+                        if ftype not in ("string", "text"):
+                            continue
+                        if not isinstance(values, (list, tuple)):
+                            values = [values]
+                    elif op in ("in", "ex"):
+                        if not ftype.startswith("list:"):
+                            continue
+                        if not isinstance(values, (list, tuple)):
+                            values = [values]
+                    else:
+                        continue
+                    vlist = []
+                    for v in values:
+                        if ftype == "boolean":
+                            if v in ("true", "True"):
+                                value = True
+                            else:
+                                value = False
+                        elif ftype == "integer":
+                            try:
+                                value = float(v)
+                            except ValueError:
+                                continue
+                        elif ftype == "double":
+                            try:
+                                value = float(v)
+                            except ValueError:
+                                continue
+                        elif ftype == "date":
+                            validator = IS_DATE()
+                            value, error = validator(v)
+                            if error:
+                                continue
+                        elif ftype == "time":
+                            validator = IS_TIME()
+                            value, error = validator(v)
+                            if error:
+                                continue
+                        elif ftype == "datetime":
+                            tfmt = "%Y-%m-%dT%H:%M:%SZ" # ISO Format
+                            try:
+                                (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(v, tfmt)
+                                value = datetime.datetime(y,m,d,hh,mm,ss)
+                            except ValueError:
+                                continue
+                        else:
+                            value = v
+
+                        vlist.append(value)
+                    values = vlist
+                    if values:
+                        if rname not in q:
+                            q[rname] = Storage()
+                        if field not in q[rname]:
+                            q[rname][field] = Storage()
+                        q[rname][field][op] = values
+        return q
+
+
+    # -------------------------------------------------------------------------
+    def query(self, resource, id=None, uid=None, filter=None, vars=None):
+
+        """ Query builder
+
+            @param resource: the resource
+            @param id: record ID or list of record IDs to include
+            @param uid: record UID or list of record UIDs to include
+            @param filter: filtering query (DAL only)
+            @param left: left outer joins for the filter (if needed)
+            @param vars: dict of URL query variables
+
+        """
+
+        # Initialize
+        resource.clear()
+        resource.clear_query()
+
+        xml = self.manager.xml
+        deletion_status = self.manager.DELETED
+
+        if vars:
+            url_query = self.parse_url_query(resource, vars)
+            if url_query:
+                resource.vars = vars
+        else:
+            url_query = Storage()
+
+        resource._multiple = True # multiple results expected by default
+
+        table = resource.table
+        name = resource.name
+
+        # Master Query
+        if resource.accessible_query is not None:
+            mquery = resource.accessible_query("read", table)
+        else:
+            mquery = (table.id > 0)
+
+        # Deletion status
+        if deletion_status in table.fields:
+            remaining = (table[deletion_status] == False)
+            mquery = remaining & mquery
+
+        # Component Query
+        parent = resource.parent
+        if parent:
+
+            parent_query = parent.get_query()
+            if parent_query:
+                mquery = mquery & parent_query
+
+            component = parent.components.get(name, None)
+            if component:
+                pkey = component.pkey
+                fkey = component.fkey
+                resource._multiple = component.get("multiple", True)
+                join = parent.table[pkey] == table[fkey]
+                if str(mquery).find(str(join)) == -1:
+                    mquery = mquery & (join)
+
+        # Primary Resource Query
+        else:
+
+            if id or uid:
+                if name not in url_query:
+                    url_query[name] = Storage()
+
+            # Collect IDs
+            if id:
+                if not isinstance(id, (list, tuple)):
+                    resource._multiple = False # single result expected
+                    id = [id]
+                id_queries = url_query[name].get("id", Storage())
+
+                ne = id_queries.get("ne", [])
+                eq = id_queries.get("eq", [])
+                eq = eq + [v for v in id if v not in eq]
+
+                if ne and "ne" not in id_queries:
+                    id_queries.ne = ne
+                if eq and "eq" not in id_queries:
+                    id_queries.eq = eq
+
+                if "id" not in url_query[name]:
+                    url_query[name]["id"] = id_queries
+
+            # Collect UIDs
+            if uid:
+                if not isinstance(uid, (list, tuple)):
+                    resource._multiple = False # single result expected
+                    uid = [uid]
+                uid_queries = url_query[name].get(self.manager.UID, Storage())
+
+                ne = uid_queries.get("ne", [])
+                eq = uid_queries.get("eq", [])
+                eq = eq + [v for v in uid if v not in eq]
+
+                if ne and "ne" not in uid_queries:
+                    uid_queries.ne = ne
+                if eq and "eq" not in uid_queries:
+                    uid_queries.eq = eq
+
+                if self.manager.UID not in url_query[name]:
+                    url_query[name][self.manager.__UID] = uid_queries
+
+            # URL Queries
+            contexts = url_query.context
+            for rname in url_query:
+
+                if rname == "context":
+                    continue
+
+                elif contexts and rname in contexts:
+                    context = contexts[rname]
+
+                    cname = context.rname
+                    if cname != name and \
+                        cname in resource.components:
+                        component = resource.components[cname]
+                        rtable = component.resource.table
+                        pkey = component.pkey
+                        fkey = component.fkey
+                        cjoin = (table[pkey]==rtable[fkey])
+                    else:
+                        rtable = table
+                        cjoin = None
+
+                    _table = resource.db[context.table]
+                    if context.multiple:
+                        join = (rtable[context.field].contains(table.id))
+                    else:
+                        join = (rtable[context.field] == table.id)
+                    if cjoin:
+                        join = (cjoin & join)
+
+                    mquery = mquery & join
+
+                    if deletion_status in table.fields:
+                        remaining = (table[deletion_status] == False)
+                        mquery = mquery & remaining
+
+                elif rname == name:
+                    _table = table
+
+                elif rname in resource.components:
+                    component = resource.components[rname]
+                    _table = component.resource.table
+                    pkey = component.pkey
+                    fkey = component.fkey
+
+                    join = (resource.table[pkey]==_table[fkey])
+                    mquery = mquery & join
+
+                    if deletion_status in _table.fields:
+                        remaining = (_table[deletion_status] == False)
+                        mquery = mquery & remaining
+
+                for field in url_query[rname]:
+                    if field in _table.fields:
+                        for op in url_query[rname][field]:
+                            values = url_query[rname][field][op]
+                            if field == xml.UID and xml.domain_mapping:
+                                uids = map(xml.import_uid, values)
+                                values = uids
+                            f = _table[field]
+                            query = None
+                            if op == "eq":
+                                if len(values) == 1:
+                                    if values[0] == "NONE":
+                                        query = (f == None)
+                                    elif values[0] == "EMPTY":
+                                        query = ((f == None) | (f == ""))
+                                    else:
+                                        query = (f == values[0])
+                                elif len(values):
+                                    query = (f.belongs(values))
+                            elif op == "ne":
+                                if len(values) == 1:
+                                    if values[0] == "NONE":
+                                        query = (f != None)
+                                    elif values[0] == "EMPTY":
+                                        query = ((f != None) & (f != ""))
+                                    else:
+                                        query = (f != values[0])
+                                elif len(values):
+                                    query = (~(f.belongs(values)))
+                            elif op == "lt":
+                                v = values[-1]
+                                query = (f < v)
+                            elif op == "le":
+                                v = values[-1]
+                                query = (f <= v)
+                            elif op == "gt":
+                                v = values[-1]
+                                query = (f > v)
+                            elif op == "ge":
+                                v = values[-1]
+                                query = (f >= v)
+                            elif op == "in":
+                                for v in values:
+                                    q = (f.contains(v))
+                                    if query:
+                                        query = query | q
+                                    else:
+                                        query = q
+                                query = (query)
+                            elif op == "ex":
+                                for v in values:
+                                    q = (~(f.contains(v)))
+                                    if query:
+                                        query = query & q
+                                    else:
+                                        query = q
+                                query = (query)
+                            elif op == "like":
+                                for v in values:
+                                    q = (f.lower().contains(v.lower()))
+                                    if query:
+                                        query = query | q
+                                    else:
+                                        query = q
+                                query = (query)
+                            elif op == "unlike":
+                                for v in values:
+                                    q = (~(f.lower().contains(v.lower())))
+                                    if query:
+                                        query = query & q
+                                    else:
+                                        query = q
+                                query = (query)
+                            else:
+                                continue
+                            mquery = mquery & query
+
+            # Filter
+            if filter:
+                mquery = mquery & filter
+
+        resource._query = mquery
+        return mquery
 
 
 # *****************************************************************************

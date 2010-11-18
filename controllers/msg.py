@@ -19,6 +19,10 @@ def shn_menu():
         ]],
         [T("Log"), False, URL(r=request, f="log")],
         [T("Outbox"), False, URL(r=request, f="outbox")],
+        [T("Search Twitter Tags"), False,URL(r=request, f="twitter_search"),[
+            [T("Queries"), False, URL(r=request, f="twitter_search")],
+            [T("Results"), False, URL(r=request, f="twitter_search_results")]
+        ]],
         #["CAP", False, URL(r=request, f="tbc")]
     ]
     if shn_has_role(1):
@@ -88,6 +92,7 @@ def process_text_via_twitter():
 
     msg.process_outbox(contact_method = 4) # 3 is reserved for XMPP
     return
+
 
 
 #------------------------------------------------------------------------------
@@ -319,6 +324,24 @@ def parserdooth(message):
 
     return "Please provide one of the keywords - person, hospital, organisation"
 
+#----------------------------------------------------------------------------------------    
+def twitter_search():
+    """ Controller to modify Twitter search queries """
+    
+    return s3_rest_controller(prefix, resourcename)
+       
+#-------------------------------------------------------------------------------------------------
+def twitter_search_results():
+    """ Controller to retrieve tweets for user saved search queries - to be called via cron. Currently in real time also. """
+    
+    # Update results
+    result = msg.receive_subscribed_tweets()
+
+    if not result:
+        session.error = T("Need to configure Twitter Authentication")
+        redirect(URL(r=request, f="twitter_settings", args=[1, "update"]))
+
+    return s3_rest_controller(prefix, resourcename)    
 
 #------------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
@@ -730,7 +753,8 @@ def search():
 
     import gluon.contrib.simplejson as json
     # JQuery Autocomplete uses 'q' instead of 'value'
-    value = request.vars.q
+    # JQuery UI Autocomplete uses 'term' instead of 'value'
+    value = request.vars.term or request.vars.q
     if value:
         item = person_search(value)
         item = json.dumps(item)

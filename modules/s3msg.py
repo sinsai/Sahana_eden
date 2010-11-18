@@ -223,6 +223,7 @@ class Msg(object):
                     s3_debug("Unable to Tweet @mention")
         return True
 
+    #-------------------------------------------------------------------------------------------------     
     def send_text_via_tropo(self, row_id, message_id, recipient, message, network = "SMS"):
         """
             Send a URL request to Tropo to pick a message up
@@ -263,18 +264,6 @@ class Msg(object):
         """
 
         return self.mail.send(to, subject, message)
-
-    def check_pe_id_validity(self, pe_id):
-        """
-            Check if the pe_id passed is valid or not
-        """
-
-        db = self.db
-
-        if pe_id == db(db.pr_person.pe_id == 1).select(db.pr_person.pe_id, limitby=(0, 1)).first()["pe_id"]:
-            return True
-        else:
-            return False
 
     def send_by_pe_id(self,
                       pe_id,
@@ -396,7 +385,7 @@ class Msg(object):
             entity_type = db(query).select(table2.instance_type, limitby=(0, 1)).first().instance_type
             def dispatch_to_pe_id(pe_id):
                 table3 = db.pr_pe_contact
-                query = (table3.pe_id == pe_id) & (table3.contact_method == contact_method)
+                query = (table3.pe_id == pe_id) & (table3.contact_method == contact_method) & (table3.deleted == False)
                 recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
                 if recipient:
                     if (contact_method == 4):
@@ -481,6 +470,57 @@ class Msg(object):
 
         return
 
+
+    #-------------------------------------------------------------------------    
+    def receive_subscribed_tweets(self):
+        """
+            Function  to call to drop the tweets into search_results table - called via cron
+        """
+        
+        if not self.twitter_api:
+            return False
+
+        db = self.db
+        table = self.db.msg_twitter_search
+        rows = db().select(table.ALL)     
+                
+        results_table = self.db.msg_twitter_search_results
+        
+        # Get the latest updated post time to use it as since_id in twitter search
+        recent_time = results_table.posted_by.max()
+
+        for row in rows:
+            query = row.search_query 
+            try:
+                if recent_time:
+                    search_results = self.twitter_api.search(query, result_type="recent", show_user=True, since_id=recent_time)
+                else:
+                    search_results = self.twitter_api.search(query, result_type="recent", show_user=True)
+
+                search_results.reverse()
+
+                for result in search_results:
+                    # Check if the tweet already exists in the table
+                    tweet_exists = db((results_table.posted_by == result.from_user) & (results_table.posted_at == result.created_at )).select().first()  
+                    
+                    if tweet_exists:
+                        continue
+                    else:
+                        results_table.insert(tweet = result.text,
+                                             posted_by = result.from_user,
+                                             posted_at = result.created_at,
+                                             twitter_search = row.id
+                                            ) 
+            except tweepy.TweepError:
+                s3_debug("Unable to get the Tweets for the user search query.")
+                return False
+
+            # Explicitly commit DB operations when running from Cron
+            db.commit()
+            
+        return True
+
+    #------------------------------------------------------------------------
     def receive_msg(self,
                     subject="",
                     message="",

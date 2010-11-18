@@ -255,8 +255,9 @@ def view_map():
         )
         return dict(map=html)
 
-    # TODO: What is an appropriate response if no location is available?
-    return None
+    # Redirect to person details if no location is available
+    response.error=T("Add location")
+    redirect(URL(r=request, c="vol", f="person", args=[person_id,"address"]))
 
 
 # -----------------------------------------------------------------------------
@@ -389,8 +390,9 @@ def view_team_map():
         )
         return dict(map=html)
 
-    # TODO: What is an appropriate response if no location is available?
-    return None
+    # Redirect to team details if no location is available
+    response.error=T("Add Location")
+    redirect(URL(r=request, c="vol", f="group", args=[group_id,"address"]))
 
 
 # -----------------------------------------------------------------------------

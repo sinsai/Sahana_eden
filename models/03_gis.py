@@ -159,7 +159,7 @@ table = db.define_table(tablename,
                         Field("min_lat", "double", default=-90),
                         Field("max_lon", "double", default=180),
                         Field("max_lat", "double", default=90),
-                        Field("zoom_levels", "integer", default=16, notnull=True),
+                        Field("zoom_levels", "integer", default=22, notnull=True),
                         Field("cluster_distance", "integer", default=5, notnull=True),
                         Field("cluster_threshold", "integer", default=2, notnull=True),
                         opt_gis_layout,
@@ -172,7 +172,7 @@ table.pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.pe_id", shn_pentity_
 table.pe_id.readable = table.pe_id.writable = False
 table.lat.requires = IS_LAT()
 table.lon.requires = IS_LON()
-table.zoom.requires = IS_INT_IN_RANGE(0, 19)
+table.zoom.requires = IS_INT_IN_RANGE(1, 20)
 table.map_height.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(160, 1024)]
 table.map_width.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(320, 1280)]
 table.min_lat.requires = IS_LAT()

@@ -894,25 +894,55 @@ if populate:
     table = db[tablename]
     if not db(table.id > 0).count():
         # Populate table
-        for subtype in gis_layer_openstreetmap_subtypes:
-            if subtype in ["Osmarender", "Taiwan"]:
-                # Local OSM layers should be disabled by default in default builds
-                table.insert(
-                        name = "OpenStreetMap (" + subtype + ")",
-                        subtype = subtype,
-                        enabled = False
-                    )
-            elif subtype in ["Labels", "Relief"]:
-                table.insert(
-                        name = "OpenStreetMap (" + subtype + ")",
-                        subtype = subtype,
-                        visible = False
-                    )
-            else:
-                table.insert(
-                        name = "OpenStreetMap (" + subtype + ")",
-                        subtype = subtype
-                    )
+        table.insert(
+                name = "OpenStreetMap (Mapnik)",
+                url1 = "http://a.tile.openstreetmap.org/",
+                url2 = "http://b.tile.openstreetmap.org/",
+                url3 = "http://c.tile.openstreetmap.org/",
+                attribution = '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>'
+            )
+        table.insert(
+                name = "OpenStreetMap (CycleMap)",
+                url1 = "http://a.tile.opencyclemap.org/cycle/",
+                url2 = "http://b.tile.opencyclemap.org/cycle/",
+                url3 = "http://c.tile.opencyclemap.org/cycle/",
+                attribution = '<a href="http://www.opencyclemap.org/">OpenCycleMap</a>'
+            )
+        table.insert(
+                name = "OpenStreetMap (Labels)",
+                url1 = "http://tiler1.censusprofiler.org/labelsonly/",
+                attribution = 'Labels overlay CC-by-SA by <a href="http://oobrien.com/oom/">OpenOrienteeringMap</a>/<a href="http://www.openstreetmap.org/">OpenStreetMap</a> data',
+                base = False
+            )
+        table.insert(
+                name = "OpenStreetMap (Relief)",
+                url1 = "http://toolserver.org/~cmarqu/hill/",
+                attribution = 'Relief by <a href="http://hikebikemap.de/">Hike &amp; Bike Map</a>',
+                base = False
+            )
+        table.insert(
+                name = "OpenStreetMap (Osmarender)",
+                url1 = "http://a.tah.openstreetmap.org/Tiles/tile/",
+                url2 = "http://b.tah.openstreetmap.org/Tiles/tile/",
+                url3 = "http://c.tah.openstreetmap.org/Tiles/tile/",
+                attribution = '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>',
+                enabled = False
+            )
+        table.insert(
+                name = "OpenStreetMap (Taiwan)",
+                url1 = "http://tile.openstreetmap.tw/tiles/",
+                enabled = False
+            )
+        table.insert(
+                name = "OpenStreetMap (Sahana)",
+                url1 = "http://geo.eden.sahanafoundation.org/tiles/",
+                enabled = False
+            )
+        #table.insert(
+        #        name = "OpenAerialMap",
+        #        url1 = "http://tile.openaerialmap.org/tiles/1.0.0/openaerialmap-900913/",
+        #        enabled = False
+        #    )
     tablename = "gis_layer_google"
     table = db[tablename]
     if not db(table.id > 0).count():

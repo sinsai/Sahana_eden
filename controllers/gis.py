@@ -9,6 +9,7 @@
 from operator import __and__
 
 module = request.controller
+resourcename = request.function
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
@@ -100,7 +101,6 @@ def location():
 
     """ RESTful CRUD controller for Locations """
 
-    resourcename = request.function
     tablename = module + "_" + resourcename
     table = db[tablename]
 
@@ -366,7 +366,7 @@ def location_links():
             field = tables[str(db[table])][count]
             query = db[table][field] == record_id
             _results = db(query).select()
-            module, resource = table.split("_", 1)
+            module, resourcename = table.split("_", 1)
             for result in _results:
                 id = result.id
                 # We currently have no easy way to get the default represent for a table!
@@ -376,7 +376,7 @@ def location_links():
                 except:
                     try:
                         # Organisations
-                        represent = eval("shn_%s_represent(id)" % resource)
+                        represent = eval("shn_%s_represent(id)" % resourcename)
                     except:
                         try:
                             # Many tables have a Name field
@@ -386,7 +386,7 @@ def location_links():
                             represent = id
                 results.append({
                     "module" : module,
-                    "resource" : resource,
+                    "resource" : resourcename,
                     "id" : id,
                     "represent" : represent
                     })
@@ -519,8 +519,8 @@ def layers_enable():
     authorised = shn_has_permission("update", table)
     if authorised:
         for type in gis_layer_types:
-            resource = "gis_layer_%s" % type
-            table = db[resource]
+            resourcename = "gis_layer_%s" % type
+            table = db[resourcename]
             query = table.id > 0
             sqlrows = db(query).select()
             for row in sqlrows:
@@ -536,19 +536,19 @@ def layers_enable():
                         # Disable
                         db(query_inner).update(enabled=False)
                         # Audit
-                        s3_audit("update", module, resource, record=row.id, representation="html")
+                        s3_audit("update", module, resourcename, record=row.id, representation="html")
                 else:
                     # Old state: Disabled
                     if var in request.vars:
                         # Enable
                         db(query_inner).update(enabled=True)
                         # Audit
-                        s3_audit("update", module, resource, record=row.id, representation="html")
+                        s3_audit("update", module, resourcename, record=row.id, representation="html")
                     else:
                         # Do nothing
                         pass
-        resource = "gis_layer_feature"
-        table = db[resource]
+        resourcename = "gis_layer_feature"
+        table = db[resourcename]
         query = table.id > 0
         sqlrows = db(query).select()
         for row in sqlrows:
@@ -564,14 +564,14 @@ def layers_enable():
                     # Disable
                     db(query_inner).update(enabled=False)
                     # Audit
-                    s3_audit("update", module, resource, record=row.id, representation="html")
+                    s3_audit("update", module, resourcename, record=row.id, representation="html")
             else:
                 # Old state: Disabled
                 if var in request.vars:
                     # Enable
                     db(query_inner).update(enabled=True)
                     # Audit
-                    s3_audit("update", module, resource, record=row.id, representation="html")
+                    s3_audit("update", module, resourcename, record=row.id, representation="html")
                 else:
                     # Do nothing
                     pass
@@ -589,8 +589,7 @@ def apikey():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # Model options
@@ -615,7 +614,7 @@ def apikey():
         msg_record_deleted = T("Key deleted"),
         msg_list_empty = T("No Keys currently defined"))
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -626,8 +625,7 @@ def config():
 
     """ RESTful CRUD controller """
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # Pre-processor
@@ -644,7 +642,7 @@ def config():
         return True
     response.s3.prep = prep
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -669,8 +667,7 @@ def feature_class():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # Model options
@@ -694,7 +691,7 @@ def feature_class():
         msg_record_deleted = T("Feature Class deleted"),
         msg_list_empty = T("No Feature Classes currently defined"))
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view and response.view != "popup.html":
         response.view = "gis/" + response.view
@@ -706,8 +703,7 @@ def layer_feature():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # CRUD Strings
@@ -733,7 +729,7 @@ def layer_feature():
         create_onvalidation = lambda form: feature_layer_query(form),
         update_onvalidation = lambda form: feature_layer_query(form))
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     return output
 
@@ -768,8 +764,7 @@ def marker():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # CRUD Strings
@@ -790,7 +785,7 @@ def marker():
         msg_record_deleted = T("Marker deleted"),
         msg_list_empty = T("No Markers currently available"))
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view and response.view != "popup.html":
         response.view = "gis/" + response.view
@@ -804,8 +799,7 @@ def projection():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # CRUD Strings
@@ -827,7 +821,7 @@ def projection():
         msg_record_deleted = T("Projection deleted"),
         msg_list_empty = T("No Projections currently defined"))
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -841,8 +835,7 @@ def track():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    table = module + "_" + resource
+    table = module + "_" + resourcename
 
     # Model options
     # used in multiple controllers, so defined in model
@@ -850,7 +843,7 @@ def track():
     # CRUD Strings
     # used in multiple controllers, so defined in model
 
-    return s3_rest_controller(module, resource)
+    return s3_rest_controller(module, resourcename)
 
 
 # Common CRUD strings for all layers
@@ -877,8 +870,7 @@ def layer_openstreetmap():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    table = module + "_" + resource
+    table = module + "_" + resourcename
 
     # Model options
 
@@ -903,8 +895,7 @@ def layer_openstreetmap():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    s3xrc.model.configure(table, deletable=False, listadd=False)
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -916,8 +907,7 @@ def layer_google():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    table = module + "_" + resource
+    table = module + "_" + resourcename
 
     # Model options
 
@@ -943,7 +933,7 @@ def layer_google():
         msg_list_empty=NO_LAYERS)
 
     s3xrc.model.configure(table, deletable=False, listadd=False)
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -955,8 +945,7 @@ def layer_yahoo():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    table = module + "_" + resource
+    table = module + "_" + resourcename
 
     # Model options
 
@@ -982,7 +971,7 @@ def layer_yahoo():
         msg_list_empty=NO_LAYERS)
 
     s3xrc.model.configure(table, deletable=False, listadd=False)
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -994,8 +983,7 @@ def layer_mgrs():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    table = module + "_" + resource
+    table = module + "_" + resourcename
 
     # Model options
 
@@ -1021,7 +1009,7 @@ def layer_mgrs():
         msg_list_empty=NO_LAYERS)
 
     s3xrc.model.configure(table, deletable=False, listadd=False)
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1033,8 +1021,7 @@ def layer_bing():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    table = module + "_" + resource
+    table = module + "_" + resourcename
 
     # Model options
 
@@ -1060,7 +1047,7 @@ def layer_bing():
         msg_list_empty=NO_LAYERS)
 
     s3xrc.model.configure(table, deletable=False, listadd=False)
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1072,8 +1059,7 @@ def layer_georss():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # CRUD Strings
@@ -1099,7 +1085,7 @@ def layer_georss():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1111,8 +1097,7 @@ def layer_gpx():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    table = module + "_" + resource
+    table = module + "_" + resourcename
 
     # Model options
     # Needed in multiple controllers, so defined in Model
@@ -1140,7 +1125,7 @@ def layer_gpx():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1152,8 +1137,7 @@ def layer_kml():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # CRUD Strings
@@ -1185,7 +1169,7 @@ def layer_kml():
         return output
     response.s3.postp = user_postp
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1197,8 +1181,7 @@ def layer_tms():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # CRUD Strings
@@ -1224,7 +1207,7 @@ def layer_tms():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1236,8 +1219,7 @@ def layer_wfs():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # CRUD Strings
@@ -1263,7 +1245,7 @@ def layer_wfs():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1275,8 +1257,7 @@ def layer_wms():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # CRUD Strings
@@ -1302,7 +1283,7 @@ def layer_wms():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1312,8 +1293,8 @@ def layer_wms():
 @auth.shn_requires_membership("MapAdmin")
 def layer_js():
     """ RESTful CRUD controller """
-    resource = request.function
-    table = module + "_" + resource
+
+    table = module + "_" + resourcename
 
     # Model options
 
@@ -1340,7 +1321,7 @@ def layer_js():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1352,8 +1333,7 @@ def layer_xyz():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # CRUD Strings
@@ -1379,7 +1359,7 @@ def layer_xyz():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view

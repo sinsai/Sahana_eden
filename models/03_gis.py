@@ -883,7 +883,6 @@ s3xrc.model.configure(table, deletable=False)
 # GIS Layers
 #gis_layer_types = ["bing", "shapefile", "scan"]
 gis_layer_types = ["coordinate", "openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wfs", "wms", "xyz", "yahoo"]
-gis_layer_openstreetmap_subtypes = gis.layer_subtypes("openstreetmap")
 gis_layer_google_subtypes = gis.layer_subtypes("google")
 gis_layer_yahoo_subtypes = gis.layer_subtypes("yahoo")
 gis_layer_bing_subtypes = gis.layer_subtypes("bing")
@@ -910,8 +909,12 @@ for layertype in gis_layer_types:
     elif layertype == "openstreetmap":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_openstreetmap_subtypes, zero=None)),
-                     Field("visible", "boolean", default=False, label=T("On by default?")),
+                     Field("visible", "boolean", default=True, label=T("On by default? (only applicable to Overlays)")),
+                     Field("url1", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     Field("url2", label=T("Secondary Server (Optional)")),
+                     Field("url3", label=T("Tertiary Server (Optional)")),
+                     Field("base", "boolean", default=True, label=T("Base Layer?")),
+                     Field("attribution", label=T("Attribution")),
                     )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "georss":

@@ -1037,13 +1037,10 @@ class GIS(object):
         return WKT
 
     # -----------------------------------------------------------------------------
-    def layer_subtypes(self, layer="openstreetmap"):
+    def layer_subtypes(self, layer="google"):
         """ Return a lit of the subtypes available for a Layer """
 
-        if layer == "openstreetmap":
-            #return ["Mapnik", "CycleMap", "Labels", "Relief", "Osmarender", "Aerial", "Taiwan", "Haiti"]
-            return ["Mapnik", "CycleMap", "Labels", "Relief", "Osmarender", "Taiwan", "Haiti"]
-        elif layer == "google":
+        if layer == "google":
             return ["Satellite", "Maps", "Hybrid", "Terrain", "MapMaker", "MapMakerHybrid"]
         elif layer == "yahoo":
             return ["Satellite", "Maps", "Hybrid"]
@@ -2292,17 +2289,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_bing = ""
 
         # OpenStreetMap
-        gis_layer_openstreetmap_subtypes = self.layer_subtypes("openstreetmap")
-        openstreetmap = Storage()
-        osm_visible = Storage()
-        openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled == True).select(db.gis_layer_openstreetmap.name, db.gis_layer_openstreetmap.subtype, db.gis_layer_openstreetmap.visible)
-        for layer in openstreetmap_enabled:
-            for subtype in gis_layer_openstreetmap_subtypes:
-                if layer.subtype == subtype:
-                    openstreetmap["%s" % subtype] = layer.name
-                    osm_visible["%s" % subtype] = layer.visible
-
-        if openstreetmap:
+        openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled == True).select()
+        if openstreetmap_enabled:
             functions_openstreetmap = """
         function osm_getTileURL(bounds) {
             var res = this.map.getResolution();
@@ -2323,56 +2311,34 @@ OpenLayers.Util.extend( selectPdfControl, {
             }
         }
         """
-            if openstreetmap.Mapnik:
-                layers_openstreetmap += """
-        var mapnik = new OpenLayers.Layer.TMS( '""" + openstreetmap.Mapnik + """', ['http://a.tile.openstreetmap.org/', 'http://b.tile.openstreetmap.org/', 'http://c.tile.openstreetmap.org/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
-        map.addLayer(mapnik);
-                    """
-            if openstreetmap.CycleMap:
-                layers_openstreetmap += """
-        var cyclemap = new OpenLayers.Layer.TMS( '""" + openstreetmap.CycleMap + """', ['http://a.tile.opencyclemap.org/cycle/', 'http://b.tile.opencyclemap.org/cycle/', 'http://c.tile.opencyclemap.org/cycle/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.opencyclemap.org/">OpenCycleMap</a>' } );
-        map.addLayer(cyclemap);
-                    """
-            if openstreetmap.Labels:
-                if osm_visible.Labels:
+            for layer in openstreetmap_enabled:
+                name = layer.name
+                name_safe = re.sub('\W', '_', name)
+                url1 = layer.url1
+                url2 = layer.url2
+                url3 = layer.url3
+                if url3:
+                    url = "['%s', '%s', '%s']" % (url1, url2, url3)
+                elif url2:
+                    url = "['%s', '%s']" % (url1, url2)
+                else:
+                    url = "['%s']" % (url1)
+                if layer.base:
+                    base = ""
+                else:
+                    base = ", isBaseLayer: false"
+                if layer.visible:
                     visibility = ""
                 else:
-                    visibility = "osm_labels.setVisibility(false);"
-                layers_openstreetmap += """
-        var osm_labels = new OpenLayers.Layer.TMS( '""" + openstreetmap.Labels + """', ['http://tiler1.censusprofiler.org/labelsonly/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, isBaseLayer: false, attribution: 'Labels overlay CC-by-SA by <a href="http://oobrien.com/oom/">OpenOrienteeringMap</a>/<a href="http://www.openstreetmap.org/">OpenStreetMap</a> data' } );
-        """ + visibility + """
-        map.addLayer(osm_labels);
-                    """
-            if openstreetmap.Relief:
-                if osm_visible.Relief:
-                    visibility = ""
+                    visibility = "osmLayer%s.setVisibility(false);" % name_safe
+                if layer.attribution:
+                    attribution = ",attribution: '%s'" % layer.attribution
                 else:
-                    visibility = "osm_relief.setVisibility(false);"
+                    attribution = ""
                 layers_openstreetmap += """
-        var osm_relief = new OpenLayers.Layer.TMS( '""" + openstreetmap.Relief + """', ['http://toolserver.org/~cmarqu/hill/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, isBaseLayer: false, attribution: 'Relief by <a href="http://hikebikemap.de/">Hike &amp; Bike Map</a>' } );
-        """ + visibility + """
-        map.addLayer(osm_relief);
-                    """
-            if openstreetmap.Osmarender:
-                layers_openstreetmap += """
-        var osmarender = new OpenLayers.Layer.TMS( '""" + openstreetmap.Osmarender + """', ['http://a.tah.openstreetmap.org/Tiles/tile/', 'http://b.tah.openstreetmap.org/Tiles/tile/', 'http://c.tah.openstreetmap.org/Tiles/tile/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
-        map.addLayer(osmarender);
-                    """
-            if openstreetmap.Aerial:
-                layers_openstreetmap += """
-        var oam = new OpenLayers.Layer.TMS( '""" + openstreetmap.Aerial + """', 'http://tile.openaerialmap.org/tiles/1.0.0/openaerialmap-900913/', {type: 'png', getURL: osm_getTileURL } );
-        map.addLayer(oam);
-                    """
-            if openstreetmap.Taiwan:
-                layers_openstreetmap += """
-        var osmtw = new OpenLayers.Layer.TMS( '""" + openstreetmap.Taiwan + """', 'http://tile.openstreetmap.tw/tiles/', {type: 'png', getURL: osm_getTileURL } );
-        map.addLayer(osmtw);
-                    """
-            if openstreetmap.Haiti:
-                layers_openstreetmap += """
-        var osmht = new OpenLayers.Layer.TMS( '""" + openstreetmap.Haiti + """', 'http://haiti.oxfam.org.uk/tiles/', {type: 'png', getURL: osm_getTileURL } );
-        map.addLayer(osmht);
-                    """
+        var osmLayer""" + name_safe + """ = new OpenLayers.Layer.TMS( '""" + name + """', """ + url + """, {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true """ + attribution + base + """ } );
+        map.addLayer(osmLayer""" + name_safe + """);
+        """ + visibility
         else:
             functions_openstreetmap = ""
 

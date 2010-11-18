@@ -593,7 +593,7 @@ if deployment_settings.has_module("project"):
     s3xrc.model.add_component(application, resourcename,
                               multiple=True,
                               joinby=dict(project_project="project_id",
-                                          project_office="office_id"))
+                                          org_office="office_id"))
     
     s3xrc.model.configure(table,
                           listadd=False,

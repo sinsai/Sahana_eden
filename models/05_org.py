@@ -527,7 +527,8 @@ s3xrc.model.add_component(module, resourcename,
                           multiple=True,
                           joinby=dict(org_organisation="organisation_id",
                                       org_office="office_id",
-                                      project_project="project_id"))
+                                      #project_project="project_id"
+                                      ))
 
 # May wish to over-ride this in controllers
 s3xrc.model.configure(table,

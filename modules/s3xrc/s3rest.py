@@ -2329,7 +2329,7 @@ class S3Request(object):
 
         """
 
-        xml = self.xml
+        xml = self.manager.xml
 
         if self.representation == "html":
             self.session.error = message

@@ -2370,7 +2370,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     """
             if openstreetmap.Haiti:
                 layers_openstreetmap += """
-        var osmht = new OpenLayers.Layer.TMS( '""" + openstreetmap.Haiti + """', 'http://geo.eden.sahanafoundation.org/tiles/', {type: 'png', getURL: osm_getTileURL } );
+        var osmht = new OpenLayers.Layer.TMS( '""" + openstreetmap.Haiti + """', 'http://haiti.oxfam.org.uk/tiles/', {type: 'png', getURL: osm_getTileURL } );
         map.addLayer(osmht);
                     """
         else:
@@ -3068,6 +3068,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                     except (AttributeError, KeyError):
                         popup_label = feature.name
 
+                    # Allows map API to be used with Storage instead of Rows
+                    if not popup_label:
+                        popup_label = feature.name
                     # Deal with apostrophes in Feature Names
                     fname = re.sub("'", "\\'", popup_label)
 

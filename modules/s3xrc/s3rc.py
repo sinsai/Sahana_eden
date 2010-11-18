@@ -4,7 +4,7 @@
 
     @version: 2.2.3
 
-    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
+    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
@@ -166,11 +166,6 @@ class S3ResourceController(object):
         # JSON formats, content-type headers
         self.json_formats = []
         self.content_type = Storage()
-
-        # XSLT Paths
-        self.XSLT_FILE_EXTENSION = "xsl"
-        self.XSLT_IMPORT_TEMPLATES = "static/xslt/import"
-        self.XSLT_EXPORT_TEMPLATES = "static/xslt/export"
 
         self.exporter = S3Exporter(self)    # Resource Exporter
         self.importer = S3Importer(self)    # Resource Importer
@@ -534,7 +529,6 @@ class S3ResourceController(object):
         """
 
         self.error = None
-
         try:
             req = self._request(prefix, name)
         except SyntaxError:
@@ -543,15 +537,12 @@ class S3ResourceController(object):
             raise HTTP(404, body=self.error)
         except:
             raise
-
         res = req.resource
-
         return (res, req)
 
 
     # Resource functions ======================================================
 
-    # -------------------------------------------------------------------------
     def validate(self, table, record, fieldname, value):
 
         """ Validates a single value
@@ -569,7 +560,6 @@ class S3ResourceController(object):
                 v = record.get(fieldname, None)
                 if v and v == value:
                     return (value, None)
-
             try:
                 value, error = field.validate(value)
             except:
@@ -600,9 +590,7 @@ class S3ResourceController(object):
         """
 
         NONE = str(self.T("None")).decode("utf-8")
-
         cache = self.cache
-
         fname = field.name
 
         # Get the value
@@ -696,7 +684,6 @@ class S3ResourceController(object):
                 if v:
                     value = self.xml.xml_decode(v)
                     pvalues[f] = value
-
         elif isinstance(record, dict):
             for f in pkeys:
                 v = record.get(f, None)
@@ -719,7 +706,6 @@ class S3ResourceController(object):
                     query = query | _query
                 else:
                     query = _query
-
         if query:
             original = self.db(query).select(table.ALL)
             if len(original) == 1:
@@ -1696,7 +1682,8 @@ class S3QueryBuilder(object):
 
 
     # -------------------------------------------------------------------------
-    def parse_url_context(self, resource, vars):
+    @staticmethod
+    def parse_url_context(resource, vars):
 
         """ Parse URL context queries
 
@@ -1785,7 +1772,11 @@ class S3QueryBuilder(object):
                     ftype = str(table[field].type)
                     values = vars[k]
                     if op in ("lt", "le", "gt", "ge"):
-                        if ftype not in ("integer", "double", "date", "time", "datetime"):
+                        if ftype not in ("integer",
+                                         "double",
+                                         "date",
+                                         "time",
+                                         "datetime"):
                             continue
                         if not isinstance(values, (list, tuple)):
                             values = [values]

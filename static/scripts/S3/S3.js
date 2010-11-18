@@ -15,7 +15,6 @@ $(document).ready(function() {
     $('.information').click(function() { $(this).fadeOut('slow'); return false; });
     $('.confirmation').hide().slideDown('slow')
     $('.confirmation').click(function() { $(this).fadeOut('slow'); return false; });
-    $('input.date').datepicker({ changeMonth: true, changeYear: true, dateFormat: 'yy-mm-dd', isRTL: false });
     // IE6 non anchor hover hack
     $('.hoverable').hover(
         function() { $(this).addClass('hovered'); },

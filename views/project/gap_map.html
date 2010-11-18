@@ -1,8 +1,10 @@
 {{extend "layout.html"}}
 {{=H1(title)}}
 {{=H3(subtitle)}}
-{{=T("Select the Cluster Layers for Assessments and Activities to analyse the Gaps:")}}
-{{=UL(T("Assessments are shown as green, yellow, orange, red."),
-	  T("Activities are blue.")
-	  )}}
+{{P(T(""))}}
+{{=TABLE(TR( IMG(_src="/%s/static/img/gap_map_assess.gif" % request.application),T("Assessments:") ),
+	     TR( IMG(_src="/%s/static/img/gap_map_act.gif" % request.application), T("Activities:") ),
+	     TR( IMG(_src="/%s/static/img/gap_map_met.gif" % request.application), T("Activities matching Assessments:") ),
+	  	 )}}
+	  	 &nbsp
 {{=XML(map)}}

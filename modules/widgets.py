@@ -206,6 +206,39 @@ class S3PersonAutocompleteWidget:
                       )
 
 # -----------------------------------------------------------------------------
+class S3DateWidget:
+    """
+    Standard Date widget, but with a modified yearRange to support Birth dates
+    """
+
+    def __init__(self,
+                 before=10,  # How many years to show before the current one
+                 after=10    # How many years to show after the current one
+                ):
+        self.min = before
+        self.max = after
+    
+    def __call__(self ,field, value, **attributes):
+        default = dict(
+            _type = "text",
+            value = (value!=None and str(value)) or "",
+            )
+        attr = StringWidget._attributes(field, default, **attributes)
+
+        selector = str(field).replace(".", "_")
+        
+        date_options = """
+    $(function() {
+        $( '#%s' ).datepicker( 'option', 'yearRange', 'c-%s:c+%s' );
+    });
+    """ % (selector, self.min, self.max)
+        
+        return TAG[""](
+                        INPUT(**attr),
+                        SCRIPT(date_options)
+                      )
+                      
+# -----------------------------------------------------------------------------
 class S3CheckboxesWidget(OptionsWidget):
     """
     @author: Michael Howden (michael@aidiq.com)

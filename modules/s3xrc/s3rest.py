@@ -4,7 +4,7 @@
 
     @version: 2.2.3
 
-    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
+    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
@@ -43,7 +43,7 @@ import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
 from gluon.sql import Row
-from gluon.html import URL, TABLE, TR, TH, TD, THEAD, TBODY, A, DIV, SPAN
+from gluon.html import *
 from gluon.http import HTTP, redirect
 from gluon.sqlhtml import SQLTABLE, SQLFORM
 
@@ -197,11 +197,20 @@ class S3Resource(object):
 
         self.manager = manager
         self.db = manager.db
+
+        self.HOOKS = manager.HOOKS
         self.ERROR = manager.ERROR
 
         # Export/Import hooks
         self.exporter = manager.exporter
         self.importer = manager.importer
+
+        self.xml = manager.xml
+
+        # XSLT Paths
+        self.XSLT_FILE_EXTENSION = "xsl"
+        self.XSLT_IMPORT_TEMPLATES = "static/xslt/import"
+        self.XSLT_EXPORT_TEMPLATES = "static/xslt/export"
 
         # Authorization hooks
         self.permit = manager.permit
@@ -349,7 +358,6 @@ class S3Resource(object):
         """
 
         if filter is not None:
-
             if self._query:
                 query = self._query
                 self.clear()
@@ -357,7 +365,6 @@ class S3Resource(object):
                 self._query = (query) & (filter)
             else:
                 self.build_query(filter=filter)
-
         return self._query
 
 
@@ -368,7 +375,6 @@ class S3Resource(object):
 
         if not self._query:
             self.build_query()
-
         return self._query
 
 
@@ -378,7 +384,6 @@ class S3Resource(object):
         """ Removes the current query (does not remove the set!) """
 
         self._query = None
-
         if self.components:
             for c in self.components:
                 self.components[c].resource.clear_query()
@@ -390,7 +395,6 @@ class S3Resource(object):
 
         """ Get the total number of available records in this resource """
 
-        # Rebuild the query if it was cleared before
         if not self._query:
             self.build_query()
             self._length = None
@@ -400,7 +404,6 @@ class S3Resource(object):
             row = self.db(self._query).select(x, left=left).first()
             if row:
                 self._length = row[x]
-
         return self._length
 
 
@@ -417,10 +420,8 @@ class S3Resource(object):
 
         if self._set is not None:
             self.clear()
-
         if not self._query:
             self.build_query()
-
         if not self._multiple:
             limitby = (0, 1)
         else:
@@ -438,8 +439,7 @@ class S3Resource(object):
                 limitby = None
 
         self._set = self.db(self._query).select(self.table.ALL,
-                                                    limitby=limitby)
-
+                                                limitby=limitby)
         self._ids = [row.id for row in self._set]
         uid = self.manager.UID
         if uid in self.table.fields:
@@ -456,7 +456,6 @@ class S3Resource(object):
         self._ids = []
         self._uids = []
         self._files = Storage()
-
         self._slice = False
 
         if self.components:
@@ -491,7 +490,6 @@ class S3Resource(object):
 
         if self._set is None:
             self.load()
-
         for i in xrange(len(self._set)):
             row = self._set[i]
             if str(row.id) == str(key):
@@ -511,10 +509,8 @@ class S3Resource(object):
 
         if self._set is None:
             self.load()
-
         for i in xrange(len(self._set)):
             yield self._set[i]
-
         return
 
 
@@ -559,7 +555,6 @@ class S3Resource(object):
 
         if not self._ids:
             self.__load_ids()
-
         if not self._ids:
             return None
         elif len(self._ids) == 1:
@@ -583,7 +578,6 @@ class S3Resource(object):
 
         if not self._uids:
             self.__load_ids()
-
         if not self._uids:
             return None
         elif len(self._uids) == 1:
@@ -656,7 +650,6 @@ class S3Resource(object):
 
         if (id or uid) and not self._ids:
             self.__load_ids()
-
         if id and id in self._ids:
             return 1
         elif uid and uid in self._uids:
@@ -677,13 +670,11 @@ class S3Resource(object):
 
         """
 
-        r._bind(self) # Bind request to resource
+        r.resource = self
         r.next = None
-
+        hooks = r.response.get(self.HOOKS, None)
         bypass = False
         output = None
-
-        hooks = r.response.get(self.manager.HOOKS, None)
         preprocess = None
         postprocess = None
 
@@ -756,7 +747,6 @@ class S3Resource(object):
             postprocess = hooks.get("postp", None)
         if postprocess is not None:
             output = postprocess(r, output)
-
         if output is not None and isinstance(output, dict):
             output.update(jr=r)
 
@@ -939,8 +929,6 @@ class S3Resource(object):
         json_formats = self.manager.json_formats
         content_type = self.manager.content_type
 
-        template = None
-
         if r.representation == "json":
             show_urls = False
             dereference = False
@@ -958,7 +946,6 @@ class S3Resource(object):
                 start = int(start)
             except ValueError:
                 start = None
-
         limit = r.request.vars.get("limit", None)
         if limit is not None:
             try:
@@ -1010,7 +997,7 @@ class S3Resource(object):
 
         # Transformation error?
         if not output:
-            r.error(400, "XSLT Transformation Error: %s " % self.manager.xml.error)
+            r.error(400, "XSLT Transformation Error: %s " % self.xml.error)
 
         return output
 
@@ -1093,7 +1080,6 @@ class S3Resource(object):
             if isinstance(source, basestring):
                 source = StringIO.StringIO(source)
         else:
-
             # Body is source
             source = r.request.body
             source.seek(0)
@@ -1111,7 +1097,7 @@ class S3Resource(object):
 
         """
 
-        xml = self.manager.xml
+        xml = self.xml
         vars = r.request.vars
 
         json_formats = self.manager.json_formats
@@ -1125,7 +1111,10 @@ class S3Resource(object):
                 source = urllib.urlopen(vars["fetchurl"])
             else:
                 source = self.__read_body(r)
-            tree = xml.json2tree(source)
+            format = r.representation
+            if format == "json":
+                format = None
+            tree = xml.json2tree(source, format=format)
         else:
             if "filename" in vars:
                 source = vars["filename"]
@@ -1134,7 +1123,6 @@ class S3Resource(object):
             else:
                 source = self.__read_body(r)
             tree = xml.parse(source)
-
         if not tree:
             r.error(400, xml.error)
 
@@ -1147,13 +1135,12 @@ class S3Resource(object):
                                  domain=self.manager.domain,
                                  base_url=self.manager.base_url)
             if not tree:
-                r.error(400, "XSLT Transformation Error: %s" % self.manager.xml.error)
+                r.error(400, "XSLT Transformation Error: %s" % self.xml.error)
 
         if r.method == "create":
             id = None
         else:
             id = r.id
-
         if "ignore_errors" in r.request.vars:
             ignore_errors = True
         else:
@@ -1167,8 +1154,6 @@ class S3Resource(object):
         else:
             tree = xml.tree2json(tree)
             r.error(400, self.manager.error, tree=tree)
-
-        #return dict(item=item)
         return item
 
 
@@ -1279,7 +1264,8 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def push(self, url,
+    @staticmethod
+    def push(url,
              exporter=None,
              template=None,
              xsltmode=None,
@@ -1391,7 +1377,6 @@ class S3Resource(object):
         """
 
         exporter = self.exporter.xml
-
         return self.push(url, exporter=exporter, **args)
 
 
@@ -1408,7 +1393,6 @@ class S3Resource(object):
         """
 
         exporter = self.exporter.json
-
         return self.push(url, exporter=exporter, **args)
 
 
@@ -1433,7 +1417,7 @@ class S3Resource(object):
 
         """
 
-        xml = self.manager.xml
+        xml = self.xml
 
         response = None
         url_split = url.split("://", 1)
@@ -1588,7 +1572,7 @@ class S3Resource(object):
             else:
                 raise AttributeError
         else:
-            tree = self.manager.xml.get_options(self.prefix,
+            tree = self.xml.get_options(self.prefix,
                                                 self.name,
                                                 fields=fields)
             return tree
@@ -1607,7 +1591,7 @@ class S3Resource(object):
         """
 
         tree = self.options(component=component, fields=fields)
-        return self.manager.xml.tostring(tree, pretty_print=True)
+        return self.xml.tostring(tree, pretty_print=True)
 
 
     # -------------------------------------------------------------------------
@@ -1624,7 +1608,7 @@ class S3Resource(object):
 
         tree = etree.ElementTree(self.options(component=component,
                                               fields=fields))
-        return self.manager.xml.tree2json(tree, pretty_print=True)
+        return self.xml.tree2json(tree, pretty_print=True)
 
 
     # -------------------------------------------------------------------------
@@ -1645,7 +1629,7 @@ class S3Resource(object):
             else:
                 raise AttributeError
         else:
-            tree = self.manager.xml.get_fields(self.prefix, self.name)
+            tree = self.xml.get_fields(self.prefix, self.name)
             return tree
 
 
@@ -1660,7 +1644,7 @@ class S3Resource(object):
         """
 
         tree = self.fields(component=component)
-        return self.manager.xml.tostring(tree, pretty_print=True)
+        return self.xml.tostring(tree, pretty_print=True)
 
 
     # -------------------------------------------------------------------------
@@ -1674,7 +1658,7 @@ class S3Resource(object):
         """
 
         tree = etree.ElementTree(self.fields(component=component))
-        return self.manager.xml.tree2json(tree, pretty_print=True)
+        return self.xml.tree2json(tree, pretty_print=True)
 
 
     # CRUD functions ==========================================================
@@ -2005,14 +1989,11 @@ class S3Resource(object):
         """
 
         db = self.db
-
         table = self.table
         query = self.get_query()
 
-
         if not fields:
             fields = [table.id]
-
         if limit is not None:
             limitby = (start, start + limit)
         else:
@@ -2028,21 +2009,15 @@ class S3Resource(object):
 
         if not rows:
             return None
-
         if as_page:
-
             represent = self.manager.represent
-
             items = [[represent(f, record=row, linkto=linkto)
                     for f in fields]
                     for row in rows]
 
         elif as_list:
-
             items = rows.as_list()
-
         else:
-
             headers = dict(map(lambda f: (str(f), f.label), fields))
             items= S3SQLTable(rows,
                               headers=headers,
@@ -2112,7 +2087,7 @@ class S3Resource(object):
         if "transform" in request.vars:
             return True
 
-        extension = self.manager.XSLT_FILE_EXTENSION
+        extension = self.XSLT_FILE_EXTENSION
 
         # XSLT stylesheet attached?
         template = "%s.%s" % (resourcename, extension)
@@ -2123,9 +2098,9 @@ class S3Resource(object):
 
         # XSLT stylesheet exists in application?
         if method == "import":
-            path = self.manager.XSLT_IMPORT_TEMPLATES
+            path = self.XSLT_IMPORT_TEMPLATES
         else:
-            path = self.manager.XSLT_EXPORT_TEMPLATES
+            path = self.XSLT_EXPORT_TEMPLATES
 
         template = os.path.join(r.request.folder,
                                 path, "%s.%s" % (format, extension))
@@ -2151,11 +2126,11 @@ class S3Resource(object):
         folder = request.folder
 
         if method == "import":
-            path = self.manager.XSLT_IMPORT_TEMPLATES
+            path = self.XSLT_IMPORT_TEMPLATES
         else:
-            path = self.manager.XSLT_EXPORT_TEMPLATES
+            path = self.XSLT_EXPORT_TEMPLATES
 
-        extension = self.manager.XSLT_FILE_EXTENSION
+        extension = self.XSLT_FILE_EXTENSION
 
         stylesheet = None
 
@@ -2367,18 +2342,6 @@ class S3Request(object):
                                              tree=tree))
 
 
-    # -------------------------------------------------------------------------
-    def _bind(self, resource):
-
-        """ Re-bind this request to another resource
-
-            @param resource: the S3Resource
-
-        """
-
-        self.resource = resource
-
-
     # Request Parser ==========================================================
 
     def __parse(self):
@@ -2401,39 +2364,41 @@ class S3Request(object):
                         self.extension = True
                 if arg:
                     self.args.append(str.lower(arg))
-            if self.args[0].isdigit():
-                self.id = self.args[0]
-                if len(self.args) > 1:
-                    if self.args[1] in components:
-                        self.component_name = self.args[1]
-                        if len(self.args) > 2:
-                            if self.args[2].isdigit():
-                                self.component_id = self.args[2]
-                                if len(self.args) > 3:
-                                    self.method = self.args[3]
+
+            args = self.args
+            if args[0].isdigit():
+                self.id = args[0]
+                if len(args) > 1:
+                    if args[1] in components:
+                        self.component_name = args[1]
+                        if len(args) > 2:
+                            if args[2].isdigit():
+                                self.component_id = args[2]
+                                if len(args) > 3:
+                                    self.method = args[3]
                             else:
-                                self.method = self.args[2]
-                                if len(self.args) > 3 and \
-                                   self.args[3].isdigit():
-                                    self.component_id = self.args[3]
+                                self.method = args[2]
+                                if len(args) > 3 and \
+                                   args[3].isdigit():
+                                    self.component_id = args[3]
                     else:
-                        self.method = self.args[1]
+                        self.method = args[1]
             else:
-                if self.args[0] in components:
-                    self.component_name = self.args[0]
-                    if len(self.args) > 1:
-                        if self.args[1].isdigit():
-                            self.component_id = self.args[1]
-                            if len(self.args) > 2:
-                                self.method = self.args[2]
+                if args[0] in components:
+                    self.component_name = args[0]
+                    if len(args) > 1:
+                        if args[1].isdigit():
+                            self.component_id = args[1]
+                            if len(args) > 2:
+                                self.method = args[2]
                         else:
-                            self.method = self.args[1]
-                            if len(self.args) > 2 and self.args[2].isdigit():
-                                self.component_id = self.args[2]
+                            self.method = args[1]
+                            if len(args) > 2 and args[2].isdigit():
+                                self.component_id = args[2]
                 else:
-                    self.method = self.args[0]
-                    if len(self.args) > 1 and self.args[1].isdigit():
-                        self.id = self.args[1]
+                    self.method = args[0]
+                    if len(args) > 1 and args[1].isdigit():
+                        self.id = args[1]
 
         if "format" in self.request.get_vars:
             self.representation = str.lower(self.request.get_vars.format)
@@ -2452,8 +2417,6 @@ class S3Request(object):
             @param method: an explicit method for the URL
             @param representation: the representation for the URL
             @param vars: the URL query variables
-
-            @todo 2.3: make this based on S3Resource.url()
 
         """
 
@@ -2489,9 +2452,6 @@ class S3Request(object):
                 id = str(id)
                 if len(id) == 0:
                     id = "[id]"
-                #if self.component:
-                    #component_id = None
-                    #method = None
 
         if self.component:
             if id:
@@ -2512,7 +2472,6 @@ class S3Request(object):
             if len(args) > 0:
                 args[-1] = "%s.%s" % (args[-1], representation)
             else:
-                #vars.update(format=representation)
                 f = "%s.%s" % (f, representation)
 
         return URL(r=self.request,

@@ -752,7 +752,7 @@ div#rheader_tabs span.rheader_tab_here a { color: #006699;
 		    padding: 12px;
 		    }
 
-.menu_text { clear: both;}
+#login_form, #register_form, .menu_text { clear: both;}
 
 /*
  * Media queries for responsive design

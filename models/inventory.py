@@ -75,13 +75,10 @@ if deployment_settings.has_module("logs"):
     # inventory_store as component of doc_documents and org_organisation
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(doc_document="document_id",
-                                          org_organisation="organisation_id"
-                                          )
-                              )
+                              joinby=dict(org_organisation="organisation_id"))
+                                          #doc_document="document_id")
+
     # Also a component of sites, but these are 1-1 and use a natural join.
-    # @ToDo Is multiple assumed True or False?  It's not touched
-    # in add_component, so safest to set it explicitly.
     s3xrc.model.add_component(module, resourcename,
                               multiple=False,
                               joinby=super_key(db.org_site))

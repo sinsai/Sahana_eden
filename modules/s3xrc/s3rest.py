@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource API
 
-    @version: 2.2.3
+    @version: 2.2.4
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -2265,7 +2265,7 @@ class S3Request(object):
             if c:
                 self.component = c.component
                 self.pkey, self.fkey = c.pkey, c.fkey
-                self.multiple = self.component.attr.get("multiple", True)
+                self.multiple = self.component.multiple
             else:
                 manager.error = "%s not a component of %s" % \
                                 (self.component_name, self.resource.tablename)

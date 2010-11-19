@@ -118,9 +118,7 @@ if deployment_settings.has_module("project"):
     # Need as component of assessments
     s3xrc.model.add_component(application, resourcename,
                               multiple=True,
-                              joinby=dict(assess_assess="assess_id"),
-                              deletable=True,
-                              editable=True)      
+                              joinby=dict(assess_assess="assess_id"))
         
     #==============================================================================
     # Projects:

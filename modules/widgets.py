@@ -13,6 +13,39 @@ from gluon.html import URL
 from s3utils import *
 
 # -----------------------------------------------------------------------------
+class S3DateWidget:
+    """
+    Standard Date widget, but with a modified yearRange to support Birth dates
+    """
+
+    def __init__(self,
+                 before=10,  # How many years to show before the current one
+                 after=10    # How many years to show after the current one
+                ):
+        self.min = before
+        self.max = after
+    
+    def __call__(self ,field, value, **attributes):
+        default = dict(
+            _type = "text",
+            value = (value!=None and str(value)) or "",
+            )
+        attr = StringWidget._attributes(field, default, **attributes)
+
+        selector = str(field).replace(".", "_")
+        
+        date_options = """
+    $(function() {
+        $( '#%s' ).datepicker( 'option', 'yearRange', 'c-%s:c+%s' );
+    });
+    """ % (selector, self.min, self.max)
+        
+        return TAG[""](
+                        INPUT(**attr),
+                        SCRIPT(date_options)
+                      )
+                      
+# -----------------------------------------------------------------------------
 class S3AutocompleteWidget:
     """
     @author: Fran Boon (fran@aidiq.com)
@@ -183,6 +216,7 @@ class S3PersonAutocompleteWidget:
         """
         
         if value:
+            # Provide the representation for the current/default Value
             text = str(field.represent(default["value"]))
             if "<" in text:
                 # Strip Markup
@@ -206,38 +240,95 @@ class S3PersonAutocompleteWidget:
                       )
 
 # -----------------------------------------------------------------------------
-class S3DateWidget:
+class S3LocationSelectorWidget:
     """
-    Standard Date widget, but with a modified yearRange to support Birth dates
-    """
+    @author: Fran Boon (fran@aidiq.com)
 
+    @ToDo: This is a work-in-progress
+    http://eden.sahanafoundation.org/wiki/BluePrintGISLocationSelector
+
+    Renders a gis_location SELECT as a hierarchical dropdown with the ability to add a new location from within the main form
+    - new location can be specified as:
+        * a simple name (hopefully within hierarchy)
+        * manual Lat/Lon entry (with optional GPS Coordinate Converter
+        * Geocoder lookup
+        * Select location from Map
+    """
     def __init__(self,
-                 before=10,  # How many years to show before the current one
-                 after=10    # How many years to show after the current one
-                ):
-        self.min = before
-        self.max = after
-    
+                 request,
+                 response,
+                 #hierarchy=True    # @ToDo Force selection of the hierarchy (useful when we have that data fully-populated)
+                 #level=None        # @ToDo Support forcing which level of the hierarchy is expected to be entered for this instance of the field
+                 ):
+
+        self.request = request
+        self.response = response
+
     def __call__(self ,field, value, **attributes):
         default = dict(
             _type = "text",
-            value = (value!=None and str(value)) or "",
+            value = (value != None and str(value)) or "",
             )
         attr = StringWidget._attributes(field, default, **attributes)
 
-        selector = str(field).replace(".", "_")
+        # Hide the real field
+        attr["_class"] = attr["_class"] + " hidden"
         
-        date_options = """
-    $(function() {
-        $( '#%s' ).datepicker( 'option', 'yearRange', 'c-%s:c+%s' );
-    });
-    """ % (selector, self.min, self.max)
+        real_input = str(field).replace(".", "_")
+        dummy_input = "dummy_%s" % real_input
+
+        # Read Options
+        _gis = self.response.s3.gis
+        # Do we display the country dropdown?
         
+        # Prepare a dropdown widget
+        #requires = field.requires
+        #if not isinstance(requires, (list, tuple)):
+        #    requires = [requires]
+        #if requires:
+        #    if hasattr(requires[0], 'options'):
+        #        options = requires[0].options()
+        #    else:
+        #        raise SyntaxError, 'widget cannot determine options of %s' \
+        #            % field
+        #opts = [OPTION(v, _value=k) for (k, v) in options]
+        #widget = SELECT(*opts, **attr)
+
+        def url(level):
+            return URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"%s" % level})
+        
+        # Localised strings to insert into the javascript held in static
+        
+        js_location_selector = """
+        $(function() {
+            // code here
+        }
+        """
+        
+        if value:
+            # Provide the representation for the current/default Value
+            text = str(field.represent(default["value"]))
+            if "<" in text:
+                # Strip Markup
+                try:
+                    markup = etree.XML(text)
+                    text = markup.xpath(".//text()")
+                    if text:
+                        text = " ".join(text)
+                    else:
+                        text = ""
+                except etree.XMLSyntaxError:
+                    pass
+            represent = text
+        else:
+            represent = ""
+
         return TAG[""](
+                        INPUT(_id=dummy_input, _value=represent),
                         INPUT(**attr),
-                        SCRIPT(date_options)
+                        SCRIPT(js_location_selector)
                       )
-                      
+
 # -----------------------------------------------------------------------------
 class S3CheckboxesWidget(OptionsWidget):
     """

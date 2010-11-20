@@ -86,6 +86,11 @@
     height: 20px !important;
     width: 20px !important;
 }
+#mappanel .potlatch {
+  background-image: url(../../img/gis/openstreetmap.ico) !important;
+  height: 20px !important;
+  width: 20px !important;
+}
 #mappanel .movefeature {
     background-image: url(../../img/gis/arrow_refresh.png) !important;
     height: 20px !important;

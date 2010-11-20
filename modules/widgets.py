@@ -10,7 +10,11 @@
 from lxml import etree
 from gluon.sqlhtml import *
 from gluon.html import URL
+from gluon.validators import *
 from s3utils import *
+from validators import *
+
+repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
 
 # -----------------------------------------------------------------------------
 class S3DateWidget:
@@ -265,35 +269,88 @@ class S3LocationSelectorWidget:
         self.response = response
 
     def __call__(self ,field, value, **attributes):
+
+        db = field._db
+        response = self.response
+
+        # Read Options @ToDo
+        _gis = response.s3.gis
+        # Which Levels do we have in our hierarchy & what are their Labels?
+        location_hierarchy = _gis.location_hierarchy
+        # Ignore the bad bulk-imported data
+        del location_hierarchy["XX"]
+        
+        # Read current record
+        if value:
+            this_location = db(db.gis_location.id == value).select(db.gis_location.level, db.gis_location.lat, db.gis_location.lon, db.gis_location.parent, limitby=(0, 1)).first()
+            level = this_location.level
+            lat = this_location.lat
+            lon = this_location.lon
+            parent = this_location.parent
+            if parent:
+                # & grandparent? @ToDo
+                pass
+        else:
+            this_location = None
+        
+        # Main Input
         default = dict(
             _type = "text",
             value = (value != None and str(value)) or "",
             )
         attr = StringWidget._attributes(field, default, **attributes)
-
         # Hide the real field
         attr["_class"] = attr["_class"] + " hidden"
         
         real_input = str(field).replace(".", "_")
         dummy_input = "dummy_%s" % real_input
 
-        # Read Options
-        _gis = self.response.s3.gis
-        # Do we display the country dropdown?
-        
-        # Prepare a dropdown widget
-        #requires = field.requires
-        #if not isinstance(requires, (list, tuple)):
-        #    requires = [requires]
-        #if requires:
-        #    if hasattr(requires[0], 'options'):
-        #        options = requires[0].options()
-        #    else:
-        #        raise SyntaxError, 'widget cannot determine options of %s' \
-        #            % field
-        #opts = [OPTION(v, _value=k) for (k, v) in options]
-        #widget = SELECT(*opts, **attr)
+        # Hierarchical Selector
+        # @ToDo if this is an Admin Level then set the right dropdown to this level
+        # @ToDo if there is parent detail, then set the parent dropdowns to the right levels
+        default_dropdown = dict(
+            _type = "int",
+            value = 0,
+            )
+        attr_dropdown = OptionsWidget._attributes(field, default_dropdown, **attributes)
+        def level_dropdown(level, required=False):
+            # Prepare a dropdown widget
+            # @ToDo convert to the hierarchical AJAX
+            # IS_ONE_OF_EMPTY, etc
+            requires = IS_ONE_OF(db, "gis_location.id", repr_select,
+                                 filterby="level",
+                                 filter_opts=(level,),
+                                 orderby="gis_location.name",
+                                 sort=True)
+            if not required:
+                requires = IS_NULL_OR(requires)
+            if not isinstance(requires, (list, tuple)):
+                requires = [requires]
+            if level == "L0" and _gis.countries:
+                # Use the list of countries from deployment_settings instead of from DB
+                options = dict()
+                for country in _gis.countries:
+                    options.append()
+            elif requires:
+                if hasattr(requires[0], "options"):
+                    options = requires[0].options()
+                else:
+                    raise SyntaxError, "widget cannot determine options of %s" \
+                        % field
+            opts = [OPTION(v, _value=k) for (k, v) in options]
+            widget = SELECT(*opts, **attr_dropdown)
+            #label = LABEL(field.label)
+            label = LABEL(location_hierarchy[level], ":")
+            div = DIV(label, widget)
+            if level == "L0" and len(_gis.countries) == 1:
+                # Hide the Country selector if hard-coded
+                div.append(_class="hidden")
+            return div
 
+        dropdowns = DIV()
+        for level in location_hierarchy:
+            dropdowns.append(level_dropdown(level))
+        
         def url(level):
             return URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"%s" % level})
         
@@ -302,7 +359,7 @@ class S3LocationSelectorWidget:
         js_location_selector = """
         $(function() {
             // code here
-        }
+        });
         """
         
         if value:
@@ -324,8 +381,10 @@ class S3LocationSelectorWidget:
             represent = ""
 
         return TAG[""](
+                        INPUT(**attr), # Real input, which is hidden
+                        #level_dropdown("L1"),
+                        dropdowns,
                         INPUT(_id=dummy_input, _value=represent),
-                        INPUT(**attr),
                         SCRIPT(js_location_selector)
                       )
 

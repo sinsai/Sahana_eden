@@ -506,6 +506,8 @@ location_id = S3ReusableField("location_id", db.gis_location,
                                     _title=ADD_LOCATION),
                                   DIV(_class="tooltip",
                                       _title=T("Location") + "|" + T("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
+                    # Not yet ready
+                    #widget = S3LocationSelectorWidget(request, response),
                     ondelete = "RESTRICT")
 
 _gis.countries = Storage()

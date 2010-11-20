@@ -1151,6 +1151,7 @@
 'Edit current record': 'Edit current record',
 'Edit message': 'Edit message',
 'Edit the Application': 'Edit the Application',
+'Edit the OpenStreetMap data for this area': 'Edit the OpenStreetMap data for this area',
 'Editable?': 'Editable?',
 'Education': 'Education',
 'Education materials received': 'Education materials received',

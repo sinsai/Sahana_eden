@@ -642,7 +642,7 @@ if deployment_settings.has_module(module):
     table.icaths_available.comment = DIV(DIV(_class="tooltip",
         _title=T("Infusion catheters available") + "|" + T("Specify the number of available sets")))
 
-    table.icaths_needed_24.label = T("Infusion catheters need per 24h")
+    table.icaths_needed_24.label = T("Infusion catheters needed per 24h")
     table.icaths_needed_24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999999))
     table.icaths_needed_24.comment = DIV(DIV(_class="tooltip",
         _title=T("Infusion catheters need per 24h") + "|" + T("Specify the number of sets needed per 24h")))
@@ -669,7 +669,7 @@ if deployment_settings.has_module(module):
 
     table.problem_types.label = T("Current problems, categories")
     table.problem_types.requires = IS_EMPTY_OR(IS_IN_SET(hms_problem_types, zero=None, multiple=True))
-    table.problem_types.represent = lambda optlist: optlist and ", ".join(optlist) or T("N/A")
+    table.problem_types.represent = lambda optlist: optlist and ", ".join(map(str,optlist)) or T("N/A")
     table.problem_types.comment = DIV(DIV(_class="tooltip",
         _title=T("Current problems, categories") + "|" + T("Select all that apply")))
 

@@ -185,7 +185,7 @@ class S3MethodHandler(object):
         self.manager = manager
         self.db = manager.db
         self.T = manager.T
-        
+
         self.session = manager.session
         self.request = manager.request
         self.response = manager.response
@@ -338,7 +338,7 @@ class S3MethodHandler(object):
             else:
                 view = "%s_%s" % (r.name, default)
             path = os.path.join(folder, "views", prefix, view)
-            
+
         if os.path.exists(path):
             return "%s/%s" % (prefix, view)
         else:
@@ -493,6 +493,7 @@ class S3CRUDHandler(S3MethodHandler):
                     table[r.fkey].writable = True
                     r.request.post_vars.update({r.fkey: str(r.record[r.pkey])})
                 else:
+                    table[r.fkey].readable = False
                     table[r.fkey].writable = False
 
             # Copy from a previous record?
@@ -844,6 +845,7 @@ class S3CRUDHandler(S3MethodHandler):
                     table[r.fkey].writable = True
                     request.post_vars.update({r.fkey: str(r.record[r.pkey])})
                 else:
+                    table[r.fkey].readable = False
                     table[r.fkey].writable = False
 
             # Success message

@@ -390,6 +390,7 @@ if deployment_settings.has_module(module):
         12: T("Negative Flow Isolation"),
         13: T("Other Isolation"),
         14: T("Operating Rooms"),
+        15: T("Cholera Treatment"),
         99: T("Other")
     }
 
@@ -575,6 +576,136 @@ if deployment_settings.has_module(module):
                           main="hospital_id", extra="id")
 
     # -----------------------------------------------------------------------------
+    # Cholera Treatment Capability
+    #
+    hms_problem_types = {
+        1: T("Security problems"),
+        2: T("Hygiene problems"),
+        3: T("Sanitation problems"),
+        4: T("Improper handling of dead bodies"),
+        5: T("Improper decontamination"),
+        6: T("Understaffed"),
+        7: T("Lack of material"),
+        8: T("Communication problems"),
+        9: T("Information gaps")
+    }
+    resourcename = "ctc_capability"
+    tablename = "%s_%s" % (module, resourcename)
+    table = db.define_table(tablename,
+                            hospital_id(),
+                            Field("ctc", "boolean", default=False),
+                            Field("number_of_patients", "integer", default=0),
+                            Field("cases_24", "integer", default=0),
+                            Field("deaths_24", "integer", default=0),
+                            #Field("staff_total", "integer", default=0),
+                            Field("icaths_available", "integer", default=0),
+                            Field("icaths_needed_24", "integer", default=0),
+                            Field("infusions_available", "integer", default=0),
+                            Field("infusions_needed_24", "integer", default=0),
+                            #Field("infset_available", "integer", default=0),
+                            #Field("infset_needed_24", "integer", default=0),
+                            Field("antibiotics_available", "integer", default=0),
+                            Field("antibiotics_needed_24", "integer", default=0),
+                            Field("problem_types", "list:integer"),
+                            Field("problem_details", "text"),
+                            comments(),
+                            migrate=migrate, *s3_meta_fields())
+
+    table.modified_on.label = T("Last updated on")
+    table.modified_on.readable = True
+
+    table.modified_by.label = T("Last updated by")
+    table.modified_by.readable = True
+
+    table.ctc.label = T("Cholera-Treatment-Center")
+    table.ctc.represent = lambda opt: opt and T("yes") or T("no")
+    table.ctc.comment = DIV(DIV(_class="tooltip",
+        _title=T("Cholera Treatment Center") + "|" + T("Does this facility provide a cholera treatment center?")))
+
+    table.number_of_patients.label = T("Current number of patients")
+    table.number_of_patients.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999999))
+    table.number_of_patients.comment = DIV(DIV(_class="tooltip",
+        _title=T("Current number of patients") + "|" + T("How many patients with the disease are currently hospitalized at this facility?")))
+
+    table.cases_24.label = T("New cases in the past 24h")
+    table.cases_24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999999))
+    table.cases_24.comment = DIV(DIV(_class="tooltip",
+        _title=T("New cases in the past 24h") + "|" + T("How many new cases have been admitted to this facility in the past 24h?")))
+
+    table.deaths_24.label = T("Deaths in the past 24h")
+    table.deaths_24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999999))
+    table.deaths_24.comment = DIV(DIV(_class="tooltip",
+        _title=T("Deaths in the past 24h") + "|" + T("How many of the patients with the disease died in the past 24h at this facility?")))
+
+    table.icaths_available.label = T("Infusion catheters available")
+    table.icaths_available.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999999))
+    table.icaths_available.comment = DIV(DIV(_class="tooltip",
+        _title=T("Infusion catheters available") + "|" + T("Specify the number of available sets")))
+
+    table.icaths_needed_24.label = T("Infusion catheters needed per 24h")
+    table.icaths_needed_24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999999))
+    table.icaths_needed_24.comment = DIV(DIV(_class="tooltip",
+        _title=T("Infusion catheters need per 24h") + "|" + T("Specify the number of sets needed per 24h")))
+
+    table.infusions_available.label = T("Infusions available")
+    table.infusions_available.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999999))
+    table.infusions_available.comment = DIV(DIV(_class="tooltip",
+        _title=T("Infusions available") + "|" + T("Specify the number of available units (litres) of Ringer-Lactate or equivalent solutions")))
+
+    table.infusions_needed_24.label = T("Infusions needed per 24h")
+    table.infusions_needed_24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999999))
+    table.infusions_needed_24.comment = DIV(DIV(_class="tooltip",
+        _title=T("Infusions needed per 24h") + "|" + T("Specify the number of units (litres) of Ringer-Lactate or equivalent solutions needed per 24h")))
+
+    table.antibiotics_available.label = T("Antibiotics available")
+    table.antibiotics_available.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999999))
+    table.antibiotics_available.comment = DIV(DIV(_class="tooltip",
+        _title=T("Antibiotics available") + "|" + T("Specify the number of available units (adult doses)")))
+
+    table.antibiotics_needed_24.label = T("Antibiotics needed per 24h")
+    table.antibiotics_needed_24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999999))
+    table.antibiotics_needed_24.comment = DIV(DIV(_class="tooltip",
+        _title=T("Antibiotics needed per 24h") + "|" + T("Specify the number of units (adult doses) needed per 24h")))
+
+    table.problem_types.label = T("Current problems, categories")
+    table.problem_types.requires = IS_EMPTY_OR(IS_IN_SET(hms_problem_types, zero=None, multiple=True))
+    table.problem_types.represent = lambda optlist: optlist and ", ".join(map(str,optlist)) or T("N/A")
+    table.problem_types.comment = DIV(DIV(_class="tooltip",
+        _title=T("Current problems, categories") + "|" + T("Select all that apply")))
+
+    table.problem_details.label = T("Current problems, details")
+    table.problem_details.comment = DIV(DIV(_class="tooltip",
+        _title=T("Current problems, details") + "|" + T("Please specify any problems and obstacles with the proper handling of the disease, in detail (in numbers, where appropriate). You may also add suggestions the situation could be improved.")))
+
+    s3.crud_strings[tablename] = Storage(
+        title_create = T("Add Cholera Treatment Capability Information"),
+        title_display = T("Cholera Treatment Capability"),
+        title_list = T("Cholera Treatment Capability"),
+        title_update = T("Update Cholera Treatment Capability Information"),
+        title_search = T("Search Status"),
+        subtitle_create = T("Add Status"),
+        subtitle_list = T("Current Status"),
+        label_list_button = T("List Status"),
+        label_create_button = T("Add Status"),
+        label_delete_button = T("Delete Status"),
+        msg_record_created = T("Status added"),
+        msg_record_modified = T("Status updated"),
+        msg_record_deleted = T("Status deleted"),
+        msg_list_empty = T("No status information available"))
+
+    s3xrc.model.add_component(module, resourcename,
+                              multiple=False,
+                              joinby=dict(hms_hospital="hospital_id"))
+
+    s3xrc.model.configure(table,
+        list_fields = ["id"],
+        subheadings = {
+            "Activities": "ctc",
+            "Medical Supplies Availability": "icaths_available",
+            "Current Problems": "problem_types",
+            "Comments": "comments"})
+
+    # -----------------------------------------------------------------------------
     # Images
     #
     hms_image_type_opts = {
@@ -690,6 +821,11 @@ if deployment_settings.has_module(module):
     # -----------------------------------------------------------------------------
     # Hospital Search by Name
     #
+    s3_hms_hospital_search_simple = s3xrc.search_simple(
+        label=T("Name and/or ID"),
+        comment=T("To search for a hospital, enter any of the names or IDs of the hospital, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all hospitals."),
+        fields=["gov_uuid", "name", "aka1", "aka2"])
+
     def shn_hms_hospital_search_simple(r, **attr):
 
         """ Simple search form for hospitals """
@@ -760,4 +896,4 @@ if deployment_settings.has_module(module):
             redirect(URL(r=request))
 
     # Plug into REST controller
-    s3xrc.model.set_method(module, "hospital", method="search_simple", action=shn_hms_hospital_search_simple )
+    s3xrc.model.set_method(module, "hospital", method="search_simple", action=s3_hms_hospital_search_simple )

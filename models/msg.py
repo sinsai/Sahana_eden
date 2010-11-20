@@ -219,9 +219,7 @@ if deployment_settings.has_module(module):
                             
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(msg_twitter_search="twitter_search"),
-                              deletable=True,
-                              editable=True)
+                              joinby=dict(msg_twitter_search="twitter_search"))
    
     s3xrc.model.configure(table,
                           list_fields=[ "id",

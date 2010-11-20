@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Controller
 
-    @version: 2.2.3
+    @version: 2.2.4
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -82,7 +82,6 @@ class S3ResourceController(object):
         delete="delete"
     )
 
-    ROWSPERPAGE = 10
     MAX_DEPTH = 10
 
     # Prefixes of resources that must not be manipulated from remote
@@ -110,7 +109,6 @@ class S3ResourceController(object):
                  environment,
                  domain=None, # @todo 2.3: read fromm environment
                  base_url=None, # @todo 2.3: read from environment
-                 rpp=None, # @todo 2.3: move into settings
                  messages=None, # @todo 2.3: move into settings
                  **attr):
 
@@ -118,6 +116,7 @@ class S3ResourceController(object):
         environment = Storage(environment)
 
         self.T = environment.T
+        self.ROWSPERPAGE = environment.ROWSPERPAGE
 
         self.db = environment.db
         self.cache = environment.cache
@@ -137,9 +136,6 @@ class S3ResourceController(object):
 
         self.rlink_tablename = "s3_rlink"
 
-        if rpp:
-            self.ROWSPERPAGE = rpp
-
         self.show_ids = False
 
         # Errors
@@ -152,7 +148,7 @@ class S3ResourceController(object):
 
         self.query_builder = S3QueryBuilder(self) # Query Builder
 
-        self.model = S3ResourceModel(self.db)   # Resource Model, @todo 2.: reduce parameter list to (self)?
+        self.model = S3ResourceModel(self.db)   # Resource Model
         self.crud = S3CRUDHandler(self)         # CRUD Handler
         self.xml = S3XML(self)                  # XML Toolkit
 
@@ -1056,7 +1052,7 @@ class S3ResourceController(object):
                     c_id = c_uid = None
 
                     # Get the original record ID/UID, if not multiple
-                    if not c.attr.multiple:
+                    if not c.multiple:
                         if vector.id:
                             query = (table.id == vector.id) & (table[pkey] == ctable[pkey])
                             if self.xml.UID in ctable:

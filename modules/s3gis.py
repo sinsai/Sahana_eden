@@ -1754,6 +1754,37 @@ OpenLayers.Util.extend( selectPdfControl, {
                 save_button = ""
                 save_button2 = ""
 
+            osm_oauth_consumer_key = deployment_settings.get_osm_oauth_consumer_key()
+            osm_oauth_consumer_secret = deployment_settings.get_osm_oauth_consumer_secret()
+            if osm_oauth_consumer_key and osm_oauth_consumer_secret:
+                potlatch_button = """
+        var potlatchButton = new Ext.Toolbar.Button({
+            iconCls: 'potlatch',
+            tooltip: '""" + T("Edit the OpenStreetMap data for this area") + """',
+            handler: function() {
+                // Read current settings from map
+                var lonlat = map.getCenter();
+                var zoom_current = map.getZoom();
+                if (zoom_current < 14 ) {
+                    zoom_current = 14;
+                }
+                // Convert back to LonLat for saving
+                lonlat.transform(map.getProjectionObject(), proj4326);
+                // @ToDo Use Embedded Potlatch
+                var url = '""" + URL(r=request, f="potlatch2", args="potlatch2.html") + """?lat=' + lonlat.lat + '&lon=' + lonlat.lon + "&zoom=" + zoom_current;
+                window.open(url);
+            }
+        });
+        """
+                potlatch_button2 = """
+        toolbar.addSeparator();
+        // Edit in OpenStreetMap
+        toolbar.addButton(potlatchButton);
+        """
+            else:
+                potlatch_button = ""
+                potlatch_button2 = ""
+
             if add_feature:
                 pan_depress = "false"
             else:
@@ -1905,6 +1936,8 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         """ + save_button + """
 
+        """ + potlatch_button + """
+
         // Add to Map & Toolbar
         toolbar.add(zoomfull);
         toolbar.add(zoomfull);
@@ -1923,7 +1956,9 @@ OpenLayers.Util.extend( selectPdfControl, {
         nav.activate();
         toolbar.addButton(navPreviousButton);
         toolbar.addButton(navNextButton);
-        """ + save_button2
+        """ + save_button2 + """
+        """ + potlatch_button2
+
             toolbar2 = "Ext.QuickTips.init();"
         else:
             toolbar = ""

@@ -499,6 +499,8 @@ location_id = S3ReusableField("location_id", db.gis_location,
                     requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True)),
                     represent = lambda id: shn_gis_location_represent(id),
                     label = T("Location"),
+                    # Not yet ready
+                    #widget = S3LocationSelectorWidget(request, response, T),
                     comment = DIV(A(ADD_LOCATION,
                                     _class="colorbox",
                                     _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),

@@ -7,6 +7,8 @@
 
 """
 
+import copy
+
 from lxml import etree
 from gluon.sqlhtml import *
 from gluon.html import URL
@@ -261,19 +263,23 @@ class S3LocationSelectorWidget:
     def __init__(self,
                  request,
                  response,
+                 T,
                  #hierarchy=True    # @ToDo Force selection of the hierarchy (useful when we have that data fully-populated)
                  #level=None        # @ToDo Support forcing which level of the hierarchy is expected to be entered for this instance of the field
                  ):
 
         self.request = request
         self.response = response
+        self.T = T
 
     def __call__(self ,field, value, **attributes):
 
         db = field._db
+        request = self.request
         response = self.response
+        T = self.T
 
-        # Read Options @ToDo
+        # Read Options
         _gis = response.s3.gis
         # Which Levels do we have in our hierarchy & what are their Labels?
         location_hierarchy = _gis.location_hierarchy
@@ -282,16 +288,25 @@ class S3LocationSelectorWidget:
         
         # Read current record
         if value:
-            this_location = db(db.gis_location.id == value).select(db.gis_location.level, db.gis_location.lat, db.gis_location.lon, db.gis_location.parent, limitby=(0, 1)).first()
+            this_location = db(db.gis_location.id == value).select(db.gis_location.level,
+                                                                   db.gis_location.lat,
+                                                                   db.gis_location.lon,
+                                                                   db.gis_location.addr_street,
+                                                                   db.gis_location.parent,
+                                                                   limitby=(0, 1)).first()
             level = this_location.level
             lat = this_location.lat
             lon = this_location.lon
+            addr_street = this_location.addr_street
             parent = this_location.parent
             if parent:
                 # & grandparent? @ToDo
                 pass
         else:
             this_location = None
+            lat = ""
+            lon = ""
+            addr_street = ""
         
         # Main Input
         default = dict(
@@ -303,8 +318,19 @@ class S3LocationSelectorWidget:
         attr["_class"] = attr["_class"] + " hidden"
         
         real_input = str(field).replace(".", "_")
-        dummy_input = "dummy_%s" % real_input
+        dummy_input = "gis_location_name"
 
+        # Settings to insert into static/scripts/S3/s3.locationselector.widget.js
+        location_id = attr["_id"]
+        #def url(level):
+        #    return URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"%s" % level})
+        url = URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level"})
+        
+        # Localised strings
+        empty_set = T("No locations registered at this level")
+        loading_locations = T("Loading Locations")
+        select_location = T("Select a location")
+        
         # Hierarchical Selector
         # @ToDo if this is an Admin Level then set the right dropdown to this level
         # @ToDo if there is parent detail, then set the parent dropdowns to the right levels
@@ -318,49 +344,86 @@ class S3LocationSelectorWidget:
             # @ToDo convert to the hierarchical AJAX
             # IS_ONE_OF_EMPTY, etc
             requires = IS_ONE_OF(db, "gis_location.id", repr_select,
-                                 filterby="level",
-                                 filter_opts=(level,),
-                                 orderby="gis_location.name",
-                                 sort=True)
+                                 filterby = "level",
+                                 filter_opts = (level,),
+                                 orderby = "gis_location.name",
+                                 sort = True,
+                                 zero = select_location + "...")
             if not required:
                 requires = IS_NULL_OR(requires)
             if not isinstance(requires, (list, tuple)):
                 requires = [requires]
-            if level == "L0" and _gis.countries:
-                # Use the list of countries from deployment_settings instead of from DB
-                options = dict()
-                for country in _gis.countries:
-                    options.append()
-            elif requires:
-                if hasattr(requires[0], "options"):
-                    options = requires[0].options()
+            if level == "L0":
+                if _gis.countries:
+                    # Use the list of countries from deployment_settings instead of from DB
+                    options = []
+                    for country_code in _gis.countries:
+                        country = db(db.gis_location.code == country_code).select(db.gis_location.id, db.gis_location.name, limitby=(0, 1)).first()
+                        options.append((country.id, country.name))
                 else:
-                    raise SyntaxError, "widget cannot determine options of %s" \
-                        % field
+                    if hasattr(requires[0], "options"):
+                        options = requires[0].options()
+                    else:
+                        raise SyntaxError, "widget cannot determine options of %s" % field
+            else:
+                if level == "L1" and _gis.countries and len(_gis.countries) == 1:
+                    if hasattr(requires[0], "options"):
+                        options = requires[0].options()
+                    else:
+                        raise SyntaxError, "widget cannot determine options of %s" % field
+                else:
+                    # We don't want to pre-populate the dropdown - it will be pulled dynamically via AJAX when the parent dropdown is selected
+                    options = [(0, loading_locations)]
             opts = [OPTION(v, _value=k) for (k, v) in options]
-            widget = SELECT(*opts, **attr_dropdown)
-            #label = LABEL(field.label)
-            label = LABEL(location_hierarchy[level], ":")
-            div = DIV(label, widget)
-            if level == "L0" and len(_gis.countries) == 1:
-                # Hide the Country selector if hard-coded
-                div.append(_class="hidden")
-            return div
+
+            this_attr = copy.copy(attr_dropdown)
+            this_attr["_id"] = "gis_location_%s" % level
+            if level == "L0" and not len(_gis.countries) == 1:
+                # Don't Hide the Country selector if not hard-coded
+                label = LABEL(location_hierarchy[level], ":", _id="gis_location_label_%s" % level)
+            elif level == "L1" and len(_gis.countries) == 1:
+                # Don't Hide the L1 selector if Country hard-coded
+                label = LABEL(location_hierarchy[level], ":", _id="gis_location_label_%s" % level)
+            else:
+                # Hide the Dropdown & the selector
+                this_attr["_class"] = this_attr["_class"] + " hidden"
+                label = LABEL(location_hierarchy[level], ":", _id="gis_location_label_%s" % level, _class="hidden")
+
+            widget = SELECT(*opts, **this_attr)
+            row = DIV(TR(label), TR(widget))
+            return row
 
         dropdowns = DIV()
-        for level in location_hierarchy:
-            dropdowns.append(level_dropdown(level))
-        
-        def url(level):
-            return URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"%s" % level})
-        
-        # Localised strings to insert into the javascript held in static
-        
+        if "L0" in location_hierarchy:
+            dropdowns.append(level_dropdown("L0"))
+            maxlevel = "L0"
+        if "L1" in location_hierarchy:
+            dropdowns.append(level_dropdown("L1"))
+            maxlevel = "L1"
+        if "L2" in location_hierarchy:
+            dropdowns.append(level_dropdown("L2"))
+            maxlevel = "L2"
+        if "L3" in location_hierarchy:
+            dropdowns.append(level_dropdown("L3"))
+            maxlevel = "L3"
+        if "L4" in location_hierarchy:
+            dropdowns.append(level_dropdown("L4"))
+            maxlevel = "L4"
+        if "L5" in location_hierarchy:
+            dropdowns.append(level_dropdown("L5"))
+            maxlevel = "L5"
+
+        # Settings to be read by static/scripts/S3/s3.locationselector.widget.js
         js_location_selector = """
-        $(function() {
-            // code here
-        });
-        """
+    var gis_location_id = '%s';
+    var gis_maxlevel = '%s';
+    var gis_empty_set = '<option value="">%s</option>';
+    var gis_loading_locations = '<option value="">%s...</option>';
+    var gis_select_location = '<option value="" selected>%s...</option>';
+    var gis_url = '%s';
+    $(function() {
+    });
+    """ % (location_id, maxlevel, empty_set, loading_locations, select_location, url)
         
         if value:
             # Provide the representation for the current/default Value
@@ -380,11 +443,16 @@ class S3LocationSelectorWidget:
         else:
             represent = ""
 
+        add_button = A(T("Add New Location"), _id="gis_location_add-btn", _href="#", _class="action-btn")
+        
         return TAG[""](
                         INPUT(**attr), # Real input, which is hidden
-                        #level_dropdown("L1"),
                         dropdowns,
-                        INPUT(_id=dummy_input, _value=represent),
+                        TR(INPUT(_id=dummy_input, _value=represent)),
+                        TR(add_button),
+                        TR(TEXTAREA(_id="gis_location_addr_street", _class="hidden", _value=addr_street)),
+                        TR(INPUT(_id="gis_location_lat", _class="hidden", _value=lat)),
+                        TR(INPUT(_id="gis_location_lon", _class="hidden", _value=lon)),
                         SCRIPT(js_location_selector)
                       )
 

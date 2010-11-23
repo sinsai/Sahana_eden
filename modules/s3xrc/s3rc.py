@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Controller
 
-    @version: 2.2.4
+    @version: 2.2.5
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -1758,7 +1758,7 @@ class S3ResourceLinker(object):
     # -------------------------------------------------------------------------
     def get_origin_query(self, from_table, to_table, to_id,
                          link_class=None,
-                         all=False):
+                         union=False):
 
         """ Get a query for the origin table to retrieve records that are
             linked to a set of target table records.
@@ -1767,8 +1767,8 @@ class S3ResourceLinker(object):
             @param to_table: the target table
             @param to_id: target record ID or list of target record IDs
             @param link_class: link class name
-            @param all: retrieve a union (True) or an intersection (False, default)
-                        of all sets of links (in case of multiple target records)
+            @param union: retrieve a union (True) or an intersection (False, default)
+                          of all sets of links (in case of multiple target records)
 
             @note: None for to_id means *any* record
 
@@ -1790,7 +1790,7 @@ class S3ResourceLinker(object):
         ids = []
         rows = self.db(query).select(table.origin_id)
         for row in rows:
-            if all:
+            if union:
                 add = [i for i in row.origin_id if i not in ids]
                 ids += add
             elif not ids:
@@ -1809,7 +1809,7 @@ class S3ResourceLinker(object):
     # -------------------------------------------------------------------------
     def get_target_query(self, from_table, from_id, to_table,
                          link_class=None,
-                         all=False):
+                         union=False):
 
         """ Get a query for the target table to retrieve records that are
             linked to a set of origin table records.
@@ -1818,8 +1818,8 @@ class S3ResourceLinker(object):
             @param from_id: origin record ID or list of origin record IDs
             @param to_table: the target table
             @param link_class: link class name
-            @param all: retrieve a union (True) or an intersection (False, default)
-                        of all sets of links (in case of multiple origin records)
+            @param union: retrieve a union (True) or an intersection (False, default)
+                          of all sets of links (in case of multiple origin records)
 
             @note: None for from_id means *any* record
 
@@ -1836,9 +1836,9 @@ class S3ResourceLinker(object):
             q = None
             for origin_id in from_id:
                 iq = table.origin_id.contains(origin_id)
-                if q and all:
+                if q and union:
                     q = q | iq
-                elif q and not all:
+                elif q and not union:
                     q = q & iq
                 else:
                     q = iq
@@ -1871,17 +1871,73 @@ class S3QueryBuilder(object):
 
         self.manager = manager
 
+
     # -------------------------------------------------------------------------
     def parse_url_rlinks(self, resource, vars):
 
-        """ Parse URL resource link queries
+        """ Parse URL resource link queries. Syntax:
+            ?linked{.<component>}.<from|to>.<table>={link_class},<ANY|ALL|list_of_ids>
 
             @param resource: the resource
             @param vars: dict of URL vars
 
         """
 
-        return None
+        linker = self.manager.linker
+        q = None
+
+        for k in vars:
+            if k[:7] == "linked.":
+                link = k.split(".")
+                if len(link) < 3:
+                    continue
+                else:
+                    link = link[1:]
+                o_tn = link.pop()
+                if o_tn in self.manager.db:
+                    link_table = self.manager.db[o_tn]
+                else:
+                    continue
+                operator = link.pop()
+                if not operator in ("from", "to"):
+                    continue
+                table = resource.table
+                join = None
+                if link and link[0] in resource.components:
+                    component = components[link[0]].component
+                    table = component.table
+                    pkey, fkey = component.pkey, component.fkey
+                    join = (resource.table[pkey] == table[fkey])
+                link_class = None
+                union = False
+                val = vars[k]
+                if isinstance(val, (list, tuple)):
+                    val = ",".join(val)
+                ids = val.split(",")
+                if ids:
+                    if not ids[0].isdigit() and ids[0] not in ("ANY", "ALL"):
+                        link_class = ids.pop(0)
+                if ids:
+                    if ids.count("ANY"):
+                        link_id = None
+                        union = True
+                    elif ids.count("ALL"):
+                        link_id = None
+                    else:
+                        link_id = filter(str.isdigit, ids)
+                if operator == "from":
+                    query = linker.get_target_query(link_table, link_id, table,
+                                                    link_class=link_class,
+                                                    union=union)
+                else:
+                    query = linker.get_origin_query(table, link_table, link_id,
+                                                    link_class=link_class,
+                                                    union=union)
+                if query is not None:
+                    if join is not None:
+                        query = (join & query)
+                    q = q and (q & query) or query
+        return q
 
 
     # -------------------------------------------------------------------------
@@ -1951,7 +2007,7 @@ class S3QueryBuilder(object):
         for k in vars:
             if k.find(".") > 0:
                 rname, field = k.split(".", 1)
-                if rname == "context":
+                if rname in ("context", "linked"):
                     continue
                 elif rname == resource.name:
                     table = resource.table
@@ -2090,10 +2146,12 @@ class S3QueryBuilder(object):
 
         if vars:
             url_query = self.parse_url_query(resource, vars)
-            if url_query:
+            url_rlinks = self.parse_url_rlinks(resource, vars)
+            if url_query or url_rlinks:
                 resource.vars = vars
         else:
             url_query = Storage()
+            url_rlinks = None
 
         resource._multiple = True # multiple results expected by default
 
@@ -2305,6 +2363,8 @@ class S3QueryBuilder(object):
             # Filter
             if filter:
                 mquery = mquery & filter
+            if url_rlinks:
+                mquery = mquery & url_rlinks
 
         resource._query = mquery
         return mquery

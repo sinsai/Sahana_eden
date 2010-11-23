@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Data Model Extensions
 
-    @version: 2.2.3
+    @version: 2.2.4
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -34,50 +34,16 @@
 
 """
 
-__all__ = ["S3ResourceComponent",
-           "S3ResourceModel"]
+__all__ = ["S3ResourceModel"]
 
 from gluon.storage import Storage
 from gluon.sql import Table, Field
 from gluon.validators import IS_EMPTY_OR, IS_IN_DB
 
 # *****************************************************************************
-class S3ResourceComponent(object):
-
-    """ Class to represent component relations between resources
-
-        @param db: the database (DAL)
-        @param prefix: prefix of the resource name (=module name)
-        @param name: name of the resource (=without prefix)
-        @param attr: attributes
-
-    """
-
-    def __init__(self, db, prefix, name, **attr):
-
-        self.db = db
-        self.prefix = prefix
-        self.name = name
-
-        self.tablename = "%s_%s" % (prefix, name)
-        self.table = self.db.get(self.tablename, None)
-        if not self.table:
-            raise SyntaxError("Table must exist in the database.")
-
-        self.attr = Storage(attr)
-        if not "multiple" in self.attr:
-            self.attr.multiple = True
-        if not "deletable" in self.attr:
-            self.attr.deletable = True
-        if not "editable" in self.attr:
-            self.attr.editable = True
-
-
-# *****************************************************************************
 class S3ResourceModel(object):
 
-
-    """ Class to handle the compound resources model
+    """ Model extensions helper class
 
         @param db: the database (DAL)
 
@@ -94,25 +60,39 @@ class S3ResourceModel(object):
 
     # Components ==============================================================
 
-    def add_component(self, prefix, name, **attr):
+    def add_component(self, prefix, name, joinby=None, multiple=True):
 
-        """ Adds a component to the model
+        """ Define a component join
 
             @param prefix: prefix of the component name (=module name)
             @param name: name of the component (=without prefix)
+            @param joinby: join key, or dict of join keys
 
         """
 
-        joinby = attr.get("joinby", None)
         if joinby:
-            component = S3ResourceComponent(self.db, prefix, name, **attr)
+            tablename = "%s_%s" % (prefix, name)
+            table = self.db.get(tablename, None)
+            if not table:
+                raise SyntaxError("Undefined table: %s" % tablename)
+            component = Storage(prefix = prefix,
+                                name = name,
+                                tablename = tablename,
+                                table = table,
+                                multiple = multiple)
             hook = self.components.get(name, Storage())
             if isinstance(joinby, dict):
-                for tablename in joinby:
-                    hook[tablename] = Storage(
-                        _joinby = ("id", joinby[tablename]),
-                        _component = component)
+                for tn in joinby:
+                    key = joinby[tn]
+                    if key not in table.fields:
+                        raise SyntaxError("Undefined key: %s.%s" %
+                                          (tablename, key))
+                    hook[tn] = Storage(_joinby = ("id", key),
+                                       _component = component)
             elif isinstance(joinby, str):
+                if joinby not in table.fields:
+                    raise SyntaxError("Undefined key: %s.%s" %
+                                      (tablename, joinby))
                 hook._joinby=joinby
                 hook._component=component
             else:
@@ -126,7 +106,7 @@ class S3ResourceModel(object):
     # -------------------------------------------------------------------------
     def get_component(self, prefix, name, component_name):
 
-        """ Retrieves a component of a resource
+        """ Retrieve a component join
 
             @param prefix: prefix of the resource name (=module name)
             @param name: name of the resource (=without prefix)
@@ -156,7 +136,7 @@ class S3ResourceModel(object):
     # -------------------------------------------------------------------------
     def get_components(self, prefix, name):
 
-        """ Retrieves all components related to a resource
+        """ Retrieves all component joins for a table
 
             @param prefix: prefix of the resource name (=module name)
             @param name: name of the resource (=without prefix)
@@ -339,7 +319,7 @@ class S3ResourceModel(object):
 
     def super_entity(self, tablename, key, types, *fields, **args):
 
-        """ Create a new super-entity table
+        """ Define a super-entity table
 
             @param tablename: the tablename
             @param key: name of the primary key
@@ -447,7 +427,8 @@ class S3ResourceModel(object):
             shared = self.get_config(table, "%s_fields" % s._tablename)
             if shared:
                 data = dict([(f, record[shared[f]])
-                             for f in shared if shared[f] in record and f in s.fields])
+                             for f in shared
+                             if shared[f] in record and f in s.fields])
             else:
                 data = dict([(f, record[f])
                              for f in s.fields if f in record])

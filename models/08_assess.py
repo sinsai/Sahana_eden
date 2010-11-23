@@ -73,8 +73,7 @@ if deployment_settings.has_module(module):
     # assess_assess as component of org_organisation
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(org_organisation="organisation_id")
-                              )    
+                              joinby=dict(org_organisation="organisation_id"))    
     
     # Hide Add Assessment functionality. Users should only add assessments through the Basic Assessment.
     s3xrc.model.configure(table,
@@ -169,9 +168,7 @@ if deployment_settings.has_module(module):
     # Baseline as component of assessments
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(assess_assess="assess_id"),
-                              deletable=True,
-                              editable=True)         
+                              joinby=dict(assess_assess="assess_id"))
 
     #==============================================================================
     # Summary
@@ -241,9 +238,7 @@ if deployment_settings.has_module(module):
     # Summary as component of assessments
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(assess_assess="assess_id"),
-                              deletable=True,
-                              editable=True)        
+                              joinby=dict(assess_assess="assess_id"))
     
     #==============================================================================    
     # Rapid Assessment Tool
@@ -482,7 +477,8 @@ if deployment_settings.has_module(module):
     # - therefore disable the listadd & jump out of the tabs for Create/Update
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(cr_shelter="shelter_id", doc_document="document_id"))
+                              joinby=dict(cr_shelter="shelter_id",
+                                          doc_document="document_id"))
 
     s3xrc.model.configure(table,
                           listadd=False,

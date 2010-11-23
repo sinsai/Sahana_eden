@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Controller
 
-    @version: 2.2.3
+    @version: 2.2.4
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -40,6 +40,7 @@ __all__ = ["S3ResourceController", "S3Vector"]
 
 import sys, datetime, time
 
+from gluon.sql import Field
 from gluon.storage import Storage
 from gluon.html import URL, A
 from gluon.http import HTTP, redirect
@@ -82,7 +83,6 @@ class S3ResourceController(object):
         delete="delete"
     )
 
-    ROWSPERPAGE = 10
     MAX_DEPTH = 10
 
     # Prefixes of resources that must not be manipulated from remote
@@ -110,7 +110,6 @@ class S3ResourceController(object):
                  environment,
                  domain=None, # @todo 2.3: read fromm environment
                  base_url=None, # @todo 2.3: read from environment
-                 rpp=None, # @todo 2.3: move into settings
                  messages=None, # @todo 2.3: move into settings
                  **attr):
 
@@ -118,6 +117,7 @@ class S3ResourceController(object):
         environment = Storage(environment)
 
         self.T = environment.T
+        self.ROWSPERPAGE = environment.ROWSPERPAGE
 
         self.db = environment.db
         self.cache = environment.cache
@@ -137,9 +137,6 @@ class S3ResourceController(object):
 
         self.rlink_tablename = "s3_rlink"
 
-        if rpp:
-            self.ROWSPERPAGE = rpp
-
         self.show_ids = False
 
         # Errors
@@ -152,7 +149,8 @@ class S3ResourceController(object):
 
         self.query_builder = S3QueryBuilder(self) # Query Builder
 
-        self.model = S3ResourceModel(self.db)   # Resource Model, @todo 2.: reduce parameter list to (self)?
+        self.model = S3ResourceModel(self.db)   # Resource Model
+        self.linker = S3ResourceLinker(self)    # Resource Linker
         self.crud = S3CRUDHandler(self)         # CRUD Handler
         self.xml = S3XML(self)                  # XML Toolkit
 
@@ -1056,7 +1054,7 @@ class S3ResourceController(object):
                     c_id = c_uid = None
 
                     # Get the original record ID/UID, if not multiple
-                    if not c.attr.multiple:
+                    if not c.multiple:
                         if vector.id:
                             query = (table.id == vector.id) & (table[pkey] == ctable[pkey])
                             if self.xml.UID in ctable:
@@ -1618,41 +1616,246 @@ class S3Vector(object):
 # *****************************************************************************
 class S3ResourceLinker(object):
 
-    """ Hyperlink between resources """
+    """ Hyperlink between resources
+
+        @param manager: the resource controller
+
+    """
 
     def __init__(self, manager):
 
-        db = self.manager.db
-        tablename = self.manager.rlink_tablename
-        migrate = self.manager.migrate
+        self.db = manager.db
+        self.tablename = manager.rlink_tablename
+        migrate = manager.migrate
 
-        self.table = db.get(tablename, None)
+        self.table = self.db.get(self.tablename, None)
         if not self.table:
-            self.table = db.define_table(tablename,
-                                         Field("class"),
-                                         Field("origin_table"),
-                                         Field("origin_id"),
-                                         Field("target_table"),
-                                         Field("target_id"),
-                                         migrate=migrate)
+            self.table = self.db.define_table(self.tablename,
+                                              Field("link_class", length=128),
+                                              Field("origin_table"),
+                                              Field("origin_id", "list:integer"),
+                                              Field("target_table"),
+                                              Field("target_id", "integer"),
+                                              migrate=migrate)
 
-    def link(self):
-        pass
 
-    def unlink(self):
-        pass
+    # -------------------------------------------------------------------------
+    def link(self, from_table, from_id, to_table, to_id, link_class=None):
 
-    def get_origin_query(self):
-        pass
+        """ Create a hyperlink between resources
 
-    def get_origin(self):
-        pass
+            @param from_table: the originating table
+            @param from_id: ID or list of IDs of the originating record(s)
+            @param to_table: the target table
+            @param to_id: ID or list of IDs of the target record(s)
+            @param link_class: link class name
 
-    def get_target_query(self):
-        pass
+            @returns: a list of record IDs of the created links
 
-    def get_target(self):
-        pass
+        """
+
+        o_tn = from_table._tablename
+        t_tn = to_table._tablename
+        links = []
+        if not from_id:
+            return links
+        elif not isinstance(from_id, (list, tuple)):
+            o_id = [str(from_id)]
+        else:
+            o_id = map(str, from_id)
+        if not to_id:
+            return links
+        elif not isinstance(to_id, (list, tuple)):
+            t_id = [str(to_id)]
+        else:
+            t_id = map(str, to_id)
+        table = self.table
+        query = ((table.origin_table == o_tn) &
+                 (table.target_table == t_tn) &
+                 (table.link_class == link_class) &
+                 (table.target_id.belongs(t_id)))
+        rows = self.db(query).select()
+        rows = dict([(str(r.target_id), r) for r in rows])
+        success = True
+        for target_id in t_id:
+            if target_id in rows:
+                row = rows[target_id]
+                ids = map(str, row.origin_id)
+                add = [i for i in o_id if i not in ids]
+                ids += add
+                row.update_record(origin_id=ids)
+                links.append(row.id)
+            else:
+                row = table.insert(origin_table=o_tn,
+                                    target_table=t_tn,
+                                    link_class=link_class,
+                                    target_id=target_id,
+                                    origin_id=o_id)
+                links.append(row)
+        return links
+
+
+    # -------------------------------------------------------------------------
+    def unlink(self, from_table, from_id, to_table, to_id, link_class=None):
+
+        """ Remove a hyperlink between resources
+
+            @param from_table: the originating table
+            @param from_id: ID or list of IDs of the originating record(s)
+            @param to_table: the target table
+            @param to_id: ID or list of IDs of the target record(s)
+            @param link_class: link class name
+
+            @note: None for from_id or to_id means *any* record
+
+        """
+
+        o_tn = from_table._tablename
+        t_tn = to_table._tablename
+
+        table = self.table
+        query = ((table.origin_table == o_tn) &
+                 (table.target_table == t_tn) &
+                 (table.link_class == link_class))
+        q = None
+        if from_id is not None:
+            if not isinstance(from_id, (list, tuple)):
+                o_id = [str(from_id)]
+            else:
+                o_id = map(str, from_id)
+            for origin_id in o_id:
+                iq = table.origin_id.contains(origin_id)
+                if q is None:
+                    q = iq
+                else:
+                    q = q | iq
+        else:
+            o_id = None
+        if q is not None:
+            query = query & (q)
+        q = None
+        if to_id is not None:
+            if not isinstance(to_id, (list, tuple)):
+                q = table.target_id == str(to_id)
+            else:
+                t_id = map(str, to_id)
+                q = table.target_id.belongs(t_id)
+        if q is not None:
+            query = query & (q)
+        rows = self.db(query).select()
+        for row in rows:
+            if o_id:
+                ids = [i for i in row.origin_id if str(i) not in o_id]
+            else:
+                ids = []
+            if ids:
+                row.update_record(origin_id=ids)
+            else:
+                row.delete_record()
+        return
+
+
+    # -------------------------------------------------------------------------
+    def get_origin_query(self, from_table, to_table, to_id,
+                         link_class=None,
+                         all=False):
+
+        """ Get a query for the origin table to retrieve records that are
+            linked to a set of target table records.
+
+            @param from_table: the origin table
+            @param to_table: the target table
+            @param to_id: target record ID or list of target record IDs
+            @param link_class: link class name
+            @param all: retrieve a union (True) or an intersection (False, default)
+                        of all sets of links (in case of multiple target records)
+
+            @note: None for to_id means *any* record
+
+        """
+
+        o_tn = from_table._tablename
+        t_tn = to_table._tablename
+
+        table = self.table
+        if not to_id:
+            query = (table.target_id != None)
+        elif not isinstance(to_id, (list, tuple)):
+            query = (table.target_id == to_id)
+        else:
+            query = (table.target_id.belongs(to_id))
+        query = (table.origin_table == o_tn) & \
+                (table.target_table == t_tn) & \
+                (table.link_class == link_class) & query
+        ids = []
+        rows = self.db(query).select(table.origin_id)
+        for row in rows:
+            if all:
+                add = [i for i in row.origin_id if i not in ids]
+                ids += add
+            elif not ids:
+                ids = row.origin_id
+            else:
+                ids = [i for i in ids if i in row.origin_id]
+        if ids and len(ids) == 1:
+            mq = (from_table.id == ids[0])
+        elif ids:
+            mq = (from_table.id.belongs(ids))
+        else:
+            mq = (from_table.id == None)
+        return mq
+
+
+    # -------------------------------------------------------------------------
+    def get_target_query(self, from_table, from_id, to_table,
+                         link_class=None,
+                         all=False):
+
+        """ Get a query for the target table to retrieve records that are
+            linked to a set of origin table records.
+
+            @param from_table: the origin table
+            @param from_id: origin record ID or list of origin record IDs
+            @param to_table: the target table
+            @param link_class: link class name
+            @param all: retrieve a union (True) or an intersection (False, default)
+                        of all sets of links (in case of multiple origin records)
+
+            @note: None for from_id means *any* record
+
+        """
+
+        o_tn = from_table._tablename
+        t_tn = to_table._tablename
+        table = self.table
+        if not from_id:
+            query = (table.origin_id != None)
+        elif not isinstance(from_id, (list, tuple)):
+            query = (table.origin_id.contains(from_id))
+        else:
+            q = None
+            for origin_id in from_id:
+                iq = table.origin_id.contains(origin_id)
+                if q and all:
+                    q = q | iq
+                elif q and not all:
+                    q = q & iq
+                else:
+                    q = iq
+            if q:
+                query = (q)
+        query = (table.origin_table == o_tn) & \
+                (table.target_table == t_tn) & \
+                (table.link_class == link_class) & query
+        rows = self.db(query).select(table.target_id, distinct=True)
+        ids = [row.target_id for row in rows]
+        if ids and len(ids) == 1:
+            mq = (to_table.id == ids[0])
+        elif ids:
+            mq = (to_table.id.belongs(ids))
+        else:
+            mq = (to_table.id == None)
+        return mq
 
 
 # *****************************************************************************

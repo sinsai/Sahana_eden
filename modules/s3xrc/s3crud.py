@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - CRUD Method Handlers
 
-    @version: 2.2.3
+    @version: 2.2.4
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -185,7 +185,7 @@ class S3MethodHandler(object):
         self.manager = manager
         self.db = manager.db
         self.T = manager.T
-        
+
         self.session = manager.session
         self.request = manager.request
         self.response = manager.response
@@ -219,7 +219,6 @@ class S3MethodHandler(object):
             self.method = method
         else:
             self.method = r.method
-
         if r.component:
             self.record = r.component_id
             component = r.resource.components.get(r.component_name, None)
@@ -241,7 +240,7 @@ class S3MethodHandler(object):
         # Invoke the responder
         output = self.respond(r, **attr)
 
-        # Redirection to next
+        # Redirection
         if self.next and self.resource.lastid:
             self.next = str(self.next)
             placeholder = "%5Bid%5D"
@@ -253,7 +252,6 @@ class S3MethodHandler(object):
         # Add additional view variables
         self._extend_view(output, r, **attr)
 
-        # Done
         return output
 
 
@@ -323,21 +321,17 @@ class S3MethodHandler(object):
         """
 
         request = r.request
-
         folder = request.folder
         prefix = request.controller
 
         if r.component:
-
             view = "%s_%s_%s" % (r.name, r.component_name, default)
             path = os.path.join(folder, "views", prefix, view)
-
             if os.path.exists(path):
                 return "%s/%s" % (prefix, view)
             else:
                 view = "%s_%s" % (r.name, default)
                 path = os.path.join(folder, "views", prefix, view)
-
         else:
             if format:
                 view = "%s_%s_%s" % (r.name, default, format)
@@ -380,7 +374,6 @@ class S3MethodHandler(object):
                         continue
                 else:
                     display = handler
-
                 if isinstance(display, dict) and resolve:
                     output.update(**display)
                 elif display is not None:
@@ -500,6 +493,7 @@ class S3CRUDHandler(S3MethodHandler):
                     table[r.fkey].writable = True
                     r.request.post_vars.update({r.fkey: str(r.record[r.pkey])})
                 else:
+                    table[r.fkey].readable = False
                     table[r.fkey].writable = False
 
             # Copy from a previous record?
@@ -851,6 +845,7 @@ class S3CRUDHandler(S3MethodHandler):
                     table[r.fkey].writable = True
                     request.post_vars.update({r.fkey: str(r.record[r.pkey])})
                 else:
+                    table[r.fkey].readable = False
                     table[r.fkey].writable = False
 
             # Success message

@@ -424,6 +424,13 @@
                 </have:ResourceInformationText>
             </xsl:if>
 
+            <xsl:if test="./resource[@name='hms_ctc_capability']/data[@field='ctc']/@value='True'">
+                <have:ResourceInformationText>
+                    <xsl:text>CTC Information: </xsl:text>
+                    <!-- @todo: elaborate -->
+                </have:ResourceInformationText>
+            </xsl:if>
+
             <xsl:apply-templates select="./resource[@name='hms_shortage']"/>
         </have:HospitalResourceStatus>
     </xsl:template>

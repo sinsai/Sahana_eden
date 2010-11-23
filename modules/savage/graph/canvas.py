@@ -8,7 +8,7 @@ from ..graphics.utils import ViewBox
 from ..graphics.color import white
 
 from ..utils.struct import Vector as V, Matrix
-from ..utils.dictionary import DefaultDictionary
+#from ..utils.dictionary import DefaultDictionary
 
 from re import match
 

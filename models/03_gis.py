@@ -159,7 +159,7 @@ table = db.define_table(tablename,
                         Field("min_lat", "double", default=-90),
                         Field("max_lon", "double", default=180),
                         Field("max_lat", "double", default=90),
-                        Field("zoom_levels", "integer", default=16, notnull=True),
+                        Field("zoom_levels", "integer", default=22, notnull=True),
                         Field("cluster_distance", "integer", default=5, notnull=True),
                         Field("cluster_threshold", "integer", default=2, notnull=True),
                         opt_gis_layout,
@@ -172,7 +172,7 @@ table.pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.pe_id", shn_pentity_
 table.pe_id.readable = table.pe_id.writable = False
 table.lat.requires = IS_LAT()
 table.lon.requires = IS_LON()
-table.zoom.requires = IS_INT_IN_RANGE(0, 19)
+table.zoom.requires = IS_INT_IN_RANGE(1, 20)
 table.map_height.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(160, 1024)]
 table.map_width.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(320, 1280)]
 table.min_lat.requires = IS_LAT()
@@ -499,6 +499,8 @@ location_id = S3ReusableField("location_id", db.gis_location,
                     requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True)),
                     represent = lambda id: shn_gis_location_represent(id),
                     label = T("Location"),
+                    # Not yet ready
+                    #widget = S3LocationSelectorWidget(request, response, T),
                     comment = DIV(A(ADD_LOCATION,
                                     _class="colorbox",
                                     _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
@@ -883,7 +885,6 @@ s3xrc.model.configure(table, deletable=False)
 # GIS Layers
 #gis_layer_types = ["bing", "shapefile", "scan"]
 gis_layer_types = ["coordinate", "openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wfs", "wms", "xyz", "yahoo"]
-gis_layer_openstreetmap_subtypes = gis.layer_subtypes("openstreetmap")
 gis_layer_google_subtypes = gis.layer_subtypes("google")
 gis_layer_yahoo_subtypes = gis.layer_subtypes("yahoo")
 gis_layer_bing_subtypes = gis.layer_subtypes("bing")
@@ -910,8 +911,12 @@ for layertype in gis_layer_types:
     elif layertype == "openstreetmap":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_openstreetmap_subtypes, zero=None)),
-                     Field("visible", "boolean", default=False, label=T("On by default?")),
+                     Field("visible", "boolean", default=True, label=T("On by default? (only applicable to Overlays)")),
+                     Field("url1", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     Field("url2", label=T("Secondary Server (Optional)")),
+                     Field("url3", label=T("Tertiary Server (Optional)")),
+                     Field("base", "boolean", default=True, label=T("Base Layer?")),
+                     Field("attribution", label=T("Attribution")),
                     )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "georss":

@@ -132,7 +132,8 @@ def hospital():
                                                        (T("Requests"), "req"),
                                                        (T("Images"), "himage"),
                                                        (T("Services"), "services"),
-                                                       (T("Contacts"), "hcontact")
+                                                       (T("Contacts"), "hcontact"),
+                                                       (T("Cholera Treatment Capability"), "ctc_capability")
                                                       ])
 
     output = s3_rest_controller(module, resourcename, rheader=rheader)

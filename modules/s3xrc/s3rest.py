@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource API
 
-    @version: 2.2.4
+    @version: 2.2.5
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -258,9 +258,9 @@ class S3Resource(object):
         # Store CRUD and other method handlers
         self.crud = self.manager.crud
         self._handler = Storage(options=self.__get_options,
-                                 fields=self.__get_fields,
-                                 export_tree=self.__get_tree,
-                                 import_tree=self.__put_tree)
+                                fields=self.__get_fields,
+                                export_tree=self.__get_tree,
+                                import_tree=self.__put_tree)
 
 
     # Method handler configuration ============================================

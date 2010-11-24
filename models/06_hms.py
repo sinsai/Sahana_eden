@@ -87,6 +87,7 @@ if deployment_settings.has_module(module):
                     Field("aka2"),                              # Alternate name, or name in local language
                     Field("facility_type", "integer",           # Type of facility
                           requires = IS_NULL_OR(IS_IN_SET(hms_facility_type_opts)),
+                          default = 1,
                           label = T("Facility Type"),
                           represent = lambda opt: hms_facility_type_opts.get(opt, T("not specified"))),
                     organisation_id(),
@@ -230,7 +231,7 @@ if deployment_settings.has_module(module):
     # -----------------------------------------------------------------------------
     # Contacts
     #
-    resourcename = "hcontact"
+    resourcename = "contact"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             hospital_id(),
@@ -298,7 +299,7 @@ if deployment_settings.has_module(module):
     # -----------------------------------------------------------------------------
     # Activity
     #
-    resourcename = "hactivity"
+    resourcename = "activity"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             hospital_id(),
@@ -715,7 +716,7 @@ if deployment_settings.has_module(module):
         99:T("other")
     }
 
-    resourcename = "himage"
+    resourcename = "image"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             hospital_id(),

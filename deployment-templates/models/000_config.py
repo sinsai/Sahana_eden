@@ -92,7 +92,7 @@ deployment_settings.L10n.languages = {
     #"pa":T("Punjabi"),
     #"ps":T("Pashto"),
     #"sd":T("Sindhi"),
-    #"ja":T("Japanese"),
+    "ja":T("Japanese"),
     "ur":T("Urdu"),
     "zh-tw":T("Chinese (Taiwan)"),
 }

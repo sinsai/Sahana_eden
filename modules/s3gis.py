@@ -1918,10 +1918,6 @@ OpenLayers.Util.extend( selectPdfControl, {
             enableToggle: true
         });
 
-        """ + mgrs2 + """
-
-        """ + draw_feature + """
-
         var navPreviousButton = new Ext.Toolbar.Button({
             iconCls: 'back',
             tooltip: '""" + T("Previous View") + """',
@@ -1934,29 +1930,46 @@ OpenLayers.Util.extend( selectPdfControl, {
             handler: nav.next.trigger
         });
 
+        var geoLocateButton = new Ext.Toolbar.Button({
+            iconCls: 'geolocation',
+            tooltip: '""" + T("Zoom to Current Location") + """',
+            handler: function(){
+                navigator.geolocation.getCurrentPosition(getCurrentPosition);
+            }
+        });
+
+        """ + mgrs2 + """
+
+        """ + draw_feature + """
+
         """ + save_button + """
 
         """ + potlatch_button + """
 
         // Add to Map & Toolbar
         toolbar.add(zoomfull);
-        toolbar.add(zoomfull);
+        if (navigator.geolocation) {
+            // HTML5 geolocation is available :)
+            toolbar.addButton(geoLocateButton);
+        } else {
+            // geolocation is not available...IE sucks! ;)
+        }
         toolbar.add(zoomout);
         toolbar.add(zoomin);
         toolbar.add(pan);
         toolbar.addSeparator();
-        // Measure Tools
-        toolbar.add(lengthButton);
-        toolbar.add(areaButton);
-        toolbar.addSeparator();
-        """ + mgrs3 + """
-        """ + draw_feature2 + """
         // Navigation
         map.addControl(nav);
         nav.activate();
         toolbar.addButton(navPreviousButton);
         toolbar.addButton(navNextButton);
         """ + save_button2 + """
+        toolbar.addSeparator();
+        // Measure Tools
+        toolbar.add(lengthButton);
+        toolbar.add(areaButton);
+        """ + mgrs3 + """
+        """ + draw_feature2 + """
         """ + potlatch_button2
 
             toolbar2 = "Ext.QuickTips.init();"
@@ -3592,6 +3605,20 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
     }
 
+    // HTML5 GeoLocation: http://dev.w3.org/geo/api/spec-source.html
+    function getCurrentPosition(position){
+            // Level to zoom into
+            var zoomLevel = 15;
+            var lat = position.coords.latitude;
+            var lon = position.coords.longitude;
+            //var elevation = position.coords.altitude;
+            //var ce = position.coords.accuracy;
+            //var le = position.coords.altitudeAccuracy;
+            //position.coords.heading;
+            //position.coords.speed;
+            map.setCenter(new OpenLayers.LonLat(lon, lat).transform(proj4326, map.getProjectionObject()), zoomLevel);
+        };
+
     function addLayers(map) {
         // Base Layers
         // OSM
@@ -3766,7 +3793,6 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + mouse_position + """
         map.addControl(new OpenLayers.Control.Permalink());
         map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
-        map.addControl(new OpenLayers.Control.cdauth.GeoLocation());
 
         // Popups
         // onClick Popup

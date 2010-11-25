@@ -1383,6 +1383,100 @@ def map_viewing_client():
     return dict(map=map)
 
 # -----------------------------------------------------------------------------
+def map_selector():
+    """
+        Map Selector.
+        UI for a user to select a Location from a Map
+    """
+
+    config = gis.get_config()
+
+    if lat in request.vars:
+        lat = request.vars.lat
+    else:
+        lat = config.lat
+
+    if lon in request.vars:
+        lon = request.vars.lon
+    else:
+        lon = config.lon
+
+    if zoom in request.vars:
+        zoom = request.vars.zoom
+    else:
+        zoom = config.zoom
+
+    if method in request.vars:
+        method = request.vars.method
+    else:
+        method = "create"
+
+    tablename = None
+    prefix = None
+    name = None
+
+    if method == "create":
+        map = self.show_map(add_feature = True,
+                            add_feature_active = True,
+                            toolbar = True,
+                            collapsed = True,
+                            window = True,
+                            window_hide = True)
+        return dict(map=map)
+
+    elif method == "update" and tablename and prefix and name:
+        # @ToDo: Finish porting this over from CRUD to a separate controller
+        _locations = db.gis_location
+        fields = [_locations.id, _locations.uuid, _locations.name, _locations.lat, _locations.lon, _locations.level, _locations.parent, _locations.addr_street]
+        if tablename == "gis_location":
+            location = db(db[tablename].id == r.id).select(limitby=(0, 1), *fields).first()
+        else:
+            location = db((db[tablename].id == r.id) & (_locations.id == db[tablename].location_id)).select(limitby=(0, 1), *fields).first()
+        if location and location.lat is not None and location.lon is not None:
+            lat = location.lat
+            lon = location.lon
+        else:
+            lat = config.lat
+            lon = config.lon
+        layername = T("Location")
+        popup_label = ""
+        filter = Storage(tablename = tablename,
+                         id = r.id
+                        )
+        layer = self.get_feature_layer(prefix, name, layername, popup_label, filter=filter)
+        if layer:
+            feature_queries = [layer]
+        else:
+            feature_queries = []
+        map = self.show_map(lat = lat,
+                            lon = lon,
+                            # Same as a single zoom on a cluster
+                            zoom = zoom + 2,
+                            feature_queries = feature_queries,
+                            add_feature = True,
+                            add_feature_active = False,
+                            toolbar = True,
+                            collapsed = True,
+                            window = True,
+                            window_hide = True)
+        if location and location.id:
+            _location = Storage(id = location.id,
+                                uuid = location.uuid,
+                                name = location.name,
+                                lat = location.lat,
+                                lon = location.lon,
+                                level = location.level,
+                                parent = location.parent,
+                                addr_street = location.addr_street
+                                )
+        else:
+            _location = None
+        return dict(map=map, oldlocation=_location)
+
+    else:
+        raise HTTP(501, BADMETHOD)
+
+# -----------------------------------------------------------------------------
 def display_feature():
     """
         Cut-down version of the Map Viewing Client.

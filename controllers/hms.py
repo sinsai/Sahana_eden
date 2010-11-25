@@ -128,11 +128,11 @@ def hospital():
     rheader = lambda r: shn_hms_hospital_rheader(r,
                                                  tabs=[(T("Status Report"), ""),
                                                        (T("Bed Capacity"), "bed_capacity"),
-                                                       (T("Activity Report"), "hactivity"),
+                                                       (T("Activity Report"), "activity"),
                                                        (T("Requests"), "req"),
-                                                       (T("Images"), "himage"),
+                                                       (T("Images"), "image"),
                                                        (T("Services"), "services"),
-                                                       (T("Contacts"), "hcontact"),
+                                                       (T("Contacts"), "contact"),
                                                        (T("Cholera Treatment Capability"), "ctc_capability")
                                                       ])
 

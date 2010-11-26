@@ -444,15 +444,29 @@ class S3LocationSelectorWidget:
             represent = ""
 
         add_button = A(T("Add New Location"), _id="gis_location_add-btn", _href="#", _class="action-btn")
-        
+
+        geolocate_button = A(T("Use Current Location"), _id="gis_location_geolocate-btn", _href="#", _class="action-btn hidden")
+
+        map_button = A(T("Select using Map"), _id="gis_location_map-btn", _href="#", _class="action-btn hidden")
+
+        geocode_button = A(T("Lookup Address"), _id="gis_location_geocode-btn", _href="#", _class="action-btn hidden")
+
+        converter_button = A(T("Coordinate Converter"), _id="gis_location_converter-btn", _href="#", _class="action-btn hidden")
+
         return TAG[""](
                         INPUT(**attr), # Real input, which is hidden
                         dropdowns,
-                        TR(INPUT(_id=dummy_input, _value=represent)),
                         TR(add_button),
-                        TR(TEXTAREA(_id="gis_location_addr_street", _class="hidden", _value=addr_street)),
-                        TR(INPUT(_id="gis_location_lat", _class="hidden", _value=lat)),
-                        TR(INPUT(_id="gis_location_lon", _class="hidden", _value=lon)),
+                        TR(DIV(geolocate_button, map_button)),
+                        TR(DIV(LABEL(T("Name") + ":"), SPAN("*", _class="req"), _id="gis_location_name_label", _class="hidden")),
+                        TR(INPUT(_id=dummy_input, _value=represent, _class="hidden")),
+                        TR(LABEL(T("Street Address") + ":", _id="gis_location_addr_street_label", _class="hidden")),
+                        TR(DIV(TEXTAREA(_id="gis_location_addr_street", _class="hidden", _value=addr_street), geocode_button)),
+                        TR(DIV(T("Advanced") + ":", INPUT(_type="checkbox", _id="gis_location_advanced_checkbox"), _id="gis_location_advanced_div", _class="hidden")),
+                        TR(LABEL(T("Latitude") + ":", _id="gis_location_lat_label", _class="hidden")),
+                        TR(INPUT(_id="gis_location_lat", _value=lat), db.gis_location.lat.comment, _id="gis_location_lat_row", _class="hidden"),
+                        TR(LABEL(T("Longitude") + ":", _id="gis_location_lon_label", _class="hidden")),
+                        TR(INPUT(_id="gis_location_lon", _value=lon), db.gis_location.lon.comment, _id="gis_location_lon_row", _class="hidden"),
                         SCRIPT(js_location_selector)
                       )
 

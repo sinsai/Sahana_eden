@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    Inventory
+    Inventory (Warehouse) Management
 
     @author: Michael Howden (michael@sahanafoundation.org)
     @date-created: 2010-08-16

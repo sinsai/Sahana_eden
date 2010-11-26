@@ -11,7 +11,7 @@
 
          EDXL-HAVE Export Templates
 
-         Version 0.5 / 2010-10-26 / by nursix
+         Version 0.5.1 / 2010-11-25 / by nursix
 
          Copyright (c) 2010 Sahana Software Foundation
 
@@ -233,6 +233,7 @@
 
     <!-- ****************************************************************** -->
     <!-- Bed Capacity -->
+    <!-- @todo: export broken down by department if available -->
     <xsl:template name="BedCapacityStatus">
         <have:HospitalBedCapacityStatus>
             <have:BedCapacity>
@@ -368,17 +369,19 @@
     <!-- ****************************************************************** -->
     <!-- Activites 24hrs -->
     <xsl:template name="Activity24Hr">
-        <have:Activity24Hr>
-            <have:Admissions>
-                <xsl:value-of select="./data[@field='admissions24']"/>
-            </have:Admissions>
-            <have:Discharges>
-                <xsl:value-of select="./data[@field='discharges24']"/>
-            </have:Discharges>
-            <have:Deaths>
-                <xsl:value-of select="./data[@field='deaths24']"/>
-            </have:Deaths>
-        </have:Activity24Hr>
+        <xsl:for-each select="./resource[@name='hms_activity'][1]">
+            <have:Activity24Hr>
+                <have:Admissions>
+                    <xsl:value-of select="./data[@field='admissions24']"/>
+                </have:Admissions>
+                <have:Discharges>
+                    <xsl:value-of select="./data[@field='discharges24']"/>
+                </have:Discharges>
+                <have:Deaths>
+                    <xsl:value-of select="./data[@field='deaths24']"/>
+                </have:Deaths>
+            </have:Activity24Hr>
+        </xsl:for-each>
     </xsl:template>
 
 
@@ -404,22 +407,29 @@
 
             <xsl:if test="./data[@field='doctors']/text()">
                 <have:ResourceInformationText>
-                    <xsl:text>Doctors available: </xsl:text>
+                    <xsl:text>Doctors: </xsl:text>
                     <xsl:value-of select="./data[@field='doctors']/text()"/>
                 </have:ResourceInformationText>
             </xsl:if>
 
             <xsl:if test="./data[@field='nurses']/text()">
                 <have:ResourceInformationText>
-                    <xsl:text>Nurses available: </xsl:text>
+                    <xsl:text>Nurses: </xsl:text>
                     <xsl:value-of select="./data[@field='nurses']/text()"/>
                 </have:ResourceInformationText>
             </xsl:if>
 
             <xsl:if test="./data[@field='non_medical_staff']/text()">
                 <have:ResourceInformationText>
-                    <xsl:text>Non-medical staff available: </xsl:text>
+                    <xsl:text>Non-medical staff: </xsl:text>
                     <xsl:value-of select="./data[@field='non_medical_staff']/text()"/>
+                </have:ResourceInformationText>
+            </xsl:if>
+
+            <xsl:if test="./resource[@name='hms_ctc_capability']/data[@field='ctc']/@value='True'">
+                <have:ResourceInformationText>
+                    <xsl:text>CTC Information: </xsl:text>
+                    <!-- @todo: elaborate -->
                 </have:ResourceInformationText>
             </xsl:if>
 

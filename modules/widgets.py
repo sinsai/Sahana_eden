@@ -7,8 +7,482 @@
 
 """
 
+import copy
+
+from lxml import etree
 from gluon.sqlhtml import *
+from gluon.html import P, URL
+from gluon.validators import *
 from s3utils import *
+from validators import *
+
+repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
+
+# -----------------------------------------------------------------------------
+class S3DateWidget:
+    """
+    Standard Date widget, but with a modified yearRange to support Birth dates
+    """
+
+    def __init__(self,
+                 before=10,  # How many years to show before the current one
+                 after=10    # How many years to show after the current one
+                ):
+        self.min = before
+        self.max = after
+    
+    def __call__(self ,field, value, **attributes):
+        default = dict(
+            _type = "text",
+            value = (value!=None and str(value)) or "",
+            )
+        attr = StringWidget._attributes(field, default, **attributes)
+
+        selector = str(field).replace(".", "_")
+        
+        date_options = """
+    $(function() {
+        $( '#%s' ).datepicker( 'option', 'yearRange', 'c-%s:c+%s' );
+    });
+    """ % (selector, self.min, self.max)
+        
+        return TAG[""](
+                        INPUT(**attr),
+                        SCRIPT(date_options)
+                      )
+                      
+# -----------------------------------------------------------------------------
+class S3AutocompleteWidget:
+    """
+    @author: Fran Boon (fran@aidiq.com)
+
+    Renders a SELECT as an INPUT field with AJAX Autocomplete
+    
+    # @ToDo version for Locations
+    """
+    def __init__(self,
+                 request,
+                 prefix,
+                 resourcename,
+                 fieldname="name",
+                 post_process = "",
+                 min_length=2):
+
+        self.request = request
+        self.prefix = prefix
+        self.resourcename = resourcename
+        self.fieldname = fieldname
+        self.post_process = post_process
+        self.min_length = min_length
+
+    def __call__(self ,field, value, **attributes):
+        default = dict(
+            _type = "text",
+            value = (value != None and str(value)) or "",
+            )
+        attr = StringWidget._attributes(field, default, **attributes)
+
+        # Hide the real field
+        attr["_class"] = attr["_class"] + " hidden"
+        
+        real_input = str(field).replace(".", "_")
+        dummy_input = "dummy_%s" % real_input
+        fieldname = self.fieldname
+        url = URL(r=self.request, c=self.prefix, f=self.resourcename, args="search.json", vars={"filter":"~", "field":fieldname})
+        
+        js_autocomplete = """
+        $('#%s').autocomplete({
+            source: '%s',
+            minLength: %d,
+            focus: function( event, ui ) {
+                $( '#%s' ).val( ui.item.%s );
+                return false;
+            },
+            select: function( event, ui ) {
+                $( '#%s' ).val( ui.item.%s );
+                $( '#%s' ).val( ui.item.id );
+                """ % (dummy_input, url, self.min_length, dummy_input, fieldname, dummy_input, fieldname, real_input) + self.post_process + """
+                return false;
+            }
+        })
+        .data( 'autocomplete' )._renderItem = function( ul, item ) {
+            return $( '<li></li>' )
+                .data( 'item.autocomplete', item )
+                .append( '<a>' + item.%s + '</a>' )
+                .appendTo( ul );
+        };
+        """ % (fieldname)
+        
+        if value:
+            text = str(field.represent(default["value"]))
+            if "<" in text:
+                # Strip Markup
+                try:
+                    markup = etree.XML(text)
+                    text = markup.xpath(".//text()")
+                    if text:
+                        text = " ".join(text)
+                    else:
+                        text = ""
+                except etree.XMLSyntaxError:
+                    pass
+            represent = text
+        else:
+            represent = ""
+        
+        return TAG[""](
+                        INPUT(_id=dummy_input, _value=represent),
+                        INPUT(**attr),
+                        SCRIPT(js_autocomplete)
+                      )
+
+# -----------------------------------------------------------------------------
+class S3PersonAutocompleteWidget:
+    """
+    @author: Fran Boon (fran@aidiq.com)
+
+    Renders a pr_person SELECT as an INPUT field with AJAX Autocomplete
+    
+    Differs from the S3AutocompleteWidget in that it uses 3 name fields
+    """
+    def __init__(self,
+                 request,
+                 post_process = "",
+                 min_length=2):
+
+        self.request = request
+        self.post_process = post_process
+        self.min_length = min_length
+
+    def __call__(self ,field, value, **attributes):
+        default = dict(
+            _type = "text",
+            value = (value != None and str(value)) or "",
+            )
+        attr = StringWidget._attributes(field, default, **attributes)
+
+        # Hide the real field
+        attr["_class"] = attr["_class"] + " hidden"
+        
+        real_input = str(field).replace(".", "_")
+        dummy_input = "dummy_%s" % real_input
+        url = URL(r=self.request, c="pr", f="person", args="search.json", vars={"filter":"~", "field":"first_name", "field2":"middle_name", "field3":"last_name"})
+        
+        js_autocomplete = """
+        $('#%s').autocomplete({
+            source: '%s',
+            minLength: %d,
+            focus: function( event, ui ) {
+                var name = '';
+                if (ui.item.first_name != null) {
+                    name += ui.item.first_name + ' ';
+                }
+                if (ui.item.middle_name != null) {
+                    name += ui.item.middle_name + ' ';
+                }
+                if (ui.item.last_name != null) {
+                    name += ui.item.last_name;
+                }
+                $( '#%s' ).val( name );
+                return false;
+            },
+            select: function( event, ui ) {
+                var name = '';
+                if (ui.item.first_name != null) {
+                    name += ui.item.first_name + ' ';
+                }
+                if (ui.item.middle_name != null) {
+                    name += ui.item.middle_name + ' ';
+                }
+                if (ui.item.last_name != null) {
+                    name += ui.item.last_name;
+                }
+                $( '#%s' ).val( name );
+                $( '#%s' ).val( ui.item.id );
+                """ % (dummy_input, url, self.min_length, dummy_input, dummy_input, real_input) + self.post_process + """
+                return false;
+            }
+        })
+        .data( 'autocomplete' )._renderItem = function( ul, item ) {
+            var name = '';
+            if (item.first_name != null) {
+                name += item.first_name + ' ';
+            }
+            if (item.middle_name != null) {
+                name += item.middle_name + ' ';
+            }
+            if (item.last_name != null) {
+                name += item.last_name;
+            }
+            return $( '<li></li>' )
+                .data( 'item.autocomplete', item )
+                .append( '<a>' + name + '</a>' )
+                .appendTo( ul );
+        };
+        """
+        
+        if value:
+            # Provide the representation for the current/default Value
+            text = str(field.represent(default["value"]))
+            if "<" in text:
+                # Strip Markup
+                try:
+                    markup = etree.XML(text)
+                    text = markup.xpath(".//text()")
+                    if text:
+                        text = " ".join(text)
+                    else:
+                        text = ""
+                except etree.XMLSyntaxError:
+                    pass
+            represent = text
+        else:
+            represent = ""
+        
+        return TAG[""](
+                        INPUT(_id=dummy_input, _value=represent),
+                        INPUT(**attr),
+                        SCRIPT(js_autocomplete)
+                      )
+
+# -----------------------------------------------------------------------------
+class S3LocationSelectorWidget:
+    """
+    @author: Fran Boon (fran@aidiq.com)
+
+    @ToDo: This is a work-in-progress
+    http://eden.sahanafoundation.org/wiki/BluePrintGISLocationSelector
+
+    Renders a gis_location SELECT as a hierarchical dropdown with the ability to add a new location from within the main form
+    - new location can be specified as:
+        * a simple name (hopefully within hierarchy)
+        * manual Lat/Lon entry (with optional GPS Coordinate Converter
+        * Geocoder lookup
+        * Select location from Map
+    """
+    def __init__(self,
+                 request,
+                 response,
+                 T,
+                 #hierarchy=True    # @ToDo Force selection of the hierarchy (useful when we have that data fully-populated)
+                 #level=None        # @ToDo Support forcing which level of the hierarchy is expected to be entered for this instance of the field
+                 ):
+
+        self.request = request
+        self.response = response
+        self.T = T
+
+    def __call__(self ,field, value, **attributes):
+
+        db = field._db
+        request = self.request
+        response = self.response
+        T = self.T
+
+        # Read Options
+        _gis = response.s3.gis
+        # Which Levels do we have in our hierarchy & what are their Labels?
+        location_hierarchy = _gis.location_hierarchy
+        # Ignore the bad bulk-imported data
+        del location_hierarchy["XX"]
+        
+        # Read current record
+        if value:
+            this_location = db(db.gis_location.id == value).select(db.gis_location.level,
+                                                                   db.gis_location.lat,
+                                                                   db.gis_location.lon,
+                                                                   db.gis_location.addr_street,
+                                                                   db.gis_location.parent,
+                                                                   limitby=(0, 1)).first()
+            level = this_location.level
+            lat = this_location.lat
+            lon = this_location.lon
+            addr_street = this_location.addr_street
+            parent = this_location.parent
+            if parent:
+                # & grandparent? @ToDo
+                pass
+        else:
+            this_location = None
+            lat = ""
+            lon = ""
+            addr_street = ""
+        
+        # Main Input
+        default = dict(
+            _type = "text",
+            value = (value != None and str(value)) or "",
+            )
+        attr = StringWidget._attributes(field, default, **attributes)
+        # Hide the real field
+        attr["_class"] = attr["_class"] + " hidden"
+        
+        real_input = str(field).replace(".", "_")
+        dummy_input = "gis_location_name"
+
+        # Settings to insert into static/scripts/S3/s3.locationselector.widget.js
+        location_id = attr["_id"]
+        #def url(level):
+        #    return URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"%s" % level})
+        url = URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level"})
+        
+        # Localised strings
+        empty_set = T("No locations registered at this level")
+        loading_locations = T("Loading Locations")
+        select_location = T("Select a location")
+        
+        # Hierarchical Selector
+        # @ToDo if this is an Admin Level then set the right dropdown to this level
+        # @ToDo if there is parent detail, then set the parent dropdowns to the right levels
+        default_dropdown = dict(
+            _type = "int",
+            value = 0,
+            )
+        attr_dropdown = OptionsWidget._attributes(field, default_dropdown, **attributes)
+        def level_dropdown(level, required=False):
+            # Prepare a dropdown widget
+            # @ToDo convert to the hierarchical AJAX
+            # IS_ONE_OF_EMPTY, etc
+            requires = IS_ONE_OF(db, "gis_location.id", repr_select,
+                                 filterby = "level",
+                                 filter_opts = (level,),
+                                 orderby = "gis_location.name",
+                                 sort = True,
+                                 zero = select_location + "...")
+            if not required:
+                requires = IS_NULL_OR(requires)
+            if not isinstance(requires, (list, tuple)):
+                requires = [requires]
+            if level == "L0":
+                if _gis.countries:
+                    # Use the list of countries from deployment_settings instead of from DB
+                    options = []
+                    for country_code in _gis.countries:
+                        country = db(db.gis_location.code == country_code).select(db.gis_location.id, db.gis_location.name, limitby=(0, 1)).first()
+                        options.append((country.id, country.name))
+                else:
+                    if hasattr(requires[0], "options"):
+                        options = requires[0].options()
+                    else:
+                        raise SyntaxError, "widget cannot determine options of %s" % field
+            else:
+                if level == "L1" and _gis.countries and len(_gis.countries) == 1:
+                    if hasattr(requires[0], "options"):
+                        options = requires[0].options()
+                    else:
+                        raise SyntaxError, "widget cannot determine options of %s" % field
+                else:
+                    # We don't want to pre-populate the dropdown - it will be pulled dynamically via AJAX when the parent dropdown is selected
+                    options = [(0, loading_locations)]
+            opts = [OPTION(v, _value=k) for (k, v) in options]
+
+            this_attr = copy.copy(attr_dropdown)
+            this_attr["_id"] = "gis_location_%s" % level
+            if level == "L0" and not len(_gis.countries) == 1:
+                # Don't Hide the Country selector if not hard-coded
+                label = LABEL(location_hierarchy[level], ":", _id="gis_location_label_%s" % level)
+            elif level == "L1" and len(_gis.countries) == 1:
+                # Don't Hide the L1 selector if Country hard-coded
+                label = LABEL(location_hierarchy[level], ":", _id="gis_location_label_%s" % level)
+            else:
+                # Hide the Dropdown & the selector
+                this_attr["_class"] = this_attr["_class"] + " hidden"
+                label = LABEL(location_hierarchy[level], ":", _id="gis_location_label_%s" % level, _class="hidden")
+
+            widget = SELECT(*opts, **this_attr)
+            row = DIV(TR(label), TR(widget))
+            return row
+
+        dropdowns = DIV()
+        if "L0" in location_hierarchy:
+            dropdowns.append(level_dropdown("L0"))
+            maxlevel = "L0"
+        if "L1" in location_hierarchy:
+            dropdowns.append(level_dropdown("L1"))
+            maxlevel = "L1"
+        if "L2" in location_hierarchy:
+            dropdowns.append(level_dropdown("L2"))
+            maxlevel = "L2"
+        if "L3" in location_hierarchy:
+            dropdowns.append(level_dropdown("L3"))
+            maxlevel = "L3"
+        if "L4" in location_hierarchy:
+            dropdowns.append(level_dropdown("L4"))
+            maxlevel = "L4"
+        if "L5" in location_hierarchy:
+            dropdowns.append(level_dropdown("L5"))
+            maxlevel = "L5"
+
+        # Settings to be read by static/scripts/S3/s3.locationselector.widget.js
+        js_location_selector = """
+    var gis_location_id = '%s';
+    var gis_maxlevel = '%s';
+    var gis_empty_set = '<option value="">%s</option>';
+    var gis_loading_locations = '<option value="">%s...</option>';
+    var gis_select_location = '<option value="" selected>%s...</option>';
+    var gis_url = '%s';
+    $(function() {
+    });
+    """ % (location_id, maxlevel, empty_set, loading_locations, select_location, url)
+        
+        if value:
+            # Provide the representation for the current/default Value
+            text = str(field.represent(default["value"]))
+            if "<" in text:
+                # Strip Markup
+                try:
+                    markup = etree.XML(text)
+                    text = markup.xpath(".//text()")
+                    if text:
+                        text = " ".join(text)
+                    else:
+                        text = ""
+                except etree.XMLSyntaxError:
+                    pass
+            represent = text
+        else:
+            represent = ""
+
+        add_button = A(T("Add New Location"), _id="gis_location_add-btn", _href="#",
+                                              #_class="action-btn"
+                                              )
+
+        geolocate_button = A(T("Use Current Location"), _id="gis_location_geolocate-btn", _href="#",
+                                                        _class="hidden"
+                                                        #_class="action-btn hidden"
+                                                        )
+
+        map_button = A(T("Select using Map"), _id="gis_location_map-btn", _href="#",
+                                              _class="hidden"
+                                              #_class="action-btn hidden"
+                                              )
+
+        geocode_button = A(T("Lookup Address"), _id="gis_location_geocode-btn", _href="#",
+                                                _class="hidden"
+                                                #_class="action-btn hidden"
+                                                )
+
+        converter_button = A(T("Coordinate Converter"), _id="gis_location_converter-btn", _href="#",
+                                                        _class="hidden"
+                                                        #_class="action-btn hidden"
+                                                        )
+
+        return TAG[""](
+                        INPUT(**attr), # Real input, which is hidden
+                        dropdowns,
+                        TR(add_button),
+                        TR(DIV(geolocate_button, map_button)),
+                        TR(DIV(LABEL(T("Name") + ":"), SPAN("*", _class="req"), _id="gis_location_name_label", _class="hidden")),
+                        TR(INPUT(_id=dummy_input, _value=represent, _class="hidden")),
+                        TR(LABEL(T("Street Address") + ":", _id="gis_location_addr_street_label", _class="hidden")),
+                        TR(DIV(TEXTAREA(_id="gis_location_addr_street", _class="hidden", _value=addr_street), geocode_button)),
+                        TR(DIV(T("Advanced") + ":", INPUT(_type="checkbox", _id="gis_location_advanced_checkbox"), _id="gis_location_advanced_div", _class="hidden")),
+                        TR(LABEL(T("Latitude") + ":", _id="gis_location_lat_label", _class="hidden")),
+                        TR(INPUT(_id="gis_location_lat", _value=lat), db.gis_location.lat.comment, _id="gis_location_lat_row", _class="hidden"),
+                        TR(LABEL(T("Longitude") + ":", _id="gis_location_lon_label", _class="hidden")),
+                        TR(INPUT(_id="gis_location_lon", _value=lon), db.gis_location.lon.comment, _id="gis_location_lon_row", _class="hidden"),
+                        SCRIPT(js_location_selector)
+                      )
 
 # -----------------------------------------------------------------------------
 class S3CheckboxesWidget(OptionsWidget):
@@ -461,7 +935,7 @@ class S3MultiSelectWidget(FormWidget):
                     # We should put a check here to make sure we don't double display rows
                     if id:
                         row = db(link_table.id == id).select()
-                        if len(row) > 0:    # If is NOT true, it indicates that a error has occured
+                        if len(row) > 0:    # If is NOT true, it indicates that an error has occurred
                             widget_rows.append(self._generate_row(widget_id,
                                                                   id,
                                                                   column_fields = column_fields,
@@ -512,7 +986,7 @@ class S3MultiSelectWidget(FormWidget):
                                     ColumnFields = column_fields
                                     )
         js_delete_click = "$('." + widget_id + "_delete" + "').live('click', function () {" + \
-                       "S3MultiselectWidgetDeleteClick(this," +  str(js_delete_click_args) + ")});"
+                          "S3MultiselectWidgetDeleteClick(this," +  str(js_delete_click_args) + ")});"
 
         # When the form is submitted, click the "add button" - just in case the user forgot to
         js_submit =  "$('form').submit( function() {" + \
@@ -566,10 +1040,10 @@ class S3MultiSelectWidget(FormWidget):
 
         # Delete button
         row_field_cells.append(TD(A(DIV(_class = "s3_multiselect_widget_delete_button"),
-                                    _class = "s3_multiselect_widget_delete " + widget_id + "_delete",
-                                    _href = "javascript: void(0)",
-                                    **delete_attr),
-                                  _class = "s3_multiselect_widget_delete_button")
+                                  _class = "s3_multiselect_widget_delete " + widget_id + "_delete",
+                                  _href = "javascript: void(0)",
+                                  **delete_attr),
+                               _class = "s3_multiselect_widget_delete_button")
                                )
 
         return TR(*row_field_cells)

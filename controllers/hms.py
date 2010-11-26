@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
-"""
-    HMS Hospital Status Assessment and Request Management System
+""" HMS Hospital Status Assessment and Request Management System
 
     @author: nursix
+    @version: 1.0.1
+
 """
 
 module = request.controller
+resourcename = request.function
 
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
@@ -52,8 +54,7 @@ def hospital():
 
     """ Main controller for hospital data entry """
 
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
      # Pre-processor
@@ -127,33 +128,34 @@ def hospital():
     rheader = lambda r: shn_hms_hospital_rheader(r,
                                                  tabs=[(T("Status Report"), ""),
                                                        (T("Bed Capacity"), "bed_capacity"),
-                                                       (T("Activity Report"), "hactivity"),
+                                                       (T("Activity Report"), "activity"),
                                                        (T("Requests"), "req"),
-                                                       (T("Images"), "himage"),
+                                                       (T("Images"), "image"),
                                                        (T("Services"), "services"),
-                                                       (T("Contacts"), "hcontact")
+                                                       (T("Contacts"), "contact"),
+                                                       (T("Cholera Treatment Capability"), "ctc_capability")
                                                       ])
 
-    output = s3_rest_controller(module, resource, rheader=rheader)
+    output = s3_rest_controller(module, resourcename, rheader=rheader)
     shn_menu()
     return output
 
 
 # -----------------------------------------------------------------------------
 #
-def shn_hms_hospital_rheader(jr, tabs=[]):
+def shn_hms_hospital_rheader(r, tabs=[]):
 
     """ Page header for component resources """
 
-    if jr.name == "hospital":
-        if jr.representation == "html":
+    if r.name == "hospital":
+        if r.representation == "html":
 
-            _next = jr.here()
-            _same = jr.same()
+            _next = r.here()
+            _same = r.same()
 
-            rheader_tabs = shn_rheader_tabs(jr, tabs)
+            rheader_tabs = shn_rheader_tabs(r, tabs)
 
-            hospital = jr.record
+            hospital = r.record
             if hospital:
                 rheader = DIV(TABLE(
 

@@ -2,9 +2,9 @@
 
 """ S3XRC Resource Framework
 
-    @version: 2.2.0
+    @version: 2.2.5
 
-    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
+    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
     @requires: U{B{I{ReportLab}} <http://www.reportlab.com/software/opensource>}

@@ -586,120 +586,51 @@ $(function() {
     $('#gis_location_name_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
 
     // Autocomplete-enable the Name Input
-    $('#gis_location_name').autocomplete('{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"~", "field":"name", "exclude_field":"level", "exclude_value":"XX"})}}', {
-        extraParams: {
-            // Read 'parent' field dynamically
-            // @ ToDo Disabled temporarily until the bad Lx data is fixed
-            //parent: function() {
-            //            var _parent = $('#gis_location_l5').val();
-            //            if (undefined == _parent || '' == _parent) {
-            //                _parent = $('#gis_location_l4').val();
-            //                if (undefined == _parent || '' == _parent) {
-            //                    _parent = $('#gis_location_l3').val();
-            //                    if (undefined == _parent || '' == _parent) {
-            //                        _parent = $('#gis_location_l2').val();
-            //                        if (undefined == _parent || '' == _parent) {
-            //                            _parent = $('#gis_location_l1').val();
-            //                            if (undefined == _parent || '' == _parent) {
-            //                                _parent = $('#gis_location_l0').val();
-            //                            }
-            //                        }
-            //                    }
-            //                }
-            //           }
-            //            return _parent
-            //        }
+    $('#gis_location_name').autocomplete({
+        source: '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"~", "field":"name", "exclude_field":"level", "exclude_value":"XX"})}}',
+        minLength: 2,
+        focus: function( event, ui ) {
+            $( '#gis_location_name' ).val( ui.item.name );
+            return false;
         },
-        // Don't cache
-        cacheLength: 1,
-        minChars: 2,
-		//mustMatch: true,
-		matchContains: true,
-        dataType: 'json',
-        parse: function(data) {
-            var rows = new Array();
-            for(var i=0; i<data.length; i++){
-                rows[i] = { data:data[i], value:data[i].id, result:data[i].name };
-            }
-            return rows;
-        },
-        formatItem: function(row, i, n) {
-            {{try:}}
-            {{test = _gis.location_hierarchy["L1"]}}
-            if (row.level == 'L1') {
-                return row.name + ' ({{=_gis.location_hierarchy["L1"]}})';
-            {{try:}}
-            {{test = _gis.location_hierarchy["L2"]}}
-            } else if (row.level == 'L2') {
-                return row.name + ' ({{=_gis.location_hierarchy["L2"]}})';
-            {{except:}}
-            {{pass}}
-            {{try:}}
-            {{test = _gis.location_hierarchy["L3"]}}
-            } else if (row.level == 'L3') {
-                return row.name + ' ({{=_gis.location_hierarchy["L3"]}})';
-            {{except:}}
-            {{pass}}
-            {{try:}}
-            {{test = _gis.location_hierarchy["L4"]}}
-            } else if (row.level == 'L4') {
-                return row.name + ' ({{=_gis.location_hierarchy["L4"]}})';
-            {{except:}}
-            {{pass}}
-            {{try:}}
-            {{test = _gis.location_hierarchy["L5"]}}
-            } else if (row.level == 'L5') {
-                return row.name + ' ({{=_gis.location_hierarchy["L5"]}})';
-            {{except:}}
-            {{pass}}
-            } else {
-            {{except:}}
-            {{pass}}
-                return row.name;
-            }
-		}
-    });
-    $('#gis_location_name').change(function() {
-        // If a new name is typed into the field, then we want to create a new Location, not update an existing one.
-        $('#' + location_id).val('');
-        S3.gis.uuid = '';
-        // If a name is selected from the Autocomplete
-        // Populate the ID, Street Address & Lat/Lon
-        $('#gis_location_name').result(function(event, data, formatted) {
-            $('#' + location_id).val(data.id);
-            S3.gis.uuid = data.uuid;
-            $('#gis_location_lat').val(data.lat);
-            $('#gis_location_lon').val(data.lon);
-            if (data.addr_street != 'None') {
-                $('#gis_location_addr_street').val(data.addr_street);
+        select: function( event, ui ) {
+            $( '#gis_location_name' ).val( ui.item.name );
+            $( '#{{=request.controller + "_" + request.function + "_location_id"}}' ).val( ui.item.id );
+            
+            // Also populate the Street Address & Lat/Lon
+            S3.gis.uuid = ui.item.uuid;
+            $('#gis_location_lat').val(ui.item.lat);
+            $('#gis_location_lon').val(ui.item.lon);
+            if (ui.item.addr_street != 'None') {
+                $('#gis_location_addr_street').val(ui.item.addr_street);
             }
             // If a location in the admin hierarchy has been selected
-            if ((data.level != 'None') && (data.level != '')){
-                if (data.level == 'L0') {
+            if ((ui.item.level != 'None') && (ui.item.level != '')){
+                if (ui.item.level == 'L0') {
                     // Set the location (whether visible or not)
-                    $('#gis_location_l0').val(data.id);
+                    $('#gis_location_l0').val(ui.item.id);
                     // @ToDo Refresh other dropdowns
                     // (Not needed for PK)
-                } else if (data.level == 'L1') {
+                } else if (ui.item.level == 'L1') {
                     // Check if that dropdown is visible
                     if ($('#gis_location_l1__row').length == 0) {
                         // Open the dropdown
                         // @ToDo Check for bad side-effects of reusing these!
                         // Better to use arguments than flags!
                         S3.gis.level = 'L1';
-                        old_id = data.id;
+                        old_id = ui.item.id;
                         S3.gis.locations_l1(false);
                         // Set the right entry
-                        //s3_debug('opened dropdown', data.id)
+                        //s3_debug('opened dropdown', ui.item.id)
                         // Not working - async issue?
-                        //$('#gis_location_l1').val(data.id);
+                        //$('#gis_location_l1').val(ui.item.id);
                         // @ToDo If we know country has changed, then reset that dropdown too
                         // (Not needed for PK)
                     } else {
                         // @ToDo Check that our location is in this dropdown!
                         // (Not needed for PK)
                         // Set the right entry
-                        $('#gis_location_l1').val(data.id);
+                        $('#gis_location_l1').val(ui.item.id);
                         // @ToDo If we know country has changed, then reset that dropdown too
                         // (Not needed for PK)
                         // Refresh L2-L5 dropdowns
@@ -708,20 +639,20 @@ $(function() {
                         $('#gis_location_l4').val('');
                         $('#gis_location_l5').val('');
                     }
-                } else if (data.level == 'L2') {
+                } else if (ui.item.level == 'L2') {
                     // Check if that dropdown is visible
                     if ($('#gis_location_l2__row').length == 0) {
                         // Open the dropdown
                         S3.gis.level = 'L2';
-                        old_id = data.id;
+                        old_id = ui.item.id;
                         S3.gis.locations_l2(false);
                         // Set the right entry
-                        //$('#gis_location_l2').val(data.id);
-                        if (data.parent) {
-                            var exists = $('#gis_location_l1').itemExists(data.parent.toString());
+                        //$('#gis_location_l2').val(ui.item.id);
+                        if (ui.item.parent) {
+                            var exists = $('#gis_location_l1').itemExists(ui.item.parent.toString());
                             if (exists) {
                                 // Set the L1 to the Parent
-                                $('#gis_location_l1').val(data.parent);
+                                $('#gis_location_l1').val(ui.item.parent);
                             } else {
                                 // Reset the L1 dropdown
                                 $('#gis_location_l1').val('');
@@ -731,15 +662,15 @@ $(function() {
                         }
                     } else {
                         // Check that our location is in this dropdown!
-                        var exists = $('#gis_location_l2').itemExists(data.id.toString());
+                        var exists = $('#gis_location_l2').itemExists(ui.item.id.toString());
                         if (exists) {
                             // Set the right entry
-                            $('#gis_location_l2').val(data.id);
-                            if (data.parent) {
-                                var exists = $('#gis_location_l1').itemExists(data.parent.toString());
+                            $('#gis_location_l2').val(ui.item.id);
+                            if (ui.item.parent) {
+                                var exists = $('#gis_location_l1').itemExists(ui.item.parent.toString());
                                 if (exists) {
                                     // Set the L1 to the Parent
-                                    $('#gis_location_l1').val(data.parent);
+                                    $('#gis_location_l1').val(ui.item.parent);
                                 } else {
                                     // Reset the L1 dropdown
                                     $('#gis_location_l1').val('');
@@ -755,20 +686,20 @@ $(function() {
                             // @ToDo Reload this Dropdown
                         }
                     }
-                } else if (data.level == 'L3') {
+                } else if (ui.item.level == 'L3') {
                     // Check if that dropdown is visible
                     if ($('#gis_location_l3__row').length == 0) {
                         // Open the dropdown
                         S3.gis.level = 'L3';
-                        old_id = data.id;
+                        old_id = ui.item.id;
                         S3.gis.locations_l3(false);
                         // Set the right entry
-                        //$('#gis_location_l3').val(data.id);
-                        if (data.parent) {
-                            var exists = $('#gis_location_l2').itemExists(data.parent.toString());
+                        //$('#gis_location_l3').val(ui.item.id);
+                        if (ui.item.parent) {
+                            var exists = $('#gis_location_l2').itemExists(ui.item.parent.toString());
                             if (exists) {
                                 // Set the L2 to the Parent
-                                $('#gis_location_l2').val(data.parent);
+                                $('#gis_location_l2').val(ui.item.parent);
                             } else {
                                 // Reset the L2 dropdown
                                 $('#gis_location_l2').val('');
@@ -778,15 +709,15 @@ $(function() {
                         }
                     } else {
                         // Check that our location is in this dropdown!
-                        var exists = $('#gis_location_l3').itemExists(data.id.toString());
+                        var exists = $('#gis_location_l3').itemExists(ui.item.id.toString());
                         if (exists) {
                             // Set the right entry
-                            $('#gis_location_l3').val(data.id);
-                            if (data.parent) {
-                                var exists = $('#gis_location_l2').itemExists(data.parent.toString());
+                            $('#gis_location_l3').val(ui.item.id);
+                            if (ui.item.parent) {
+                                var exists = $('#gis_location_l2').itemExists(ui.item.parent.toString());
                                 if (exists) {
                                     // Set the L2 to the Parent
-                                    $('#gis_location_l2').val(data.parent);
+                                    $('#gis_location_l2').val(ui.item.parent);
                                 } else {
                                     // Reset the L2 dropdown
                                     $('#gis_location_l2').val('');
@@ -801,20 +732,20 @@ $(function() {
                             // @ToDo Reload this Dropdown
                         }
                     }
-                } else if (data.level == 'L4') {
+                } else if (ui.item.level == 'L4') {
                     // Check if that dropdown is visible
                     if ($('#gis_location_l4__row').length == 0) {
                         // Open the dropdown
                         S3.gis.level = 'L4';
-                        old_id = data.id;
+                        old_id = ui.item.id;
                         S3.gis.locations_l4(false);
                         // Set the right entry
-                        //$('#gis_location_l4').val(data.id);
-                        if (data.parent) {
-                            var exists = $('#gis_location_l3').itemExists(data.parent.toString());
+                        //$('#gis_location_l4').val(ui.item.id);
+                        if (ui.item.parent) {
+                            var exists = $('#gis_location_l3').itemExists(ui.item.parent.toString());
                             if (exists) {
                                 // Set the L3 to the Parent
-                                $('#gis_location_l3').val(data.parent);
+                                $('#gis_location_l3').val(ui.item.parent);
                             } else {
                                 // Reset the L3 dropdown
                                 $('#gis_location_l3').val('');
@@ -825,15 +756,15 @@ $(function() {
                         }
                     } else {
                         // Check that our location is in this dropdown!
-                        var exists = $('#gis_location_l4').itemExists(data.id.toString());
+                        var exists = $('#gis_location_l4').itemExists(ui.item.id.toString());
                         if (exists) {
                             // Set the right entry
-                            $('#gis_location_l4').val(data.id);
-                            if (data.parent) {
-                                var exists = $('#gis_location_l3').itemExists(data.parent.toString());
+                            $('#gis_location_l4').val(ui.item.id);
+                            if (ui.item.parent) {
+                                var exists = $('#gis_location_l3').itemExists(ui.item.parent.toString());
                                 if (exists) {
                                     // Set the L3 to the Parent
-                                    $('#gis_location_l3').val(data.parent);
+                                    $('#gis_location_l3').val(ui.item.parent);
                                 } else {
                                     // Reset the L3 dropdown
                                     $('#gis_location_l3').val('');
@@ -848,28 +779,28 @@ $(function() {
                             // @ToDo Reload this Dropdown
                         }
                     }
-                } else if (data.level == 'L5') {
+                } else if (ui.item.level == 'L5') {
                     // Check if that dropdown is visible
                     if ($('#gis_location_l5__row').length == 0) {
                         // Open the dropdown
                         S3.gis.level = 'L5';
-                        old_id = data.id;
+                        old_id = ui.item.id;
                         S3.gis.locations_l5(false);
                         // Set the right entry
-                        //$('#gis_location_l5').val(data.id);
+                        //$('#gis_location_l5').val(ui.item.id);
                         // @ToDo Ensure that all dropdowns above it are now visible
-                        // @ToDo If we have parent data, set those too
+                        // @ToDo If we have parent ui.item, set those too
                     } else {
                         // Check that our location is in this dropdown!
-                        var exists = $('#gis_location_l5').itemExists(data.id.toString());
+                        var exists = $('#gis_location_l5').itemExists(ui.item.id.toString());
                         if (exists) {
                             // Set the right entry
-                            $('#gis_location_l5').val(data.id);
-                            if (data.parent) {
-                                var exists = $('#gis_location_l4').itemExists(data.parent.toString());
+                            $('#gis_location_l5').val(ui.item.id);
+                            if (ui.item.parent) {
+                                var exists = $('#gis_location_l4').itemExists(ui.item.parent.toString());
                                 if (exists) {
                                     // Set the L4 to the Parent
-                                    $('#gis_location_l4').val(data.parent);
+                                    $('#gis_location_l4').val(ui.item.parent);
                                 } else {
                                     // Reset the L4 dropdown
                                     $('#gis_location_l4').val('');
@@ -887,13 +818,57 @@ $(function() {
                 // Clear the Name box, so that it's obviously free for a future sub-location
                 $('#gis_location_name').val('');
             }
-        });
+            
+            return false;
+        }
+    })
+    .data( 'autocomplete' )._renderItem = function( ul, item ) {
+        var name = item.name;
+        {{try:}}
+        {{test = _gis.location_hierarchy["L1"]}}
+        if (item.level == 'L1') {
+            name += ' ({{=_gis.location_hierarchy["L1"]}})';
+        {{try:}}
+        {{test = _gis.location_hierarchy["L2"]}}
+        } else if (item.level == 'L2') {
+            name += ' ({{=_gis.location_hierarchy["L2"]}})';
+        {{except:}}
+        {{pass}}
+        {{try:}}
+        {{test = _gis.location_hierarchy["L3"]}}
+        } else if (item.level == 'L3') {
+            name += ' ({{=_gis.location_hierarchy["L3"]}})';
+        {{except:}}
+        {{pass}}
+        {{try:}}
+        {{test = _gis.location_hierarchy["L4"]}}
+        } else if (item.level == 'L4') {
+            name += ' ({{=_gis.location_hierarchy["L4"]}})';
+        {{except:}}
+        {{pass}}
+        {{try:}}
+        {{test = _gis.location_hierarchy["L5"]}}
+        } else if (item.level == 'L5') {
+            name += ' ({{=_gis.location_hierarchy["L5"]}})';
+        {{except:}}
+        {{pass}}
+        }
+        {{except:}}
+        {{pass}}
+        return $( '<li></li>' )
+            .data( 'item.autocomplete', item )
+            .append( '<a>' + name + '</a>' )
+            .appendTo( ul );
+    };
+    $('#gis_location_name').change(function() {
+        // If a new name is typed into the field, then we want to create a new Location, not update an existing one.
+        $('#' + location_id).val('');
+        S3.gis.uuid = '';
     });
     
     // Street Address
     label = '{{=db.gis_location.addr_street.label}}:';
     widget = "<textarea id='gis_location_addr_street' class='text' rows='5' cols='46'>" + old_addr_street + '</textarea>';
-    // ToDo: GeoCoder widget here
     comment = "<div title='" + label + '|' + "{{=T("This can either be the postal address or a simpler description (such as `Next to the Fuel Station`).")}}" + "' id='gis_location_add_street_tooltip' class='tooltip'></div>";
     row1 = "<tr id='gis_location_addr_street__row1'><td colspan='2'><label>" + label + '</label></td></tr>';
     row2 = "<tr id='gis_location_addr_street__row'><td>" + widget + '</td><td>' + comment + '</td></tr>';
@@ -901,6 +876,116 @@ $(function() {
     $(location_id_row).before(row2);
     // Apply the tooltip which was missed 1st time round
     $('#gis_location_add_street_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
+    
+    // GeoCoder widget
+    widget = "<a id='geocoder-results-button' href='#'>{{=T("Geocoder Search")}}</a> ({{=T("Type an address above and use the geocoder to complete it.")}})";
+    row2 = "<tr id='gis_location_geocoder__row'><td>" + widget + '</td><td></td></tr>';
+    $(location_id_row).before(row2);
+
+    // This is a generic method to find a specific value for an object
+    // inside of the nested Google placemark objects.  It's recursive.
+    function getGoogleValue(placemark, searchValue) {
+        //s3_debug('Searching...', placemark, searchValue);
+        for (key in placemark) {
+            if (key == searchValue) {
+                return placemark[key];
+            }
+            else if (typeof(placemark[key]) == 'object') {
+                return getGoogleValue(placemark[key], searchValue);
+            }
+        }
+        return ''
+    }
+
+    /* This is a specific function to find the "ThoroughfareName" in the
+    /* placemark.  For some reason using the above function will read
+    /* everything in the "Locality" object except the Thoroughfare, which
+    /* contains the ThoroughfareName.  It will even read the PostalCode,
+    /* which is also referenced below.  The 'in' operator simply doesn't
+    /* see Thoroughfare in the Locality.  Incidentally, Google makes it so
+    /* the "Locality" object appears under SubAdministrativeArea usually, but
+    /* SubAdministrativeArea doesn't always appear under an AdministrativeArea,
+    /* thus the need for these recursive functions. */
+    function getGoogleThoroughfareName(placemark) {
+        //s3_debug('Object: ', placemark);
+        localityPlacemark = getGoogleValue(placemark, 'Locality');
+        // Search for a 'DependentLocality' if Locality wasn't found at all
+        if(localityPlacemark == '' || localityPlacemark == undefined) {
+            localityPlacemark = getGoogleValue(placemark, 'DependentLocality');
+        }
+        // If the locality has a dependentlocality, use that...
+        if (localityPlacemark['DependentLocality'] != undefined)
+            localityPlacemark = localityPlacemark['DependentLocality'];
+        if (localityPlacemark['Thoroughfare'] != undefined) {
+            localityPlacemark = localityPlacemark['Thoroughfare'];
+            if (localityPlacemark['ThoroughfareName'] != undefined) {
+                //s3_debug('Found ThoroughfareName: ', placemark['ThoroughfareName']);
+                // Finally return the street address
+                return localityPlacemark['ThoroughfareName'];
+            }
+        }
+        return ''
+    }
+
+     function geoCoderResultsHandler(selectedAddress) {
+        $('#gis_location_lat').val(selectedAddress.Point.coordinates[0]);
+        $('#gis_location_lon').val(selectedAddress.Point.coordinates[1]);
+
+        /* Note, these calls are how the street_addr and zipcode could normally
+         * be found, but sometimes SubAdminArea doesn't appear under an 
+         * AdminArea, so the methods above are needed. */
+        /*street_addr = selectedAddress.AddressDetails.Country.
+                AdministrativeArea.SubAdministrativeArea.Locality.
+                Thoroughfare.ThoroughfareName;
+        zipcode = selectedAddress.AddressDetails.Country.
+                AdministrativeArea.SubAdministrativeArea.Locality.
+                PostalCode.PostalCodeNumber;*/
+
+        var street_addr = getGoogleThoroughfareName(selectedAddress);
+        if (!street_addr) {
+            alert('{{=T("Unfortunately there was not a usable street address for your selection.  Latitude and Longitude values were found, and have been entered below.")}}');
+            return;
+        }
+        var successfulEntries = '{{=T("Latitude, Longitude, Street Address")}}';
+        var zipcode = getGoogleValue(selectedAddress, 'PostalCodeNumber');
+        var country = selectedAddress.AddressDetails.Country.CountryName;
+        if (zipcode) {
+            street_addr += ' ' + zipcode;
+            successfulEntries += ', Postal code';
+        }
+        $('#gis_location_addr_street').val(street_addr);
+        //$('#gis_location_l0').val(country);
+        //alert('{{=T("Successfully changed")}}: ' + successfulEntries);
+    }
+
+    var geoCodeButton = Ext.get('geocoder-results-button');
+    geoCodeButton.on('click', function(){
+        var addr_street = $('#gis_location_addr_street').val();
+        var country = '';
+        var province = '';
+        // Unfortunately, adding in the country sometimes seems to pare down results too much.
+        // Needs more work...
+        if ($('#gis_location_l0').val()) {
+            country = $('#gis_location_l0 :selected').text();
+        }
+        if ($('#gis_location_l1').val()) {
+            province = $('#gis_location_l1 :selected').text();
+        }
+        var search_term = addr_street + ' ' + province + ' ' + country;
+        //s3_debug('Searching geocoder with: ', search_term);
+        if (!addr_street) {
+            return;
+        }
+        $.getJSONS3(
+            '{{=URL(r=request, c="gis", f="geocode")}}' + '?location=' + search_term,
+            function(data) {
+                //s3_debug('Geocoder results:', data);
+                geocode_results_picker(data, geoCoderResultsHandler);
+            },
+            'false'
+        );
+    });
+
 
     // Call L0 after definition of L1-L5 (since it may need to recurse through them)
     S3.gis.locations_l0();
@@ -1109,5 +1194,6 @@ s3_tb_cleanup = function(level){
 {{pass}}
 
 {{include "gis/convert_gps.html"}}
+{{include "gis/geocoder_results_popup.html"}}
 
 {{pass}}

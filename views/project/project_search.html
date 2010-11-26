@@ -1,4 +1,4 @@
-{{extend 'layout.html'}}
+{{extend "layout.html"}}
 {{try:}}
  {{=H2(title)}}
 {{except:}}
@@ -21,10 +21,10 @@
 {{pass}}
 </div>
 <p>&nbsp;</p>
-{{include 'pagenav.html'}}
-{{include 'searchbox.html'}}
+{{include "pagenav.html"}}
+{{include "searchbox.html"}}
 {{try:}}
  {{=add_btn}}
 {{except:}}
 {{pass}}
-{{include 'dataTables.html'}}
+{{include "dataTables.html"}}

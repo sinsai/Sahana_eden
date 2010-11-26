@@ -28,12 +28,15 @@ def s3_sessions():
     if auth.is_logged_in():
         user_id = auth.user.id
         _memberships = db.auth_membership
-        memberships = db(_memberships.user_id == user_id).select(_memberships.group_id) # Cache this & invalidate when memberships are changed?
+        # Cache this & invalidate when memberships are changed?
+        memberships = db(_memberships.user_id == user_id).select(
+                        _memberships.group_id) 
         roles = [m.group_id for m in memberships]
     session.s3.roles = roles
 
     # Are we running in debug mode?
-    session.s3.debug = request.vars.get("debug", None) or deployment_settings.get_base_debug()
+    session.s3.debug = request.vars.get("debug", None) or \
+                       deployment_settings.get_base_debug()
 
     # Should we use Content-Delivery Networks?
     session.s3.cdn = deployment_settings.get_base_cdn()
@@ -740,8 +743,9 @@ def shn_search(r, **attr):
         _table = r.table
 
         # JQuery Autocomplete uses "q" instead of "value"
-        value = _vars.value or _vars.q or None
-
+        # JQueryUI Autocomplete uses "term" instead of "value"
+        value = _vars.value or _vars.term or _vars.q or None
+        
         if _vars.field and _vars.filter and value:
             field = str.lower(_vars.field)
             _field = _table[field]

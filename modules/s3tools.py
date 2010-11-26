@@ -499,6 +499,7 @@ class AuthS3(Auth):
                               requires=IS_EXPR("value==%s" % \
                                repr(request.vars.get(passfield, None)),
                         error_message=self.messages.mismatched_password)),
+                        SPAN("*", _class="req"),
                 "", _class="%s_%s__row" % (user, "password_two")))
         if self.settings.captcha != None:
             form[0].insert(-1, TR("", self.settings.captcha, ""))

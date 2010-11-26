@@ -270,6 +270,7 @@ if populate:
             table.insert( name = "# of children under 5" )
             table.insert( name = "# of children" )
             table.insert( name = "# of cattle" )
+            table.insert( name = "Ha. of fields" )
 
     # Impacts
     if deployment_settings.has_module("irs") or deployment_settings.has_module("assess"):        
@@ -284,7 +285,7 @@ if populate:
                                                      field = "id",
                                                      look_up = "Food",
                                                      look_up_field = "abrv") 
-                          )              
+                          )
             table.insert( name = "# People at Risk From Vector-Borne Diseases",
                           cluster_id = \
                               shn_get_db_field_value(db = db,
@@ -292,7 +293,7 @@ if populate:
                                                      field = "id",
                                                      look_up = "Health",
                                                      look_up_field = "abrv") 
-                          )  
+                          )
             table.insert( name = "# People without Access to Safe Drinking-Water",
                           cluster_id = \
                               shn_get_db_field_value(db = db,
@@ -308,7 +309,7 @@ if populate:
                                                      field = "id",
                                                      look_up = "Shelter",
                                                      look_up_field = "abrv") 
-                          )  
+                          )
             table.insert( name = "# Houses Flooded",
                           cluster_id = \
                               shn_get_db_field_value(db = db,
@@ -316,15 +317,23 @@ if populate:
                                                      field = "id",
                                                      look_up = "Shelter",
                                                      look_up_field = "abrv") 
-                          )                              
-            table.insert( name = "Ha. Rice Paddies Flooded",
+                          )
+            table.insert( name = "Water Level still high?",
+                          cluster_id = \
+                              shn_get_db_field_value(db = db,
+                                                     table = "org_cluster",
+                                                     field = "id",
+                                                     look_up = "Shelter",
+                                                     look_up_field = "abrv") 
+                          )
+            table.insert( name = "Ha. Fields Flooded",
                           cluster_id = \
                               shn_get_db_field_value(db = db,
                                                      table = "org_cluster",
                                                      field = "id",
                                                      look_up = "Agriculture",
                                                      look_up_field = "abrv") 
-                          )                                                    
+                          )
 
     # Supply / Inventory
     tablename = "supply_item_category"
@@ -657,7 +666,7 @@ if populate:
             projection_id = 1,
             marker_id = 1,
             map_height = 600,
-            map_width = 800,
+            map_width = 1000,
             symbology_id = symbology_us,
             wmsbrowser_url = "http://geo.eden.sahanafoundation.org/geoserver/wms?service=WMS&request=GetCapabilities"
         )
@@ -853,9 +862,9 @@ if populate:
         )
         table.insert(
             name = "Assessments",
-            module = "rat",
-            resource = "assessment",
-            popup_label = "Assessment",
+            module = "assess",
+            resource = "rat",
+            popup_label = "Rapid Assessment",
             marker_id = db(db.gis_marker.name == "marker_green").select(db.gis_marker.id, limitby=(0, 1)).first().id
         )
         table.insert(
@@ -872,23 +881,68 @@ if populate:
             popup_label = "Warehouse",
             marker_id = db(db.gis_marker.name == "office").select(db.gis_marker.id, limitby=(0, 1)).first().id
         )
+    tablename = "gis_layer_coordinate"
+    table = db[tablename]
+    if not db(table.id > 0).count():
+        # Populate table
+        table.insert(
+                name = "Coordinate Grid",
+                enabled = False,
+                visible = False
+            )
     tablename = "gis_layer_openstreetmap"
     table = db[tablename]
     if not db(table.id > 0).count():
         # Populate table
-        for subtype in gis_layer_openstreetmap_subtypes:
-            if subtype in ["Taiwan"]:
-                # Local OSM layers should be disabled by default in default builds
-                table.insert(
-                        name = "OSM " + subtype,
-                        subtype = subtype,
-                        enabled = False
-                    )
-            else:
-                table.insert(
-                        name = "OSM " + subtype,
-                        subtype = subtype
-                    )
+        table.insert(
+                name = "OpenStreetMap (Mapnik)",
+                url1 = "http://a.tile.openstreetmap.org/",
+                url2 = "http://b.tile.openstreetmap.org/",
+                url3 = "http://c.tile.openstreetmap.org/",
+                attribution = '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>'
+            )
+        table.insert(
+                name = "OpenStreetMap (CycleMap)",
+                url1 = "http://a.tile.opencyclemap.org/cycle/",
+                url2 = "http://b.tile.opencyclemap.org/cycle/",
+                url3 = "http://c.tile.opencyclemap.org/cycle/",
+                attribution = '<a href="http://www.opencyclemap.org/">OpenCycleMap</a>'
+            )
+        table.insert(
+                name = "OpenStreetMap (Labels)",
+                url1 = "http://tiler1.censusprofiler.org/labelsonly/",
+                attribution = 'Labels overlay CC-by-SA by <a href="http://oobrien.com/oom/">OpenOrienteeringMap</a>/<a href="http://www.openstreetmap.org/">OpenStreetMap</a> data',
+                base = False
+            )
+        table.insert(
+                name = "OpenStreetMap (Relief)",
+                url1 = "http://toolserver.org/~cmarqu/hill/",
+                attribution = 'Relief by <a href="http://hikebikemap.de/">Hike &amp; Bike Map</a>',
+                base = False
+            )
+        table.insert(
+                name = "OpenStreetMap (Osmarender)",
+                url1 = "http://a.tah.openstreetmap.org/Tiles/tile/",
+                url2 = "http://b.tah.openstreetmap.org/Tiles/tile/",
+                url3 = "http://c.tah.openstreetmap.org/Tiles/tile/",
+                attribution = '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>',
+                enabled = False
+            )
+        table.insert(
+                name = "OpenStreetMap (Taiwan)",
+                url1 = "http://tile.openstreetmap.tw/tiles/",
+                enabled = False
+            )
+        table.insert(
+                name = "OpenStreetMap (Sahana)",
+                url1 = "http://geo.eden.sahanafoundation.org/tiles/",
+                enabled = False
+            )
+        #table.insert(
+        #        name = "OpenAerialMap",
+        #        url1 = "http://tile.openaerialmap.org/tiles/1.0.0/openaerialmap-900913/",
+        #        enabled = False
+        #    )
     tablename = "gis_layer_google"
     table = db[tablename]
     if not db(table.id > 0).count():

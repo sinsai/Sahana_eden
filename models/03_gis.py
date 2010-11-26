@@ -159,7 +159,7 @@ table = db.define_table(tablename,
                         Field("min_lat", "double", default=-90),
                         Field("max_lon", "double", default=180),
                         Field("max_lat", "double", default=90),
-                        Field("zoom_levels", "integer", default=16, notnull=True),
+                        Field("zoom_levels", "integer", default=22, notnull=True),
                         Field("cluster_distance", "integer", default=5, notnull=True),
                         Field("cluster_threshold", "integer", default=2, notnull=True),
                         opt_gis_layout,
@@ -172,7 +172,7 @@ table.pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.pe_id", shn_pentity_
 table.pe_id.readable = table.pe_id.writable = False
 table.lat.requires = IS_LAT()
 table.lon.requires = IS_LON()
-table.zoom.requires = IS_INT_IN_RANGE(0, 19)
+table.zoom.requires = IS_INT_IN_RANGE(1, 20)
 table.map_height.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(160, 1024)]
 table.map_width.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(320, 1280)]
 table.min_lat.requires = IS_LAT()
@@ -421,8 +421,9 @@ table = db.define_table(tablename,
                         #marker_id(),           # Being removed
                         Field("level", length=2),
                         Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
-                        Field("lft", "integer", readable=False, writable=False), # Left will be for MPTT: http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
-                        Field("rght", "integer", readable=False, writable=False),# Right currently unused
+                        Field("path", "string", length=500),
+                        #Field("lft", "integer", readable=False, writable=False), # Left will be for MPTT: http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+                        #Field("rght", "integer", readable=False, writable=False),# Right currently unused
                         # Street Address (other address fields come from hierarchy)
                         Field("addr_street"),
                         #Field("addr_postcode"),
@@ -498,6 +499,8 @@ location_id = S3ReusableField("location_id", db.gis_location,
                     requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True)),
                     represent = lambda id: shn_gis_location_represent(id),
                     label = T("Location"),
+                    # Not yet ready
+                    #widget = S3LocationSelectorWidget(request, response, T),
                     comment = DIV(A(ADD_LOCATION,
                                     _class="colorbox",
                                     _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
@@ -569,10 +572,13 @@ def gis_location_onaccept(form):
             #name_dummy = "|%s|" % "|".join(ids)
             name_dummy = "|".join(ids) # That's not how it should be
             table = db.gis_location
-            db(table.id==location_id).update(name_dummy=name_dummy)
+            db(table.id == location_id).update(name_dummy=name_dummy)
     # Update the parent Hierarchy
-    gis.update_location_tree()
-
+    # Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
+    # Associating path for the new node once it is inserted
+    parent = form.vars.parent
+    level = form.vars.level
+    gis.update_location_tree(parent, level, form.vars.id)    
     return
 
 def gis_location_onvalidation(form):
@@ -680,77 +686,13 @@ def s3_gis_location_simple(r, **attr):
 # Plug into REST controller
 s3xrc.model.set_method(module, "location", method="simple", action=s3_gis_location_simple )
 
-# -----------------------------------------------------------------------------
-def s3_gis_location_search_simple(r, **attr):
-
-    """ Simple search form for locations """
-
-    resource = r.resource
-    table = resource.table
-
-    r.id = None
-
-    # Check permission
-    if not shn_has_permission("read", table):
-        r.unauthorised()
-
-    if r.representation == "html":
-
-        # Check for redirection
-        next = r.request.vars.get("_next", None)
-        if not next:
-            next = URL(r=request, f="location", args="[id]")
-
-        # Select form
-        form = FORM(TABLE(
-                TR(T("Name" + ": "),
-                   INPUT(_type="text", _name="label", _size="40"),
-                   DIV(DIV(_class="tooltip",
-                           _title=T("Name") + "|" + T("To search for a location, enter the name. You may use % as wildcard. Press 'Search' without input to list all locations.")))),
-                TR("", INPUT(_type="submit", _value=T("Search")))))
-
-        output = dict(form=form, vars=form.vars)
-
-        # Accept action
-        items = None
-        if form.accepts(request.vars, session):
-
-            if form.vars.label == "":
-                form.vars.label = "%"
-
-            # Search
-            results = s3xrc.search_simple(table,
-                        fields = ["name",
-                                  # @ToDo: http://eden.sahanafoundation.org/wiki/S3XRC_Roadmap#Version2.1
-                                  #"name_l10n"
-                                  ],
-                        label = form.vars.label)
-
-            # Get the results
-            if results:
-                resource.build_query(id=results)
-                report = resource.crud(r, method="list", **attr)["items"]
-                r.next = None
-            else:
-                report = T("No matching records found.")
-
-            output.update(items=report)
-
-        # Title and subtitle
-        title = T("Search for a Location")
-        subtitle = T("Matching Records")
-
-        # Add-button
-        label_create_button = shn_get_crud_string("gis_location", "label_create_button")
-        add_btn = A(label_create_button, _class="action-btn",
-                    _href=URL(r=request, f="location", args="create"))
-
-        output.update(title=title, subtitle=subtitle, add_btn=add_btn)
-        response.view = "search_simple.html"
-        return output
-
-    else:
-        raise HTTP(501, body=s3xrc.ERROR.BAD_FORMAT)
+s3_gis_location_search_simple = s3xrc.search_simple(
+    label=T("Name"),
+    comment=T("To search for a location, enter the name. You may use % as wildcard. Press 'Search' without input to list all locations."),
+    fields=["name",
+            # @ToDo: http://eden.sahanafoundation.org/wiki/S3XRC_Roadmap#Version2.1
+            #"name_l10n"
+            ])
 
 # Plug into REST controller
 s3xrc.model.set_method(module, "location", method="search_simple", action=s3_gis_location_search_simple )
@@ -942,8 +884,7 @@ s3xrc.model.configure(table, deletable=False)
 # -----------------------------------------------------------------------------
 # GIS Layers
 #gis_layer_types = ["bing", "shapefile", "scan"]
-gis_layer_types = ["openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wfs", "wms", "xyz", "yahoo"]
-gis_layer_openstreetmap_subtypes = gis.layer_subtypes("openstreetmap")
+gis_layer_types = ["coordinate", "openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wfs", "wms", "xyz", "yahoo"]
 gis_layer_google_subtypes = gis.layer_subtypes("google")
 gis_layer_yahoo_subtypes = gis.layer_subtypes("yahoo")
 gis_layer_bing_subtypes = gis.layer_subtypes("bing")
@@ -961,10 +902,21 @@ for layertype in gis_layer_types:
     resourcename = "layer_" + layertype
     tablename = "%s_%s" % (module, resourcename)
     # Create Type-specific Layer tables
-    if layertype == "openstreetmap":
+    if layertype == "coordinate":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_openstreetmap_subtypes, zero=None))
+                     Field("visible", "boolean", default=False, label=T("On by default?")),
+                    )
+        table = db.define_table(tablename, t, migrate=migrate)
+    elif layertype == "openstreetmap":
+        t = db.Table(db, table,
+                     gis_layer,
+                     Field("visible", "boolean", default=True, label=T("On by default? (only applicable to Overlays)")),
+                     Field("url1", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     Field("url2", label=T("Secondary Server (Optional)")),
+                     Field("url3", label=T("Tertiary Server (Optional)")),
+                     Field("base", "boolean", default=True, label=T("Base Layer?")),
+                     Field("attribution", label=T("Attribution")),
                     )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "georss":
@@ -989,7 +941,10 @@ for layertype in gis_layer_types:
                      gis_layer,
                      Field("visible", "boolean", default=False, label=T("On by default?")),
                      #Field("url", label=T("Location")),
-                     track_id(),
+                     track_id(), # @ToDo remove this layer of complexity: Inlcude the upload field within the Layer
+                     Field("waypoints", "boolean", default=True, label=T("Display Waypoints?")),
+                     Field("tracks", "boolean", default=True, label=T("Display Tracks?")),
+                     Field("routes", "boolean", default=False, label=T("Display Routes?")),
                      marker_id()
                     )
         table = db.define_table(tablename, t, migrate=migrate)

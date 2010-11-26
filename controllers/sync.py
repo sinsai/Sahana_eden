@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-""" Synchronisation - Controllers
+""" SYNC Synchronisation, Controllers
 
     @author: Amer Tahir
     @author: nursix
+    @version: 0.1.0
 
 """
 
@@ -27,9 +28,11 @@ def setting():
 
     """ Synchronisation Settings - RESTful controller """
 
-    # Table settings
-    table = db.sync_setting
+    resourcename = "setting"
+    tablename = "%s_%s" % (prefix, resourcename)
+    table = db[tablename]
 
+    # Tablename
     table.uuid.label = "UUID"
     table.uuid.comment = DIV(_class="tooltip",
         _title="UUID|" + T("The unique identifier which identifies this instance to other instances."))
@@ -39,25 +42,9 @@ def setting():
         title_update = T("Synchronization Settings"),
         msg_record_modified = T("Synchronization settings updated"))
 
-    def prep(r):
-        if r.component or \
-           str(r.id) != "1" or r.method != "update":
-               redirect(URL(r=request, args=["update", 1]))
-        return True
-    response.s3.prep = prep
+    s3xrc.model.configure(table, deletable=False, listadd=False)
 
-    def postp(r, output):
-        if isinstance(output, dict) and output.get("list_btn", None):
-            del output["list_btn"]
-        return output
-    response.s3.postp = postp
-
-    s3xrc.model.configure(table,
-                          deletable=False,
-                          listadd=False,
-                          update_next = URL(r=request, args=["update", 1]))
-
-    return s3_rest_controller("sync", "setting")
+    return s3_rest_controller("sync", "setting", list_btn=None)
 
 
 # -----------------------------------------------------------------------------
@@ -68,6 +55,7 @@ def peer():
 
     resourcename = "peer"
     tablename = "%s_%s" % (prefix, resourcename)
+    table = db[tablename]
 
     s3.crud_strings[tablename] = Storage(
         title_create = T("New Synchronization Peer"),
@@ -97,11 +85,8 @@ def peer():
     db.sync_log.peer_id.readable = False
     db.sync_log.peer_id.writable = False
 
-    table = db.sync_peer
     table.uuid.label = T("UID")
     table.url.label = T("URL")
-
-    s3xrc.model.configure(table, listadd=False)
 
     rheader = lambda r: sync_rheader(r, tabs=[
                                     (T("Peer"), None),
@@ -119,8 +104,11 @@ def job():
 
     resourcename = "job"
 
+    # Get primary resources
     primary_resources = s3_sync_primary_resources()
-    db.sync_job.resources.requires = IS_NULL_OR(IS_IN_SET(primary_resources, multiple=True, zero=None))
+    db.sync_job.resources.requires = IS_NULL_OR(IS_IN_SET(primary_resources,
+                                                          multiple=True,
+                                                          zero=None))
 
     return s3_rest_controller(prefix, resourcename)
 
@@ -155,12 +143,22 @@ def log():
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
+    s3.crud_strings[tablename] = Storage(
+        title_display = T("Synchronization Details"),
+        title_list = T("Synchronization History"),
+        subtitle_list = T("Finished Jobs"),
+        label_list_button = T("List All Entries"),
+        label_delete_button = T("Delete Entry"),
+        msg_record_deleted = T("Entry deleted"),
+        msg_list_empty = T("No entries found"),
+        msg_no_match = T("No entries matching the query"))
+
     s3xrc.model.configure(table,
-                          listadd = False,
+                          insertable = False,
                           editable = False,
                           deletable = True)
 
-    return s3_rest_controller(prefix, name)
+    return s3_rest_controller(prefix, resourcename)
 
 
 # -----------------------------------------------------------------------------
@@ -496,7 +494,7 @@ def sync():
                 raise HTTP(501, body="%s: %s" %
                         (s3xrc.ERROR.NOT_PERMITTED, T("Peer not allowed to push")))
             # Set the sync resolver with no policy (defaults to peer policy)
-            s3xrc.sync_resolve = lambda vector, peer=peer: sync_res(vector, peer, None)
+            s3xrc.sync_resolve = lambda vector, peer=peer: sync_resolve(vector, peer, None)
     elif method == "GET":
         remote_push = False
     else:
@@ -547,7 +545,6 @@ def sync():
     # Execute the request
     output = s3_rest_controller(prefix, name)
 
-    #return ret_data
     return output
 
 
@@ -583,7 +580,7 @@ def sync_run_job(job, settings=None, pid=None, tables=[], silent=False):
 
         job_policy = job.policy or peer.policy
         s3xrc.sync_resolve = lambda vector, peer=peer, policy=policy: \
-                                    sync_res(vector, peer, policy)
+                                    sync_resolve(vector, peer, policy)
 
         # Find resources to sync
         tablenames = [n.strip().lower() for n in tables]
@@ -1022,30 +1019,53 @@ def sync_rheader(r, tabs=[]):
 
 
 # -----------------------------------------------------------------------------
-def sync_res(vector, peer, policy):
+def sync_resolve(vector, peer, policy):
 
-    """ Sync resolver
-
-        designed as callback for s3xrc.sync_resolve
-
-    """
+    """ Sync resolver """
 
     import cPickle
 
+    # Assume both records have been modified
+    lmodified = True
+    rmodified = True
+
+    table = vector.table
+
+    # Get last synchronization time
+    last_sync_time = peer.last_sync_time
+
+    # Get the local record and its modification time
+    lmtime = None
+    if vector.method == vector.METHOD.UPDATE:
+        fields = vector.record.keys()
+        if not "modified_on" in fields:
+            fields.append("modified_on")
+        row = db(table.id==vector.id).select(limitby=(0,1), *fields).first()
+        if row:
+            lmtime = row.modified_on
+    else:
+        row = None
+
+    # Get remote record modification time
+    rmtime = vector.mtime
+
+    # Conflict detection
+    conflict = False
+    if last_sync_time:
+        if rmtime and rmtime <= last_sync_time:
+            rmodified = False
+        if lmtime and lmtime <= last_sync_time:
+            lmodified = False
+    if lmodified and rmodified:
+        # Is the remote record really different?
+        for f in fields:
+            if f != "modified_on" and vector.record[f] != row[f]:
+                conflict = True
+                break;
+
+    # Get synchronization policy
     if policy is None:
         policy = peer.policy
-
-    newer = True # assume that the peer record is newer
-
-    if vector.method == vector.METHOD.UPDATE:
-        table = vector.table
-        if "modified_on" in table.fields and vector.mtime is not None:
-            row = vector.db(table.id==vector.id).select(table.modified_on,
-                                                        limitby=(0,1)).first()
-            if row:
-                local_mtime = row.modified_on
-            if local_mtime > vector.mtime:
-                newer = False
 
     # Sync policies:
     #
@@ -1063,58 +1083,60 @@ def sync_res(vector, peer, policy):
     #  9         update to master              do nothing       Update Master
     # 10         --                            --               Role-Based (not implemented)
 
-    conflict = False
+    if not conflict:
 
-    # @todo: conflict detection
+        # Apply default policy
+        if policy == 0: # No Sync
+            vector.resolution = vector.RESOLUTION.THIS
+            vector.strategy = []
+        elif policy == 1: # Manual
+            conflict = True
+        elif policy == 2: # Import
+            vector.resolution = vector.RESOLUTION.OTHER
+            vector.strategy = [vector.METHOD.CREATE]
+        elif policy == 3: # Replace
+            vector.resolution = vector.RESOLUTION.OTHER
+            vector.strategy = [vector.METHOD.CREATE, vector.METHOD.UPDATE]
+        elif policy == 4: # Update
+            vector.resolution = vector.RESOLUTION.OTHER
+            vector.strategy = [vector.METHOD.UPDATE]
+        elif policy == 5: # Replace Newer
+            vector.resolution = vector.RESOLUTION.NEWER
+            vector.strategy = [vector.METHOD.CREATE, vector.METHOD.UPDATE]
+        elif policy == 6: # Update Newer
+            vector.resolution = vector.RESOLUTION.NEWER
+            vector.strategy = [vector.METHOD.UPDATE]
+        elif policy == 7: # Import Master
+            vector.resolution = vector.RESOLUTION.MASTER
+            vector.strategy = [vector.METHOD.CREATE]
+        elif policy == 8: # Replace Master
+            vector.resolution = vector.RESOLUTION.MASTER
+            vector.strategy = [vector.METHOD.CREATE, vector.METHOD.UPDATE]
+        elif policy == 9: # Update Master
+            vector.resolution = vector.RESOLUTION.THIS
+            vector.strategy = [vector.METHOD.UPDATE]
+        elif policy == 10: # Role Based (not implemented)
+            conflict = True
+        else:
+            pass # use defaults
 
-    if policy == 0: # No Sync
+    if conflict:
+
+        # Do not synchronize
         vector.resolution = vector.RESOLUTION.THIS
         vector.strategy = []
-    elif policy == 1: # Manual
-        vector.resolution = vector.RESOLUTION.THIS
-        vector.strategy = []
-    elif policy == 2: # Import
-        vector.resolution = vector.RESOLUTION.OTHER
-        vector.strategy = [vector.METHOD.CREATE]
-    elif policy == 3: # Replace
-        vector.resolution = vector.RESOLUTION.OTHER
-        vector.strategy = [vector.METHOD.CREATE, vector.METHOD.UPDATE]
-    elif policy == 4: # Update
-        vector.resolution = vector.RESOLUTION.OTHER
-        vector.strategy = [vector.METHOD.UPDATE]
-    elif policy == 5: # Replace Newer
-        vector.resolution = vector.RESOLUTION.NEWER
-        vector.strategy = [vector.METHOD.CREATE, vector.METHOD.UPDATE]
-    elif policy == 6: # Update Newer
-        vector.resolution = vector.RESOLUTION.NEWER
-        vector.strategy = [vector.METHOD.UPDATE]
-    elif policy == 7: # Import Master
-        vector.resolution = vector.RESOLUTION.MASTER
-        vector.strategy = [vector.METHOD.CREATE]
-    elif policy == 8: # Replace Master
-        vector.resolution = vector.RESOLUTION.MASTER
-        vector.strategy = [vector.METHOD.CREATE, vector.METHOD.UPDATE]
-    elif policy == 9: # Update Master
-        vector.resolution = vector.RESOLUTION.THIS
-        vector.strategy = [vector.METHOD.UPDATE]
-    elif policy == 10: # Role Based (not implemented)
-        vector.resolution = vector.RESOLUTION.THIS
-        vector.strategy = []
-    else:
-        pass # use defaults
 
-    if conflict: # log conflict
-
+        # Log conflict for manual resolution
+        now = datetime.datetime.utcnow()
+        modifier = vector.element.get("modified_by", None)
         record_dump = cPickle.dumps(dict(vector.record), 0)
 
-        table_conflict.insert(
-            uuid = vector.uuid,
-            resource_table = vector.tablename,
-            remote_record = record_dump,
-            remote_modified_by = vector.element.get("modified_by", None),
-            remote_modified_on = vector.mtime,
-            logged_on = datetime.datetime.utcnow(),
-            resolved = False)
+        table_conflict.insert(peer_id=peer.id,
+                              tablename=vector.tablename,
+                              uuid=vector.uid,
+                              remote_record = record_dump,
+                              remote_modified_by = modifier,
+                              remote_modified_on = rmtime)
 
     return
 
@@ -1130,12 +1152,9 @@ def conflict():
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    s3xrc.model.configure(table,
-                          listadd = False,
-                          editable = False,
-                          deletable = True)
+    response.s3.filter = (table.resolved == False)
 
-    return s3_rest_controller(prefix, name)
+    return s3_rest_controller(prefix, resourcename)
 
 
 # -----------------------------------------------------------------------------

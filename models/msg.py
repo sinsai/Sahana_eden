@@ -120,7 +120,7 @@ if deployment_settings.has_module(module):
         2:T("Medium"),
         1:T("Low")
     }
-
+    #------------------------------------------------------------------------
     # Message Log - This is where all the messages / logs go into
     resourcename = "log"
     tablename = "%s_%s" % (module, resourcename)
@@ -174,6 +174,7 @@ if deployment_settings.has_module(module):
                                  ondelete = "RESTRICT"
                                 )
 
+    
     #------------------------------------------------------------------------
     # Message Tag - Used to tag a message to a resource
     resourcename = "tag"
@@ -194,7 +195,41 @@ if deployment_settings.has_module(module):
                                         "record_uuid",
                                         "resource",
                                        ])
-
+    #------------------------------------------------------------------------
+    # Twitter Search Queries
+    resourcename = "twitter_search"
+    tablename = "%s_%s" % (module, resourcename)
+    table = db.define_table(tablename,
+                            Field("search_query", length = 140),
+                            migrate = migrate           
+                            )
+    #------------------------------------------------------------------------
+    # Twitter Search Results
+    resourcename = "twitter_search_results"
+    tablename = "%s_%s" % (module, resourcename)
+    table = db.define_table(tablename,
+                            Field("tweet", length=140),
+                            Field("posted_by"),
+                            Field("posted_at"),
+                            Field("twitter_search", db.msg_twitter_search),
+                            migrate = migrate
+                            )  
+    #table.twitter_search.requires = IS_ONE_OF(db, "twitter_search.search_query")                    
+    #table.twitter_search.represent = lambda id: db(db.msg_twitter_search.id == id).select(db.msg_twitter_search.search_query, limitby = (0,1)).first().search_query
+                            
+    s3xrc.model.add_component(module, resourcename,
+                              multiple=True,
+                              joinby=dict(msg_twitter_search="twitter_search"))
+   
+    s3xrc.model.configure(table,
+                          list_fields=[ "id",
+                                        "tweet",
+                                        "posted_by",
+                                        "posted_at",
+                                        "twitter_search",
+                                       ])                       
+               
+   
     #------------------------------------------------------------------------
     # The following was added to show only the supported messaging methods
     msg_contact_method_opts = { # pr_contact_method dependency
@@ -432,7 +467,7 @@ def shn_msg_compose( redirect_module = "msg",
                              request.vars.message,
                              sender_pe_id,
                              request.vars.pr_message_method):
-            session.flash = T("Message sent to outbox")
+            session.flash = T("Check outbox for the message status")
             redirect(URL(r=request, c=redirect_module, f=redirect_function, vars=redirect_vars))
         else:
             session.error = T("Error in message")

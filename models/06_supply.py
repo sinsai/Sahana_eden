@@ -85,23 +85,23 @@ if deployment_settings.has_module("logs"):
 
 
     # CRUD strings
-    ADD_ITEM = T("Add Item")
-    LIST_ITEMS = T("List Items")
+    ADD_ITEM = T("Add Catalog Item")
+    LIST_ITEMS = T("List Catalog Items")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_ITEM,
-        title_display = T("Item Details"),
+        title_display = T("Item Catalog Details"),
         title_list = LIST_ITEMS,
-        title_update = T("Edit Item"),
-        title_search = T("Search Items"),
-        subtitle_create = T("Add New Item"),
-        subtitle_list = T("Items"),
+        title_update = T("Edit Catalog Item"),
+        title_search = T("Search Catalog Items"),
+        subtitle_create = T("Add New Catalog Item"),
+        subtitle_list = T("Catalog Items"),
         label_list_button = LIST_ITEMS,
         label_create_button = ADD_ITEM,
-        label_delete_button = T("Delete Item"),
-        msg_record_created = T("Item added"),
-        msg_record_modified = T("Item updated"),
-        msg_record_deleted = T("Item deleted"),
-        msg_list_empty = T("No Items currently registered"))
+        label_delete_button = T("Delete Catalog Item"),
+        msg_record_created = T("Catalog Item added"),
+        msg_record_modified = T("Catalog Item updated"),
+        msg_record_deleted = T("Catalog Item deleted"),
+        msg_list_empty = T("No Catalog Items currently registered"))
     
     def shn_item_represent(id):
         record = db(db.supply_item.id == id).select(db.supply_item.name,
@@ -122,6 +122,6 @@ if deployment_settings.has_module("logs"):
                 represent = shn_item_represent,
                 label = T("Item"),
                 comment = DIV(A(ADD_ITEM, _class="colorbox", _href=URL(r=request, c="supply", f="item", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ITEM),
-                          DIV( _class="tooltip", _title=T("Relief Item") + "|" + T("Add a new Relief Item."))),
+                          DIV( _class="tooltip", _title=T("Catalog Item") + "|" + ADD_ITEM)),
                 ondelete = "RESTRICT"
                 )

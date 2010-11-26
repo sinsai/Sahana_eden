@@ -11,7 +11,7 @@
 
          EDXL-HAVE Import Templates
 
-         Version 0.3 / 2010-10-26 / by nursix
+         Version 0.3.1 / 2010-10-26 / by nursix
 
          Copyright (c) 2010 Sahana Software Foundation
 
@@ -104,7 +104,21 @@
     <!-- ****************************************************************** -->
     <!-- HospitalFacilityStatus -->
     <xsl:template match="have:HospitalFacilityStatus">
-        <!-- @todo: implement -->
+        <xsl:variable name="status" select="normalize-space(./have:FacilityStatus/text())"/>
+        <xsl:choose>
+            <xsl:when test="$status='normal' or $status='Normal'">
+                <data field="facility_status" value="1">normal</data>
+            </xsl:when>
+            <xsl:when test="$status='compromised' or $status='Compromised'">
+                <data field="facility_status" value="2">compromised</data>
+            </xsl:when>
+            <xsl:when test="$status='evacuating' or $status='Evacuating'">
+                <data field="facility_status" value="3">evacuating</data>
+            </xsl:when>
+            <xsl:when test="$status='closed' or $status='Closed'">
+                <data field="facility_status" value="4">closed</data>
+            </xsl:when>
+        </xsl:choose>
     </xsl:template>
 
     <!-- ****************************************************************** -->

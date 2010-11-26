@@ -10,8 +10,10 @@
 </div>
 <div id='map'></div>
 {{try:}}
-{{=showaddbtn}}
+{{=showadd_btn}}
+{{hide_listadd=True}}
 {{except:}}
+{{hide_listadd=False}}
 {{pass}}
 <div id='list-add'>
 {{try:}}
@@ -45,9 +47,14 @@
 {{include "dataTables.html"}}
 <script type="text/javascript">//<![CDATA[
 $(document).ready(function(){
+{{if jr.http=="POST" or not hide_listadd:}}
+    $('#list-add').show()
+    $('#show-add-btn').hide()
+{{else:}}
     $('#show-add-btn').click(function() {
         $('#list-add').show()
         $('#show-add-btn').hide()
     });
+{{pass}}
 });
 //]]></script>

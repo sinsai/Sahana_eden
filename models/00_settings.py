@@ -8,6 +8,34 @@
 
 """
 
+# Keep all our configuration options off the main global variables
+
+# Use response for one-off variables which are visible in views without explicit passing
+response.s3 = Storage()
+response.s3.countries = deployment_settings.get_L10n_countries()
+response.s3.formats = Storage()
+response.s3.gis = Storage()
+
+# Use session for persistent per-user variables (beware of a user having multiple tabs open!)
+if not session.s3:
+    session.s3 = Storage()
+
+########################
+# Is it a mobile client?
+########################
+def ifmobile(request):
+    if request.env.http_x_wap_profile or request.env.http_profile:
+        return True
+    if request.env.http_accept and (request.env.http_accept.find("text/vnd.wap.wml") > 0):
+        return True
+    keys = ["iphone", "ipod", "android", "opera mini", "blackberry", "palm", "windows ce", "iemobile", "smartphone", "medi", "sk-0", "vk-v", "aptu", "xda-", "mtv ", "v750", "p800", "opwv", "send", "xda2", "sage", "t618", "qwap", "veri", "t610", "tcl-", "vx60", "vx61", "lg-k", "lg-l", "lg-m", "lg-o", "lg-a", "lg-b", "lg-c", "xdag", "lg-f", "lg-g", "sl45", "emul", "lg-p", "lg-s", "lg-t", "lg-u", "lg-w", "6590", "t250", "qc21", "ig01", "port", "m1-w", "770s", "n710", "ez60", "mt50", "g1 u", "vk40", "bird", "tagt", "pose", "jemu", "beck", "go.w", "jata", "gene", "smar", "g-mo", "o2-x", "htc_", "hei-", "fake", "qc-7", "smal", "htcp", "htcs", "craw", "htct", "aste", "htca", "htcg", "teli", "telm", "kgt", "mwbp", "kwc-", "owg1", "htc ", "kgt/", "htc-", "benq", "slid", "qc60", "dmob", "blac", "smt5", "nec-", "sec-", "sec1", "sec0", "fetc", "spv ", "mcca", "nem-", "spv-", "o2im", "m50/", "ts70", "arch", "qtek", "opti", "devi", "winw", "rove", "winc", "talk", "pant", "netf", "pana", "esl8", "pand", "vite", "v400", "whit", "scoo", "good", "nzph", "mtp1", "doco", "raks", "wonu", "cmd-", "cell", "mode", "im1k", "modo", "lg-d", "idea", "jigs", "bumb", "sany", "vulc", "vx70", "psio", "fly_", "mate", "pock", "cdm-", "fly-", "i230", "lge-", "lge/", "argo", "qc32", "n701", "n700", "mc21", "n500", "midp", "t-mo", "airn", "bw-u", "iac", "bw-n", "lg g", "erk0", "sony", "alav", "503i", "pt-g", "au-m", "treo", "ipaq", "dang", "seri", "mywa", "eml2", "smb3", "brvw", "sgh-", "maxo", "pg-c", "qci-", "vx85", "vx83", "vx80", "vx81", "pg-8", "pg-6", "phil", "pg-1", "pg-2", "pg-3", "ds12", "scp-", "dc-s", "brew", "hipt", "kddi", "qc07", "elai", "802s", "506i", "dica", "mo01", "mo02", "avan", "kyoc", "ikom", "siem", "kyok", "dopo", "g560", "i-ma", "6310", "sie-", "grad", "ibro", "sy01", "nok6", "el49", "rim9", "upsi", "inno", "wap-", "sc01", "ds-d", "aur ", "comp", "wapp", "wapr", "waps", "wapt", "wapu", "wapv", "wapy", "newg", "wapa", "wapi", "wapj", "wapm", "hutc", "lg/u", "yas-", "hita", "lg/l", "lg/k", "i-go", "4thp", "bell", "502i", "zeto", "ez40", "java", "n300", "n302", "mmef", "pn-2", "newt", "1207", "sdk/", "gf-5", "bilb", "zte-", "maui", "qc-3", "qc-2", "blaz", "r600", "hp i", "qc-5", "moto", "cond", "motv", "virg", "ccwa", "audi", "shar", "i-20", "samm", "sama", "sams", "sch-", "mot ", "http", "505i", "mot-", "n502", "topl", "n505", "mobi", "3gso", "wmlb", "ezwa", "qc12", "abac", "tdg-", "neon", "mio8", "sp01", "rozo", "vx98", "dait", "t600", "anyw", "tx-9", "sava", "m-cr", "tsm-", "mioa", "tsm5", "klon", "capi", "tsm3", "hcit", "libw", "lg50", "mc01", "amoi", "lg54", "ez70", "se47", "n203", "vk52", "vk53", "vk50", "webc", "haie", "semc", "grun", "play", "palm", "a wa", "anny", "prox", "o2 x", "ezze", "symb", "hs-c", "pg13", "mits", "kpt ", "qa-a", "501i", "pdxg", "iris", "pluc", "acoo", "soft", "hpip", "iac/", "iac-", "aus ", "s55/", "vx53", "vx52", "chtm", "meri", "merc", "your", "huaw", "cldc", "voda", "smit", "x700", "mozz", "lexi", "up.b", "sph-", "keji", "jbro", "wig ", "attw", "pire", "r380", "lynx", "anex", "vm40", "hd-m", "504i", "w3c ", "c55/", "w3c-", "upg1", "t218", "tosh", "acer", "hd-t", "eric", "hd-p", "noki", "acs-", "dbte", "n202", "tim-", "alco", "ezos", "dall", "leno", "alca", "asus", "m3ga", "utst", "aiko", "n102", "n101", "n100", "oran"]
+    ua = (request.env.http_user_agent or "").lower()
+    if [key for key in keys if ua.find(key) >= 0]:
+        return True
+    return False
+
+response.s3.mobile = ifmobile(request)
+
 ##################
 # Global variables
 ##################
@@ -41,18 +69,6 @@ NOT_APPLICABLE = T("N/A")
 # Data Export Settings
 ROWSPERPAGE = 20
 PRETTY_PRINT = False
-
-# Keep all our configuration options in a single pair of global variables
-
-# Use response for one-off variables which are visible in views without explicit passing
-response.s3 = Storage()
-response.s3.countries = deployment_settings.get_L10n_countries()
-response.s3.formats = Storage()
-response.s3.gis = Storage()
-
-# Use session for persistent per-user variables
-if not session.s3:
-    session.s3 = Storage()
 
 ###########
 # Languages
@@ -215,51 +231,21 @@ crud.settings.formstyle = s3_formstyle
 # XML/JSON Formats
 ##################
 
-XSLT_FILE_EXTENSION = "xsl" #: File extension of XSLT templates
-XSLT_IMPORT_TEMPLATES = "static/xslt/import" #: Path to XSLT templates for data import
-XSLT_EXPORT_TEMPLATES = "static/xslt/export" #: Path to XSLT templates for data export
+s3xrc.XSLT_FILE_EXTENSION = "xsl" #: File extension of XSLT templates
+s3xrc.XSLT_IMPORT_TEMPLATES = "static/xslt/import" #: Path to XSLT templates for data import
+s3xrc.XSLT_EXPORT_TEMPLATES = "static/xslt/export" #: Path to XSLT templates for data export
 
-# Supported XML Output Formats
-shn_xml_export_formats = dict(
-    xml = "application/xml", # Native S3XML (must be included here!)
-    gpx = "application/xml", # GPX
-    lmx = "application/xml", # NOKIA Landmarks
-    pfif = "application/xml", # Person Finder Interchange Format
-    have = "application/xml", # EDXL-HAVE
-    osm = "application/xml", # Open Street Map
+# Content Type Headers, default is application/xml for XML formats
+# and text/x-json for JSON formats, other content types must be
+# specified here:
+s3xrc.content_type = Storage(
     rss = "application/rss+xml", # RSS
     georss = "application/rss+xml", # GeoRSS
     kml = "application/vnd.google-earth.kml+xml", # KML
 )
 
-# Supported XML Import Formats
-shn_xml_import_formats = ["xml", # native S3XML (must be included here!)
-                          "lmx", # Nokia Landmarks
-                          "osm", # Open Street Map
-                          "pfif", # Person Finder Interchange Format
-                          "ushahidi", # Ushahidi
-                          "have",
-                          "odk",
-                          "agasti", # Sahana Agasti
-                          "fods" # Flat Open Document Spreadsheet
-                         ]
-
-# Supported JSON Export Formats
-shn_json_export_formats = dict(
-    json = "text/x-json", # Native S3XML-JSON (must be included here!)
-    geojson = "text/x-json" # GeoJSON
-)
-
-# Supported JSON Import Formats
-shn_json_import_formats = ["json", # native S3XML-JSON (must be included here!)
-                          ]
-
-# Register formats with resource controller
-s3xrc.xml_import_formats = shn_xml_import_formats
-s3xrc.xml_export_formats = shn_xml_export_formats
-s3xrc.json_import_formats = shn_json_import_formats
-s3xrc.json_export_formats = shn_json_export_formats
-
+# JSON Formats
+s3xrc.json_formats = ["geojson"]
 
 ##########
 # Messages

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-""" S3 Person Registry
+""" VITA Person Registry, Models
 
     @author: nursix
     @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
@@ -132,11 +132,13 @@ pr_age_group_opts = {
 }
 
 pr_age_group = S3ReusableField("age_group", "integer",
-                               requires = IS_IN_SET(pr_age_group_opts, zero=None),
+                               requires = IS_IN_SET(pr_age_group_opts,
+                                                    zero=None),
                                default = 1,
                                label = T("Age Group"),
                                represent = lambda opt: \
-                                           pr_age_group_opts.get(opt, UNKNOWN_OPT))
+                                           pr_age_group_opts.get(opt,
+                                                                 UNKNOWN_OPT))
 
 
 # -----------------------------------------------------------------------------
@@ -151,11 +153,13 @@ pr_marital_status_opts = {
 }
 
 pr_marital_status = S3ReusableField("marital_status", "integer",
-                                    requires = IS_NULL_OR(IS_IN_SET(pr_marital_status_opts)),
+                                    requires = IS_NULL_OR(IS_IN_SET(
+                                                    pr_marital_status_opts)),
                                     default = 1,
                                     label = T("Marital Status"),
                                     represent = lambda opt: opt and \
-                                                pr_marital_status_opts.get(opt, UNKNOWN_OPT))
+                                                pr_marital_status_opts.get(opt,
+                                                    UNKNOWN_OPT))
 
 
 # -----------------------------------------------------------------------------
@@ -205,7 +209,8 @@ def shn_pr_person_represent(id):
         else:
             return None
 
-    name = cache.ram("pr_person_%s" % id, lambda: _represent(id), time_expire=10)
+    name = cache.ram("pr_person_%s" % id, lambda: _represent(id),
+                     time_expire=10)
     return name
 
 
@@ -223,7 +228,7 @@ table = db.define_table(tablename,
                         Field("local_name"),
                         pr_gender(),
                         pr_age_group(),
-                        Field("date_of_birth", "date"),
+                        Field("date_of_birth", "date", widget=S3DateWidget(before=110, after=0)),
                         pr_country("nationality", label = T("Nationality")),
                         pr_country("country"),
                         pr_religion(),
@@ -241,7 +246,8 @@ table.local_name.label = T("Local Name")
 table.date_of_birth.label = T("Date of Birth")
 table.date_of_birth.requires = IS_NULL_OR(IS_DATE_IN_RANGE(
                                maximum=request.utcnow.date(),
-                               error_message="%s " % T("Enter a date before") + "%(max)s!"))
+                               error_message="%s %%(max)s!" %
+                                             T("Enter a date before")))
 
 table.first_name.requires = IS_NOT_EMPTY()
 table.first_name.requires.error_message = T("Please enter a First Name")
@@ -315,7 +321,9 @@ person_id = S3ReusableField("person_id", db.pr_person,
                                         [shn_pr_person_represent(id)] or [NONE])[0],
                             label = T("Person"),
                             comment = shn_person_id_comment,
-                            ondelete = "RESTRICT")
+                            ondelete = "RESTRICT",
+                            widget = S3PersonAutocompleteWidget(request)
+                            )
 
 # -----------------------------------------------------------------------------
 def pr_person_onvalidation(form):
@@ -352,7 +360,7 @@ def pr_person_onvalidation(form):
 s3xrc.model.configure(table,
     main="first_name",
     extra="last_name",
-    listadd=False,
+    #listadd=False,
     super_entity=db.pr_pentity,
     onvalidation=lambda form: pr_person_onvalidation(form),
     list_fields = [

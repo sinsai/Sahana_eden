@@ -92,10 +92,9 @@ deployment_settings.L10n.languages = {
     #"pa":T("Punjabi"),
     #"ps":T("Pashto"),
     #"sd":T("Sindhi"),
+    "ja":T("Japanese"),
     "ur":T("Urdu"),
     "zh-tw":T("Chinese (Taiwan)"),
-    #"seraiki":T("Seraiki"),
-    #"balochi":T("Balochi"),
 }
 # Default language for Language Toolbar (& GIS Locations in future)
 deployment_settings.L10n.default_language = "en"
@@ -230,8 +229,8 @@ deployment_settings.modules = Storage(
                 pr_group_membership = {"importer" : True},
             )
         ),
-    mpr = Storage(
-            name_nice = T("Missing Persons"),
+    pf = Storage(
+            name_nice = T("Person Finder"),
             description = T("Helps to report and search for Missing Persons"),
             module_type = 10,
         ),
@@ -261,6 +260,27 @@ deployment_settings.modules = Storage(
                 org_staff = {"importer" : True}
             )
         ),
+    project = Storage(
+        name_nice = T("Project Tracking"),
+        description = T("Tracking of Projects, Activities and Tasks"),
+        module_type = 10
+    ),
+    # NB Budget module depends on Project Tracking Module
+    budget = Storage(
+            name_nice = T("Budgeting Module"),
+            description = T("Allows a Budget to be drawn up"),
+            module_type = 10,
+            resources = Storage(
+                budget_item = {"importer" : True},
+                budget_kit = {"importer" : True},
+                budget_bundle = {"importer" : True},
+            )
+        ),
+    logs = Storage(
+            name_nice = T("Logistics Management"),
+            description = T("Managing, Storing and Distributing Relief Items"),
+            module_type = 10
+        ),
     rms = Storage(
             name_nice = T("Requests"),
             description = T("Tracks requests for aid and matches them against donors who have pledged aid"),
@@ -268,11 +288,6 @@ deployment_settings.modules = Storage(
             resources = Storage(
                 rms_req = {"importer" : True},
             )
-        ),
-    logs = Storage(
-            name_nice = T("Logistics Management"),
-            description = T("Managing, Storing and Distributing Relief Items"),
-            module_type = 10
         ),
     cr = Storage(
             name_nice = T("Shelter Registry"),
@@ -302,60 +317,34 @@ deployment_settings.modules = Storage(
     ),
     assess = Storage(
          name_nice = "Assessments",
-         description = "Generic Assessments",
+         description = "Rapid Assessments & Flexible Impact Assessments",
          module_type = 2,
-    ),
-    rat = Storage(
-            name_nice = T("Rapid Assessments"),
-            description = T("Assessments are structured reports done by Professional Organizations"),
-            module_type = 10
-        ),
-    #sitrep = Storage(
-    #        name_nice = T("Assessments"),
-    #        description = T("Assessments are structured reports done by Professional Organizations - data includes WFP Assessments"),
-    #        module_type = 10
-    #    ),
-    project = Storage(
-        name_nice = T("Project Tracking"),
-        description = T("Tracking of Projects, Activities and Tasks"),
-        module_type = 10
-    ),    
-    # NB Budget module depends on Project Tracking Module
-    budget = Storage(
-            name_nice = T("Budgeting Module"),
-            description = T("Allows a Budget to be drawn up"),
-            module_type = 10,
-            resources = Storage(
-                budget_item = {"importer" : True},
-                budget_kit = {"importer" : True},
-                budget_bundle = {"importer" : True},
-            )
-        ),
-    delphi = Storage(
-         name_nice = T("Delphi Decision Maker"),
-            description = T("Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list."),
-            module_type = 10,
-        ),
-    flood = Storage(
-            name_nice = T("Flood Alerts"),
-            description = T("Flood Alerts show water levels in various parts of the country"),
-            module_type = 10
-        ),
-    #ticket = Storage(
-    #        name_nice = T("Ticketing Module"),
-    #        description = T("Master Message Log to process incoming reports & requests"),
-    #        module_type = 10,
-    #    ),
-    importer = Storage(
-             name_nice = "Spreadsheet Importer",
-             description = "Used to import data from spreadsheets into the database",
-             module_type = 10,
     ),
     survey = Storage(
              name_nice = "Survey Module",
              description = "Create, enter, and manage surveys.",
              module_type = 10,
-    )
+    ),
+    delphi = Storage(
+         name_nice = T("Delphi Decision Maker"),
+            description = T("Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list."),
+            module_type = 10,
+    ),
+    importer = Storage(
+             name_nice = "Spreadsheet Importer",
+             description = "Used to import data from spreadsheets into the database",
+             module_type = 10,
+    ),
+    #flood = Storage(
+    #        name_nice = T("Flood Alerts"),
+    #        description = T("Flood Alerts show water levels in various parts of the country"),
+    #        module_type = 10
+    #    ),
+    #ticket = Storage(
+    #        name_nice = T("Ticketing Module"),
+    #        description = T("Master Message Log to process incoming reports & requests"),
+    #        module_type = 10,
+    #    ),
     #lms = Storage(
     #        name_nice = T("Logistics Management System"),
     #        description = T("An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities."),

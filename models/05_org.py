@@ -67,6 +67,7 @@ def shn_site_represent(id, default_label="[no label]"):
 
 # -----------------------------------------------------------------------------
 # Cluster
+# @ToDo Allow easy changing between the term 'Cluster' (UN) & 'Sector' (everywhere else)
 resourcename = "cluster"
 tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
@@ -76,23 +77,23 @@ table = db.define_table(tablename,
                         )
 
 # CRUD strings
-ADD_CLUSTER = T("Add Cluster")
-LIST_CLUSTER = T("List Cluster")
+ADD_CLUSTER = T("Add Sector")
+LIST_CLUSTER = T("List Sector")
 s3.crud_strings[tablename] = Storage(
     title_create = ADD_CLUSTER,
-    title_display = T("Cluster Details"),
+    title_display = T("Sector Details"),
     title_list = LIST_CLUSTER,
-    title_update = T("Edit Cluster"),
-    title_search = T("Search Clusters"),
-    subtitle_create = T("Add New Cluster"),
-    subtitle_list = T("Clusters"),
+    title_update = T("Edit Sector"),
+    title_search = T("Search Sectors"),
+    subtitle_create = T("Add New Sector"),
+    subtitle_list = T("Sectors"),
     label_list_button = LIST_CLUSTER,
     label_create_button = ADD_CLUSTER,
-    label_delete_button = T("Delete Cluster"),
-    msg_record_created = T("Cluster added"),
-    msg_record_modified = T("Cluster updated"),
-    msg_record_deleted = T("Cluster deleted"),
-    msg_list_empty = T("No Clusters currently registered"))
+    label_delete_button = T("Delete Sector"),
+    msg_record_created = T("Sector added"),
+    msg_record_modified = T("Sector updated"),
+    msg_record_deleted = T("Sector deleted"),
+    msg_list_empty = T("No Sectors currently registered"))
 
 def shn_org_cluster_represent(id):
     return shn_get_db_field_value(db = db,
@@ -103,7 +104,7 @@ def shn_org_cluster_represent(id):
 cluster_id = S3ReusableField("cluster_id", db.org_cluster, sortby="abrv",
                                    requires = IS_NULL_OR(IS_ONE_OF(db, "org_cluster.id","%(abrv)s", sort=True)),
                                    represent = shn_org_cluster_represent,
-                                   label = T("Cluster"),
+                                   label = T("Sector"),
                                    #comment = Script to filter the cluster_subsector drop down
                                    ondelete = "RESTRICT"
                                    )
@@ -270,12 +271,17 @@ shn_organisation_comment = DIV(A(ADD_ORGANIZATION,
                                  _title=ADD_ORGANIZATION + "|" + T("The Organization this record is associated with."))))
 
 organisation_id = S3ReusableField("organisation_id", db.org_organisation, sortby="name",
-                           requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", shn_organisation_represent, orderby="org_organisation.name", sort=True)),
-                           represent = shn_organisation_represent,
-                           label = T("Organization"),
-                           comment = shn_organisation_comment,
-                           ondelete = "RESTRICT"
-                          )
+                                  requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id",
+                                                                  shn_organisation_represent,
+                                                                  orderby="org_organisation.name",
+                                                                  sort=True)
+                                                        ),
+                                  represent = shn_organisation_represent,
+                                  label = T("Organization"),
+                                  comment = shn_organisation_comment,
+                                  ondelete = "RESTRICT",
+                                  widget = S3AutocompleteWidget(request, module, resourcename)
+                                 )
 
 # Orgs as component of Clusters
 # doesn't work - component join keys cannot be 1-to-many (=a component record can only belong to one primary record)
@@ -521,7 +527,8 @@ s3xrc.model.add_component(module, resourcename,
                           multiple=True,
                           joinby=dict(org_organisation="organisation_id",
                                       org_office="office_id",
-                                      project_project="project_id"))
+                                      #project_project="project_id"
+                                      ))
 
 # May wish to over-ride this in controllers
 s3xrc.model.configure(table,

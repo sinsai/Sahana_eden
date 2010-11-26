@@ -131,6 +131,12 @@
                     <xsl:apply-templates select="./resource[@name='hms_shortage']"/>
                     &lt;/ul&gt;
                 </xsl:if>
+                <xsl:if test="./resource[@name='hms_ctc_capability']/data[@field='ctc']/@value='True'">
+                    &lt;h4&gt;CTC Information:&lt;/h4&gt;
+                    &lt;ul&gt;
+                    <xsl:apply-templates select="./resource[@name='hms_ctc_capability']"/>
+                    &lt;/ul&gt;
+                </xsl:if>
             </description>
             <Point>
                 <coordinates>
@@ -172,6 +178,13 @@
         <xsl:if test="./data[@field='status']/@value='1' or ./data[@field='status']/@value='2'">
             &lt;li&gt;Shortage [<xsl:value-of select="./data[@field='priority']/text()"/>/<xsl:value-of select="./data[@field='impact']/text()"/>/<xsl:value-of select="./data[@field='type']/text()"/>]: <xsl:value-of select="./data[@field='description']/text()"/>&lt;/li&gt;
         </xsl:if>
+    </xsl:template>
+
+    <!-- ****************************************************************** -->
+    <xsl:template match="resource[@name='hms_ctc_capability']">
+        &lt;li&gt;Current number of patients: <xsl:value-of select="./data[@field='number_of_patients']/text()"/>&lt;/li&gt;
+        &lt;li&gt;New cases in the past 24h: <xsl:value-of select="./data[@field='cases_24']/text()"/>&lt;/li&gt;
+        &lt;li&gt;Deaths in the past 24h: <xsl:value-of select="./data[@field='deaths_24']/text()"/>&lt;/li&gt;
     </xsl:template>
 
 </xsl:stylesheet>

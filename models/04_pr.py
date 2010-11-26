@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
-""" S3 Person Registry, additional components
+""" VITA Person Registry, Additional Models
 
     @author: nursix
-
     @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
 
 """
@@ -301,8 +300,15 @@ tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
                         super_link(db.sit_situation), # sit_id
-                        Field("reporter", db.pr_person),
-                        Field("observer", db.pr_person),
+                        person_id("reporter",
+                                  label=T("Reporter"),
+                                  default = s3_logged_in_person(),
+                                  comment=shn_person_comment(T("Reporter"),
+                                                             T("Person who is reporting about the presence."))),
+                        person_id("observer",
+                                  label=T("Observer"),
+                                  comment=shn_person_comment(T("Observer"),
+                                                             T("Person who observed the presence (if different from reporter)."))),
                         Field("shelter_id", "integer"),
                         location_id(),
                         Field("location_details"),
@@ -325,21 +331,6 @@ table = db.define_table(tablename,
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
-table.observer.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent, orderby="pr_person.first_name"))
-table.observer.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
-table.observer.comment = shn_person_comment(
-        T("Observer"),
-        T("Person who observed the presence (if different from reporter)."))
-table.observer.ondelete = "RESTRICT"
-
-table.reporter.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent, orderby="pr_person.first_name"))
-table.reporter.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
-table.reporter.comment = shn_person_comment(
-        T("Reporter"),
-        T("Person who is reporting about the presence."))
-table.reporter.ondelete = "RESTRICT"
-table.reporter.default = s3_logged_in_person()
-
 table.datetime.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
 table.datetime.represent = lambda value: shn_as_local_time(value)
 table.datetime.label = T("Date/Time")
@@ -350,6 +341,8 @@ table.closed.writable = False
 #table.closed.represent = lambda opt: opt and "closed" or ""
 
 table.proc_desc.label = T("Procedure")
+table.proc_desc.comment = DIV(DIV(_class="tooltip",
+        _title=T("Procedure") + "|" + T('Describe the procedure which this record relates to (e.g. "medical examination")')))
 
 table.shelter_id.readable = False
 table.shelter_id.writable = False

@@ -1671,6 +1671,7 @@ class S3Resource(object):
                from_table=None,
                from_record=None,
                map_fields=None,
+               link=None,
                format=None):
 
         """ Provides and processes an Add-form for this resource
@@ -1743,7 +1744,8 @@ class S3Resource(object):
                            onaccept=onaccept,
                            message=message,
                            download_url=download_url,
-                           format=format)
+                           format=format,
+                           link=link)
 
         return form
 
@@ -1787,7 +1789,8 @@ class S3Resource(object):
                onaccept=None,
                message="Record updated",
                download_url=None,
-               format=None):
+               format=None,
+               link=None):
 
         """ Update form for this resource
 
@@ -1882,6 +1885,16 @@ class S3Resource(object):
 
             # Update super entity links
             model.update_super(table, form.vars)
+
+            # Link record
+            if link and form.vars.id:
+                linker = self.manager.linker
+                if link.linkdir == "to":
+                    linker.link(table, form.vars.id, link.linktable, link.linkid,
+                                link_class=link.linkclass)
+                else:
+                    linker.link(link.linktable, link.linkid, table, form.vars.id,
+                                link_class=link.linkclass)
 
             # Store session vars
             if form.vars.id:

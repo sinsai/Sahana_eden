@@ -62,7 +62,6 @@ class S3ResourceController(object):
         @param environment: the environment of this run
         @param domain: name of the current domain
         @param base_url: base URL of this instance
-        @param rpp: rows-per-page for server-side pagination
         @param messages: a function to retrieve message URLs tagged for a resource
         @param attr: configuration settings
 
@@ -2132,7 +2131,6 @@ class S3QueryBuilder(object):
             @param id: record ID or list of record IDs to include
             @param uid: record UID or list of record UIDs to include
             @param filter: filtering query (DAL only)
-            @param left: left outer joins for the filter (if needed)
             @param vars: dict of URL query variables
 
         """

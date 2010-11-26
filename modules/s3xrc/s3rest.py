@@ -335,7 +335,6 @@ class S3Resource(object):
             @param id: record ID or list of record IDs to include
             @param uid: record UID or list of record UIDs to include
             @param filter: filtering query (DAL only)
-            @param left: left outer joins for the filter (if needed)
             @param vars: dict of URL query variables
 
         """

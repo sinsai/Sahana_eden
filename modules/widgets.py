@@ -11,7 +11,7 @@ import copy
 
 from lxml import etree
 from gluon.sqlhtml import *
-from gluon.html import URL
+from gluon.html import P, URL
 from gluon.validators import *
 from s3utils import *
 from validators import *
@@ -443,15 +443,29 @@ class S3LocationSelectorWidget:
         else:
             represent = ""
 
-        add_button = A(T("Add New Location"), _id="gis_location_add-btn", _href="#", _class="action-btn")
+        add_button = A(T("Add New Location"), _id="gis_location_add-btn", _href="#",
+                                              #_class="action-btn"
+                                              )
 
-        geolocate_button = A(T("Use Current Location"), _id="gis_location_geolocate-btn", _href="#", _class="action-btn hidden")
+        geolocate_button = A(T("Use Current Location"), _id="gis_location_geolocate-btn", _href="#",
+                                                        _class="hidden"
+                                                        #_class="action-btn hidden"
+                                                        )
 
-        map_button = A(T("Select using Map"), _id="gis_location_map-btn", _href="#", _class="action-btn hidden")
+        map_button = A(T("Select using Map"), _id="gis_location_map-btn", _href="#",
+                                              _class="hidden"
+                                              #_class="action-btn hidden"
+                                              )
 
-        geocode_button = A(T("Lookup Address"), _id="gis_location_geocode-btn", _href="#", _class="action-btn hidden")
+        geocode_button = A(T("Lookup Address"), _id="gis_location_geocode-btn", _href="#",
+                                                _class="hidden"
+                                                #_class="action-btn hidden"
+                                                )
 
-        converter_button = A(T("Coordinate Converter"), _id="gis_location_converter-btn", _href="#", _class="action-btn hidden")
+        converter_button = A(T("Coordinate Converter"), _id="gis_location_converter-btn", _href="#",
+                                                        _class="hidden"
+                                                        #_class="action-btn hidden"
+                                                        )
 
         return TAG[""](
                         INPUT(**attr), # Real input, which is hidden

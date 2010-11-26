@@ -62,23 +62,32 @@ $(function(){
     $('#gis_location_L4').change( function() {
         gis_dropdown_select(5);
     });
-    // When 'Add Location' pressed, unhide the next part
-    // Why not working?
-    $('gis_location_add-btn').click( function() {
-        $('gis_location_geolocate-btn').removeClass('hidden').show();
-        $('gis_location_map-btn').removeClass('hidden').show();
-        $('gis_location_name_label').removeClass('hidden').show();
-        $('gis_location_name').removeClass('hidden').show();
-        $('gis_location_addr_street_label').removeClass('hidden').show();
-        $('gis_location_addr_street').removeClass('hidden').show();
-        $('gis_location_advanced_div').removeClass('hidden').show();
+    $('#gis_location_add-btn').click( function() {
+        // When 'Add Location' pressed
+        // Hide the now-redundant button
+        $('#gis_location_add-btn').hide();
+        // unhide the next part
+        $('#gis_location_geolocate-btn').removeClass('hidden').show();
+        $('#gis_location_map-btn').removeClass('hidden').show();
+        $('#gis_location_name_label').removeClass('hidden').show();
+        $('#gis_location_name').removeClass('hidden').show();
+        $('#gis_location_addr_street_label').removeClass('hidden').show();
+        $('#gis_location_addr_street').removeClass('hidden').show();
+        $('#gis_location_advanced_div').removeClass('hidden').show();
     });
-    // When 'Advanced' checked, unhide the next part
-    $('gis_location_advanced_checkbox').change( function() {
-        // @ToDo Hide again if unticked
-        $('gis_location_lat_label').removeClass('hidden').show();
-        $('gis_location_lat_row').removeClass('hidden').show();
-        $('gis_location_lon_label').removeClass('hidden').show();
-        $('gis_location_lon_row').removeClass('hidden').show();
+    $('#gis_location_advanced_checkbox').change( function() {
+        if ($('#gis_location_advanced_checkbox').is(':checked')) {
+            // When 'Advanced' checked, unhide the next part
+            $('#gis_location_lat_label').removeClass('hidden').show();
+            $('#gis_location_lat_row').removeClass('hidden').show();
+            $('#gis_location_lon_label').removeClass('hidden').show();
+            $('#gis_location_lon_row').removeClass('hidden').show();
+        } else {
+            // Hide again
+            $('#gis_location_lat_label').hide();
+            $('#gis_location_lat_row').hide();
+            $('#gis_location_lon_label').hide();
+            $('#gis_location_lon_row').hide();
+        }
     });
 });

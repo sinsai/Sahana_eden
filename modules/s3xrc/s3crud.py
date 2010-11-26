@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - CRUD Method Handlers
 
-    @version: 2.2.5
+    @version: 2.2.6
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -619,7 +619,8 @@ class S3CRUDHandler(S3MethodHandler):
             if representation in ("popup", "iframe"):
                 self.next = None
             elif not create_next:
-                self.next = r.there(representation=representation)
+                #self.next = r.there(representation=representation)
+                self.next = self.resource.url(id=[])
             else:
                 try:
                     self.next = create_next(self)
@@ -920,10 +921,11 @@ class S3CRUDHandler(S3MethodHandler):
             if representation in ("popup", "iframe"):
                 self.next = None
             elif not update_next:
-                if r.component:
-                    self.next = r.there(representation=r.representation)
-                else:
-                    self.next = r.here(representation=r.representation)
+                #if r.component:
+                    #self.next = r.there(representation=r.representation)
+                #else:
+                    #self.next = r.here(representation=r.representation)
+                self.next = self.resource.url(id=[])
             else:
                 try:
                     self.next = update_next(self)

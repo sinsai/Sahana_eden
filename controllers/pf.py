@@ -128,7 +128,7 @@ def index():
                 # Is the current user reported missing?
                 if isinstance(output, dict):
                     person = s3_logged_in_person()
-                    if person and person.missing:
+                    if person and db.pr_person[person].missing:
                         myself = URL(r=request, f=resourcename,
                                      args=[person.id, "presence"],
                                      vars=dict(condition=vita.CONFIRMED))

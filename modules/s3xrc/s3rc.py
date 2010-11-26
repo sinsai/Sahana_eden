@@ -1616,7 +1616,7 @@ class S3Vector(object):
 # *****************************************************************************
 class S3ResourceLinker(object):
 
-    """ Hyperlink between resources
+    """ Hyperlinks between resources
 
         @param manager: the resource controller
 

@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Controller
 
-    @version: 2.2.5
+    @version: 2.2.6
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 

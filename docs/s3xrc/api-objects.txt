@@ -70,6 +70,12 @@ vita.modules.s3xrc.s3import.S3Importer.url	vita.modules.s3xrc.s3import.S3Importe
 vita.modules.s3xrc.s3import.S3Importer.json	vita.modules.s3xrc.s3import.S3Importer-class.html#json
 vita.modules.s3xrc.s3import.S3Importer.csv	vita.modules.s3xrc.s3import.S3Importer-class.html#csv
 vita.modules.s3xrc.s3import.S3Importer.__init__	vita.modules.s3xrc.s3import.S3Importer-class.html#__init__
+vita.modules.s3xrc.s3model.S3ResourceLinker	vita.modules.s3xrc.s3model.S3ResourceLinker-class.html
+vita.modules.s3xrc.s3model.S3ResourceLinker.link	vita.modules.s3xrc.s3model.S3ResourceLinker-class.html#link
+vita.modules.s3xrc.s3model.S3ResourceLinker.get_target_query	vita.modules.s3xrc.s3model.S3ResourceLinker-class.html#get_target_query
+vita.modules.s3xrc.s3model.S3ResourceLinker.get_origin_query	vita.modules.s3xrc.s3model.S3ResourceLinker-class.html#get_origin_query
+vita.modules.s3xrc.s3model.S3ResourceLinker.unlink	vita.modules.s3xrc.s3model.S3ResourceLinker-class.html#unlink
+vita.modules.s3xrc.s3model.S3ResourceLinker.__init__	vita.modules.s3xrc.s3model.S3ResourceLinker-class.html#__init__
 vita.modules.s3xrc.s3model.S3ResourceModel	vita.modules.s3xrc.s3model.S3ResourceModel-class.html
 vita.modules.s3xrc.s3model.S3ResourceModel.get_component	vita.modules.s3xrc.s3model.S3ResourceModel-class.html#get_component
 vita.modules.s3xrc.s3model.S3ResourceModel.super_link	vita.modules.s3xrc.s3model.S3ResourceModel-class.html#super_link
@@ -122,12 +128,6 @@ vita.modules.s3xrc.s3rc.S3ResourceController.callback	vita.modules.s3xrc.s3rc.S3
 vita.modules.s3xrc.s3rc.S3ResourceController.PROTECTED	vita.modules.s3xrc.s3rc.S3ResourceController-class.html#PROTECTED
 vita.modules.s3xrc.s3rc.S3ResourceController.__directory	vita.modules.s3xrc.s3rc.S3ResourceController-class.html#__directory
 vita.modules.s3xrc.s3rc.S3ResourceController.original	vita.modules.s3xrc.s3rc.S3ResourceController-class.html#original
-vita.modules.s3xrc.s3rc.S3ResourceLinker	vita.modules.s3xrc.s3rc.S3ResourceLinker-class.html
-vita.modules.s3xrc.s3rc.S3ResourceLinker.link	vita.modules.s3xrc.s3rc.S3ResourceLinker-class.html#link
-vita.modules.s3xrc.s3rc.S3ResourceLinker.get_target_query	vita.modules.s3xrc.s3rc.S3ResourceLinker-class.html#get_target_query
-vita.modules.s3xrc.s3rc.S3ResourceLinker.get_origin_query	vita.modules.s3xrc.s3rc.S3ResourceLinker-class.html#get_origin_query
-vita.modules.s3xrc.s3rc.S3ResourceLinker.unlink	vita.modules.s3xrc.s3rc.S3ResourceLinker-class.html#unlink
-vita.modules.s3xrc.s3rc.S3ResourceLinker.__init__	vita.modules.s3xrc.s3rc.S3ResourceLinker-class.html#__init__
 vita.modules.s3xrc.s3rc.S3Vector	vita.modules.s3xrc.s3rc.S3Vector-class.html
 vita.modules.s3xrc.s3rc.S3Vector.__init__	vita.modules.s3xrc.s3rc.S3Vector-class.html#__init__
 vita.modules.s3xrc.s3rc.S3Vector.UID	vita.modules.s3xrc.s3rc.S3Vector-class.html#UID

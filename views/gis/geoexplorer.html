@@ -23,10 +23,11 @@
 <script type="text/javascript">//<![CDATA[
     Ext.BLANK_IMAGE_URL = '/{{=request.application}}/static/img/gis/openlayers/blank.gif';
     OpenLayers.DOTS_PER_INCH = 25.4 / 0.28; // OGC "standardized rendering pixel size"
-    var app = new GeoExplorer.Composer({
+    var app = new GeoExplorer.{{if request.args(0) == "viewer.html":}}Viewer{{else:}}Composer{{pass}}({
         proxy: '/{{=request.application}}/gis/proxy?url=',
-        // ToDo setting to select a local one
+      {{if print_service:}}
         printService: 'http://geo.eden.sahanafoundation.org/geoserver/pdf/',
+      {{pass}}
         alignToGrid: true,
         about: {
             title: 'GeoExplorer Demo Map',
@@ -35,11 +36,13 @@
         },
         defaultSourceType: 'gx_wmssource',
         sources: {
+          {{if geoserver_url:}}
             local: {
-                url: '/geoserver/ows',
+                url: '{{=geoserver_url}}',
                 title: 'Local GeoServer'
             },
-            suite: {
+          {{pass}}
+            sahana: {
                 url: "http://geo.eden.sahanafoundation.org/geoserver/ows",
                 title: "Remote Sahana GeoServer"
             },
@@ -62,9 +65,9 @@
                 20037508.34, 20037508.34
             ],
             layers: [{
-                source: 'google',
-                title: 'Google Terrain',
-                name: 'TERRAIN',
+                source: 'osm',
+                title: 'OpenStreetMap',
+                name: 'mapnik',
                 group: 'background'
             }, {
                 source: 'ol',

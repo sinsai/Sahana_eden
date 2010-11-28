@@ -11,7 +11,6 @@ if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
     redirect(URL(r=request, c="default", f="index"))
 
-import gluon.contrib.simplejson as json
 importer = local_import("importer")
 
 response.menu_options = [

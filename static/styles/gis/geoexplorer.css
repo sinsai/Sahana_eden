@@ -19,6 +19,9 @@
     background-color: #EAEAEA;
 }
 
+.x-tree-node-ct {
+    margin: 0;
+}
 
 .x-tree-node img.gx-folder, .x-tree-node-collapsed img.gx-folder{
     background: url(../../scripts/ext/resources/images/default/tree/folder.gif);
@@ -230,6 +233,24 @@ div.map-overlay div.overlay-element {
 
 .olControlScaleLine {
     font-family: tahoma,arial,helvetica,sans-serif;
+    font-size: xx-small;
+    line-height: 100%;
+}
+
+.olControlScaleLineTop {
+    border-color: -moz-use-text-color black black;
+    border-right: 2px solid black;
+    border-style: none solid solid;
+    border-width: medium 2px 2px;
+    text-align: center;
+}
+
+.olControlScaleLineBottom {
+    border-color: black black -moz-use-text-color;
+    border-style: solid solid none;
+    border-width: 2px 2px medium;
+    margin-top: -2px;
+    text-align: center;
 }
 
 /* position the zoom slider within map panel */

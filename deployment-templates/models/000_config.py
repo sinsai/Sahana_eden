@@ -146,12 +146,17 @@ deployment_settings.gis.marker_max_width = 30
 # lon<0 have a duplicate at lon+360
 # lon>0 have a duplicate at lon-360
 deployment_settings.gis.duplicate_features = False
+# Mouse Position: 'normal', 'mgrs' or 'off'
+deployment_settings.gis.mouse_position = "normal"
+# Print Service URL: http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting
+#deployment_settings.gis.print_service = "/geoserver/pdf/"
 # Do we have a spatial DB available? (currently unused. Will support PostGIS & Spatialite.)
 deployment_settings.gis.spatialdb = False
-# GeoServer (currently unused. Will allow REST control of GeoServer.)
-deployment_settings.gis.geoserver_url = "http://localhost/geoserver"
-deployment_settings.gis.geoserver_username = "admin"
-deployment_settings.gis.geoserver_password = "password"
+# GeoServer (Currently used by GeoExplorer. Will allow REST control of GeoServer.)
+# NB Needs to be publically-accessible URL for querying via client JS
+#deployment_settings.gis.geoserver_url = "http://localhost/geoserver"
+#deployment_settings.gis.geoserver_username = "admin"
+#deployment_settings.gis.geoserver_password = "password"
 
 # OpenStreetMap settings:
 # Register your app by logging in to www.openstreetmap.org & then selecting 'oauth settings'

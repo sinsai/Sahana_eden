@@ -877,8 +877,6 @@ def shn_barchart (r, **attr):
 
     """
 
-    import gluon.contrib.simplejson as json
-
     # Get all the variables and format them if needed
     valKey = r.request.vars.get("value")
 

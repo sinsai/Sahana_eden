@@ -167,8 +167,6 @@ def now():
 
     """ Manual synchronization """
 
-    import gluon.contrib.simplejson as json
-
     pid = None
 
     # Notification helpers
@@ -457,8 +455,6 @@ def sync():
 
     """
 
-    import gluon.contrib.simplejson as json
-
     if len(request.args) < 2:
         # No resource specified
         raise HTTP(501, body=s3xrc.ERROR.BAD_RESOURCE)
@@ -553,8 +549,6 @@ def sync_run_job(job, settings=None, pid=None, tables=[], silent=False):
 
     """ Run synchronization job """
 
-    import gluon.contrib.simplejson as json
-
     # Notification helpers
     error = lambda message, pid=pid, silent=silent: not silent and \
                    s3_sync_push_message(message, pid=pid, error=True)
@@ -623,8 +617,6 @@ def s3_sync_eden_eden(peer, mode, tablenames,
     """ Synchronization Eden<->Eden """
 
     import urllib, urlparse
-    import gluon.contrib.simplejson as json
-
     # Initialize output object
     output = Storage(success = False,
                      errors = [],
@@ -804,7 +796,6 @@ def s3_sync_eden_other(peer, mode, tablenames,
     """ Synchronization Eden<->Other """
 
     import urllib, urlparse
-    import gluon.contrib.simplejson as json
 
     # Initialize output object
     output = Storage(success = False,

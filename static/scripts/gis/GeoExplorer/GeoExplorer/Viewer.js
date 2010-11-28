@@ -30,6 +30,7 @@ GeoExplorer.Viewer = Ext.extend(GeoExplorer, {
         this.toolbar = new Ext.Toolbar({
             xtype: "toolbar",
             region: "north",
+            height: 27,
             disabled: true,
             items: this.createTools()
         });

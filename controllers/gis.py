@@ -1618,6 +1618,18 @@ def geocode():
         return s3gis.YahooGeocoder(location, db).get_xml()
 
 # -----------------------------------------------------------------------------
+def geoexplorer():
+
+    """
+        Custom View for GeoExplorer: http://projects.opengeo.org/geoext/wiki/GeoExplorer
+        This version doesn't yet work properly
+    """
+
+    google_key = db(db.gis_apikey.name == "google").select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
+    
+    return dict(google_key=google_key)
+
+# -----------------------------------------------------------------------------
 def potlatch2():
     """
         Custom View for the Potlatch2 OpenStreetMap editor

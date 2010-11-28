@@ -130,24 +130,35 @@ def dojs(dogis = False):
         configDictGIS = {
             "gis":                          ".."
         }
+        configDictOpenLayers = {
+            "OpenLayers.js":            "../gis/openlayers/lib",
+            "OpenLayers":               "../gis/openlayers/lib",
+            "Rico":                     "../gis/openlayers/lib",
+            "Gears":                    "../gis/openlayers/lib"
+        }
         configDictGeoExt = {
             "GeoExt.js":                "../gis/GeoExt/lib",
             "GeoExt":                   "../gis/GeoExt/lib",
             "ux":                       "../gis/GeoExt"
         }
-        configDictOpenLayers = {
-            "OpenLayers.js":                "../gis/openlayers/lib",
-            "OpenLayers":                   "../gis/openlayers/lib",
-            "Rico":                         "../gis/openlayers/lib",
-            "Gears":                        "../gis/openlayers/lib"
+        configDictGxp = {
+            "gxp":                      "../gis"
+        }
+        configDictGeoExplorer = {
+            "GeoExplorer.js":           "../gis/GeoExplorer",
+            "GeoExplorer":              "../gis/GeoExplorer"
         }
         configDictGlobalGIS = {}
         configDictGlobalGIS.update(configDictOpenLayers)
         configDictGlobalGIS.update(configDictGIS)
         configFilenameGIS = "sahana.js.gis.cfg"
-        configFilenameGeoExt = "geoext.js.gis.cfg"
+        configFilenameGeoExt = "sahana.js.geoext.cfg"
+        configFilenameGxp = "sahana.js.gxp.cfg"
+        configFilenameGeoExplorer = "sahana.js.geoexplorer.cfg"
         outputFilenameGIS = "OpenLayers.js"
         outputFilenameGeoExt = "GeoExt.js"
+        outputFilenameGxp = "gxp.js"
+        outputFilenameGeoExplorer = "GeoExplorer.js"
         
         # Merge GIS JS Files
         print "Merging GIS libraries."
@@ -158,12 +169,26 @@ def dojs(dogis = False):
         (files, order) = mergejs.getFiles(configDictGeoExt, configFilenameGeoExt)
         mergedGeoExt = mergejs.run(files, order)
 
+        print "Merging gxp libraries."
+        (files, order) = mergejs.getFiles(configDictGxp, configFilenameGxp)
+        mergedGxp = mergejs.run(files, order)
+
+        print "Merging GeoExplorer libraries."
+        (files, order) = mergejs.getFiles(configDictGeoExplorer, configFilenameGeoExplorer)
+        mergedGeoExplorer = mergejs.run(files, order)
+
         # Compress JS files
         print "Compressing - GIS JS"
         minimizedGIS = jsmin.jsmin(mergedGIS)
 
         print "Compressing - GeoExt JS"
         minimizedGeoExt = jsmin.jsmin(mergedGeoExt)
+
+        print "Compressing - gxp JS"
+        minimizedGxp = jsmin.jsmin(mergedGxp)
+
+        print "Compressing - GeoExplorer JS"
+        minimizedGeoExplorer = jsmin.jsmin(mergedGeoExplorer)
 
         # Add license
         minimizedGIS = file("license.gis.txt").read() + minimizedGIS
@@ -174,6 +199,12 @@ def dojs(dogis = False):
 
         print "Writing to %s." % outputFilenameGeoExt
         file(outputFilenameGeoExt, "w").write(minimizedGeoExt)
+
+        print "Writing to %s." % outputFilenameGxp
+        file(outputFilenameGxp, "w").write(minimizedGxp)
+
+        print "Writing to %s." % outputFilenameGeoExplorer
+        file(outputFilenameGeoExplorer, "w").write(minimizedGeoExplorer)
 
         # Move new JS files
         print "Deleting %s." % outputFilenameGIS
@@ -191,6 +222,22 @@ def dojs(dogis = False):
             pass
         print "Moving new GeoExt JS files"
         shutil.move("GeoExt.js", "../gis")
+
+        print "Deleting %s." % outputFilenameGxp
+        try:
+            os.remove("../gis/%s" % outputFilenameGxp)
+        except:
+            pass
+        print "Moving new gxp JS files"
+        shutil.move("gxp.js", "../gis")
+        
+        print "Deleting %s." % outputFilenameGeoExplorer
+        try:
+            os.remove("../gis/%s" % outputFilenameGeoExplorer)
+        except:
+            pass
+        print "Moving new GeoExplorer JS files"
+        shutil.move("GeoExplorer.js", "../gis")
 
 def docss():
     """ Compresses the  CSS files """
@@ -213,10 +260,13 @@ def docss():
         "../../styles/gis/cdauth.css",
         "../../styles/gis/popup.css",
         "../../styles/gis/layerlegend.css",
+        "../../styles/gis/printpreview.css",
         #mfbase+"/ext/resources/css/ext-all.css", # would need to copy images if included here
         "../../styles/gis/google.css",
         #"../../styles/gis/style.css",
-        "../../styles/gis/ie6-style.css"
+        "../../styles/gis/ie6-style.css",
+        "../../styles/gis/geoexplorer.css",
+        "../../styles/gis/ie.css"
     ]
 
     outputFilenameCSS = "sahana.min.css"

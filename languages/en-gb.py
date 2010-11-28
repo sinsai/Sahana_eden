@@ -3770,6 +3770,7 @@
 'Zoom In: click in the map or use the left mouse button and drag to create a rectangle': 'Zoom In: click in the map or use the left mouse button and drag to create a rectangle',
 'Zoom Levels': 'Zoom Levels',
 'Zoom Out: click in the map or use the left mouse button and drag to create a rectangle': 'Zoom Out: click in the map or use the left mouse button and drag to create a rectangle',
+'Zoom to Current Location': 'Zoom to Current Location',
 'Zoom to maximum map extent': 'Zoom to maximum map extent',
 'act': 'act',
 'active': 'active',

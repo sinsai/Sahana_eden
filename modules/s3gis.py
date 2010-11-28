@@ -2404,25 +2404,59 @@ OpenLayers.Util.extend( selectPdfControl, {
                         if layer.subtype == subtype:
                             google["%s" % subtype] = layer.name
             if google:
-                html.append(SCRIPT(_type="text/javascript", _src="http://maps.google.com/maps?file=api&v=2&key=" + google.key))
+                if google.MapMaker or google.MapMakerHybrid:
+                    # Need to use v2 API
+                    # http://code.google.com/p/gmaps-api-issues/issues/detail?id=2349
+                    googleMapmaker = True
+                    html.append(SCRIPT(_type="text/javascript", _src="http://maps.google.com/maps?file=api&v=2&key=" + google.key))
+                else:
+                    googleMapmaker = False
+                    html.append(SCRIPT(_type="text/javascript", _src="http://maps.google.com/maps/api/js?sensor=false"))
+                # Google Earth (coming soon)
+                #html.append(SCRIPT(_type="text/javascript", _src="http://www.google.com/jsapi?key=" + google.key))
+                #html.append(SCRIPT("google && google.load('earth', '1');", _type="text/javascript"))
                 if google.Satellite:
-                    layers_google += """
-        var googlesat = new OpenLayers.Layer.Google( '""" + google.Satellite + """' , {type: G_SATELLITE_MAP, 'sphericalMercator': true } );
+                    if googleMapmaker:
+                        layers_google += """
+        var googlesat = new OpenLayers.Layer.Google( '""" + google.Satellite + """' , {type: G_SATELLITE_MAP, 'sphericalMercator': true} );
+        map.addLayer(googlesat);
+                    """
+                    else:
+                        layers_google += """
+        var googlesat = new OpenLayers.Layer.Google( '""" + google.Satellite + """' , {type: google.maps.MapTypeId.SATELLITE, numZoomLevels: 22} );
         map.addLayer(googlesat);
                     """
                 if google.Maps:
-                    layers_google += """
-        var googlemaps = new OpenLayers.Layer.Google( '""" + google.Maps + """' , {type: G_NORMAL_MAP, 'sphericalMercator': true } );
+                    if googleMapmaker:
+                        layers_google += """
+        var googlemaps = new OpenLayers.Layer.Google( '""" + google.Maps + """' , {type: G_NORMAL_MAP, 'sphericalMercator': true} );
+        map.addLayer(googlemaps);
+                    """
+                    else:
+                        layers_google += """
+        var googlemaps = new OpenLayers.Layer.Google( '""" + google.Maps + """' , {numZoomLevels: 20} );
         map.addLayer(googlemaps);
                     """
                 if google.Hybrid:
-                    layers_google += """
-        var googlehybrid = new OpenLayers.Layer.Google( '""" + google.Hybrid + """' , {type: G_HYBRID_MAP, 'sphericalMercator': true } );
+                    if googleMapmaker:
+                        layers_google += """
+        var googlehybrid = new OpenLayers.Layer.Google( '""" + google.Hybrid + """' , {type: G_HYBRID_MAP, 'sphericalMercator': true} );
+        map.addLayer(googlehybrid);
+                    """
+                    else:
+                        layers_google += """
+        var googlehybrid = new OpenLayers.Layer.Google( '""" + google.Hybrid + """' , {type: google.maps.MapTypeId.HYBRID, numZoomLevels: 20} );
         map.addLayer(googlehybrid);
                     """
                 if google.Terrain:
-                    layers_google += """
-        var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: G_PHYSICAL_MAP, 'sphericalMercator': true } )
+                    if googleMapmaker:
+                        layers_google += """
+        var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: G_PHYSICAL_MAP, 'sphericalMercator': true} )
+        map.addLayer(googleterrain);
+                    """
+                    else:
+                        layers_google += """
+        var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: google.maps.MapTypeId.TERRAIN} )
         map.addLayer(googleterrain);
                     """
                 if google.MapMaker:
@@ -3901,7 +3935,8 @@ OpenLayers.Util.extend( selectPdfControl, {
             items: [{
                     region: 'west',
                     id: 'tools',
-                    title: '""" + T("Tools") + """',
+                    //title: '""" + T("Tools") + """',
+                    header: false,
                     border: true,
                     width: 250,
                     autoScroll: true,

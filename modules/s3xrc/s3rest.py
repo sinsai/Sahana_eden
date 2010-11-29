@@ -2352,8 +2352,12 @@ class S3Request(object):
                                            self.resource.name,
                                            self.id)
             else:
-                manager.error = "No matching record found"
-                raise KeyError(manager.error)
+                manager.error = self.manager.ERROR.BAD_RECORD
+                if self.representation == "html":
+                    self.session.error = manager.error
+                    redirect(self.there())
+                else:
+                    raise KeyError(manager.error)
 
         # Check for custom action
         model = manager.model

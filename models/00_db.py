@@ -16,6 +16,8 @@ import uuid
 
 from lxml import etree
 
+import gluon.contrib.simplejson as json
+
 from gluon.sql import SQLCustomType
 
 # All dates should be stored in UTC for Sync to work reliably

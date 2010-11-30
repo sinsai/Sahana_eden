@@ -8,6 +8,8 @@ import cPickle as pickle
 import csv
 from gluon.admin import *
 from gluon.fileutils import listdir
+#import unittest   # added by Graeme Nov 2010
+#from applications.eden.static.selenium.scripts.testSuite import TestSuite # added by Graeme Nov 2010
 
 module = "admin"
 
@@ -1019,3 +1021,25 @@ def ticket():
                 code=e.code,
                 layer=e.layer)
 
+# Regression Test functionality added by Graeme Nov 2010
+@auth.shn_requires_membership(1)
+def rtests():
+    """ Regression tests """
+    details = ""
+    if len(request.args) == 1:
+        # need to ensure that the Selenium RC server is running (if not start it)
+        
+        # now run the tests and capture the output
+#        test = TestStuite()
+#        test.test_main()
+        argv=['applications/eden/static/selenium/scripts/testSuite.py', 'TestSuite']
+        unittest.main(argv=argv)
+        
+        details = "Tests completed..."
+        title = T("Regression Test Completed")
+    else:
+        title = T("Regression Tests")
+    description = T("Suite of regression tests performed on the Sahana platform")
+    module_name = deployment_settings.modules[module].name_nice
+
+    return dict(module_name=module_name, title=title, description=description, details=details)

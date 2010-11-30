@@ -130,11 +130,16 @@
                 </xsl:when>
             </xsl:choose>
 
-            <xsl:if test="./tag[@k='name']">
-                <data field="name">
-                    <xsl:value-of select="./tag[@k='name']/@v"/>
-                </data>
-            </xsl:if>
+            <data field="name">
+                <xsl:choose>
+                    <xsl:when test="./tag[@k='name']">
+                        <xsl:value-of select="./tag[@k='name']/@v"/>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:value-of select="concat('OSM #', @id)"/>
+                    </xsl:otherwise>
+                </xsl:choose>
+            </data>
 
             <xsl:choose>
                 <xsl:when test="local-name()='node'">

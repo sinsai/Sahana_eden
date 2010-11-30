@@ -9,6 +9,7 @@
 from operator import __and__
 
 module = request.controller
+resourcename = request.function
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
@@ -21,11 +22,6 @@ response.menu_options = [
     # Currently broken
     #[T("Bulk Uploader"), False, URL(r=request, c="doc", f="bulk_upload")]
 ]
-
-osm_oauth_consumer_key = deployment_settings.get_osm_oauth_consumer_key()
-osm_oauth_consumer_secret = deployment_settings.get_osm_oauth_consumer_secret()
-if osm_oauth_consumer_key and osm_oauth_consumer_secret:
-    response.menu_options.append([T("OpenStreetMap Editor"), False, URL(r=request, f="potlatch2", args="potlatch2.html")])
 
 if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
     response.menu_options.append([T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")])
@@ -74,6 +70,16 @@ def define_map(window=False, toolbar=False):
     else:
         wms_browser = None
 
+    # 'normal', 'mgrs' or 'off'
+    mouse_position = deployment_settings.get_gis_mouse_position()
+
+    # http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting
+    print_service = deployment_settings.get_gis_print_service()
+    if print_service:
+        print_tool = {url: print_service}
+    else:
+        print_tool = {}
+    
     # Custom Feature Layers
     feature_queries = []
     feature_layers = db(db.gis_layer_feature.enabled == True).select()
@@ -90,7 +96,8 @@ def define_map(window=False, toolbar=False):
                        search=search,
                        catalogue_overlays=catalogue_overlays,
                        feature_queries=feature_queries,
-                       #mouse_position = "mgrs"
+                       mouse_position = mouse_position,
+                       print_tool = print_tool
                       )
 
     return map
@@ -100,7 +107,6 @@ def location():
 
     """ RESTful CRUD controller for Locations """
 
-    resourcename = request.function
     tablename = module + "_" + resourcename
     table = db[tablename]
 
@@ -354,8 +360,6 @@ def location_links():
         item = s3xrc.xml.json_message(False, 404, "Record not found!")
         raise HTTP(404, body=item)
 
-    import gluon.contrib.simplejson as json
-
     # Find all tables which link to the Locations table
     # @ToDo Replace with db.gis_location._referenced_by
     tables = shn_table_links("gis_location")
@@ -366,7 +370,7 @@ def location_links():
             field = tables[str(db[table])][count]
             query = db[table][field] == record_id
             _results = db(query).select()
-            module, resource = table.split("_", 1)
+            module, resourcename = table.split("_", 1)
             for result in _results:
                 id = result.id
                 # We currently have no easy way to get the default represent for a table!
@@ -376,7 +380,7 @@ def location_links():
                 except:
                     try:
                         # Organisations
-                        represent = eval("shn_%s_represent(id)" % resource)
+                        represent = eval("shn_%s_represent(id)" % resourcename)
                     except:
                         try:
                             # Many tables have a Name field
@@ -386,7 +390,7 @@ def location_links():
                             represent = id
                 results.append({
                     "module" : module,
-                    "resource" : resource,
+                    "resource" : resourcename,
                     "id" : id,
                     "represent" : represent
                     })
@@ -519,8 +523,8 @@ def layers_enable():
     authorised = shn_has_permission("update", table)
     if authorised:
         for type in gis_layer_types:
-            resource = "gis_layer_%s" % type
-            table = db[resource]
+            resourcename = "gis_layer_%s" % type
+            table = db[resourcename]
             query = table.id > 0
             sqlrows = db(query).select()
             for row in sqlrows:
@@ -536,19 +540,19 @@ def layers_enable():
                         # Disable
                         db(query_inner).update(enabled=False)
                         # Audit
-                        s3_audit("update", module, resource, record=row.id, representation="html")
+                        s3_audit("update", module, resourcename, record=row.id, representation="html")
                 else:
                     # Old state: Disabled
                     if var in request.vars:
                         # Enable
                         db(query_inner).update(enabled=True)
                         # Audit
-                        s3_audit("update", module, resource, record=row.id, representation="html")
+                        s3_audit("update", module, resourcename, record=row.id, representation="html")
                     else:
                         # Do nothing
                         pass
-        resource = "gis_layer_feature"
-        table = db[resource]
+        resourcename = "gis_layer_feature"
+        table = db[resourcename]
         query = table.id > 0
         sqlrows = db(query).select()
         for row in sqlrows:
@@ -564,14 +568,14 @@ def layers_enable():
                     # Disable
                     db(query_inner).update(enabled=False)
                     # Audit
-                    s3_audit("update", module, resource, record=row.id, representation="html")
+                    s3_audit("update", module, resourcename, record=row.id, representation="html")
             else:
                 # Old state: Disabled
                 if var in request.vars:
                     # Enable
                     db(query_inner).update(enabled=True)
                     # Audit
-                    s3_audit("update", module, resource, record=row.id, representation="html")
+                    s3_audit("update", module, resourcename, record=row.id, representation="html")
                 else:
                     # Do nothing
                     pass
@@ -589,8 +593,7 @@ def apikey():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # Model options
@@ -615,7 +618,7 @@ def apikey():
         msg_record_deleted = T("Key deleted"),
         msg_list_empty = T("No Keys currently defined"))
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -626,8 +629,7 @@ def config():
 
     """ RESTful CRUD controller """
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # Pre-processor
@@ -644,7 +646,7 @@ def config():
         return True
     response.s3.prep = prep
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -669,8 +671,7 @@ def feature_class():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # Model options
@@ -694,7 +695,7 @@ def feature_class():
         msg_record_deleted = T("Feature Class deleted"),
         msg_list_empty = T("No Feature Classes currently defined"))
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view and response.view != "popup.html":
         response.view = "gis/" + response.view
@@ -706,8 +707,7 @@ def layer_feature():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # CRUD Strings
@@ -733,7 +733,7 @@ def layer_feature():
         create_onvalidation = lambda form: feature_layer_query(form),
         update_onvalidation = lambda form: feature_layer_query(form))
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     return output
 
@@ -768,8 +768,7 @@ def marker():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # CRUD Strings
@@ -790,7 +789,7 @@ def marker():
         msg_record_deleted = T("Marker deleted"),
         msg_list_empty = T("No Markers currently available"))
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view and response.view != "popup.html":
         response.view = "gis/" + response.view
@@ -804,8 +803,7 @@ def projection():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # CRUD Strings
@@ -827,7 +825,7 @@ def projection():
         msg_record_deleted = T("Projection deleted"),
         msg_list_empty = T("No Projections currently defined"))
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -841,8 +839,7 @@ def track():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    table = module + "_" + resource
+    table = module + "_" + resourcename
 
     # Model options
     # used in multiple controllers, so defined in model
@@ -850,7 +847,7 @@ def track():
     # CRUD Strings
     # used in multiple controllers, so defined in model
 
-    return s3_rest_controller(module, resource)
+    return s3_rest_controller(module, resourcename)
 
 
 # Common CRUD strings for all layers
@@ -877,8 +874,7 @@ def layer_openstreetmap():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    table = module + "_" + resource
+    table = module + "_" + resourcename
 
     # Model options
 
@@ -903,8 +899,7 @@ def layer_openstreetmap():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    s3xrc.model.configure(table, deletable=False, listadd=False)
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -916,8 +911,7 @@ def layer_google():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    table = module + "_" + resource
+    table = module + "_" + resourcename
 
     # Model options
 
@@ -943,7 +937,7 @@ def layer_google():
         msg_list_empty=NO_LAYERS)
 
     s3xrc.model.configure(table, deletable=False, listadd=False)
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -955,8 +949,7 @@ def layer_yahoo():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    table = module + "_" + resource
+    table = module + "_" + resourcename
 
     # Model options
 
@@ -982,7 +975,7 @@ def layer_yahoo():
         msg_list_empty=NO_LAYERS)
 
     s3xrc.model.configure(table, deletable=False, listadd=False)
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -994,8 +987,7 @@ def layer_mgrs():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    table = module + "_" + resource
+    table = module + "_" + resourcename
 
     # Model options
 
@@ -1021,7 +1013,7 @@ def layer_mgrs():
         msg_list_empty=NO_LAYERS)
 
     s3xrc.model.configure(table, deletable=False, listadd=False)
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1033,8 +1025,7 @@ def layer_bing():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    table = module + "_" + resource
+    table = module + "_" + resourcename
 
     # Model options
 
@@ -1060,7 +1051,7 @@ def layer_bing():
         msg_list_empty=NO_LAYERS)
 
     s3xrc.model.configure(table, deletable=False, listadd=False)
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1072,8 +1063,7 @@ def layer_georss():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # CRUD Strings
@@ -1099,7 +1089,7 @@ def layer_georss():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1111,8 +1101,7 @@ def layer_gpx():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    table = module + "_" + resource
+    table = module + "_" + resourcename
 
     # Model options
     # Needed in multiple controllers, so defined in Model
@@ -1140,7 +1129,7 @@ def layer_gpx():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1152,8 +1141,7 @@ def layer_kml():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # CRUD Strings
@@ -1185,7 +1173,7 @@ def layer_kml():
         return output
     response.s3.postp = user_postp
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1197,8 +1185,7 @@ def layer_tms():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # CRUD Strings
@@ -1224,7 +1211,7 @@ def layer_tms():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1236,8 +1223,7 @@ def layer_wfs():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # CRUD Strings
@@ -1263,7 +1249,7 @@ def layer_wfs():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1275,8 +1261,7 @@ def layer_wms():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # CRUD Strings
@@ -1302,7 +1287,7 @@ def layer_wms():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1312,8 +1297,8 @@ def layer_wms():
 @auth.shn_requires_membership("MapAdmin")
 def layer_js():
     """ RESTful CRUD controller """
-    resource = request.function
-    table = module + "_" + resource
+
+    table = module + "_" + resourcename
 
     # Model options
 
@@ -1340,7 +1325,7 @@ def layer_js():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1352,8 +1337,7 @@ def layer_xyz():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # CRUD Strings
@@ -1379,7 +1363,7 @@ def layer_xyz():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1406,6 +1390,100 @@ def map_viewing_client():
     map = define_map(window=window, toolbar=toolbar)
 
     return dict(map=map)
+
+# -----------------------------------------------------------------------------
+def map_selector():
+    """
+        Map Selector.
+        UI for a user to select a Location from a Map
+    """
+
+    config = gis.get_config()
+
+    if lat in request.vars:
+        lat = request.vars.lat
+    else:
+        lat = config.lat
+
+    if lon in request.vars:
+        lon = request.vars.lon
+    else:
+        lon = config.lon
+
+    if zoom in request.vars:
+        zoom = request.vars.zoom
+    else:
+        zoom = config.zoom
+
+    if method in request.vars:
+        method = request.vars.method
+    else:
+        method = "create"
+
+    tablename = None
+    prefix = None
+    name = None
+
+    if method == "create":
+        map = self.show_map(add_feature = True,
+                            add_feature_active = True,
+                            toolbar = True,
+                            collapsed = True,
+                            window = True,
+                            window_hide = True)
+        return dict(map=map)
+
+    elif method == "update" and tablename and prefix and name:
+        # @ToDo: Finish porting this over from CRUD to a separate controller
+        _locations = db.gis_location
+        fields = [_locations.id, _locations.uuid, _locations.name, _locations.lat, _locations.lon, _locations.level, _locations.parent, _locations.addr_street]
+        if tablename == "gis_location":
+            location = db(db[tablename].id == r.id).select(limitby=(0, 1), *fields).first()
+        else:
+            location = db((db[tablename].id == r.id) & (_locations.id == db[tablename].location_id)).select(limitby=(0, 1), *fields).first()
+        if location and location.lat is not None and location.lon is not None:
+            lat = location.lat
+            lon = location.lon
+        else:
+            lat = config.lat
+            lon = config.lon
+        layername = T("Location")
+        popup_label = ""
+        filter = Storage(tablename = tablename,
+                         id = r.id
+                        )
+        layer = self.get_feature_layer(prefix, name, layername, popup_label, filter=filter)
+        if layer:
+            feature_queries = [layer]
+        else:
+            feature_queries = []
+        map = self.show_map(lat = lat,
+                            lon = lon,
+                            # Same as a single zoom on a cluster
+                            zoom = zoom + 2,
+                            feature_queries = feature_queries,
+                            add_feature = True,
+                            add_feature_active = False,
+                            toolbar = True,
+                            collapsed = True,
+                            window = True,
+                            window_hide = True)
+        if location and location.id:
+            _location = Storage(id = location.id,
+                                uuid = location.uuid,
+                                name = location.name,
+                                lat = location.lat,
+                                lon = location.lon,
+                                level = location.level,
+                                parent = location.parent,
+                                addr_street = location.addr_street
+                                )
+        else:
+            _location = None
+        return dict(map=map, oldlocation=_location)
+
+    else:
+        raise HTTP(501, BADMETHOD)
 
 # -----------------------------------------------------------------------------
 def display_feature():
@@ -1549,6 +1627,225 @@ def geocode():
         return s3gis.YahooGeocoder(location, db).get_xml()
 
 # -----------------------------------------------------------------------------
+def geoexplorer():
+
+    """
+        Custom View for GeoExplorer: http://projects.opengeo.org/geoext/wiki/GeoExplorer
+    """
+
+    google_key = db(db.gis_apikey.name == "google").select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
+    
+    # http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting
+    print_service = deployment_settings.get_gis_print_service()
+
+    geoserver_url = deployment_settings.get_gis_geoserver_url()
+
+    return dict(google_key=google_key, print_service=print_service, geoserver_url=geoserver_url)
+
+def about():
+    """  Custom View for GeoExplorer """
+    return dict()
+
+def maps():
+
+    """
+        Map Save/Publish Handler for GeoExplorer
+    """
+
+    if request.env.request_method == "GET":
+        # This is a request to read the config of a saved map
+
+        # Which map are we updating?
+        id = request.args(0)
+        if not id:
+            raise HTTP(501)
+
+        # Read the WMC record
+        record = db(db.gis_wmc.id == id).select(limitby=(0, 1)).first()
+        # & linked records
+        #projection = db(db.gis_projection.id == record.projection).select(limitby=(0, 1)).first()
+
+        # Put details into the correct structure
+        output = dict()
+        output["map"] = dict()
+        map = output["map"]
+        map["center"] = [record.lat, record.lon]
+        map["zoom"] = record.zoom
+        # @ToDo: Read Projection (we generally use 900913 & no way to edit this yet)
+        map["projection"] = "EPSG:900913"
+        map["units"] = "m"
+        map["maxResolution"] = 156543.0339
+        map["maxExtent"] = [ -20037508.34, -20037508.34, 20037508.34, 20037508.34 ]
+        # @ToDo: Read Layers
+        map["layers"] = []
+        #map["layers"].append(dict(source="google", title="Google Terrain", name="TERRAIN", group="background"))
+        #map["layers"].append(dict(source="ol", group="background", fixed=True, type="OpenLayers.Layer", args=[ "None", {"visibility":False} ]))
+        for _layer in record.layer_id:
+            layer = db(db.gis_wmc_layer.id == _layer).select(limitby=(0, 1)).first()
+            if layer.type_ == "OpenLayers.Layer":
+                # Add args
+                map["layers"].append(dict(source=layer.source, title=layer.title, name=layer.name, group=layer.group_, type=layer.type_, format=layer.format, visibility=layer.visibility, transparent=layer.transparent, opacity=layer.opacity, fixed=layer.fixed, args=[ "None", {"visibility":False} ]))
+            else:
+                map["layers"].append(dict(source=layer.source, title=layer.title, name=layer.name, group=layer.group_, type=layer.type_, format=layer.format, visibility=layer.visibility, transparent=layer.transparent, opacity=layer.opacity, fixed=layer.fixed))
+        
+        # @ToDo: Read Metadata (no way of editing this yet)
+
+        # Encode as JSON
+        output = json.dumps(output)
+
+        # Output to browser
+        response.headers["Content-Type"] = "text/json"
+        return output
+
+    elif request.env.request_method == "POST":
+        # This is a request to save/publish a new map
+
+        # Get the data from the POST
+        source = request.body.read()
+        if isinstance(source, basestring):
+            from StringIO import StringIO
+            source = StringIO(source)
+
+        # Decode JSON
+        source = json.load(source)
+        # @ToDo: Projection (we generally use 900913 & no way to edit this yet)
+        lat = source["map"]["center"][0]
+        lon = source["map"]["center"][1]
+        zoom = source["map"]["zoom"]
+        # Layers
+        layers = []
+        for layer in source["map"]["layers"]:
+            try:
+                opacity = layer["opacity"]
+            except:
+                opacity = None
+            try:
+                name = layer["name"]
+            except:
+                name = None
+            _layer = db((db.gis_wmc_layer.source == layer["source"]) &
+                        (db.gis_wmc_layer.name == name) &
+                        (db.gis_wmc_layer.visibility == layer["visibility"]) &
+                        (db.gis_wmc_layer.opacity == opacity)
+                       ).select(db.gis_wmc_layer.id,
+                                limitby=(0, 1)).first()
+            if _layer:
+                # This is an existing layer
+                layers.append(_layer.id)
+            else:
+                # This is a new layer
+                try:
+                    type_ = layer["type"]
+                except:
+                    type_ = None
+                try:
+                    group_ = layer["group"]
+                except:
+                    group_ = None
+                try:
+                    fixed = layer["fixed"]
+                except:
+                    fixed = None
+                try:
+                    format = layer["format"]
+                except:
+                    format = None
+                try:
+                    transparent = layer["transparent"]
+                except:
+                    transparent = None
+                # Add a new record to the gis_wmc_layer table
+                _layer = db.gis_wmc_layer.insert(source=layer["source"], name=name, visibility=layer["visibility"], opacity=opacity, type_=type_, title=layer["title"], group_=group_, fixed=fixed, transparent=transparent, format=format)
+                layers.append(_layer)
+            
+        # @ToDo: Metadata (no way of editing this yet)
+
+        # Save a record in the WMC table
+        id = db.gis_wmc.insert(lat=lat, lon=lon, zoom=zoom, layer_id=layers)
+
+        # Return the ID of the saved record for the Bookmark
+        output = json.dumps(dict(id=id))
+        return output
+
+    elif request.env.request_method == "PUT":
+        # This is a request to save/publish an existing map
+
+        # Which map are we updating?
+        id = request.args(0)
+        if not id:
+            raise HTTP(501)
+
+        # Get the data from the PUT
+        source = request.body.read()
+        if isinstance(source, basestring):
+            from StringIO import StringIO
+            source = StringIO(source)
+
+        # Decode JSON
+        source = json.load(source)
+        # @ToDo: Projection (unlikely to change)
+        lat = source["map"]["center"][0]
+        lon = source["map"]["center"][1]
+        zoom = source["map"]["zoom"]
+        # Layers
+        layers = []
+        for layer in source["map"]["layers"]:
+            try:
+                opacity = layer["opacity"]
+            except:
+                opacity = None
+            try:
+                name = layer["name"]
+            except:
+                name = None
+            _layer = db((db.gis_wmc_layer.source == layer["source"]) &
+                        (db.gis_wmc_layer.name == name) &
+                        (db.gis_wmc_layer.visibility == layer["visibility"]) &
+                        (db.gis_wmc_layer.opacity == opacity)
+                       ).select(db.gis_wmc_layer.id,
+                                limitby=(0, 1)).first()
+            if _layer:
+                # This is an existing layer
+                layers.append(_layer.id)
+            else:
+                # This is a new layer
+                try:
+                    type_ = layer["type"]
+                except:
+                    type_ = None
+                try:
+                    group_ = layer["group"]
+                except:
+                    group_ = None
+                try:
+                    fixed = layer["fixed"]
+                except:
+                    fixed = None
+                try:
+                    format = layer["format"]
+                except:
+                    format = None
+                try:
+                    transparent = layer["transparent"]
+                except:
+                    transparent = None
+                # Add a new record to the gis_wmc_layer table
+                _layer = db.gis_wmc_layer.insert(source=layer["source"], name=name, visibility=layer["visibility"], opacity=opacity, type_=type_, title=layer["title"], group_=group_, fixed=fixed, transparent=transparent, format=format)
+                layers.append(_layer)
+        
+        # @ToDo: Metadata (no way of editing this yet)
+
+        # Update the record in the WMC table
+        db(db.gis_wmc.id == id).update(lat=lat, lon=lon, zoom=zoom, layer_id=layers)
+
+        # Return the ID of the saved record for the Bookmark
+        output = json.dumps(dict(id=id))
+        return output
+
+    # Abort - we shouldn't get here
+    raise HTTP(501)
+
+# -----------------------------------------------------------------------------
 def potlatch2():
     """
         Custom View for the Potlatch2 OpenStreetMap editor
@@ -1556,17 +1853,27 @@ def potlatch2():
     """
 
     if request.args(0) == "potlatch2.html":
+        osm_oauth_consumer_key = deployment_settings.get_osm_oauth_consumer_key()
+        osm_oauth_consumer_secret = deployment_settings.get_osm_oauth_consumer_secret()
         if osm_oauth_consumer_key and osm_oauth_consumer_secret:
-            settings = gis.get_config()
-            lat = settings.lat
-            lon = settings.lon
-            # This isn't good as it makes for too large an area to edit
-            #zoom = settings.zoom
+            if "lat" in request.vars:
+                lat = request.vars.lat
+                lon = request.vars.lon
+            else:
+                settings = gis.get_config()
+                lat = settings.lat
+                lon = settings.lon
+            
+            if "zoom" in request.vars:
+                zoom = request.vars.zoom
+            else:
+                # This isn't good as it makes for too large an area to edit
+                #zoom = settings.zoom
+                zoom = 14
 
             response.extra_styles = ["S3/potlatch2.css"]
 
-            return dict(lat=lat, lon=lon, key=osm_oauth_consumer_key, secret=osm_oauth_consumer_secret)
-            #return dict(lat=lat, lon=lon, zoom=zoom, key=osm_oauth_consumer_key, secret=osm_oauth_consumer_secret)
+            return dict(lat=lat, lon=lon, zoom=zoom, key=osm_oauth_consumer_key, secret=osm_oauth_consumer_secret)
 
         else:
             session.error = T("To edit OpenStreetMap, you need to edit the OpenStreetMap settings in models/000_config.py")

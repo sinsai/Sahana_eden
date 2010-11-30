@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-""" VITA Sahana-Eden Person Data Toolkit
+""" VITA Person Finder Toolkit
 
     @version: 1.0.0
     @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
@@ -332,7 +332,7 @@ class S3Vita(object):
     def match_query(self, body_id):
 
         person = self.db.pr_person
-        missing_report = self.db.mpr_missing_report
+        missing_report = self.db.pf_missing_report
         query = ((person.deleted == False) &
                  (person.missing == True) &
                  (missing_report.person_id == person.id))

@@ -6,7 +6,7 @@
 
          GeoJSON Export Templates for Sahana-Eden
 
-         Version 0.1 / 2010-07-25 / by nursix
+         Version 0.2 / 2010-11-17 / by nursix
 
          Copyright (c) 2010 Sahana Software Foundation
 
@@ -81,7 +81,15 @@
                     </coordinates>
                 </geometry>
             </xsl:when>
+            <xsl:otherwise>
+                <xsl:apply-templates select="./reference[@resource='gis_location']"/>
+            </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
     
+    <xsl:template match="reference[@resource='gis_location']">
+        <xsl:variable name="uid" select="@uuid"/>
+        <xsl:apply-templates select="//resource[@name='gis_location' and @uuid=$uid]"/>
+    </xsl:template>
+
 </xsl:stylesheet>

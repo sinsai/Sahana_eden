@@ -74,15 +74,9 @@ object --+
 <p>S3 Resource Controller</p>
 
 <hr />
-<div class="fields">      <strong>To Do (2.2):</strong>
-      <ul class="nomargin-top">
-        <li>
-        move formats into settings
-        </li>
-        <li>
+<div class="fields">      <p><strong>To Do (2.3):</strong>
         error messages internationalization!
-        </li>
-      </ul>
+      </p>
 </div><!-- ==================== INSTANCE METHODS ==================== -->
 <a name="section-InstanceMethods"></a>
 <table class="summary" border="1" cellpadding="3"
@@ -110,7 +104,6 @@ object --+
         <span class="summary-sig-arg">environment</span>,
         <span class="summary-sig-arg">domain</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">base_url</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">rpp</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">messages</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">**attr</span>)</span><br />
       x.__init__(...) initializes x; see x.__class__.__doc__ for signature</td>
@@ -324,8 +317,7 @@ object --+
         <span class="summary-sig-arg">filter</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">vars</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">parent</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">components</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">storage</span>=<span class="summary-sig-default">None</span>)</span><br />
+        <span class="summary-sig-arg">components</span>=<span class="summary-sig-default">None</span>)</span><br />
       Wrapper function for S3Resource, creates a resource</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController._resource">source&nbsp;code</a></span>
@@ -614,36 +606,8 @@ object --+
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#XSLT_FILE_EXTENSION" class="summary-name">XSLT_FILE_EXTENSION</a> = <code title="&quot;xsl&quot;">&quot;xsl&quot;</code>
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-        <a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#XSLT_IMPORT_TEMPLATES" class="summary-name">XSLT_IMPORT_TEMPLATES</a> = <code title="&quot;static/xslt/import&quot;">&quot;static/xslt/import&quot;</code>
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-        <a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#XSLT_EXPORT_TEMPLATES" class="summary-name">XSLT_EXPORT_TEMPLATES</a> = <code title="&quot;static/xslt/export&quot;">&quot;static/xslt/export&quot;</code>
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
         <a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#ACTION" class="summary-name">ACTION</a> = <code title="Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= &quot;update&quot;, delete= &quot;del\
 ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= &quot;upda<code class="variable-ellipsis">...</code></code>
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-        <a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#ROWSPERPAGE" class="summary-name">ROWSPERPAGE</a> = <code title="10">10</code>
     </td>
   </tr>
 <tr>
@@ -730,7 +694,6 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
         <span class="sig-arg">environment</span>,
         <span class="sig-arg">domain</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">base_url</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">rpp</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">messages</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">**attr</span>)</span>
     <br /><em class="fname">(Constructor)</em>
@@ -748,13 +711,8 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
         <li><strong class="pname"><code>environment</code></strong> - the environment of this run</li>
         <li><strong class="pname"><code>domain</code></strong> - name of the current domain</li>
         <li><strong class="pname"><code>base_url</code></strong> - base URL of this instance</li>
-        <li><strong class="pname"><code>rpp</code></strong> - rows-per-page for server-side pagination</li>
         <li><strong class="pname"><code>messages</code></strong> - a function to retrieve message URLs tagged for a resource</li>
         <li><strong class="pname"><code>attr</code></strong> - configuration settings</li>
-        <li><strong class="pname"><code>xml_export_formats</code></strong> - XML export format configuration (see 00_settings.py)</li>
-        <li><strong class="pname"><code>xml_import_formats</code></strong> - XML import format configuration (see 00_settings.py)</li>
-        <li><strong class="pname"><code>json_export_formats</code></strong> - JSON export format configuration (see 00_settings.py)</li>
-        <li><strong class="pname"><code>json_import_formats</code></strong> - JSON import format configuration (see 00_settings.py)</li>
     </ul></dd>
     <dt>Overrides:
         object.__init__
@@ -1000,7 +958,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
   <p>Set the default handler for a resource method</p>
   <dl class="fields">
   </dl>
-<div class="fields">      <p><strong>To Do (2.2):</strong>
+<div class="fields">      <p><strong>To Do (2.3):</strong>
         deprecate?
       </p>
 </div></td></tr></table>
@@ -1023,7 +981,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
   <p>Get the default handler for a resource method</p>
   <dl class="fields">
   </dl>
-<div class="fields">      <p><strong>To Do (2.2):</strong>
+<div class="fields">      <p><strong>To Do (2.3):</strong>
         deprecate?
       </p>
 </div></td></tr></table>
@@ -1043,8 +1001,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
         <span class="sig-arg">filter</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">vars</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">parent</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">components</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">storage</span>=<span class="sig-default">None</span>)</span>
+        <span class="sig-arg">components</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController._resource">source&nbsp;code</a></span>&nbsp;
@@ -1063,7 +1020,6 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
         <li><strong class="pname"><code>vars</code></strong> - dict of URL query parameters</li>
         <li><strong class="pname"><code>parent</code></strong> - the parent resource (if this is a component)</li>
         <li><strong class="pname"><code>components</code></strong> - list of component (names)</li>
-        <li><strong class="pname"><code>storage</code></strong> - the data store (None for DB)</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -1249,7 +1205,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
     <dt>Returns:</dt>
         <dd>a list of matching elements</dd>
   </dl>
-<div class="fields">      <p><strong>To Do (2.2):</strong>
+<div class="fields">      <p><strong>To Do (2.3):</strong>
         implement this and use in import_tree()
       </p>
 </div></td></tr></table>
@@ -1474,60 +1430,6 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
   </dl>
 </td></tr></table>
 </div>
-<a name="XSLT_FILE_EXTENSION"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <h3 class="epydoc">XSLT_FILE_EXTENSION</h3>
-  
-  <dl class="fields">
-  </dl>
-  <dl class="fields">
-    <dt>Value:</dt>
-      <dd><table><tr><td><pre class="variable">
-&quot;xsl&quot;
-</pre></td></tr></table>
-</dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="XSLT_IMPORT_TEMPLATES"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <h3 class="epydoc">XSLT_IMPORT_TEMPLATES</h3>
-  
-  <dl class="fields">
-  </dl>
-  <dl class="fields">
-    <dt>Value:</dt>
-      <dd><table><tr><td><pre class="variable">
-&quot;static/xslt/import&quot;
-</pre></td></tr></table>
-</dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="XSLT_EXPORT_TEMPLATES"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <h3 class="epydoc">XSLT_EXPORT_TEMPLATES</h3>
-  
-  <dl class="fields">
-  </dl>
-  <dl class="fields">
-    <dt>Value:</dt>
-      <dd><table><tr><td><pre class="variable">
-&quot;static/xslt/export&quot;
-</pre></td></tr></table>
-</dd>
-  </dl>
-</td></tr></table>
-</div>
 <a name="ACTION"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -1542,24 +1444,6 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
       <dd><table><tr><td><pre class="variable">
 Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= &quot;update&quot;, delete= &quot;del<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
 ete&quot;)
-</pre></td></tr></table>
-</dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="ROWSPERPAGE"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <h3 class="epydoc">ROWSPERPAGE</h3>
-  
-  <dl class="fields">
-  </dl>
-  <dl class="fields">
-    <dt>Value:</dt>
-      <dd><table><tr><td><pre class="variable">
-10
 </pre></td></tr></table>
 </dd>
   </dl>
@@ -1659,7 +1543,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Tue Oct 26 15:06:23 2010
+    Generated by Epydoc 3.0.1 on Fri Nov 26 22:53:52 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

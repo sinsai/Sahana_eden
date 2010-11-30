@@ -108,9 +108,8 @@ if deployment_settings.has_module("irs") or deployment_settings.has_module("asse
     # Impact as component of assessments and incidents
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(assess_assess="assess_id", irs_incident="incident_id"),
-                              deletable=True,
-                              editable=True)  
+                              joinby=dict(assess_assess="assess_id",
+                                          irs_incident="incident_id"))
     
     # -----------------------------------------------------------------------------
                         

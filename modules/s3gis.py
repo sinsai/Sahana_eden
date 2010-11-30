@@ -277,22 +277,22 @@ class GIS(object):
             Return a list of all GIS Features which are children of the requested feature
             @ Using Materialized path for retrieving the children
             @author: Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
-            
+
             This has been chosen over Modified Preorder Tree Traversal for greater efficiency:
             http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
         """
-        
+
         db = self.db
         list = []
         table = db.gis_location
         parent_path = db(table.id == parent_id).select(table.path)
         if(parent_path[0].path == None):
             path = str(parent_id)
-        else:    
+        else:
             path = parent_path[0].path
         for row in db(table.path.like(path + "/%")).select():
             list.append(row.id)
-             
+
         return list
 
     # -----------------------------------------------------------------------------
@@ -383,7 +383,7 @@ class GIS(object):
                 query = (db["%s_%s" % (module, resource)].deleted == False)
             else:
                 query = (db["%s_%s" % (module, resource)].id > 0)
-            
+
             if filter:
                 query = query & (db[filter.tablename].id == filter.id)
 
@@ -402,7 +402,7 @@ class GIS(object):
             else:
                 # Polygons & Categorised resources
                 locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon, db["%s_%s" % (module, resource)].category)
-                
+
             if resource in gis_categorised_resources:
                 for i in range(0, len(locations)):
                     locations[i].popup_label = locations[i].name + "-" + popup_label
@@ -410,9 +410,9 @@ class GIS(object):
             else:
                 for i in range(0, len(locations)):
                     locations[i].popup_label = locations[i].name + "-" + popup_label
-            
+
             popup_url = URL(r=request, c=module, f=resource, args="read.plain?%s.location_id=" % resource)
-            
+
             if not marker and not resource in gis_categorised_resources:
                 # Add the marker here so that we calculate once/layer not once/feature
                 table_fclass = db.gis_feature_class
@@ -421,13 +421,13 @@ class GIS(object):
                 marker = db(query).select(db.gis_feature_class.id, limitby=(0, 1), cache=cache).first()
                 if marker:
                     marker = marker.id
-            
+
             try:
                 marker = db(db.gis_marker.name == marker).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, db.gis_marker.id, limitby=(0, 1), cache=cache).first()
                 layer = {"name":layername, "query":locations, "active":active, "marker":marker, "popup_url": popup_url, "polygons": polygons}
             except:
                 layer = {"name":layername, "query":locations, "active":active, "popup_url": popup_url, "polygons": polygons}
-        
+
             return layer
 
         except:
@@ -444,7 +444,7 @@ class GIS(object):
 
         # km
         RADIUS_EARTH = 6378.137
-        
+
         if deployment_settings.gis.spatialdb and deployment_settings.database.db_type == "postgres":
             # Use Postgres routine
             import psycopg2
@@ -456,13 +456,13 @@ class GIS(object):
 
             # Convert km to degrees (since we're using the_geom not the_geog)
             # @ToDo
-            
+
             # This function call will automatically include a bounding box comparison that will make use of any indexes that are available on the geometries.
             conn = psycopg2.connect("dbname=%s user=%s password=%s host=%s port=%i" % (dbname, username, password, host, port))
             cursor = conn.cursor()
             query_string = cursor.mogrify("SELECT * FROM gis_location WHERE ST_DWithin (ST_GeomFromText ('POINT (%s, %s)', 4326), the_geom, %s);", [lat, lon, radius])
             cursor.execute(query_string)
-            
+
         elif SHAPELY:
             # Use Shapely routine
             # Is there one?
@@ -846,7 +846,7 @@ class GIS(object):
             # Check for duplicates
             query = (_locations.name == name) & (_locations.level == level) & (_locations.parent == parent_id)
             duplicate = db(query).select()
-            
+
             if duplicate:
                 s3_debug("Location", name)
                 s3_debug("Duplicate - updating...")
@@ -1037,13 +1037,10 @@ class GIS(object):
         return WKT
 
     # -----------------------------------------------------------------------------
-    def layer_subtypes(self, layer="openstreetmap"):
+    def layer_subtypes(self, layer="google"):
         """ Return a lit of the subtypes available for a Layer """
 
-        if layer == "openstreetmap":
-            #return ["Mapnik", "CycleMap", "Labels", "Relief", "Osmarender", "Aerial"]
-            return ["Mapnik", "CycleMap", "Labels", "Relief", "Osmarender", "Taiwan"]
-        elif layer == "google":
+        if layer == "google":
             return ["Satellite", "Maps", "Hybrid", "Terrain", "MapMaker", "MapMakerHybrid"]
         elif layer == "yahoo":
             return ["Satellite", "Maps", "Hybrid"]
@@ -1092,7 +1089,7 @@ class GIS(object):
         """
             Update the Tree for GIS Locations:
             @author: Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
-            @summary: Using Materialized path for each node in the tree 
+            @summary: Using Materialized path for each node in the tree
             http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
         """
 
@@ -1412,14 +1409,7 @@ class GIS(object):
         #####
         # CSS
         #####
-        if session.s3.debug:
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/ie6-style.css"), _media="screen", _charset="utf-8") )
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/google.css"), _media="screen", _charset="utf-8") )
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/geoext-all-debug.css"), _media="screen", _charset="utf-8") )
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/cdauth.css"), _media="screen", _charset="utf-8") )
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.css"), _media="screen", _charset="utf-8") )
-        else:
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.min.css"), _media="screen", _charset="utf-8") )
+        # All Loaded as-standard to avoid delays in page loading
 
         ######
         # HTML
@@ -1764,6 +1754,37 @@ OpenLayers.Util.extend( selectPdfControl, {
                 save_button = ""
                 save_button2 = ""
 
+            osm_oauth_consumer_key = deployment_settings.get_osm_oauth_consumer_key()
+            osm_oauth_consumer_secret = deployment_settings.get_osm_oauth_consumer_secret()
+            if osm_oauth_consumer_key and osm_oauth_consumer_secret:
+                potlatch_button = """
+        var potlatchButton = new Ext.Toolbar.Button({
+            iconCls: 'potlatch',
+            tooltip: '""" + T("Edit the OpenStreetMap data for this area") + """',
+            handler: function() {
+                // Read current settings from map
+                var lonlat = map.getCenter();
+                var zoom_current = map.getZoom();
+                if (zoom_current < 14 ) {
+                    zoom_current = 14;
+                }
+                // Convert back to LonLat for saving
+                lonlat.transform(map.getProjectionObject(), proj4326);
+                // @ToDo Use Embedded Potlatch
+                var url = '""" + URL(r=request, f="potlatch2", args="potlatch2.html") + """?lat=' + lonlat.lat + '&lon=' + lonlat.lon + "&zoom=" + zoom_current;
+                window.open(url);
+            }
+        });
+        """
+                potlatch_button2 = """
+        toolbar.addSeparator();
+        // Edit in OpenStreetMap
+        toolbar.addButton(potlatchButton);
+        """
+            else:
+                potlatch_button = ""
+                potlatch_button2 = ""
+
             if add_feature:
                 pan_depress = "false"
             else:
@@ -1897,10 +1918,6 @@ OpenLayers.Util.extend( selectPdfControl, {
             enableToggle: true
         });
 
-        """ + mgrs2 + """
-
-        """ + draw_feature + """
-
         var navPreviousButton = new Ext.Toolbar.Button({
             iconCls: 'back',
             tooltip: '""" + T("Previous View") + """',
@@ -1913,27 +1930,48 @@ OpenLayers.Util.extend( selectPdfControl, {
             handler: nav.next.trigger
         });
 
+        var geoLocateButton = new Ext.Toolbar.Button({
+            iconCls: 'geolocation',
+            tooltip: '""" + T("Zoom to Current Location") + """',
+            handler: function(){
+                navigator.geolocation.getCurrentPosition(getCurrentPosition);
+            }
+        });
+
+        """ + mgrs2 + """
+
+        """ + draw_feature + """
+
         """ + save_button + """
+
+        """ + potlatch_button + """
 
         // Add to Map & Toolbar
         toolbar.add(zoomfull);
-        toolbar.add(zoomfull);
+        if (navigator.geolocation) {
+            // HTML5 geolocation is available :)
+            toolbar.addButton(geoLocateButton);
+        } else {
+            // geolocation is not available...IE sucks! ;)
+        }
         toolbar.add(zoomout);
         toolbar.add(zoomin);
         toolbar.add(pan);
         toolbar.addSeparator();
-        // Measure Tools
-        toolbar.add(lengthButton);
-        toolbar.add(areaButton);
-        toolbar.addSeparator();
-        """ + mgrs3 + """
-        """ + draw_feature2 + """
         // Navigation
         map.addControl(nav);
         nav.activate();
         toolbar.addButton(navPreviousButton);
         toolbar.addButton(navNextButton);
-        """ + save_button2
+        """ + save_button2 + """
+        toolbar.addSeparator();
+        // Measure Tools
+        toolbar.add(lengthButton);
+        toolbar.add(areaButton);
+        """ + mgrs3 + """
+        """ + draw_feature2 + """
+        """ + potlatch_button2
+
             toolbar2 = "Ext.QuickTips.init();"
         else:
             toolbar = ""
@@ -2299,17 +2337,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_bing = ""
 
         # OpenStreetMap
-        gis_layer_openstreetmap_subtypes = self.layer_subtypes("openstreetmap")
-        openstreetmap = Storage()
-        osm_visible = Storage()
-        openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled == True).select(db.gis_layer_openstreetmap.name, db.gis_layer_openstreetmap.subtype, db.gis_layer_openstreetmap.visible)
-        for layer in openstreetmap_enabled:
-            for subtype in gis_layer_openstreetmap_subtypes:
-                if layer.subtype == subtype:
-                    openstreetmap["%s" % subtype] = layer.name
-                    osm_visible["%s" % subtype] = layer.visible
-
-        if openstreetmap:
+        openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled == True).select()
+        if openstreetmap_enabled:
             functions_openstreetmap = """
         function osm_getTileURL(bounds) {
             var res = this.map.getResolution();
@@ -2330,51 +2359,34 @@ OpenLayers.Util.extend( selectPdfControl, {
             }
         }
         """
-            if openstreetmap.Mapnik:
-                layers_openstreetmap += """
-        var mapnik = new OpenLayers.Layer.TMS( '""" + openstreetmap.Mapnik + """', ['http://a.tile.openstreetmap.org/', 'http://b.tile.openstreetmap.org/', 'http://c.tile.openstreetmap.org/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
-        map.addLayer(mapnik);
-                    """
-            if openstreetmap.CycleMap:
-                layers_openstreetmap += """
-        var cyclemap = new OpenLayers.Layer.TMS( '""" + openstreetmap.CycleMap + """', ['http://a.tile.opencyclemap.org/cycle/', 'http://b.tile.opencyclemap.org/cycle/', 'http://c.tile.opencyclemap.org/cycle/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.opencyclemap.org/">OpenCycleMap</a>' } );
-        map.addLayer(cyclemap);
-                    """
-            if openstreetmap.Labels:
-                if osm_visible.Labels:
+            for layer in openstreetmap_enabled:
+                name = layer.name
+                name_safe = re.sub('\W', '_', name)
+                url1 = layer.url1
+                url2 = layer.url2
+                url3 = layer.url3
+                if url3:
+                    url = "['%s', '%s', '%s']" % (url1, url2, url3)
+                elif url2:
+                    url = "['%s', '%s']" % (url1, url2)
+                else:
+                    url = "['%s']" % (url1)
+                if layer.base:
+                    base = ""
+                else:
+                    base = ", isBaseLayer: false"
+                if layer.visible:
                     visibility = ""
                 else:
-                    visibility = "osm_labels.setVisibility(false);"
-                layers_openstreetmap += """
-        var osm_labels = new OpenLayers.Layer.TMS( '""" + openstreetmap.Labels + """', ['http://tiler1.censusprofiler.org/labelsonly/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, isBaseLayer: false, attribution: 'Labels overlay CC-by-SA by <a href="http://oobrien.com/oom/">OpenOrienteeringMap</a>/<a href="http://www.openstreetmap.org/">OpenStreetMap</a> data' } );
-        """ + visibility + """
-        map.addLayer(osm_labels);
-                    """
-            if openstreetmap.Relief:
-                if osm_visible.Relief:
-                    visibility = ""
+                    visibility = "osmLayer%s.setVisibility(false);" % name_safe
+                if layer.attribution:
+                    attribution = ",attribution: '%s'" % layer.attribution
                 else:
-                    visibility = "osm_relief.setVisibility(false);"
+                    attribution = ""
                 layers_openstreetmap += """
-        var osm_relief = new OpenLayers.Layer.TMS( '""" + openstreetmap.Relief + """', ['http://toolserver.org/~cmarqu/hill/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, isBaseLayer: false, attribution: 'Relief by <a href="http://hikebikemap.de/">Hike &amp; Bike Map</a>' } );
-        """ + visibility + """
-        map.addLayer(osm_relief);
-                    """
-            if openstreetmap.Osmarender:
-                layers_openstreetmap += """
-        var osmarender = new OpenLayers.Layer.TMS( '""" + openstreetmap.Osmarender + """', ['http://a.tah.openstreetmap.org/Tiles/tile/', 'http://b.tah.openstreetmap.org/Tiles/tile/', 'http://c.tah.openstreetmap.org/Tiles/tile/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
-        map.addLayer(osmarender);
-                    """
-            if openstreetmap.Aerial:
-                layers_openstreetmap += """
-        var oam = new OpenLayers.Layer.TMS( '""" + openstreetmap.Aerial + """', 'http://tile.openaerialmap.org/tiles/1.0.0/openaerialmap-900913/', {type: 'png', getURL: osm_getTileURL } );
-        map.addLayer(oam);
-                    """
-            if openstreetmap.Taiwan:
-                layers_openstreetmap += """
-        var osmtw = new OpenLayers.Layer.TMS( '""" + openstreetmap.Taiwan + """', 'http://tile.openstreetmap.tw/tiles/', {type: 'png', getURL: osm_getTileURL } );
-        map.addLayer(osmtw);
-                    """
+        var osmLayer""" + name_safe + """ = new OpenLayers.Layer.TMS( '""" + name + """', """ + url + """, {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true """ + attribution + base + """ } );
+        map.addLayer(osmLayer""" + name_safe + """);
+        """ + visibility
         else:
             functions_openstreetmap = ""
 
@@ -2392,25 +2404,59 @@ OpenLayers.Util.extend( selectPdfControl, {
                         if layer.subtype == subtype:
                             google["%s" % subtype] = layer.name
             if google:
-                html.append(SCRIPT(_type="text/javascript", _src="http://maps.google.com/maps?file=api&v=2&key=" + google.key))
+                if google.MapMaker or google.MapMakerHybrid:
+                    # Need to use v2 API
+                    # http://code.google.com/p/gmaps-api-issues/issues/detail?id=2349
+                    googleMapmaker = True
+                    html.append(SCRIPT(_type="text/javascript", _src="http://maps.google.com/maps?file=api&v=2&key=" + google.key))
+                else:
+                    googleMapmaker = False
+                    html.append(SCRIPT(_type="text/javascript", _src="http://maps.google.com/maps/api/js?sensor=false"))
+                # Google Earth (coming soon)
+                #html.append(SCRIPT(_type="text/javascript", _src="http://www.google.com/jsapi?key=" + google.key))
+                #html.append(SCRIPT("google && google.load('earth', '1');", _type="text/javascript"))
                 if google.Satellite:
-                    layers_google += """
-        var googlesat = new OpenLayers.Layer.Google( '""" + google.Satellite + """' , {type: G_SATELLITE_MAP, 'sphericalMercator': true } );
+                    if googleMapmaker:
+                        layers_google += """
+        var googlesat = new OpenLayers.Layer.Google( '""" + google.Satellite + """' , {type: G_SATELLITE_MAP, 'sphericalMercator': true} );
+        map.addLayer(googlesat);
+                    """
+                    else:
+                        layers_google += """
+        var googlesat = new OpenLayers.Layer.Google( '""" + google.Satellite + """' , {type: google.maps.MapTypeId.SATELLITE, numZoomLevels: 22} );
         map.addLayer(googlesat);
                     """
                 if google.Maps:
-                    layers_google += """
-        var googlemaps = new OpenLayers.Layer.Google( '""" + google.Maps + """' , {type: G_NORMAL_MAP, 'sphericalMercator': true } );
+                    if googleMapmaker:
+                        layers_google += """
+        var googlemaps = new OpenLayers.Layer.Google( '""" + google.Maps + """' , {type: G_NORMAL_MAP, 'sphericalMercator': true} );
+        map.addLayer(googlemaps);
+                    """
+                    else:
+                        layers_google += """
+        var googlemaps = new OpenLayers.Layer.Google( '""" + google.Maps + """' , {numZoomLevels: 20} );
         map.addLayer(googlemaps);
                     """
                 if google.Hybrid:
-                    layers_google += """
-        var googlehybrid = new OpenLayers.Layer.Google( '""" + google.Hybrid + """' , {type: G_HYBRID_MAP, 'sphericalMercator': true } );
+                    if googleMapmaker:
+                        layers_google += """
+        var googlehybrid = new OpenLayers.Layer.Google( '""" + google.Hybrid + """' , {type: G_HYBRID_MAP, 'sphericalMercator': true} );
+        map.addLayer(googlehybrid);
+                    """
+                    else:
+                        layers_google += """
+        var googlehybrid = new OpenLayers.Layer.Google( '""" + google.Hybrid + """' , {type: google.maps.MapTypeId.HYBRID, numZoomLevels: 20} );
         map.addLayer(googlehybrid);
                     """
                 if google.Terrain:
-                    layers_google += """
-        var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: G_PHYSICAL_MAP, 'sphericalMercator': true } )
+                    if googleMapmaker:
+                        layers_google += """
+        var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: G_PHYSICAL_MAP, 'sphericalMercator': true} )
+        map.addLayer(googleterrain);
+                    """
+                    else:
+                        layers_google += """
+        var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: google.maps.MapTypeId.TERRAIN} )
         map.addLayer(googleterrain);
                     """
                 if google.MapMaker:
@@ -2785,7 +2831,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     name = feature.cluster[i].attributes.name;
                     fid = feature.cluster[i].fid;
                     """ + uuid_from_fid + """
-                    if ( feature.cluster[i].popup_url.match("<id>") != null ) {                   
+                    if ( feature.cluster[i].popup_url.match("<id>") != null ) {
                         url = feature.cluster[i].popup_url.replace("<id>", uuid)
                     }
                     else {
@@ -2823,12 +2869,12 @@ OpenLayers.Util.extend( selectPdfControl, {
                 // call AJAX to get the contentHTML
                 var fid = feature.fid;
                 """ + uuid_from_fid + """
-                if ( popup_url.match("<id>") != null ) {                    
+                if ( popup_url.match("<id>") != null ) {
                     popup_url = popup_url.replace("<id>", uuid)
                 }
                 else {
                     popup_url = popup_url + uuid;
-                }               
+                }
                 loadDetails(popup_url, id, popup);
             }
         }
@@ -3070,6 +3116,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                     except (AttributeError, KeyError):
                         popup_label = feature.name
 
+                    # Allows map API to be used with Storage instead of Rows
+                    if not popup_label:
+                        popup_label = feature.name
                     # Deal with apostrophes in Feature Names
                     fname = re.sub("'", "\\'", popup_label)
 
@@ -3123,6 +3172,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             # No Feature Layers requested
             pass
 
+        layer_coordinategrid = ""
         layers_georss = ""
         layers_gpx = ""
         layers_kml = ""
@@ -3514,24 +3564,22 @@ OpenLayers.Util.extend( selectPdfControl, {
                 layers_kml += """
         allLayers = allLayers.concat(kmlLayers);
         """
-        
+
             # Coordinate Grid
-            coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select()
+            coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select(db.gis_layer_coordinate.name, db.gis_layer_coordinate.visible)
             if coordinate_enabled:
+                layer = coordinate_enabled.first()
                 name = layer["name"]
                 # Generate HTML snippet
                 name_safe = re.sub("\W", "_", name)
                 if "visible" in layer and layer["visible"]:
-                    visibility = name_safe + ".setVisibility(true);"
+                    visibility = ""
                 else:
-                    visibility = name_safe + ".setVisibility(false);"
+                    visibility = ", visibility: false"
                 layer_coordinategrid = """
-        """ + visibility + """
-        map.addLayer(new OpenLayers.Layer.cdauth.CoordinateGrid(null, { name: '""" + name_safe + """', shortName: "grid" }));
+        map.addLayer(new OpenLayers.Layer.cdauth.CoordinateGrid(null, { name: '""" + name_safe + """', shortName: 'grid' """ + visibility + """ }));
         """
-            else:
-                layer_coordinategrid = ""
-        
+
         #############
         # Main script
         #############
@@ -3591,6 +3639,20 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
     }
 
+    // HTML5 GeoLocation: http://dev.w3.org/geo/api/spec-source.html
+    function getCurrentPosition(position){
+            // Level to zoom into
+            var zoomLevel = 15;
+            var lat = position.coords.latitude;
+            var lon = position.coords.longitude;
+            //var elevation = position.coords.altitude;
+            //var ce = position.coords.accuracy;
+            //var le = position.coords.altitudeAccuracy;
+            //position.coords.heading;
+            //position.coords.speed;
+            map.setCenter(new OpenLayers.LonLat(lon, lat).transform(proj4326, map.getProjectionObject()), zoomLevel);
+        };
+
     function addLayers(map) {
         // Base Layers
         // OSM
@@ -3647,7 +3709,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         // KML
         """ + layers_kml + """
-        
+
         // CoordinateGrid
         """ + layer_coordinategrid + """
     }
@@ -3765,7 +3827,6 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + mouse_position + """
         map.addControl(new OpenLayers.Control.Permalink());
         map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
-        map.addControl(new OpenLayers.Control.cdauth.GeoLocation());
 
         // Popups
         // onClick Popup
@@ -3874,7 +3935,8 @@ OpenLayers.Util.extend( selectPdfControl, {
             items: [{
                     region: 'west',
                     id: 'tools',
-                    title: '""" + T("Tools") + """',
+                    //title: '""" + T("Tools") + """',
+                    header: false,
                     border: true,
                     width: 250,
                     autoScroll: true,

@@ -2,9 +2,9 @@
 
 """ S3XRC Resource Framework - Resource Export Toolkit
 
-    @version: 2.2.2
+    @version: 2.2.6
 
-    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
+    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
     @requires: U{B{I{ReportLab}} <http://www.reportlab.com/software/opensource>}
@@ -373,8 +373,9 @@ class S3Exporter(object):
             @param list_fields: fields to include in list views
 
             @todo 2.3: PEP-8
+            @todo 2.3: implement audit
             @todo 2.3: use S3Resource.readable_fields
-            @todo: implement audit
+            @todo 2.3: use separate export_fields instead of list_fields
 
         """
 
@@ -431,24 +432,11 @@ class S3Exporter(object):
                     style.num_format_str = "M/D/YY h:mm"
                 elif coltype == "time":
                     style.num_format_str = "h:mm:ss"
-
                 represent = self.manager.represent(field,
                                                    record=item,
                                                    strip_markup=True,
                                                    xml_escape=True)
-                ## Check for a custom.represent (e.g. for ref fields)
-                #represent = resource._represent(item, field.name)
-                ## Filter out markup from text
-                #if isinstance(represent, basestring) and "<" in represent:
-                    #try:
-                        #markup = etree.XML(represent)
-                        #represent = markup.xpath(".//text()")
-                        #if represent:
-                            #represent = " ".join(represent)
-                    #except etree.XMLSyntaxError:
-                        #pass
-
-                rowx.write(cell1, str(represent), style)
+                rowx.write(cell1, unicode(represent), style)
                 cell1 += 1
         book.save(output)
         output.seek(0)

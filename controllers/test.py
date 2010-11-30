@@ -57,7 +57,6 @@ def post():
     curl -i -X POST --data-urlencode "name=Colombo Shelter" http://127.0.0.1:8000/sahana/test/post
     """
     #file=request.body.read()
-    #import gluon.contrib.simplejson as json
     #reader=json.loads(file)
     #name = reader["name"]
     #return db.test_post.insert(name=name)
@@ -67,7 +66,6 @@ def get():
     """Test for JSON GET
     curl -i http://127.0.0.1:8000/sahana/test/get -F name=john
     """
-    #import gluon.contrib.simplejson as json
     #return db.test_get.insert(**json.loads(request.vars.fields))
     return db.test_get.insert(**dict (request.vars))
 

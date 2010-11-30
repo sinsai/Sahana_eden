@@ -331,9 +331,7 @@ if deployment_settings.has_module(module):
     # irs_ireport as component of doc_documents
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(doc_document="document_id"),
-                              deletable=True,
-                              editable=True)
+                              joinby=dict(doc_document="document_id"))
 
     ireport_id = S3ReusableField("incident_id", table,
                                  requires = IS_NULL_OR(IS_ONE_OF(db, "irs_ireport.id", "%(name)s")),
@@ -429,9 +427,7 @@ if deployment_settings.has_module(module):
     # Disabling until we figure out how to link to Assessments module
     #s3xrc.model.add_component(module, resourcename,
     #                          multiple = True,
-    #                          joinby = dict(irs_incident="incident_id"),
-    #                          deletable = True,
-    #                          editable = True)
+    #                          joinby = dict(irs_incident="incident_id"))
 
     # -----------------------------------------------------------------------------
     irs_image_type_opts = {
@@ -482,9 +478,7 @@ if deployment_settings.has_module(module):
                               multiple = True,
                               joinby = dict(irs_incident="incident_id",
                                             irs_ireport="report_id",
-                                            irs_iassessment="assessment_id"),
-                              deletable = True,
-                              editable = True)
+                                            irs_iassessment="assessment_id"))
 
     # -----------------------------------------------------------------------------
     irs_response_type_opts = {
@@ -528,9 +522,7 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resourcename,
                               multiple = True,
-                              joinby = dict(irs_incident="incident_id"),
-                              deletable = True,
-                              editable = True)
+                              joinby = dict(irs_incident="incident_id"))
 
     # -----------------------------------------------------------------------------
     @auth.shn_requires_membership(1) # must be Administrator

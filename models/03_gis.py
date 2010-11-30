@@ -159,7 +159,7 @@ table = db.define_table(tablename,
                         Field("min_lat", "double", default=-90),
                         Field("max_lon", "double", default=180),
                         Field("max_lat", "double", default=90),
-                        Field("zoom_levels", "integer", default=16, notnull=True),
+                        Field("zoom_levels", "integer", default=22, notnull=True),
                         Field("cluster_distance", "integer", default=5, notnull=True),
                         Field("cluster_threshold", "integer", default=2, notnull=True),
                         opt_gis_layout,
@@ -172,7 +172,7 @@ table.pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.pe_id", shn_pentity_
 table.pe_id.readable = table.pe_id.writable = False
 table.lat.requires = IS_LAT()
 table.lon.requires = IS_LON()
-table.zoom.requires = IS_INT_IN_RANGE(0, 19)
+table.zoom.requires = IS_INT_IN_RANGE(1, 20)
 table.map_height.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(160, 1024)]
 table.map_width.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(320, 1280)]
 table.min_lat.requires = IS_LAT()
@@ -499,6 +499,8 @@ location_id = S3ReusableField("location_id", db.gis_location,
                     requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True)),
                     represent = lambda id: shn_gis_location_represent(id),
                     label = T("Location"),
+                    # Not yet ready
+                    #widget = S3LocationSelectorWidget(request, response, T),
                     comment = DIV(A(ADD_LOCATION,
                                     _class="colorbox",
                                     _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
@@ -717,7 +719,6 @@ def s3_gis_location_parents(r, **attr):
     elif r.representation == "json":
 
         if r.id:
-            import gluon.contrib.simplejson as json
             # Get the parents for a Location
             parents = gis.get_parents(r.id)
             if parents:
@@ -835,7 +836,7 @@ s3xrc.model.configure(table, listadd=False, deletable=False)
 # GPS Tracks (files in GPX format)
 resourcename = "track"
 tablename = "%s_%s" % (module, resourcename)
-table = db.define_table(tablename, #timestamp,
+table = db.define_table(tablename,
                         #uuidstamp, # Tracks don't sync
                         Field("name", length=128, notnull=True, unique=True),
                         Field("description", length=128),
@@ -883,7 +884,6 @@ s3xrc.model.configure(table, deletable=False)
 # GIS Layers
 #gis_layer_types = ["bing", "shapefile", "scan"]
 gis_layer_types = ["coordinate", "openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wfs", "wms", "xyz", "yahoo"]
-gis_layer_openstreetmap_subtypes = gis.layer_subtypes("openstreetmap")
 gis_layer_google_subtypes = gis.layer_subtypes("google")
 gis_layer_yahoo_subtypes = gis.layer_subtypes("yahoo")
 gis_layer_bing_subtypes = gis.layer_subtypes("bing")
@@ -910,8 +910,12 @@ for layertype in gis_layer_types:
     elif layertype == "openstreetmap":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_openstreetmap_subtypes, zero=None)),
-                     Field("visible", "boolean", default=False, label=T("On by default?")),
+                     Field("visible", "boolean", default=True, label=T("On by default? (only applicable to Overlays)")),
+                     Field("url1", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     Field("url2", label=T("Secondary Server (Optional)")),
+                     Field("url3", label=T("Tertiary Server (Optional)")),
+                     Field("base", "boolean", default=True, label=T("Base Layer?")),
+                     Field("attribution", label=T("Attribution")),
                     )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "georss":
@@ -1048,16 +1052,64 @@ table = db.define_table(tablename,
 table.file.uploadfolder = os.path.join(request.folder, "uploads/gis_cache")
 
 # -----------------------------------------------------------------------------
+# GIS Web Map Contexts
+# (Saved Map definitions)
+# GIS Config's Defaults should just be the version for id=1?
+
+# @ToDo Unify WMC Layers with the rest of the Layers system
+resourcename = "wmc_layer"
+tablename = "%s_%s" % (module, resourcename)
+table = db.define_table(tablename,
+                        Field("source"),
+                        Field("name"),
+                        Field("title"),
+                        Field("visibility", "boolean"),
+                        Field("group_"),
+                        Field("fixed", "boolean"),
+                        Field("opacity", "double"),
+                        Field("type_"),
+                        # Handle this as a special case for 'None' layer ('ol' source)
+                        #"args":["None",{"visibility":false}]
+                        Field("format"),
+                        Field("styles"),
+                        Field("transparent", "boolean"),
+                        migrate=migrate, *s3_timestamp())
+# We don't need dropdowns as these aren't currently edited using Web2Py forms
+# @ToDo Handle Added WMS servers (& KML/GeoRSS once GeoExplorer supports them!)
+#table.source.requires = IS_IN_SET(["ol", "osm", "google", "local", "sahana"])
+#table.name.requires = IS_IN_SET(["mapnik", "TERRAIN", "Pakistan:level3", "Pakistan:pak_flood_17Aug"])
+# @ToDo Use this to split Internal/External Feeds
+#table.group_.requires = IS_NULL_OR(IS_IN_SET(["background"]))
+# @ToDo: Can we add KML/GeoRSS/GPX layers using this?
+#table.type_.requires = IS_NULL_OR(IS_IN_SET(["OpenLayers.Layer"]))
+#table.format.requires = IS_NULL_OR(IS_IN_SET(["image/png"]))
+
+# @ToDo add security
+resourcename = "wmc"
+tablename = "%s_%s" % (module, resourcename)
+table = db.define_table(tablename,
+                        #uuidstamp, # WMCs don't sync
+                        projection_id(),
+                        Field("lat", "double"), # This is currently 'x' not 'lat'
+                        Field("lon", "double"), # This is currently 'y' not 'lon'
+                        Field("zoom", "integer"),
+                        Field("layer_id", "list:reference gis_wmc_layer", requires=IS_ONE_OF(db, "gis_wmc_layer.id", "%(title)s", multiple=True)),
+                        # Metadata tbc
+                        migrate=migrate, *(s3_authorstamp() + s3_timestamp()))
+#table.lat.requires = IS_LAT()
+#table.lon.requires = IS_LON()
+table.zoom.requires = IS_INT_IN_RANGE(1, 20)
+table.lat.label = T("Latitude")
+table.lon.label = T("Longitude")
+table.zoom.label = T("Zoom")
+
+# -----------------------------------------------------------------------------
 # Below tables are not yet implemented
 
 # GIS Styles: SLD
-#db.define_table("gis_style", timestamp,
-#                Field("name", notnull=True, unique=True))
+#resourcename = "style"
+#tablename = "%s_%s" % (module, resourcename)
+#table = db.define_table(tablename,
+#                        Field("name", notnull=True, unique=True)
+#                        migrate=migrate, *s3_timestamp())
 #db.gis_style.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "gis_style.name")]
-
-# GIS WebMapContexts
-# (User preferences)
-# GIS Config's Defaults should just be the version for user=0?
-#db.define_table("gis_webmapcontext", timestamp,
-#                Field("user", db.auth_user))
-#db.gis_webmapcontext.user.requires = IS_ONE_OF(db, "auth_user.id", "%(email)s")

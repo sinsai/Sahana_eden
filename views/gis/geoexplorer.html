@@ -1,0 +1,94 @@
+{{extend "layout.html"}}
+{{if session.s3.debug:}}
+<link href="/{{=request.application}}/static/styles/gis/geoexplorer.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+<link href="/{{=request.application}}/static/styles/gis/ie.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+<link href="/{{=request.application}}/static/styles/gis/printpreview.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+{{else:}}
+{{pass}}
+
+<!-- Google Earth resources-->
+<!--
+    Note: Replace the key below with your own key before deploying. 
+    See http://code.google.com/apis/maps/signup.html for information.
+-->
+<script src="http://www.google.com/jsapi?key={{=google_key}}"></script>
+<script type="text/javascript">google && google.load("earth", "1");</script>
+
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-2.2.1/examples/grid/RowExpander.js"></script>
+{{if session.s3.debug:}}
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/openlayers/lib/OpenLayers.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/geoext/lib/GeoExt.js"></script>
+<!--
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/gxp/loader.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer.js"></script>
+-->
+{{else:}}
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/OpenLayers.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExt_.js"></script>
+{{pass}}
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/gxp.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer.js"></script>
+
+<script type="text/javascript">//<![CDATA[
+    Ext.BLANK_IMAGE_URL = '/{{=request.application}}/static/img/gis/openlayers/blank.gif';
+    OpenLayers.DOTS_PER_INCH = 25.4 / 0.28; // OGC "standardized rendering pixel size"
+    var app = new GeoExplorer.{{if request.args(0) == "viewer.html":}}Viewer{{else:}}Composer{{pass}}({
+        proxy: '/{{=request.application}}/gis/proxy?url=',
+      {{if print_service:}}
+        printService: 'http://geo.eden.sahanafoundation.org/geoserver/pdf/',
+      {{pass}}
+        alignToGrid: true,
+        about: {
+            title: 'GeoExplorer Demo Map',
+            'abstract': 'This is a demonstration of GeoExplorer',
+            contact: 'IRC #sahana-eden'
+        },
+        defaultSourceType: 'gx_wmssource',
+        sources: {
+          {{if geoserver_url:}}
+            local: {
+                url: '{{=geoserver_url}}',
+                title: 'Local GeoServer'
+            },
+          {{pass}}
+            sahana: {
+                url: "http://geo.eden.sahanafoundation.org/geoserver/ows",
+                title: "Remote Sahana GeoServer"
+            },
+            osm: {
+                ptype: 'gx_osmsource'
+            },
+            google: {
+                ptype: 'gx_googlesource'
+            },
+            ol: {
+                ptype: 'gx_olsource'
+            }
+        },
+        map: {
+            projection: 'EPSG:900913',
+            units: 'm',
+            maxResolution: 156543.0339,
+            maxExtent: [
+                -20037508.34, -20037508.34,
+                20037508.34, 20037508.34
+            ],
+            layers: [{
+                source: 'osm',
+                title: 'OpenStreetMap',
+                name: 'mapnik',
+                group: 'background'
+            }, {
+                source: 'ol',
+                group: 'background',
+                fixed: true,
+                type: 'OpenLayers.Layer',
+                args: [
+                    'None', {visibility: false}
+                ]
+            }],
+            center: [0, 0],
+            zoom: 2
+        }
+    });
+//]]></script>

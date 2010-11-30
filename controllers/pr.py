@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 
-""" PR Person Registry, Controllers
-    (Part of VITA)
+""" VITA Person Registry, Controllers
 
     @author: nursix
     @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
-    @version: 1.0.0
 
 """
 
@@ -99,7 +97,15 @@ def index():
         return output
     response.s3.postp = postp
 
-    output = s3_rest_controller("pr", "person")
+    if auth.shn_logged_in():
+        add_btn = A(T("Add Person"),
+                    _class="action-btn",
+                    _href=URL(r=request, f="person", args="create"))
+    else:
+        add_btn = None
+
+    output = s3_rest_controller("pr", "person",
+                                add_btn=add_btn)
     response.view = "pr/index.html"
 
     shn_menu()

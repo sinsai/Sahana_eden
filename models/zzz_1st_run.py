@@ -894,25 +894,55 @@ if populate:
     table = db[tablename]
     if not db(table.id > 0).count():
         # Populate table
-        for subtype in gis_layer_openstreetmap_subtypes:
-            if subtype in ["Osmarender", "Taiwan"]:
-                # Local OSM layers should be disabled by default in default builds
-                table.insert(
-                        name = "OpenStreetMap (" + subtype + ")",
-                        subtype = subtype,
-                        enabled = False
-                    )
-            elif subtype in ["Labels", "Relief"]:
-                table.insert(
-                        name = "OpenStreetMap (" + subtype + ")",
-                        subtype = subtype,
-                        visible = False
-                    )
-            else:
-                table.insert(
-                        name = "OpenStreetMap (" + subtype + ")",
-                        subtype = subtype
-                    )
+        table.insert(
+                name = "OpenStreetMap (Mapnik)",
+                url1 = "http://a.tile.openstreetmap.org/",
+                url2 = "http://b.tile.openstreetmap.org/",
+                url3 = "http://c.tile.openstreetmap.org/",
+                attribution = '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>'
+            )
+        table.insert(
+                name = "OpenStreetMap (CycleMap)",
+                url1 = "http://a.tile.opencyclemap.org/cycle/",
+                url2 = "http://b.tile.opencyclemap.org/cycle/",
+                url3 = "http://c.tile.opencyclemap.org/cycle/",
+                attribution = '<a href="http://www.opencyclemap.org/">OpenCycleMap</a>'
+            )
+        table.insert(
+                name = "OpenStreetMap (Labels)",
+                url1 = "http://tiler1.censusprofiler.org/labelsonly/",
+                attribution = 'Labels overlay CC-by-SA by <a href="http://oobrien.com/oom/">OpenOrienteeringMap</a>/<a href="http://www.openstreetmap.org/">OpenStreetMap</a> data',
+                base = False
+            )
+        table.insert(
+                name = "OpenStreetMap (Relief)",
+                url1 = "http://toolserver.org/~cmarqu/hill/",
+                attribution = 'Relief by <a href="http://hikebikemap.de/">Hike &amp; Bike Map</a>',
+                base = False
+            )
+        table.insert(
+                name = "OpenStreetMap (Osmarender)",
+                url1 = "http://a.tah.openstreetmap.org/Tiles/tile/",
+                url2 = "http://b.tah.openstreetmap.org/Tiles/tile/",
+                url3 = "http://c.tah.openstreetmap.org/Tiles/tile/",
+                attribution = '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>',
+                enabled = False
+            )
+        table.insert(
+                name = "OpenStreetMap (Taiwan)",
+                url1 = "http://tile.openstreetmap.tw/tiles/",
+                enabled = False
+            )
+        table.insert(
+                name = "OpenStreetMap (Sahana)",
+                url1 = "http://geo.eden.sahanafoundation.org/tiles/",
+                enabled = False
+            )
+        #table.insert(
+        #        name = "OpenAerialMap",
+        #        url1 = "http://tile.openaerialmap.org/tiles/1.0.0/openaerialmap-900913/",
+        #        enabled = False
+        #    )
     tablename = "gis_layer_google"
     table = db[tablename]
     if not db(table.id > 0).count():
@@ -992,6 +1022,91 @@ if populate:
                 projection_id = db(db.gis_projection.epsg == 4326).select(limitby=(0, 1)).first().id,
                 marker_id = db(db.gis_marker.name == "volcano").select(limitby=(0, 1)).first().id,
                 enabled = False
+            )
+
+    tablename = "gis_wmc_layer"
+    table = db[tablename]
+    if not db(table.id > 0).count():
+        # Populate table with the layers currently-supported by GeoExplorer
+        table.insert(
+                source = "ol",
+                type_ = "OpenLayers.Layer",
+                title = "None",
+                visibility = False,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "osm",
+                name = "mapnik",
+                title = "OpenStreetMap",
+                visibility = True,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "osm",
+                name = "osmarender",
+                title = "Tiles@home",
+                visibility = False,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "google",
+                name = "ROADMAP",
+                title = "Google Maps",
+                visibility = False,
+                opacity = 1,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "google",
+                name = "SATELLITE",
+                title = "Google Satellite",
+                visibility = False,
+                opacity = 1,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "google",
+                name = "HYBRID",
+                title = "Google Hybrid",
+                visibility = False,
+                opacity = 1,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "google",
+                name = "TERRAIN",
+                title = "Google Terrain",
+                visibility = False,
+                opacity = 1,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "sahana",
+                name = "Pakistan:level3",
+                title = "L3: Tehsils",
+                visibility = False,
+                opacity = 0.74,
+                format = "image/png",
+                styles = "",
+                transparent = True
+            )
+        table.insert(
+                source = "sahana",
+                name = "Pakistan:pak_flood_17Aug",
+                title = "Flood Extent - 17 August",
+                visibility = False,
+                opacity = 0.45,
+                format = "image/png",
+                styles = "",
+                transparent = True
             )
 
     tablename = "gis_location"

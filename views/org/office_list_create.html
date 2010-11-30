@@ -1,13 +1,4 @@
 {{extend "layout.html"}}
 {{include "_list_create.html"}}
-<script type="text/javascript">//<![CDATA[
-$(function() {
-    {{entity_id = "org_office_organisation_id"}}
-    {{urlpath_c = "org"}}
-    {{urlpath_f = "organisation"}}
-    {{urlvar_field = "name"}}
-    {{include 'auto_input.js'}}
-});
-//]]></script>
 {{include "gis/location_autocomplete.js"}}
 

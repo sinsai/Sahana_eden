@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 
-""" DVI Disaster Victim Identification, Controllers
-    (Part of VITA)
+""" VITA Disaster Victim Identification, Controllers
 
     @author: nursix
     @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
-    @version: 1.0.0
 
 """
 
@@ -103,8 +101,6 @@ def recreq():
     resource = request.function
 
     db.dvi_recreq.person_id.default = s3_logged_in_person()
-
-    s3xrc.model.configure(db.dvi_recreq, listadd=False)
     output = s3_rest_controller(module, resource)
 
     shn_menu()
@@ -129,22 +125,19 @@ def body():
         if ids:
             response.s3.filter = (~(db.dvi_body.pe_id.belongs(ids)))
 
-    s3xrc.model.configure(db.dvi_body,
-                          listadd=False,
-                          main="pe_label",
-                          extra="gender")
+    s3xrc.model.configure(db.dvi_body, main="pe_label", extra="gender")
+
+    dvi_tabs = [(T("Recovery"), ""),
+                (T("Checklist"), "checklist"),
+                (T("Images"), "image"),
+                (T("Physical Description"), "physical_description"),
+                (T("Effects Inventory"), "effects"),
+                (T("Tracing"), "presence"),
+                (T("Identification"), "identification")]
 
     output = s3_rest_controller(module, resource,
                                  rheader=lambda r: \
-                                         shn_dvi_rheader(r, tabs=[
-                                            (T("Recovery"), ""),
-                                            (T("Checklist"), "checklist"),
-                                            (T("Images"), "image"),
-                                            (T("Physical Description"), "physical_description"),
-                                            (T("Effects Inventory"), "effects"),
-                                            (T("Tracing"), "presence"),
-                                            (T("Identification"), "identification"),
-                                         ]))
+                                         shn_dvi_rheader(r, tabs=dvi_tabs))
     shn_menu()
     return output
 
@@ -193,16 +186,14 @@ def person():
                 s3.crud_strings["pr_person"].update(
                     subtitle_list = T("Candidate Matches for Body %s" % label),
                     msg_no_match = T("No records matching the query"))
-        if auth.shn_logged_in():
-            persons = db.pr_person
-            person = db(persons.uuid == session.auth.user.person_uuid).select(persons.id, limitby=(0, 1)).first()
-            if person:
-                db.pr_presence.reporter.default = person.id
-                db.pr_presence.reporter.writable = False
-                db.pr_presence.reporter.comment = None
-                db.mpr_missing_report.reporter.default = person.id
-                db.mpr_missing_report.reporter.writable = False
-                db.mpr_missing_report.reporter.comment = None
+        person = s3_logged_in_person()
+        if person:
+            db.pr_presence.reporter.default = person
+            db.pr_presence.reporter.writable = False
+            db.pr_presence.reporter.comment = None
+            db.pf_missing_report.reporter.default = person
+            db.pf_missing_report.reporter.writable = False
+            db.pf_missing_report.reporter.comment = None
         elif jr.component_name == "presence":
             condition = jr.request.vars.get("condition", None)
             if condition:
@@ -229,14 +220,14 @@ def person():
     db.pr_person.missing.writable = False
     db.pr_person.missing.default = True
 
-    db.mpr_missing_report.person_id.readable = False
-    db.mpr_missing_report.person_id.writable = False
+    db.pf_missing_report.person_id.readable = False
+    db.pf_missing_report.person_id.writable = False
 
     # Show only missing persons in list views
     if len(request.args) == 0:
         response.s3.filter = (db.pr_person.missing == True)
 
-    mpr_tabs = [
+    pf_tabs = [
                 (T("Missing Report"), "missing_report"),
                 (T("Person Details"), None),
                 (T("Physical Description"), "physical_description"),
@@ -247,7 +238,7 @@ def person():
                 (T("Presence Log"), "presence"),
                ]
 
-    rheader = lambda r: shn_pr_rheader(r, tabs=mpr_tabs)
+    rheader = lambda r: shn_pr_rheader(r, tabs=pf_tabs)
 
     output = s3_rest_controller("pr", resource,
                                  main="first_name",

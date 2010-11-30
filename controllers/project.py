@@ -43,6 +43,26 @@ def index():
     return dict(module_name=module_name)
 
 #==============================================================================
+def need():
+
+    """ RESTful CRUD controller """
+
+    tablename = "%s_%s" % (prefix, resourcename)
+    table = db[tablename]
+
+    return s3_rest_controller(prefix, resourcename)
+
+#==============================================================================
+def need_type():
+
+    """ RESTful CRUD controller """
+
+    tablename = "%s_%s" % (prefix, resourcename)
+    table = db[tablename]
+
+    return s3_rest_controller(prefix, resourcename)
+
+#==============================================================================
 def project():
 
     """ RESTful CRUD controller """
@@ -93,7 +113,7 @@ def shn_activity_rheader(r, tabs=[]):
                               ),                                      
                            TR( TH( T("Organisation") + ": "),
                                shn_organisation_represent(project_activity.organisation_id),                                       
-                               TH( T("Cluster") + ": "),
+                               TH( T("Sector") + ": "),
                                shn_org_cluster_represent(project_activity.cluster_id),                               
                              ),
                             ),
@@ -116,13 +136,15 @@ def activity():
            ]
     rheader = lambda r: shn_activity_rheader(r, tabs)
     
-    #Default values (from gap_report) set for fields 
-    default_fieldnames = ["location_id", "cluster_id"]
-    for fieldname in default_fieldnames:
-        if fieldname in request.vars:
-            table[fieldname].default = request.vars[fieldname]
-            table[fieldname].writable = False
-
+    if "create"  in request.args:
+        #Default values (from gap_report) set for fields 
+        default_fieldnames = ["location_id", "need_type_id"]
+        for fieldname in default_fieldnames:
+            if fieldname in request.vars:
+                table[fieldname].default = request.vars[fieldname]
+                table[fieldname].writable = False
+                table[fieldname].comment = None
+    
     return s3_rest_controller(prefix, 
                               resourcename,
                               rheader = rheader)
@@ -143,23 +165,23 @@ def gap_report():
     """ Provide a Report on Gaps between Activities & Needs Assessments """
 
     #Get all assess_summary
-    assess_rows = db((db.assess_summary.id > 0) &\
-                     (db.assess_summary.assess_id == db.assess_assess.id) &\
-                     (db.assess_assess.location_id > 0) &\
-                     (db.assess_assess.deleted != True)
-                     ).select(db.assess_assess.id,
-                              db.assess_assess.location_id,
-                              db.assess_assess.datetime,
-                              db.assess_summary.cluster_id,
-                              db.assess_summary.value
-                              )
+    assess_need_rows = db((db.project_need.id > 0) &\
+                          (db.project_need.assess_id == db.assess_assess.id) &\
+                          (db.assess_assess.location_id > 0) &\
+                          (db.assess_assess.deleted != True)
+                          ).select(db.assess_assess.id,
+                                   db.assess_assess.location_id,
+                                   db.assess_assess.datetime,
+                                   db.project_need.need_type_id,
+                                   db.project_need.value
+                                   )
 
     activity_rows = db((db.project_activity.id > 0) &\
                        (db.project_activity.location_id > 0) &\
                        (db.project_activity.deleted != True)
                        ).select(db.project_activity.id,
                                 db.project_activity.location_id,
-                                db.project_activity.cluster_id,
+                                db.project_activity.need_type_id,
                                 db.project_activity.organisation_id,
                                 db.project_activity.total_bnf,
                                 db.project_activity.start_date,
@@ -169,9 +191,9 @@ def gap_report():
     def map_assess_to_gap(row):
         return Storage( assess_id = row.assess_assess.id,
                         location_id = row.assess_assess.location_id,
-                        cluster_id = row.assess_summary.cluster_id,
-                        datetime = row.assess_assess.datetime,
-                        assess_value = row.assess_summary.value,
+                        datetime = row.assess_assess.datetime,                       
+                        need_type_id = row.project_need.need_type_id,
+                        value = row.project_need.value,                         
                         activity_id = None,
                         organisation_id = None,
                         start_date = NONE,
@@ -179,14 +201,14 @@ def gap_report():
                         total_bnf = NONE,
                         )
 
-    gap_rows = map(map_assess_to_gap, assess_rows)
+    gap_rows = map(map_assess_to_gap, assess_need_rows)
 
     for activity_row in activity_rows:
         add_new_gap_row = True
         # Check if there is an Assessment of this location & cluster_subsector_id
         for gap_row in gap_rows:
             if activity_row.location_id == gap_row.location_id and \
-               activity_row.cluster_id == gap_row.cluster_id:
+               activity_row.need_type_id == gap_row.need_type_id:
 
                 add_new_gap_row = False
 
@@ -199,7 +221,7 @@ def gap_report():
 
         if add_new_gap_row:
             gap_rows.append(Storage(location_id = activity_row.location_id,
-                                    cluster_id = activity_row.cluster_id,
+                                    need_type_id = activity_row.need_type_id,
                                     activity_id = activity_row.id,
                                     organisation_id = activity_row.organisation_id,
                                     start_date = activity_row.start_date,
@@ -208,16 +230,16 @@ def gap_report():
                                     )
                             )
 
-    headings = ("Date",
-                "Location",
-                "Clusters",
+    headings = ("Location",
+                "Needs",
                 "Assessment",
-                "Severity",
+                "Date",                
                 "Activity",
-                "Organisation",
                 "Start Date",
                 "End Date",
-                "Total Beneficiaries"
+                "Total Beneficiaries", 
+                "Organization",  
+                "Gap (% Needs Met)",              
                 )
     gap_table = TABLE(THEAD(TR(*[TH(header) for header in headings])),
                       _id = "list",
@@ -226,11 +248,11 @@ def gap_report():
 
     for gap_row in gap_rows:
         if gap_row.assess_id:
-            assess_action_btn = A(T("Assessment"),
+            assess_action_btn = A(T("Open"),
                                   _href = URL(r=request,
                                               c="assess",
                                               f="assess",
-                                              args = (gap_row.assess_id, "impact")
+                                              args = (gap_row.assess_id, "need")
                                               ),
                                   _target = "blank",
                                   _id = "show-add-btn",
@@ -240,7 +262,7 @@ def gap_report():
             assess_action_btn = NONE
 
         if gap_row.activity_id:
-            activity_action_btn =A(T("Activity"),
+            activity_action_btn =A(T("Open"),
                                    _href = URL(r=request,
                                                c="project",
                                                f="activity",
@@ -257,50 +279,40 @@ def gap_report():
                                                f="activity",
                                                args = ("create"),
                                                vars = {"location_id":gap_row.location_id,
-                                                       "cluster_id":gap_row.cluster_id,
+                                                       "need_type_id":gap_row.need_type_id,
                                                        }
                                                ),
                                    _id = "show-add-btn",
                                    _class="action-btn"
                                    ),
+                       
+        need_str = shn_need_type_represent(gap_row.need_type_id)
+        if gap_row.value:
+            need_str = "%d %s" % (gap_row.value, need_str)    
+        
+        #Calculate the Gap
+        if not gap_row.value:
+            gap_str = NONE
+        elif gap_row.total_bnf and gap_row.total_bnf != NONE:
+            gap_str = "%d%%" % min((gap_row.total_bnf / gap_row.value) * 100, 100)
+        else:
+            gap_str = "0%"
             
-            
-        #Displaying NONE
-        if gap_row.datetime:
-            datetime = gap_row.datetime
-        else:
-            datetime = NONE
-                    
-        if gap_row.start_date:
-            start_date = gap_row.start_date
-        else:
-            start_date = NONE
-
-        if gap_row.end_date:
-            end_date = gap_row.end_date
-        else:
-            end_date = NONE
-
-        if gap_row.total_bnf:
-            total_bnf = gap_row.total_bnf
-        else:
-            total_bnf = NONE
-
-        gap_table.append(TR( datetime, 
-                             shn_gis_location_represent(gap_row.location_id),
-                             shn_org_cluster_represent(gap_row.cluster_id),
+        gap_table.append(TR( shn_gis_location_represent(gap_row.location_id),
+                             need_str,   
                              assess_action_btn,
-                             shn_assess_severity_represent(gap_row.assess_value),
-                             activity_action_btn,
+                             gap_row.datetime or NONE,                                                                        
+                             activity_action_btn,                             
+                             gap_row.start_date or NONE,
+                             gap_row.end_date or NONE,
+                             gap_row.total_bnf or NONE,
                              shn_organisation_represent(gap_row.organisation_id),
-                             start_date,
-                             end_date,
-                             total_bnf,
+                             gap_str
                             )
                         )
 
     return dict(title = T("Gap Analysis Report"),
-                subtitle = T("Assessments and Activities"),
+                subtitle = T("Assessments Needs vs. Activities"),
                 gap_table = gap_table,                
                 )
 
@@ -315,20 +327,23 @@ def gap_map():
                                   }    
 
     feature_queries = []
-    cluster_rows = db(db.org_cluster.id > 0).select()
-    for cluster_rows in cluster_rows:
-        cluster_id = cluster_rows.id
-        cluster = shn_org_cluster_represent(cluster_id)
-
+    need_type_rows = db(db.project_need_type.id > 0).select()
+    for need_type_rows in need_type_rows:
+        
+        layer_rows = []
+        
+        need_type_id = need_type_rows.id
+        need_type = shn_need_type_represent(need_type_id)               
+            
         #Add activity row
         activity_rows = db((db.project_activity.id > 0) &\
-                           (db.project_activity.cluster_id == cluster_id) &\
+                           (db.project_activity.need_type_id == need_type_id) &\
                            (db.project_activity.location_id > 0) &\
                            (db.project_activity.deleted != True) &
                            (db.project_activity.location_id == db.gis_location.id)
                            ).select(db.project_activity.id,
                                     db.project_activity.location_id,
-                                    db.project_activity.cluster_id,
+                                    #db.project_activity.need_type_id,
                                     db.gis_location.uuid,
                                     db.gis_location.id,
                                     db.gis_location.name,
@@ -338,65 +353,75 @@ def gap_map():
                                     )
         if len(activity_rows):
             for i in range( 0 , len( activity_rows) ):
-                # 'gis_location' is needed because the quiery isn't simple due to the count - this could be fixed in s3gis.py
+                #layer_rows.append(Storage(gis_location = 
+                #                      Storage(uuid = activity_rows[i].gis_location.uuid,
+                #                              id = activity_rows[i].gis_location.id,
+                #                              name = activity_rows[i].gis_location.name,
+                #                              lat = activity_rows[i].gis_location.lat,
+                #                              lon = activity_rows[i].gis_location.lon,
+                #                              shape = "circle",
+                #                              size = 6,                                              
+                #                              color = "#0000FF", #blue
+                #                              )
+                #                          )
+                #                  )
                 activity_rows[i].gis_location.shape = "circle"
                 activity_rows[i].gis_location.size = 6
                 activity_rows[i].gis_location.color = "#0000FF" #blue
-
-            feature_queries.append({ "name": "%s: Activities" % cluster,
+            feature_queries.append({ "name": "%s: Activities" % need_type,
                                      "query": activity_rows,
                                      "active": False,
                                      "popup_url" : "#",
-                                    })
+                                    })             
+            
+#Add assess layer
+        assess_need_rows = db((db.project_need.id > 0) &\
+                              (db.project_need.need_type_id == need_type_id) &\
+                              (db.project_need.assess_id == db.assess_assess.id) &\
+                              (db.assess_assess.location_id > 0) &\
+                              (db.assess_assess.deleted != True) &
+                              (db.assess_assess.location_id == db.gis_location.id)
+                              ).select(db.assess_assess.id,
+                                       db.assess_assess.location_id,
+                                       db.assess_assess.datetime,
+                                       #db.project_need.need_type_id,
+                                       #db.project_need.value,
+                                       db.gis_location.uuid,
+                                       db.gis_location.id,
+                                       db.gis_location.name,
+                                       db.gis_location.code,
+                                       db.gis_location.lat,
+                                       db.gis_location.lon,
+                                       )
 
-        #Add assess layer
-        assess_rows = db((db.assess_summary.id > 0) &\
-                         (db.assess_summary.cluster_id == cluster_id) &\
-                         (db.assess_summary.assess_id == db.assess_assess.id) &\
-                         (db.assess_assess.location_id > 0) &\
-                         (db.assess_assess.deleted != True) &
-                         (db.assess_assess.location_id == db.gis_location.id)
-                         ).select(db.assess_assess.id,
-                                  db.assess_assess.location_id,
-                                  db.assess_assess.datetime,
-                                  db.assess_summary.cluster_id,
-                                  db.assess_summary.value,
-                                  db.gis_location.uuid,
-                                  db.gis_location.id,
-                                  db.gis_location.name,
-                                  db.gis_location.code,
-                                  db.gis_location.lat,
-                                  db.gis_location.lon,
-                                  )
-
-        if len(assess_rows):
-            for i in range( 0 , len( assess_rows) ):
-                # 'gis_location' is needed because the quiery isn't simple due to the count - this could be fixed in s3gis.py
-                assess_rows[i].gis_location.shape = "circle"
-                assess_rows[i].gis_location.size = 4
-                assess_rows[i].gis_location.color = \
-                    assess_summary_colour_code[assess_rows[i].assess_summary.value]
-
-            feature_queries.append({ "name": "%s: Assessments" % cluster,
-                                     "query": assess_rows,
+        if len(assess_need_rows):
+            for i in range( 0 , len( assess_need_rows) ):
+                #layer_rows.append(dict(gis_location = 
+                #                      dict(uuid = assess_need_rows[i].gis_location.uuid,
+                #                              id = assess_need_rows[i].gis_location.id,
+                #                              name = assess_need_rows[i].gis_location.name,
+                #                              lat = assess_need_rows[i].gis_location.lat,
+                #                              lon = assess_need_rows[i].gis_location.lon,                                              
+                #                              shape = "circle",
+                #                              size = 4,                                              
+                #                              color = assess_summary_colour_code[3]
+                #                              )
+                #                          )
+                #                  )                
+                assess_need_rows[i].gis_location.shape = "circle"
+                assess_need_rows[i].gis_location.size = 4
+                assess_need_rows[i].gis_location.color = assess_summary_colour_code[3]
+                    #assess_summary_colour_code[assess_need_rows[i].assess_summary.value]
+            feature_queries.append({ "name": "%s: Assessments" % need_type,
+                                     "query": assess_need_rows,
                                      "active": False,
                                      "popup_url" : "#",
-                                    })
+                                    })            
 
     map = gis.show_map(
                 feature_queries = feature_queries,
-                # Take defaults from Catalogue rather than hardcoding
-                #wms_browser = {"name" : "Risk Maps",
-                #               "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
-                #width               = 866,
-                #lat                 = 1.9,
-                #lon                 = -180,
-                #zoom                = 2
                 )
 
     return dict(map = map,
                 title = T("Gap Analysis Map"),
                 subtitle = T("Assessments and Activities") )
-
-
-#==============================================================================

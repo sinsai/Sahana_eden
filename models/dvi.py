@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 
-""" DVI - Disaster Victim Identification, Models
-   (Part of VITA)
+""" VITA Disaster Victim Identification, Models
 
     @author: nursix
     @author: khushbu
     @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
-    @version: 1.0.0
 
 """
 
@@ -49,7 +47,6 @@ if deployment_settings.has_module(module):
                             dvi_task_status(),
                             Field("bodies_rec", "integer"), # Number of bodies recovered
                             migrate=migrate, *s3_meta_fields())
-
 
     # Settings and Restrictions
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
@@ -103,19 +100,17 @@ if deployment_settings.has_module(module):
 
 
     s3xrc.model.configure(table,
-                          list_fields = ["id",
-                                         "date",
-                                         "site_id",
-                                         "location_id",
-                                         "location_details",
-                                         #"description",
-                                         "bodies_est",
-                                         "bodies_rec",
-                                         "opt_dvi_task_status"])
+        list_fields = ["id",
+                       "date",
+                       "site_id",
+                       "location_id",
+                       "location_details",
+                       #"description",
+                       "bodies_est",
+                       "bodies_rec",
+                       "opt_dvi_task_status"])
 
-    #
-    # Body ------------------------------------------------------------------------
-    #
+    # Body ====================================================================
     resourcename = "body"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
@@ -133,12 +128,14 @@ if deployment_settings.has_module(module):
                             pr_age_group(),
                             migrate=migrate, *s3_meta_fields())
 
-    table.pe_label.requires = [IS_NOT_EMPTY(error_message=T("Enter a unique label!")),
+    table.pe_label.requires = [IS_NOT_EMPTY(
+                                error_message=T("Enter a unique label!")),
                                IS_NOT_IN_DB(db, "dvi_body.pe_label")]
 
     table.date_of_recovery.default = request.utcnow
-    table.date_of_recovery.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
-                                                      allow_future=False)
+    table.date_of_recovery.requires = IS_UTC_DATETIME(
+                                        utc_offset=shn_user_utc_offset(),
+                                        allow_future=False)
     table.date_of_recovery.represent = lambda value: shn_as_local_time(value)
 
     # Labels

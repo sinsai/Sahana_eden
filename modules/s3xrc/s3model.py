@@ -2,9 +2,9 @@
 
 """ S3XRC Resource Framework - Data Model Extensions
 
-    @version: 2.2.2
+    @version: 2.2.6
 
-    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
+    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @author: nursix
     @contact: dominic AT nursix DOT org
@@ -34,79 +34,16 @@
 
 """
 
-__all__ = ["S3ResourceComponent",
-           "S3ResourceModel"]
+__all__ = ["S3ResourceModel", "S3ResourceLinker"]
 
 from gluon.storage import Storage
 from gluon.sql import Table, Field
 from gluon.validators import IS_EMPTY_OR, IS_IN_DB
 
 # *****************************************************************************
-class S3ResourceComponent(object):
-
-    """ Class to represent component relations between resources
-
-        @param db: the database (DAL)
-        @param prefix: prefix of the resource name (=module name)
-        @param name: name of the resource (=without prefix)
-        @param attr: attributes
-
-    """
-
-    def __init__(self, db, prefix, name, **attr):
-
-        self.db = db
-        self.prefix = prefix
-        self.name = name
-
-        self.tablename = "%s_%s" % (prefix, name)
-        self.table = self.db.get(self.tablename, None)
-        if not self.table:
-            raise SyntaxError("Table must exist in the database.")
-
-        self.attr = Storage(attr)
-        if not "multiple" in self.attr:
-            self.attr.multiple = True
-        if not "deletable" in self.attr:
-            self.attr.deletable = True
-        if not "editable" in self.attr:
-            self.attr.editable = True
-
-
-    # Configuration ===========================================================
-
-    def set_attr(self, name, value):
-
-        """ Sets an attribute for a component
-
-            @param name: attribute name
-            @param value: attribute value
-
-        """
-
-        self.attr[name] = value
-
-
-    # -------------------------------------------------------------------------
-    def get_attr(self, name):
-
-        """ Reads an attribute of the component
-
-            @param name: attribute name
-
-        """
-
-        if name in self.attr:
-            return self.attr[name]
-        else:
-            return None
-
-
-# *****************************************************************************
 class S3ResourceModel(object):
 
-
-    """ Class to handle the compound resources model
+    """ Model extensions helper class
 
         @param db: the database (DAL)
 
@@ -123,25 +60,39 @@ class S3ResourceModel(object):
 
     # Components ==============================================================
 
-    def add_component(self, prefix, name, **attr):
+    def add_component(self, prefix, name, joinby=None, multiple=True):
 
-        """ Adds a component to the model
+        """ Define a component join
 
             @param prefix: prefix of the component name (=module name)
             @param name: name of the component (=without prefix)
+            @param joinby: join key, or dict of join keys
 
         """
 
-        joinby = attr.get("joinby", None)
         if joinby:
-            component = S3ResourceComponent(self.db, prefix, name, **attr)
+            tablename = "%s_%s" % (prefix, name)
+            table = self.db.get(tablename, None)
+            if not table:
+                raise SyntaxError("Undefined table: %s" % tablename)
+            component = Storage(prefix = prefix,
+                                name = name,
+                                tablename = tablename,
+                                table = table,
+                                multiple = multiple)
             hook = self.components.get(name, Storage())
             if isinstance(joinby, dict):
-                for tablename in joinby:
-                    hook[tablename] = Storage(
-                        _joinby = ("id", joinby[tablename]),
-                        _component = component)
+                for tn in joinby:
+                    key = joinby[tn]
+                    if key not in table.fields:
+                        raise SyntaxError("Undefined key: %s.%s" %
+                                          (tablename, key))
+                    hook[tn] = Storage(_joinby = ("id", key),
+                                       _component = component)
             elif isinstance(joinby, str):
+                if joinby not in table.fields:
+                    raise SyntaxError("Undefined key: %s.%s" %
+                                      (tablename, joinby))
                 hook._joinby=joinby
                 hook._component=component
             else:
@@ -155,7 +106,7 @@ class S3ResourceModel(object):
     # -------------------------------------------------------------------------
     def get_component(self, prefix, name, component_name):
 
-        """ Retrieves a component of a resource
+        """ Retrieve a component join
 
             @param prefix: prefix of the resource name (=module name)
             @param name: name of the resource (=without prefix)
@@ -185,7 +136,7 @@ class S3ResourceModel(object):
     # -------------------------------------------------------------------------
     def get_components(self, prefix, name):
 
-        """ Retrieves all components related to a resource
+        """ Retrieves all component joins for a table
 
             @param prefix: prefix of the resource name (=module name)
             @param name: name of the resource (=without prefix)
@@ -241,37 +192,6 @@ class S3ResourceModel(object):
                         return True
 
         return False
-
-
-    # -------------------------------------------------------------------------
-    def set_attr(self, component_name, name, value):
-
-        """ Sets an attribute for a component
-
-            @param component_name: name of the component (without prefix)
-            @param name: name of the attribute
-            @param value: value for the attribute
-
-            @todo 2.3: deprecate?
-
-        """
-
-        return self.components[component_name].set_attr(name, value)
-
-
-    # -------------------------------------------------------------------------
-    def get_attr(self, component_name, name):
-
-        """ Retrieves an attribute value of a component
-
-            @param component_name: name of the component (without prefix)
-            @param name: name of the attribute
-
-            @todo 2.3: deprecate?
-
-        """
-
-        return self.components[component_name].get_attr(name)
 
 
     # Resource Methods ========================================================
@@ -399,7 +319,7 @@ class S3ResourceModel(object):
 
     def super_entity(self, tablename, key, types, *fields, **args):
 
-        """ Create a new super-entity table
+        """ Define a super-entity table
 
             @param tablename: the tablename
             @param key: name of the primary key
@@ -438,7 +358,8 @@ class S3ResourceModel(object):
 
 
     # -------------------------------------------------------------------------
-    def super_key(self, super):
+    @staticmethod
+    def super_key(super):
 
         """ Get the name of the key for a super-entity
 
@@ -506,7 +427,8 @@ class S3ResourceModel(object):
             shared = self.get_config(table, "%s_fields" % s._tablename)
             if shared:
                 data = dict([(f, record[shared[f]])
-                             for f in shared if shared[f] in record and f in s.fields])
+                             for f in shared
+                             if shared[f] in record and f in s.fields])
             else:
                 data = dict([(f, record[f])
                              for f in s.fields if f in record])
@@ -557,6 +479,251 @@ class S3ResourceModel(object):
                     self.db(s.uuid == uid).update(deleted=True)
 
         return True
+
+
+# *****************************************************************************
+class S3ResourceLinker(object):
+
+    """ Hyperlinks between resources
+
+        @param manager: the resource controller
+
+    """
+
+    def __init__(self, manager):
+
+        self.db = manager.db
+        self.tablename = manager.rlink_tablename
+        migrate = manager.migrate
+
+        self.table = self.db.get(self.tablename, None)
+        if not self.table:
+            self.table = self.db.define_table(self.tablename,
+                                              Field("link_class", length=128),
+                                              Field("origin_table"),
+                                              Field("origin_id", "list:integer"),
+                                              Field("target_table"),
+                                              Field("target_id", "integer"),
+                                              migrate=migrate)
+
+
+    # -------------------------------------------------------------------------
+    def link(self, from_table, from_id, to_table, to_id, link_class=None):
+
+        """ Create a hyperlink between resources
+
+            @param from_table: the originating table
+            @param from_id: ID or list of IDs of the originating record(s)
+            @param to_table: the target table
+            @param to_id: ID or list of IDs of the target record(s)
+            @param link_class: link class name
+
+            @returns: a list of record IDs of the created links
+
+        """
+
+        o_tn = from_table._tablename
+        t_tn = to_table._tablename
+        links = []
+        if not from_id:
+            return links
+        elif not isinstance(from_id, (list, tuple)):
+            o_id = [str(from_id)]
+        else:
+            o_id = map(str, from_id)
+        if not to_id:
+            return links
+        elif not isinstance(to_id, (list, tuple)):
+            t_id = [str(to_id)]
+        else:
+            t_id = map(str, to_id)
+        table = self.table
+        query = ((table.origin_table == o_tn) &
+                 (table.target_table == t_tn) &
+                 (table.link_class == link_class) &
+                 (table.target_id.belongs(t_id)))
+        rows = self.db(query).select()
+        rows = dict([(str(r.target_id), r) for r in rows])
+        success = True
+        for target_id in t_id:
+            if target_id in rows:
+                row = rows[target_id]
+                ids = map(str, row.origin_id)
+                add = [i for i in o_id if i not in ids]
+                ids += add
+                row.update_record(origin_id=ids)
+                links.append(row.id)
+            else:
+                row = table.insert(origin_table=o_tn,
+                                   target_table=t_tn,
+                                   link_class=link_class,
+                                   target_id=target_id,
+                                   origin_id=o_id)
+                links.append(row)
+        return links
+
+
+    # -------------------------------------------------------------------------
+    def unlink(self, from_table, from_id, to_table, to_id, link_class=None):
+
+        """ Remove a hyperlink between resources
+
+            @param from_table: the originating table
+            @param from_id: ID or list of IDs of the originating record(s)
+            @param to_table: the target table
+            @param to_id: ID or list of IDs of the target record(s)
+            @param link_class: link class name
+
+            @note: None for from_id or to_id means *any* record
+
+        """
+
+        o_tn = from_table._tablename
+        t_tn = to_table._tablename
+
+        table = self.table
+        query = ((table.origin_table == o_tn) &
+                 (table.target_table == t_tn) &
+                 (table.link_class == link_class))
+        q = None
+        if from_id is not None:
+            if not isinstance(from_id, (list, tuple)):
+                o_id = [str(from_id)]
+            else:
+                o_id = map(str, from_id)
+            for origin_id in o_id:
+                iq = table.origin_id.contains(origin_id)
+                if q is None:
+                    q = iq
+                else:
+                    q = q | iq
+        else:
+            o_id = None
+        if q is not None:
+            query = query & (q)
+        q = None
+        if to_id is not None:
+            if not isinstance(to_id, (list, tuple)):
+                q = table.target_id == str(to_id)
+            else:
+                t_id = map(str, to_id)
+                q = table.target_id.belongs(t_id)
+        if q is not None:
+            query = query & (q)
+        rows = self.db(query).select()
+        for row in rows:
+            if o_id:
+                ids = [i for i in row.origin_id if str(i) not in o_id]
+            else:
+                ids = []
+            if ids:
+                row.update_record(origin_id=ids)
+            else:
+                row.delete_record()
+        return
+
+
+    # -------------------------------------------------------------------------
+    def get_origin_query(self, from_table, to_table, to_id,
+                         link_class=None,
+                         union=False):
+
+        """ Get a query for the origin table to retrieve records that are
+            linked to a set of target table records.
+
+            @param from_table: the origin table
+            @param to_table: the target table
+            @param to_id: target record ID or list of target record IDs
+            @param link_class: link class name
+            @param union: retrieve a union (True) or an intersection (False, default)
+                          of all sets of links (in case of multiple target records)
+
+            @note: None for to_id means *any* record
+
+        """
+
+        o_tn = from_table._tablename
+        t_tn = to_table._tablename
+
+        table = self.table
+        if not to_id:
+            query = (table.target_id != None)
+        elif not isinstance(to_id, (list, tuple)):
+            query = (table.target_id == to_id)
+        else:
+            query = (table.target_id.belongs(to_id))
+        query = (table.origin_table == o_tn) & \
+                (table.target_table == t_tn) & \
+                (table.link_class == link_class) & query
+        ids = []
+        rows = self.db(query).select(table.origin_id)
+        for row in rows:
+            if union:
+                add = [i for i in row.origin_id if i not in ids]
+                ids += add
+            elif not ids:
+                ids = row.origin_id
+            else:
+                ids = [i for i in ids if i in row.origin_id]
+        if ids and len(ids) == 1:
+            mq = (from_table.id == ids[0])
+        elif ids:
+            mq = (from_table.id.belongs(ids))
+        else:
+            mq = (from_table.id == None)
+        return mq
+
+
+    # -------------------------------------------------------------------------
+    def get_target_query(self, from_table, from_id, to_table,
+                         link_class=None,
+                         union=False):
+
+        """ Get a query for the target table to retrieve records that are
+            linked to a set of origin table records.
+
+            @param from_table: the origin table
+            @param from_id: origin record ID or list of origin record IDs
+            @param to_table: the target table
+            @param link_class: link class name
+            @param union: retrieve a union (True) or an intersection (False, default)
+                          of all sets of links (in case of multiple origin records)
+
+            @note: None for from_id means *any* record
+
+        """
+
+        o_tn = from_table._tablename
+        t_tn = to_table._tablename
+        table = self.table
+        if not from_id:
+            query = (table.origin_id != None)
+        elif not isinstance(from_id, (list, tuple)):
+            query = (table.origin_id.contains(from_id))
+        else:
+            q = None
+            for origin_id in from_id:
+                iq = table.origin_id.contains(origin_id)
+                if q and union:
+                    q = q | iq
+                elif q and not union:
+                    q = q & iq
+                else:
+                    q = iq
+            if q:
+                query = (q)
+        query = (table.origin_table == o_tn) & \
+                (table.target_table == t_tn) & \
+                (table.link_class == link_class) & query
+        rows = self.db(query).select(table.target_id, distinct=True)
+        ids = [row.target_id for row in rows]
+        if ids and len(ids) == 1:
+            mq = (to_table.id == ids[0])
+        elif ids:
+            mq = (to_table.id.belongs(ids))
+        else:
+            mq = (to_table.id == None)
+        return mq
 
 
 # *****************************************************************************

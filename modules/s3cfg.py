@@ -100,8 +100,12 @@ class S3Config(Storage):
         return self.gis.get("marker_max_height", 35)
     def get_gis_marker_max_width(self):
         return self.gis.get("marker_max_width", 30)
+    def get_gis_mouse_position(self):
+        return self.gis.get("mouse_position", "normal")
+    def get_gis_print_service(self):
+        return self.gis.get("print_service", "")
     def get_gis_geoserver_url(self):
-        return self.gis.get("geoserver_url", "http://localhost/geoserver")
+        return self.gis.get("geoserver_url", "")
     def get_gis_geoserver_username(self):
         return self.gis.get("geoserver_username", "admin")
     def get_gis_geoserver_password(self):

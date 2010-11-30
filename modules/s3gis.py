@@ -1099,11 +1099,12 @@ class GIS(object):
             node_path = str(location_id)
             db(table.id == location_id).update(path=node_path)
         else:
-            path = db(table.id == parent).select(table.path)
-            if(path[0].path == None):
-               path[0].path = parent
-            node_path = str(path[0].path) + "/" + str(location_id)
-            db(table.id == location_id).update(path=node_path)
+            path = db(table.id == parent).select(table.path).first()
+            if path:
+                if (path.path == None):
+                    path.path = parent
+                node_path = str(path.path) + "/" + str(location_id)
+                db(table.id == location_id).update(path=node_path)
 
         return
 

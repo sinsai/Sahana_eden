@@ -844,6 +844,7 @@ def get_matchable_fields(module, resource):
 
 
 # Functional Testing
+# Deprecated: Use static/selenium/scripts/regressionTests.py with it's Tk UI
 def handleResults():
     """
         Process the POST data returned from Selenium TestRunner.

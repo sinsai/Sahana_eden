@@ -789,13 +789,13 @@ table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("module"),
                         Field("resource"),
-                        Field("popup_label"),       # Replace with s3.crud_strings[tablename]
+                        Field("popup_label"),       # @ToDo Replace with s3.crud_strings[tablename]
                         marker_id(),                # Optional Marker to over-ride the values from the Feature Classes
                         Field("polygons", "boolean", default=False, label=T("Display Polygons?")),
                         Field("enabled", "boolean", default=True, label=T("Available in Viewer?")),
                         Field("visible", "boolean", default=True, label=T("On by default?")),
-                        # ToDo Expose the Graphic options
-                        # ToDo Allow defining more complex queries
+                        # @ToDo Expose the Graphic options
+                        # @ToDo Allow defining more complex queries
                         # e.g. L1 for Provinces, L2 for Districts, etc
                         #Field("filter_field"),     # Used to build a simple query
                         #Field("filter_value"),     # Used to build a simple query

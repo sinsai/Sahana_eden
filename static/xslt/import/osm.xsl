@@ -49,9 +49,11 @@
     <xsl:template name="hospital">
         <resource name="hms_hospital">
 
-<!--            <xsl:attribute name="modified_on">
-                <xsl:value-of select="@timestamp"/>
-            </xsl:attribute>-->
+            <xsl:attribute name="modified_on">
+                <xsl:call-template name="datetime">
+                    <xsl:with-param name="datetime" select="@timestamp"/>
+                </xsl:call-template>
+            </xsl:attribute>
 
             <data field="gov_uuid">
                 <xsl:choose>
@@ -106,9 +108,11 @@
                 <xsl:value-of select="concat('urn:osm:id:', @id)"/>
             </xsl:attribute>
 
-<!--            <xsl:attribute name="modified_on">
-                <xsl:value-of select="@timestamp"/>
-            </xsl:attribute>-->
+            <xsl:attribute name="modified_on">
+                <xsl:call-template name="datetime">
+                    <xsl:with-param name="datetime" select="@timestamp"/>
+                </xsl:call-template>
+            </xsl:attribute>
 
             <xsl:choose>
                 <xsl:when test="./tag[@v='town']">
@@ -168,6 +172,11 @@
             -->
 
         </resource>
+    </xsl:template>
+
+    <xsl:template name="datetime">
+        <xsl:param name="datetime"/>
+        <xsl:value-of select="concat(substring-before($datetime, 'T'),' ',substring-before(substring-after($datetime, 'T'), 'Z'))"/>
     </xsl:template>
 
 </xsl:stylesheet>

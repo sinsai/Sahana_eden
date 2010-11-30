@@ -847,6 +847,13 @@ if populate:
             marker_id = db(db.gis_marker.name == "marker_red").select(db.gis_marker.id, limitby=(0, 1)).first().id
         )
         table.insert(
+            name = "Hospitals",
+            module = "hms",
+            resource = "hospital",
+            popup_label = "Hospital",
+            marker_id = db(db.gis_marker.name == "hospital").select(db.gis_marker.id, limitby=(0, 1)).first().id
+        )
+        table.insert(
             name = "Shelters",
             module = "cr",
             resource = "shelter",

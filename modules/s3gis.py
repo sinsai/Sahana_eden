@@ -366,7 +366,7 @@ class GIS(object):
             return None
 
     # -----------------------------------------------------------------------------
-    def get_feature_layer(self, module, resource, layername, popup_label, marker=None, filter=None, active=True, polygons=False):
+    def get_feature_layer(self, prefix, resourcename, layername, popup_label, config=None, marker_id=None, filter=None, active=True, polygons=False):
         """
             Return a Feature Layer suitable to display on a map
             @param: layername: Used as the label in the LayerSwitcher
@@ -377,53 +377,60 @@ class GIS(object):
         deployment_settings = self.deployment_settings
         request = self.request
 
+        _locations = db.gis_location
+        _markers = db.gis_marker
+
+        tablename = "%s_%s" % (prefix, resourcename)
+        table = db[tablename]
+
         try:
-            if "deleted" in db["%s_%s" % (module, resource)].fields:
+            if "deleted" in table.fields:
                 # Hide deleted Resources
-                query = (db["%s_%s" % (module, resource)].deleted == False)
+                query = (table.deleted == False)
             else:
-                query = (db["%s_%s" % (module, resource)].id > 0)
+                query = (table.id > 0)
 
             if filter:
                 query = query & (db[filter.tablename].id == filter.id)
 
             # Hide Resources recorded to Country Locations on the map?
             if not deployment_settings.get_gis_display_l0():
-                query = query & ((db.gis_location.level != "L0") | (db.gis_location.level == None))
+                query = query & ((_locations.level != "L0") | (_locations.level == None))
 
-            query = query & (db.gis_location.id == db["%s_%s" % (module, resource)].location_id)
-            if not polygons and not resource in gis_categorised_resources:
+            query = query & (_locations.id == db["%s_%s" % (prefix, resourcename)].location_id)
+            if not polygons and not resourcename in gis_categorised_resources:
                 # Only retrieve the bulky polygons if-required
-                locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.lat, db.gis_location.lon)
-            elif not polygons and resource in gis_categorised_resources:
-                locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.lat, db.gis_location.lon, db["%s_%s" % (module, resource)].category)
-            elif polygons and not resource in gis_categorised_resources:
-                locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
+                locations = db(query).select(_locations.id, _locations.uuid, _locations.parent, _locations.name, _locations.lat, _locations.lon)
+            elif not polygons and resourcename in gis_categorised_resources:
+                locations = db(query).select(_locations.id, _locations.uuid, _locations.parent, _locations.name, _locations.lat, _locations.lon, table.category)
+            elif polygons and not resourcename in gis_categorised_resources:
+                locations = db(query).select(_locations.id, _locations.uuid, _locations.parent, _locations.name, _locations.wkt, _locations.lat, _locations.lon)
             else:
                 # Polygons & Categorised resources
-                locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon, db["%s_%s" % (module, resource)].category)
+                locations = db(query).select(_locations.id, _locations.uuid, _locations.parent, _locations.name, _locations.wkt, _locations.lat, _locations.lon, table.category)
 
-            if resource in gis_categorised_resources:
+            if resourcename in gis_categorised_resources:
                 for i in range(0, len(locations)):
-                    locations[i].popup_label = locations[i].name + "-" + popup_label
-                    locations[i].marker = self.get_marker(resource, locations[i]["%s_%s" % (module, resource)].category)
+                    locations[i].popup_label = "%s-%s" % (locations[i].name, popup_label)
+                    locations[i].marker = self.get_marker(resourcename, locations[i][tablename].category)
             else:
                 for i in range(0, len(locations)):
-                    locations[i].popup_label = locations[i].name + "-" + popup_label
+                    locations[i].popup_label = "%s-%s" % (locations[i].name, popup_label)
 
-            popup_url = URL(r=request, c=module, f=resource, args="read.plain?%s.location_id=" % resource)
+            popup_url = URL(r=request, c=prefix, f=resourcename, args="read.plain?%s.location_id=" % resourcename)
 
-            if not marker and not resource in gis_categorised_resources:
+            if not marker_id and not resourcename in gis_categorised_resources:
                 # Add the marker here so that we calculate once/layer not once/feature
                 table_fclass = db.gis_feature_class
-                config = self.get_config()
-                query = (table_fclass.deleted == False) & (table_fclass.symbology_id == config.symbology_id) & (table_fclass.resource == resource)
+                if not config:
+                    config = self.get_config()
+                query = (table_fclass.deleted == False) & (table_fclass.symbology_id == config.symbology_id) & (table_fclass.resource == resourcename)
                 marker = db(query).select(db.gis_feature_class.id, limitby=(0, 1), cache=cache).first()
                 if marker:
-                    marker = marker.id
+                    marker_id = marker.id
 
             try:
-                marker = db(db.gis_marker.name == marker).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, db.gis_marker.id, limitby=(0, 1), cache=cache).first()
+                marker = db(_markers.id == marker_id).select(_markers.image, _markers.height, _markers.width, _markers.id, limitby=(0, 1), cache=cache).first()
                 layer = {"name":layername, "query":locations, "active":active, "marker":marker, "popup_url": popup_url, "polygons": polygons}
             except:
                 layer = {"name":layername, "query":locations, "active":active, "popup_url": popup_url, "polygons": polygons}

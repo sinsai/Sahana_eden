@@ -50,14 +50,15 @@ def index():
     return dict(module_name=module_name, map=map)
 
 # -----------------------------------------------------------------------------
-def define_map(window=False, toolbar=False):
+def define_map(window=False, toolbar=False, config=None):
     """
         Define the main Situation Map
         This can then be called from both the Index page (embedded) & the Map_Viewing_Client (fullscreen)
     """
 
     # @ToDo: Make these configurable
-    config = gis.get_config()
+    if not config:
+        config = gis.get_config()
     if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
         catalogue_toolbar = True
     else:
@@ -84,7 +85,7 @@ def define_map(window=False, toolbar=False):
     feature_queries = []
     feature_layers = db(db.gis_layer_feature.enabled == True).select()
     for layer in feature_layers:
-        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, layer.marker_id, active=layer.visible, polygons=layer.polygons)
+        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons)
         if _layer:
             feature_queries.append(_layer)
 
@@ -740,10 +741,16 @@ def layer_feature():
 def feature_layer_query(form):
     """ OnValidation callback to build the simple Query from helpers """
 
+    if "resource" in form.vars:
+        resource = form.vars.resource
+        # Remove the module from name
+        form.vars.resource = resource[len(form.vars.module) + 1:]
+    
     if "advanced" in form.vars:
         # We should use the query field as-is
         pass
-    elif "resource" in form.vars:
+    
+    if resource:
         # We build query from helpers
         if "filter_field" in form.vars and "filter_value" in form.vars:
             if "deleted" in db[resource]:
@@ -1387,7 +1394,7 @@ def map_viewing_client():
     # @ToDo Make Configurable
     toolbar = True
 
-    map = define_map(window=window, toolbar=toolbar)
+    map = define_map(window=window, toolbar=toolbar, config=config)
 
     return dict(map=map)
 

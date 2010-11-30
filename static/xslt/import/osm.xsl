@@ -159,7 +159,7 @@
                         <xsl:for-each select="./nd">
                             <xsl:variable name="id" select="@ref"/>
                             <xsl:for-each select="//node[@id=$id][1]">
-                                <xsl:value-of select="concat(@lat, ' ', @lon)"/>
+                                <xsl:value-of select="concat(@lon, ' ', @lat)"/>
                             </xsl:for-each>
                             <xsl:if test="following-sibling::nd">
                                 <xsl:text>,</xsl:text>

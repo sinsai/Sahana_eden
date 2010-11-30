@@ -123,38 +123,66 @@
                     <xsl:with-param name="datetime" select="@timestamp"/>
                 </xsl:call-template>
             </xsl:attribute>
+            
+            <data field="osm_id">
+                <xsl:value-of select="@id"/>
+            </data>
+            
+            <!-- @ToDo: Handle Source
+            e.g.
+            <tag k="source" v="US Census Bureau"/> -->
 
+            
             <xsl:choose>
             
-                <!--
-                    @ToDo: Admin Boundaries
-                        <tag k="admin_level" v="8"/>
-                        <tag k="source" v="US Census Bureau"/>
+                <!-- Admin Boundaries: http://wiki.openstreetmap.org/wiki/Tag:boundary%3Dadministrative -->
+                <!-- @ToDo: How to handle the variability of levels per-country? -->
                 <xsl:when test="./tag[@k='boundary'] and ./tag[@v='administrative']">
-                
+                    <xsl:choose>
+                        <xsl:when test="./tag[@k='admin_level'] and ./tag[@v='2']">
+                            <data field="level">
+                                <xsl:text>L0</xsl:text>
+                            </data>
+                        </xsl:when>
+                        <!-- 4 is the right level for Haiti -->
+                        <xsl:when test="./tag[@k='admin_level'] and ./tag[@v='4']">
+                            <data field="level">
+                                <xsl:text>L1</xsl:text>
+                            </data>
+                        </xsl:when>
+                        <!-- 8 is the right level for Haiti -->
+                        <xsl:when test="./tag[@k='admin_level'] and ./tag[@v='8']">
+                            <data field="level">
+                                <xsl:text>L2</xsl:text>
+                            </data>
+                        </xsl:when>
+                    </xsl:choose>
                 </xsl:when>
-                -->
             
-                <xsl:when test="./tag[@v='town']">
-                    <!-- @ToDo: How to handle the variability of levels per-country? -->
+                <xsl:when test="./tag[@k='place'] and ./tag[@v='town']">
                     <data field="level">
                         <xsl:text>L3</xsl:text>
                     </data>
                 </xsl:when>
 
-                <xsl:when test="./tag[@v='village']">
-                    <!-- @ToDo: How to handle the variability of levels per-country? -->
+                <xsl:when test="./tag[@k='place'] and ./tag[@v='village']">
                     <data field="level">
                         <xsl:text>L4</xsl:text>
                     </data>
                 </xsl:when>
+
             </xsl:choose>
 
-            <xsl:if test="./tag[@k='name']">
-                <data field="name">
-                    <xsl:value-of select="./tag[@k='name']/@v"/>
-                </data>
-            </xsl:if>
+            <data field="name">
+                <xsl:choose>
+                    <xsl:when test="./tag[@k='name']">
+                        <xsl:value-of select="./tag[@k='name']/@v"/>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:value-of select="concat('OSM #', @id)"/>
+                    </xsl:otherwise>
+                </xsl:choose>
+            </data>
 
             <xsl:choose>
                 <xsl:when test="local-name()='node'">

@@ -1780,6 +1780,7 @@ def maps():
         if isinstance(source, basestring):
             from StringIO import StringIO
             source = StringIO(source)
+
         # Decode JSON
         source = json.load(source)
         # @ToDo: Projection (unlikely to change)

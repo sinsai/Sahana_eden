@@ -529,9 +529,9 @@ class S3ResourceController(object):
         try:
             req = self._request(prefix, name)
         except SyntaxError:
-            raise HTTP(400, body=self.error)
+            raise HTTP(400, body=self.xml.json_message(False, 400, message=self.error))
         except KeyError:
-            raise HTTP(404, body=self.error)
+            raise HTTP(404, body=self.xml.json_message(False, 404, message=self.error))
         except:
             raise
         res = req.resource

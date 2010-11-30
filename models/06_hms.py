@@ -742,7 +742,7 @@ if deployment_settings.has_module(module):
             T("No Image")
 
     table.url.label = T("URL")
-    table.url.represent = lambda url: len(url) and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None")
+    table.url.represent = lambda url: url and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None")
 
     table.tags.label = T("Tags")
     table.tags.comment = DIV(DIV(_class="tooltip",

@@ -25,12 +25,8 @@
         <s3xrc>
             <!--
                 Handle simple Nodes (minority case)
-                    @ToDo: Handle Ways
-                        lookup all linked nodes, create WKT & pull in polygon?
-                        calculate centroids using PostgreSQL?
             -->
             <xsl:for-each select="//node" >
-
                 <xsl:choose>
 
                     <!-- Hospitals -->
@@ -158,13 +154,6 @@
                         </resource>
                     </xsl:when>
 
-                    <!--
-                        @ToDo: Admin Boundaries (Ways!)
-                            <tag k="boundary" v="administrative"/>
-                            <tag k="admin_level" v="8"/>
-                            <tag k="source" v="US Census Bureau"/>
-                    -->
-
                     <!-- @ToDo: Landmarks -->
                     <!--
                     <xsl:when test="./tag[@k='aeroway'] and ./tag[@v='aerodrome']">
@@ -182,8 +171,120 @@
                     -->
 
                 </xsl:choose>
-            
             </xsl:for-each>
+            
+            <!--
+                @ToDo: Handle Ways (majority case)
+                    lookup all linked nodes, create WKT & pull in as polygon
+                    (centroid calculated onvalidation)
+            -->
+            <xsl:for-each select="//way" >
+                <xsl:choose>
+
+                    <!-- Hospitals -->
+                    <!--
+                        @ToDo: Catch:
+                            Clinics (http://wiki.openstreetmap.org/wiki/Proposed_features/Clinic_%28Medical%29)
+                            & Pharmacies (http://wiki.openstreetmap.org/wiki/Tag:amenity%3Dpharmacy)
+                    -->
+                    <xsl:when test="./tag[@k='amenity'] and ./tag[@v='hospital']">
+                        <resource name="hms_hospital">
+
+                            <xsl:attribute name="uuid">
+                                <xsl:text>openstreetmap.org/</xsl:text>
+                                <xsl:value-of select="@id"/>
+                            </xsl:attribute>
+
+                            <xsl:attribute name="modified_on">
+                                <xsl:value-of select="@timestamp"/>
+                            </xsl:attribute>
+
+                            <!-- Main Record -->
+                            <xsl:if test="./tag[@k='name']">
+                                <data field="name">
+                                    <xsl:value-of select="./tag[@k='name']/@v"/>
+                                </data>
+                            </xsl:if>
+
+                            <!--
+                            Can add Hospital-specific tags here
+                                http://wiki.openstreetmap.org/wiki/Tag:amenity%3Dhospital
+                                    emergency=yes
+                                    contact:phone=xxx
+                                    contact:website=xxx
+                                    <tag k="health_facility:type" v="hospital"/>
+                                    <tag k="health_facility:type" v="specialized_hospital"/>
+                                    <tag k="health_facility:type" v="dispensary"/>
+                                    <tag k="health_facility:type" v="health_center"/>
+                                    <tag k="health_facility:bed" v="no"/>
+                                    <tag k="operator" v="DR GERARD JANVIER"/>
+                                    <tag k="paho:damage" v="Damaged"/>
+                                    <tag k="paho:damage" v="Severe"/>
+                            -->
+
+                            <!-- Location Info -->
+                            <reference field="location_id" resource="gis_location">
+                                <resource name="gis_location">
+
+                                    <xsl:if test="./tag[@k='name']">
+                                        <data field="name">
+                                            <xsl:value-of select="./tag[@k='name']/@v"/>
+                                        </data>
+                                    </xsl:if>
+
+                                    <data field="osm_id">
+                                        <xsl:value-of select="@id"/>
+                                    </data>
+
+                                    <!-- Save as Polygon -->
+                                    <data field="gis_feature_type" value="3">Polygon</data>
+
+                                    <data field="wkt">
+                                        <!-- Initialise the WKT -->
+                                        <xsl:text>POLYGON((</xsl:text>
+                                        
+                                        <!-- Walk through the Nodes -->
+                                        <xsl:for-each select="./nd" >
+
+                                            <xsl:variable name="id" select="@ref"/>
+                                            <xsl:for-each select="//node[@id=$id][1]">
+                                                
+                                                <!-- Append the Node's Lat/Lon to WKT -->
+                                                <xsl:value-of select="@lon"/><xsl:text> </xsl:text><xsl:value-of select="@lat"/><xsl:text>,</xsl:text>
+                                                
+                                            </xsl:for-each>
+
+                                        </xsl:for-each>
+                                        
+                                        <!-- complete the WKT -->
+                                        <xsl:text>))</xsl:text>
+                                    </data>
+
+                                </resource>
+                            </reference>
+                        </resource>
+                    </xsl:when>
+
+                    <!--
+                        @ToDo: Admin Boundaries
+                            <tag k="admin_level" v="8"/>
+                            <tag k="source" v="US Census Bureau"/>
+                    <xsl:when test="./tag[@k='boundary'] and ./tag[@v='administrative']">
+                    
+                    </xsl:when>
+                    -->
+
+                </xsl:choose>
+            </xsl:for-each>
+
+            <!--
+                @ToDo: Handle Relations (minority case)
+                    lookup all linked ways, & hence nodes, create WKT & pull in as polygon or multipolygon
+                    (centroid calculated onvalidation)
+            <xsl:for-each select="//relation" >
+            </xsl:for-each>
+            -->
+
         </s3xrc>
     </xsl:template>
 </xsl:stylesheet>

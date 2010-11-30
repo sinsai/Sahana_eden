@@ -1127,9 +1127,13 @@ class S3Resource(object):
 
         # Transform source
         if template:
-            tree = xml.transform(tree, template,
-                                 domain=self.manager.domain,
-                                 base_url=self.manager.base_url)
+            tfmt = "%Y-%m-%d %H:%M:%S"
+            args = dict(domain=self.manager.domain,
+                        base_url=self.manager.base_url,
+                        prefix=self.prefix,
+                        name=self.name,
+                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
+            tree = xml.transform(tree, template, **args)
             if not tree:
                 r.error(400, "XSLT Transformation Error: %s" % self.xml.error)
 

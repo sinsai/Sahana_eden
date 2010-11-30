@@ -59,11 +59,11 @@
     <xsl:template name="hospital">
         <resource name="hms_hospital">
 
-            <!-- Incompatible format
             <xsl:attribute name="modified_on">
-                <xsl:value-of select="@timestamp"/>
+                <xsl:call-template name="datetime">
+                    <xsl:with-param name="datetime" select="@timestamp"/>
+                </xsl:call-template>
             </xsl:attribute>
-            -->
 
             <data field="gov_uuid">
                 <xsl:choose>
@@ -118,11 +118,11 @@
                 <xsl:value-of select="concat('urn:osm:id:', @id)"/>
             </xsl:attribute>
 
-            <!-- Incompatible format
             <xsl:attribute name="modified_on">
-                <xsl:value-of select="@timestamp"/>
+                <xsl:call-template name="datetime">
+                    <xsl:with-param name="datetime" select="@timestamp"/>
+                </xsl:call-template>
             </xsl:attribute>
-            -->
 
             <xsl:choose>
             
@@ -174,7 +174,7 @@
                         <xsl:for-each select="./nd">
                             <xsl:variable name="id" select="@ref"/>
                             <xsl:for-each select="//node[@id=$id][1]">
-                                <xsl:value-of select="concat(@lat, ' ', @lon)"/>
+                                <xsl:value-of select="concat(@lon, ' ', @lat)"/>
                             </xsl:for-each>
                             <xsl:if test="following-sibling::nd">
                                 <xsl:text>,</xsl:text>
@@ -192,6 +192,11 @@
             -->
 
         </resource>
+    </xsl:template>
+
+    <xsl:template name="datetime">
+        <xsl:param name="datetime"/>
+        <xsl:value-of select="concat(substring-before($datetime, 'T'),' ',substring-before(substring-after($datetime, 'T'), 'Z'))"/>
     </xsl:template>
 
 </xsl:stylesheet>

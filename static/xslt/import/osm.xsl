@@ -49,9 +49,9 @@
     <xsl:template name="hospital">
         <resource name="hms_hospital">
 
-            <xsl:attribute name="modified_on">
+<!--            <xsl:attribute name="modified_on">
                 <xsl:value-of select="@timestamp"/>
-            </xsl:attribute>
+            </xsl:attribute>-->
 
             <data field="gov_uuid">
                 <xsl:choose>
@@ -106,9 +106,9 @@
                 <xsl:value-of select="concat('urn:osm:id:', @id)"/>
             </xsl:attribute>
 
-            <xsl:attribute name="modified_on">
+<!--            <xsl:attribute name="modified_on">
                 <xsl:value-of select="@timestamp"/>
-            </xsl:attribute>
+            </xsl:attribute>-->
 
             <xsl:choose>
                 <xsl:when test="./tag[@v='town']">

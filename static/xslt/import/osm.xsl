@@ -152,6 +152,9 @@
                             <xsl:for-each select="//node[@id=$id][1]">
                                 <xsl:value-of select="concat(@lat, ' ', @lon)"/>
                             </xsl:for-each>
+                            <xsl:if test="following-sibling::nd">
+                                <xsl:text>,</xsl:text>
+                            </xsl:if>
                         </xsl:for-each>
                         <xsl:text>))</xsl:text>
                     </data>

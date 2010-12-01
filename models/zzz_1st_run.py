@@ -847,6 +847,13 @@ if populate:
             marker_id = db(db.gis_marker.name == "marker_red").select(db.gis_marker.id, limitby=(0, 1)).first().id
         )
         table.insert(
+            name = "Hospitals",
+            module = "hms",
+            resource = "hospital",
+            popup_label = "Hospital",
+            marker_id = db(db.gis_marker.name == "hospital").select(db.gis_marker.id, limitby=(0, 1)).first().id
+        )
+        table.insert(
             name = "Shelters",
             module = "cr",
             resource = "shelter",
@@ -1022,6 +1029,91 @@ if populate:
                 projection_id = db(db.gis_projection.epsg == 4326).select(limitby=(0, 1)).first().id,
                 marker_id = db(db.gis_marker.name == "volcano").select(limitby=(0, 1)).first().id,
                 enabled = False
+            )
+
+    tablename = "gis_wmc_layer"
+    table = db[tablename]
+    if not db(table.id > 0).count():
+        # Populate table with the layers currently-supported by GeoExplorer
+        table.insert(
+                source = "ol",
+                type_ = "OpenLayers.Layer",
+                title = "None",
+                visibility = False,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "osm",
+                name = "mapnik",
+                title = "OpenStreetMap",
+                visibility = True,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "osm",
+                name = "osmarender",
+                title = "Tiles@home",
+                visibility = False,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "google",
+                name = "ROADMAP",
+                title = "Google Maps",
+                visibility = False,
+                opacity = 1,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "google",
+                name = "SATELLITE",
+                title = "Google Satellite",
+                visibility = False,
+                opacity = 1,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "google",
+                name = "HYBRID",
+                title = "Google Hybrid",
+                visibility = False,
+                opacity = 1,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "google",
+                name = "TERRAIN",
+                title = "Google Terrain",
+                visibility = False,
+                opacity = 1,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "sahana",
+                name = "Pakistan:level3",
+                title = "L3: Tehsils",
+                visibility = False,
+                opacity = 0.74,
+                format = "image/png",
+                styles = "",
+                transparent = True
+            )
+        table.insert(
+                source = "sahana",
+                name = "Pakistan:pak_flood_17Aug",
+                title = "Flood Extent - 17 August",
+                visibility = False,
+                opacity = 0.45,
+                format = "image/png",
+                styles = "",
+                transparent = True
             )
 
     tablename = "gis_location"

@@ -366,7 +366,7 @@ class GIS(object):
             return None
 
     # -----------------------------------------------------------------------------
-    def get_feature_layer(self, module, resource, layername, popup_label, marker=None, filter=None, active=True, polygons=False):
+    def get_feature_layer(self, prefix, resourcename, layername, popup_label, config=None, marker_id=None, filter=None, active=True, polygons=False):
         """
             Return a Feature Layer suitable to display on a map
             @param: layername: Used as the label in the LayerSwitcher
@@ -377,53 +377,60 @@ class GIS(object):
         deployment_settings = self.deployment_settings
         request = self.request
 
+        _locations = db.gis_location
+        _markers = db.gis_marker
+
+        tablename = "%s_%s" % (prefix, resourcename)
+        table = db[tablename]
+
         try:
-            if "deleted" in db["%s_%s" % (module, resource)].fields:
+            if "deleted" in table.fields:
                 # Hide deleted Resources
-                query = (db["%s_%s" % (module, resource)].deleted == False)
+                query = (table.deleted == False)
             else:
-                query = (db["%s_%s" % (module, resource)].id > 0)
+                query = (table.id > 0)
 
             if filter:
                 query = query & (db[filter.tablename].id == filter.id)
 
             # Hide Resources recorded to Country Locations on the map?
             if not deployment_settings.get_gis_display_l0():
-                query = query & ((db.gis_location.level != "L0") | (db.gis_location.level == None))
+                query = query & ((_locations.level != "L0") | (_locations.level == None))
 
-            query = query & (db.gis_location.id == db["%s_%s" % (module, resource)].location_id)
-            if not polygons and not resource in gis_categorised_resources:
+            query = query & (_locations.id == db["%s_%s" % (prefix, resourcename)].location_id)
+            if not polygons and not resourcename in gis_categorised_resources:
                 # Only retrieve the bulky polygons if-required
-                locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.lat, db.gis_location.lon)
-            elif not polygons and resource in gis_categorised_resources:
-                locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.lat, db.gis_location.lon, db["%s_%s" % (module, resource)].category)
-            elif polygons and not resource in gis_categorised_resources:
-                locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
+                locations = db(query).select(_locations.id, _locations.uuid, _locations.parent, _locations.name, _locations.lat, _locations.lon)
+            elif not polygons and resourcename in gis_categorised_resources:
+                locations = db(query).select(_locations.id, _locations.uuid, _locations.parent, _locations.name, _locations.lat, _locations.lon, table.category)
+            elif polygons and not resourcename in gis_categorised_resources:
+                locations = db(query).select(_locations.id, _locations.uuid, _locations.parent, _locations.name, _locations.wkt, _locations.lat, _locations.lon)
             else:
                 # Polygons & Categorised resources
-                locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon, db["%s_%s" % (module, resource)].category)
+                locations = db(query).select(_locations.id, _locations.uuid, _locations.parent, _locations.name, _locations.wkt, _locations.lat, _locations.lon, table.category)
 
-            if resource in gis_categorised_resources:
+            if resourcename in gis_categorised_resources:
                 for i in range(0, len(locations)):
-                    locations[i].popup_label = locations[i].name + "-" + popup_label
-                    locations[i].marker = self.get_marker(resource, locations[i]["%s_%s" % (module, resource)].category)
+                    locations[i].popup_label = "%s-%s" % (locations[i].name, popup_label)
+                    locations[i].marker = self.get_marker(resourcename, locations[i][tablename].category)
             else:
                 for i in range(0, len(locations)):
-                    locations[i].popup_label = locations[i].name + "-" + popup_label
+                    locations[i].popup_label = "%s-%s" % (locations[i].name, popup_label)
 
-            popup_url = URL(r=request, c=module, f=resource, args="read.plain?%s.location_id=" % resource)
+            popup_url = URL(r=request, c=prefix, f=resourcename, args="read.plain?%s.location_id=" % resourcename)
 
-            if not marker and not resource in gis_categorised_resources:
+            if not marker_id and not resourcename in gis_categorised_resources:
                 # Add the marker here so that we calculate once/layer not once/feature
                 table_fclass = db.gis_feature_class
-                config = self.get_config()
-                query = (table_fclass.deleted == False) & (table_fclass.symbology_id == config.symbology_id) & (table_fclass.resource == resource)
+                if not config:
+                    config = self.get_config()
+                query = (table_fclass.deleted == False) & (table_fclass.symbology_id == config.symbology_id) & (table_fclass.resource == resourcename)
                 marker = db(query).select(db.gis_feature_class.id, limitby=(0, 1), cache=cache).first()
                 if marker:
-                    marker = marker.id
+                    marker_id = marker.id
 
             try:
-                marker = db(db.gis_marker.name == marker).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, db.gis_marker.id, limitby=(0, 1), cache=cache).first()
+                marker = db(_markers.id == marker_id).select(_markers.image, _markers.height, _markers.width, _markers.id, limitby=(0, 1), cache=cache).first()
                 layer = {"name":layername, "query":locations, "active":active, "marker":marker, "popup_url": popup_url, "polygons": polygons}
             except:
                 layer = {"name":layername, "query":locations, "active":active, "popup_url": popup_url, "polygons": polygons}
@@ -1099,11 +1106,12 @@ class GIS(object):
             node_path = str(location_id)
             db(table.id == location_id).update(path=node_path)
         else:
-            path = db(table.id == parent).select(table.path)
-            if(path[0].path == None):
-               path[0].path = parent
-            node_path = str(path[0].path) + "/" + str(location_id)
-            db(table.id == location_id).update(path=node_path)
+            path = db(table.id == parent).select(table.path).first()
+            if path:
+                if (path.path == None):
+                    path.path = parent
+                node_path = str(path.path) + "/" + str(location_id)
+                db(table.id == location_id).update(path=node_path)
 
         return
 
@@ -1918,10 +1926,6 @@ OpenLayers.Util.extend( selectPdfControl, {
             enableToggle: true
         });
 
-        """ + mgrs2 + """
-
-        """ + draw_feature + """
-
         var navPreviousButton = new Ext.Toolbar.Button({
             iconCls: 'back',
             tooltip: '""" + T("Previous View") + """',
@@ -1934,29 +1938,46 @@ OpenLayers.Util.extend( selectPdfControl, {
             handler: nav.next.trigger
         });
 
+        var geoLocateButton = new Ext.Toolbar.Button({
+            iconCls: 'geolocation',
+            tooltip: '""" + T("Zoom to Current Location") + """',
+            handler: function(){
+                navigator.geolocation.getCurrentPosition(getCurrentPosition);
+            }
+        });
+
+        """ + mgrs2 + """
+
+        """ + draw_feature + """
+
         """ + save_button + """
 
         """ + potlatch_button + """
 
         // Add to Map & Toolbar
         toolbar.add(zoomfull);
-        toolbar.add(zoomfull);
+        if (navigator.geolocation) {
+            // HTML5 geolocation is available :)
+            toolbar.addButton(geoLocateButton);
+        } else {
+            // geolocation is not available...IE sucks! ;)
+        }
         toolbar.add(zoomout);
         toolbar.add(zoomin);
         toolbar.add(pan);
         toolbar.addSeparator();
-        // Measure Tools
-        toolbar.add(lengthButton);
-        toolbar.add(areaButton);
-        toolbar.addSeparator();
-        """ + mgrs3 + """
-        """ + draw_feature2 + """
         // Navigation
         map.addControl(nav);
         nav.activate();
         toolbar.addButton(navPreviousButton);
         toolbar.addButton(navNextButton);
         """ + save_button2 + """
+        toolbar.addSeparator();
+        // Measure Tools
+        toolbar.add(lengthButton);
+        toolbar.add(areaButton);
+        """ + mgrs3 + """
+        """ + draw_feature2 + """
         """ + potlatch_button2
 
             toolbar2 = "Ext.QuickTips.init();"
@@ -2391,25 +2412,59 @@ OpenLayers.Util.extend( selectPdfControl, {
                         if layer.subtype == subtype:
                             google["%s" % subtype] = layer.name
             if google:
-                html.append(SCRIPT(_type="text/javascript", _src="http://maps.google.com/maps?file=api&v=2&key=" + google.key))
+                if google.MapMaker or google.MapMakerHybrid:
+                    # Need to use v2 API
+                    # http://code.google.com/p/gmaps-api-issues/issues/detail?id=2349
+                    googleMapmaker = True
+                    html.append(SCRIPT(_type="text/javascript", _src="http://maps.google.com/maps?file=api&v=2&key=" + google.key))
+                else:
+                    googleMapmaker = False
+                    html.append(SCRIPT(_type="text/javascript", _src="http://maps.google.com/maps/api/js?sensor=false"))
+                # Google Earth (coming soon)
+                #html.append(SCRIPT(_type="text/javascript", _src="http://www.google.com/jsapi?key=" + google.key))
+                #html.append(SCRIPT("google && google.load('earth', '1');", _type="text/javascript"))
                 if google.Satellite:
-                    layers_google += """
-        var googlesat = new OpenLayers.Layer.Google( '""" + google.Satellite + """' , {type: G_SATELLITE_MAP, 'sphericalMercator': true } );
+                    if googleMapmaker:
+                        layers_google += """
+        var googlesat = new OpenLayers.Layer.Google( '""" + google.Satellite + """' , {type: G_SATELLITE_MAP, 'sphericalMercator': true} );
+        map.addLayer(googlesat);
+                    """
+                    else:
+                        layers_google += """
+        var googlesat = new OpenLayers.Layer.Google( '""" + google.Satellite + """' , {type: google.maps.MapTypeId.SATELLITE, numZoomLevels: 22} );
         map.addLayer(googlesat);
                     """
                 if google.Maps:
-                    layers_google += """
-        var googlemaps = new OpenLayers.Layer.Google( '""" + google.Maps + """' , {type: G_NORMAL_MAP, 'sphericalMercator': true } );
+                    if googleMapmaker:
+                        layers_google += """
+        var googlemaps = new OpenLayers.Layer.Google( '""" + google.Maps + """' , {type: G_NORMAL_MAP, 'sphericalMercator': true} );
+        map.addLayer(googlemaps);
+                    """
+                    else:
+                        layers_google += """
+        var googlemaps = new OpenLayers.Layer.Google( '""" + google.Maps + """' , {numZoomLevels: 20} );
         map.addLayer(googlemaps);
                     """
                 if google.Hybrid:
-                    layers_google += """
-        var googlehybrid = new OpenLayers.Layer.Google( '""" + google.Hybrid + """' , {type: G_HYBRID_MAP, 'sphericalMercator': true } );
+                    if googleMapmaker:
+                        layers_google += """
+        var googlehybrid = new OpenLayers.Layer.Google( '""" + google.Hybrid + """' , {type: G_HYBRID_MAP, 'sphericalMercator': true} );
+        map.addLayer(googlehybrid);
+                    """
+                    else:
+                        layers_google += """
+        var googlehybrid = new OpenLayers.Layer.Google( '""" + google.Hybrid + """' , {type: google.maps.MapTypeId.HYBRID, numZoomLevels: 20} );
         map.addLayer(googlehybrid);
                     """
                 if google.Terrain:
-                    layers_google += """
-        var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: G_PHYSICAL_MAP, 'sphericalMercator': true } )
+                    if googleMapmaker:
+                        layers_google += """
+        var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: G_PHYSICAL_MAP, 'sphericalMercator': true} )
+        map.addLayer(googleterrain);
+                    """
+                    else:
+                        layers_google += """
+        var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: google.maps.MapTypeId.TERRAIN} )
         map.addLayer(googleterrain);
                     """
                 if google.MapMaker:
@@ -3592,6 +3647,20 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
     }
 
+    // HTML5 GeoLocation: http://dev.w3.org/geo/api/spec-source.html
+    function getCurrentPosition(position){
+            // Level to zoom into
+            var zoomLevel = 15;
+            var lat = position.coords.latitude;
+            var lon = position.coords.longitude;
+            //var elevation = position.coords.altitude;
+            //var ce = position.coords.accuracy;
+            //var le = position.coords.altitudeAccuracy;
+            //position.coords.heading;
+            //position.coords.speed;
+            map.setCenter(new OpenLayers.LonLat(lon, lat).transform(proj4326, map.getProjectionObject()), zoomLevel);
+        };
+
     function addLayers(map) {
         // Base Layers
         // OSM
@@ -3766,7 +3835,6 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + mouse_position + """
         map.addControl(new OpenLayers.Control.Permalink());
         map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
-        map.addControl(new OpenLayers.Control.cdauth.GeoLocation());
 
         // Popups
         // onClick Popup
@@ -3875,7 +3943,8 @@ OpenLayers.Util.extend( selectPdfControl, {
             items: [{
                     region: 'west',
                     id: 'tools',
-                    title: '""" + T("Tools") + """',
+                    //title: '""" + T("Tools") + """',
+                    header: false,
                     border: true,
                     width: 250,
                     autoScroll: true,

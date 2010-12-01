@@ -77,12 +77,8 @@ def req():
             # listadd arrives here as method=None
             if not r.component:
                 table.datetime.default = request.utcnow
-                person = session.auth.user.id if auth.is_logged_in() else None
-                if person:
-                    person_uuid = db(db.auth_user.id == person).select(db.auth_user.person_uuid, limitby=(0, 1)).first().person_uuid
-                    person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
-                    table.requestor_person_id.default = person
-                
+                table.requestor_person_id.default = s3_logged_in_person()
+
                 # @ToDo Default the Organisation too
 
         return True
@@ -111,8 +107,8 @@ def req():
                           #listadd=False, #@todo: List add is causing errors with JS - FIX
                           editable=True)
 
-    return s3_rest_controller(prefix, 
-                              resourcename, 
+    return s3_rest_controller(prefix,
+                              resourcename,
                               rheader=shn_rms_req_rheader)
 
 def shn_rms_req_rheader(r):
@@ -147,9 +143,9 @@ def shn_rms_req_rheader(r):
                                        req_record.datetime,
                                        TH( T( "Location") + ": "),
                                        location_represent,
-                                      ),                                      
+                                      ),
                                    TR( TH( T("Priority") + ": "),
-                                       req_record.priority,                                       
+                                       req_record.priority,
                                        TH( T("Document") + ": "),
                                        document_represent(req_record.document_id)
                                       ),
@@ -182,7 +178,7 @@ def ritem():
     return s3_rest_controller(prefix, resourcename) #, rheader=rheader)
 
 def store_for_req():
-    
-    store_table = None 
-    
+
+    store_table = None
+
     return dict(store_table = store_table)

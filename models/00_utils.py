@@ -30,7 +30,7 @@ def s3_sessions():
         _memberships = db.auth_membership
         # Cache this & invalidate when memberships are changed?
         memberships = db(_memberships.user_id == user_id).select(
-                        _memberships.group_id) 
+                        _memberships.group_id)
         roles = [m.group_id for m in memberships]
     session.s3.roles = roles
 
@@ -552,8 +552,9 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
                 previous = i and tablist[i-1] or None
             args = [r.id]
             vars = Storage(_vars)
-            if not vars.get("_next", None):
-                vars.update(_next=URL(r=request, f=function, args=args, vars=_vars))
+            # _next has no effect
+            #if not vars.get("_next", None):
+                #vars.update(_next=URL(r=request, f=function, args=args, vars=_vars))
             tab.update(_href=URL(r=request, f=function, args=args, vars=vars))
 
         tablist.append(tab)
@@ -745,7 +746,7 @@ def shn_search(r, **attr):
         # JQuery Autocomplete uses "q" instead of "value"
         # JQueryUI Autocomplete uses "term" instead of "value"
         value = _vars.value or _vars.term or _vars.q or None
-        
+
         if _vars.field and _vars.filter and value:
             field = str.lower(_vars.field)
             _field = _table[field]
@@ -875,8 +876,6 @@ def shn_barchart (r, **attr):
         @todo: replace by a S3MethodHandler
 
     """
-
-    import gluon.contrib.simplejson as json
 
     # Get all the variables and format them if needed
     valKey = r.request.vars.get("value")

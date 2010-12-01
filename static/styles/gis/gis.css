@@ -86,8 +86,13 @@
     height: 20px !important;
     width: 20px !important;
 }
+#mappanel .geolocation {
+  background-image: url(../../img/gis/geolocation.png) !important;
+  height: 20px !important;
+  width: 20px !important;
+}
 #mappanel .potlatch {
-  background-image: url(../../img/gis/openstreetmap.ico) !important;
+  background-image: url(../../img/gis/openstreetmap.png) !important;
   height: 20px !important;
   width: 20px !important;
 }

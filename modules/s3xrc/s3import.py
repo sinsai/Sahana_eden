@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Import Toolkit
 
-    @version: 2.2.4
+    @version: 2.2.6
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -208,6 +208,12 @@ class S3Importer(object):
 
         if tree:
             if template is not None:
+                tfmt = "%Y-%m-%d %H:%M:%S"
+                args.update(domain=self.manager.domain,
+                            base_url=self.manager.base_url,
+                            prefix=resource.prefix,
+                            name=resource.name,
+                            utcnow=datetime.datetime.utcnow().strftime(tfmt))
                 tree = xml.transform(tree, template, **args)
                 if not tree:
                     raise SyntaxError(xml.error)

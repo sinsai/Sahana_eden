@@ -46,6 +46,7 @@ from gluon.sql import Row
 from gluon.html import *
 from gluon.http import HTTP, redirect
 from gluon.sqlhtml import SQLTABLE, SQLFORM
+from gluon.validators import IS_EMPTY_OR
 
 from lxml import etree
 from s3crud import S3CRUDHandler

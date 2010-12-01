@@ -815,7 +815,7 @@ class S3XML(object):
                     _uid = self.import_uid(uid)
                 id = _uid and id_map and id_map.get(_uid, None) or None
 
-                entry = dict(vector=None,
+                entry = dict(job=None,
                              resource=resource,
                              element=relement,
                              uid=uid,

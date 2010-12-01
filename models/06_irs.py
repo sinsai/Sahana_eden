@@ -222,7 +222,7 @@ if deployment_settings.has_module(module):
     # Reports
     # This is a report of an Incident
     # (A single incident may generate many reports)
-    
+
     #def shn_assess_represent(assessments):
     #    """ Represent assessments in the Incidents List """
     #    add_assessment = A(T("Add Assessment"), _href=URL(r=request, c="assess", f="assess.html", args="create"), _class="action-btn")
@@ -234,7 +234,7 @@ if deployment_settings.has_module(module):
     #        return output
     #    else:
     #        return output
-    
+
     resourcename = "ireport"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
@@ -246,7 +246,7 @@ if deployment_settings.has_module(module):
                             Field("contact"),
                             organisation_id(),
                             Field("datetime", "datetime"),
-                            location_id(),                            
+                            location_id(),
                             # To be replaced by flexible Impacts as per Assessments?
                             #Field("persons_affected", "integer"),
                             #Field("persons_injured", "integer"),
@@ -280,7 +280,7 @@ if deployment_settings.has_module(module):
     table.datetime.label = T("Date/Time")
     table.datetime.requires = [IS_NOT_EMPTY(),
                                IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)]
-    
+
     organisation_id.label = T("Assign to Org.")
 
     #table.persons_affected.label = T("# of People Affected")
@@ -557,8 +557,8 @@ if deployment_settings.has_module(module):
             if form.accepts(request.vars, session):
 
                 import_count = [0]
-                def sync(vector, import_count = import_count):
-                    if vector.tablename == "irs_ireport":
+                def sync(job, import_count = import_count):
+                    if job.tablename == "irs_ireport":
                         import_count[0] += 1
                 s3xrc.sync_resolve = sync
 

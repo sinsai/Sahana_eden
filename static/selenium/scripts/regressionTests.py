@@ -6,7 +6,9 @@ import thread
 import unittest
 
 import os
+import thread
 import time
+from subprocess import Popen
 
 class TestWindow(Frame):
 
@@ -23,7 +25,7 @@ class TestWindow(Frame):
         self.clean = False
         test = SahanaTestSuite()
         test.test_main(self.getTestModules())
-        call(["firefox", "../results/regressionTest.html"])
+        call(["firefox", os.path.join("..", "results", "regressionTest.html")])
         SahanaTestSuite.stopSelenium() # Debug comment out to keep the Selenium window open 
         self.clean = True
     
@@ -32,14 +34,17 @@ class TestWindow(Frame):
             SahanaTestSuite.stopSelenium()
 
     def isSeleniumRunning(self):
-        # Need to find if a service is running on the Selenium port 
-        sockets = os.popen("netstat -lnt").read()
-        # look for match on IPAddr and port
-        service = ":%s" % (self.ipPort.get())
-        if (service in sockets):
+        if sys.platform[:5]=='linux':
+            # Need to find if a service is running on the Selenium port 
+            sockets = os.popen("netstat -lnt").read()
+            # look for match on IPAddr and port
+            service = ":%s" % (self.ipPort.get())
+            if (service in sockets):
+                return True
+            else:
+                return False
+        if self.seleniumServer != 0:
             return True
-        else:
-            return False
     
     def sahanaPanel(self, panel):
         Label(panel, text="Sahana options").pack(side=TOP)
@@ -164,7 +169,11 @@ class TestWindow(Frame):
         self.serverCommand.config(state='readonly')
         
     def buildServerStartCommand(self):
-        args = [r"java", r"-jar", r"selenium-server.jar", r"-singlewindow", "-port", "%s" % self.ipPort.get()]
+        if os.environ.has_key('JAVA_HOME'):
+            java = os.path.join(os.environ['JAVA_HOME'], "bin", "java")
+        else:
+            java = "java"
+        args = [java, r"-jar", r"selenium-server.jar", r"-singlewindow", "-port", "%s" % self.ipPort.get()]
         if self.radioLog.get() == "File":
             args.append("-log")
             args.append(self.logFilename.get())
@@ -173,32 +182,30 @@ class TestWindow(Frame):
     def startSelenium(self):
         # start the Selenium server
         os.chdir(r'../server/')
-        
-        pid = os.fork()
-        if pid == 0:
-            args = self.buildServerStartCommand()
-            self.PID = os.execvp("java", args)
-            return
-        else:
-            self.PID = pid
-            self.startSelenium.config(state="disabled")
-            # crude wait to give the server time to start
-            time.sleep(5)
-            print self.PID
-            os.chdir(r'../scripts/')
-            self.serverStatus(Event())
-            return
+        args = self.buildServerStartCommand()
+        self.startSelenium.config(state="disabled")
+        self.seleniumServer = Popen(args)
+        # crude wait to give the server time to start
+        os.chdir(r'../scripts/')
+        time.sleep(5)
+        self.serverStatus(Event())
         
     def stopSelenium(self):
         # stop the Selenium server
-        result = os.popen("ps x").readlines()
-        for line in result:
-            if 'selenium' in line and 'java' in line:
-                pid = line.split()[0]
-                os.system("kill %s" % pid)
-                print "Stopping process %s started with command %s" % (pid, line)
-        self.serverStatus(Event())
-        return
+        if self.seleniumServer != 0:
+            self.seleniumServer.terminate()
+            self.seleniumServer = 0
+            self.serverStatus(Event())
+            return
+        if sys.platform[:5]=='linux':
+            result = os.popen("ps x").readlines()
+            for line in result:
+                if 'selenium' in line and 'java' in line:
+                    pid = line.split()[0]
+                    os.system("kill %s" % pid)
+                    print "Stopping process %s started with command %s" % (pid, line)
+            self.serverStatus(Event())
+            return
     
     def onPressServerLog(self):
         if self.radioLog.get() == "None":
@@ -245,7 +252,8 @@ class TestWindow(Frame):
     def run(self):
         thread.start_new(self.runTestSuite,())
 
-    def __init__(self, parent=None):    
+    def __init__(self, parent=None):
+        self.seleniumServer = 0
         Frame.__init__(self, parent=parent)
         self.winfo_toplevel().title("Sahana Eden regression testing helper program")
         

@@ -6,6 +6,7 @@ import thread
 import unittest
 
 import os
+import thread
 import time
 
 class TestWindow(Frame):
@@ -173,21 +174,19 @@ class TestWindow(Frame):
     def startSelenium(self):
         # start the Selenium server
         os.chdir(r'../server/')
-        
-        pid = os.fork()
-        if pid == 0:
-            args = self.buildServerStartCommand()
-            self.PID = os.execvp("java", args)
-            return
+        args = self.buildServerStartCommand()
+        self.startSelenium.config(state="disabled")
+        if sys.platform[:3] == 'win':
+            os.spawnv(os.P_NOWAIT, "java", args)
         else:
-            self.PID = pid
-            self.startSelenium.config(state="disabled")
-            # crude wait to give the server time to start
-            time.sleep(5)
-            print self.PID
-            os.chdir(r'../scripts/')
-            self.serverStatus(Event())
-            return
+            pid = os.fork()
+            if pid == 0:
+                self.PID = os.execvp("java", args)
+                return
+        # crude wait to give the server time to start
+        os.chdir(r'../scripts/')
+        time.sleep(5)
+        self.serverStatus(Event())
         
     def stopSelenium(self):
         # stop the Selenium server

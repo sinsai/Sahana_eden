@@ -1261,7 +1261,20 @@ class S3ReusableField(object):
             name = self.name
 
         ia = Storage(self.attr)
+
         if attr:
+            if not attr.get("empty", True):
+                requires = ia.requires
+                if requires:
+                    if not isinstance(requires, (list, tuple)):
+                        requires = [requires]
+                    if requires:
+                        r = requires[0]
+                        if isinstance(r, IS_EMPTY_OR):
+                            requires[0] = r.other
+                            ia.update(requires=requires)
+            if "empty" in attr:
+                del attr["empty"]
             ia.update(**attr)
 
         if ia.sortby is not None:

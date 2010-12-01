@@ -1554,6 +1554,8 @@
 'Identification Reports': 'Identification Reports',
 'Identification Status': 'Identification Status',
 'Identification label of the Storage bin.': 'Identification label of the Storage bin.',
+'Identified as': 'Identified as',
+'Identified by': 'Identified by',
 'Identity': 'Identity',
 'Identity Details': 'Identity Details',
 'Identity added': 'Identity added',

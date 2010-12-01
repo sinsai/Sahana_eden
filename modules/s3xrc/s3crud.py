@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - CRUD Method Handlers
 
-    @version: 2.2.6
+    @version: 2.2.7
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -489,12 +489,9 @@ class S3CRUDHandler(S3MethodHandler):
             if r.component:
                 table[r.fkey].comment = None
                 table[r.fkey].default = r.record[r.pkey]
-                if r.http == "POST":
-                    table[r.fkey].writable = True
-                    r.request.post_vars.update({r.fkey: str(r.record[r.pkey])})
-                else:
-                    table[r.fkey].readable = False
-                    table[r.fkey].writable = False
+                table[r.fkey].update = r.record[r.pkey]
+                table[r.fkey].readable = False
+                table[r.fkey].writable = False
 
             # Copy record
             from_table = None
@@ -860,12 +857,9 @@ class S3CRUDHandler(S3MethodHandler):
                 _comment = table[r.fkey].comment
                 table[r.fkey].comment = None
                 table[r.fkey].default = r.record[r.pkey]
-                if r.http == "POST":
-                    table[r.fkey].writable = True
-                    request.post_vars.update({r.fkey: str(r.record[r.pkey])})
-                else:
-                    table[r.fkey].readable = False
-                    table[r.fkey].writable = False
+                table[r.fkey].update = r.record[r.pkey]
+                table[r.fkey].readable = False
+                table[r.fkey].writable = False
 
             # Success message
             message = self.crud_string(self.tablename, "msg_record_modified")

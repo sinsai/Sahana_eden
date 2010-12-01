@@ -91,18 +91,85 @@
             <!--
             Can add Hospital-specific tags here
                 http://wiki.openstreetmap.org/wiki/Tag:amenity%3Dhospital
-                    emergency=yes
-                    contact:phone=xxx
-                    contact:website=xxx
-                    <tag k="health_facility:type" v="hospital"/>
-                    <tag k="health_facility:type" v="specialized_hospital"/>
-                    <tag k="health_facility:type" v="dispensary"/>
-                    <tag k="health_facility:type" v="health_center"/>
-                    <tag k="health_facility:bed" v="no"/>
-                    <tag k="operator" v="DR GERARD JANVIER"/>
                     <tag k="paho:damage" v="Damaged"/>
                     <tag k="paho:damage" v="Severe"/>
             -->
+
+            <xsl:for-each select="./tag[starts-with(@k, 'name:')][1]">
+                <data field="aka1">
+                    <xsl:value-of select="@v"/>
+                </data>
+            </xsl:for-each>
+
+            <!-- health_facility:type and health_facility:bed -->
+            <data field="facility_type">
+                <xsl:attribute name="value">
+                    <xsl:choose>
+                        <xsl:when test="./tag[@k='health_facility:type']">
+                            <xsl:for-each select="./tag[@k='health_facility:type'][1]">
+                                <xsl:choose>
+                                    <xsl:when test="@v='hospital'">1</xsl:when>
+                                    <xsl:when test="@v='field_hospital'">2</xsl:when>
+                                    <xsl:when test="@v='specialized_hospital'">3</xsl:when>
+                                    <xsl:when test="@v='health_center'">
+                                        <xsl:choose>
+                                            <xsl:when test="../tag[@k='health_facility:bed' and @v='yes']">12</xsl:when>
+                                            <xsl:when test="../tag[@k='health_facility:bed' and @v='no']">13</xsl:when>
+                                            <xsl:otherwise>11</xsl:otherwise>
+                                        </xsl:choose>
+                                    </xsl:when>
+                                    <xsl:when test="@v='dispensary'">21</xsl:when>
+                                    <xsl:otherwise>98</xsl:otherwise>
+                                </xsl:choose>
+                            </xsl:for-each>
+                        </xsl:when>
+                        <xsl:otherwise>1</xsl:otherwise> <!-- can we simply assume that? otherwise should be 99 -->
+                    </xsl:choose>
+                </xsl:attribute>
+            </data>
+
+            <xsl:for-each select="./tag[@k='bed_capacity' or @k='building:beds'][1]">
+                <resource name="hms_bed_capacity">
+                    <data field="bed_type" value="6"/>
+                    <data field="beds_baseline" value="@v"/>
+                </resource>
+            </xsl:for-each>
+
+            <xsl:for-each select="./tag[@k='emergency'][1]">
+                <xsl:if test="@v='yes'">
+                    <resource name="hms_services">
+                        <data field="emsd" value="True"/>
+                    </resource>
+                </xsl:if>
+            </xsl:for-each>
+
+            <xsl:for-each select="./tag[@k='contact:phone'][1]">
+                <data field="phone_exchange">
+                    <xsl:value-of select="@v"/>
+                </data>
+            </xsl:for-each>
+
+            <xsl:for-each select="./tag[@k='contact:website'][1]">
+                <data field="website">
+                    <xsl:value-of select="@v"/>
+                </data>
+            </xsl:for-each>
+
+            <xsl:for-each select="./tag[@k='picture'][1]">
+                <resource name="hms_image">
+                    <data field="type" value="1"/>
+                    <data field="url">
+                        <xsl:value-of select="@v"/>
+                    </data>
+                    <!-- Can also download the image, replace the above element by:
+                    <data field="image">
+                        <xsl:attribute name="url">
+                            <xsl:value-of select="@v"/>
+                        </xsl:attribute>
+                    </data>
+                    -->
+                </resource>
+            </xsl:for-each>
 
             <!-- Location Info -->
             <reference field="location_id" resource="gis_location">
@@ -123,18 +190,18 @@
                     <xsl:with-param name="datetime" select="@timestamp"/>
                 </xsl:call-template>
             </xsl:attribute>
-            
+
             <data field="osm_id">
                 <xsl:value-of select="@id"/>
             </data>
-            
+
             <!-- @ToDo: Handle Source
             e.g.
             <tag k="source" v="US Census Bureau"/> -->
 
-            
+
             <xsl:choose>
-            
+
                 <!-- Admin Boundaries: http://wiki.openstreetmap.org/wiki/Tag:boundary%3Dadministrative -->
                 <!-- @ToDo: How to handle the variability of levels per-country? -->
                 <xsl:when test="./tag[@k='boundary'] and ./tag[@v='administrative']">
@@ -158,7 +225,7 @@
                         </xsl:when>
                     </xsl:choose>
                 </xsl:when>
-            
+
                 <xsl:when test="./tag[@k='place'] and ./tag[@v='town']">
                     <data field="level">
                         <xsl:text>L3</xsl:text>

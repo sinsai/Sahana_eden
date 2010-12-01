@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Import Toolkit
 
-    @version: 2.2.6
+    @version: 2.2.7
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -141,16 +141,16 @@ class S3Importer(object):
 
         # Import data
         result = Storage(committed=False)
-        manager.sync_resolve = lambda vector, result=result: \
-                                      result.update(vector=vector)
+        manager.sync_resolve = lambda job, result=result: \
+                                      result.update(job=job)
         try:
             success = resource.import_xml(tree)
         except SyntaxError:
             pass
 
         # Check result
-        if result.vector:
-            result = result.vector
+        if result.job:
+            result = result.job
 
         # Build response
         if success and result.committed:

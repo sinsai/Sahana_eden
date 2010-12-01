@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Controller
 
-    @version: 2.2.6
+    @version: 2.2.8
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -36,7 +36,7 @@
 
 """
 
-__all__ = ["S3ResourceController", "S3Vector"]
+__all__ = ["S3ResourceController", "S3ImportJob"]
 
 import sys, datetime, time
 
@@ -207,20 +207,20 @@ class S3ResourceController(object):
 
 
     # -------------------------------------------------------------------------
-    def __vectorize(self, resource, element,
-                    id=None,
-                    files=[],
-                    validate=None,
-                    permit=None,
-                    audit=None,
-                    sync=None,
-                    log=None,
-                    tree=None,
-                    directory=None,
-                    vmap=None,
-                    lookahead=True):
+    def __create_job(self, resource, element,
+                     id=None,
+                     files=[],
+                     validate=None,
+                     permit=None,
+                     audit=None,
+                     sync=None,
+                     log=None,
+                     tree=None,
+                     directory=None,
+                     joblist=None,
+                     lookahead=True):
 
-        """ Builds a list of vectors from an element
+        """ Builds a list of import jobs from an element
 
             @param resource: the resource name (=tablename)
             @param element: the element
@@ -232,14 +232,14 @@ class S3ResourceController(object):
             @param log: log hook (function to log imports)
             @param tree: the element tree of the source
             @param directory: the resource directory of the tree
-            @param vmap: the vector map for the import
+            @param joblist: the job list for the import
             @param lookahead: resolve any references
 
         """
 
         imports = []
 
-        if vmap is not None and element in vmap:
+        if joblist is not None and element in joblist:
             return imports
 
         table = self.db[resource]
@@ -269,7 +269,7 @@ class S3ResourceController(object):
         (prefix, name) = resource.split("_", 1)
         onvalidation = self.model.get_config(table, "onvalidation")
         onaccept = self.model.get_config(table, "onaccept")
-        vector = S3Vector(self, prefix, name, id,
+        job = S3ImportJob(self, prefix, name, id,
                           record=record,
                           element=element,
                           mtime=mtime,
@@ -282,15 +282,15 @@ class S3ResourceController(object):
                           onvalidation=onvalidation,
                           onaccept=onaccept)
 
-        if vmap is not None:
-            vmap[element] = vector
+        if joblist is not None:
+            joblist[element] = job
 
         for r in rmap:
             entry = r.get("entry")
             relement = entry.get("element")
             if relement is None:
                 continue
-            vectors = self.__vectorize(entry.get("resource"),
+            jobs = self.__create_job(entry.get("resource"),
                                      relement,
                                      validate=validate,
                                      permit=permit,
@@ -299,13 +299,13 @@ class S3ResourceController(object):
                                      log=log,
                                      tree=tree,
                                      directory=directory,
-                                     vmap=vmap)
-            if vectors:
-                if entry["vector"] is None:
-                    entry["vector"] = vectors[-1]
-                imports.extend(vectors)
+                                     joblist=joblist)
+            if jobs:
+                if entry["job"] is None:
+                    entry["job"] = jobs[-1]
+                imports.extend(jobs)
 
-        imports.append(vector)
+        imports.append(job)
         return imports
 
 
@@ -1014,25 +1014,25 @@ class S3ResourceController(object):
         error = None
         imports = []
         directory = {}
-        vmap = {} # Element<->Vector Map
+        joblist = {} # Element<->Job Map
 
         for i in xrange(0, len(elements)):
             element = elements[i]
-            vectors = self.__vectorize(tablename, element,
-                                       id=id,
-                                       files = resource.files(),
-                                       validate=self.validate,
-                                       permit=permit,
-                                       audit=audit,
-                                       sync=self.sync_resolve,
-                                       log=self.sync_log,
-                                       tree=tree,
-                                       directory=directory,
-                                       vmap=vmap,
-                                       lookahead=True)
+            jobs = self.__create_job(tablename, element,
+                                     id=id,
+                                     files = resource.files(),
+                                     validate=self.validate,
+                                     permit=permit,
+                                     audit=audit,
+                                     sync=self.sync_resolve,
+                                     log=self.sync_log,
+                                     tree=tree,
+                                     directory=directory,
+                                     joblist=joblist,
+                                     lookahead=True)
 
-            if vectors:
-                vector = vectors[-1]
+            if jobs:
+                job = jobs[-1]
             else:
                 continue
 
@@ -1054,8 +1054,8 @@ class S3ResourceController(object):
 
                     # Get the original record ID/UID, if not multiple
                     if not c.multiple:
-                        if vector.id:
-                            query = (table.id == vector.id) & (table[pkey] == ctable[pkey])
+                        if job.id:
+                            query = (table.id == job.id) & (table[pkey] == ctable[pkey])
                             if self.xml.UID in ctable:
                                 fields = (ctable.id, ctable[self.xml.UID])
                             else:
@@ -1069,34 +1069,34 @@ class S3ResourceController(object):
                         if c_uid:
                             celements[0].set(self.xml.UID, c_uid)
 
-                    # Generate vectors for the component elements
+                    # Generate jobs for the component elements
                     for k in xrange(0, len(celements)):
                         celement = celements[k]
-                        cvectors = self.__vectorize(ctablename,
-                                                    celement,
-                                                    files = resource.files(),
-                                                    validate=self.validate,
-                                                    permit=permit,
-                                                    audit=audit,
-                                                    sync=self.sync_resolve,
-                                                    log=self.sync_log,
-                                                    tree=tree,
-                                                    directory=directory,
-                                                    vmap=vmap,
-                                                    lookahead=True)
+                        cjobs = self.__create_job(ctablename,
+                                                  celement,
+                                                  files = resource.files(),
+                                                  validate=self.validate,
+                                                  permit=permit,
+                                                  audit=audit,
+                                                  sync=self.sync_resolve,
+                                                  log=self.sync_log,
+                                                  tree=tree,
+                                                  directory=directory,
+                                                  joblist=joblist,
+                                                  lookahead=True)
 
-                        cvector = None
-                        if cvectors:
-                            cvector = cvectors.pop()
-                        if cvectors:
-                            vectors.extend(cvectors)
-                        if cvector:
-                            cvector.pkey = pkey
-                            cvector.fkey = fkey
-                            vector.components.append(cvector)
+                        cjob = None
+                        if cjobs:
+                            cjob = cjobs.pop()
+                        if cjobs:
+                            jobs.extend(cjobs)
+                        if cjob:
+                            cjob.pkey = pkey
+                            cjob.fkey = fkey
+                            job.components.append(cjob)
 
             if self.error is None:
-                imports.extend(vectors)
+                imports.extend(jobs)
             else:
                 error = self.error
                 self.error = None
@@ -1104,18 +1104,18 @@ class S3ResourceController(object):
         if error:
             self.error = error
 
-        # Commit all vectors
+        # Commit all jobs
         if self.error is None or ignore_errors:
             for i in xrange(0, len(imports)):
-                vector = imports[i]
-                success = vector.commit()
+                job = imports[i]
+                success = job.commit()
                 if not success:
-                    if not vector.permitted:
+                    if not job.permitted:
                         self.error = self.ERROR.NOT_PERMITTED
                     else:
                         self.error = self.ERROR.DATA_IMPORT_ERROR
-                    if vector.element:
-                        vector.element.set(self.xml.ATTRIBUTE.error, self.error)
+                    if job.element:
+                        job.element.set(self.xml.ATTRIBUTE.error, self.error)
                     if ignore_errors:
                         continue
                     else:
@@ -1243,7 +1243,7 @@ class S3ResourceController(object):
 
 
 # *****************************************************************************
-class S3Vector(object):
+class S3ImportJob(object):
 
     """ Helper class for data imports """
 
@@ -1363,12 +1363,12 @@ class S3Vector(object):
            permit(permission, self.tablename, record_id=self.id):
             self.permitted = False
 
-        # Once the vector has been created, update the entry in the directory
+        # Once the job has been created, update the entry in the directory
         if self.uid and \
            directory is not None and self.tablename in directory:
             entry = directory[self.tablename].get(self.uid, None)
             if entry:
-                entry.update(vector=self)
+                entry.update(job=self)
 
 
     # Data import =============================================================
@@ -1393,7 +1393,7 @@ class S3Vector(object):
     # -------------------------------------------------------------------------
     def commit(self):
 
-        """ Commits the vector to the database
+        """ Commits the record to the database
 
             @todo 2.3: propagate onvalidation errors properly to the element
             @todo 2.3: propagate import errors properly to the importer
@@ -1409,7 +1409,7 @@ class S3Vector(object):
         if not self.committed:
             if self.accepted and self.permitted:
 
-                #print >> sys.stderr, "Committing %s id=%s mtime=%s" % (self.tablename, self.id, self.mtime)
+                print >> sys.stderr, "Committing %s id=%s mtime=%s" % (self.tablename, self.id, self.mtime)
 
                 # Create pseudoform for callbacks
                 form = Storage()
@@ -1545,13 +1545,13 @@ class S3Vector(object):
                 component.record[fkey] = db_record[pkey]
                 component.commit()
 
-        # Update referencing vectors
+        # Update referencing jobs
         if self.update and self.id:
             for u in self.update:
-                vector = u.get("vector", None)
-                if vector:
+                job = u.get("job", None)
+                if job:
                     field = u.get("field", None)
-                    vector.writeback(field, self.id)
+                    job.writeback(field, self.id)
 
         # Phew...done!
         return True
@@ -1571,9 +1571,9 @@ class S3Vector(object):
                 if r.entry:
                     id = r.entry.get("id", None)
                     if not id:
-                        vector = r.entry.get("vector", None)
-                        if vector:
-                            id = vector.id
+                        job = r.entry.get("job", None)
+                        if job:
+                            id = job.id
                             r.entry.update(id=id)
                         else:
                             continue
@@ -1587,7 +1587,7 @@ class S3Vector(object):
                     else:
                         if r.field in self.record and not multiple:
                             del self.record[r.field]
-                        vector.update.append(dict(vector=self, field=r.field))
+                        job.update.append(dict(job=self, field=r.field))
 
 
     # -------------------------------------------------------------------------

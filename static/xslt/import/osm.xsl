@@ -158,16 +158,18 @@
             <xsl:for-each select="./tag[@k='picture'][1]">
                 <resource name="hms_image">
                     <data field="type" value="1"/>
-                    <data field="url">
+                    <!-- Use either url (link the image) or image (upload the image) -->
+<!--                    <data field="url">
                         <xsl:value-of select="@v"/>
-                    </data>
-                    <!-- Can also download the image, replace the above element by:
+                    </data>-->
                     <data field="image">
+                        <xsl:attribute name="filename">
+                            <xsl:value-of select="@v"/>
+                        </xsl:attribute>
                         <xsl:attribute name="url">
                             <xsl:value-of select="@v"/>
                         </xsl:attribute>
                     </data>
-                    -->
                 </resource>
             </xsl:for-each>
 

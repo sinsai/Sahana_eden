@@ -2774,17 +2774,17 @@ OpenLayers.Util.extend( selectPdfControl, {
             context: {
                 radius: function(feature) {
                     // Size For Unclustered Point
-                    var pix = 6;
+                    var pix = 15;
                     // Size For Clustered Point
                     if(feature.cluster) {
-                        pix = Math.min(feature.attributes.count, 7) + 4;
+                        pix = Math.min(feature.attributes.count, 3) + 12;
                     }
                     return pix;
                 },
                 label: function(feature) {
                     // Label For Unclustered Point or Cluster of just 2
                     var label = '';
-                    // Size For Clustered Point
+                    // Label For Clustered Point
                     if(feature.cluster && feature.attributes.count > 2) {
                         label = feature.attributes.count;
                     }
@@ -3090,9 +3090,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                         try:
                             pointRadius = feature.size
                             if not pointRadius:
-                                pointRadius = 6
+                                pointRadius = 12
                         except (AttributeError, KeyError):
-                            pointRadius = 6
+                            pointRadius = 12
                         try:
                             fillColor = feature.color
                             if not fillColor:
@@ -3518,9 +3518,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                             # Write file to cache
                             f.write(file)
                             f.close()
-                            records = db(db.gis_cache.name == name).select()
-                            if records:
-                                records[0].update(modified_on=response.utcnow)
+                            record = db(db.gis_cache.name == name).select().first()
+                            if record:
+                                record.update(modified_on=response.utcnow)
                             else:
                                 db.gis_cache.insert(name=name, file=filename)
                             url = URL(r=request, c="default", f="download", args=[filename])
@@ -3642,7 +3642,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         // Center and Zoom
         map.setCenter(lonlat, newZoom);
         // Remove Popups
-        for (var i=0; i<map.popups.length; ++i)	{
+        for (var i=0; i < map.popups.length; ++i)	{
             map.removePopup(map.popups[i]);
         }
     }
@@ -3850,7 +3850,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             allLayers, {
                 hover: true,
                 highlightOnly: true,
-                renderIntent: "temporary",
+                //renderIntent: 'temporary',
                 eventListeners: {
                     featurehighlighted: tooltipSelect,
                     featureunhighlighted: tooltipUnselect

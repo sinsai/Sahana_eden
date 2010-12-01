@@ -490,7 +490,8 @@ def sync():
                 raise HTTP(501, body="%s: %s" %
                         (s3xrc.ERROR.NOT_PERMITTED, T("Peer not allowed to push")))
             # Set the sync resolver with no policy (defaults to peer policy)
-            s3xrc.sync_resolve = lambda vector, peer=peer: sync_resolve(vector, peer, None)
+            s3xrc.sync_resolve = lambda import_job, peer=peer: \
+                                        sync_resolve(import_job, peer, None)
     elif method == "GET":
         remote_push = False
     else:
@@ -573,8 +574,8 @@ def sync_run_job(job, settings=None, pid=None, tables=[], silent=False):
         notify("Processing job %s..." % job.id)
 
         job_policy = job.policy or peer.policy
-        s3xrc.sync_resolve = lambda vector, peer=peer, policy=policy: \
-                                    sync_resolve(vector, peer, policy)
+        s3xrc.sync_resolve = lambda import_job, peer=peer, policy=policy: \
+                                    sync_resolve(import_job, peer, policy)
 
         # Find resources to sync
         tablenames = [n.strip().lower() for n in tables]
@@ -1010,7 +1011,7 @@ def sync_rheader(r, tabs=[]):
 
 
 # -----------------------------------------------------------------------------
-def sync_resolve(vector, peer, policy):
+def sync_resolve(import_job, peer, policy):
 
     """ Sync resolver """
 
@@ -1020,25 +1021,25 @@ def sync_resolve(vector, peer, policy):
     lmodified = True
     rmodified = True
 
-    table = vector.table
+    table = import_job.table
 
     # Get last synchronization time
     last_sync_time = peer.last_sync_time
 
     # Get the local record and its modification time
     lmtime = None
-    if vector.method == vector.METHOD.UPDATE:
-        fields = vector.record.keys()
+    if import_job.method == import_job.METHOD.UPDATE:
+        fields = import_job.record.keys()
         if not "modified_on" in fields:
             fields.append("modified_on")
-        row = db(table.id==vector.id).select(limitby=(0,1), *fields).first()
+        row = db(table.id==import_job.id).select(limitby=(0,1), *fields).first()
         if row:
             lmtime = row.modified_on
     else:
         row = None
 
     # Get remote record modification time
-    rmtime = vector.mtime
+    rmtime = import_job.mtime
 
     # Conflict detection
     conflict = False
@@ -1050,7 +1051,7 @@ def sync_resolve(vector, peer, policy):
     if lmodified and rmodified:
         # Is the remote record really different?
         for f in fields:
-            if f != "modified_on" and vector.record[f] != row[f]:
+            if f != "modified_on" and import_job.record[f] != row[f]:
                 conflict = True
                 break;
 
@@ -1078,34 +1079,34 @@ def sync_resolve(vector, peer, policy):
 
         # Apply default policy
         if policy == 0: # No Sync
-            vector.resolution = vector.RESOLUTION.THIS
-            vector.strategy = []
+            import_job.resolution = import_job.RESOLUTION.THIS
+            import_job.strategy = []
         elif policy == 1: # Manual
             conflict = True
         elif policy == 2: # Import
-            vector.resolution = vector.RESOLUTION.OTHER
-            vector.strategy = [vector.METHOD.CREATE]
+            import_job.resolution = import_job.RESOLUTION.OTHER
+            import_job.strategy = [import_job.METHOD.CREATE]
         elif policy == 3: # Replace
-            vector.resolution = vector.RESOLUTION.OTHER
-            vector.strategy = [vector.METHOD.CREATE, vector.METHOD.UPDATE]
+            import_job.resolution = import_job.RESOLUTION.OTHER
+            import_job.strategy = [import_job.METHOD.CREATE, import_job.METHOD.UPDATE]
         elif policy == 4: # Update
-            vector.resolution = vector.RESOLUTION.OTHER
-            vector.strategy = [vector.METHOD.UPDATE]
+            import_job.resolution = import_job.RESOLUTION.OTHER
+            import_job.strategy = [import_job.METHOD.UPDATE]
         elif policy == 5: # Replace Newer
-            vector.resolution = vector.RESOLUTION.NEWER
-            vector.strategy = [vector.METHOD.CREATE, vector.METHOD.UPDATE]
+            import_job.resolution = import_job.RESOLUTION.NEWER
+            import_job.strategy = [import_job.METHOD.CREATE, import_job.METHOD.UPDATE]
         elif policy == 6: # Update Newer
-            vector.resolution = vector.RESOLUTION.NEWER
-            vector.strategy = [vector.METHOD.UPDATE]
+            import_job.resolution = import_job.RESOLUTION.NEWER
+            import_job.strategy = [import_job.METHOD.UPDATE]
         elif policy == 7: # Import Master
-            vector.resolution = vector.RESOLUTION.MASTER
-            vector.strategy = [vector.METHOD.CREATE]
+            import_job.resolution = import_job.RESOLUTION.MASTER
+            import_job.strategy = [import_job.METHOD.CREATE]
         elif policy == 8: # Replace Master
-            vector.resolution = vector.RESOLUTION.MASTER
-            vector.strategy = [vector.METHOD.CREATE, vector.METHOD.UPDATE]
+            import_job.resolution = import_job.RESOLUTION.MASTER
+            import_job.strategy = [import_job.METHOD.CREATE, import_job.METHOD.UPDATE]
         elif policy == 9: # Update Master
-            vector.resolution = vector.RESOLUTION.THIS
-            vector.strategy = [vector.METHOD.UPDATE]
+            import_job.resolution = import_job.RESOLUTION.THIS
+            import_job.strategy = [import_job.METHOD.UPDATE]
         elif policy == 10: # Role Based (not implemented)
             conflict = True
         else:
@@ -1114,17 +1115,17 @@ def sync_resolve(vector, peer, policy):
     if conflict:
 
         # Do not synchronize
-        vector.resolution = vector.RESOLUTION.THIS
-        vector.strategy = []
+        import_job.resolution = import_job.RESOLUTION.THIS
+        import_job.strategy = []
 
         # Log conflict for manual resolution
         now = datetime.datetime.utcnow()
-        modifier = vector.element.get("modified_by", None)
-        record_dump = cPickle.dumps(dict(vector.record), 0)
+        modifier = import_job.element.get("modified_by", None)
+        record_dump = cPickle.dumps(dict(import_job.record), 0)
 
         table_conflict.insert(peer_id=peer.id,
-                              tablename=vector.tablename,
-                              uuid=vector.uid,
+                              tablename=import_job.tablename,
+                              uuid=import_job.uid,
                               remote_record = record_dump,
                               remote_modified_by = modifier,
                               remote_modified_on = rmtime)

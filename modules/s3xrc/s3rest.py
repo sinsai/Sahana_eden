@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource API
 
-    @version: 2.2.6
+    @version: 2.2.7
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -208,9 +208,11 @@ class S3Resource(object):
         self.xml = manager.xml
 
         # XSLT Paths
-        self.XSLT_FILE_EXTENSION = "xsl"
-        self.XSLT_IMPORT_TEMPLATES = "static/xslt/import"
-        self.XSLT_EXPORT_TEMPLATES = "static/xslt/export"
+        self.XSLT_PATH = "static/formats"
+        self.XSLT_EXTENSION = "xsl"
+        #self.XSLT_FILE_EXTENSION = "xsl"
+        #self.XSLT_IMPORT_TEMPLATES = "static/xslt/import"
+        #self.XSLT_EXPORT_TEMPLATES = "static/xslt/export"
 
         # Authorization hooks
         self.permit = manager.permit
@@ -2137,41 +2139,28 @@ class S3Resource(object):
         """
 
         format = r.representation
-
         request = self.manager.request
         if r.component:
             resourcename = r.component.name
         else:
             resourcename = r.name
-
-        # format "xml" or "json"?
         if format in ("xml", "json"):
             return True
-
-        # XSLT transformation demanded in URL?
         if "transform" in request.vars:
             return True
-
-        extension = self.XSLT_FILE_EXTENSION
-
-        # XSLT stylesheet attached?
-        template = "%s.%s" % (resourcename, extension)
-        if template in request.post_vars:
-            p = request.post_vars[template]
+        extension = self.XSLT_EXTENSION
+        filename = "%s.%s" % (resourcename, extension)
+        if filename in request.post_vars:
+            p = request.post_vars[filename]
             if isinstance(p, cgi.FieldStorage) and p.filename:
                 return True
-
-        # XSLT stylesheet exists in application?
-        if method == "import":
-            path = self.XSLT_IMPORT_TEMPLATES
-        else:
-            path = self.XSLT_EXPORT_TEMPLATES
-
-        template = os.path.join(r.request.folder,
-                                path, "%s.%s" % (format, extension))
+        if method != "import":
+            method = "export"
+        path = self.XSLT_PATH
+        filename = "%s.%s" % (method, extension)
+        template = os.path.join(r.request.folder, path, format, filename)
         if os.path.exists(template):
             return True
-
         return False
 
 
@@ -2185,42 +2174,30 @@ class S3Resource(object):
 
         """
 
-        request = r.request
-
-        format = r.representation
-        folder = request.folder
-
-        if method == "import":
-            path = self.XSLT_IMPORT_TEMPLATES
-        else:
-            path = self.XSLT_EXPORT_TEMPLATES
-
-        extension = self.XSLT_FILE_EXTENSION
-
         stylesheet = None
-
+        format = r.representation
+        if format in ("xml", "json"):
+            return stylesheet
         resourcename = r.component and \
                        r.component.name or r.name
-
-        if format not in ("xml", "json"):
-
-            # External stylesheet?
-            if "transform" in request.vars:
-                stylesheet = request.vars["transform"]
-            else:
-                # Attached stylesheet?
-                ssname = "%s.%s" % (resourcename, extension)
-                if ssname in request.post_vars:
-                    p = request.post_vars[ssname]
-                    if isinstance(p, cgi.FieldStorage) and p.filename:
-                        stylesheet = p.file
-                # Integrated stylesheet?
-                else:
-                    ssname = "%s.%s" % (format, extension)
-                    stylesheet = os.path.join(folder, path, ssname)
-                    if not os.path.exists(stylesheet):
-                        r.error(501, "%s: %s" % (self.ERROR.BAD_TEMPLATE, template))
-
+        request = r.request
+        if "transform" in request.vars:
+            return request.vars["transform"]
+        extension = self.XSLT_EXTENSION
+        filename = "%s.%s" % (resourcename, extension)
+        if filename in request.post_vars:
+            p = request.post_vars[filename]
+            if isinstance(p, cgi.FieldStorage) and p.filename:
+                stylesheet = p.file
+            return stylesheet
+        folder = request.folder
+        path = self.XSLT_PATH
+        if method != "import":
+            method = "export"
+        filename = "%s.%s" % (method, extension)
+        stylesheet = os.path.join(folder, path, format, filename)
+        if not os.path.exists(stylesheet):
+            r.error(501, "%s: %s" % (self.ERROR.BAD_TEMPLATE, stylesheet))
         return stylesheet
 
 

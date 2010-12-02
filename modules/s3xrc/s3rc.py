@@ -1384,6 +1384,8 @@ class S3ImportJob(object):
                         if not e:
                             e = self.element
                             form.errors[k] = "[%s] %s" % (k, form.errors[k])
+                        else:
+                            e = e[0]
                         e.set(xml.ATTRIBUTE.error,
                               xml.xml_encode(form.errors[k]))
                     self.manager.error = self.manager.ERROR.VALIDATION_ERROR

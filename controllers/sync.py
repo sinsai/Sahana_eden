@@ -490,8 +490,8 @@ def sync():
                 raise HTTP(501, body="%s: %s" %
                         (s3xrc.ERROR.NOT_PERMITTED, T("Peer not allowed to push")))
             # Set the sync resolver with no policy (defaults to peer policy)
-            s3xrc.sync_resolve = lambda import_job, peer=peer: \
-                                        sync_resolve(import_job, peer, None)
+            s3xrc.resolve = lambda import_job, peer=peer: \
+                                   sync_resolve(import_job, peer, None)
     elif method == "GET":
         remote_push = False
     else:
@@ -574,8 +574,8 @@ def sync_run_job(job, settings=None, pid=None, tables=[], silent=False):
         notify("Processing job %s..." % job.id)
 
         job_policy = job.policy or peer.policy
-        s3xrc.sync_resolve = lambda import_job, peer=peer, policy=policy: \
-                                    sync_resolve(import_job, peer, policy)
+        s3xrc.resolve = lambda import_job, peer=peer, policy=policy: \
+                               sync_resolve(import_job, peer, policy)
 
         # Find resources to sync
         tablenames = [n.strip().lower() for n in tables]

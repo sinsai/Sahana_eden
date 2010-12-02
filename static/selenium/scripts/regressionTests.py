@@ -170,7 +170,7 @@ class TestWindow(Frame):
         
     def buildServerStartCommand(self):
         if os.environ.has_key('JAVA_HOME'):
-            java = os.path.join(os.environ['JAVA_HOME'],"java")
+            java = os.path.join(os.environ['JAVA_HOME'], "bin", "java")
         else:
             java = "java"
         args = [java, r"-jar", r"selenium-server.jar", r"-singlewindow", "-port", "%s" % self.ipPort.get()]

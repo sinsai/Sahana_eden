@@ -71,13 +71,7 @@ if deployment_settings.has_module("project"):
                                       table = "project_need_type",
                                       field = "name",
                                       look_up = id)   
-         
-    #This should be moved to zz_1st_run / CSV 
-    if not db(table.id > 0).count():
-        table.insert( name = T("People Needing Food") )
-        table.insert( name = T("People Needing Water") )
-        table.insert( name = T("People Needing Shelter") )
-    
+
     #==============================================================================
     # Need
     resourcename = "need"

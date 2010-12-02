@@ -1156,10 +1156,11 @@ class GIS(object):
                 try:
                     shape = wkt_loads(form.vars.wkt)
                 except:
-                    form.errors["wkt"] = {
-                        "2": self.messages.invalid_wkt_linestring,
-                        "3": self.messages.invalid_wkt_polygon,
-                    }
+                    if form.vars.gis_feature_type  == "2":
+                        form.errors["wkt"] = self.messages.invalid_wkt_linestring
+                    else:
+                        # "3"
+                        form.errors["wkt"] = self.messages.invalid_wkt_polygon
                     return
                 centroid_point = shape.centroid
                 form.vars.lon = centroid_point.x

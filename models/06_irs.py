@@ -560,7 +560,7 @@ if deployment_settings.has_module(module):
                 def sync(job, import_count = import_count):
                     if job.tablename == "irs_ireport":
                         import_count[0] += 1
-                s3xrc.sync_resolve = sync
+                s3xrc.resolve = sync
 
                 ireports = r.resource
                 ushahidi = form.vars.url

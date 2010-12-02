@@ -141,8 +141,7 @@ class S3Importer(object):
 
         # Import data
         result = Storage(committed=False)
-        manager.sync_resolve = lambda job, result=result: \
-                                      result.update(job=job)
+        manager.resolve = lambda job, result=result: result.update(job=job)
         try:
             success = resource.import_xml(tree)
         except SyntaxError:

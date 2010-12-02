@@ -1409,7 +1409,7 @@ class S3ImportJob(object):
         if not self.committed:
             if self.accepted and self.permitted:
 
-                print >> sys.stderr, "Committing %s id=%s mtime=%s" % (self.tablename, self.id, self.mtime)
+                #print >> sys.stderr, "Committing %s id=%s mtime=%s" % (self.tablename, self.id, self.mtime)
 
                 # Create pseudoform for callbacks
                 form = Storage()

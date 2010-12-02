@@ -927,7 +927,8 @@ if populate:
                 name = "OpenStreetMap (Labels)",
                 url1 = "http://tiler1.censusprofiler.org/labelsonly/",
                 attribution = 'Labels overlay CC-by-SA by <a href="http://oobrien.com/oom/">OpenOrienteeringMap</a>/<a href="http://www.openstreetmap.org/">OpenStreetMap</a> data',
-                base = False
+                base = False,
+                visible = False
             )
         table.insert(
                 name = "OpenStreetMap (Relief)",

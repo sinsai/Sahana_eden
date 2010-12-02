@@ -47,16 +47,18 @@ class S3Config(Storage):
         if (db_type == "sqlite"):
             db_string = "sqlite://storage.db"
         elif (db_type == "mysql"):
-            db_string = "mysql://%s:%s@%s/%s" % \
+            db_string = "mysql://%s:%s@%s:%s/%s" % \
                         (self.database.get("username", "sahana"),
                          self.database.get("password", "password"),
                          self.database.get("host", "localhost"),
+                         self.database.get("port", "3306"),
                          self.database.get("database", "sahana"))
         elif (db_type == "postgres"):
-            db_string = "postgres://%s:%s@%s/%s" % \
+            db_string = "postgres://%s:%s@%s:%s/%s" % \
                         (self.database.get("username", "sahana"),
                          self.database.get("password", "password"),
                          self.database.get("host", "localhost"),
+                         self.database.get("port", "5432"),
                          self.database.get("database", "sahana"))
         else:
             raise HTTP(501, body="Database type '%s' not recognised - please correct file models/000_config.py." % db_type)

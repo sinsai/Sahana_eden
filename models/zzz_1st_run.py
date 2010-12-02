@@ -413,7 +413,15 @@ if populate:
             comments = "Designed to provide a 1st phase drinking water purification solution at the household level. Contains 600 sachets to provide sufficient drinking water (4l) for 100 people for 30 days."
             )
 
-
+    # Project Module
+    if deployment_settings.has_module("project"):
+        tablename = "project_need_type"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert( name = T("People Needing Food") )
+            table.insert( name = T("People Needing Water") )
+            table.insert( name = T("People Needing Shelter") )
+    
     # Budget Module
     if "budget" in deployment_settings.modules:
         tablename = "budget_parameter"
@@ -919,7 +927,8 @@ if populate:
                 name = "OpenStreetMap (Labels)",
                 url1 = "http://tiler1.censusprofiler.org/labelsonly/",
                 attribution = 'Labels overlay CC-by-SA by <a href="http://oobrien.com/oom/">OpenOrienteeringMap</a>/<a href="http://www.openstreetmap.org/">OpenStreetMap</a> data',
-                base = False
+                base = False,
+                visible = False
             )
         table.insert(
                 name = "OpenStreetMap (Relief)",

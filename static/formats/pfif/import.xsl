@@ -36,6 +36,7 @@
 
     *********************************************************************** -->
     <xsl:output method="xml"/>
+    <xsl:include href="../xml/commons.xsl"/>
 
     <!-- ****************************************************************** -->
     <xsl:param name="domain"/>
@@ -66,7 +67,7 @@
                     <xsl:value-of select="$uuid"/>
                 </xsl:attribute>
                 <xsl:attribute name="modified_on">
-                    <xsl:call-template name="pfif2datetime">
+                    <xsl:call-template name="iso2datetime">
                         <xsl:with-param name="datetime" select="./pfif:entry_date/text()"/>
                     </xsl:call-template>
                 </xsl:attribute>
@@ -173,7 +174,7 @@
 
             <!-- Date/Time -->
             <data field="time">
-                <xsl:call-template name="pfif2datetime">
+                <xsl:call-template name="iso2datetime">
                     <xsl:with-param name="datetime" select="./pfif:entry_date/text()"/>
                 </xsl:call-template>
             </data>
@@ -192,13 +193,4 @@
         </resource>
     </xsl:template>
 
-    <!-- ****************************************************************** -->
-    <!-- Tools -->
-
-    <xsl:template name="pfif2datetime">
-        <xsl:param name="datetime"/>
-        <xsl:value-of select="concat(substring-before($datetime, 'T'),' ',substring-before(substring-after($datetime, 'T'), 'Z'))"/>
-    </xsl:template>
-
 </xsl:stylesheet>
-

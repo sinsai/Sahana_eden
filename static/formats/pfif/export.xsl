@@ -34,6 +34,7 @@
 
     *********************************************************************** -->
     <xsl:output method="xml"/>
+    <xsl:include href="../xml/commons.xsl"/>
 
     <!-- ****************************************************************** -->
     <xsl:param name="domain"/>
@@ -61,7 +62,7 @@
 
             <!-- Entry date and Author -->
             <pfif:entry_date>
-                <xsl:call-template name="datetime2pfif">
+                <xsl:call-template name="datetime2iso">
                     <xsl:with-param name="datetime" select="./@modified_on" />
                 </xsl:call-template>
             </pfif:entry_date>
@@ -74,7 +75,7 @@
                 <xsl:value-of select="/s3xrc/@domain"/>
             </pfif:source_name>
             <pfif:source_date>
-                <xsl:call-template name="datetime2pfif">
+                <xsl:call-template name="datetime2iso">
                     <xsl:with-param name="datetime" select="./@created_on" />
                 </xsl:call-template>
             </pfif:source_date>
@@ -121,7 +122,7 @@
             </pfif:note_record_id>
 
             <pfif:entry_date>
-                <xsl:call-template name="datetime2pfif">
+                <xsl:call-template name="datetime2iso">
                     <xsl:with-param name="datetime" select="./data[@field='time']/@value" />
                 </xsl:call-template>
             </pfif:entry_date>
@@ -130,7 +131,7 @@
             </pfif:author_name>
 
             <pfif:source_date>
-                <xsl:call-template name="datetime2pfif">
+                <xsl:call-template name="datetime2iso">
                     <xsl:with-param name="datetime" select="./@created_on" />
                 </xsl:call-template>
             </pfif:source_date>
@@ -215,17 +216,5 @@
     </xsl:template>
 
     <!-- ****************************************************************** -->
-    <xsl:template name="datetime2pfif">
-        <xsl:param name="datetime"/>
-        <xsl:value-of select="concat(substring-before($datetime, ' '), 'T', substring-after($datetime, ' '), 'Z')"/>
-    </xsl:template>
-
-    <!-- deprecated -->
-    <xsl:template name="name2pfif">
-        <xsl:param name="name"/>
-        <xsl:value-of select="translate($name,
-            'abcdefghijklmnopqrstuvwxyzáéíóúàèìòùäöüåâêîôûãẽĩõũø',
-            'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÀÈÌÒÙÄÖÜÅÂÊÎÔÛÃẼĨÕŨØ')"/>
-    </xsl:template>
 
 </xsl:stylesheet>

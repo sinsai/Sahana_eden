@@ -530,11 +530,11 @@
     <xsl:template name="ResourceStatusOptions">
         <xsl:param name="value"/>
         <xsl:choose>
-            <xsl:when test="$value='1'">
-                <xsl:text>Adequate</xsl:text>
+            <xsl:when test="$value='2'">
+                <xsl:text>Insufficient</xsl:text>
             </xsl:when>
             <xsl:otherwise>
-                <xsl:text>Insufficient</xsl:text>
+                <xsl:text>Adequate</xsl:text>
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>

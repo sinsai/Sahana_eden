@@ -83,17 +83,18 @@
                     </data>
                 </xsl:when>
 
+                <!-- @ToDo: Handle Polygons
                 <xsl:when test="./geometry/type/text()='Polygon'">
                     <data field="gis_feature_type">3</data>
                     <data field="wkt">
                         <xsl:text>POLYGON((</xsl:text>
-                        <!-- @ToDo Loop through Coordinates to build WKT string -->
+                        <!- @ToDo Loop through Coordinates to build WKT string
                         <xsl:value-of select="./geometry/coordinates[1]/text()"/>
                         <xsl:value-of select="./geometry/coordinates[2]/text()"/>
                         <xsl:text>))</xsl:text>
                     </data>
                 </xsl:when>
-
+                -->
 
             </xsl:choose>
 

@@ -70,7 +70,7 @@
             <data field="name">
                 <xsl:value-of select="./id/text()"/>
             </data>
-
+            
             <xsl:choose>
 
                 <xsl:when test="./geometry/type/text()='Point'">

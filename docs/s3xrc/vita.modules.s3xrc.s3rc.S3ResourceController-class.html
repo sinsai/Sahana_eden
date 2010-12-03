@@ -142,23 +142,19 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#__vectorize" class="summary-sig-name" onclick="show_private();">__vectorize</a>(<span class="summary-sig-arg">self</span>,
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#__create_job" class="summary-sig-name" onclick="show_private();">__create_job</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">resource</span>,
         <span class="summary-sig-arg">element</span>,
         <span class="summary-sig-arg">id</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">files</span>=<span class="summary-sig-default">[]</span>,
         <span class="summary-sig-arg">validate</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">permit</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">audit</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">sync</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">log</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">tree</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">directory</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">vmap</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">joblist</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">lookahead</span>=<span class="summary-sig-default">True</span>)</span><br />
-      Builds a list of vectors from an element</td>
+      Builds a list of import jobs from an element</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.__vectorize">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.__create_job">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -748,34 +744,30 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
   </dl>
 </td></tr></table>
 </div>
-<a name="__vectorize"></a>
+<a name="__create_job"></a>
 <div class="private">
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">__vectorize</span>(<span class="sig-arg">self</span>,
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__create_job</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">resource</span>,
         <span class="sig-arg">element</span>,
         <span class="sig-arg">id</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">files</span>=<span class="sig-default">[]</span>,
         <span class="sig-arg">validate</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">permit</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">audit</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">sync</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">log</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">tree</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">directory</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">vmap</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">joblist</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">lookahead</span>=<span class="sig-default">True</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.__vectorize">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.__create_job">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>Builds a list of vectors from an element</p>
+  <p>Builds a list of import jobs from an element</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
@@ -783,13 +775,9 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
         <li><strong class="pname"><code>element</code></strong> - the element</li>
         <li><strong class="pname"><code>id</code></strong> - target record ID</li>
         <li><strong class="pname"><code>validate</code></strong> - validate hook (function to validate record)</li>
-        <li><strong class="pname"><code>permit</code></strong> - permit hook (function to check table permissions)</li>
-        <li><strong class="pname"><code>audit</code></strong> - audit hook (function to audit table access)</li>
-        <li><strong class="pname"><code>sync</code></strong> - sync hook (function to resolve sync conflicts)</li>
-        <li><strong class="pname"><code>log</code></strong> - log hook (function to log imports)</li>
         <li><strong class="pname"><code>tree</code></strong> - the element tree of the source</li>
         <li><strong class="pname"><code>directory</code></strong> - the resource directory of the tree</li>
-        <li><strong class="pname"><code>vmap</code></strong> - the vector map for the import</li>
+        <li><strong class="pname"><code>joblist</code></strong> - the job list for the import</li>
         <li><strong class="pname"><code>lookahead</code></strong> - resolve any references</li>
     </ul></dd>
   </dl>
@@ -1543,7 +1531,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Fri Nov 26 22:53:52 2010
+    Generated by Epydoc 3.0.1 on Fri Dec  3 23:49:43 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

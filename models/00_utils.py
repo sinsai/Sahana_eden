@@ -144,7 +144,9 @@ def shn_as_local_time(value):
 
     offset = IS_UTC_OFFSET.get_offset_value(session.s3.utc_offset)
 
-    if offset:
+    if not value:
+        return "-"
+    elif offset:
         dt = value + datetime.timedelta(seconds=offset)
         return dt.strftime(str(format))
     else:

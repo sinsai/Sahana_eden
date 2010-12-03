@@ -2332,6 +2332,19 @@ OpenLayers.Util.extend( selectPdfControl, {
     """
             zoomToExtent = ""
 
+        cluster_style = """
+        // Needs to be uniquely instantiated
+        var style_cluster = new OpenLayers.Style(style_cluster_style, style_cluster_options);
+        // Define StyleMap, Using 'style_cluster' rule for 'default' styling intent
+        var featureClusterStyleMap = new OpenLayers.StyleMap({
+                                          'default': style_cluster,
+                                          'select': {
+                                              fillColor: '#ffdc33',
+                                              strokeColor: '#ff9933'
+                                          }
+        });
+        """
+
         ########
         # Layers
         ########
@@ -2550,13 +2563,24 @@ OpenLayers.Util.extend( selectPdfControl, {
                 wfs_version = layer.version
             except:
                 wfs_version = ""
-            featureType = layer.featureType
-            featureNS = layer.featureNS
+            featureType = "featureType: '" + layer.featureType + "'"
+            if layer.featureNS:
+                featureNS = """,
+                    featureNS: '""" + layer.featureNS + "'"
+            else:
+                featureNS = ""
+            if layer.geometryName:
+                geometryName = """,
+                    geometryName: '""" + layer.geometryName + "'"
+            else:
+                geometryName = ""
             try:
-                wfs_projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
-                wfs_projection = "srsName: 'EPSG:" + wfs_projection + "',"
+                wfs_projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1), cache=cache).first().epsg
+                wfs_projection1 = "projection: new OpenLayers.Projection('EPSG:" + str(wfs_projection) + "'),"
+                wfs_projection2 = "srsName: 'EPSG:" + str(wfs_projection) + "',"
             except:
                 wfs_projection = ""
+                wfs_projection2 = ""
             if layer.visible:
                 wfs_visibility = ""
             else:
@@ -2571,23 +2595,21 @@ OpenLayers.Util.extend( selectPdfControl, {
                                 resFactor: 1
                                 })
             """
-            layers_wfs  += """
+            layers_wfs  += cluster_style + """
         var wfsLayer""" + name_safe + """ = new OpenLayers.Layer.Vector( '""" + name + """', {
                 // limit the number of features to avoid browser freezes
                 maxFeatures: 1000,
-                strategies: [""" + wfs_strategy + """],
-                projection: projection_current,
+                strategies: [""" + wfs_strategy + ", " + strategy_cluster + """],
+                """ + wfs_projection1 + """
                 //outputFormat: "json",
                 //readFormat: new OpenLayers.Format.GeoJSON(),
                 protocol: new OpenLayers.Protocol.WFS({
                     version: '""" + wfs_version + """',
-                    """ + wfs_projection + """
+                    """ + wfs_projection2 + """
                     url:  '""" + url + """',
-                    featureType: '""" + featureType + """',
-                    featureNS: '""" + featureNS + """'
-                    //,geometryName: "the_geom" // default PostGIS geometry column
-                })
-                //,styleMap: styleMap
+                    """ + featureType + featureNS + geometryName + """
+                }),
+                styleMap: featureClusterStyleMap
             });
         map.addLayer(wfsLayer""" + name_safe + """);
         """ + wfs_visibility + """
@@ -2733,18 +2755,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_features = ""
         if feature_queries or add_feature:
 
-            cluster_style = """
-        // Needs to be uniquely instantiated
-        var style_cluster = new OpenLayers.Style(style_cluster_style, style_cluster_options);
-        // Define StyleMap, Using 'style_cluster' rule for 'default' styling intent
-        var featureClusterStyleMap = new OpenLayers.StyleMap({
-                                          'default': style_cluster,
-                                          'select': {
-                                              fillColor: '#ffdc33',
-                                              strokeColor: '#ff9933'
-                                          }
-        });
-        """
+            
 
             if deployment_settings.get_gis_duplicate_features():
                 uuid_from_fid = """

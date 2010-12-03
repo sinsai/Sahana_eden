@@ -911,7 +911,8 @@ for layertype in gis_layer_types:
         t = db.Table(db, table,
                      gis_layer,
                      Field("visible", "boolean", default=True, label=T("On by default? (only applicable to Overlays)")),
-                     Field("url1", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     Field("url1", label=T("Location"), requires = IS_NOT_EMPTY(),
+                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
                      Field("url2", label=T("Secondary Server (Optional)")),
                      Field("url3", label=T("Tertiary Server (Optional)")),
                      Field("base", "boolean", default=True, label=T("Base Layer?")),
@@ -939,7 +940,8 @@ for layertype in gis_layer_types:
         t = db.Table(db, table,
                      gis_layer,
                      Field("visible", "boolean", default=False, label=T("On by default?")),
-                     #Field("url", label=T("Location")),
+                     #Field("url", label=T("Location"),
+                           #comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
                      track_id(), # @ToDo remove this layer of complexity: Inlcude the upload field within the Layer
                      Field("waypoints", "boolean", default=True, label=T("Display Waypoints?")),
                      Field("tracks", "boolean", default=True, label=T("Display Tracks?")),
@@ -951,7 +953,8 @@ for layertype in gis_layer_types:
         t = db.Table(db, table,
                      gis_layer,
                      Field("visible", "boolean", default=False, label=T("On by default?")),
-                     Field("url", label=T("Location"), requires=IS_NOT_EMPTY()),
+                     Field("url", label=T("Location"), requires=IS_NOT_EMPTY(),
+                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
                      Field("title", label=T("Title"), default="name",
                            comment=T("The attribute within the KML which is used for the title of popups.")),
                      Field("body", label=T("Body"), default="description",
@@ -969,13 +972,15 @@ for layertype in gis_layer_types:
     elif layertype == "mgrs":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("url", label=T("Location"))
+                     Field("url", label=T("Location"),
+                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
                     )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "tms":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY(),
+                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
                      Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
                      Field("format", label=T("Format"))
                     )
@@ -984,12 +989,15 @@ for layertype in gis_layer_types:
         t = db.Table(db, table,
                      gis_layer,
                      Field("visible", "boolean", default=False, label=T("On by default?")),
-                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY(),
+                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("Mandatory. The URL to access the service."))),
                      Field("version", label=T("Version"), default="1.1.0", requires = IS_IN_SET(["1.0.0", "1.1.0"], zero=None)),
-                     Field("featureNS", requires=IS_NOT_EMPTY(), label=T("Feature Namespace"),
-                           comment=DIV( _class="tooltip", _title="Feature Namespace" + "|" + T("In GeoServer, this is the Workspace Name. Within the WFS getCapabilities, this is the FeatureType Name part before the colon(:)."))),
-                     Field("featureType", requires=IS_NOT_EMPTY(), label=T("Feature Type"),
-                           comment=DIV( _class="tooltip", _title=T("Feature Type") + "|" + T("In GeoServer, this is the Layer Name. Within the WFS getCapabilities, this is the FeatureType Name part after the colon(:)."))),
+                     Field("featureNS", label=T("Feature Namespace"),
+                           comment=DIV( _class="tooltip", _title="Feature Namespace" + "|" + T("Optional. In GeoServer, this is the Workspace Namespace URI. Within the WFS getCapabilities, this is the FeatureType Name part before the colon(:)."))),
+                     Field("featureType", label=T("Feature Type"), requires = IS_NOT_EMPTY(),
+                           comment=DIV( _class="tooltip", _title=T("Feature Type") + "|" + T("Mandatory. In GeoServer, this is the Layer Name. Within the WFS getCapabilities, this is the FeatureType Name part after the colon(:)."))),
+                     Field("geometryName", label=T("Geometry Name"), default = "the_geom",
+                           comment=DIV( _class="tooltip", _title=T("Geometry Name") + "|" + T("Optional. The name of the geometry column. In PostGIS this defaults to 'the_geom'."))),
                      projection_id(),
                      #Field("editable", "boolean", default=False, label=T("Editable?")),
                     )
@@ -999,7 +1007,8 @@ for layertype in gis_layer_types:
         t = db.Table(db, table,
                      gis_layer,
                      Field("visible", "boolean", default=False, label=T("On by default?")),
-                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY(),
+                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
                      Field("version", label=T("Version"), default="1.1.1", requires = IS_IN_SET(["1.1.1", "1.3.0"], zero=None)),
                      Field("base", "boolean", default=True, label=T("Base Layer?")),
                      Field("transparent", "boolean", default=False, label=T("Transparent?")),
@@ -1016,7 +1025,8 @@ for layertype in gis_layer_types:
     elif layertype == "xyz":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY(),
+                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
                      Field("base", "boolean", default=True, label=T("Base Layer?")),
                      Field("sphericalMercator", "boolean", default=False, label=T("Spherical Mercator?")),
                      Field("transitionEffect", requires=IS_NULL_OR(IS_IN_SET(["resize"])), label=T("Transition Effect")),

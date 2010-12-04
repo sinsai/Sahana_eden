@@ -234,7 +234,9 @@ def view_map():
         location_row = location.first()  # location is a sql.Rows
         lat = location_row.lat
         lon = location_row.lon
-        bounds = gis.get_bounds(features=location)
+        # Use bounds if more than 1 feature
+        #bounds = gis.get_bounds(features=location)
+        zoom = 15
 
         volunteer = {"feature_group" : "People"}
         try:
@@ -254,7 +256,8 @@ def view_map():
             search = True,
             lat = lat,
             lon = lon,
-            bbox = bounds,
+            zoom = zoom,
+            #bbox = bounds,
             window = True,
         )
         return dict(map=html)

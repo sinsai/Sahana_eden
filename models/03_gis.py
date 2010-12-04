@@ -438,7 +438,7 @@ table = db.define_table(tablename,
                         Field("lat_min", "double", writable=False, readable=False), # bounding-box
                         Field("lon_max", "double", writable=False, readable=False), # bounding-box
                         Field("lat_max", "double", writable=False, readable=False), # bounding-box
-                        Field("elevation", "integer", writable=False, readable=False),   # m in height above WGS84 ellipsoid (approximately sea-level). not displayed currently
+                        Field("elevation", "double", writable=False, readable=False),   # m in height above WGS84 ellipsoid (approximately sea-level). not displayed currently
                         Field("ce", "integer", writable=False, readable=False), # Circular 'Error' around Lat/Lon (in m). Needed for CoT.
                         Field("le", "integer", writable=False, readable=False), # Linear 'Error' for the Elevation (in m). Needed for CoT.
                         Field("source", requires=IS_NULL_OR(IS_IN_SET(gis_source_opts))),
@@ -843,6 +843,9 @@ table = db.define_table(tablename,
                         location_id(),
                         migrate=migrate,
                         *s3_meta_fields())
+table.name.label = T("Name")
+table.description.label = T("Description")
+table.category.label = T("Category")
 
 # -----------------------------------------------------------------------------
 # GPS Tracks (stored as 1 record per point)

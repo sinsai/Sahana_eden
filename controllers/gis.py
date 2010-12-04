@@ -839,9 +839,25 @@ def projection():
 
     return output
 
+def waypoint():
+
+    """ RESTful CRUD controller for GPS Waypoints """
+
+    table = module + "_" + resourcename
+
+    return s3_rest_controller(module, resourcename)
+
+def trackpoint():
+
+    """ RESTful CRUD controller for GPS Track points """
+
+    table = module + "_" + resourcename
+
+    return s3_rest_controller(module, resourcename)
+
 def track():
 
-    """ RESTful CRUD controller """
+    """ RESTful CRUD controller for GPS Tracks (uploaded as files) """
 
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()

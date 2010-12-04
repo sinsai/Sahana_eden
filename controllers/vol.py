@@ -238,20 +238,32 @@ def view_map():
         #bounds = gis.get_bounds(features=location)
         zoom = 15
 
-        volunteer = {"feature_group" : "People"}
+        # Standard Feature Layers
+        config = gis.get_config()
+        feature_queries = []
+        feature_layers = db(db.gis_layer_feature.enabled == True).select()
+        for layer in feature_layers:
+            _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=False, polygons=layer.polygons)
+            if _layer:
+                feature_queries.append(_layer)
+        
+        # Add the Volunteer layer
         try:
             marker_id = db(db.gis_marker.name == "volunteer").select().first().id
         except:
             marker_id = 1
-        html = gis.show_map(
-            feature_queries = [{"name" : "Volunteer",
+        
+        feature_queries.append({"name" : "Volunteer",
                                 "query" : location,
                                 "active" : True,
-                                "marker" : marker_id}],
+                                "marker" : marker_id})
+
+        html = gis.show_map(
+            feature_queries = feature_queries,
             #wms_browser = {"name" : "Risk Maps",
             #               "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
-            #catalogue_overlays = True,
             #catalogue_toolbar = True,
+            catalogue_overlays = True,
             toolbar = True,
             search = True,
             lat = lat,
@@ -264,7 +276,7 @@ def view_map():
 
     # Redirect to person details if no location is available
     response.error=T("Add location")
-    redirect(URL(r=request, c="vol", f="person", args=[person_id, "address"]))
+    redirect(URL(r=request, c="vol", f="person", args=[person_id, "presence"]))
 
 
 # -----------------------------------------------------------------------------

@@ -847,6 +847,15 @@ def waypoint():
 
     return s3_rest_controller(module, resourcename)
 
+def waypoint_upload():
+
+    """
+        Custom View
+        Temporary: Likely to be refactored into the main waypoint controller
+    """
+
+    return dict()
+
 def trackpoint():
 
     """ RESTful CRUD controller for GPS Track points """

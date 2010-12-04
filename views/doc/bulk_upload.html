@@ -28,7 +28,7 @@
     <td><label>{{=gpx_label}}:</label></td><td>{{=gpx_widget}}</td><td>{{=gpx_comment}}</td>
 </tr>
 <tr id='gis_location_to_feature_group_feature_group_id__row'>
-    <td><label>{{=T('Layer')}}:</label></td><td>{{=fg_widget}}</td><td>{{=fg_comment}}</td>
+    <td><label>{{=T('Layer')}}:</label></td><td>{{#=fg_widget}}</td><td>{{#=fg_comment}}</td>
 </tr>
 </table>
 </form>
@@ -51,7 +51,7 @@
 </div>
 <p>&nbsp;</p>
 <div class='form-container' id='form_metadata'>
-{{=form}}
+{{#=form}}
 </div>
 <div id='flash_uploader'>
 </div>

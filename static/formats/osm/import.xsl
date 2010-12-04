@@ -3,7 +3,7 @@
             xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
             xmlns:osm="http://openstreetmap.org/osm/0.6">
 
-    <!-- Sahana Eden XSLT Import Template
+    <!-- Sahana Eden XSLT Import Templates
 
         Transformation of
             OpenStreetMap Points of Interest

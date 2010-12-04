@@ -71,8 +71,8 @@ def deploy():
     cleanup()
     migrate_on()
     db_upgrade()
-    optimise()
     migrate_off()
+    optimise()
     maintenance_off()
 
 def backup():

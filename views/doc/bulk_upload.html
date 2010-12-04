@@ -1,22 +1,22 @@
-{{extend 'layout.html'}}
+{{extend "layout.html"}}
 {{try:}}
  {{=H2(response.title)}}
 {{except:}}
 {{pass}}
 <p>
-{{=T('This screen allows you to upload a collection of photos to the server.')}}
+{{=T("This screen allows you to upload a collection of photos to the server.")}}
 </p>
 <p>&nbsp;</p>
-{{=H3(T('Mapping'))}}
+{{=H3(T("Mapping"))}}
 <div class='form-container' id='form_question'>
-{{=T('Would you like to display the photos on the map?')}}
+{{=T("Would you like to display the photos on the map?")}}
 <form>
 <table>
-<tr><td><label>Don't display on the map</label></td><td><input type="radio" value="No" name="method" checked="checked"/></td><td></td></tr>
+<tr><td><label>Don't display on the map</label></td><td><input type='radio' value='No' name='method' checked='checked'/></td><td></td></tr>
 <!--
-<tr><td><label>Use Lat/Lon from file header</label></td><td><input type="radio" value="Header" name="method"/></td><td></td></tr>
+<tr><td><label>Use Lat/Lon from file header</label></td><td><input type='radio' value='Header' name='method'/></td><td></td></tr>
 -->
-<tr><td><label>Upload GPS Track for timestamp correlation</label></td><td><input type="radio" value="Track" name="method"/></td><td></td></tr>
+<tr><td><label>Upload GPS Track for timestamp correlation</label></td><td><input type='radio' value='Track' name='method'/></td><td></td></tr>
 </table>
 </form>
 </div>
@@ -24,43 +24,43 @@
 <div class='form-container' id='form_gps_track'>
 <form>
 <table>
-<tr id="gis_layer_gpx_track_id__row">
+<tr id='gis_layer_gpx_track_id__row'>
     <td><label>{{=gpx_label}}:</label></td><td>{{=gpx_widget}}</td><td>{{=gpx_comment}}</td>
 </tr>
-<tr id="gis_location_to_feature_group_feature_group_id__row">
-    <td><label>{{=T('Layer')}}:</label></td><td>{{=fg_widget}}</td><td>{{=fg_comment}}</td>
+<tr id='gis_location_to_feature_group_feature_group_id__row'>
+    <td><label>{{=T('Layer')}}:</label></td><td>{{#=fg_widget}}</td><td>{{#=fg_comment}}</td>
 </tr>
 </table>
 </form>
 </div>
 
-{{=H3(T('Metadata'))}}
+{{=H3(T("Metadata"))}}
 <p>
-{{=T('Any available Metadata in the files will be read automatically, such as Timestamp, Author, Latitude & Longitude.')}}
+{{=T("Any available Metadata in the files will be read automatically, such as Timestamp, Author, Latitude & Longitude.")}}
 </p>
 <p>&nbsp;</p>
 <div class='form-container' id='form_question'>
 <form>
 <p>
-{{=T('Metadata can be supplied here to be applied to all uploaded photos, if desired.')}}
+{{=T("Metadata can be supplied here to be applied to all uploaded photos, if desired.")}}
 </p>
 <table>
-<tr><td><label>{{=T('Do you want to over-write the file metadata with new default values?')}}</label></td><td><input type='checkbox' name='overwrite' id='overwrite'/></td><td></td></tr>
+<tr><td><label>{{=T("Do you want to over-write the file metadata with new default values?")}}</label></td><td><input type='checkbox' name='overwrite' id='overwrite'/></td><td></td></tr>
 </table>
 </form>
 </div>
 <p>&nbsp;</p>
 <div class='form-container' id='form_metadata'>
-{{=form}}
+{{#=form}}
 </div>
 <div id='flash_uploader'>
 </div>
 <div id='js_uploader'>
 <!-- Backup option for when Flash not available in client or failing due to Proxy issues -->
-<form id="upload-confirmation" action="{{=URL(r=request)}}" method="POST">
-        <textarea id='file-list' name="file-list"></textarea>
+<form id='upload-confirmation' action='{{=URL(r=request)}}' method='POST'>
+        <textarea id='file-list' name='file-list'></textarea>
         <div id='show-dialog-btn'></div>
-        <!-- <input type="submit" value="confirm submissions"/> -->
+        <!-- <input type='submit' value='confirm submissions'/> -->
     </form>
 </div>
 <p>&nbsp;</p>
@@ -68,7 +68,7 @@
  {{=list_btn}}
 {{except:}}
 {{pass}}
-{{include 'colorbox.html'}}
+{{include "colorbox.html"}}
 <!-- Currently requires Ext20. To be replaced with main Ext3 -->
 <link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext-2.2.1/resources/css/ext-all.css" />
 <link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/S3/Ext.ux.UploadDialog.css" />
@@ -152,17 +152,17 @@ Ext.onReady(function() {
 
         function onBeforeFileUploadStart(dialog, filename, record) {
             if  ($("input[name='method']:radio:checked").val() == 'Track') {
-                dialog.base_params['track_id'] = $("#gis_layer_gpx_track_id").val();
+                dialog.base_params['track_id'] = $('#gis_layer_gpx_track_id').val();
                 dialog.base_params['feature_group_id'] = $("#gis_location_to_feature_group_feature_group_id").val();
             }
-            if  ($("#overwrite").attr('checked') == true) {
-                dialog.base_params['description'] = $("#media_metadata_description").val();
-                dialog.base_params['person_id'] = $("#media_metadata_person_id").val();
-                dialog.base_params['source'] = $("#media_metadata_source").val();
-                dialog.base_params['sensitivity'] = $("#media_metadata_sensitivity").val();
-                dialog.base_params['event_time'] = $("#media_metadata_event_time").val();
-                dialog.base_params['expiry_time'] = $("#media_metadata_expiry_time").val();
-                dialog.base_params['url'] = $("#media_metadata_url").val();
+            if  ($('#overwrite').attr('checked') == true) {
+                dialog.base_params['description'] = $('#media_metadata_description').val();
+                dialog.base_params['person_id'] = $('#media_metadata_person_id').val();
+                dialog.base_params['source'] = $('#media_metadata_source').val();
+                dialog.base_params['sensitivity'] = $('#media_metadata_sensitivity').val();
+                dialog.base_params['event_time'] = $('#media_metadata_event_time').val();
+                dialog.base_params['expiry_time'] = $('#media_metadata_expiry_time').val();
+                dialog.base_params['url'] = $('#media_metadata_url').val();
             }
             var store = dialog.getQueueStore();
             store.each(function(r, id) {
@@ -177,7 +177,7 @@ Ext.onReady(function() {
                 button = new Ext.Button({
                     renderTo: 'show-dialog-btn',
                     id: 'show-button',
-                    text: '{{=T('Select Photos')}}',
+                    text: '{{=T("Select Photos")}}',
                     handler: showDialog
                 });
 
@@ -193,43 +193,43 @@ Ext.onReady(function() {
 $(function() {
 
     // Hide the Flash uploader since not yet ready
-    $("#flash_uploader").hide();
+    $('#flash_uploader').hide();
 
     // Hide the Results DIV
-    $("#file-list").hide();
+    $('#file-list').hide();
 
     // Hide the Forms initially
-    $("#form_gps_track").hide();
-    $("#form_metadata").hide();
+    $('#form_gps_track').hide();
+    $('#form_metadata').hide();
 
     // Hide the Location Field (we do this via EXIF header or GPX track)
-    $("#media_metadata_location_id__row").hide();
+    $('#media_metadata_location_id__row').hide();
     // Hide the Image Field (we use Ext multiple upload widget)
-    $("#media_metadata_image__row").hide();
+    $('#media_metadata_image__row').hide();
     // Hide the metadata Submit Field (we use Ext multiple upload widget)
-    $("#form_metadata :submit").hide();
+    $('#form_metadata :submit').hide();
 
     // When the Mapping answer changes:
 	$("input[name='method']:radio").change(function() {
 		// What is the new answer?
-        method=$("input[name='method']:radio:checked").val();
-        if (method=="No") {
-            $("#form_gps_track").hide();
-        } else if (method=="Header") {
-            $("#form_gps_track").hide();
-        } else if (method=="Track") {
-            $("#form_gps_track").show();
+        method = $("input[name='method']:radio:checked").val();
+        if (method == 'No') {
+            $('#form_gps_track').hide();
+        } else if (method == 'Header') {
+            $('#form_gps_track').hide();
+        } else if (method == 'Track') {
+            $('#form_gps_track').show();
         }
     })
 
     // When the Metadata answer changes:
-	$("#overwrite").change(function() {
+	$('#overwrite').change(function() {
 		// What is the new answer?
-        overwrite=$("#overwrite").attr('checked');
-        if (overwrite==true) {
-            $("#form_metadata").show();
+        overwrite = $('#overwrite').attr('checked');
+        if (overwrite == true) {
+            $('#form_metadata').show();
         } else {
-            $("#form_metadata").hide();
+            $('#form_metadata').hide();
         }
     })
 });

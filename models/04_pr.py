@@ -358,6 +358,14 @@ def s3_pr_presence_onvalidation(form):
     location = form.vars.location_id
     shelter = form.vars.shelter_id
 
+    if shelter and "cr_shelter" in db:
+        set = db(db.cr_shelter.id == shelter)
+        row = set.select(db.cr_shelter.location_id, limitby=(0, 1)).first()
+        if row:
+            location = form.vars.location_id = row.location_id
+        else:
+            shelter = None
+
     if location or shelter:
         return
 

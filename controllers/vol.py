@@ -143,6 +143,16 @@ def person():
                 #(T("Resources"), "resource"),
                ]
 
+    db.pr_presence.presence_condition.default = vita.CONFIRMED
+    db.pr_presence.presence_condition.readable = False
+    db.pr_presence.presence_condition.writable = False
+    db.pr_presence.orig_id.readable = False
+    db.pr_presence.orig_id.writable = False
+    db.pr_presence.dest_id.readable = False
+    db.pr_presence.dest_id.writable = False
+    db.pr_presence.proc_desc.readable = False
+    db.pr_presence.proc_desc.writable = False
+
     output = s3_rest_controller("pr", resourcename,
                                 rheader=lambda r: shn_pr_rheader(r, tabs))
 
@@ -234,7 +244,9 @@ def view_map():
         location_row = location.first()  # location is a sql.Rows
         lat = location_row.lat
         lon = location_row.lon
-        bounds = gis.get_bounds(features=location)
+        # Use bounds if more than 1 feature
+        #bounds = gis.get_bounds(features=location)
+        zoom = 15
 
         volunteer = {"feature_group" : "People"}
         try:
@@ -254,7 +266,8 @@ def view_map():
             search = True,
             lat = lat,
             lon = lon,
-            bbox = bounds,
+            zoom = zoom,
+            #bbox = bounds,
             window = True,
         )
         return dict(map=html)

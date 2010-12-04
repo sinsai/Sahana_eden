@@ -140,7 +140,7 @@ class S3Vita(object):
         earlier = (table.datetime < datetime)
         later = (table.datetime > datetime)
         same_place = ((table.location_id == presence.location_id) |
-                        (table.shelter_id == presence.shelter_id))
+                      (table.shelter_id == presence.shelter_id))
         is_present = (table.presence_condition.belongs(self.PERSISTANT_PRESENCE))
         is_absent = (table.presence_condition.belongs(self.ABSENCE))
         is_missing = (table.presence_condition == self.MISSING)

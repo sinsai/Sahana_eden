@@ -143,6 +143,16 @@ def person():
                 #(T("Resources"), "resource"),
                ]
 
+    db.pr_presence.presence_condition.default = vita.CONFIRMED
+    db.pr_presence.presence_condition.readable = False
+    db.pr_presence.presence_condition.writable = False
+    db.pr_presence.orig_id.readable = False
+    db.pr_presence.orig_id.writable = False
+    db.pr_presence.dest_id.readable = False
+    db.pr_presence.dest_id.writable = False
+    db.pr_presence.proc_desc.readable = False
+    db.pr_presence.proc_desc.writable = False
+
     output = s3_rest_controller("pr", resourcename,
                                 rheader=lambda r: shn_pr_rheader(r, tabs))
 

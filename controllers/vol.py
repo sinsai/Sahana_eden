@@ -203,43 +203,63 @@ def skill_types():
 # -----------------------------------------------------------------------------
 def view_map():
 
-    """ Map Location of Volunteer.
-
-        Use most recent presence if available, else any address that's
-        available.
-
+    """
+        Show Location of a Volunteer on the Map
+        
+        Use most recent presence if available, else any address that's available.
     """
 
     person_id = request.args(0)
 
-    presence_query = (db.pr_person.id == person_id) & \
-                     (db.pr_presence.pe_id == db.pr_person.pe_id) & \
-                     (db.gis_location.id == db.pr_presence.location_id)
+    persons = db.pr_person
+    presences = db.pr_presence
+    locations = db.gis_location
+    
+    # Include the person's last verified location, assuming that they're not missing
+    presence_query = (persons.id == person_id) & \
+                     (persons.missing == False) & \
+                     (presences.pe_id == persons.pe_id) & \
+                     (presences.presence_condition.belongs(vita.PERSISTANT_PRESENCE)) & \
+                     (presences.closed == False) & \
+                     (locations.id == presences.location_id)
 
     # Need sql.Rows object for show_map, so don't extract individual row.
-    location = db(presence_query).select(db.gis_location.ALL,
-                                         orderby=~db.pr_presence.datetime,
+    features = db(presence_query).select(locations.id,
+                                         locations.lat,
+                                         locations.lon,
+                                         persons.id,
                                          limitby=(0, 1))
 
-    if not location:
-        address_query = (db.pr_person.id == person_id) & \
-                        (db.pr_address.pe_id == db.pr_person.pe_id) & \
-                        (db.gis_location.id == db.pr_address.location_id)
-        # TODO: If there are multiple addresses, which should we choose?
+    if not features:
+        # Use their Address
+        address_query = (persons.id == person_id) & \
+                        (db.pr_address.pe_id == persons.pe_id) & \
+                        (locations.id == db.pr_address.location_id)
+        # @ToDo: Lookup their schedule to see whether they should be at Work, Home or Holiday & lookup the correct address
         # For now, take whichever address is supplied first.
-        location = db(address_query).select(db.gis_location.ALL, limitby=(0, 1))
+        features = db(address_query).select(locations.id,
+                                            locations.lat,
+                                            locations.lon,
+                                            persons.id,
+                                            limitby=(0, 1))
 
-    if location:
+    if features:
         # Center and zoom the map.
-        location_row = location.first()  # location is a sql.Rows
-        lat = location_row.lat
-        lon = location_row.lon
+        record = features.first()
+        lat = record.gis_location.lat
+        lon = record.gis_location.lon
         # Use bounds if more than 1 feature
         #bounds = gis.get_bounds(features=location)
         zoom = 15
 
-        # Standard Feature Layers
         config = gis.get_config()
+
+        if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
+            catalogue_toolbar = True
+        else:
+            catalogue_toolbar = False
+
+        # Standard Feature Layers
         feature_queries = []
         feature_layers = db(db.gis_layer_feature.enabled == True).select()
         for layer in feature_layers:
@@ -253,16 +273,27 @@ def view_map():
         except:
             marker_id = 1
         
+        # Can't use this since the location_id link is via pr_presence not pr_person
+        #_layer = gis.get_feature_layer("pr", "person", "Volunteer", "Volunteer", config=config, marker_id=marker_id, active=True, polygons=False)
+        #if _layer:
+        #    feature_queries.append(_layer)
+        
+        # Insert the name into the query
+        for i in range(0, len(features)):
+            features[i].gis_location.name = vita.fullname(db(db.pr_person.id == features[i].pr_person.id).select(limitby=(0, 1)).first())
+        
         feature_queries.append({"name" : "Volunteer",
-                                "query" : location,
+                                "query" : features,
                                 "active" : True,
+                                "popup_label" : "Volunteer",
+                                "popup_url" : URL(r=request, c="vol", f="person", args=person_id),
                                 "marker" : marker_id})
 
         html = gis.show_map(
             feature_queries = feature_queries,
             #wms_browser = {"name" : "Risk Maps",
             #               "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
-            #catalogue_toolbar = True,
+            catalogue_toolbar = catalogue_toolbar,
             catalogue_overlays = True,
             toolbar = True,
             search = True,
@@ -270,12 +301,12 @@ def view_map():
             lon = lon,
             zoom = zoom,
             #bbox = bounds,
-            window = True,
+            window = False  # We should provide a button within the map to make it go full-screen (ideally without reloading the page!)
         )
         return dict(map=html)
 
     # Redirect to person details if no location is available
-    response.error=T("Add location")
+    session.error = T("No location found")
     redirect(URL(r=request, c="vol", f="person", args=[person_id, "presence"]))
 
 
@@ -359,9 +390,12 @@ def skill():
 # -----------------------------------------------------------------------------
 def view_team_map():
 
-    """ Map Location of Volunteer in a Team.
-        Use most recent presence if available, else any address that's available.
+    """
+        Show Location of a Team of Volunteers on the Map
 
+        Use most recent presence if available, else any address that's available
+        
+        @ToDo: Update for correct Presence settings, Popup details, etc (see view_map)
     """
 
     group_id = request.args(0)

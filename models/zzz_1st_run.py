@@ -1132,7 +1132,7 @@ if populate:
         import_file = os.path.join(request.folder,
                                    "private", "import",
                                    "countries.csv")
-        table.import_from_csv_file(open(import_file,"r"))
+        table.import_from_csv_file(open(import_file, "r"))
     # Should work for our 3 supported databases: sqlite, MySQL & PostgreSQL
     field = "name"
     db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))

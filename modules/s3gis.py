@@ -440,6 +440,7 @@ class GIS(object):
         except:
             # Application disabled, skip layer
             return None
+
     # -----------------------------------------------------------------------------
     def get_features_in_radius(self, lat, lon, radius, resourcename="gis_location", category=None):
         """

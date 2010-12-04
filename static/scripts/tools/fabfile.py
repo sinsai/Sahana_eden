@@ -70,7 +70,15 @@ def deploy():
     pull()
     cleanup()
     migrate_on()
-    db_upgrade()
+    if "test" in env.host:
+        db_sync()
+    else:
+        db_upgrade()
+        # Step 3: Allow web2py to run the Eden model to configure the Database structure
+        migrate()
+        # Do the actual DB upgrade
+        # (split into a separate function to allow it to easily be run manually if there is a problem with the previous step)
+        db_upgrade_()
     migrate_off()
     optimise()
     maintenance_off()
@@ -124,31 +132,23 @@ def db_upgrade():
         - this assumes that /root/.my.cnf is configured on both Test & Prod to allow root to have access to the MySQL DB
           without needing '-u root -p'
     """
-    if "test" in env.host:
-        db_sync()
-    else:
-        print(green("%s: Upgrading Database" % env.host))
-        # See dbstruct.py
-        with cd("/home/web2py/applications/eden/"):
-            # Step 0: Drop old database 'sahana'
-            print(green("%s: Dropping old Database" % env.host))
-            # If database doesn't exist, we don't want to stop
-            env.warn_only = True
-            run("mysqladmin -f drop sahana", pty=True)
-            env.warn_only = False
-            print(green("%s: Cleaning databases folder" % env.host))
-            run("rm -rf databases/*", pty=True)
-            # Step 1: Create a new, empty MySQL database 'sahana' as-normal
-            print(green("%s: Creating new Database" % env.host))
-            run("mysqladmin create sahana", pty=True)
-            # Step 2: set deployment_settings.base.prepopulate = False in models/000_config.py
-            print(green("%s: Disabling prepopulate" % env.host))
-            run("sed -i 's/deployment_settings.base.prepopulate = True/deployment_settings.base.prepopulate = False/g' models/000_config.py", pty=True)
-        # Step 3: Allow web2py to run the Eden model to configure the Database structure
-        migrate()
-        # Do the actual DB upgrade
-        # (split into a separate function to allow it to easily be run manually if there is a problem with the previous step)
-        db_upgrade_()
+    print(green("%s: Upgrading Database" % env.host))
+    # See dbstruct.py
+    with cd("/home/web2py/applications/eden/"):
+        # Step 0: Drop old database 'sahana'
+        print(green("%s: Dropping old Database" % env.host))
+        # If database doesn't exist, we don't want to stop
+        env.warn_only = True
+        run("mysqladmin -f drop sahana", pty=True)
+        env.warn_only = False
+        print(green("%s: Cleaning databases folder" % env.host))
+        run("rm -rf databases/*", pty=True)
+        # Step 1: Create a new, empty MySQL database 'sahana' as-normal
+        print(green("%s: Creating new Database" % env.host))
+        run("mysqladmin create sahana", pty=True)
+        # Step 2: set deployment_settings.base.prepopulate = False in models/000_config.py
+        print(green("%s: Disabling prepopulate" % env.host))
+        run("sed -i 's/deployment_settings.base.prepopulate = True/deployment_settings.base.prepopulate = False/g' models/000_config.py", pty=True)
 
 def db_upgrade_():
     """

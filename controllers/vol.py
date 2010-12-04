@@ -286,7 +286,8 @@ def view_map():
                                 "query" : features,
                                 "active" : True,
                                 "popup_label" : "Volunteer",
-                                "popup_url" : URL(r=request, c="vol", f="person", args=person_id),
+                                # @ToDo: Create a custom controller with the core Vol-related requirements for the Incident Commander
+                                "popup_url" : URL(r=request, c="vol", f="person", args=(person_id, "read.plain")) + "?dummy=",  # Add a dummy var to take the location_id
                                 "marker" : marker_id})
 
         html = gis.show_map(

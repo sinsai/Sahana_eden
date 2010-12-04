@@ -237,16 +237,19 @@ def view_map():
         bounds = gis.get_bounds(features=location)
 
         volunteer = {"feature_group" : "People"}
+        try:
+            marker_id = db(db.gis_marker.name == "volunteer").select().first().id
+        except:
+            marker_id = 1
         html = gis.show_map(
             feature_queries = [{"name" : "Volunteer",
                                 "query" : location,
                                 "active" : True,
-                                "marker" : db(db.gis_marker.name == "volunteer").select().first().id}],
-            feature_groups = [volunteer],
-            wms_browser = {"name" : "Risk Maps",
-                           "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
-            catalogue_overlays = True,
-            catalogue_toolbar = True,
+                                "marker" : marker_id}],
+            #wms_browser = {"name" : "Risk Maps",
+            #               "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+            #catalogue_overlays = True,
+            #catalogue_toolbar = True,
             toolbar = True,
             search = True,
             lat = lat,
@@ -258,7 +261,7 @@ def view_map():
 
     # Redirect to person details if no location is available
     response.error=T("Add location")
-    redirect(URL(r=request, c="vol", f="person", args=[person_id,"address"]))
+    redirect(URL(r=request, c="vol", f="person", args=[person_id, "address"]))
 
 
 # -----------------------------------------------------------------------------

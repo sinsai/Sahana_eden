@@ -833,6 +833,28 @@ table.apikey.label = T("Key")
 s3xrc.model.configure(table, listadd=False, deletable=False)
 
 # -----------------------------------------------------------------------------
+# GPS Waypoints
+resourcename = "waypoint"
+tablename = "%s_%s" % (module, resourcename)
+table = db.define_table(tablename,
+                        Field("name", length=128, notnull=True),
+                        Field("description", length=128),
+                        Field("category", length=128),
+                        location_id(),
+                        migrate=migrate,
+                        *s3_meta_fields())
+
+# -----------------------------------------------------------------------------
+# GPS Tracks (stored as 1 record per point)
+resourcename = "trackpoint"
+tablename = "%s_%s" % (module, resourcename)
+table = db.define_table(tablename,
+                        location_id(),
+                        #track_id(),        # link to the uploaded file?
+                        migrate=migrate,
+                        *s3_meta_fields())
+
+# -----------------------------------------------------------------------------
 # GPS Tracks (files in GPX format)
 resourcename = "track"
 tablename = "%s_%s" % (module, resourcename)
@@ -841,7 +863,8 @@ table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("description", length=128),
                         Field("track", "upload", autodelete = True),
-                        migrate=migrate, *s3_timestamp())
+                        migrate=migrate,
+                        *s3_timestamp())
 
 
 # upload folder needs to be visible to the download() function as well as the upload

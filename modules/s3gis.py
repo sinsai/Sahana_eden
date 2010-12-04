@@ -2332,6 +2332,59 @@ OpenLayers.Util.extend( selectPdfControl, {
     """
             zoomToExtent = ""
 
+        cluster_style_options = """
+        // Style Rule For Clusters
+        var style_cluster_style = {
+            label: '${label}',
+            pointRadius: '${radius}',
+            fillColor: '${fill}',
+            fillOpacity: 0.5,
+            strokeColor: '${stroke}',
+            strokeWidth: 2,
+            strokeOpacity: 1
+        };
+        var style_cluster_options = {
+            context: {
+                radius: function(feature) {
+                    // Size for Unclustered Point
+                    var pix = 12;
+                    // Size for Clustered Point
+                    if(feature.cluster) {
+                        pix = Math.min(feature.attributes.count/2, 8) + 12;
+                    }
+                    return pix;
+                },
+                fill: function(feature) {
+                    // fillColor for Unclustered Point
+                    var color = '#f5902e';
+                    // fillColor for Clustered Point
+                    if(feature.cluster) {
+                        color = '#8087ff';
+                    }
+                    return color;
+                },
+                stroke: function(feature) {
+                    // strokeColor for Unclustered Point
+                    var color = '#f5902e';
+                    // strokeColor for Clustered Point
+                    if(feature.cluster) {
+                        color = '#2b2f76';
+                    }
+                    return color;
+                },
+                label: function(feature) {
+                    // Label For Unclustered Point or Cluster of just 2
+                    var label = '';
+                    // Label For Clustered Point
+                    if(feature.cluster && feature.attributes.count > 2) {
+                        label = feature.attributes.count;
+                    }
+                    return label;
+                }
+            }
+        };
+        """
+
         cluster_style = """
         // Needs to be uniquely instantiated
         var style_cluster = new OpenLayers.Style(style_cluster_style, style_cluster_options);
@@ -2555,6 +2608,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         # WFS
         layers_wfs = ""
         wfs_enabled = db(db.gis_layer_wfs.enabled == True).select()
+        if wfs_enabled:
+            layers_wfs = cluster_style_options
         for layer in wfs_enabled:
             name = layer.name
             name_safe = re.sub('\W', '_', name)
@@ -2755,7 +2810,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_features = ""
         if feature_queries or add_feature:
 
-            
+            if not wfs_enabled:
+                layers_features = cluster_style_options
 
             if deployment_settings.get_gis_duplicate_features():
                 uuid_from_fid = """
@@ -2771,39 +2827,6 @@ OpenLayers.Util.extend( selectPdfControl, {
         var features = [];
         var parser = new OpenLayers.Format.WKT();
         var geom, featureVec;
-
-        // Style Rule For Clusters
-        var style_cluster_style = {
-            label: '${label}',
-            pointRadius: '${radius}',
-            fillColor: '#8087ff',
-            fillOpacity: 0.5,
-            strokeColor: '#2b2f76',
-            strokeWidth: 2,
-            strokeOpacity: 1
-        };
-        var style_cluster_options = {
-            context: {
-                radius: function(feature) {
-                    // Size For Unclustered Point
-                    var pix = 15;
-                    // Size For Clustered Point
-                    if(feature.cluster) {
-                        pix = Math.min(feature.attributes.count, 3) + 12;
-                    }
-                    return pix;
-                },
-                label: function(feature) {
-                    // Label For Unclustered Point or Cluster of just 2
-                    var label = '';
-                    // Label For Clustered Point
-                    if(feature.cluster && feature.attributes.count > 2) {
-                        label = feature.attributes.count;
-                    }
-                    return label;
-                }
-            }
-        };
 
         function addFeature(feature_id, name, geom, styleMarker, image, popup_url) {
             geom = geom.transform(proj4326, projection_current);

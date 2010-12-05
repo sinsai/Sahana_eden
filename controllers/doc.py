@@ -112,7 +112,7 @@ def shn_document_rheader(r):
 
 def document_onvalidation(form):
     s3deduplicator = local_import("s3deduplicator")
-    cgi = local_import("cgi")
+    import cgi
 
     p = request.post_vars["file"]
     if isinstance(p, cgi.FieldStorage) and p.filename:
@@ -149,6 +149,7 @@ def document():
 #==============================================================================
 def image_onvalidation(form):
     s3deduplicator = local_import("s3deduplicator")
+    import cgi
 
     p = request.post_vars["image"]
     if isinstance(p, cgi.FieldStorage) and p.filename:

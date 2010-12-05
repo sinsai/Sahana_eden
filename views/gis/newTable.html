@@ -1,0 +1,63 @@
+{{if session.s3.debug:}}
+ <script src="/{{=request.application}}/static/scripts/S3/jquery.dataTables.js" type="text/javascript" charset="utf-8"></script>
+{{else:}}
+ <script src="/{{=request.application}}/static/scripts/S3/jquery.dataTables.min.js" type="text/javascript" charset="utf-8"></script>
+{{pass}}
+<script type="text/javascript">//<![CDATA[
+$(document).ready(function(){
+alert ("HI");
+    $('#list').dataTable({
+        'bStateSave': true,
+  {{try:}}
+    {{if sortby:}}
+        'aaSorting': {{=XML(sortby)}},
+    {{else:}}
+    {{pass}}
+  {{except:}}
+  {{pass}}
+  {{try:}}
+  	//Allow dataTables.html to be used outside of CRUD
+    {{jr}}  
+    {{if not response.s3.no_sspag:}}
+        'bFilter': true,
+        'bSort': true,
+        'sPaginationType': 'full_numbers',
+        'iDisplayLength': 10,
+        'bProcessing': true,
+        'bServerSide': true,      
+        'sAjaxSource': '{{=jr.there(representation="aaData")}}',
+        'fnServerData': fnDataTablesPipeline,
+    {{pass}}
+  {{except:}}
+  {{pass}}             
+  {{if response.s3.actions:}}
+        'aoColumns': ColumnSettings,
+    // Set the action buttons in the id (first) column for each row
+        'fnRowCallback': function( nRow, aData, iDisplayIndex ) {
+            Actions = {{=XML(response.s3.actions)}};
+            Buttons = '';
+            // Loop through each action to build the button
+            for (i=0; i < Actions.length; i++) {
+                // Extract the id # from the link
+                var re = />(.*)</i;
+                id = re.exec(aData[0])[1];
+                c = Actions[i]._class
+                re = /%5Bid%5D/g;
+                Buttons = Buttons + '<a class="'+ c +'" href="' + Actions[i].url.replace(re, id) + '">' + Actions[i].label + '</a>' + '&nbsp;';
+            }
+            // Set the first column to the action buttons
+            $('td:eq(0)', nRow).html( Buttons );
+            return nRow;
+        }
+  {{pass}}
+    });
+    jQuery('.delete-btn').live('click', function(event) {
+        if(confirm('{{=T("Sure you want to delete this object?")}}')) {
+            return true;
+        } else {
+            event.preventDefault();
+            return false;
+        }
+    });
+});
+//]]></script>

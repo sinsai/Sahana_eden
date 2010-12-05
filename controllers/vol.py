@@ -287,16 +287,16 @@ def view_map():
         #if _layer:
         #    feature_queries.append(_layer)
         
-        # Insert the name into the query
+        # Insert the name into the query & replace the location_id with the person_id
         for i in range(0, len(features)):
             features[i].gis_location.name = vita.fullname(db(db.pr_person.id == features[i].pr_person.id).select(limitby=(0, 1)).first())
+            features[i].gis_location.id = features[i].pr_person.id
         
         feature_queries.append({"name" : "Volunteer",
                                 "query" : features,
                                 "active" : True,
                                 "popup_label" : "Volunteer",
-                                # @ToDo: Create a custom controller with the core Vol-related requirements for the Incident Commander
-                                "popup_url" : URL(r=request, c="vol", f="person", args=(person_id, "read.plain")) + "?dummy=",  # Add a dummy var to take the location_id
+                                "popup_url" : URL(r=request, c="vol", f="person") + "/<id>/read.plain",
                                 "marker" : marker_id})
 
         html = gis.show_map(
@@ -479,16 +479,16 @@ def view_team_map():
         #if _layer:
         #    feature_queries.append(_layer)
         
-        # Insert the name into the query
+        # Insert the name into the query & replace the location_id with the person_id
         for i in range(0, len(features)):
             features[i].gis_location.name = vita.fullname(db(db.pr_person.id == features[i].pr_person.id).select(limitby=(0, 1)).first())
+            features[i].gis_location.id = features[i].pr_person.id
         
         feature_queries.append({"name" : "Volunteers",
                                 "query" : features,
                                 "active" : True,
                                 "popup_label" : "Volunteer",
-                                # @ToDo: Create a custom controller with the core Vol-related requirements for the Incident Commander
-                                "popup_url" : URL(r=request, c="vol", f="person") + "/<id>/read.plain",  # @ToDo use the person_id instead of the location_id
+                                "popup_url" : URL(r=request, c="vol", f="person") + "/<id>/read.plain",
                                 "marker" : marker_id})
 
         try:

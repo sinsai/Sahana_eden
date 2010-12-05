@@ -4,11 +4,9 @@
     Project
 
     @author: Michael Howden (michael@sahanafoundation.org)
-    @date-created: 2010-08-25
+    @date-created: 2010-08-25 (moved from org)
 
     Project Tracking
-    
-    project_project and project_task moved from 05_org.py
 """
 
 application = "project"
@@ -535,8 +533,9 @@ if deployment_settings.has_module("project"):
                             Field("subject", length=80, notnull=True),
                             Field("description", "text"),
                             project_id(),
-                            office_id(),
-                            person_id(),
+                            location_id(),
+                            office_id(label=T("Managing Office")),
+                            person_id(label=T("Assigned to")),
                             Field("status", "integer",
                                 requires = IS_IN_SET(project_task_status_opts, zero=None),
                                 # default = 1,
@@ -549,10 +548,7 @@ if deployment_settings.has_module("project"):
     # - so we define strings in the model
     table.subject.requires = IS_NOT_EMPTY()
     table.subject.label = T("Subject")
-    
-    table.person_id.label = T("Assigned to")
-    
-    
+
     def shn_project_task_onvalidation(form):
     
         """ Task form validation """

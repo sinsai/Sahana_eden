@@ -102,6 +102,8 @@ def index():
 
 
 # -----------------------------------------------------------------------------
+# People
+# -----------------------------------------------------------------------------
 def person():
 
     """
@@ -158,56 +160,6 @@ def person():
 
     shn_menu()
     return output
-
-
-# -----------------------------------------------------------------------------
-def project():
-
-    """ RESTful CRUD controller """
-
-    tabs = [
-            (T("Basic Details"), None),
-            (T("Staff"), "staff"),
-            (T("Tasks"), "task"),
-            #(T("Donors"), "organisation"),
-            #(T("Sites"), "site"),  # Ticket 195
-           ]
-
-    rheader = lambda r: shn_project_rheader(r, tabs)
-    return s3_rest_controller("project", resourcename, rheader=rheader)
-
-
-# -----------------------------------------------------------------------------
-def task():
-
-    """ Manage current user's tasks """
-
-    tablename = "project_%s" % (resourcename)
-    table = db[tablename]
-
-    my_person_id = s3_logged_in_person()
-
-    if not my_person_id:
-        session.error = T("No person record found for current user.")
-        redirect(URL(r=request, f="index"))
-
-    table.person_id.default = my_person_id
-    #table.person_id.writable = False
-
-    response.s3.filter = (db.project_task.person_id == my_person_id)
-
-    s3.crud_strings[tablename].title_list = T("My Tasks")
-    s3.crud_strings[tablename].subtitle_list = T("Task List")
-
-    return s3_rest_controller("project", resourcename)
-
-
-# -----------------------------------------------------------------------------
-def skill_types():
-
-    """ Allow user to define new skill types. """
-
-    return s3_rest_controller(prefix, "skill_types")
 
 
 # -----------------------------------------------------------------------------
@@ -320,6 +272,32 @@ def view_map():
 
 
 # -----------------------------------------------------------------------------
+def skill_types():
+
+    """ Allow user to define new skill types. """
+
+    return s3_rest_controller(prefix, "skill_types")
+
+
+# -----------------------------------------------------------------------------
+def skill():
+
+    """ Select skills a volunteer has. """
+
+    return s3_rest_controller(prefix, "skill")
+
+
+# -----------------------------------------------------------------------------
+# TODO: Is resource a bad name, due to possible confusion with other usage?
+def resource():
+
+    """ Select resources a volunteer has """
+
+    return s3_rest_controller(prefix, "resource")
+
+# -----------------------------------------------------------------------------
+# Teams
+# -----------------------------------------------------------------------------
 def group():
 
     """ Team controller -- teams use the group table from PR """
@@ -386,14 +364,6 @@ def group():
 
     shn_menu()
     return output
-
-
-# -----------------------------------------------------------------------------
-def skill():
-
-    """ Select skills a volunteer has. """
-
-    return s3_rest_controller(prefix, "skill")
 
 
 # -----------------------------------------------------------------------------
@@ -523,6 +493,179 @@ def view_team_map():
 
 
 # -----------------------------------------------------------------------------
+# Projects & Tasks
+# -----------------------------------------------------------------------------
+def project():
+
+    """ RESTful CRUD controller """
+
+    tabs = [
+            (T("Basic Details"), None),
+            (T("Staff"), "staff"),
+            (T("Tasks"), "task"),
+            #(T("Donors"), "organisation"),
+            #(T("Sites"), "site"),  # Ticket 195
+           ]
+
+    rheader = lambda r: shn_project_rheader(r, tabs)
+    return s3_rest_controller("project", resourcename, rheader=rheader)
+
+
+# -----------------------------------------------------------------------------
+def task():
+
+    """ Manage current user's tasks """
+
+    tablename = "project_%s" % (resourcename)
+    table = db[tablename]
+
+    my_person_id = s3_logged_in_person()
+
+    if not my_person_id:
+        session.error = T("No person record found for current user.")
+        redirect(URL(r=request, f="index"))
+
+    table.person_id.default = my_person_id
+    #@ToDo: if not a team leader then:
+    #   can only assign themselves tasks
+
+    response.s3.filter = (db.project_task.person_id == my_person_id)
+
+    s3.crud_strings[tablename].title_list = T("My Tasks")
+    s3.crud_strings[tablename].subtitle_list = T("Task List")
+
+    return s3_rest_controller("project", resourcename)
+
+
+# -----------------------------------------------------------------------------
+def view_project_map():
+
+    """
+        Show Location of all Volunteers on the Map
+
+        Use most recent presence if available, else any address that's available
+        
+        @ToDo: Update for correct Presence settings, Popup details, etc (see view_map)
+    """
+
+    group_id = request.args(0)
+
+    members_query = (db.pr_group_membership.group_id == group_id)
+    members = db(members_query).select(db.pr_group_membership.person_id) # Members of a team (aka group)
+    member_person_ids = [ x.person_id for x in members ] # List of members
+
+    # Shortcuts
+    persons = db.pr_person
+    presences = db.pr_presence
+    locations = db.gis_location
+    
+    # Presence Data for Members who aren't Missing & have a Verified Presence
+    features = db(persons.id.belongs(member_person_ids) & \
+                 (persons.missing == False) & \
+                 (presences.pe_id == persons.pe_id) & \
+                 (presences.presence_condition.belongs(vita.PERSISTANT_PRESENCE)) & \
+                 (presences.closed == False) & \
+                 (locations.id == presences.location_id)).select(locations.id,
+                                                                 locations.lat,
+                                                                 locations.lon,
+                                                                 locations.lat_min,
+                                                                 locations.lat_max,
+                                                                 locations.lon_min,
+                                                                 locations.lon_max,
+                                                                 persons.id)
+
+    # Address of those members without Presence data
+    #address = db(persons.id.belongs(member_person_ids) & \
+    #            (db.pr_address.pe_id == persons.pe_id) & \
+    #            (locations.id ==  db.pr_address.location_id)).select(locations.id,
+    #                                                                 locations.lat,
+    #                                                                 locations.lon,
+    #                                                                 persons.id)
+    #locations_list.extend(address)
+
+    if features:
+
+        if len(features) > 1:
+            # Set the viewport to the appropriate area to see everyone
+            bounds = gis.get_bounds(features=features)
+        else:
+            # A 1-person bounds zooms in too far for many tilesets
+            lat = features.first().gis_location.lat
+            lon = features.first().gis_location.lon
+            zoom = 15
+
+        config = gis.get_config()
+
+        if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
+            catalogue_toolbar = True
+        else:
+            catalogue_toolbar = False
+
+        # Standard Feature Layers
+        feature_queries = []
+        feature_layers = db(db.gis_layer_feature.enabled == True).select()
+        for layer in feature_layers:
+            _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=False, polygons=layer.polygons)
+            if _layer:
+                feature_queries.append(_layer)
+        
+        # Add the Volunteer layer
+        try:
+            marker_id = db(db.gis_marker.name == "volunteer").select().first().id
+        except:
+            marker_id = 1
+        
+        # Can't use this since the location_id link is via pr_presence not pr_person
+        #_layer = gis.get_feature_layer("pr", "person", "Volunteer", "Volunteer", config=config, marker_id=marker_id, active=True, polygons=False)
+        #if _layer:
+        #    feature_queries.append(_layer)
+        
+        # Insert the name into the query & replace the location_id with the person_id
+        for i in range(0, len(features)):
+            features[i].gis_location.name = vita.fullname(db(db.pr_person.id == features[i].pr_person.id).select(limitby=(0, 1)).first())
+            features[i].gis_location.id = features[i].pr_person.id
+        
+        feature_queries.append({"name" : "Volunteers",
+                                "query" : features,
+                                "active" : True,
+                                "popup_label" : "Volunteer",
+                                "popup_url" : URL(r=request, c="vol", f="person") + "/<id>/read.plain",
+                                "marker" : marker_id})
+
+        try:
+            html = gis.show_map(
+                feature_queries = feature_queries,
+                #wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+                catalogue_toolbar = catalogue_toolbar,
+                catalogue_overlays = True,
+                toolbar = True,
+                search = True,
+                bbox = bounds,
+                window = True,  # @ToDo Change to False & create a way to convert an embedded map to a full-screen one without a screen refresh
+            )
+        except:
+            html = gis.show_map(
+                feature_queries = feature_queries,
+                #wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+                catalogue_toolbar = catalogue_toolbar,
+                catalogue_overlays = True,
+                toolbar = True,
+                search = True,
+                lat = lat,
+                lon = lon,
+                zoom = zoom,
+                window = True,  # @ToDo Change to False & create a way to convert an embedded map to a full-screen one without a screen refresh
+            )
+        return dict(map=html)
+
+    # Redirect to team details if no location is available
+    session.error=T("Add Location")
+    redirect(URL(r=request, c="vol", f="group", args=[group_id, "address"]))
+
+
+# -----------------------------------------------------------------------------
+# Messaging
+# -----------------------------------------------------------------------------
 def compose_person():
 
     """ Send message to volunteer """
@@ -550,14 +693,5 @@ def compose_group():
                            redirect_function="compose_group",
                            redirect_vars={"group_id":request.vars.group_id},
                            title_name="Send a message to a team of volunteers")
-
-
-# -----------------------------------------------------------------------------
-# TODO: Is resource a bad name, due to possible confusion with other usage?
-def resource():
-
-    """ Select resources a volunteer has """
-
-    return s3_rest_controller(prefix, "resource")
 
 # -----------------------------------------------------------------------------

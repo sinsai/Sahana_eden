@@ -25,7 +25,7 @@ class TestWindow(Frame):
         self.clean = False
         test = SahanaTestSuite()
         test.test_main(self.getTestModules())
-        call(["firefox", "../results/regressionTest.html"])
+        call(["firefox", os.path.join("..", "results", "regressionTest.html")])
         SahanaTestSuite.stopSelenium() # Debug comment out to keep the Selenium window open 
         self.clean = True
     

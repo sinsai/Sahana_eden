@@ -13,7 +13,7 @@ class Action:
         if reveal:
             msg += " with password " + password
         sel.wait_for_page_to_load("30000")
-        test.assertTrue("Logged in" in sel.get_text("//*[@class=\"col1\"]"),msg)
+        test.assertTrue("Logged in" in sel.get_text("//div[@class=\"confirmation\"]"),msg)
 
     def logout(self, test):
         # TODO add test for user to be logged in

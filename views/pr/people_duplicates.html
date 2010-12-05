@@ -1,0 +1,20 @@
+{{extend "layout.html"}}
+{{include "person_dedup_table.html"}}
+{{try:}}
+ {{=H2(title)}}
+{{except:}}
+{{pass}}
+<p> &nbsp 
+<h3> Person Deduplicator </h3>
+<UL>
+<LI>Person 1, Person 2 are the duplicate records 
+<LI>Match percentage indicates the % match between these two records
+<LI>Resolve link invokes new screen which helps to resolve these duplicate records and update the database.
+</UL>
+</p>
+<div id='table-container'>
+{{try:}}
+ {{=items}}
+{{except:}}
+{{pass}}
+</div>

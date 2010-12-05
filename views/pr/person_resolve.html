@@ -1,0 +1,365 @@
+{{extend "layout.html"}}
+{{include "person_dedup_table.html"}}
+{{try:}}
+ {{=H2(title)}}
+{{except:}}
+{{pass}}
+<script type="text/javascript">//<![CDATA[
+// function to get url variables
+function getUrlVars(){
+    var vars = [], hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+    for(var i = 0; i < hashes.length; i++)
+    {
+        hash = hashes[i].split('=');
+        vars.push(hash[0]);
+        vars[hash[0]] = hash[1];
+    }
+    return vars;
+}
+
+//function to make ajax requests to update new record and delete old record
+function makeRequest(xml,url,newRec,old){
+        var xmler = (new XMLSerializer()).serializeToString(xml);
+        //alert(url);
+        $.ajax({
+                type: "PUT",
+                url: url,
+                data : xmler,
+                dataType : 'xml',
+                processData : 'false',
+                contentType: "text/xml",
+                success: function(res){
+                    alert("Record Saved");
+                }
+                });
+        newUrl = "{{=URL(r=request, c="pr", f="delete_person")}}";
+        dataVar = "new=" + newRec  + "&old=" + old;
+        alert("The other record is will be deleted");
+        $.ajax({
+        type: "POST",
+        url: newUrl,
+        data: dataVar,
+        success: function(msg){
+        alert(msg);
+        window.close();
+        //write code here to close the window
+        }
+        });
+}
+
+$(document).ready(function(){
+$('#pr_person_id__row').remove();
+$('#pr_person_id__row').remove();
+$('table tr td').each(function(){
+this.style.height = "25px"; //make it look uniform on all browsers
+});
+
+// operations done when form1 is submitted
+$('#form1').submit(function(event){
+    url = this.action + ".xml"
+    var str = this.id + ' :input'
+    var $inputs = $('#form1 :input');
+    var values = {};
+    $inputs.each(function() {
+        values[this.name] = $(this).val();   //associative array of form elements names and values
+    });
+    $.ajax({
+        type: "GET",
+        url: url,
+        dataType: "xml",
+        success: function(xml){
+            $(xml).find("data").each(function () {
+                name = $(this).attr('field')
+                value = $(this).text();
+                $(this).text(values[name]);
+            });
+            newRec = getUrlVars()["perID1"];
+            old = getUrlVars()["perID2"];
+            makeRequest(xml,url,newRec,old);
+        }
+    });
+    
+   event.preventDefault(); 
+});
+
+
+//function to run on submission of form2
+$('#form2').submit(function(event){
+    url = this.action + ".xml"
+    var str = this.id + ' :input'
+    var $inputs = $('#form2 :input');
+    var values = {};
+    $inputs.each(function() {
+        values[this.name] = $(this).val();    //associative arrays containing name valure pairs of form elements
+    });
+    $.ajax({     //To get the XML format to be used for posting data to server
+        type: "GET",
+        url: url,
+        dataType: "xml",
+        success: function(xml){
+            $(xml).find("data").each(function () {      //Procedure to iterate over one data block after another from the XML
+                name = $(this).attr('field')
+                value = $(this).text();
+                $(this).text(values[name]);
+            });
+            newRec = getUrlVars()["perID2"];
+            old = getUrlVars()["perID1"];
+            makeRequest(xml,url,newRec,old);
+        }
+    });
+   event.preventDefault();                  //Prevent default behavior
+});
+
+
+$('.leftArrows').live('click',function(){
+number = this.id.substring(0,2);                    //switching based on first two nos of the id
+switch(number)
+{
+case "2L":  
+  answer = $('input[id="pr_person_pe_label"]').last().val();
+  //alert(answer);
+  $('input[id="pr_person_pe_label"]').first().val(answer);
+  $('input[id="pr_person_pe_label"]').last().val("");
+  break;
+case "3L":  
+  answer = $('input[id="pr_person_missing"]').last().attr('checked');
+  alert("3l value " + answer);
+  if (answer==true)
+  {
+     $('input[id="pr_person_missing"]').first().attr('checked',true);
+     $('input[id="pr_person_missing"]').last().attr('checked',false);
+     $('input[id="pr_person_missing"]').first().val(true); 
+  }
+  else
+  {
+     $('input[id="pr_person_missing"]').first().attr('checked',false);
+     //$('input[id="pr_person_missing"]').last().attr('checked',true);
+     $('input[id="pr_person_missing"]').first().val(false); 
+  }
+  
+  break;
+case "4L":
+  answer = $('input[id="pr_person_first_name"]').last().val();
+  //alert(answer);
+  $('input[id="pr_person_first_name"]').first().val(answer);
+  $('input[id="pr_person_first_name"]').last().val("");
+  break;
+case "5L":
+  answer = $('input[id="pr_person_middle_name"]').last().val();
+  //alert(answer);
+  $('input[id="pr_person_middle_name"]').first().val(answer);
+  $('input[id="pr_person_middle_name"]').last().val("");
+  break;
+case "6L":
+  answer = $('input[id="pr_person_last_name"]').last().val();
+  //alert(answer);
+  $('input[id="pr_person_last_name"]').first().val(answer);
+  $('input[id="pr_person_last_name"]').last().val("");
+  break;
+case "7L":
+  answer = $('input[id="pr_person_preferred_name"]').last().val();
+  //alert(answer);
+  $('input[id="pr_person_preferred_name"]').first().val(answer);
+  $('input[id="pr_person_preferred_name"]').last().val("");
+  break;
+case "8L":
+  answer = $('input[id="pr_person_local_name"]').last().val();
+  //alert(answer);
+  $('input[id="pr_person_local_name"]').first().val(answer);
+  $('input[id="pr_person_local_name"]').last().val("");
+  break;
+case "9L":
+  answer = $('select[id="pr_person_gender"]').last().val();
+  //alert(answer);
+  $('select[id="pr_person_gender"]').first().val(answer);
+  $('select[id="pr_person_gender"]').last().val("");
+  break;
+case "10":
+  answer = $('select[id="pr_person_age_group"]').last().val();
+  //alert(answer);
+  $('select[id="pr_person_age_group"]').first().val(answer);
+  $('select[id="pr_person_age_group"]').last().val("");
+  break;
+case "11":
+  answer = $('input[id="pr_person_date_of_birth"]').last().val();
+  //alert(answer);
+  $('input[id="pr_person_date_of_birth"]').first().val(answer);
+  $('input[id="pr_person_date_of_birth"]').last().val("");
+  break;
+case "12":
+  answer = $('select[id="pr_person_nationality"]').last().val();
+  //alert(answer);
+  $('select[id="pr_person_nationality"]').first().val(answer);
+  $('select[id="pr_person_nationality"]').last().val("");
+  break;
+case "13":
+  answer = $('select[id="pr_person_country"]').last().val();
+  //alert(answer);
+  $('select[id="pr_person_country"]').first().val(answer);
+  $('select[id="pr_person_country"]').last().val("")
+  break;
+case "14":
+  answer = $('select[id="pr_person_religion"]').last().val();
+  //alert(answer);
+  $('select[id="pr_person_religion"]').first().val(answer);
+  $('select[id="pr_person_religion"]').last().val("");
+  break;
+case "15":
+  answer = $('select[id="pr_person_marital_status"]').last().val();
+  //alert(answer);
+  $('select[id="pr_person_marital_status"]').first().val(answer);
+  $('select[id="pr_person_marital_status"]').last().val("");
+  break;
+case "16":
+  answer = $('input[id="pr_person_occupation"]').last().val();
+  //alert(answer);
+  $('input[id="pr_person_occupation"]').first().val(answer);
+  $('input[id="pr_person_occupation"]').last().val("");
+  break;
+case "17":
+  answer = $('select[id="pr_person_tags"]').last().val();
+  //alert(answer);
+  $('select[id="pr_person_tags"]').first().val(answer);
+  $('select[id="pr_person_tags"]').last().val("");
+  break;
+case "18":
+  answer = $('textarea[id="pr_person_comments"]').last().val();
+  //alert(answer);
+  $('textarea[id="pr_person_comments"]').first().val(answer);
+  $('textarea[id="pr_person_comments"]').last().val("");
+  break;
+default:
+}
+});
+$('.rightArrows').live('click',function(){
+number = this.id.substring(0,2);
+switch(number)
+{
+case "2R":
+  
+  answer = $('input[id="pr_person_pe_label"]').first().val();
+  //alert(answer);
+  $('input[id="pr_person_pe_label"]').last().val(answer);
+  $('input[id="pr_person_pe_label"]').first().val("");
+  break;
+case "3R":
+  //alert ($('input[id="pr_person_pe_label"]').first().val());
+  answer = $('input[id="pr_person_missing"]').first().attr('checked');
+  alert("3r value " + answer);
+  if (answer==true)
+  {
+     $('input[id="pr_person_missing"]').last().attr('checked',true);
+     $('input[id="pr_person_missing"]').first().attr('checked',false);
+     $('input[id="pr_person_missing"]').last().val(true);
+  }
+  else
+  {
+     $('input[id="pr_person_missing"]').last().attr('checked',false);
+     //$('input[id="pr_person_missing"]').first().attr('checked',true);
+     $('input[id="pr_person_missing"]').last().val(false);
+  }
+ 
+  break;
+case "4R":
+  answer = $('input[id="pr_person_first_name"]').first().val();
+  ////alert(answer);
+  $('input[id="pr_person_first_name"]').last().val(answer);
+  $('input[id="pr_person_first_name"]').first().val("");
+  break;
+case "5R":
+  answer = $('input[id="pr_person_middle_name"]').first().val();
+  //alert(answer);
+  $('input[id="pr_person_middle_name"]').last().val(answer);
+  $('input[id="pr_person_middle_name"]').first().val("");
+  break;
+case "6R":
+  answer = $('input[id="pr_person_last_name"]').first().val();
+  //alert(answer);
+  $('input[id="pr_person_last_name"]').last().val(answer);
+  $('input[id="pr_person_last_name"]').first().val("");
+  break;
+case "7R":
+  answer = $('input[id="pr_person_preferred_name"]').first().val();
+  //alert(answer);
+  $('input[id="pr_person_preferred_name"]').last().val(answer);
+  $('input[id="pr_person_preferred_name"]').first().val("");
+  break;
+case "8R":
+  answer = $('input[id="pr_person_local_name"]').first().val();
+  //alert(answer);
+  $('input[id="pr_person_local_name"]').last().val(answer);
+  $('input[id="pr_person_local_name"]').first().val("");
+  break;
+case "9R":
+  answer = $('select[id="pr_person_gender"]').first().val();
+  //alert(answer);
+  $('select[id="pr_person_gender"]').last().val(answer);
+  $('select[id="pr_person_gender"]').first().val("");
+  break;
+case "10":
+  answer = $('select[id="pr_person_age_group"]').first().val();
+  //alert(answer);
+  $('select[id="pr_person_age_group"]').last().val(answer);
+  $('select[id="pr_person_age_group"]').first().val("");
+  break;
+case "11":
+  answer = $('input[id="pr_person_date_of_birth"]').first().val();
+  //alert(answer);
+  $('input[id="pr_person_date_of_birth"]').last().val(answer);
+  $('input[id="pr_person_date_of_birth"]').first().val("");
+  break;
+case "12":
+  answer = $('select[id="pr_person_nationality"]').first().val();
+  //alert(answer);
+  $('select[id="pr_person_nationality"]').last().val(answer);
+  $('select[id="pr_person_nationality"]').first().val("");
+  break;
+case "13":
+  answer = $('select[id="pr_person_country"]').first().val();
+  //alert(answer);
+  $('select[id="pr_person_country"]').last().val(answer);
+  $('select[id="pr_person_country"]').first().val("");
+  break;
+case "14":
+  answer = $('select[id="pr_person_religion"]').first().val();
+  //alert(answer);
+  $('select[id="pr_person_religion"]').last().val(answer);
+  $('select[id="pr_person_religion"]').first().val("");
+  break;
+case "15":
+  answer = $('select[id="pr_person_marital_status"]').first().val();
+  //alert(answer);
+  $('select[id="pr_person_marital_status"]').last().val(answer);
+  $('select[id="pr_person_marital_status"]').first().val("");
+  break;
+case "16":
+  answer = $('input[id="pr_person_occupation"]').first().val();
+  //alert(answer);
+  $('input[id="pr_person_occupation"]').last().val(answer);
+  $('input[id="pr_person_occupation"]').first().val("");
+  break;
+case "17":
+  answer = $('select[id="pr_person_tags"]').first().val();
+  //alert(answer);
+  $('select[id="pr_person_tags"]').last().val(answer);
+  $('select[id="pr_person_tags"]').first().val("");
+  break;
+case "18":
+  answer = $('textarea[id="pr_person_comments"]').first().val();
+  //alert(answer);
+  $('textarea[id="pr_person_comments"]').last().val(answer);
+  $('textarea[id="pr_person_comments"]').first().val("");
+  break;
+default:
+}
+});
+});
+//]]></script>
+<table>
+<tr><td><b><center>RECORD A</center></b></td>
+<td><b><center>RECORD B</center></b></td></tr>
+<tr>
+<td>{{=form1}}</td>
+<td>{{=form2}}</td></tr>
+</table>

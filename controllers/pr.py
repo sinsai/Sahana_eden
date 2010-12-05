@@ -250,14 +250,14 @@ def tooltip():
 
 #----------------------------------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------
-#To delete references to a old record and replacing it with the new one.
+#To delete references to a old record and replace it with the new one.
 def delete_person():
     old = request.vars.old
     new = request.vars.new
     # Find all tables which link to the pr_person table
     
     tables = shn_table_links("pr_person")
-
+    
     for table in tables:
         for count in range(len(tables[table])):
             field = tables[str(db[table])][count]
@@ -289,6 +289,9 @@ def person_resolve():
     record = db.pr_person[request.vars.perID2]
     form2 = SQLFORM(db.pr_person, record,_id="form2",_action=(myUrl+"/"+request.vars.perID2))
     return dict(form1=form1,form2=form2,perID1=request.vars.perID1,perID2=request.vars.perID2)    
+#------------------------------------------------------------------------------------------------------------------
+#                                 S08 - person De-Duplicator Module                                               #
+#------------------------------------------------------------------------------------------------------------------
 
 def people_duplicates():
     """

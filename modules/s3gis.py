@@ -257,6 +257,12 @@ class GIS(object):
         max_lat = -90
         min_not_none = self._min_not_none  # use this instead of min
         for feature in features:
+            try:
+                # A simple feature set?
+                lon = feature.lon
+            except:
+                # A Join
+                feature = feature.gis_location
             min_lon = min_not_none(feature.lon, feature.lon_min, min_lon)
             min_lat = min_not_none(feature.lat, feature.lat_min, min_lat)
             max_lon = max(feature.lon, feature.lon_max, max_lon)
@@ -440,6 +446,7 @@ class GIS(object):
         except:
             # Application disabled, skip layer
             return None
+
     # -----------------------------------------------------------------------------
     def get_features_in_radius(self, lat, lon, radius, resourcename="gis_location", category=None):
         """
@@ -1156,10 +1163,11 @@ class GIS(object):
                 try:
                     shape = wkt_loads(form.vars.wkt)
                 except:
-                    form.errors["wkt"] = {
-                        "2": self.messages.invalid_wkt_linestring,
-                        "3": self.messages.invalid_wkt_polygon,
-                    }
+                    if form.vars.gis_feature_type  == "2":
+                        form.errors["wkt"] = self.messages.invalid_wkt_linestring
+                    else:
+                        # "3"
+                        form.errors["wkt"] = self.messages.invalid_wkt_polygon
                     return
                 centroid_point = shape.centroid
                 form.vars.lon = centroid_point.x
@@ -2331,6 +2339,72 @@ OpenLayers.Util.extend( selectPdfControl, {
     """
             zoomToExtent = ""
 
+        cluster_style_options = """
+        // Style Rule For Clusters
+        var style_cluster_style = {
+            label: '${label}',
+            pointRadius: '${radius}',
+            fillColor: '${fill}',
+            fillOpacity: 0.5,
+            strokeColor: '${stroke}',
+            strokeWidth: 2,
+            strokeOpacity: 1
+        };
+        var style_cluster_options = {
+            context: {
+                radius: function(feature) {
+                    // Size for Unclustered Point
+                    var pix = 12;
+                    // Size for Clustered Point
+                    if(feature.cluster) {
+                        pix = Math.min(feature.attributes.count/2, 8) + 12;
+                    }
+                    return pix;
+                },
+                fill: function(feature) {
+                    // fillColor for Unclustered Point
+                    var color = '#f5902e';
+                    // fillColor for Clustered Point
+                    if(feature.cluster) {
+                        color = '#8087ff';
+                    }
+                    return color;
+                },
+                stroke: function(feature) {
+                    // strokeColor for Unclustered Point
+                    var color = '#f5902e';
+                    // strokeColor for Clustered Point
+                    if(feature.cluster) {
+                        color = '#2b2f76';
+                    }
+                    return color;
+                },
+                label: function(feature) {
+                    // Label For Unclustered Point or Cluster of just 2
+                    var label = '';
+                    // Label For Clustered Point
+                    if(feature.cluster && feature.attributes.count > 2) {
+                        label = feature.attributes.count;
+                    }
+                    return label;
+                }
+            }
+        };
+        """
+
+        cluster_style = """
+        // Needs to be uniquely instantiated
+        var style_cluster = new OpenLayers.Style(style_cluster_style, style_cluster_options);
+        // Define StyleMap, Using 'style_cluster' rule for 'default' styling intent
+        var featureClusterStyleMap = new OpenLayers.StyleMap({
+                                          'default': style_cluster,
+                                          'select': {
+                                              fillColor: '#ffdc33',
+                                              strokeColor: '#ff9933'
+                                          }
+        });
+        """
+
         ########
         # Layers
         ########
@@ -2541,6 +2615,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         # WFS
         layers_wfs = ""
         wfs_enabled = db(db.gis_layer_wfs.enabled == True).select()
+        if wfs_enabled:
+            layers_wfs = cluster_style_options
         for layer in wfs_enabled:
             name = layer.name
             name_safe = re.sub('\W', '_', name)
@@ -2549,13 +2625,24 @@ OpenLayers.Util.extend( selectPdfControl, {
                 wfs_version = layer.version
             except:
                 wfs_version = ""
-            featureType = layer.featureType
-            featureNS = layer.featureNS
+            featureType = "featureType: '" + layer.featureType + "'"
+            if layer.featureNS:
+                featureNS = """,
+                    featureNS: '""" + layer.featureNS + "'"
+            else:
+                featureNS = ""
+            if layer.geometryName:
+                geometryName = """,
+                    geometryName: '""" + layer.geometryName + "'"
+            else:
+                geometryName = ""
             try:
-                wfs_projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
-                wfs_projection = "srsName: 'EPSG:" + wfs_projection + "',"
+                wfs_projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1), cache=cache).first().epsg
+                wfs_projection1 = "projection: new OpenLayers.Projection('EPSG:" + str(wfs_projection) + "'),"
+                wfs_projection2 = "srsName: 'EPSG:" + str(wfs_projection) + "',"
             except:
                 wfs_projection = ""
+                wfs_projection2 = ""
             if layer.visible:
                 wfs_visibility = ""
             else:
@@ -2570,23 +2657,21 @@ OpenLayers.Util.extend( selectPdfControl, {
                                 resFactor: 1
                                 })
             """
-            layers_wfs  += """
+            layers_wfs  += cluster_style + """
         var wfsLayer""" + name_safe + """ = new OpenLayers.Layer.Vector( '""" + name + """', {
                 // limit the number of features to avoid browser freezes
                 maxFeatures: 1000,
-                strategies: [""" + wfs_strategy + """],
-                projection: projection_current,
+                strategies: [""" + wfs_strategy + ", " + strategy_cluster + """],
+                """ + wfs_projection1 + """
                 //outputFormat: "json",
                 //readFormat: new OpenLayers.Format.GeoJSON(),
                 protocol: new OpenLayers.Protocol.WFS({
                     version: '""" + wfs_version + """',
-                    """ + wfs_projection + """
+                    """ + wfs_projection2 + """
                     url:  '""" + url + """',
-                    featureType: '""" + featureType + """',
-                    featureNS: '""" + featureNS + """'
-                    //,geometryName: "the_geom" // default PostGIS geometry column
-                })
-                //,styleMap: styleMap
+                    """ + featureType + featureNS + geometryName + """
+                }),
+                styleMap: featureClusterStyleMap
             });
         map.addLayer(wfsLayer""" + name_safe + """);
         """ + wfs_visibility + """
@@ -2732,18 +2817,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_features = ""
         if feature_queries or add_feature:
 
-            cluster_style = """
-        // Needs to be uniquely instantiated
-        var style_cluster = new OpenLayers.Style(style_cluster_style, style_cluster_options);
-        // Define StyleMap, Using 'style_cluster' rule for 'default' styling intent
-        var featureClusterStyleMap = new OpenLayers.StyleMap({
-                                          'default': style_cluster,
-                                          'select': {
-                                              fillColor: '#ffdc33',
-                                              strokeColor: '#ff9933'
-                                          }
-        });
-        """
+            if not wfs_enabled:
+                layers_features = cluster_style_options
 
             if deployment_settings.get_gis_duplicate_features():
                 uuid_from_fid = """
@@ -2759,39 +2834,6 @@ OpenLayers.Util.extend( selectPdfControl, {
         var features = [];
         var parser = new OpenLayers.Format.WKT();
         var geom, featureVec;
-
-        // Style Rule For Clusters
-        var style_cluster_style = {
-            label: '${label}',
-            pointRadius: '${radius}',
-            fillColor: '#8087ff',
-            fillOpacity: 0.5,
-            strokeColor: '#2b2f76',
-            strokeWidth: 2,
-            strokeOpacity: 1
-        };
-        var style_cluster_options = {
-            context: {
-                radius: function(feature) {
-                    // Size For Unclustered Point
-                    var pix = 15;
-                    // Size For Clustered Point
-                    if(feature.cluster) {
-                        pix = Math.min(feature.attributes.count, 3) + 12;
-                    }
-                    return pix;
-                },
-                label: function(feature) {
-                    // Label For Unclustered Point or Cluster of just 2
-                    var label = '';
-                    // Label For Clustered Point
-                    if(feature.cluster && feature.attributes.count > 2) {
-                        label = feature.attributes.count;
-                    }
-                    return label;
-                }
-            }
-        };
 
         function addFeature(feature_id, name, geom, styleMarker, image, popup_url) {
             geom = geom.transform(proj4326, projection_current);

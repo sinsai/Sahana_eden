@@ -5,7 +5,7 @@
 
     <!-- **********************************************************************
 
-         GPX Export Templates for S3XRC
+         GPX Export Template for S3XRC
 
          Copyright (c) 2010 Sahana Software Foundation
 

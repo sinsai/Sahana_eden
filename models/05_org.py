@@ -292,7 +292,7 @@ organisation_id = S3ReusableField("organisation_id", db.org_organisation, sortby
                           #joinby=dict(org_sector="sector_id"))
 
 s3xrc.model.configure(table,
-                      listadd=False,
+                      #listadd=False,
                       super_entity=db.pr_pentity,
                       list_fields = ["id",
                                      "name",

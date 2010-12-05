@@ -7,11 +7,7 @@
             xmlns:xal="urn:oasis:names:tc:ciq:xal:3"
             xmlns:xpil="urn:oasis:names:tc:ciq:xpil:3">
 
-    <!-- **********************************************************************
-
-         EDXL-HAVE Export Templates
-
-         Version 0.5.1 / 2010-11-25 / by nursix
+    <!-- EDXL-HAVE Export Stylesheet / by nursix
 
          Copyright (c) 2010 Sahana Software Foundation
 
@@ -36,10 +32,11 @@
          FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
          OTHER DEALINGS IN THE SOFTWARE.
 
-    *********************************************************************** -->
-    <xsl:output method="xml"/>
+    -->
 
     <!-- ****************************************************************** -->
+    <xsl:output method="xml"/>
+    <xsl:include href="../xml/commons.xsl"/>
     <xsl:param name="domain"/>
     <xsl:param name="base_url"/>
 
@@ -66,9 +63,9 @@
 
             <have:Hospital>
 
-                <!-- Organizational Data -->
+                <!-- Organization -->
                 <have:Organization>
-                    <xsl:call-template name="OrgInfo"/>
+                    <xsl:call-template name="OrganizationInformation"/>
                     <xsl:call-template name="GeoLocation"/>
                 </have:Organization>
 
@@ -91,7 +88,11 @@
 
                 <!-- Last Update Time -->
                 <have:LastUpdateTime>
-                    <xsl:value-of select="./@modified_on"/>
+                    <xsl:call-template name="datetime2iso">
+                        <xsl:with-param name="datetime">
+                            <xsl:value-of select="./@modified_on"/>
+                        </xsl:with-param>
+                    </xsl:call-template>
                 </have:LastUpdateTime>
 
             </have:Hospital>
@@ -99,76 +100,15 @@
     </xsl:template>
 
     <!-- ****************************************************************** -->
-    <!-- Organization, Contact and Address Info -->
-    <xsl:template name="OrgInfo">
+    <!-- Organization Information -->
+    <xsl:template name="OrganizationInformation">
         <have:OrganizationInformation>
-
-            <!-- @todo: move into separate template -->
-            <xnl:OrganisationName>
-                <xsl:attribute name="xnl:ID">
-                    <xsl:choose>
-                        <xsl:when test="normalize-space(./data[@field='gov_uuid']/text())">
-                            <xsl:value-of select="normalize-space(./data[@field='gov_uuid']/text())"/>
-                        </xsl:when>
-                        <xsl:otherwise>
-                            <xsl:value-of select="./@uuid" />
-                        </xsl:otherwise>
-                    </xsl:choose>
-                </xsl:attribute>
-                <xnl:NameElement>
-                    <xsl:value-of select="./data[@field='name']/text()" />
-                </xnl:NameElement>
-            </xnl:OrganisationName>
-
-            <!-- @todo: move into separate template -->
-            <!-- @todo: implement email address -->
-            <xpil:ContactNumbers>
-                <xpil:ContactNumber xpil:MediaType="Telephone" xpil:ContactNature="Exchange">
-                    <xpil:ContactNumberElement>
-                        <xsl:value-of select="./data[@field='phone_exchange']/text()" />
-                    </xpil:ContactNumberElement>
-                </xpil:ContactNumber>
-                <xpil:ContactNumber xpil:MediaType="Telephone" xpil:ContactNature="Business">
-                    <xpil:ContactNumberElement>
-                        <xsl:value-of select="./data[@field='phone_business']/text()" />
-                    </xpil:ContactNumberElement>
-                </xpil:ContactNumber>
-                <xpil:ContactNumber xpil:MediaType="Telephone" xpil:ContactNature="Emergency">
-                    <xpil:ContactNumberElement>
-                        <xsl:value-of select="./data[@field='phone_emergency']/text()" />
-                    </xpil:ContactNumberElement>
-                </xpil:ContactNumber>
-                <xpil:ContactNumber xpil:MediaType="Fax">
-                    <xpil:ContactNumberElement>
-                        <xsl:value-of select="./data[@field='fax']/text()" />
-                    </xpil:ContactNumberElement>
-                </xpil:ContactNumber>
-            </xpil:ContactNumbers>
-
-            <!-- @todo: move into separate template -->
-            <xpil:Addresses>
-                <xal:Address>
-                    <xal:FreeTextAddress>
-                        <xal:AddressLine>
-                            <xsl:value-of select="./data[@field='address']/text()"/>
-                        </xal:AddressLine>
-                    </xal:FreeTextAddress>
-                    <xal:Locality xal:Type="town">
-                        <xal:NameElement xal:NameType="Name">
-                            <xsl:value-of select="./data[@field='city']/text()"/>
-                        </xal:NameElement>
-                    </xal:Locality>
-                    <xal:PostCode>
-                        <xal:Identifier>
-                            <xsl:value-of select="./data[@field='postcode']/text()"/>
-                        </xal:Identifier>
-                    </xal:PostCode>
-                </xal:Address>
-            </xpil:Addresses>
-
+            <xsl:call-template name="OrganizationName"/>
+            <xsl:call-template name="Addresses"/>
+            <xsl:call-template name="ContactNumbers"/>
+            <xsl:call-template name="ElectronicAddressIdentifiers"/>
         </have:OrganizationInformation>
     </xsl:template>
-
 
     <!-- ****************************************************************** -->
     <!-- GeoLocation -->
@@ -199,6 +139,123 @@
         </xsl:if>
     </xsl:template>
 
+    <!-- ****************************************************************** -->
+    <!-- Organization Name and ID -->
+    <xsl:template name="OrganizationName">
+        <xnl:OrganisationName>
+            <xsl:attribute name="xnl:ID">
+                <xsl:choose>
+                    <xsl:when test="normalize-space(./data[@field='gov_uuid']/text())">
+                        <xsl:value-of select="normalize-space(./data[@field='gov_uuid']/text())"/>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:value-of select="./@uuid" />
+                    </xsl:otherwise>
+                </xsl:choose>
+            </xsl:attribute>
+            <xnl:NameElement>
+                <xsl:value-of select="./data[@field='name']/text()" />
+            </xnl:NameElement>
+        </xnl:OrganisationName>
+    </xsl:template>
+
+    <!-- ****************************************************************** -->
+    <!-- Contact Numbers -->
+    <xsl:template name="ContactNumbers">
+        <xsl:variable name="phone_exchange" select="./data[@phone_exchange]"/>
+        <xsl:variable name="phone_business" select="./data[@phone_business]"/>
+        <xsl:variable name="phone_emergency" select="./data[@phone_emergency]"/>
+        <xsl:variable name="fax" select="./data[@fax]"/>
+        <xsl:if test="$phone_exchange/text()!='' or
+                      $phone_business/text()!='' or
+                      $phone_emergency/text()!='' or
+                      $fax/text()!=''">
+            <xpil:ContactNumbers>
+                <xsl:if test="$phone_exchange/text()!=''">
+                    <xpil:ContactNumber xpil:MediaType="Telephone" xpil:ContactNature="Exchange">
+                        <xpil:ContactNumberElement>
+                            <xsl:value-of select="$phone_exchange/text()" />
+                        </xpil:ContactNumberElement>
+                    </xpil:ContactNumber>
+                </xsl:if>
+                <xsl:if test="$phone_business/text()!=''">
+                    <xpil:ContactNumber xpil:MediaType="Telephone" xpil:ContactNature="Business">
+                        <xpil:ContactNumberElement>
+                            <xsl:value-of select="$phone_business/text()" />
+                        </xpil:ContactNumberElement>
+                    </xpil:ContactNumber>
+                </xsl:if>
+                <xsl:if test="$phone_emergency/text()!=''">
+                    <xpil:ContactNumber xpil:MediaType="Telephone" xpil:ContactNature="Emergency">
+                        <xpil:ContactNumberElement>
+                            <xsl:value-of select="$phone_emergency/text()" />
+                        </xpil:ContactNumberElement>
+                    </xpil:ContactNumber>
+                </xsl:if>
+                <xsl:if test="$fax/text()!=''">
+                    <xpil:ContactNumber xpil:MediaType="Fax">
+                        <xpil:ContactNumberElement>
+                            <xsl:value-of select="$fax/text()" />
+                        </xpil:ContactNumberElement>
+                    </xpil:ContactNumber>
+                </xsl:if>
+            </xpil:ContactNumbers>
+        </xsl:if>
+      </xsl:template>
+
+    <!-- ****************************************************************** -->
+    <!-- Electronic Address Identifiers -->
+    <xsl:template name="ElectronicAddressIdentifiers">
+        <xsl:variable name="email" select="./data[@field='email']"/>
+        <xsl:variable name="website" select="./data[@field='website']"/>
+        <xsl:if test="$email/text()!='' or $website/text()!=''">
+            <xpil:ElectronicAddressIdentifiers>
+                <xsl:if test="$email/text()!=''">
+                    <xpil:ElectronicAddressIdentifier xpil:Type="EMAIL">
+                        <xsl:value-of select="$email/text()"/>
+                    </xpil:ElectronicAddressIdentifier>
+                </xsl:if>
+                <xsl:if test="$website/text()!=''">
+                    <xpil:ElectronicAddressIdentifier xpil:Type="URL">
+                        <xsl:value-of select="$website/text()"/>
+                    </xpil:ElectronicAddressIdentifier>
+                </xsl:if>
+            </xpil:ElectronicAddressIdentifiers>
+        </xsl:if>
+    </xsl:template>
+
+    <!-- ****************************************************************** -->
+    <!-- Addresses -->
+    <xsl:template name="Addresses">
+        <xsl:variable name="address" select="./data[@field='address']"/>
+        <xsl:variable name="city" select="./data[@field='city']"/>
+        <xsl:variable name="postcode" select="./data[@field='postcode']"/>
+        <xsl:if test="$city/text()!=''">
+            <xpil:Addresses>
+                <xal:Address>
+                    <xsl:if test="$address/text()!=''">
+                        <xal:FreeTextAddress>
+                            <xal:AddressLine>
+                                <xsl:value-of select="$address/text()"/>
+                            </xal:AddressLine>
+                        </xal:FreeTextAddress>
+                    </xsl:if>
+                    <xal:Locality xal:Type="town">
+                        <xal:NameElement xal:NameType="Name">
+                            <xsl:value-of select="$city/text()"/>
+                        </xal:NameElement>
+                    </xal:Locality>
+                    <xsl:if test="$postcode/text()!=''">
+                        <xal:PostCode>
+                            <xal:Identifier>
+                                <xsl:value-of select="$postcode/text()"/>
+                            </xal:Identifier>
+                        </xal:PostCode>
+                    </xsl:if>
+                </xal:Address>
+            </xpil:Addresses>
+        </xsl:if>
+    </xsl:template>
 
     <!-- ****************************************************************** -->
     <!-- Emergency Department Status -->
@@ -221,7 +278,7 @@
                         </xsl:otherwise>
                     </xsl:choose>
                 </have:EMSTrafficStatus>
-                <xsl:if test="./data[@field='ems_reason']/text()">
+                <xsl:if test="./data[@field='ems_reason']/text()!=''">
                     <have:EMSTrafficReason>
                         <xsl:value-of select="./data[@field='ems_reason']/text()"/>
                     </have:EMSTrafficReason>
@@ -233,21 +290,40 @@
 
     <!-- ****************************************************************** -->
     <!-- Bed Capacity -->
-    <!-- @todo: export broken down by department if available -->
+    <!-- @todo: export broken down by bed type -->
     <xsl:template name="BedCapacityStatus">
         <have:HospitalBedCapacityStatus>
-            <have:BedCapacity>
-                <have:BedType>MedicalSurgical</have:BedType>
-                <have:Capacity>
+            <xsl:for-each select="./resource[@name='hms_bed_capacity']">
+                <have:BedCapacity>
+                    <have:BedType>
+                        <xsl:choose>
+                            <xsl:when test="./data[@field='bed_type']/@value='1'">AdultICU</xsl:when>
+                            <xsl:when test="./data[@field='bed_type']/@value='2'">PediatricICU</xsl:when>
+                            <xsl:when test="./data[@field='bed_type']/@value='3'">NeonatalICU</xsl:when>
+                            <xsl:when test="./data[@field='bed_type']/@value='4'">EmergencyDepartment</xsl:when>
+                            <xsl:when test="./data[@field='bed_type']/@value='5'">NurseryBeds</xsl:when>
+                            <xsl:when test="./data[@field='bed_type']/@value='6'">MedicalSurgical</xsl:when>
+                            <xsl:when test="./data[@field='bed_type']/@value='7'">RehabLongTermCare</xsl:when>
+                            <xsl:when test="./data[@field='bed_type']/@value='8'">Burn</xsl:when>
+                            <xsl:when test="./data[@field='bed_type']/@value='9'">Pediatrics</xsl:when>
+                            <xsl:when test="./data[@field='bed_type']/@value='10'">AdultPsychiatric</xsl:when>
+                            <xsl:when test="./data[@field='bed_type']/@value='11'">PediatricPsychiatric</xsl:when>
+                            <xsl:when test="./data[@field='bed_type']/@value='12'">NegativeFlowIsolation</xsl:when>
+                            <xsl:when test="./data[@field='bed_type']/@value='13'">OtherIsolation</xsl:when>
+                            <xsl:when test="./data[@field='bed_type']/@value='14'">OperatingRooms</xsl:when>
+                            <xsl:when test="./data[@field='bed_type']/@value='15'">CholeraTreatment</xsl:when>
+                            <xsl:otherwise>Other</xsl:otherwise>
+                        </xsl:choose>
+                    </have:BedType>
                     <have:CapacityStatus>VacantAvailable</have:CapacityStatus>
                     <have:AvailableCount>
-                        <xsl:value-of select="./data[@field='available_beds']/text()" />
+                        <xsl:value-of select="./data[@field='beds_available']/text()" />
                     </have:AvailableCount>
                     <have:BaselineCount>
-                        <xsl:value-of select="./data[@field='total_beds']/text()" />
+                        <xsl:value-of select="./data[@field='beds_baseline']/text()" />
                     </have:BaselineCount>
-                </have:Capacity>
-            </have:BedCapacity>
+                </have:BedCapacity>
+            </xsl:for-each>
         </have:HospitalBedCapacityStatus>
     </xsl:template>
 
@@ -308,30 +384,37 @@
     <!-- ****************************************************************** -->
     <!-- Morgue Capacity and Status -->
     <xsl:template name="MorgueCapacity">
-        <have:MorgueCapacity>
-            <have:MorgueCapacityStatus>
-                <xsl:choose>
-                    <xsl:when test="./data[@field='morgue_status']/@value='1'">
-                        <xsl:text>Open</xsl:text>
-                    </xsl:when>
-                    <xsl:when test="./data[@field='morgue_status']/@value='2'">
-                        <xsl:text>Full</xsl:text>
-                    </xsl:when>
-                    <xsl:when test="./data[@field='morgue_status']/@value='3'">
-                        <xsl:text>Exceeded</xsl:text>
-                    </xsl:when>
-                    <xsl:when test="./data[@field='morgue_status']/@value='4'">
-                        <xsl:text>Closed</xsl:text>
-                    </xsl:when>
-                    <xsl:otherwise>
-                        <xsl:text>Unknown</xsl:text>
-                    </xsl:otherwise>
-                </xsl:choose>
-            </have:MorgueCapacityStatus>
-            <have:MorgueCapacityUnits>
-                <xsl:value-of select="./data[@field='morgue_units']/text()"/>
-            </have:MorgueCapacityUnits>
-        </have:MorgueCapacity>
+        <xsl:if test="./data[@field='morgue_status']/@value or
+                      ./data[@field='morgue_units']/text()!=''">
+            <have:MorgueCapacity>
+                <xsl:if test="./data[@field='morgue_status']/@value">
+                    <have:MorgueCapacityStatus>
+                        <xsl:choose>
+                            <xsl:when test="./data[@field='morgue_status']/@value='1'">
+                                <xsl:text>Open</xsl:text>
+                            </xsl:when>
+                            <xsl:when test="./data[@field='morgue_status']/@value='2'">
+                                <xsl:text>Full</xsl:text>
+                            </xsl:when>
+                            <xsl:when test="./data[@field='morgue_status']/@value='3'">
+                                <xsl:text>Exceeded</xsl:text>
+                            </xsl:when>
+                            <xsl:when test="./data[@field='morgue_status']/@value='4'">
+                                <xsl:text>Closed</xsl:text>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:text>Unknown</xsl:text>
+                            </xsl:otherwise>
+                        </xsl:choose>
+                    </have:MorgueCapacityStatus>
+                </xsl:if>
+                <xsl:if test="./data[@field='morgue_units']/text()!=''">
+                    <have:MorgueCapacityUnits>
+                        <xsl:value-of select="./data[@field='morgue_units']/text()"/>
+                    </have:MorgueCapacityUnits>
+                </xsl:if>
+            </have:MorgueCapacity>
+        </xsl:if>
     </xsl:template>
 
 
@@ -368,19 +451,23 @@
 
     <!-- ****************************************************************** -->
     <!-- Activites 24hrs -->
+    <!-- @todo: check for modification date - current? -->
     <xsl:template name="Activity24Hr">
-        <xsl:for-each select="./resource[@name='hms_activity'][1]">
-            <have:Activity24Hr>
-                <have:Admissions>
-                    <xsl:value-of select="./data[@field='admissions24']"/>
-                </have:Admissions>
-                <have:Discharges>
-                    <xsl:value-of select="./data[@field='discharges24']"/>
-                </have:Discharges>
-                <have:Deaths>
-                    <xsl:value-of select="./data[@field='deaths24']"/>
-                </have:Deaths>
-            </have:Activity24Hr>
+        <xsl:for-each select="./resource[@name='hms_activity']">
+            <xsl:sort select="./data[@field='date']" order="descending"/>
+            <xsl:if test="position()=1">
+                <have:Activity24Hr>
+                    <have:Admissions>
+                        <xsl:value-of select="./data[@field='admissions24']"/>
+                    </have:Admissions>
+                    <have:Discharges>
+                        <xsl:value-of select="./data[@field='discharges24']"/>
+                    </have:Discharges>
+                    <have:Deaths>
+                        <xsl:value-of select="./data[@field='deaths24']"/>
+                    </have:Deaths>
+                </have:Activity24Hr>
+            </xsl:if>
         </xsl:for-each>
     </xsl:template>
 
@@ -443,11 +530,11 @@
     <xsl:template name="ResourceStatusOptions">
         <xsl:param name="value"/>
         <xsl:choose>
-            <xsl:when test="$value='1'">
-                <xsl:text>Adequate</xsl:text>
+            <xsl:when test="$value='2'">
+                <xsl:text>Insufficient</xsl:text>
             </xsl:when>
             <xsl:otherwise>
-                <xsl:text>Insufficient</xsl:text>
+                <xsl:text>Adequate</xsl:text>
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>

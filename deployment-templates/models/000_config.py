@@ -17,7 +17,7 @@ deployment_settings = s3cfg.S3Config(T)
 # Database settings
 deployment_settings.database.db_type = "sqlite"
 deployment_settings.database.host = "localhost"
-deployment_settings.database.port = "" # use default
+deployment_settings.database.port = None # use default
 deployment_settings.database.database = "sahana"
 deployment_settings.database.username = "sahana"
 deployment_settings.database.password = "password"

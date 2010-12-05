@@ -6,7 +6,9 @@
 
          GeoJSON Import Templates for Sahana-Eden
 
-         Version 0.1 / 2010-11-17 / by nursix
+         http://geojson.org/geojson-spec.html
+
+         Version 0.2 / 2010-12-02 / by flavour
 
          Copyright (c) 2010 Sahana Software Foundation
 
@@ -60,15 +62,44 @@
     <!-- ****************************************************************** -->
     <xsl:template name="location">
         <resource name="gis_location">
+
             <xsl:attribute name="uuid">
                 <xsl:value-of select="./id/text()"/>
             </xsl:attribute>
-            <data field="lat">
-                <xsl:value-of select="./geometry/coordinates[1]/text()"/>
+
+            <data field="name">
+                <xsl:value-of select="./id/text()"/>
             </data>
-            <data field="lon">
-                <xsl:value-of select="./geometry/coordinates[2]/text()"/>
-            </data>
+            
+            <xsl:choose>
+
+                <xsl:when test="./geometry/type/text()='Point'">
+                    <data field="gis_feature_type">1</data>
+                    <data field="lon">
+                        <xsl:value-of select="./geometry/coordinates[1]/text()"/>
+                    </data>
+                    <data field="lat">
+                        <xsl:value-of select="./geometry/coordinates[2]/text()"/>
+                    </data>
+                </xsl:when>
+
+                <!-- @ToDo: Handle Polygons
+                <xsl:when test="./geometry/type/text()='Polygon'">
+                    <data field="gis_feature_type">3</data>
+                    <data field="wkt">
+                        <xsl:text>POLYGON((</xsl:text>
+                        <!- @ToDo Loop through Coordinates to build WKT string
+                        <xsl:value-of select="./geometry/coordinates[1]/text()"/>
+                        <xsl:value-of select="./geometry/coordinates[2]/text()"/>
+                        <xsl:text>))</xsl:text>
+                    </data>
+                </xsl:when>
+                -->
+
+            </xsl:choose>
+
+            <!-- @ToDo: Support CRS -->
+
         </resource>
     </xsl:template>
 

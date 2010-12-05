@@ -82,7 +82,7 @@ meta_modified_by = S3ReusableField("modified_by", db.auth_user,
                                    ondelete="RESTRICT")
 
 def s3_authorstamp():
-    return (meta_created_by(),meta_modified_by())
+    return (meta_created_by(), meta_modified_by())
 
 def s3_meta_fields():
 

@@ -182,6 +182,7 @@ class S3Config(Storage):
                 "org",          # Organisation Registry
                 "budget",       # Budgetting
                 "cr",           # Camp Registry
+		"deduplicator", # Duplicate Record Removal
                 "delphi",       # Delphi Decision Maker
                 "dvi",          # Disaster Victim Identification
                 #"dvr",          # Disaster Victim Registry

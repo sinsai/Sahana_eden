@@ -26,6 +26,7 @@ response.menu_options = [
 if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
     response.menu_options.append([T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")])
     response.menu_options.append([T("De-duplicator"), False, URL(r=request, f="location_duplicates")])
+    
 
 # -----------------------------------------------------------------------------
 # Web2Py Tools functions
@@ -276,69 +277,108 @@ def location():
 
     return output
 
+#To delete references to a old record and replacing it with the new one.
+def delete_location():
+    old = request.vars.old
+    new = request.vars.new
+    # Find all tables which link to the Locations table
+    # @ToDo Replace with db.gis_location._referenced_by
+    tables = shn_table_links("gis_location")
+
+    for table in tables:
+        for count in range(len(tables[table])):
+            field = tables[str(db[table])][count]
+            query = db[table][field] == old
+            db(query).update(**{field:new})
+
+    # Remove the record
+    db(db.gis_location.id == old).update(deleted=True)
+    return "Record Gracefully Deleted"
+
+#This opens a popup screen where the deduplication process takes place.
+def location_resolve():
+    count = 0
+    #Remove the comment and replace it with buttons for each of the fields 
+    for field in db["gis_location"]:
+        id1 = str(count) + "Right"      #Gives a unique number to each of the arrow keys
+        id2 = str(count) + "Left"
+        count  = count + 1;
+        #Comment field filled with buttons
+        field.comment = DIV(TABLE(TR(TD(INPUT(_type="button", _id=id1,_class="rightArrows",_value="-->")),TD(INPUT(_type="button", _id=id2,_class="leftArrows",_value="<--")))))
+        record = db.gis_location[request.vars.locID1]
+    myUrl = URL(r=request, c="gis", f="location")
+    #create sqlform for the record
+    form1 = SQLFORM(db.gis_location, record,_id="form1",_action=(myUrl+"/"+request.vars.locID1))
+    
+    #For the second location remove all the comments to save space.
+    for field in db["gis_location"]:
+        field.comment = None
+    record = db.gis_location[request.vars.locID2]
+    form2 = SQLFORM(db.gis_location, record,_id="form2",_action=(myUrl+"/"+request.vars.locID2))
+    return dict(form1=form1,form2=form2,locID1=request.vars.locID1,locID2=request.vars.locID2)
+    
+
 def location_duplicates():
     """
         Handle De-duplication of Locations
     """
-
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
-        unauthorised()
-
-    def delete_location(old, new):
-        # Find all tables which link to the Locations table
-        # @ToDo Replace with db.gis_location._referenced_by
-        tables = shn_table_links("gis_location")
-
-        for table in tables:
-            for count in range(len(tables[table])):
-                field = tables[str(db[table])][count]
-                query = db[table][field] == old
-                db(query).update(**{field:XXX})
-
-        # Remove the record
-        db(db.gis_location.id == old).update(deleted=True)
-
-        return
-
-    def open_btn(id):
-        return A(T("Load Details"), _id=id, _href=URL(r=request, f="location"), _class="action-btn", _target="_blank")
-
-    def links_btn(id):
-        return A(T("Linked Records"), _id=id, _href=URL(r=request, f="location_links"), _class="action-btn", _target="_blank")
-
-    # Unused: we do all filtering client-side using AJAX
-    filter = request.vars.get("filter", None)
-
-    #repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
-    repr_select = lambda l: l.level and "%s (%s)" % (l.name, response.s3.gis.location_hierarchy[l.level]) or l.name
-    if filter:
-        requires = IS_ONE_OF(db, "gis_location.id", repr_select, filterby="level", filter_opts=(filter,), orderby="gis_location.name", sort=True)
+    #Import the s3deduplicator module necessary to find the great circle distance
+    s3dedup = local_import("s3deduplicator")
+    table_header = THEAD(TR(TH("Location 1"),TH("Location 2"),TH("Distance(Kms)"),TH("Resolve")))
+    totalLocations = db(db.gis_location.id > 0).count()
+    #Calculating max possible combinations of locations
+    #To handle the AJAX requests by the table plugin to jquery.
+    item_list = []
+    if request.vars.iDisplayStart:
+        end = int(request.vars.iDisplayLength)+int(request.vars.iDisplayStart)
+        locations = db((db.gis_location.id>0)&(db.gis_location.deleted==False)&(db.gis_location.lat!=None)&(db.gis_location.lon!=None)).select(db.gis_location.id, db.gis_location.name, db.gis_location.level, db.gis_location.lat, db.gis_location.lon)
+        count = 1
+        #calculating the great circle distance
+        for oneLocation in locations[:len(locations)/2]:
+            for anotherLocation in locations[len(locations)/2:]:
+                if count > end and request.vars.max != "undefined":
+                    count = int(request.vars.max)
+                    break;
+                if oneLocation.id == anotherLocation.id:
+                    continue
+                else:
+                    dist = s3dedup.greatCircleDistance(oneLocation.lat,oneLocation.lon,anotherLocation.lat,anotherLocation.lon)
+                    if dist < deployment_settings.gis.location_min_distance:
+                        count = count + 1
+                        item_list.append([oneLocation.name,anotherLocation.name,dist,"<a href=\"../gis/location_resolve?locID1="+str(oneLocation.id)+"&locID2="+str(anotherLocation.id)+"\", class=\"action-btn\">Resolve</a>"])
+                    else:
+                        continue
+        item_list = item_list[int(request.vars.iDisplayStart):end]
+        #Need to convert data to JSON
+        import gluon.contrib.simplejson as json
+        result  = []
+        result.append({
+                    "sEcho" : request.vars.sEcho,
+                    "iTotalRecords" : count,
+                    "iTotalDisplayRecords" : count,
+                    "aaData" : item_list
+                    })
+        output = json.dumps(result)
+        output = output[1:] #remove unwanted brackets
+        output = output[:-1]
+        return output
     else:
-        requires = IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True, zero=T("Select a location"))
-    table = db.gis_location
-    form = SQLFORM.factory(
-                           Field("old", table, requires=requires, label = SPAN(B(T("Old")), " (" + T("To delete") + ")"), comment=DIV(links_btn("linkbtn_old"), open_btn("btn_old"))),
-                           Field("new", table, requires=requires, label = B(T("New")), comment=DIV(links_btn("linkbtn_new"), open_btn("btn_new"))),
-                           formstyle = s3_formstyle
-                          )
-
-    form.custom.submit.attributes['_value'] = T("Delete Old")
-
-    if form.accepts(request.vars, session):
-        _vars = form.vars
-
-        if not _vars.old == _vars.new:
-            # Take Action
-            delete_location(_vars.old, _vars.new)
-            session.confirmation = T("Location De-duplicated")
-            redirect(URL(r=request))
-        else:
-            response.error = T("Locations should be different!")
-
-    elif form.errors:
-        response.error = T("Need to select 2 Locations")
-
-    return dict(form=form)
+        locations = db((db.gis_location.id>0)&(db.gis_location.deleted==False)&(db.gis_location.lat!=None)&(db.gis_location.lon!=None)).select(db.gis_location.id, db.gis_location.name, db.gis_location.level, db.gis_location.lat, db.gis_location.lon)
+        item_list1 = []
+        count = 1
+        #Just for the initial look
+        for oneLocation in locations:
+            for anotherLocation in locations:
+                count = count + 1
+                if count  > 20:
+                    break
+                if oneLocation.id == anotherLocation.id:
+                    continue
+                else:
+                    dist = s3dedup.greatCircleDistance(oneLocation.lat,oneLocation.lon,anotherLocation.lat,anotherLocation.lon)
+                    item_list1.append(TR(TD(oneLocation.name),TD(anotherLocation.name),TD(dist),TD(A("Resolve",_href=URL(r=request, f="location_resolve"),_class="action-btn"))))
+        items = DIV((TABLE(table_header,TBODY(item_list1),_id="list",_class="display")))
+        return(dict(items=items))
 
 def location_links():
     """

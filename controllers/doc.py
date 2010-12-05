@@ -110,8 +110,29 @@ def shn_document_rheader(r):
         return rheader
     return None
 
+def document_onvalidation(form):
+    s3deduplicator = local_import("s3deduplicator")
+    cgi = local_import("cgi")
+
+    p = request.post_vars["file"]
+    if isinstance(p, cgi.FieldStorage) and p.filename:
+        f = p.file
+        form.vars.checksum = s3deduplicator.docChecksum(f.read())
+	query = db["doc_document"]["checksum"]
+	results = db(query).select()
+	for result in results:
+	    if form.vars.checksum == result.checksum:
+		doc_name = result.name
+                form.errors["file"] = "This file already exists on the server as doc/document/%s" % (doc_name)
+    return
+
 def document():
     """ RESTful CRUD controller """
+
+    s3xrc.model.configure(db.doc_document,
+        create_onvalidation=document_onvalidation,
+        update_onvalidation=document_onvalidation)
+
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -126,8 +147,28 @@ def document():
 
     return output
 #==============================================================================
+def image_onvalidation(form):
+    s3deduplicator = local_import("s3deduplicator")
+
+    p = request.post_vars["image"]
+    if isinstance(p, cgi.FieldStorage) and p.filename:
+        f = p.file
+        form.vars.checksum = s3deduplicator.docChecksum(f.read())
+	query = db["doc_image"]["checksum"]
+	results = db(query).select()
+	for result in results:
+	    if form.vars.checksum == result.checksum:
+		image_name = result.name
+                form.errors["image"] = "This file already exists on the server as doc/image/%s" % (image_name)
+    return
+
 def image():
     """ RESTful CRUD controller """
+
+    s3xrc.model.configure(db.doc_image,
+        create_onvalidation=image_onvalidation,
+        update_onvalidation=image_onvalidation)
+
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]

@@ -43,8 +43,8 @@ def jaro_winkler(str1, str2):
 
     if (str1 == str2):
         return 1.0
-    print str1
-    print str2
+    #print str1
+    #print str2
     
     if str1 == None:
     	return 0
@@ -181,7 +181,7 @@ def jaro_winkler_distance_row(row1, row2):
     	str1 = row1[x]		# get row fields
     	str2 = row2[x]          # get row fields
     	dw += jaro_winkler(str1, str2) #Calculate match value for two column values
-    	print dw
+    	#print dw
     dw = dw /len(row1) # Average of all column match value.
     dw = dw * 100      # convert in percentage	
     #print dw

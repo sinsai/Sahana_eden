@@ -428,10 +428,10 @@ class S3ResourceModel(object):
             if shared:
                 data = dict([(f, record[shared[f]])
                              for f in shared
-                             if shared[f] in record and f in s.fields])
+                             if shared[f] in record and f in s.fields and f != key])
             else:
                 data = dict([(f, record[f])
-                             for f in s.fields if f in record])
+                             for f in s.fields if f in record and f != key])
 
             # Add instance type and deletion status
             data.update(instance_type=table._tablename,
@@ -447,7 +447,7 @@ class S3ResourceModel(object):
                 k = {key:row[key]}
                 self.db(s[key] == row[key]).update(**data)
                 if record[key] != row[key]:
-                    self.db(table.id==id).update(k)
+                    self.db(table.id == id).update(k)
             else:
                 k = s.insert(**data)
                 if k:

@@ -74,10 +74,11 @@
                         <xsl:value-of select="data[@field='gis_feature_type']"/>
                     </type>
                     <coordinates>
-                        <xsl:value-of select="data[@field='lat']"/>
-                    </coordinates>
-                    <coordinates>
+                        <xsl:text>[</xsl:text>
                         <xsl:value-of select="data[@field='lon']"/>
+                        <xsl:text>,</xsl:text>
+                        <xsl:value-of select="data[@field='lat']"/>
+                        <xsl:text>]</xsl:text>
                     </coordinates>
                 </geometry>
             </xsl:when>

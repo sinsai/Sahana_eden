@@ -140,7 +140,7 @@ class S3Vita(object):
         earlier = (table.datetime < datetime)
         later = (table.datetime > datetime)
         same_place = ((table.location_id == presence.location_id) |
-                        (table.shelter_id == presence.shelter_id))
+                      (table.shelter_id == presence.shelter_id))
         is_present = (table.presence_condition.belongs(self.PERSISTANT_PRESENCE))
         is_absent = (table.presence_condition.belongs(self.ABSENCE))
         is_missing = (table.presence_condition == self.MISSING)
@@ -364,17 +364,38 @@ class S3Vita(object):
     # -------------------------------------------------------------------------
     def fullname(self, record, truncate=True):
 
-        """ Returns the full name of a person """
+        """
+            Returns the full name of a person
+            
+            @ToDo: Support being passed a pe_id instead of a record
+        """
 
         if record:
             fname, mname, lname = "", "", ""
-            if record.first_name:
-                fname = "%s " % self.truncate(record.first_name.strip(), 24)
-            if record.middle_name:
-                mname = "%s " % self.truncate(record.middle_name.strip(), 16)
-            if record.last_name:
-                lname = self.truncate(record.last_name.strip(), 24, nice = False)
+            try:
+                # plain query
+                if record.first_name:
+                    fname = record.first_name.strip()
+                if record.middle_name:
+                    mname = record.middle_name.strip()
+                if record.last_name:
+                    lname = record.last_name.strip()
+            except KeyError:
+                # result of a JOIN
+                if record.pr_person.first_name:
+                    fname = record.pr_person.first_name.strip()
+                if record.pr_person.middle_name:
+                    mname = record.pr_person.middle_name.strip()
+                if record.pr_person.last_name:
+                    lname = record.pr_person.last_name.strip()
 
+            if fname:
+                fname = "%s " % self.truncate(fname, 24)
+            if mname:
+                mname = "%s " % self.truncate(mname, 24)
+            if lname:
+                lname = "%s " % self.truncate(lname, 24, nice = False)
+                    
             if mname.isspace():
                 return "%s%s" % (fname, lname)
             else:

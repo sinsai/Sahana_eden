@@ -184,21 +184,24 @@ def bulk_upload():
 
     crud.messages.submit_button = T("Upload")
 
-    form = crud.create(db.doc_metadata)
+    #form = crud.create(db.doc_metadata)
 
     gpx_tracks = OptionsWidget()
-    gpx_widget = gpx_tracks.widget(track_id.track_id, track_id.track_id.default, _id="gis_layer_gpx_track_id")
-    gpx_label = track_id.track_id.label
-    gpx_comment = track_id.track_id.comment
+    #gpx_widget = gpx_tracks.widget(db.gis_track.id, "", _id="gis_layer_gpx_track_id")
+    gpx_widget = ""
+    gpx_label = track_id.attr.label
+    gpx_comment = track_id.attr.comment
 
-    feature_group = OptionsWidget()
-    fg_widget = feature_group.widget(feature_group_id.feature_group_id, feature_group_id.feature_group_id.default, _id="gis_location_to_feature_group_feature_group_id")
-    fg_label = feature_group_id.feature_group_id.label
-    fg_comment = feature_group_id.feature_group_id.comment
+    # feature_group has been replaced by layer_feature
+    #feature_group = OptionsWidget()
+    #fg_widget = feature_group.widget(feature_group_id.feature_group_id, feature_group_id.feature_group_id.default, _id="gis_location_to_feature_group_feature_group_id")
+    #fg_label = feature_group_id.feature_group_id.label
+    #fg_comment = feature_group_id.feature_group_id.comment
 
     response.title = T("Bulk Uploader")
 
-    return dict(form=form, gpx_widget=gpx_widget, gpx_label=gpx_label, gpx_comment=gpx_comment, fg_widget=fg_widget, fg_label=fg_label, fg_comment=fg_comment, IMAGE_EXTENSIONS=IMAGE_EXTENSIONS)
+    #return dict(form=form, gpx_widget=gpx_widget, gpx_label=gpx_label, gpx_comment=gpx_comment, fg_widget=fg_widget, fg_label=fg_label, fg_comment=fg_comment, IMAGE_EXTENSIONS=IMAGE_EXTENSIONS)
+    return dict(gpx_widget=gpx_widget, gpx_label=gpx_label, gpx_comment=gpx_comment, IMAGE_EXTENSIONS=IMAGE_EXTENSIONS)
 
 def upload_bulk():
     "Receive the Uploaded data from bulk_upload()"

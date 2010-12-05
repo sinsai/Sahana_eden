@@ -157,8 +157,9 @@ class S3ResourceController(object):
         self.permit = self.auth.shn_has_permission  # Permission Checker
         self.messages = None                        # Messages Finder
         self.tree_resolve = None                    # Tree Resolver
-        self.sync_resolve = None                    # Sync Resolver
-        self.sync_log = None                        # Sync Logger
+
+        self.resolve = None                         # Resolver
+        self.log = None                             # Logger
 
         # JSON formats, content-type headers
         self.json_formats = []
@@ -211,10 +212,6 @@ class S3ResourceController(object):
                      id=None,
                      files=[],
                      validate=None,
-                     permit=None,
-                     audit=None,
-                     sync=None,
-                     log=None,
                      tree=None,
                      directory=None,
                      joblist=None,
@@ -226,10 +223,6 @@ class S3ResourceController(object):
             @param element: the element
             @param id: target record ID
             @param validate: validate hook (function to validate record)
-            @param permit: permit hook (function to check table permissions)
-            @param audit: audit hook (function to audit table access)
-            @param sync: sync hook (function to resolve sync conflicts)
-            @param log: log hook (function to log imports)
             @param tree: the element tree of the source
             @param directory: the resource directory of the tree
             @param joblist: the job list for the import
@@ -275,10 +268,6 @@ class S3ResourceController(object):
                           mtime=mtime,
                           rmap=rmap,
                           directory=directory,
-                          permit=permit,
-                          audit=audit,
-                          sync=sync,
-                          log=log,
                           onvalidation=onvalidation,
                           onaccept=onaccept)
 
@@ -293,10 +282,6 @@ class S3ResourceController(object):
             jobs = self.__create_job(entry.get("resource"),
                                      relement,
                                      validate=validate,
-                                     permit=permit,
-                                     audit=audit,
-                                     sync=sync,
-                                     log=log,
                                      tree=tree,
                                      directory=directory,
                                      joblist=joblist)
@@ -1022,10 +1007,6 @@ class S3ResourceController(object):
                                      id=id,
                                      files = resource.files(),
                                      validate=self.validate,
-                                     permit=permit,
-                                     audit=audit,
-                                     sync=self.sync_resolve,
-                                     log=self.sync_log,
                                      tree=tree,
                                      directory=directory,
                                      joblist=joblist,
@@ -1076,10 +1057,6 @@ class S3ResourceController(object):
                                                   celement,
                                                   files = resource.files(),
                                                   validate=self.validate,
-                                                  permit=permit,
-                                                  audit=audit,
-                                                  sync=self.sync_resolve,
-                                                  log=self.sync_log,
                                                   tree=tree,
                                                   directory=directory,
                                                   joblist=joblist,
@@ -1112,10 +1089,11 @@ class S3ResourceController(object):
                 if not success:
                     if not job.permitted:
                         self.error = self.ERROR.NOT_PERMITTED
-                    else:
+                    elif not self.error:
                         self.error = self.ERROR.DATA_IMPORT_ERROR
                     if job.element:
-                        job.element.set(self.xml.ATTRIBUTE.error, self.error)
+                        if not job.element.get(self.xml.ATTRIBUTE.error):
+                            job.element.set(self.xml.ATTRIBUTE.error, self.error)
                     if ignore_errors:
                         continue
                     else:
@@ -1245,7 +1223,20 @@ class S3ResourceController(object):
 # *****************************************************************************
 class S3ImportJob(object):
 
-    """ Helper class for data imports """
+    """ Helper class for data imports
+
+        @param manager: the resource controller
+        @param prefix: prefix of the resource name (=module name)
+        @param name: the resource name (=without prefix)
+        @param id: the target record ID
+        @param record: the record data to import
+        @param element: the corresponding element from the element tree
+        @param rmap: map of references for this record
+        @param directory: resource directory of the input tree
+        @param onvalidation: extra function to validate records
+        @param onaccept: callback function for committed importes
+
+    """
 
     METHOD = Storage(
         CREATE="create",
@@ -1272,37 +1263,19 @@ class S3ImportJob(object):
                  mtime=None,
                  rmap=None,
                  directory=None,
-                 permit=None, # @todo 2.3: read from manager
-                 audit=None, # @todo 2.3: read from manager
-                 sync=None, # @todo 2.3: read from manager
-                 log=None, # @todo 2.3: read from manager
                  onvalidation=None,
                  onaccept=None):
 
-        """ Constructor
+        self.manager = manager
+        self.db = manager.db
 
-            @param manager: the resource controller
-            @param prefix: prefix of the resource name (=module name)
-            @param name: the resource name (=without prefix)
-            @param id: the target record ID
-            @param record: the record data to import
-            @param element: the corresponding element from the element tree
-            @param rmap: map of references for this record
-            @param directory: resource directory of the input tree
-            @param permit: permit hook (function to check table permissions)
-            @param audit: audit hook (function to audit table access)
-            @param sync: sync hook (function to resolve sync conflicts)
-            @param log: log hook (function to log imports)
-            @param onvalidation: extra function to validate records
-            @param onaccept: callback function for committed importes
+        self.permit = manager.permit
+        self.audit = manager.audit
+        self.resolve = manager.resolve
+        self.log = manager.log
 
-        """
-
-        self.__manager = manager
-        self.db = self.__manager.db
         self.prefix = prefix
         self.name = name
-
         self.tablename = "%s_%s" % (self.prefix, self.name)
         self.table = self.db[self.tablename]
 
@@ -1316,22 +1289,17 @@ class S3ImportJob(object):
             self.mtime = datetime.datetime.utcnow()
 
         self.rmap = rmap
-
         self.components = []
         self.references = []
         self.update = []
 
         self.method = None
         self.strategy = [self.METHOD.CREATE, self.METHOD.UPDATE]
-
         self.resolution = self.RESOLUTION.OTHER
         self.default_resolution = self.RESOLUTION.THIS
 
         self.onvalidation = onvalidation
         self.onaccept = onaccept
-        self.audit = audit
-        self.sync = sync
-        self.log = log
 
         self.accepted = True
         self.permitted = True
@@ -1343,7 +1311,7 @@ class S3ImportJob(object):
         if not self.id:
             self.id = 0
             self.method = permission = self.METHOD.CREATE
-            orig = self.__manager.original(self.table, self.record)
+            orig = self.manager.original(self.table, self.record)
             if orig:
                 self.id = orig.id
                 self.uid = orig.get(self.UID, None)
@@ -1354,16 +1322,12 @@ class S3ImportJob(object):
                 self.id = 0
                 self.method = permission = self.METHOD.CREATE
 
-        # Do allow import to tables with these prefixes:
-        if self.prefix in self.__manager.PROTECTED:
+        if self.prefix in self.manager.PROTECTED:
+            self.permitted = False
+        elif self.permit and not \
+           self.permit(permission, self.tablename, record_id=self.id):
             self.permitted = False
 
-        # ...or check permission explicitly:
-        elif permit and not \
-           permit(permission, self.tablename, record_id=self.id):
-            self.permitted = False
-
-        # Once the job has been created, update the entry in the directory
         if self.uid and \
            directory is not None and self.tablename in directory:
             entry = directory[self.tablename].get(self.uid, None)
@@ -1393,61 +1357,55 @@ class S3ImportJob(object):
     # -------------------------------------------------------------------------
     def commit(self):
 
-        """ Commits the record to the database
+        """ Commits the record to the database """
 
-            @todo 2.3: propagate onvalidation errors properly to the element
-            @todo 2.3: propagate import errors properly to the importer
+        self.resolve_references()
 
-        """
-
-        self.resolve() # Resolve references
-
-        model = self.__manager.model
+        xml = self.manager.xml
+        model = self.manager.model
 
         skip_components = False
 
         if not self.committed:
             if self.accepted and self.permitted:
-
                 #print >> sys.stderr, "Committing %s id=%s mtime=%s" % (self.tablename, self.id, self.mtime)
 
-                # Create pseudoform for callbacks
+                # Validate
                 form = Storage()
                 form.method = self.method
                 form.vars = self.record
                 form.vars.id = self.id
                 form.errors = Storage()
-
-                # Validate
                 if self.onvalidation:
-                    self.__manager.callback(self.onvalidation, form, name=self.tablename)
+                    self.manager.callback(self.onvalidation, form, name=self.tablename)
                 if form.errors:
-                    #print >> sys.stderr, form.errors
-                    if self.element:
-                        #TODO: propagate errors to element
-                        pass
+                    for k in form.errors:
+                        e = self.element.findall("data[@field='%s']" % k)
+                        if not e:
+                            e = self.element
+                            form.errors[k] = "[%s] %s" % (k, form.errors[k])
+                        else:
+                            e = e[0]
+                        e.set(xml.ATTRIBUTE.error,
+                              xml.xml_encode(str(form.errors[k])))
+                    self.manager.error = self.manager.ERROR.VALIDATION_ERROR
                     return False
 
-                # Call Sync resolver+logger
-                if self.sync:
-                    self.sync(self)
+                # Resolve+Log
+                if self.resolve:
+                    self.resolve(self)
                 if self.log:
                     self.log(self)
 
-                # Check for strategy
                 if not isinstance(self.strategy, (list, tuple)):
                     self.strategy = [self.strategy]
 
+                # Skip
                 if self.method not in self.strategy:
-                    # Skip this record ----------------------------------------
+                    skip_components = True # Skip all components as well
 
-                    # Do not create/update components when skipping primary
-                    skip_components = True
-
+                # Update
                 elif self.method == self.METHOD.UPDATE:
-                    # Update existing record ----------------------------------
-
-                    # Merge as per Sync resolution:
                     query = (self.table.id == self.id)
                     this = self.db(query).select(self.table.ALL, limitby=(0,1))
                     if this:
@@ -1480,23 +1438,22 @@ class S3ImportJob(object):
                                 elif this_mci == self.mci and \
                                      this_mtime and this_mtime > self.mtime:
                                         del self.record[f]
-
                     if len(self.record):
                         self.record.update({self.MCI:self.mci})
                         if "deleted" in self.table.fields:
                             self.record.update(deleted=False) # Undelete re-imported records!
                         try:
                             success = self.db(self.table.id == self.id).update(**dict(self.record))
-                        except: # TODO: propagate error to XML importer
+                        except:
+                            self.manager.error = sys.exc_info()[1]
                             return False
                         if success:
                             self.committed = True
                     else:
                         self.committed = True
 
+                # Create new
                 elif self.method == self.METHOD.CREATE:
-                    # Create new record ---------------------------------------
-
                     if self.UID in self.record:
                         del self.record[self.UID]
                     if self.MCI in self.record:
@@ -1505,7 +1462,6 @@ class S3ImportJob(object):
                         r = self.get_resolution(f)
                         if r == self.RESOLUTION.MASTER and self.mci != 1:
                             del self.record[f]
-
                     if not len(self.record):
                         skip_components = True
                     else:
@@ -1515,13 +1471,14 @@ class S3ImportJob(object):
                             self.record.update({self.MCI:self.mci})
                         try:
                             success = self.table.insert(**dict(self.record))
-                        except: # TODO: propagate error to XML importer
+                        except:
+                            self.manager.error = sys.exc_info()[1]
                             return False
                         if success:
                             self.id = success
                             self.committed = True
 
-                # audit + onaccept on successful commits
+                # Audit + onaccept on successful commits
                 if self.committed:
                     form.vars.id = self.id
                     if self.audit:
@@ -1529,15 +1486,13 @@ class S3ImportJob(object):
                                    form=form, record=self.id, representation="xml")
                     model.update_super(self.table, form.vars)
                     if self.onaccept:
-                        self.__manager.callback(self.onaccept, form, name=self.tablename)
+                        self.manager.callback(self.onaccept, form, name=self.tablename)
 
-        # Load record if components pending
+        # Commit components
         if self.id and self.components and not skip_components:
             db_record = self.db(self.table.id == self.id).select(self.table.ALL)
             if db_record:
                 db_record = db_record.first()
-
-            # Commit components
             for i in xrange(0, len(self.components)):
                 component = self.components[i]
                 pkey = component.pkey
@@ -1553,12 +1508,11 @@ class S3ImportJob(object):
                     field = u.get("field", None)
                     job.writeback(field, self.id)
 
-        # Phew...done!
         return True
 
 
     # -------------------------------------------------------------------------
-    def resolve(self):
+    def resolve_references(self):
 
         """ Resolve references of this record """
 

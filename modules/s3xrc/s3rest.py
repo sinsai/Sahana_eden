@@ -925,7 +925,7 @@ class S3Resource(object):
 
         """
 
-        json_formats = self.manager.json_formats
+        json_formats = self.manager.json_formats + ["json"]
         content_type = self.manager.content_type
 
         if r.representation == "json":

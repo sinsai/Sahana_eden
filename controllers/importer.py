@@ -40,6 +40,7 @@ def spreadsheet():
     return s3_rest_controller(module, resource, listadd=False)
 
 def spreadsheetview():
+    # Get the most recently-uploaded spreadsheet
     k = db(db.importer_spreadsheet.id > 0).select(limitby=(0, 1)).last()
     k = k.path;
     str = importer.pathfind(k)

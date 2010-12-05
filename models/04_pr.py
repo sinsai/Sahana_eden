@@ -33,12 +33,12 @@ table = db.define_table(tablename,
                               represent = lambda opt: \
                                           pr_address_type_opts.get(opt, UNKNOWN_OPT)),
                         Field("co_name"),
-                        Field("street1"),
-                        Field("street2"),
-                        Field("postcode"),
-                        Field("city"),
-                        Field("state"),
-                        pr_country(),
+                        Field("street1"),       # Should be hidden since part of location_id, populate hidden field in onvalidation to allow XSLT to see it
+                        Field("street2"),       # Should be hidden since part of location_id, populate hidden field in onvalidation to allow XSLT to see it
+                        Field("postcode"),      # Should be hidden since part of location_id, populate hidden field in onvalidation to allow XSLT to see it
+                        Field("city"),          # Should be hidden since part of location_id, populate hidden field in onvalidation to allow XSLT to see it
+                        Field("state"),         # Should be hidden since part of location_id, populate hidden field in onvalidation to allow XSLT to see it
+                        pr_country(),           # Should be hidden since part of location_id, populate hidden field in onvalidation to allow XSLT to see it
                         location_id(),
                         comments(),
                         migrate=migrate, *s3_meta_fields())
@@ -54,11 +54,18 @@ table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id", shn_pentity_represent,
 
 table.co_name.label = T("c/o Name")
 table.street1.label = T("Street")
+table.street1.readable = table.street1.writable = False
 table.street2.label = T("Street (continued)")
+table.street2.readable = table.street2.writable = False
 table.postcode.label = T("ZIP/Postcode")
+table.postcode.readable = table.postcode.writable = False
+table.city.label = T("City")
+table.city.readable = table.city.writable = False
+#table.city.requires = IS_NOT_EMPTY()
+table.state.label = T("State")
+table.state.readable = table.state.writable = False
 table.country.label = T("Country")
-
-table.city.requires = IS_NOT_EMPTY()
+table.country.readable = table.country.writable = False
 
 ADD_ADDRESS = T("Add Address")
 LIST_ADDRESS = T("List of addresses")
@@ -357,6 +364,14 @@ def s3_pr_presence_onvalidation(form):
 
     location = form.vars.location_id
     shelter = form.vars.shelter_id
+
+    if shelter and "cr_shelter" in db:
+        set = db(db.cr_shelter.id == shelter)
+        row = set.select(db.cr_shelter.location_id, limitby=(0, 1)).first()
+        if row:
+            location = form.vars.location_id = row.location_id
+        else:
+            shelter = None
 
     if location or shelter:
         return

@@ -151,10 +151,7 @@ if deployment_settings.has_module(module):
                     comments(),
                     migrate=migrate, *s3_meta_fields())
 
-
-
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-
     table.gov_uuid.label = T("Government UID")
     table.gov_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "%s.gov_uuid" % tablename))
     table.name.label = T("Name")
@@ -210,8 +207,6 @@ if deployment_settings.has_module(module):
                                   comment = shn_hospital_id_comment,
                                   ondelete = "RESTRICT")
 
-
-    # -----------------------------------------------------------------------------
     s3xrc.model.configure(table,
                           super_entity=db.org_site,
                           list_fields=["id",
@@ -302,7 +297,7 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             hospital_id(),
-                            Field("date", "datetime"),              # Date&Time the entry applies to
+                            Field("date", "datetime", unique=True), # Date&Time the entry applies to
                             Field("patients", "integer"),           # Current Number of Patients
                             Field("admissions24", "integer"),       # Admissions in the past 24 hours
                             Field("discharges24", "integer"),       # Discharges in the past 24 hours
@@ -342,11 +337,23 @@ if deployment_settings.has_module(module):
     table.deaths24.comment = DIV(DIV(_class="tooltip",
         _title=T("Deaths/24hrs") + "|" + T("Number of deaths during the past 24 hours.")))
 
+    def hms_activity_onaccept(form):
+
+        table = db.hms_activity
+        query = ((table.id == form.vars.id) & (db.hms_hospital.id == table.hospital_id))
+        hospital = db(query).select(db.hms_hospital.id,
+                                    db.hms_hospital.modified_on,
+                                    limitby=(0, 1)).first()
+        timestmp = form.vars.date
+        if hospital and hospital.modified_on < timestmp:
+            hospital.update_record(modified_on=timestmp)
+
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(hms_hospital="hospital_id"))
 
     s3xrc.model.configure(table,
+                          onaccept = lambda form: hms_activity_onaccept(form),
                           list_fields=["id",
                                        "date",
                                        "patients",
@@ -373,7 +380,7 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No reports currently available"))
 
     # -----------------------------------------------------------------------------
-    # Bed Capacity (multiple)
+    # Bed Capacity
     #
     hms_bed_type_opts = {
         1: T("Adult ICU"),
@@ -398,7 +405,7 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             hospital_id(),
-                            Field("unit_name", length=64),
+                            Field("unit_id", length=128, unique=True),
                             Field("bed_type", "integer",
                                 requires = IS_IN_SET(hms_bed_type_opts, zero=None),
                                 default = 6,
@@ -412,10 +419,8 @@ if deployment_settings.has_module(module):
                             migrate=migrate, *s3_meta_fields())
 
 
-    table.unit_name.label = T("Department/Unit Name")
-    table.unit_name.requires = IS_NULL_OR(IS_NOT_IN_DB(db(table.deleted==False), table.unit_name))
-    table.unit_name.comment = DIV(DIV(_class="tooltip",
-        _title=T("Unit Name") + "|" + T("Name of the unit or department this report refers to. Leave empty if your hospital has no subdivisions.")))
+    table.unit_id.readable = False
+    table.unit_id.writable = False
 
     table.bed_type.comment =  DIV(DIV(_class="tooltip",
         _title=T("Bed Type") + "|" + T("Specify the bed type of this unit.")))
@@ -442,11 +447,28 @@ if deployment_settings.has_module(module):
     table.beds_add24.comment = DIV(DIV(_class="tooltip",
         _title=T("Additional Beds / 24hrs") + "|" + T("Number of additional beds of that type expected to become available in this unit within the next 24 hours.")))
 
-    # -----------------------------------------------------------------------------
-    #
-    def shn_hms_bedcount_update(form):
+    def hms_bed_capacity_onvalidation(form):
 
-        """ updates the number of total/available beds of a hospital """
+        """ Bed Capacity Validation """
+
+        table = db.hms_bed_capacity
+        hospital_id = table.hospital_id.update
+        bed_type = form.vars.bed_type
+        row = db((table.hospital_id == hospital_id) &
+                 (table.bed_type == bed_type)).select(table.id,
+                                                      limitby=(0, 1)).first()
+        if row and str(row.id) != request.post_vars.id:
+            form.errors["bed_type"] = T("Bed type already registered")
+        elif "unit_id" not in form.vars:
+            hospitals = db.hms_hospital
+            hospital = db(hospitals.id == hospital_id).select(hospitals.uuid,
+                                                              limitby=(0, 1)).first()
+            if hospital:
+                form.vars.unit_id = "%s-%s" % (hospital.uuid, bed_type)
+
+    def hms_bed_capacity_onaccept(form):
+
+        """ Updates the number of total/available beds of a hospital """
 
         if isinstance(form, Row):
             formvars = form
@@ -473,16 +495,17 @@ if deployment_settings.has_module(module):
                 total_beds=t_beds,
                 available_beds=a_beds)
 
-    # add as component
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(hms_hospital="hospital_id"))
 
     s3xrc.model.configure(table,
+                          onvalidation = lambda form: \
+                                         hms_bed_capacity_onvalidation(form),
                           onaccept = lambda form: \
-                                     shn_hms_bedcount_update(form),
+                                     hms_bed_capacity_onaccept(form),
                           ondelete = lambda row: \
-                                     shn_hms_bedcount_update(row),
+                                     hms_bed_capacity_onaccept(row),
                           list_fields=["id",
                                        "unit_name",
                                        "bed_type",
@@ -493,9 +516,9 @@ if deployment_settings.has_module(module):
                           main="hospital_id", extra="id")
 
     s3.crud_strings[tablename] = Storage(
-        title_create = T("Add Unit"),
-        title_display = T("Unit Bed Capacity"),
-        title_list = T("List Units"),
+        title_create = T("Add Bed Type"),
+        title_display = T("Bed Capacity"),
+        title_list = T("Bed Capacity"),
         title_update = T("Update Unit"),
         title_search = T("Search Units"),
         subtitle_create = T("Add Unit"),
@@ -532,7 +555,6 @@ if deployment_settings.has_module(module):
                             Field("psyp", "boolean", default=False),
                             Field("obgy", "boolean", default=False),
                             migrate=migrate, *s3_meta_fields())
-
 
     table.burn.label = T("Burn")
     table.card.label = T("Cardiology")
@@ -825,75 +847,6 @@ if deployment_settings.has_module(module):
         label=T("Name and/or ID"),
         comment=T("To search for a hospital, enter any of the names or IDs of the hospital, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all hospitals."),
         fields=["gov_uuid", "name", "aka1", "aka2"])
-
-    def shn_hms_hospital_search_simple(r, **attr):
-
-        """ Simple search form for hospitals """
-
-        resource = r.resource
-        table = resource.table
-
-        r.id = None
-
-        # Check permission
-        if not shn_has_permission("read", table):
-            r.unauthorised()
-
-        if r.representation == "html":
-
-            # Check for redirection
-            next = r.request.vars.get("_next", None)
-            if not next:
-                next = URL(r=request, f="hospital", args="[id]")
-
-            # Select form
-            form = FORM(TABLE(
-                    TR(T("Name and/or ID Label" + ": "),
-                    INPUT(_type="text", _name="label", _size="40"),
-                    DIV(DIV(_class="tooltip",
-                            _title=T("Name") + "|" + T("To search for a hospital, enter any part of the name or ID. You may use % as wildcard. Press 'Search' without input to list all hospitals.")))),
-                    TR("", INPUT(_type="submit", _value=T("Search")))))
-
-            output = dict(form=form, vars=form.vars)
-
-            # Accept action
-            items = None
-            if form.accepts(request.vars, session, keepvalues=True):
-
-                if form.vars.label == "":
-                    form.vars.label = "%"
-
-                # Search
-                results = s3xrc.search_simple(table,
-                            fields = ["gov_uuid", "name", "aka1", "aka2"],
-                            label = form.vars.label)
-
-                # Get the results
-                if results:
-                    resource.build_query(id=results)
-                    report = resource.crud(r, method="list", **attr)["items"]
-                    r.next = None
-                else:
-                    report = T("No matching records found.")
-
-                output.update(items=report)
-
-            # Title and subtitle
-            title = T("Search for a Hospital")
-            subtitle = T("Matching Records")
-
-            # Add-button
-            label_create_button = shn_get_crud_string("hms_hospital", "label_create_button")
-            add_btn = A(label_create_button, _class="action-btn",
-                        _href=URL(r=request, f="hospital", args="create"))
-
-            output.update(title=title, subtitle=subtitle, add_btn=add_btn)
-            response.view = "search_simple.html"
-            return output
-
-        else:
-            session.error = BADFORMAT
-            redirect(URL(r=request))
 
     # Plug into REST controller
     s3xrc.model.set_method(module, "hospital", method="search_simple", action=s3_hms_hospital_search_simple )

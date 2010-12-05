@@ -47,16 +47,18 @@ class S3Config(Storage):
         if (db_type == "sqlite"):
             db_string = "sqlite://storage.db"
         elif (db_type == "mysql"):
-            db_string = "mysql://%s:%s@%s/%s" % \
+            db_string = "mysql://%s:%s@%s:%s/%s" % \
                         (self.database.get("username", "sahana"),
                          self.database.get("password", "password"),
                          self.database.get("host", "localhost"),
+                         self.database.get("port", None) or "3306",
                          self.database.get("database", "sahana"))
         elif (db_type == "postgres"):
-            db_string = "postgres://%s:%s@%s/%s" % \
+            db_string = "postgres://%s:%s@%s:%s/%s" % \
                         (self.database.get("username", "sahana"),
                          self.database.get("password", "password"),
                          self.database.get("host", "localhost"),
+                         self.database.get("port", None) or "5432",
                          self.database.get("database", "sahana"))
         else:
             raise HTTP(501, body="Database type '%s' not recognised - please correct file models/000_config.py." % db_type)
@@ -100,27 +102,31 @@ class S3Config(Storage):
         return self.gis.get("marker_max_height", 35)
     def get_gis_marker_max_width(self):
         return self.gis.get("marker_max_width", 30)
+    def get_gis_mouse_position(self):
+        return self.gis.get("mouse_position", "normal")
+    def get_gis_print_service(self):
+        return self.gis.get("print_service", "")
     def get_gis_geoserver_url(self):
-        return self.gis.get("geoserver_url", "http://localhost/geoserver")
+        return self.gis.get("geoserver_url", "")
     def get_gis_geoserver_username(self):
         return self.gis.get("geoserver_username", "admin")
     def get_gis_geoserver_password(self):
         return self.gis.get("geoserver_password", "password")
     def get_gis_spatialdb(self):
         return self.gis.get("spatialdb", False)
-    
+
     # OpenStreetMap settings
     def get_osm_oauth_consumer_key(self):
         return self.osm.get("oauth_consumer_key", "")
     def get_osm_oauth_consumer_secret(self):
         return self.osm.get("oauth_consumer_secret", "")
-    
+
     # Twitter settings
     def get_twitter_oauth_consumer_key(self):
         return self.twitter.get("oauth_consumer_key", "")
     def get_twitter_oauth_consumer_secret(self):
         return self.twitter.get("oauth_consumer_secret", "")
-    
+
     # L10N Settings
     def get_L10n_countries(self):
         return self.L10n.get("countries", "")

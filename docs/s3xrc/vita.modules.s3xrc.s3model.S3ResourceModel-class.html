@@ -71,7 +71,7 @@ object --+
 </pre>
 
 <hr />
-<p>Class to handle the compound resources model</p>
+<p>Model extensions helper class</p>
 
 <!-- ==================== INSTANCE METHODS ==================== -->
 <a name="section-InstanceMethods"></a>
@@ -117,8 +117,9 @@ object --+
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3model.S3ResourceModel-class.html#add_component" class="summary-sig-name">add_component</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">prefix</span>,
         <span class="summary-sig-arg">name</span>,
-        <span class="summary-sig-arg">**attr</span>)</span><br />
-      Adds a component to the model</td>
+        <span class="summary-sig-arg">joinby</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">multiple</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Define a component join</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3model-pysrc.html#S3ResourceModel.add_component">source&nbsp;code</a></span>
             
@@ -138,7 +139,7 @@ object --+
         <span class="summary-sig-arg">prefix</span>,
         <span class="summary-sig-arg">name</span>,
         <span class="summary-sig-arg">component_name</span>)</span><br />
-      Retrieves a component of a resource</td>
+      Retrieve a component join</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3model-pysrc.html#S3ResourceModel.get_component">source&nbsp;code</a></span>
             
@@ -157,7 +158,7 @@ object --+
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3model.S3ResourceModel-class.html#get_components" class="summary-sig-name">get_components</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">prefix</span>,
         <span class="summary-sig-arg">name</span>)</span><br />
-      Retrieves all components related to a resource</td>
+      Retrieves all component joins for a table</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3model-pysrc.html#S3ResourceModel.get_components">source&nbsp;code</a></span>
             
@@ -179,45 +180,6 @@ object --+
       Check whether the specified resource has components</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3model-pysrc.html#S3ResourceModel.has_components">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3model.S3ResourceModel-class.html#set_attr" class="summary-sig-name">set_attr</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">component_name</span>,
-        <span class="summary-sig-arg">name</span>,
-        <span class="summary-sig-arg">value</span>)</span><br />
-      Sets an attribute for a component</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3model-pysrc.html#S3ResourceModel.set_attr">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3model.S3ResourceModel-class.html#get_attr" class="summary-sig-name">get_attr</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">component_name</span>,
-        <span class="summary-sig-arg">name</span>)</span><br />
-      Retrieves an attribute value of a component</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3model-pysrc.html#S3ResourceModel.get_attr">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -338,27 +300,9 @@ object --+
         <span class="summary-sig-arg">types</span>,
         <span class="summary-sig-arg">*fields</span>,
         <span class="summary-sig-arg">**args</span>)</span><br />
-      Create a new super-entity table</td>
+      Define a super-entity table</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3model-pysrc.html#S3ResourceModel.super_entity">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3model.S3ResourceModel-class.html#super_key" class="summary-sig-name">super_key</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">super</span>)</span><br />
-      Get a the name of the key for a super-entity</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3model-pysrc.html#S3ResourceModel.super_key">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -438,6 +382,41 @@ object --+
       <code>__str__</code>,
       <code>__subclasshook__</code>
       </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== STATIC METHODS ==================== -->
+<a name="section-StaticMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Static Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-StaticMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3model.S3ResourceModel-class.html#super_key" class="summary-sig-name">super_key</a>(<span class="summary-sig-arg">super</span>)</span><br />
+      Get the name of the key for a super-entity</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3model-pysrc.html#S3ResourceModel.super_key">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
     </td>
   </tr>
 </table>
@@ -524,19 +503,21 @@ object --+
   <h3 class="epydoc"><span class="sig"><span class="sig-name">add_component</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">prefix</span>,
         <span class="sig-arg">name</span>,
-        <span class="sig-arg">**attr</span>)</span>
+        <span class="sig-arg">joinby</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">multiple</span>=<span class="sig-default">True</span>)</span>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vita.modules.s3xrc.s3model-pysrc.html#S3ResourceModel.add_component">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>Adds a component to the model</p>
+  <p>Define a component join</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>prefix</code></strong> - prefix of the component name (=module name)</li>
         <li><strong class="pname"><code>name</code></strong> - name of the component (=without prefix)</li>
+        <li><strong class="pname"><code>joinby</code></strong> - join key, or dict of join keys</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -558,7 +539,7 @@ object --+
     </td>
   </tr></table>
   
-  <p>Retrieves a component of a resource</p>
+  <p>Retrieve a component join</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
@@ -585,7 +566,7 @@ object --+
     </td>
   </tr></table>
   
-  <p>Retrieves all components related to a resource</p>
+  <p>Retrieves all component joins for a table</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
@@ -620,66 +601,6 @@ object --+
     </ul></dd>
   </dl>
 </td></tr></table>
-</div>
-<a name="set_attr"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">set_attr</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">component_name</span>,
-        <span class="sig-arg">name</span>,
-        <span class="sig-arg">value</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3model-pysrc.html#S3ResourceModel.set_attr">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Sets an attribute for a component</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>component_name</code></strong> - name of the component (without prefix)</li>
-        <li><strong class="pname"><code>name</code></strong> - name of the attribute</li>
-        <li><strong class="pname"><code>value</code></strong> - value for the attribute</li>
-    </ul></dd>
-  </dl>
-<div class="fields">      <p><strong>To Do (2.2):</strong>
-        deprecate?
-      </p>
-</div></td></tr></table>
-</div>
-<a name="get_attr"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_attr</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">component_name</span>,
-        <span class="sig-arg">name</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3model-pysrc.html#S3ResourceModel.get_attr">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Retrieves an attribute value of a component</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>component_name</code></strong> - name of the component (without prefix)</li>
-        <li><strong class="pname"><code>name</code></strong> - name of the attribute</li>
-    </ul></dd>
-  </dl>
-<div class="fields">      <p><strong>To Do (2.2):</strong>
-        deprecate?
-      </p>
-</div></td></tr></table>
 </div>
 <a name="set_method"></a>
 <div>
@@ -841,7 +762,7 @@ object --+
     </td>
   </tr></table>
   
-  <p>Create a new super-entity table</p>
+  <p>Define a super-entity table</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
@@ -861,15 +782,15 @@ object --+
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">super_key</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">super</span>)</span>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">super_key</span>(<span class="sig-arg">super</span>)</span>
+    <br /><em class="fname">Static Method</em>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vita.modules.s3xrc.s3model-pysrc.html#S3ResourceModel.super_key">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>Get a the name of the key for a super-entity</p>
+  <p>Get the name of the key for a super-entity</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
@@ -986,7 +907,7 @@ object --+
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Tue Oct 26 15:06:23 2010
+    Generated by Epydoc 3.0.1 on Fri Dec  3 23:49:43 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

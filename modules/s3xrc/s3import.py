@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Import Toolkit
 
-    @version: 2.2.5
+    @version: 2.2.7
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -141,16 +141,15 @@ class S3Importer(object):
 
         # Import data
         result = Storage(committed=False)
-        manager.sync_resolve = lambda vector, result=result: \
-                                      result.update(vector=vector)
+        manager.resolve = lambda job, result=result: result.update(job=job)
         try:
             success = resource.import_xml(tree)
         except SyntaxError:
             pass
 
         # Check result
-        if result.vector:
-            result = result.vector
+        if result.job:
+            result = result.job
 
         # Build response
         if success and result.committed:
@@ -208,6 +207,12 @@ class S3Importer(object):
 
         if tree:
             if template is not None:
+                tfmt = "%Y-%m-%d %H:%M:%S"
+                args.update(domain=self.manager.domain,
+                            base_url=self.manager.base_url,
+                            prefix=resource.prefix,
+                            name=resource.name,
+                            utcnow=datetime.datetime.utcnow().strftime(tfmt))
                 tree = xml.transform(tree, template, **args)
                 if not tree:
                     raise SyntaxError(xml.error)

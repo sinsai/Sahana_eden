@@ -11,7 +11,6 @@ if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
     redirect(URL(r=request, c="default", f="index"))
 
-import gluon.contrib.simplejson as json
 importer = local_import("importer")
 
 response.menu_options = [
@@ -41,6 +40,7 @@ def spreadsheet():
     return s3_rest_controller(module, resource, listadd=False)
 
 def spreadsheetview():
+    # Get the most recently-uploaded spreadsheet
     k = db(db.importer_spreadsheet.id > 0).select(limitby=(0, 1)).last()
     k = k.path;
     str = importer.pathfind(k)

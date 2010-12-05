@@ -140,7 +140,7 @@ class S3Vita(object):
         earlier = (table.datetime < datetime)
         later = (table.datetime > datetime)
         same_place = ((table.location_id == presence.location_id) |
-                        (table.shelter_id == presence.shelter_id))
+                      (table.shelter_id == presence.shelter_id))
         is_present = (table.presence_condition.belongs(self.PERSISTANT_PRESENCE))
         is_absent = (table.presence_condition.belongs(self.ABSENCE))
         is_missing = (table.presence_condition == self.MISSING)
@@ -332,7 +332,7 @@ class S3Vita(object):
     def match_query(self, body_id):
 
         person = self.db.pr_person
-        missing_report = self.db.mpr_missing_report
+        missing_report = self.db.pf_missing_report
         query = ((person.deleted == False) &
                  (person.missing == True) &
                  (missing_report.person_id == person.id))

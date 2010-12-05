@@ -3,7 +3,6 @@
 """ HMS Hospital Status Assessment and Request Management System
 
     @author: nursix
-    @version: 1.0.1
 
 """
 
@@ -24,7 +23,7 @@ def shn_menu():
             [T("Add Hospital"), False, URL(r=request, f="hospital", args="create")]
         ]],
         [T("Requests"), False, URL(r=request, c="rms", f="req")],
-        [T("Pledges"), False, URL(r=request, c="rms", f="pledge")],
+        #[T("Pledges"), False, URL(r=request, c="rms", f="pledge")],
     ]
     menu_selected = []
     if session.rcvars and "hms_hospital" in session.rcvars:

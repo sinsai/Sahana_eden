@@ -50,14 +50,15 @@ def index():
     return dict(module_name=module_name, map=map)
 
 # -----------------------------------------------------------------------------
-def define_map(window=False, toolbar=False):
+def define_map(window=False, toolbar=False, config=None):
     """
         Define the main Situation Map
         This can then be called from both the Index page (embedded) & the Map_Viewing_Client (fullscreen)
     """
 
     # @ToDo: Make these configurable
-    config = gis.get_config()
+    if not config:
+        config = gis.get_config()
     if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
         catalogue_toolbar = True
     else:
@@ -70,11 +71,21 @@ def define_map(window=False, toolbar=False):
     else:
         wms_browser = None
 
+    # 'normal', 'mgrs' or 'off'
+    mouse_position = deployment_settings.get_gis_mouse_position()
+
+    # http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting
+    print_service = deployment_settings.get_gis_print_service()
+    if print_service:
+        print_tool = {url: print_service}
+    else:
+        print_tool = {}
+    
     # Custom Feature Layers
     feature_queries = []
     feature_layers = db(db.gis_layer_feature.enabled == True).select()
     for layer in feature_layers:
-        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, layer.marker_id, active=layer.visible, polygons=layer.polygons)
+        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons)
         if _layer:
             feature_queries.append(_layer)
 
@@ -86,7 +97,8 @@ def define_map(window=False, toolbar=False):
                        search=search,
                        catalogue_overlays=catalogue_overlays,
                        feature_queries=feature_queries,
-                       #mouse_position = "mgrs"
+                       mouse_position = mouse_position,
+                       print_tool = print_tool
                       )
 
     return map
@@ -348,8 +360,6 @@ def location_links():
     except:
         item = s3xrc.xml.json_message(False, 404, "Record not found!")
         raise HTTP(404, body=item)
-
-    import gluon.contrib.simplejson as json
 
     # Find all tables which link to the Locations table
     # @ToDo Replace with db.gis_location._referenced_by
@@ -731,10 +741,16 @@ def layer_feature():
 def feature_layer_query(form):
     """ OnValidation callback to build the simple Query from helpers """
 
+    if "resource" in form.vars:
+        resource = form.vars.resource
+        # Remove the module from name
+        form.vars.resource = resource[len(form.vars.module) + 1:]
+    
     if "advanced" in form.vars:
         # We should use the query field as-is
         pass
-    elif "resource" in form.vars:
+    
+    if resource:
         # We build query from helpers
         if "filter_field" in form.vars and "filter_value" in form.vars:
             if "deleted" in db[resource]:
@@ -823,9 +839,34 @@ def projection():
 
     return output
 
+def waypoint():
+
+    """ RESTful CRUD controller for GPS Waypoints """
+
+    table = module + "_" + resourcename
+
+    return s3_rest_controller(module, resourcename)
+
+def waypoint_upload():
+
+    """
+        Custom View
+        Temporary: Likely to be refactored into the main waypoint controller
+    """
+
+    return dict()
+
+def trackpoint():
+
+    """ RESTful CRUD controller for GPS Track points """
+
+    table = module + "_" + resourcename
+
+    return s3_rest_controller(module, resourcename)
+
 def track():
 
-    """ RESTful CRUD controller """
+    """ RESTful CRUD controller for GPS Tracks (uploaded as files) """
 
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
@@ -1378,7 +1419,7 @@ def map_viewing_client():
     # @ToDo Make Configurable
     toolbar = True
 
-    map = define_map(window=window, toolbar=toolbar)
+    map = define_map(window=window, toolbar=toolbar, config=config)
 
     return dict(map=map)
 
@@ -1616,6 +1657,225 @@ def geocode():
 
     if service == "yahoo":
         return s3gis.YahooGeocoder(location, db).get_xml()
+
+# -----------------------------------------------------------------------------
+def geoexplorer():
+
+    """
+        Custom View for GeoExplorer: http://projects.opengeo.org/geoext/wiki/GeoExplorer
+    """
+
+    google_key = db(db.gis_apikey.name == "google").select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
+    
+    # http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting
+    print_service = deployment_settings.get_gis_print_service()
+
+    geoserver_url = deployment_settings.get_gis_geoserver_url()
+
+    return dict(google_key=google_key, print_service=print_service, geoserver_url=geoserver_url)
+
+def about():
+    """  Custom View for GeoExplorer """
+    return dict()
+
+def maps():
+
+    """
+        Map Save/Publish Handler for GeoExplorer
+    """
+
+    if request.env.request_method == "GET":
+        # This is a request to read the config of a saved map
+
+        # Which map are we updating?
+        id = request.args(0)
+        if not id:
+            raise HTTP(501)
+
+        # Read the WMC record
+        record = db(db.gis_wmc.id == id).select(limitby=(0, 1)).first()
+        # & linked records
+        #projection = db(db.gis_projection.id == record.projection).select(limitby=(0, 1)).first()
+
+        # Put details into the correct structure
+        output = dict()
+        output["map"] = dict()
+        map = output["map"]
+        map["center"] = [record.lat, record.lon]
+        map["zoom"] = record.zoom
+        # @ToDo: Read Projection (we generally use 900913 & no way to edit this yet)
+        map["projection"] = "EPSG:900913"
+        map["units"] = "m"
+        map["maxResolution"] = 156543.0339
+        map["maxExtent"] = [ -20037508.34, -20037508.34, 20037508.34, 20037508.34 ]
+        # @ToDo: Read Layers
+        map["layers"] = []
+        #map["layers"].append(dict(source="google", title="Google Terrain", name="TERRAIN", group="background"))
+        #map["layers"].append(dict(source="ol", group="background", fixed=True, type="OpenLayers.Layer", args=[ "None", {"visibility":False} ]))
+        for _layer in record.layer_id:
+            layer = db(db.gis_wmc_layer.id == _layer).select(limitby=(0, 1)).first()
+            if layer.type_ == "OpenLayers.Layer":
+                # Add args
+                map["layers"].append(dict(source=layer.source, title=layer.title, name=layer.name, group=layer.group_, type=layer.type_, format=layer.format, visibility=layer.visibility, transparent=layer.transparent, opacity=layer.opacity, fixed=layer.fixed, args=[ "None", {"visibility":False} ]))
+            else:
+                map["layers"].append(dict(source=layer.source, title=layer.title, name=layer.name, group=layer.group_, type=layer.type_, format=layer.format, visibility=layer.visibility, transparent=layer.transparent, opacity=layer.opacity, fixed=layer.fixed))
+        
+        # @ToDo: Read Metadata (no way of editing this yet)
+
+        # Encode as JSON
+        output = json.dumps(output)
+
+        # Output to browser
+        response.headers["Content-Type"] = "text/json"
+        return output
+
+    elif request.env.request_method == "POST":
+        # This is a request to save/publish a new map
+
+        # Get the data from the POST
+        source = request.body.read()
+        if isinstance(source, basestring):
+            from StringIO import StringIO
+            source = StringIO(source)
+
+        # Decode JSON
+        source = json.load(source)
+        # @ToDo: Projection (we generally use 900913 & no way to edit this yet)
+        lat = source["map"]["center"][0]
+        lon = source["map"]["center"][1]
+        zoom = source["map"]["zoom"]
+        # Layers
+        layers = []
+        for layer in source["map"]["layers"]:
+            try:
+                opacity = layer["opacity"]
+            except:
+                opacity = None
+            try:
+                name = layer["name"]
+            except:
+                name = None
+            _layer = db((db.gis_wmc_layer.source == layer["source"]) &
+                        (db.gis_wmc_layer.name == name) &
+                        (db.gis_wmc_layer.visibility == layer["visibility"]) &
+                        (db.gis_wmc_layer.opacity == opacity)
+                       ).select(db.gis_wmc_layer.id,
+                                limitby=(0, 1)).first()
+            if _layer:
+                # This is an existing layer
+                layers.append(_layer.id)
+            else:
+                # This is a new layer
+                try:
+                    type_ = layer["type"]
+                except:
+                    type_ = None
+                try:
+                    group_ = layer["group"]
+                except:
+                    group_ = None
+                try:
+                    fixed = layer["fixed"]
+                except:
+                    fixed = None
+                try:
+                    format = layer["format"]
+                except:
+                    format = None
+                try:
+                    transparent = layer["transparent"]
+                except:
+                    transparent = None
+                # Add a new record to the gis_wmc_layer table
+                _layer = db.gis_wmc_layer.insert(source=layer["source"], name=name, visibility=layer["visibility"], opacity=opacity, type_=type_, title=layer["title"], group_=group_, fixed=fixed, transparent=transparent, format=format)
+                layers.append(_layer)
+            
+        # @ToDo: Metadata (no way of editing this yet)
+
+        # Save a record in the WMC table
+        id = db.gis_wmc.insert(lat=lat, lon=lon, zoom=zoom, layer_id=layers)
+
+        # Return the ID of the saved record for the Bookmark
+        output = json.dumps(dict(id=id))
+        return output
+
+    elif request.env.request_method == "PUT":
+        # This is a request to save/publish an existing map
+
+        # Which map are we updating?
+        id = request.args(0)
+        if not id:
+            raise HTTP(501)
+
+        # Get the data from the PUT
+        source = request.body.read()
+        if isinstance(source, basestring):
+            from StringIO import StringIO
+            source = StringIO(source)
+
+        # Decode JSON
+        source = json.load(source)
+        # @ToDo: Projection (unlikely to change)
+        lat = source["map"]["center"][0]
+        lon = source["map"]["center"][1]
+        zoom = source["map"]["zoom"]
+        # Layers
+        layers = []
+        for layer in source["map"]["layers"]:
+            try:
+                opacity = layer["opacity"]
+            except:
+                opacity = None
+            try:
+                name = layer["name"]
+            except:
+                name = None
+            _layer = db((db.gis_wmc_layer.source == layer["source"]) &
+                        (db.gis_wmc_layer.name == name) &
+                        (db.gis_wmc_layer.visibility == layer["visibility"]) &
+                        (db.gis_wmc_layer.opacity == opacity)
+                       ).select(db.gis_wmc_layer.id,
+                                limitby=(0, 1)).first()
+            if _layer:
+                # This is an existing layer
+                layers.append(_layer.id)
+            else:
+                # This is a new layer
+                try:
+                    type_ = layer["type"]
+                except:
+                    type_ = None
+                try:
+                    group_ = layer["group"]
+                except:
+                    group_ = None
+                try:
+                    fixed = layer["fixed"]
+                except:
+                    fixed = None
+                try:
+                    format = layer["format"]
+                except:
+                    format = None
+                try:
+                    transparent = layer["transparent"]
+                except:
+                    transparent = None
+                # Add a new record to the gis_wmc_layer table
+                _layer = db.gis_wmc_layer.insert(source=layer["source"], name=name, visibility=layer["visibility"], opacity=opacity, type_=type_, title=layer["title"], group_=group_, fixed=fixed, transparent=transparent, format=format)
+                layers.append(_layer)
+        
+        # @ToDo: Metadata (no way of editing this yet)
+
+        # Update the record in the WMC table
+        db(db.gis_wmc.id == id).update(lat=lat, lon=lon, zoom=zoom, layer_id=layers)
+
+        # Return the ID of the saved record for the Bookmark
+        output = json.dumps(dict(id=id))
+        return output
+
+    # Abort - we shouldn't get here
+    raise HTTP(501)
 
 # -----------------------------------------------------------------------------
 def potlatch2():

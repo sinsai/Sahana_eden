@@ -141,11 +141,7 @@ def ireport():
             table.verified.writable = True
         elif r.representation in shn_interactive_view_formats and (r.method == "create" or r.method == None):
             table.datetime.default = request.utcnow
-            person = session.auth.user.id if auth.is_logged_in() else None
-            if person:
-                person_uuid = db(db.auth_user.id == person).select(db.auth_user.person_uuid, limitby=(0, 1)).first().person_uuid
-                person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
-            table.person_id.default = person
+            table.person_id.default = s3_logged_in_person()
 
         return True
     response.s3.prep = prep
@@ -178,7 +174,7 @@ def ireport():
                                     "label" : "Assess"
                                     }
                                    )
-    
+
     return output
 
 # -----------------------------------------------------------------------------

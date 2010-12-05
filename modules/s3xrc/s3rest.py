@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource API
 
-    @version: 2.2.5
+    @version: 2.2.7
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -46,6 +46,7 @@ from gluon.sql import Row
 from gluon.html import *
 from gluon.http import HTTP, redirect
 from gluon.sqlhtml import SQLTABLE, SQLFORM
+from gluon.validators import IS_EMPTY_OR
 
 from lxml import etree
 from s3crud import S3CRUDHandler
@@ -208,9 +209,11 @@ class S3Resource(object):
         self.xml = manager.xml
 
         # XSLT Paths
-        self.XSLT_FILE_EXTENSION = "xsl"
-        self.XSLT_IMPORT_TEMPLATES = "static/xslt/import"
-        self.XSLT_EXPORT_TEMPLATES = "static/xslt/export"
+        self.XSLT_PATH = "static/formats"
+        self.XSLT_EXTENSION = "xsl"
+        #self.XSLT_FILE_EXTENSION = "xsl"
+        #self.XSLT_IMPORT_TEMPLATES = "static/xslt/import"
+        #self.XSLT_EXPORT_TEMPLATES = "static/xslt/export"
 
         # Authorization hooks
         self.permit = manager.permit
@@ -261,7 +264,6 @@ class S3Resource(object):
                                 fields=self.__get_fields,
                                 export_tree=self.__get_tree,
                                 import_tree=self.__put_tree)
-
 
     # Method handler configuration ============================================
 
@@ -336,7 +338,6 @@ class S3Resource(object):
             @param id: record ID or list of record IDs to include
             @param uid: record UID or list of record UIDs to include
             @param filter: filtering query (DAL only)
-            @param left: left outer joins for the filter (if needed)
             @param vars: dict of URL query variables
 
         """
@@ -596,16 +597,14 @@ class S3Resource(object):
 
         if self._query is None:
             self.build_query()
-
         if self.manager.UID in self.table.fields:
             fields = (self.table.id, self.table[self.manager.UID])
         else:
             fields = (self.table.id,)
-
         set = self.db(self._query).select(*fields)
         self._ids = [row.id for row in set]
         if self.manager.UID in self.table.fields:
-            self._uids = [row.uid for row in set]
+            self._uids = [row[self.manager.UID] for row in set]
 
 
     # Representation ==========================================================
@@ -926,7 +925,7 @@ class S3Resource(object):
 
         """
 
-        json_formats = self.manager.json_formats
+        json_formats = self.manager.json_formats + ["json"]
         content_type = self.manager.content_type
 
         if r.representation == "json":
@@ -1131,9 +1130,13 @@ class S3Resource(object):
 
         # Transform source
         if template:
-            tree = xml.transform(tree, template,
-                                 domain=self.manager.domain,
-                                 base_url=self.manager.base_url)
+            tfmt = "%Y-%m-%d %H:%M:%S"
+            args = dict(domain=self.manager.domain,
+                        base_url=self.manager.base_url,
+                        prefix=self.prefix,
+                        name=self.name,
+                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
+            tree = xml.transform(tree, template, **args)
             if not tree:
                 r.error(400, "XSLT Transformation Error: %s" % self.xml.error)
 
@@ -1671,6 +1674,7 @@ class S3Resource(object):
                from_table=None,
                from_record=None,
                map_fields=None,
+               link=None,
                format=None):
 
         """ Provides and processes an Add-form for this resource
@@ -1743,7 +1747,8 @@ class S3Resource(object):
                            onaccept=onaccept,
                            message=message,
                            download_url=download_url,
-                           format=format)
+                           format=format,
+                           link=link)
 
         return form
 
@@ -1787,7 +1792,8 @@ class S3Resource(object):
                onaccept=None,
                message="Record updated",
                download_url=None,
-               format=None):
+               format=None,
+               link=None):
 
         """ Update form for this resource
 
@@ -1882,6 +1888,16 @@ class S3Resource(object):
 
             # Update super entity links
             model.update_super(table, form.vars)
+
+            # Link record
+            if link and form.vars.id:
+                linker = self.manager.linker
+                if link.linkdir == "to":
+                    linker.link(table, form.vars.id, link.linktable, link.linkid,
+                                link_class=link.linkclass)
+                else:
+                    linker.link(link.linktable, link.linkid, table, form.vars.id,
+                                link_class=link.linkclass)
 
             # Store session vars
             if form.vars.id:
@@ -2049,16 +2065,68 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def url(self):
+    def url(self,
+            id=None,
+            uid=None,
+            prefix=None,
+            format="html",
+            method=None,
+            vars=None):
 
-        """ URL of this resource (not implemented yet)
+        """ URL of this resource
 
-            @todo 2.3: implement this.
+            @param id: record ID or list of record IDs
+            @param uid: record UID or list of record UIDs (ignored if id is specified)
+            @param prefix: override current controller prefix
+            @param format: representation format
+            @param method: URL method
+            @param vars: override current URL query
 
         """
 
-        # Not implemented yet
-        raise NotImplementedError
+        r = self.manager.request
+        v = r.get_vars
+        p = prefix or r.controller
+        n = self.name
+        x = n
+        c = None
+        args = []
+        vars = vars or v or Storage()
+
+        if self.parent:
+            n = self.parent.name
+            c = self.name
+        if c:
+            x = c
+            args.append(c)
+        if id is not None and not id:
+            if not self._multiple:
+                ids = self.get_id()
+                if not isinstance(ids, (list, tuple)):
+                    args.append(str(ids))
+            elif self.parent and not self.parent._multiple:
+                ids = self.parent.get_id()
+                if not isinstance(ids, (list, tuple)):
+                    args.insert(0, str(ids))
+        elif id:
+            if isinstance(id, (list, tuple)):
+                vars["%s.id" % x] = ",".join(map(str, id))
+            else:
+                args.append(str(id))
+        elif uid:
+            if isinstance(uid, (list, tuple)):
+                uids = ",".join(map(str, uid))
+            else:
+                uids = str(uid)
+            vars["%s.uid" % x] = uids
+        if method:
+            args.append(method)
+        if format != "html":
+            if args:
+                args[-1] = "%s.%s" % (args[-1], format)
+            else:
+                n = "%s.%s" % (n, format)
+        return URL(r=r, c=p, f=n, args=args, vars=vars, extension="")
 
 
     # -------------------------------------------------------------------------
@@ -2072,41 +2140,28 @@ class S3Resource(object):
         """
 
         format = r.representation
-
         request = self.manager.request
         if r.component:
             resourcename = r.component.name
         else:
             resourcename = r.name
-
-        # format "xml" or "json"?
         if format in ("xml", "json"):
             return True
-
-        # XSLT transformation demanded in URL?
         if "transform" in request.vars:
             return True
-
-        extension = self.XSLT_FILE_EXTENSION
-
-        # XSLT stylesheet attached?
-        template = "%s.%s" % (resourcename, extension)
-        if template in request.post_vars:
-            p = request.post_vars[template]
+        extension = self.XSLT_EXTENSION
+        filename = "%s.%s" % (resourcename, extension)
+        if filename in request.post_vars:
+            p = request.post_vars[filename]
             if isinstance(p, cgi.FieldStorage) and p.filename:
                 return True
-
-        # XSLT stylesheet exists in application?
-        if method == "import":
-            path = self.XSLT_IMPORT_TEMPLATES
-        else:
-            path = self.XSLT_EXPORT_TEMPLATES
-
-        template = os.path.join(r.request.folder,
-                                path, "%s.%s" % (format, extension))
+        if method != "import":
+            method = "export"
+        path = self.XSLT_PATH
+        filename = "%s.%s" % (method, extension)
+        template = os.path.join(r.request.folder, path, format, filename)
         if os.path.exists(template):
             return True
-
         return False
 
 
@@ -2120,42 +2175,30 @@ class S3Resource(object):
 
         """
 
-        request = r.request
-
-        format = r.representation
-        folder = request.folder
-
-        if method == "import":
-            path = self.XSLT_IMPORT_TEMPLATES
-        else:
-            path = self.XSLT_EXPORT_TEMPLATES
-
-        extension = self.XSLT_FILE_EXTENSION
-
         stylesheet = None
-
+        format = r.representation
+        if format in ("xml", "json"):
+            return stylesheet
         resourcename = r.component and \
                        r.component.name or r.name
-
-        if format not in ("xml", "json"):
-
-            # External stylesheet?
-            if "transform" in request.vars:
-                stylesheet = request.vars["transform"]
-            else:
-                # Attached stylesheet?
-                ssname = "%s.%s" % (resourcename, extension)
-                if ssname in request.post_vars:
-                    p = request.post_vars[ssname]
-                    if isinstance(p, cgi.FieldStorage) and p.filename:
-                        stylesheet = p.file
-                # Integrated stylesheet?
-                else:
-                    ssname = "%s.%s" % (format, extension)
-                    stylesheet = os.path.join(folder, path, ssname)
-                    if not os.path.exists(stylesheet):
-                        r.error(501, "%s: %s" % (self.ERROR.BAD_TEMPLATE, template))
-
+        request = r.request
+        if "transform" in request.vars:
+            return request.vars["transform"]
+        extension = self.XSLT_EXTENSION
+        filename = "%s.%s" % (resourcename, extension)
+        if filename in request.post_vars:
+            p = request.post_vars[filename]
+            if isinstance(p, cgi.FieldStorage) and p.filename:
+                stylesheet = p.file
+            return stylesheet
+        folder = request.folder
+        path = self.XSLT_PATH
+        if method != "import":
+            method = "export"
+        filename = "%s.%s" % (method, extension)
+        stylesheet = os.path.join(folder, path, format, filename)
+        if not os.path.exists(stylesheet):
+            r.error(501, "%s: %s" % (self.ERROR.BAD_TEMPLATE, stylesheet))
         return stylesheet
 
 
@@ -2291,8 +2334,12 @@ class S3Request(object):
                                            self.resource.name,
                                            self.id)
             else:
-                manager.error = "No matching record found"
-                raise KeyError(manager.error)
+                manager.error = self.manager.ERROR.BAD_RECORD
+                if self.representation == "html":
+                    self.session.error = manager.error
+                    redirect(self.there())
+                else:
+                    raise KeyError(manager.error)
 
         # Check for custom action
         model = manager.model

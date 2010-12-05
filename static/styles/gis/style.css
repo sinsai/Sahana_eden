@@ -244,6 +244,8 @@ div.olControlSaveFeaturesItemInactive {
     filter: alpha(opacity=50);
 }   
 
+/* Handled in geoexplorer.css */
+/*
 .olControlPanPanel {
     top: 10px;
     left: 5px;
@@ -309,7 +311,7 @@ div.olControlSaveFeaturesItemInactive {
     left: 0px;
     background-position: 0px 18px;
 }
-
+*/
 .olPopupCloseBox {
   background: url("../../img/gis/openlayers/theme_default/close.gif") no-repeat;
   cursor: pointer;

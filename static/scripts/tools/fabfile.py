@@ -62,7 +62,7 @@ def distribute_keys():
 def deploy():
     """
         Perform the full upgrade cycle
-        - need to prfix with 'demo', 'test' or 'prod'
+        - need to prefix with 'demo', 'test' or 'prod'
     """
     print(green("Deploying to %s" % env.host))
     maintenance_on()
@@ -70,9 +70,17 @@ def deploy():
     pull()
     cleanup()
     migrate_on()
-    db_upgrade()
-    optimise()
+    if "test" in env.host:
+        db_sync()
+    else:
+        db_upgrade()
+        # Step 3: Allow web2py to run the Eden model to configure the Database structure
+        migrate()
+        # Do the actual DB upgrade
+        # (split into a separate function to allow it to easily be run manually if there is a problem with the previous step)
+        db_upgrade_()
     migrate_off()
+    optimise()
     maintenance_off()
 
 def backup():
@@ -103,6 +111,8 @@ def cleanup():
     """
     print(green("%s: Cleaning up" % env.host))
     with cd("/home/web2py/applications/eden/"):
+        # Remove compiled version of the app
+        run("/bin/rm -rf compiled", pty=True)
         # Resolve conflicts
         # @ToDo deal with .moved files
         run("find . -name *.BASE -print | xargs /bin/rm -f", pty=True)
@@ -122,59 +132,61 @@ def db_upgrade():
         - this assumes that /root/.my.cnf is configured on both Test & Prod to allow root to have access to the MySQL DB
           without needing '-u root -p'
     """
-    if "test" in env.host:
-        db_sync()
-    else:
-        print(green("%s: Upgrading Database" % env.host))
-        # See dbstruct.py
-        with cd("/home/web2py/applications/eden/"):
-            # Step 0: Drop old database 'sahana'
-            print(green("%s: Dropping old Database" % env.host))
-            # If database doesn't exist, we don't want to stop
-            env.warn_only = True
-            run("mysqladmin -f drop sahana", pty=True)
-            env.warn_only = False
-            print(green("%s: Cleaning databases folder" % env.host))
-            run("rm -rf databases/*", pty=True)
-            # Step 1: Create a new, empty MySQL database 'sahana' as-normal
-            print(green("%s: Creating new Database" % env.host))
-            run("mysqladmin create sahana", pty=True)
-            # Step 2: set deployment_settings.base.prepopulate = False in models/000_config.py
-            print(green("%s: Disabling prepopulate" % env.host))
-            run("sed -i 's/deployment_settings.base.prepopulate = True/deployment_settings.base.prepopulate = False/g' models/000_config.py", pty=True)
-        # Step 3: Allow web2py to run the Eden model to configure the Database structure
-        migrate()
-        with cd("/root/"):
-            # Step 5: Use the backup to populate a new table 'old'
-            print(green("%s: Restoring backup to 'old'" % env.host))
-            # If database doesn't exist, we don't want to stop
-            env.warn_only = True
-            run("mysqladmin -f drop old", pty=True)
-            env.warn_only = False
-            run("mysqladmin create old", pty=True)
-            run("mysql old < backup.sql", pty=True)
-        # Step 7: Run the script: python dbstruct.py
-        # use pexpect to allow us to jump in to do manual fixes
-        print(green("%s: Fixing Database Structure" % env.host))
-        child = pexpect.spawn("ssh -i /root/.ssh/sahana_release %s@%s" % (env.user, env.host))
-        child.expect(":~#")
-        child.sendline("cd /home/web2py/applications/eden/static/scripts/tools")
-        child.expect(":/home/web2py/applications/eden/static/scripts/tools#")
-        child.sendline("python dbstruct.py")
-        # @ToDo check if we need to interact otherwise automate
-        child.expect(":/home/web2py/applications/eden/static/scripts/tools#")
-        child.sendline("exit")
-        #print child.before
-        # Step 8: Fixup manually anything which couldn't be done automatically
-        #print (green("Need to exit the SSH session once you have fixed anything which needs fixing"))
-        #child.interact()     # Give control of the child to the user.
-        with cd("/root/"):
-            # Step 9: Take a dump of the fixed data (no structure, full inserts)
-            print(green("%s: Dumping fixed data" % env.host))
-            run("mysqldump -tc old > old.sql", pty=True)
-            # Step 10: Import it into the empty database
-            print(green("%s: Importing fixed data" % env.host))
-            run("mysql sahana < old.sql", pty=True)
+    print(green("%s: Upgrading Database" % env.host))
+    # See dbstruct.py
+    with cd("/home/web2py/applications/eden/"):
+        # Step 0: Drop old database 'sahana'
+        print(green("%s: Dropping old Database" % env.host))
+        # If database doesn't exist, we don't want to stop
+        env.warn_only = True
+        run("mysqladmin -f drop sahana", pty=True)
+        env.warn_only = False
+        print(green("%s: Cleaning databases folder" % env.host))
+        run("rm -rf databases/*", pty=True)
+        # Step 1: Create a new, empty MySQL database 'sahana' as-normal
+        print(green("%s: Creating new Database" % env.host))
+        run("mysqladmin create sahana", pty=True)
+        # Step 2: set deployment_settings.base.prepopulate = False in models/000_config.py
+        print(green("%s: Disabling prepopulate" % env.host))
+        run("sed -i 's/deployment_settings.base.prepopulate = True/deployment_settings.base.prepopulate = False/g' models/000_config.py", pty=True)
+
+def db_upgrade_():
+    """
+        Upgrade the Database (called by db_upgrade())
+        - this assumes that /root/.my.cnf is configured on both Test & Prod to allow root to have access to the MySQL DB
+          without needing '-u root -p'
+    """
+    with cd("/root/"):
+        # Step 5: Use the backup to populate a new table 'old'
+        print(green("%s: Restoring backup to 'old'" % env.host))
+        # If database doesn't exist, we don't want to stop
+        env.warn_only = True
+        run("mysqladmin -f drop old", pty=True)
+        env.warn_only = False
+        run("mysqladmin create old", pty=True)
+        run("mysql old < backup.sql", pty=True)
+    # Step 7: Run the script: python dbstruct.py
+    # use pexpect to allow us to jump in to do manual fixes
+    print(green("%s: Fixing Database Structure" % env.host))
+    child = pexpect.spawn("ssh -i /root/.ssh/sahana_release %s@%s" % (env.user, env.host))
+    child.expect(":~#")
+    child.sendline("cd /home/web2py/applications/eden/static/scripts/tools")
+    child.expect(":/home/web2py/applications/eden/static/scripts/tools#")
+    child.sendline("python dbstruct.py")
+    # @ToDo check if we need to interact otherwise automate
+    child.expect(":/home/web2py/applications/eden/static/scripts/tools#")
+    child.sendline("exit")
+    #print child.before
+    # Step 8: Fixup manually anything which couldn't be done automatically
+    #print (green("Need to exit the SSH session once you have fixed anything which needs fixing"))
+    #child.interact()     # Give control of the child to the user.
+    with cd("/root/"):
+        # Step 9: Take a dump of the fixed data (no structure, full inserts)
+        print(green("%s: Dumping fixed data" % env.host))
+        run("mysqldump -tc old > old.sql", pty=True)
+        # Step 10: Import it into the empty database
+        print(green("%s: Importing fixed data" % env.host))
+        run("mysql sahana < old.sql", pty=True)
 
 def db_sync():
     """

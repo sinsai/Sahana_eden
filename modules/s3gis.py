@@ -257,6 +257,12 @@ class GIS(object):
         max_lat = -90
         min_not_none = self._min_not_none  # use this instead of min
         for feature in features:
+            try:
+                # A simple feature set?
+                lon = feature.lon
+            except:
+                # A Join
+                feature = feature.gis_location
             min_lon = min_not_none(feature.lon, feature.lon_min, min_lon)
             min_lat = min_not_none(feature.lat, feature.lat_min, min_lat)
             max_lon = max(feature.lon, feature.lon_max, max_lon)
@@ -366,7 +372,7 @@ class GIS(object):
             return None
 
     # -----------------------------------------------------------------------------
-    def get_feature_layer(self, module, resource, layername, popup_label, marker=None, filter=None, active=True, polygons=False):
+    def get_feature_layer(self, prefix, resourcename, layername, popup_label, config=None, marker_id=None, filter=None, active=True, polygons=False):
         """
             Return a Feature Layer suitable to display on a map
             @param: layername: Used as the label in the LayerSwitcher
@@ -377,53 +383,60 @@ class GIS(object):
         deployment_settings = self.deployment_settings
         request = self.request
 
+        _locations = db.gis_location
+        _markers = db.gis_marker
+
+        tablename = "%s_%s" % (prefix, resourcename)
+        table = db[tablename]
+
         try:
-            if "deleted" in db["%s_%s" % (module, resource)].fields:
+            if "deleted" in table.fields:
                 # Hide deleted Resources
-                query = (db["%s_%s" % (module, resource)].deleted == False)
+                query = (table.deleted == False)
             else:
-                query = (db["%s_%s" % (module, resource)].id > 0)
+                query = (table.id > 0)
 
             if filter:
                 query = query & (db[filter.tablename].id == filter.id)
 
             # Hide Resources recorded to Country Locations on the map?
             if not deployment_settings.get_gis_display_l0():
-                query = query & ((db.gis_location.level != "L0") | (db.gis_location.level == None))
+                query = query & ((_locations.level != "L0") | (_locations.level == None))
 
-            query = query & (db.gis_location.id == db["%s_%s" % (module, resource)].location_id)
-            if not polygons and not resource in gis_categorised_resources:
+            query = query & (_locations.id == db["%s_%s" % (prefix, resourcename)].location_id)
+            if not polygons and not resourcename in gis_categorised_resources:
                 # Only retrieve the bulky polygons if-required
-                locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.lat, db.gis_location.lon)
-            elif not polygons and resource in gis_categorised_resources:
-                locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.lat, db.gis_location.lon, db["%s_%s" % (module, resource)].category)
-            elif polygons and not resource in gis_categorised_resources:
-                locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
+                locations = db(query).select(_locations.id, _locations.uuid, _locations.parent, _locations.name, _locations.lat, _locations.lon)
+            elif not polygons and resourcename in gis_categorised_resources:
+                locations = db(query).select(_locations.id, _locations.uuid, _locations.parent, _locations.name, _locations.lat, _locations.lon, table.category)
+            elif polygons and not resourcename in gis_categorised_resources:
+                locations = db(query).select(_locations.id, _locations.uuid, _locations.parent, _locations.name, _locations.wkt, _locations.lat, _locations.lon)
             else:
                 # Polygons & Categorised resources
-                locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon, db["%s_%s" % (module, resource)].category)
+                locations = db(query).select(_locations.id, _locations.uuid, _locations.parent, _locations.name, _locations.wkt, _locations.lat, _locations.lon, table.category)
 
-            if resource in gis_categorised_resources:
+            if resourcename in gis_categorised_resources:
                 for i in range(0, len(locations)):
-                    locations[i].popup_label = locations[i].name + "-" + popup_label
-                    locations[i].marker = self.get_marker(resource, locations[i]["%s_%s" % (module, resource)].category)
+                    locations[i].popup_label = "%s-%s" % (locations[i].name, popup_label)
+                    locations[i].marker = self.get_marker(resourcename, locations[i][tablename].category)
             else:
                 for i in range(0, len(locations)):
-                    locations[i].popup_label = locations[i].name + "-" + popup_label
+                    locations[i].popup_label = "%s-%s" % (locations[i].name, popup_label)
 
-            popup_url = URL(r=request, c=module, f=resource, args="read.plain?%s.location_id=" % resource)
+            popup_url = URL(r=request, c=prefix, f=resourcename, args="read.plain?%s.location_id=" % resourcename)
 
-            if not marker and not resource in gis_categorised_resources:
+            if not marker_id and not resourcename in gis_categorised_resources:
                 # Add the marker here so that we calculate once/layer not once/feature
                 table_fclass = db.gis_feature_class
-                config = self.get_config()
-                query = (table_fclass.deleted == False) & (table_fclass.symbology_id == config.symbology_id) & (table_fclass.resource == resource)
+                if not config:
+                    config = self.get_config()
+                query = (table_fclass.deleted == False) & (table_fclass.symbology_id == config.symbology_id) & (table_fclass.resource == resourcename)
                 marker = db(query).select(db.gis_feature_class.id, limitby=(0, 1), cache=cache).first()
                 if marker:
-                    marker = marker.id
+                    marker_id = marker.id
 
             try:
-                marker = db(db.gis_marker.name == marker).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, db.gis_marker.id, limitby=(0, 1), cache=cache).first()
+                marker = db(_markers.id == marker_id).select(_markers.image, _markers.height, _markers.width, _markers.id, limitby=(0, 1), cache=cache).first()
                 layer = {"name":layername, "query":locations, "active":active, "marker":marker, "popup_url": popup_url, "polygons": polygons}
             except:
                 layer = {"name":layername, "query":locations, "active":active, "popup_url": popup_url, "polygons": polygons}
@@ -433,6 +446,7 @@ class GIS(object):
         except:
             # Application disabled, skip layer
             return None
+
     # -----------------------------------------------------------------------------
     def get_features_in_radius(self, lat, lon, radius, resourcename="gis_location", category=None):
         """
@@ -1099,11 +1113,12 @@ class GIS(object):
             node_path = str(location_id)
             db(table.id == location_id).update(path=node_path)
         else:
-            path = db(table.id == parent).select(table.path)
-            if(path[0].path == None):
-               path[0].path = parent
-            node_path = str(path[0].path) + "/" + str(location_id)
-            db(table.id == location_id).update(path=node_path)
+            path = db(table.id == parent).select(table.path).first()
+            if path:
+                if (path.path == None):
+                    path.path = parent
+                node_path = str(path.path) + "/" + str(location_id)
+                db(table.id == location_id).update(path=node_path)
 
         return
 
@@ -1148,10 +1163,11 @@ class GIS(object):
                 try:
                     shape = wkt_loads(form.vars.wkt)
                 except:
-                    form.errors["wkt"] = {
-                        "2": self.messages.invalid_wkt_linestring,
-                        "3": self.messages.invalid_wkt_polygon,
-                    }
+                    if form.vars.gis_feature_type  == "2":
+                        form.errors["wkt"] = self.messages.invalid_wkt_linestring
+                    else:
+                        # "3"
+                        form.errors["wkt"] = self.messages.invalid_wkt_polygon
                     return
                 centroid_point = shape.centroid
                 form.vars.lon = centroid_point.x
@@ -2323,6 +2339,72 @@ OpenLayers.Util.extend( selectPdfControl, {
     """
             zoomToExtent = ""
 
+        cluster_style_options = """
+        // Style Rule For Clusters
+        var style_cluster_style = {
+            label: '${label}',
+            pointRadius: '${radius}',
+            fillColor: '${fill}',
+            fillOpacity: 0.5,
+            strokeColor: '${stroke}',
+            strokeWidth: 2,
+            strokeOpacity: 1
+        };
+        var style_cluster_options = {
+            context: {
+                radius: function(feature) {
+                    // Size for Unclustered Point
+                    var pix = 12;
+                    // Size for Clustered Point
+                    if(feature.cluster) {
+                        pix = Math.min(feature.attributes.count/2, 8) + 12;
+                    }
+                    return pix;
+                },
+                fill: function(feature) {
+                    // fillColor for Unclustered Point
+                    var color = '#f5902e';
+                    // fillColor for Clustered Point
+                    if(feature.cluster) {
+                        color = '#8087ff';
+                    }
+                    return color;
+                },
+                stroke: function(feature) {
+                    // strokeColor for Unclustered Point
+                    var color = '#f5902e';
+                    // strokeColor for Clustered Point
+                    if(feature.cluster) {
+                        color = '#2b2f76';
+                    }
+                    return color;
+                },
+                label: function(feature) {
+                    // Label For Unclustered Point or Cluster of just 2
+                    var label = '';
+                    // Label For Clustered Point
+                    if(feature.cluster && feature.attributes.count > 2) {
+                        label = feature.attributes.count;
+                    }
+                    return label;
+                }
+            }
+        };
+        """
+
+        cluster_style = """
+        // Needs to be uniquely instantiated
+        var style_cluster = new OpenLayers.Style(style_cluster_style, style_cluster_options);
+        // Define StyleMap, Using 'style_cluster' rule for 'default' styling intent
+        var featureClusterStyleMap = new OpenLayers.StyleMap({
+                                          'default': style_cluster,
+                                          'select': {
+                                              fillColor: '#ffdc33',
+                                              strokeColor: '#ff9933'
+                                          }
+        });
+        """
+
         ########
         # Layers
         ########
@@ -2404,25 +2486,59 @@ OpenLayers.Util.extend( selectPdfControl, {
                         if layer.subtype == subtype:
                             google["%s" % subtype] = layer.name
             if google:
-                html.append(SCRIPT(_type="text/javascript", _src="http://maps.google.com/maps?file=api&v=2&key=" + google.key))
+                if google.MapMaker or google.MapMakerHybrid:
+                    # Need to use v2 API
+                    # http://code.google.com/p/gmaps-api-issues/issues/detail?id=2349
+                    googleMapmaker = True
+                    html.append(SCRIPT(_type="text/javascript", _src="http://maps.google.com/maps?file=api&v=2&key=" + google.key))
+                else:
+                    googleMapmaker = False
+                    html.append(SCRIPT(_type="text/javascript", _src="http://maps.google.com/maps/api/js?sensor=false"))
+                # Google Earth (coming soon)
+                #html.append(SCRIPT(_type="text/javascript", _src="http://www.google.com/jsapi?key=" + google.key))
+                #html.append(SCRIPT("google && google.load('earth', '1');", _type="text/javascript"))
                 if google.Satellite:
-                    layers_google += """
-        var googlesat = new OpenLayers.Layer.Google( '""" + google.Satellite + """' , {type: G_SATELLITE_MAP, 'sphericalMercator': true } );
+                    if googleMapmaker:
+                        layers_google += """
+        var googlesat = new OpenLayers.Layer.Google( '""" + google.Satellite + """' , {type: G_SATELLITE_MAP, 'sphericalMercator': true} );
+        map.addLayer(googlesat);
+                    """
+                    else:
+                        layers_google += """
+        var googlesat = new OpenLayers.Layer.Google( '""" + google.Satellite + """' , {type: google.maps.MapTypeId.SATELLITE, numZoomLevels: 22} );
         map.addLayer(googlesat);
                     """
                 if google.Maps:
-                    layers_google += """
-        var googlemaps = new OpenLayers.Layer.Google( '""" + google.Maps + """' , {type: G_NORMAL_MAP, 'sphericalMercator': true } );
+                    if googleMapmaker:
+                        layers_google += """
+        var googlemaps = new OpenLayers.Layer.Google( '""" + google.Maps + """' , {type: G_NORMAL_MAP, 'sphericalMercator': true} );
+        map.addLayer(googlemaps);
+                    """
+                    else:
+                        layers_google += """
+        var googlemaps = new OpenLayers.Layer.Google( '""" + google.Maps + """' , {numZoomLevels: 20} );
         map.addLayer(googlemaps);
                     """
                 if google.Hybrid:
-                    layers_google += """
-        var googlehybrid = new OpenLayers.Layer.Google( '""" + google.Hybrid + """' , {type: G_HYBRID_MAP, 'sphericalMercator': true } );
+                    if googleMapmaker:
+                        layers_google += """
+        var googlehybrid = new OpenLayers.Layer.Google( '""" + google.Hybrid + """' , {type: G_HYBRID_MAP, 'sphericalMercator': true} );
+        map.addLayer(googlehybrid);
+                    """
+                    else:
+                        layers_google += """
+        var googlehybrid = new OpenLayers.Layer.Google( '""" + google.Hybrid + """' , {type: google.maps.MapTypeId.HYBRID, numZoomLevels: 20} );
         map.addLayer(googlehybrid);
                     """
                 if google.Terrain:
-                    layers_google += """
-        var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: G_PHYSICAL_MAP, 'sphericalMercator': true } )
+                    if googleMapmaker:
+                        layers_google += """
+        var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: G_PHYSICAL_MAP, 'sphericalMercator': true} )
+        map.addLayer(googleterrain);
+                    """
+                    else:
+                        layers_google += """
+        var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: google.maps.MapTypeId.TERRAIN} )
         map.addLayer(googleterrain);
                     """
                 if google.MapMaker:
@@ -2499,6 +2615,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         # WFS
         layers_wfs = ""
         wfs_enabled = db(db.gis_layer_wfs.enabled == True).select()
+        if wfs_enabled:
+            layers_wfs = cluster_style_options
         for layer in wfs_enabled:
             name = layer.name
             name_safe = re.sub('\W', '_', name)
@@ -2507,13 +2625,24 @@ OpenLayers.Util.extend( selectPdfControl, {
                 wfs_version = layer.version
             except:
                 wfs_version = ""
-            featureType = layer.featureType
-            featureNS = layer.featureNS
+            featureType = "featureType: '" + layer.featureType + "'"
+            if layer.featureNS:
+                featureNS = """,
+                    featureNS: '""" + layer.featureNS + "'"
+            else:
+                featureNS = ""
+            if layer.geometryName:
+                geometryName = """,
+                    geometryName: '""" + layer.geometryName + "'"
+            else:
+                geometryName = ""
             try:
-                wfs_projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
-                wfs_projection = "srsName: 'EPSG:" + wfs_projection + "',"
+                wfs_projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1), cache=cache).first().epsg
+                wfs_projection1 = "projection: new OpenLayers.Projection('EPSG:" + str(wfs_projection) + "'),"
+                wfs_projection2 = "srsName: 'EPSG:" + str(wfs_projection) + "',"
             except:
                 wfs_projection = ""
+                wfs_projection2 = ""
             if layer.visible:
                 wfs_visibility = ""
             else:
@@ -2528,23 +2657,21 @@ OpenLayers.Util.extend( selectPdfControl, {
                                 resFactor: 1
                                 })
             """
-            layers_wfs  += """
+            layers_wfs  += cluster_style + """
         var wfsLayer""" + name_safe + """ = new OpenLayers.Layer.Vector( '""" + name + """', {
                 // limit the number of features to avoid browser freezes
                 maxFeatures: 1000,
-                strategies: [""" + wfs_strategy + """],
-                projection: projection_current,
+                strategies: [""" + wfs_strategy + ", " + strategy_cluster + """],
+                """ + wfs_projection1 + """
                 //outputFormat: "json",
                 //readFormat: new OpenLayers.Format.GeoJSON(),
                 protocol: new OpenLayers.Protocol.WFS({
                     version: '""" + wfs_version + """',
-                    """ + wfs_projection + """
+                    """ + wfs_projection2 + """
                     url:  '""" + url + """',
-                    featureType: '""" + featureType + """',
-                    featureNS: '""" + featureNS + """'
-                    //,geometryName: "the_geom" // default PostGIS geometry column
-                })
-                //,styleMap: styleMap
+                    """ + featureType + featureNS + geometryName + """
+                }),
+                styleMap: featureClusterStyleMap
             });
         map.addLayer(wfsLayer""" + name_safe + """);
         """ + wfs_visibility + """
@@ -2690,18 +2817,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_features = ""
         if feature_queries or add_feature:
 
-            cluster_style = """
-        // Needs to be uniquely instantiated
-        var style_cluster = new OpenLayers.Style(style_cluster_style, style_cluster_options);
-        // Define StyleMap, Using 'style_cluster' rule for 'default' styling intent
-        var featureClusterStyleMap = new OpenLayers.StyleMap({
-                                          'default': style_cluster,
-                                          'select': {
-                                              fillColor: '#ffdc33',
-                                              strokeColor: '#ff9933'
-                                          }
-        });
-        """
+            if not wfs_enabled:
+                layers_features = cluster_style_options
 
             if deployment_settings.get_gis_duplicate_features():
                 uuid_from_fid = """
@@ -2717,39 +2834,6 @@ OpenLayers.Util.extend( selectPdfControl, {
         var features = [];
         var parser = new OpenLayers.Format.WKT();
         var geom, featureVec;
-
-        // Style Rule For Clusters
-        var style_cluster_style = {
-            label: '${label}',
-            pointRadius: '${radius}',
-            fillColor: '#8087ff',
-            fillOpacity: 0.5,
-            strokeColor: '#2b2f76',
-            strokeWidth: 2,
-            strokeOpacity: 1
-        };
-        var style_cluster_options = {
-            context: {
-                radius: function(feature) {
-                    // Size For Unclustered Point
-                    var pix = 6;
-                    // Size For Clustered Point
-                    if(feature.cluster) {
-                        pix = Math.min(feature.attributes.count, 7) + 4;
-                    }
-                    return pix;
-                },
-                label: function(feature) {
-                    // Label For Unclustered Point or Cluster of just 2
-                    var label = '';
-                    // Size For Clustered Point
-                    if(feature.cluster && feature.attributes.count > 2) {
-                        label = feature.attributes.count;
-                    }
-                    return label;
-                }
-            }
-        };
 
         function addFeature(feature_id, name, geom, styleMarker, image, popup_url) {
             geom = geom.transform(proj4326, projection_current);
@@ -3048,9 +3132,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                         try:
                             pointRadius = feature.size
                             if not pointRadius:
-                                pointRadius = 6
+                                pointRadius = 12
                         except (AttributeError, KeyError):
-                            pointRadius = 6
+                            pointRadius = 12
                         try:
                             fillColor = feature.color
                             if not fillColor:
@@ -3476,9 +3560,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                             # Write file to cache
                             f.write(file)
                             f.close()
-                            records = db(db.gis_cache.name == name).select()
-                            if records:
-                                records[0].update(modified_on=response.utcnow)
+                            record = db(db.gis_cache.name == name).select().first()
+                            if record:
+                                record.update(modified_on=response.utcnow)
                             else:
                                 db.gis_cache.insert(name=name, file=filename)
                             url = URL(r=request, c="default", f="download", args=[filename])
@@ -3600,7 +3684,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         // Center and Zoom
         map.setCenter(lonlat, newZoom);
         // Remove Popups
-        for (var i=0; i<map.popups.length; ++i)	{
+        for (var i=0; i < map.popups.length; ++i)	{
             map.removePopup(map.popups[i]);
         }
     }
@@ -3808,7 +3892,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             allLayers, {
                 hover: true,
                 highlightOnly: true,
-                renderIntent: "temporary",
+                //renderIntent: 'temporary',
                 eventListeners: {
                     featurehighlighted: tooltipSelect,
                     featureunhighlighted: tooltipUnselect
@@ -3901,7 +3985,8 @@ OpenLayers.Util.extend( selectPdfControl, {
             items: [{
                     region: 'west',
                     id: 'tools',
-                    title: '""" + T("Tools") + """',
+                    //title: '""" + T("Tools") + """',
+                    header: false,
                     border: true,
                     width: 250,
                     autoScroll: true,

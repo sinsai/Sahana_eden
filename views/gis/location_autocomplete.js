@@ -46,7 +46,8 @@ $(function() {
 
   {{if response.s3.gis.location_id == True:}}
   // If the calling view hasn't provided a value then use the default
-  var location_id = '{{=request.controller + "_" + request.function + "_location_id"}}';   
+  {{prefix, name, table, tablename = jr.target()}}
+  var location_id = '{{=tablename + "_location_id"}}';   
   {{else:}}
   //For custom Non-CRUD forms
   var location_id = '{{=response.s3.gis.location_id}}';   

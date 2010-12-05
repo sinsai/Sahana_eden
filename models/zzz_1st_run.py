@@ -413,7 +413,15 @@ if populate:
             comments = "Designed to provide a 1st phase drinking water purification solution at the household level. Contains 600 sachets to provide sufficient drinking water (4l) for 100 people for 30 days."
             )
 
-
+    # Project Module
+    if deployment_settings.has_module("project"):
+        tablename = "project_need_type"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert( name = T("People Needing Food") )
+            table.insert( name = T("People Needing Water") )
+            table.insert( name = T("People Needing Shelter") )
+    
     # Budget Module
     if "budget" in deployment_settings.modules:
         tablename = "budget_parameter"
@@ -847,6 +855,13 @@ if populate:
             marker_id = db(db.gis_marker.name == "marker_red").select(db.gis_marker.id, limitby=(0, 1)).first().id
         )
         table.insert(
+            name = "Hospitals",
+            module = "hms",
+            resource = "hospital",
+            popup_label = "Hospital",
+            marker_id = db(db.gis_marker.name == "hospital").select(db.gis_marker.id, limitby=(0, 1)).first().id
+        )
+        table.insert(
             name = "Shelters",
             module = "cr",
             resource = "shelter",
@@ -912,7 +927,8 @@ if populate:
                 name = "OpenStreetMap (Labels)",
                 url1 = "http://tiler1.censusprofiler.org/labelsonly/",
                 attribution = 'Labels overlay CC-by-SA by <a href="http://oobrien.com/oom/">OpenOrienteeringMap</a>/<a href="http://www.openstreetmap.org/">OpenStreetMap</a> data',
-                base = False
+                base = False,
+                visible = False
             )
         table.insert(
                 name = "OpenStreetMap (Relief)",
@@ -1024,6 +1040,91 @@ if populate:
                 enabled = False
             )
 
+    tablename = "gis_wmc_layer"
+    table = db[tablename]
+    if not db(table.id > 0).count():
+        # Populate table with the layers currently-supported by GeoExplorer
+        table.insert(
+                source = "ol",
+                type_ = "OpenLayers.Layer",
+                title = "None",
+                visibility = False,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "osm",
+                name = "mapnik",
+                title = "OpenStreetMap",
+                visibility = True,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "osm",
+                name = "osmarender",
+                title = "Tiles@home",
+                visibility = False,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "google",
+                name = "ROADMAP",
+                title = "Google Maps",
+                visibility = False,
+                opacity = 1,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "google",
+                name = "SATELLITE",
+                title = "Google Satellite",
+                visibility = False,
+                opacity = 1,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "google",
+                name = "HYBRID",
+                title = "Google Hybrid",
+                visibility = False,
+                opacity = 1,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "google",
+                name = "TERRAIN",
+                title = "Google Terrain",
+                visibility = False,
+                opacity = 1,
+                group_ = "background",
+                fixed = True
+            )
+        table.insert(
+                source = "sahana",
+                name = "Pakistan:level3",
+                title = "L3: Tehsils",
+                visibility = False,
+                opacity = 0.74,
+                format = "image/png",
+                styles = "",
+                transparent = True
+            )
+        table.insert(
+                source = "sahana",
+                name = "Pakistan:pak_flood_17Aug",
+                title = "Flood Extent - 17 August",
+                visibility = False,
+                opacity = 0.45,
+                format = "image/png",
+                styles = "",
+                transparent = True
+            )
+
     tablename = "gis_location"
     table = db[tablename]
     if not db(table.id > 0).count():
@@ -1031,7 +1132,7 @@ if populate:
         import_file = os.path.join(request.folder,
                                    "private", "import",
                                    "countries.csv")
-        table.import_from_csv_file(open(import_file,"r"))
+        table.import_from_csv_file(open(import_file, "r"))
     # Should work for our 3 supported databases: sqlite, MySQL & PostgreSQL
     field = "name"
     db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))

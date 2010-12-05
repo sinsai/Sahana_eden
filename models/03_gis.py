@@ -438,7 +438,7 @@ table = db.define_table(tablename,
                         Field("lat_min", "double", writable=False, readable=False), # bounding-box
                         Field("lon_max", "double", writable=False, readable=False), # bounding-box
                         Field("lat_max", "double", writable=False, readable=False), # bounding-box
-                        Field("elevation", "integer", writable=False, readable=False),   # m in height above WGS84 ellipsoid (approximately sea-level). not displayed currently
+                        Field("elevation", "double", writable=False, readable=False),   # m in height above WGS84 ellipsoid (approximately sea-level). not displayed currently
                         Field("ce", "integer", writable=False, readable=False), # Circular 'Error' around Lat/Lon (in m). Needed for CoT.
                         Field("le", "integer", writable=False, readable=False), # Linear 'Error' for the Elevation (in m). Needed for CoT.
                         Field("source", requires=IS_NULL_OR(IS_IN_SET(gis_source_opts))),
@@ -719,7 +719,6 @@ def s3_gis_location_parents(r, **attr):
     elif r.representation == "json":
 
         if r.id:
-            import gluon.contrib.simplejson as json
             # Get the parents for a Location
             parents = gis.get_parents(r.id)
             if parents:
@@ -790,13 +789,13 @@ table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("module"),
                         Field("resource"),
-                        Field("popup_label"),       # Replace with s3.crud_strings[tablename]
+                        Field("popup_label"),       # @ToDo Replace with s3.crud_strings[tablename]
                         marker_id(),                # Optional Marker to over-ride the values from the Feature Classes
                         Field("polygons", "boolean", default=False, label=T("Display Polygons?")),
                         Field("enabled", "boolean", default=True, label=T("Available in Viewer?")),
                         Field("visible", "boolean", default=True, label=T("On by default?")),
-                        # ToDo Expose the Graphic options
-                        # ToDo Allow defining more complex queries
+                        # @ToDo Expose the Graphic options
+                        # @ToDo Allow defining more complex queries
                         # e.g. L1 for Provinces, L2 for Districts, etc
                         #Field("filter_field"),     # Used to build a simple query
                         #Field("filter_value"),     # Used to build a simple query
@@ -834,15 +833,41 @@ table.apikey.label = T("Key")
 s3xrc.model.configure(table, listadd=False, deletable=False)
 
 # -----------------------------------------------------------------------------
+# GPS Waypoints
+resourcename = "waypoint"
+tablename = "%s_%s" % (module, resourcename)
+table = db.define_table(tablename,
+                        Field("name", length=128, notnull=True),
+                        Field("description", length=128),
+                        Field("category", length=128),
+                        location_id(),
+                        migrate=migrate,
+                        *s3_meta_fields())
+table.name.label = T("Name")
+table.description.label = T("Description")
+table.category.label = T("Category")
+
+# -----------------------------------------------------------------------------
+# GPS Tracks (stored as 1 record per point)
+resourcename = "trackpoint"
+tablename = "%s_%s" % (module, resourcename)
+table = db.define_table(tablename,
+                        location_id(),
+                        #track_id(),        # link to the uploaded file?
+                        migrate=migrate,
+                        *s3_meta_fields())
+
+# -----------------------------------------------------------------------------
 # GPS Tracks (files in GPX format)
 resourcename = "track"
 tablename = "%s_%s" % (module, resourcename)
-table = db.define_table(tablename, #timestamp,
+table = db.define_table(tablename,
                         #uuidstamp, # Tracks don't sync
                         Field("name", length=128, notnull=True, unique=True),
                         Field("description", length=128),
                         Field("track", "upload", autodelete = True),
-                        migrate=migrate, *s3_timestamp())
+                        migrate=migrate,
+                        *s3_timestamp())
 
 
 # upload folder needs to be visible to the download() function as well as the upload
@@ -912,7 +937,8 @@ for layertype in gis_layer_types:
         t = db.Table(db, table,
                      gis_layer,
                      Field("visible", "boolean", default=True, label=T("On by default? (only applicable to Overlays)")),
-                     Field("url1", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     Field("url1", label=T("Location"), requires = IS_NOT_EMPTY(),
+                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
                      Field("url2", label=T("Secondary Server (Optional)")),
                      Field("url3", label=T("Tertiary Server (Optional)")),
                      Field("base", "boolean", default=True, label=T("Base Layer?")),
@@ -940,7 +966,8 @@ for layertype in gis_layer_types:
         t = db.Table(db, table,
                      gis_layer,
                      Field("visible", "boolean", default=False, label=T("On by default?")),
-                     #Field("url", label=T("Location")),
+                     #Field("url", label=T("Location"),
+                           #comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
                      track_id(), # @ToDo remove this layer of complexity: Inlcude the upload field within the Layer
                      Field("waypoints", "boolean", default=True, label=T("Display Waypoints?")),
                      Field("tracks", "boolean", default=True, label=T("Display Tracks?")),
@@ -952,7 +979,8 @@ for layertype in gis_layer_types:
         t = db.Table(db, table,
                      gis_layer,
                      Field("visible", "boolean", default=False, label=T("On by default?")),
-                     Field("url", label=T("Location"), requires=IS_NOT_EMPTY()),
+                     Field("url", label=T("Location"), requires=IS_NOT_EMPTY(),
+                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
                      Field("title", label=T("Title"), default="name",
                            comment=T("The attribute within the KML which is used for the title of popups.")),
                      Field("body", label=T("Body"), default="description",
@@ -970,13 +998,15 @@ for layertype in gis_layer_types:
     elif layertype == "mgrs":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("url", label=T("Location"))
+                     Field("url", label=T("Location"),
+                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
                     )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "tms":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY(),
+                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
                      Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
                      Field("format", label=T("Format"))
                     )
@@ -985,12 +1015,15 @@ for layertype in gis_layer_types:
         t = db.Table(db, table,
                      gis_layer,
                      Field("visible", "boolean", default=False, label=T("On by default?")),
-                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY(),
+                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("Mandatory. The URL to access the service."))),
                      Field("version", label=T("Version"), default="1.1.0", requires = IS_IN_SET(["1.0.0", "1.1.0"], zero=None)),
-                     Field("featureNS", requires=IS_NOT_EMPTY(), label=T("Feature Namespace"),
-                           comment=DIV( _class="tooltip", _title="Feature Namespace" + "|" + T("In GeoServer, this is the Workspace Name. Within the WFS getCapabilities, this is the FeatureType Name part before the colon(:)."))),
-                     Field("featureType", requires=IS_NOT_EMPTY(), label=T("Feature Type"),
-                           comment=DIV( _class="tooltip", _title=T("Feature Type") + "|" + T("In GeoServer, this is the Layer Name. Within the WFS getCapabilities, this is the FeatureType Name part after the colon(:)."))),
+                     Field("featureNS", label=T("Feature Namespace"),
+                           comment=DIV( _class="tooltip", _title="Feature Namespace" + "|" + T("Optional. In GeoServer, this is the Workspace Namespace URI. Within the WFS getCapabilities, this is the FeatureType Name part before the colon(:)."))),
+                     Field("featureType", label=T("Feature Type"), requires = IS_NOT_EMPTY(),
+                           comment=DIV( _class="tooltip", _title=T("Feature Type") + "|" + T("Mandatory. In GeoServer, this is the Layer Name. Within the WFS getCapabilities, this is the FeatureType Name part after the colon(:)."))),
+                     Field("geometryName", label=T("Geometry Name"), default = "the_geom",
+                           comment=DIV( _class="tooltip", _title=T("Geometry Name") + "|" + T("Optional. The name of the geometry column. In PostGIS this defaults to 'the_geom'."))),
                      projection_id(),
                      #Field("editable", "boolean", default=False, label=T("Editable?")),
                     )
@@ -1000,7 +1033,8 @@ for layertype in gis_layer_types:
         t = db.Table(db, table,
                      gis_layer,
                      Field("visible", "boolean", default=False, label=T("On by default?")),
-                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY(),
+                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
                      Field("version", label=T("Version"), default="1.1.1", requires = IS_IN_SET(["1.1.1", "1.3.0"], zero=None)),
                      Field("base", "boolean", default=True, label=T("Base Layer?")),
                      Field("transparent", "boolean", default=False, label=T("Transparent?")),
@@ -1017,7 +1051,8 @@ for layertype in gis_layer_types:
     elif layertype == "xyz":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY(),
+                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
                      Field("base", "boolean", default=True, label=T("Base Layer?")),
                      Field("sphericalMercator", "boolean", default=False, label=T("Spherical Mercator?")),
                      Field("transitionEffect", requires=IS_NULL_OR(IS_IN_SET(["resize"])), label=T("Transition Effect")),
@@ -1053,16 +1088,64 @@ table = db.define_table(tablename,
 table.file.uploadfolder = os.path.join(request.folder, "uploads/gis_cache")
 
 # -----------------------------------------------------------------------------
+# GIS Web Map Contexts
+# (Saved Map definitions)
+# GIS Config's Defaults should just be the version for id=1?
+
+# @ToDo Unify WMC Layers with the rest of the Layers system
+resourcename = "wmc_layer"
+tablename = "%s_%s" % (module, resourcename)
+table = db.define_table(tablename,
+                        Field("source"),
+                        Field("name"),
+                        Field("title"),
+                        Field("visibility", "boolean"),
+                        Field("group_"),
+                        Field("fixed", "boolean"),
+                        Field("opacity", "double"),
+                        Field("type_"),
+                        # Handle this as a special case for 'None' layer ('ol' source)
+                        #"args":["None",{"visibility":false}]
+                        Field("format"),
+                        Field("styles"),
+                        Field("transparent", "boolean"),
+                        migrate=migrate, *s3_timestamp())
+# We don't need dropdowns as these aren't currently edited using Web2Py forms
+# @ToDo Handle Added WMS servers (& KML/GeoRSS once GeoExplorer supports them!)
+#table.source.requires = IS_IN_SET(["ol", "osm", "google", "local", "sahana"])
+#table.name.requires = IS_IN_SET(["mapnik", "TERRAIN", "Pakistan:level3", "Pakistan:pak_flood_17Aug"])
+# @ToDo Use this to split Internal/External Feeds
+#table.group_.requires = IS_NULL_OR(IS_IN_SET(["background"]))
+# @ToDo: Can we add KML/GeoRSS/GPX layers using this?
+#table.type_.requires = IS_NULL_OR(IS_IN_SET(["OpenLayers.Layer"]))
+#table.format.requires = IS_NULL_OR(IS_IN_SET(["image/png"]))
+
+# @ToDo add security
+resourcename = "wmc"
+tablename = "%s_%s" % (module, resourcename)
+table = db.define_table(tablename,
+                        #uuidstamp, # WMCs don't sync
+                        projection_id(),
+                        Field("lat", "double"), # This is currently 'x' not 'lat'
+                        Field("lon", "double"), # This is currently 'y' not 'lon'
+                        Field("zoom", "integer"),
+                        Field("layer_id", "list:reference gis_wmc_layer", requires=IS_ONE_OF(db, "gis_wmc_layer.id", "%(title)s", multiple=True)),
+                        # Metadata tbc
+                        migrate=migrate, *(s3_authorstamp() + s3_timestamp()))
+#table.lat.requires = IS_LAT()
+#table.lon.requires = IS_LON()
+table.zoom.requires = IS_INT_IN_RANGE(1, 20)
+table.lat.label = T("Latitude")
+table.lon.label = T("Longitude")
+table.zoom.label = T("Zoom")
+
+# -----------------------------------------------------------------------------
 # Below tables are not yet implemented
 
 # GIS Styles: SLD
-#db.define_table("gis_style", timestamp,
-#                Field("name", notnull=True, unique=True))
+#resourcename = "style"
+#tablename = "%s_%s" % (module, resourcename)
+#table = db.define_table(tablename,
+#                        Field("name", notnull=True, unique=True)
+#                        migrate=migrate, *s3_timestamp())
 #db.gis_style.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "gis_style.name")]
-
-# GIS WebMapContexts
-# (User preferences)
-# GIS Config's Defaults should just be the version for user=0?
-#db.define_table("gis_webmapcontext", timestamp,
-#                Field("user", db.auth_user))
-#db.gis_webmapcontext.user.requires = IS_ONE_OF(db, "auth_user.id", "%(email)s")

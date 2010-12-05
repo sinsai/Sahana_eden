@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Controller
 
-    @version: 2.2.5
+    @version: 2.2.8
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -36,7 +36,7 @@
 
 """
 
-__all__ = ["S3ResourceController", "S3Vector"]
+__all__ = ["S3ResourceController", "S3ImportJob"]
 
 import sys, datetime, time
 
@@ -49,7 +49,7 @@ from lxml import etree
 
 from s3xml import S3XML
 from s3rest import S3Resource, S3Request
-from s3model import S3ResourceModel
+from s3model import S3ResourceModel, S3ResourceLinker
 from s3crud import S3CRUDHandler, S3SearchSimple
 from s3export import S3Exporter
 from s3import import S3Importer
@@ -62,7 +62,6 @@ class S3ResourceController(object):
         @param environment: the environment of this run
         @param domain: name of the current domain
         @param base_url: base URL of this instance
-        @param rpp: rows-per-page for server-side pagination
         @param messages: a function to retrieve message URLs tagged for a resource
         @param attr: configuration settings
 
@@ -158,8 +157,9 @@ class S3ResourceController(object):
         self.permit = self.auth.shn_has_permission  # Permission Checker
         self.messages = None                        # Messages Finder
         self.tree_resolve = None                    # Tree Resolver
-        self.sync_resolve = None                    # Sync Resolver
-        self.sync_log = None                        # Sync Logger
+
+        self.resolve = None                         # Resolver
+        self.log = None                             # Logger
 
         # JSON formats, content-type headers
         self.json_formats = []
@@ -208,39 +208,31 @@ class S3ResourceController(object):
 
 
     # -------------------------------------------------------------------------
-    def __vectorize(self, resource, element,
-                    id=None,
-                    files=[],
-                    validate=None,
-                    permit=None,
-                    audit=None,
-                    sync=None,
-                    log=None,
-                    tree=None,
-                    directory=None,
-                    vmap=None,
-                    lookahead=True):
+    def __create_job(self, resource, element,
+                     id=None,
+                     files=[],
+                     validate=None,
+                     tree=None,
+                     directory=None,
+                     joblist=None,
+                     lookahead=True):
 
-        """ Builds a list of vectors from an element
+        """ Builds a list of import jobs from an element
 
             @param resource: the resource name (=tablename)
             @param element: the element
             @param id: target record ID
             @param validate: validate hook (function to validate record)
-            @param permit: permit hook (function to check table permissions)
-            @param audit: audit hook (function to audit table access)
-            @param sync: sync hook (function to resolve sync conflicts)
-            @param log: log hook (function to log imports)
             @param tree: the element tree of the source
             @param directory: the resource directory of the tree
-            @param vmap: the vector map for the import
+            @param joblist: the job list for the import
             @param lookahead: resolve any references
 
         """
 
         imports = []
 
-        if vmap is not None and element in vmap:
+        if joblist is not None and element in joblist:
             return imports
 
         table = self.db[resource]
@@ -270,43 +262,35 @@ class S3ResourceController(object):
         (prefix, name) = resource.split("_", 1)
         onvalidation = self.model.get_config(table, "onvalidation")
         onaccept = self.model.get_config(table, "onaccept")
-        vector = S3Vector(self, prefix, name, id,
+        job = S3ImportJob(self, prefix, name, id,
                           record=record,
                           element=element,
                           mtime=mtime,
                           rmap=rmap,
                           directory=directory,
-                          permit=permit,
-                          audit=audit,
-                          sync=sync,
-                          log=log,
                           onvalidation=onvalidation,
                           onaccept=onaccept)
 
-        if vmap is not None:
-            vmap[element] = vector
+        if joblist is not None:
+            joblist[element] = job
 
         for r in rmap:
             entry = r.get("entry")
             relement = entry.get("element")
             if relement is None:
                 continue
-            vectors = self.__vectorize(entry.get("resource"),
+            jobs = self.__create_job(entry.get("resource"),
                                      relement,
                                      validate=validate,
-                                     permit=permit,
-                                     audit=audit,
-                                     sync=sync,
-                                     log=log,
                                      tree=tree,
                                      directory=directory,
-                                     vmap=vmap)
-            if vectors:
-                if entry["vector"] is None:
-                    entry["vector"] = vectors[-1]
-                imports.extend(vectors)
+                                     joblist=joblist)
+            if jobs:
+                if entry["job"] is None:
+                    entry["job"] = jobs[-1]
+                imports.extend(jobs)
 
-        imports.append(vector)
+        imports.append(job)
         return imports
 
 
@@ -530,9 +514,9 @@ class S3ResourceController(object):
         try:
             req = self._request(prefix, name)
         except SyntaxError:
-            raise HTTP(400, body=self.error)
+            raise HTTP(400, body=self.xml.json_message(False, 400, message=self.error))
         except KeyError:
-            raise HTTP(404, body=self.error)
+            raise HTTP(404, body=self.xml.json_message(False, 404, message=self.error))
         except:
             raise
         res = req.resource
@@ -1015,25 +999,21 @@ class S3ResourceController(object):
         error = None
         imports = []
         directory = {}
-        vmap = {} # Element<->Vector Map
+        joblist = {} # Element<->Job Map
 
         for i in xrange(0, len(elements)):
             element = elements[i]
-            vectors = self.__vectorize(tablename, element,
-                                       id=id,
-                                       files = resource.files(),
-                                       validate=self.validate,
-                                       permit=permit,
-                                       audit=audit,
-                                       sync=self.sync_resolve,
-                                       log=self.sync_log,
-                                       tree=tree,
-                                       directory=directory,
-                                       vmap=vmap,
-                                       lookahead=True)
+            jobs = self.__create_job(tablename, element,
+                                     id=id,
+                                     files = resource.files(),
+                                     validate=self.validate,
+                                     tree=tree,
+                                     directory=directory,
+                                     joblist=joblist,
+                                     lookahead=True)
 
-            if vectors:
-                vector = vectors[-1]
+            if jobs:
+                job = jobs[-1]
             else:
                 continue
 
@@ -1055,8 +1035,8 @@ class S3ResourceController(object):
 
                     # Get the original record ID/UID, if not multiple
                     if not c.multiple:
-                        if vector.id:
-                            query = (table.id == vector.id) & (table[pkey] == ctable[pkey])
+                        if job.id:
+                            query = (table.id == job.id) & (table[pkey] == ctable[pkey])
                             if self.xml.UID in ctable:
                                 fields = (ctable.id, ctable[self.xml.UID])
                             else:
@@ -1070,34 +1050,30 @@ class S3ResourceController(object):
                         if c_uid:
                             celements[0].set(self.xml.UID, c_uid)
 
-                    # Generate vectors for the component elements
+                    # Generate jobs for the component elements
                     for k in xrange(0, len(celements)):
                         celement = celements[k]
-                        cvectors = self.__vectorize(ctablename,
-                                                    celement,
-                                                    files = resource.files(),
-                                                    validate=self.validate,
-                                                    permit=permit,
-                                                    audit=audit,
-                                                    sync=self.sync_resolve,
-                                                    log=self.sync_log,
-                                                    tree=tree,
-                                                    directory=directory,
-                                                    vmap=vmap,
-                                                    lookahead=True)
+                        cjobs = self.__create_job(ctablename,
+                                                  celement,
+                                                  files = resource.files(),
+                                                  validate=self.validate,
+                                                  tree=tree,
+                                                  directory=directory,
+                                                  joblist=joblist,
+                                                  lookahead=True)
 
-                        cvector = None
-                        if cvectors:
-                            cvector = cvectors.pop()
-                        if cvectors:
-                            vectors.extend(cvectors)
-                        if cvector:
-                            cvector.pkey = pkey
-                            cvector.fkey = fkey
-                            vector.components.append(cvector)
+                        cjob = None
+                        if cjobs:
+                            cjob = cjobs.pop()
+                        if cjobs:
+                            jobs.extend(cjobs)
+                        if cjob:
+                            cjob.pkey = pkey
+                            cjob.fkey = fkey
+                            job.components.append(cjob)
 
             if self.error is None:
-                imports.extend(vectors)
+                imports.extend(jobs)
             else:
                 error = self.error
                 self.error = None
@@ -1105,18 +1081,19 @@ class S3ResourceController(object):
         if error:
             self.error = error
 
-        # Commit all vectors
+        # Commit all jobs
         if self.error is None or ignore_errors:
             for i in xrange(0, len(imports)):
-                vector = imports[i]
-                success = vector.commit()
+                job = imports[i]
+                success = job.commit()
                 if not success:
-                    if not vector.permitted:
+                    if not job.permitted:
                         self.error = self.ERROR.NOT_PERMITTED
-                    else:
+                    elif not self.error:
                         self.error = self.ERROR.DATA_IMPORT_ERROR
-                    if vector.element:
-                        vector.element.set(self.xml.ATTRIBUTE.error, self.error)
+                    if job.element:
+                        if not job.element.get(self.xml.ATTRIBUTE.error):
+                            job.element.set(self.xml.ATTRIBUTE.error, self.error)
                     if ignore_errors:
                         continue
                     else:
@@ -1244,9 +1221,22 @@ class S3ResourceController(object):
 
 
 # *****************************************************************************
-class S3Vector(object):
+class S3ImportJob(object):
 
-    """ Helper class for data imports """
+    """ Helper class for data imports
+
+        @param manager: the resource controller
+        @param prefix: prefix of the resource name (=module name)
+        @param name: the resource name (=without prefix)
+        @param id: the target record ID
+        @param record: the record data to import
+        @param element: the corresponding element from the element tree
+        @param rmap: map of references for this record
+        @param directory: resource directory of the input tree
+        @param onvalidation: extra function to validate records
+        @param onaccept: callback function for committed importes
+
+    """
 
     METHOD = Storage(
         CREATE="create",
@@ -1273,37 +1263,19 @@ class S3Vector(object):
                  mtime=None,
                  rmap=None,
                  directory=None,
-                 permit=None, # @todo 2.3: read from manager
-                 audit=None, # @todo 2.3: read from manager
-                 sync=None, # @todo 2.3: read from manager
-                 log=None, # @todo 2.3: read from manager
                  onvalidation=None,
                  onaccept=None):
 
-        """ Constructor
+        self.manager = manager
+        self.db = manager.db
 
-            @param manager: the resource controller
-            @param prefix: prefix of the resource name (=module name)
-            @param name: the resource name (=without prefix)
-            @param id: the target record ID
-            @param record: the record data to import
-            @param element: the corresponding element from the element tree
-            @param rmap: map of references for this record
-            @param directory: resource directory of the input tree
-            @param permit: permit hook (function to check table permissions)
-            @param audit: audit hook (function to audit table access)
-            @param sync: sync hook (function to resolve sync conflicts)
-            @param log: log hook (function to log imports)
-            @param onvalidation: extra function to validate records
-            @param onaccept: callback function for committed importes
+        self.permit = manager.permit
+        self.audit = manager.audit
+        self.resolve = manager.resolve
+        self.log = manager.log
 
-        """
-
-        self.__manager = manager
-        self.db = self.__manager.db
         self.prefix = prefix
         self.name = name
-
         self.tablename = "%s_%s" % (self.prefix, self.name)
         self.table = self.db[self.tablename]
 
@@ -1317,22 +1289,17 @@ class S3Vector(object):
             self.mtime = datetime.datetime.utcnow()
 
         self.rmap = rmap
-
         self.components = []
         self.references = []
         self.update = []
 
         self.method = None
         self.strategy = [self.METHOD.CREATE, self.METHOD.UPDATE]
-
         self.resolution = self.RESOLUTION.OTHER
         self.default_resolution = self.RESOLUTION.THIS
 
         self.onvalidation = onvalidation
         self.onaccept = onaccept
-        self.audit = audit
-        self.sync = sync
-        self.log = log
 
         self.accepted = True
         self.permitted = True
@@ -1344,7 +1311,7 @@ class S3Vector(object):
         if not self.id:
             self.id = 0
             self.method = permission = self.METHOD.CREATE
-            orig = self.__manager.original(self.table, self.record)
+            orig = self.manager.original(self.table, self.record)
             if orig:
                 self.id = orig.id
                 self.uid = orig.get(self.UID, None)
@@ -1355,21 +1322,17 @@ class S3Vector(object):
                 self.id = 0
                 self.method = permission = self.METHOD.CREATE
 
-        # Do allow import to tables with these prefixes:
-        if self.prefix in self.__manager.PROTECTED:
+        if self.prefix in self.manager.PROTECTED:
+            self.permitted = False
+        elif self.permit and not \
+           self.permit(permission, self.tablename, record_id=self.id):
             self.permitted = False
 
-        # ...or check permission explicitly:
-        elif permit and not \
-           permit(permission, self.tablename, record_id=self.id):
-            self.permitted = False
-
-        # Once the vector has been created, update the entry in the directory
         if self.uid and \
            directory is not None and self.tablename in directory:
             entry = directory[self.tablename].get(self.uid, None)
             if entry:
-                entry.update(vector=self)
+                entry.update(job=self)
 
 
     # Data import =============================================================
@@ -1394,61 +1357,55 @@ class S3Vector(object):
     # -------------------------------------------------------------------------
     def commit(self):
 
-        """ Commits the vector to the database
+        """ Commits the record to the database """
 
-            @todo 2.3: propagate onvalidation errors properly to the element
-            @todo 2.3: propagate import errors properly to the importer
+        self.resolve_references()
 
-        """
-
-        self.resolve() # Resolve references
-
-        model = self.__manager.model
+        xml = self.manager.xml
+        model = self.manager.model
 
         skip_components = False
 
         if not self.committed:
             if self.accepted and self.permitted:
-
                 #print >> sys.stderr, "Committing %s id=%s mtime=%s" % (self.tablename, self.id, self.mtime)
 
-                # Create pseudoform for callbacks
+                # Validate
                 form = Storage()
                 form.method = self.method
                 form.vars = self.record
                 form.vars.id = self.id
                 form.errors = Storage()
-
-                # Validate
                 if self.onvalidation:
-                    self.__manager.callback(self.onvalidation, form, name=self.tablename)
+                    self.manager.callback(self.onvalidation, form, name=self.tablename)
                 if form.errors:
-                    #print >> sys.stderr, form.errors
-                    if self.element:
-                        #TODO: propagate errors to element
-                        pass
+                    for k in form.errors:
+                        e = self.element.findall("data[@field='%s']" % k)
+                        if not e:
+                            e = self.element
+                            form.errors[k] = "[%s] %s" % (k, form.errors[k])
+                        else:
+                            e = e[0]
+                        e.set(xml.ATTRIBUTE.error,
+                              xml.xml_encode(str(form.errors[k])))
+                    self.manager.error = self.manager.ERROR.VALIDATION_ERROR
                     return False
 
-                # Call Sync resolver+logger
-                if self.sync:
-                    self.sync(self)
+                # Resolve+Log
+                if self.resolve:
+                    self.resolve(self)
                 if self.log:
                     self.log(self)
 
-                # Check for strategy
                 if not isinstance(self.strategy, (list, tuple)):
                     self.strategy = [self.strategy]
 
+                # Skip
                 if self.method not in self.strategy:
-                    # Skip this record ----------------------------------------
+                    skip_components = True # Skip all components as well
 
-                    # Do not create/update components when skipping primary
-                    skip_components = True
-
+                # Update
                 elif self.method == self.METHOD.UPDATE:
-                    # Update existing record ----------------------------------
-
-                    # Merge as per Sync resolution:
                     query = (self.table.id == self.id)
                     this = self.db(query).select(self.table.ALL, limitby=(0,1))
                     if this:
@@ -1481,23 +1438,22 @@ class S3Vector(object):
                                 elif this_mci == self.mci and \
                                      this_mtime and this_mtime > self.mtime:
                                         del self.record[f]
-
                     if len(self.record):
                         self.record.update({self.MCI:self.mci})
                         if "deleted" in self.table.fields:
                             self.record.update(deleted=False) # Undelete re-imported records!
                         try:
                             success = self.db(self.table.id == self.id).update(**dict(self.record))
-                        except: # TODO: propagate error to XML importer
+                        except:
+                            self.manager.error = sys.exc_info()[1]
                             return False
                         if success:
                             self.committed = True
                     else:
                         self.committed = True
 
+                # Create new
                 elif self.method == self.METHOD.CREATE:
-                    # Create new record ---------------------------------------
-
                     if self.UID in self.record:
                         del self.record[self.UID]
                     if self.MCI in self.record:
@@ -1506,7 +1462,6 @@ class S3Vector(object):
                         r = self.get_resolution(f)
                         if r == self.RESOLUTION.MASTER and self.mci != 1:
                             del self.record[f]
-
                     if not len(self.record):
                         skip_components = True
                     else:
@@ -1516,13 +1471,14 @@ class S3Vector(object):
                             self.record.update({self.MCI:self.mci})
                         try:
                             success = self.table.insert(**dict(self.record))
-                        except: # TODO: propagate error to XML importer
+                        except:
+                            self.manager.error = sys.exc_info()[1]
                             return False
                         if success:
                             self.id = success
                             self.committed = True
 
-                # audit + onaccept on successful commits
+                # Audit + onaccept on successful commits
                 if self.committed:
                     form.vars.id = self.id
                     if self.audit:
@@ -1530,15 +1486,13 @@ class S3Vector(object):
                                    form=form, record=self.id, representation="xml")
                     model.update_super(self.table, form.vars)
                     if self.onaccept:
-                        self.__manager.callback(self.onaccept, form, name=self.tablename)
+                        self.manager.callback(self.onaccept, form, name=self.tablename)
 
-        # Load record if components pending
+        # Commit components
         if self.id and self.components and not skip_components:
             db_record = self.db(self.table.id == self.id).select(self.table.ALL)
             if db_record:
                 db_record = db_record.first()
-
-            # Commit components
             for i in xrange(0, len(self.components)):
                 component = self.components[i]
                 pkey = component.pkey
@@ -1546,20 +1500,19 @@ class S3Vector(object):
                 component.record[fkey] = db_record[pkey]
                 component.commit()
 
-        # Update referencing vectors
+        # Update referencing jobs
         if self.update and self.id:
             for u in self.update:
-                vector = u.get("vector", None)
-                if vector:
+                job = u.get("job", None)
+                if job:
                     field = u.get("field", None)
-                    vector.writeback(field, self.id)
+                    job.writeback(field, self.id)
 
-        # Phew...done!
         return True
 
 
     # -------------------------------------------------------------------------
-    def resolve(self):
+    def resolve_references(self):
 
         """ Resolve references of this record """
 
@@ -1572,9 +1525,9 @@ class S3Vector(object):
                 if r.entry:
                     id = r.entry.get("id", None)
                     if not id:
-                        vector = r.entry.get("vector", None)
-                        if vector:
-                            id = vector.id
+                        job = r.entry.get("job", None)
+                        if job:
+                            id = job.id
                             r.entry.update(id=id)
                         else:
                             continue
@@ -1588,7 +1541,7 @@ class S3Vector(object):
                     else:
                         if r.field in self.record and not multiple:
                             del self.record[r.field]
-                        vector.update.append(dict(vector=self, field=r.field))
+                        job.update.append(dict(job=self, field=r.field))
 
 
     # -------------------------------------------------------------------------
@@ -1611,251 +1564,6 @@ class S3Vector(object):
                 self.db(self.table.id == self.id).update(**{field:values})
             else:
                 self.db(self.table.id == self.id).update(**{field:value})
-
-
-# *****************************************************************************
-class S3ResourceLinker(object):
-
-    """ Hyperlink between resources
-
-        @param manager: the resource controller
-
-    """
-
-    def __init__(self, manager):
-
-        self.db = manager.db
-        self.tablename = manager.rlink_tablename
-        migrate = manager.migrate
-
-        self.table = self.db.get(self.tablename, None)
-        if not self.table:
-            self.table = self.db.define_table(self.tablename,
-                                              Field("link_class", length=128),
-                                              Field("origin_table"),
-                                              Field("origin_id", "list:integer"),
-                                              Field("target_table"),
-                                              Field("target_id", "integer"),
-                                              migrate=migrate)
-
-
-    # -------------------------------------------------------------------------
-    def link(self, from_table, from_id, to_table, to_id, link_class=None):
-
-        """ Create a hyperlink between resources
-
-            @param from_table: the originating table
-            @param from_id: ID or list of IDs of the originating record(s)
-            @param to_table: the target table
-            @param to_id: ID or list of IDs of the target record(s)
-            @param link_class: link class name
-
-            @returns: a list of record IDs of the created links
-
-        """
-
-        o_tn = from_table._tablename
-        t_tn = to_table._tablename
-        links = []
-        if not from_id:
-            return links
-        elif not isinstance(from_id, (list, tuple)):
-            o_id = [str(from_id)]
-        else:
-            o_id = map(str, from_id)
-        if not to_id:
-            return links
-        elif not isinstance(to_id, (list, tuple)):
-            t_id = [str(to_id)]
-        else:
-            t_id = map(str, to_id)
-        table = self.table
-        query = ((table.origin_table == o_tn) &
-                 (table.target_table == t_tn) &
-                 (table.link_class == link_class) &
-                 (table.target_id.belongs(t_id)))
-        rows = self.db(query).select()
-        rows = dict([(str(r.target_id), r) for r in rows])
-        success = True
-        for target_id in t_id:
-            if target_id in rows:
-                row = rows[target_id]
-                ids = map(str, row.origin_id)
-                add = [i for i in o_id if i not in ids]
-                ids += add
-                row.update_record(origin_id=ids)
-                links.append(row.id)
-            else:
-                row = table.insert(origin_table=o_tn,
-                                    target_table=t_tn,
-                                    link_class=link_class,
-                                    target_id=target_id,
-                                    origin_id=o_id)
-                links.append(row)
-        return links
-
-
-    # -------------------------------------------------------------------------
-    def unlink(self, from_table, from_id, to_table, to_id, link_class=None):
-
-        """ Remove a hyperlink between resources
-
-            @param from_table: the originating table
-            @param from_id: ID or list of IDs of the originating record(s)
-            @param to_table: the target table
-            @param to_id: ID or list of IDs of the target record(s)
-            @param link_class: link class name
-
-            @note: None for from_id or to_id means *any* record
-
-        """
-
-        o_tn = from_table._tablename
-        t_tn = to_table._tablename
-
-        table = self.table
-        query = ((table.origin_table == o_tn) &
-                 (table.target_table == t_tn) &
-                 (table.link_class == link_class))
-        q = None
-        if from_id is not None:
-            if not isinstance(from_id, (list, tuple)):
-                o_id = [str(from_id)]
-            else:
-                o_id = map(str, from_id)
-            for origin_id in o_id:
-                iq = table.origin_id.contains(origin_id)
-                if q is None:
-                    q = iq
-                else:
-                    q = q | iq
-        else:
-            o_id = None
-        if q is not None:
-            query = query & (q)
-        q = None
-        if to_id is not None:
-            if not isinstance(to_id, (list, tuple)):
-                q = table.target_id == str(to_id)
-            else:
-                t_id = map(str, to_id)
-                q = table.target_id.belongs(t_id)
-        if q is not None:
-            query = query & (q)
-        rows = self.db(query).select()
-        for row in rows:
-            if o_id:
-                ids = [i for i in row.origin_id if str(i) not in o_id]
-            else:
-                ids = []
-            if ids:
-                row.update_record(origin_id=ids)
-            else:
-                row.delete_record()
-        return
-
-
-    # -------------------------------------------------------------------------
-    def get_origin_query(self, from_table, to_table, to_id,
-                         link_class=None,
-                         union=False):
-
-        """ Get a query for the origin table to retrieve records that are
-            linked to a set of target table records.
-
-            @param from_table: the origin table
-            @param to_table: the target table
-            @param to_id: target record ID or list of target record IDs
-            @param link_class: link class name
-            @param union: retrieve a union (True) or an intersection (False, default)
-                          of all sets of links (in case of multiple target records)
-
-            @note: None for to_id means *any* record
-
-        """
-
-        o_tn = from_table._tablename
-        t_tn = to_table._tablename
-
-        table = self.table
-        if not to_id:
-            query = (table.target_id != None)
-        elif not isinstance(to_id, (list, tuple)):
-            query = (table.target_id == to_id)
-        else:
-            query = (table.target_id.belongs(to_id))
-        query = (table.origin_table == o_tn) & \
-                (table.target_table == t_tn) & \
-                (table.link_class == link_class) & query
-        ids = []
-        rows = self.db(query).select(table.origin_id)
-        for row in rows:
-            if union:
-                add = [i for i in row.origin_id if i not in ids]
-                ids += add
-            elif not ids:
-                ids = row.origin_id
-            else:
-                ids = [i for i in ids if i in row.origin_id]
-        if ids and len(ids) == 1:
-            mq = (from_table.id == ids[0])
-        elif ids:
-            mq = (from_table.id.belongs(ids))
-        else:
-            mq = (from_table.id == None)
-        return mq
-
-
-    # -------------------------------------------------------------------------
-    def get_target_query(self, from_table, from_id, to_table,
-                         link_class=None,
-                         union=False):
-
-        """ Get a query for the target table to retrieve records that are
-            linked to a set of origin table records.
-
-            @param from_table: the origin table
-            @param from_id: origin record ID or list of origin record IDs
-            @param to_table: the target table
-            @param link_class: link class name
-            @param union: retrieve a union (True) or an intersection (False, default)
-                          of all sets of links (in case of multiple origin records)
-
-            @note: None for from_id means *any* record
-
-        """
-
-        o_tn = from_table._tablename
-        t_tn = to_table._tablename
-        table = self.table
-        if not from_id:
-            query = (table.origin_id != None)
-        elif not isinstance(from_id, (list, tuple)):
-            query = (table.origin_id.contains(from_id))
-        else:
-            q = None
-            for origin_id in from_id:
-                iq = table.origin_id.contains(origin_id)
-                if q and union:
-                    q = q | iq
-                elif q and not union:
-                    q = q & iq
-                else:
-                    q = iq
-            if q:
-                query = (q)
-        query = (table.origin_table == o_tn) & \
-                (table.target_table == t_tn) & \
-                (table.link_class == link_class) & query
-        rows = self.db(query).select(table.target_id, distinct=True)
-        ids = [row.target_id for row in rows]
-        if ids and len(ids) == 1:
-            mq = (to_table.id == ids[0])
-        elif ids:
-            mq = (to_table.id.belongs(ids))
-        else:
-            mq = (to_table.id == None)
-        return mq
 
 
 # *****************************************************************************
@@ -2132,7 +1840,6 @@ class S3QueryBuilder(object):
             @param id: record ID or list of record IDs to include
             @param uid: record UID or list of record UIDs to include
             @param filter: filtering query (DAL only)
-            @param left: left outer joins for the filter (if needed)
             @param vars: dict of URL query variables
 
         """

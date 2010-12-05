@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - CRUD Method Handlers
 
-    @version: 2.2.5
+    @version: 2.2.7
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -489,22 +489,17 @@ class S3CRUDHandler(S3MethodHandler):
             if r.component:
                 table[r.fkey].comment = None
                 table[r.fkey].default = r.record[r.pkey]
-                if r.http == "POST":
-                    table[r.fkey].writable = True
-                    r.request.post_vars.update({r.fkey: str(r.record[r.pkey])})
-                else:
-                    table[r.fkey].readable = False
-                    table[r.fkey].writable = False
+                table[r.fkey].update = r.record[r.pkey]
+                table[r.fkey].readable = False
+                table[r.fkey].writable = False
 
-            # Copy from a previous record?
+            # Copy record
             from_table = None
             from_record = r.request.get_vars.get("from_record", None)
             map_fields = r.request.get_vars.get("from_fields", None)
 
             if from_record:
                 del r.request.get_vars["from_record"] # forget it
-
-                # Find original table
                 if from_record.find(".") != -1:
                     from_table, from_record = from_record.split(".", 1)
                     from_table = self.db.get(from_table, None)
@@ -512,15 +507,11 @@ class S3CRUDHandler(S3MethodHandler):
                         r.error(404, self.resource.ERROR.BAD_RESOURCE)
                 else:
                     from_table = table
-
-                # User must be authorised to read the original!
                 authorised = self.permit("read",
                                          from_table._tablename,
                                          from_record)
                 if not authorised:
                     r.unauthorised()
-
-                # Field mapping?
                 if map_fields:
                     del r.request.get_vars["from_fields"]
                     if map_fields.find("$") != -1:
@@ -530,6 +521,28 @@ class S3CRUDHandler(S3MethodHandler):
                         map_fields = Storage(mf)
                     else:
                         map_fields = map_fields.split(",")
+
+            # Link record
+            link = None
+            _vars = r.request.get_vars
+            for k in _vars:
+                if k[:5] == "link.":
+                    cmd = k.split(".")
+                    if len(cmd) > 2:
+                        linkdir = cmd[1]
+                        linktable = self.db.get(cmd[2], None)
+                        linkid = _vars[k].split(",")
+                        del _vars[k] # forget it
+                        if linkid and not linkid[0].isdigit():
+                            linkclass = linkid.pop(0)
+                        else:
+                            linkclass = None
+                        if linktable and linkid:
+                            link = Storage(linkdir=linkdir,
+                                           linktable=linktable,
+                                           linkclass=linkclass,
+                                           linkid=linkid)
+                    break
 
             # Success message
             message = self.crud_string(self.tablename, "msg_record_created")
@@ -552,6 +565,7 @@ class S3CRUDHandler(S3MethodHandler):
                                             message=message,
                                             onvalidation=onvalidation,
                                             onaccept=onaccept,
+                                            link=link,
                                             download_url=self.download_url,
                                             format=representation)
 
@@ -562,6 +576,7 @@ class S3CRUDHandler(S3MethodHandler):
                                             from_table=from_table,
                                             from_record=from_record,
                                             map_fields=map_fields,
+                                            link=link,
                                             download_url=self.download_url,
                                             format=representation)
 
@@ -601,7 +616,8 @@ class S3CRUDHandler(S3MethodHandler):
             if representation in ("popup", "iframe"):
                 self.next = None
             elif not create_next:
-                self.next = r.there(representation=representation)
+                #self.next = r.there(representation=representation)
+                self.next = self.resource.url(id=[])
             else:
                 try:
                     self.next = create_next(self)
@@ -841,12 +857,9 @@ class S3CRUDHandler(S3MethodHandler):
                 _comment = table[r.fkey].comment
                 table[r.fkey].comment = None
                 table[r.fkey].default = r.record[r.pkey]
-                if r.http == "POST":
-                    table[r.fkey].writable = True
-                    request.post_vars.update({r.fkey: str(r.record[r.pkey])})
-                else:
-                    table[r.fkey].readable = False
-                    table[r.fkey].writable = False
+                table[r.fkey].update = r.record[r.pkey]
+                table[r.fkey].readable = False
+                table[r.fkey].writable = False
 
             # Success message
             message = self.crud_string(self.tablename, "msg_record_modified")
@@ -902,10 +915,11 @@ class S3CRUDHandler(S3MethodHandler):
             if representation in ("popup", "iframe"):
                 self.next = None
             elif not update_next:
-                if r.component:
-                    self.next = r.there(representation=r.representation)
-                else:
-                    self.next = r.here(representation=r.representation)
+                #if r.component:
+                    #self.next = r.there(representation=r.representation)
+                #else:
+                    #self.next = r.here(representation=r.representation)
+                self.next = self.resource.url(id=[])
             else:
                 try:
                     self.next = update_next(self)

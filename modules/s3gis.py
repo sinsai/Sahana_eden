@@ -257,6 +257,12 @@ class GIS(object):
         max_lat = -90
         min_not_none = self._min_not_none  # use this instead of min
         for feature in features:
+            try:
+                # A simple feature set?
+                lon = feature.lon
+            except:
+                # A Join
+                feature = feature.gis_location
             min_lon = min_not_none(feature.lon, feature.lon_min, min_lon)
             min_lat = min_not_none(feature.lat, feature.lat_min, min_lat)
             max_lon = max(feature.lon, feature.lon_max, max_lon)

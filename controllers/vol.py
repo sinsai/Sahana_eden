@@ -221,6 +221,7 @@ def view_map():
 
     person_id = request.args(0)
 
+    # Shortcuts
     persons = db.pr_person
     presences = db.pr_presence
     locations = db.gis_location
@@ -258,8 +259,6 @@ def view_map():
         record = features.first()
         lat = record.gis_location.lat
         lon = record.gis_location.lon
-        # Use bounds if more than 1 feature
-        #bounds = gis.get_bounds(features=location)
         zoom = 15
 
         config = gis.get_config()
@@ -311,7 +310,6 @@ def view_map():
             lat = lat,
             lon = lon,
             zoom = zoom,
-            #bbox = bounds,
             window = False  # We should provide a button within the map to make it go full-screen (ideally without reloading the page!)
         )
         return dict(map=html)
@@ -412,51 +410,116 @@ def view_team_map():
     group_id = request.args(0)
 
     members_query = (db.pr_group_membership.group_id == group_id)
-    members = db(members_query).select(db.pr_group_membership.person_id) #members of a team aka group
-    member_person_ids = [ x.person_id for x in members ] #list of members
+    members = db(members_query).select(db.pr_group_membership.person_id) # Members of a team (aka group)
+    member_person_ids = [ x.person_id for x in members ] # List of members
 
-    #Presence Data of the members with Presence Logs
-    presence_rows = db(db.pr_person.id.belongs(member_person_ids) & \
-                      (db.pr_presence.pe_id == db.pr_person.pe_id) & \
-                      (db.gis_location.id ==  db.pr_presence.location_id)).select(db.gis_location.ALL, db.pr_person.id, orderby=~db.pr_presence.datetime)
-    #Get Latest Presence Data
-    person_location_sort = presence_rows.sort(lambda row:row.pr_person.id)
-    previous_person_id = None
-    locations_list = []
-    for row in person_location_sort:
-        if row.pr_person.id != previous_person_id:
-            locations_list.append(row["gis_location"])
-            member_person_ids.remove(row.pr_person.id)
-            previous_person_id = row.pr_person.id
+    # Shortcuts
+    persons = db.pr_person
+    presences = db.pr_presence
+    locations = db.gis_location
+    
+    # Presence Data for Members who aren't Missing & have a Verified Presence
+    features = db(persons.id.belongs(member_person_ids) & \
+                 (persons.missing == False) & \
+                 (presences.pe_id == persons.pe_id) & \
+                 (presences.presence_condition.belongs(vita.PERSISTANT_PRESENCE)) & \
+                 (presences.closed == False) & \
+                 (locations.id == presences.location_id)).select(locations.id,
+                                                                 locations.lat,
+                                                                 locations.lon,
+                                                                 locations.lat_min,
+                                                                 locations.lat_max,
+                                                                 locations.lon_min,
+                                                                 locations.lon_max,
+                                                                 persons.id)
 
-    #Address of those members without Presence data
-    address = db(db.pr_person.id.belongs(member_person_ids) & \
-                (db.pr_address.pe_id == db.pr_person.pe_id) & \
-                (db.gis_location.id ==  db.pr_address.location_id)).select(db.gis_location.ALL)
+    # Address of those members without Presence data
+    #address = db(persons.id.belongs(member_person_ids) & \
+    #            (db.pr_address.pe_id == persons.pe_id) & \
+    #            (locations.id ==  db.pr_address.location_id)).select(locations.id,
+    #                                                                 locations.lat,
+    #                                                                 locations.lon,
+    #                                                                 persons.id)
+    #locations_list.extend(address)
 
-    locations_list.extend(address)
+    if features:
 
-    if locations_list:
+        if len(features) > 1:
+            # Set the viewport to the appropriate area to see everyone
+            bounds = gis.get_bounds(features=features)
+        else:
+            # A 1-person bounds zooms in too far for many tilesets
+            lat = features.first().gis_location.lat
+            lon = features.first().gis_location.lon
+            zoom = 15
 
-        bounds = gis.get_bounds(features=locations_list)
+        config = gis.get_config()
 
-        volunteer = {"feature_group" : "People"}
-        html = gis.show_map(
-            feature_queries = [{"name" : "Volunteer", "query" : locations_list, "active" : True, "marker" : db(db.gis_marker.name == "volunteer").select().first().id}],
-            feature_groups = [volunteer],
-            wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
-            catalogue_overlays = True,
-            catalogue_toolbar = True,
-            toolbar = True,
-            search = True,
-            bbox = bounds,
-            window = True,
-        )
+        if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
+            catalogue_toolbar = True
+        else:
+            catalogue_toolbar = False
+
+        # Standard Feature Layers
+        feature_queries = []
+        feature_layers = db(db.gis_layer_feature.enabled == True).select()
+        for layer in feature_layers:
+            _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=False, polygons=layer.polygons)
+            if _layer:
+                feature_queries.append(_layer)
+        
+        # Add the Volunteer layer
+        try:
+            marker_id = db(db.gis_marker.name == "volunteer").select().first().id
+        except:
+            marker_id = 1
+        
+        # Can't use this since the location_id link is via pr_presence not pr_person
+        #_layer = gis.get_feature_layer("pr", "person", "Volunteer", "Volunteer", config=config, marker_id=marker_id, active=True, polygons=False)
+        #if _layer:
+        #    feature_queries.append(_layer)
+        
+        # Insert the name into the query
+        for i in range(0, len(features)):
+            features[i].gis_location.name = vita.fullname(db(db.pr_person.id == features[i].pr_person.id).select(limitby=(0, 1)).first())
+        
+        feature_queries.append({"name" : "Volunteers",
+                                "query" : features,
+                                "active" : True,
+                                "popup_label" : "Volunteer",
+                                # @ToDo: Create a custom controller with the core Vol-related requirements for the Incident Commander
+                                "popup_url" : URL(r=request, c="vol", f="person") + "/<id>/read.plain",  # @ToDo use the person_id instead of the location_id
+                                "marker" : marker_id})
+
+        try:
+            html = gis.show_map(
+                feature_queries = feature_queries,
+                #wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+                catalogue_toolbar = catalogue_toolbar,
+                catalogue_overlays = True,
+                toolbar = True,
+                search = True,
+                bbox = bounds,
+                window = True,  # @ToDo Change to False & create a way to convert an embedded map to a full-screen one without a screen refresh
+            )
+        except:
+            html = gis.show_map(
+                feature_queries = feature_queries,
+                #wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+                catalogue_toolbar = catalogue_toolbar,
+                catalogue_overlays = True,
+                toolbar = True,
+                search = True,
+                lat = lat,
+                lon = lon,
+                zoom = zoom,
+                window = True,  # @ToDo Change to False & create a way to convert an embedded map to a full-screen one without a screen refresh
+            )
         return dict(map=html)
 
     # Redirect to team details if no location is available
-    response.error=T("Add Location")
-    redirect(URL(r=request, c="vol", f="group", args=[group_id,"address"]))
+    session.error=T("Add Location")
+    redirect(URL(r=request, c="vol", f="group", args=[group_id, "address"]))
 
 
 # -----------------------------------------------------------------------------

@@ -740,53 +740,71 @@ def pe_contact():
 #------------------------------------------------------------------------------
 def search():
 
-    """ Do a search of groups which match a type
-
-            - Used for auto-completion
-
+    """
+        Do a search of groups which match a type
+        - used for auto-completion
     """
 
-    if auth.is_logged_in() or auth.basic():
-        pass
-    else:
+    if not (auth.is_logged_in() or auth.basic()):
+        # Not allowed
         return
 
-    # JQuery Autocomplete uses 'q' instead of 'value'
     # JQuery UI Autocomplete uses 'term' instead of 'value'
+    # (old JQuery Autocomplete uses 'q' instead of 'value')
     value = request.vars.term or request.vars.q
     if value:
-        item = person_search(value)
-        item = json.dumps(item)
-        response.view = "xml.html"
-        return dict(item=item)
+        # Call the search function
+        items = person_search(value)
+        # Encode in JSON
+        item = json.dumps(items)
+        response.headers["Content-Type"] = "text/json"
+        return item
     return
 
 
 #------------------------------------------------------------------------------
 def person_search(value):
 
-    """ Generic function to do the search of groups which match a type """
+    """ Search for People & Groups which match a search term """
 
-    table1 = db.pr_group
-    field1 = "name"
-    table2 = db.pr_person
-    field21 = "first_name"
-    field22 = "middle_name"
-    field23 = "last_name"
-    item = []
-    query = db((table1[field1].like("%" + value + "%")) & (table1.deleted == False)).select(db.pr_group.pe_id)
-    for row in query:
-        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
-    query = db((table2[field21].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
-    for row in query:
-        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
-    query = db((table2[field22].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
-    for row in query:
-        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
-    query = db((table2[field23].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
-    for row in query:
-        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
-    return item
+    # Shortcuts
+    groups = db.pr_group
+    persons = db.pr_person
+
+    items = []
+
+    # We want to do case-insensitive searches
+    # (default anyway on MySQL/SQLite, but not PostgreSQL)
+    value = value.lower()
+
+    # Check Groups
+    query = (groups["name"].lower().like("%" + value + "%")) & (groups.deleted == False)
+    rows = db(query).select(groups.pe_id)
+    for row in rows:
+        items.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+
+    # Check Persons
+    deleted = (persons.deleted == False)
+    
+    # First name
+    query = (persons["first_name"].lower().like("%" + value + "%")) & deleted
+    rows = db(query).select(persons.pe_id, cache=(cache.ram, 60))
+    for row in rows:
+        items.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+
+    # Middle name
+    query = (persons["middle_name"].lower().like("%" + value + "%")) & deleted
+    rows = db(query).select(persons.pe_id, cache=(cache.ram, 60))
+    for row in rows:
+        items.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+
+    # Last name
+    query = (persons["last_name"].lower().like("%" + value + "%")) & deleted
+    rows = db(query).select(persons.pe_id, cache=(cache.ram, 60))
+    for row in rows:
+        items.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+
+    return items
 
 
 #------------------------------------------------------------------------------

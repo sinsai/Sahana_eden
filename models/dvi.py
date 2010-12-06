@@ -511,9 +511,12 @@ if deployment_settings.has_module(module):
 
     # -----------------------------------------------------------------------------
     #
-    def shn_dvi_body_search_simple(r, **attr):
+    def shn_dvi_body_search_simple_old(r, **attr):
 
-        """ Simple search form for bodies (recovery reports) """
+        """
+            Simple search form for bodies (recovery reports)
+            - deprecated: remove?
+        """
 
         resource = r.resource
         table = resource.table
@@ -549,9 +552,11 @@ if deployment_settings.has_module(module):
                     form.vars.label = "%"
 
                 # Search
-                results = s3xrc.search_simple(table,
-                            fields = ["pe_label",],
-                            label = form.vars.label)
+                results = s3xrc.search_simple(
+                                              table,
+                                              label = form.vars.label,
+                                              fields = ["pe_label"]
+                                             )
 
                 # Get the results
                 if results:
@@ -580,6 +585,12 @@ if deployment_settings.has_module(module):
             session.error = BADFORMAT
             redirect(URL(r=request))
 
+    shn_dvi_body_search_simple = s3xrc.search_simple(
+            label = T("ID Tag"),
+            comment = T("To search for a body, enter the ID label of the body. You may use % as wildcard. Press 'Search' without input to list all bodies."),
+            fields = ["pe_label"]
+            )
+    
     # Plug into REST controller
     s3xrc.model.set_method(module, "body", method="search_simple", action=shn_dvi_body_search_simple )
 

@@ -88,9 +88,10 @@ class AuthS3(Auth):
         self.settings.username_field = False
         self.settings.lock_keys = True
         self.messages.lock_keys = False
-        self.messages.email_sent = 'Verification Email sent - please check your email to validate. If you do not receive this email please check you junk email or spam filters'
-        self.messages.email_verified = 'Email verified - you can now login'
-        self.messages.registration_disabled = "Registration Disabled!"
+        self.messages.email_approver_failed = "Failed to send mail to Approver - see if you can notify them manually!"
+        self.messages.email_sent = "Verification Email sent - please check your email to validate. If you do not receive this email please check you junk email or spam filters"
+        self.messages.email_verified = "Email verified - you can now login"
+        self.messages.registration_disabled = "Registration Disabled!'"
         self.messages.lock_keys = True
 
     def __get_migrate(self, tablename, migrate=True):
@@ -517,14 +518,19 @@ class AuthS3(Auth):
             if self.settings.registration_requires_verification and self.db(self.settings.table_user.id > 0).count() > 1:
                 if not self.settings.mailer or \
                    not self.settings.mailer.send(to=form.vars.email,
-                        subject=self.messages.verify_email_subject,
-                        message=self.messages.verify_email
-                         % dict(key=key)):
+                                                 subject=self.messages.verify_email_subject,
+                                                 message=self.messages.verify_email % dict(key=key)):
                     self.db.rollback()
                     response.error = self.messages.invalid_email
                     return form
                 session.confirmation = self.messages.email_sent
             elif self.settings.registration_requires_approval and self.db(self.settings.table_user.id > 0).count() > 1:
+                if not self.settings.mailer or \
+                   not self.settings.verify_email_onaccept(form.vars):
+                    # We don't wish to prevent registration if the approver mail fails to send
+                    #self.db.rollback() 
+                    session.error = self.messages.email_approver_failed
+                    #return form 
                 user[form.vars.id] = dict(registration_key="pending")
                 session.warning = self.messages.registration_pending
             else:

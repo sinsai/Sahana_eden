@@ -1188,11 +1188,7 @@ class S3ResourceController(object):
 
             for l in labels:
                 wc = "%"
-                _l = "%s%s%s" % (wc, l, wc)
-
-                # We want to do case-insensitive searches
-                # (default anyway on MySQL/SQLite, but not PostgreSQL)
-                _l = _l.lower()
+                _l = "%s%s%s" % (wc, l.lower(), wc)
 
                 query = None
                 for tablename in search_fields:

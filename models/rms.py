@@ -218,12 +218,16 @@ if deployment_settings.has_module(module):
                 wc = "%"
                 _l = "%s%s%s" % (wc, l, wc)
 
+                # We want to do case-insensitive searches
+                # (default anyway on MySQL/SQLite, but not PostgreSQL)
+                _l = _l.lower()
+
                 # build query
                 for f in search_fields:
                     if query:
-                        query = (db.rms_req[f].like(_l)) | query
+                        query = (db.rms_req[f].lower().like(_l)) | query
                     else:
-                        query = (db.rms_req[f].like(_l))
+                        query = (db.rms_req[f].lower().like(_l))
 
                 # undeleted records only
                 query = (db.rms_req.deleted == False) & (query)
@@ -339,11 +343,10 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             request_id(),
-                            item_id(),
+                            item_id(empty=False),
                             Field("quantity", "double"),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
-
     # CRUD strings
     ADD_REQUEST_ITEM = T("Add Request Item")
     LIST_REQUEST_ITEMS = T("List Request Items")

@@ -232,9 +232,13 @@ def location():
     parent = _vars.get("parent_", None)
     # Don't use 'parent' as the var name as otherwise it conflicts with the form's var of the same name & hence this will be triggered during form submission
     if parent:
+        # We want to do case-insensitive searches
+        # (default anyway on MySQL/SQLite, but not PostgreSQL)
+        _parent = parent.lower()
+
         # Can't do this using a JOIN in DAL syntax
         # .belongs() not GAE-compatible!
-        filters.append((db.gis_location.parent.belongs(db(db.gis_location.name.like(parent)).select(db.gis_location.id))))
+        filters.append((db.gis_location.parent.belongs(db(db.gis_location.name.lower().like(_parent)).select(db.gis_location.id))))
         # ToDo: Make this recursive - want descendants not just direct children!
         # Use new gis.get_children() function
 

@@ -578,7 +578,7 @@ def gis_location_onaccept(form):
     # Associating path for the new node once it is inserted
     parent = form.vars.parent
     level = form.vars.level
-    gis.update_location_tree(parent, level, form.vars.id)    
+    gis.update_location_tree(parent, level, form.vars.id)
     return
 
 def gis_location_onvalidation(form):
@@ -915,14 +915,14 @@ gis_layer_yahoo_subtypes = gis.layer_subtypes("yahoo")
 gis_layer_bing_subtypes = gis.layer_subtypes("bing")
 gis_layer_wms_img_formats = ["image/jpeg", "image/png", "image/bmp", "image/tiff", "image/gif", "image/svg+xml"]
 # Base table from which the rest inherit
-gis_layer = db.Table(db, "gis_layer", timestamp,
+gis_layer = db.Table(db, "gis_layer",
                      #uuidstamp, # Layers like OpenStreetMap, Google, etc shouldn't sync
                      Field("name", notnull=True, label=T("Name"), requires=IS_NOT_EMPTY()),
                      Field("description", label=T("Description")),
                      # System default priority is set in s3gis. User priorities will be set in WMC.
                      #Field("priority", "integer", label=T("Priority")),
-                     Field("enabled", "boolean", default=True, label=T("Available in Viewer?"))
-                    )
+                     Field("enabled", "boolean", default=True, label=T("Available in Viewer?")),
+                     *s3_timestamp(), migrate=migrate)
 for layertype in gis_layer_types:
     resourcename = "layer_" + layertype
     tablename = "%s_%s" % (module, resourcename)

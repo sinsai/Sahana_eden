@@ -2,7 +2,7 @@
 
 """
     Budgetting module
-    
+
     NB Depends on Project Tracking module
 
     @author: Fran Boon
@@ -286,7 +286,7 @@ if deployment_settings.has_module(module):
                             Field("name", length=128, notnull=True, unique=True),
                             Field("grade", notnull=True),
                             Field("salary", "integer", notnull=True),
-                            opt_currency_type,
+                            currency_type(),
                             Field("travel", "integer", default=0),
                             # Shouldn't be grade-dependent, but purely location-dependent
                             #Field("subsistence", "double", default=0.00),

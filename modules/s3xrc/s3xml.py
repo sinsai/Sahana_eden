@@ -56,10 +56,6 @@ class S3XML(object):
 
     """ XML+JSON toolkit for S3XRC """
 
-    S3XRC_NAMESPACE = "http://eden.sahanafoundation.org/wiki/S3XRC"
-    S3XRC = "{%s}" % S3XRC_NAMESPACE #: LXML namespace prefix
-    NSMAP = {None: S3XRC_NAMESPACE} #: LXML default namespace
-
     namespace = "sahana"
 
     CACHE_TTL = 5 # time-to-live of RAM cache for field representations
@@ -74,7 +70,7 @@ class S3XML(object):
     FeatureClass = "feature_class_id"
     #Marker = "marker_id"
 
-    IGNORE_FIELDS = ["deleted", "id"]
+    IGNORE_FIELDS = ["deleted", "id", "owned_by"]
 
     FIELDS_TO_ATTRIBUTES = [
             "id",
@@ -89,7 +85,7 @@ class S3XML(object):
     ATTRIBUTES_TO_FIELDS = ["admin", "mci"]
 
     TAG = Storage(
-        root="s3xrc",
+        root="s3xml",
         resource="resource",
         reference="reference",
         data="data",
@@ -279,7 +275,7 @@ class S3XML(object):
         # matched in XSLT templates (need explicit prefix) and thus this
         # would require a rework of all existing templates (which is
         # however useful)
-        root = etree.Element(self.TAG.root) #, nsmap=self.NSMAP)
+        root = etree.Element(self.TAG.root)
 
         root.set(self.ATTRIBUTE.success, str(False))
 

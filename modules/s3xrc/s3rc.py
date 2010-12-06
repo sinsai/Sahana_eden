@@ -1188,7 +1188,8 @@ class S3ResourceController(object):
 
             for l in labels:
                 wc = "%"
-                _l = "%s%s%s" % (wc, l, wc)
+                _l = "%s%s%s" % (wc, l.lower(), wc)
+
                 query = None
                 for tablename in search_fields:
                     hq = mq[tablename]
@@ -1196,9 +1197,9 @@ class S3ResourceController(object):
                     fields = search_fields[tablename]
                     for f in fields:
                         if fq:
-                            fq = (f.like(_l)) | fq
+                            fq = (f.lower().like(_l)) | fq
                         else:
-                            fq = (f.like(_l))
+                            fq = (f.lower().like(_l))
                     q = hq & fq
                     if query is None:
                         query = q

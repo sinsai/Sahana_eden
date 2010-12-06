@@ -404,7 +404,14 @@ def get_table_for_template(template_id):
             elif question_type == 11:
                 fields.append(Field("question_%s" % (question.id), "date", label=question.name))
 
-        tbl = db.define_table("survey_template_%s" % (template_id), uuidstamp, deletion_status, authorstamp, migrate=True, *fields)
+        fields.append(s3_meta_fields())
+
+        tbl = db.define_table("survey_template_%s" % (template_id),
+                              #uuidstamp,
+                              #deletion_status,
+                              #authorstamp,
+                              migrate=True,
+                              *fields)
         # now add the table name to the template record so we can reference it later.
         db(db.survey_template.id == template_id).update(table_name="survey_template_%s" % (template.id))
         db.commit()

@@ -167,7 +167,7 @@ def project():
 
     tabs = [
             (T("Basic Details"), None),
-            (T("Staff"), "staff"),
+            #(T("Staff"), "staff"),
             (T("Tasks"), "task"),
             #(T("Donors"), "organisation"),
             #(T("Sites"), "site"),  # Ticket 195
@@ -327,6 +327,10 @@ def group():
         msg_list_empty = T("No Members currently registered"))
 
     response.s3.filter = (db.pr_group.system == False) # do not show system groups
+
+    # Redirect to member list when a new group has been created
+    s3xrc.model.configure(db.pr_group,
+        create_next = URL(r=request, c="vol", f="group", args=["[id]", "group_membership"]))
 
     s3xrc.model.configure(db.pr_group_membership,
                           list_fields=["id",

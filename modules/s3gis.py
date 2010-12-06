@@ -448,7 +448,7 @@ class GIS(object):
             return None
 
     # -----------------------------------------------------------------------------
-    def get_features_in_radius(self, lat, lon, radius, resourcename="gis_location", category=None):
+    def get_features_in_radius(self, lat, lon, radius, tablename=None, category=None):
         """
             Returns Features within a Radius (in km) of a LatLon Location
         """
@@ -461,31 +461,72 @@ class GIS(object):
 
         if deployment_settings.gis.spatialdb and deployment_settings.database.db_type == "postgres":
             # Use Postgres routine
+            # The ST_DWithin function call will automatically include a bounding box comparison that will make use of any indexes that are available on the geometries.
+            
             import psycopg2
+            import psycopg2.extras
+
             dbname = deployment_settings.database.database
             username = deployment_settings.database.username
             password = deployment_settings.database.password
             host = deployment_settings.database.host
-            port = deployment_settings.database.port or 5432
+            port = deployment_settings.database.port or "5432"
 
-            # Convert km to degrees (since we're using the_geom not the_geog)
-            # @ToDo
+            # @ToDo: Convert km to degrees? (since we're using the_geom not the_geog) [Not necessary?]
 
-            # This function call will automatically include a bounding box comparison that will make use of any indexes that are available on the geometries.
-            conn = psycopg2.connect("dbname=%s user=%s password=%s host=%s port=%i" % (dbname, username, password, host, port))
-            cursor = conn.cursor()
-            query_string = cursor.mogrify("SELECT * FROM gis_location WHERE ST_DWithin (ST_GeomFromText ('POINT (%s, %s)', 4326), the_geom, %s);", [lat, lon, radius])
+            connection = psycopg2.connect("dbname=%s user=%s password=%s host=%s port=%s" % (dbname, username, password, host, port))
+            cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            info_string = "SELECT column_name, udt_name FROM information_schema.columns WHERE table_name = 'gis_location' or table_name = '%s';" % tablename
+            cursor.execute(info_string)
+            # @ToDo look at more optimal quries for just those fields we need
+            if tablename:
+                # Lookup the resource
+                query_string = cursor.mogrify("SELECT * FROM gis_location, %s WHERE %s.location_id = gis_location.id and ST_DWithin (ST_GeomFromText ('POINT (%s %s)', 4326), the_geom, %s);" % (tablename, tablename, lat, lon, radius))
+            else:
+                # Lookup the raw Locations
+                query_string = cursor.mogrify("SELECT * FROM gis_location WHERE ST_DWithin (ST_GeomFromText ('POINT (%s %s)', 4326), the_geom, %s);" % (lat, lon, radius))
+
             cursor.execute(query_string)
+            features = []
+            for record in cursor:
+                d = dict(record.items())
+                row = Storage()
+                # @ToDo: Optional support for Polygons
+                if tablename:
+                    row.gis_location = Storage()
+                    row.gis_location.id = d["id"]
+                    row.gis_location.lat = d["lat"]
+                    row.gis_location.lon = d["lon"]
+                    row.gis_location.lat_min = d["lat_min"]
+                    row.gis_location.lon_min = d["lon_min"]
+                    row.gis_location.lat_max = d["lat_max"]
+                    row.gis_location.lon_max = d["lon_max"]
+                    row[tablename] = Storage()
+                    row[tablename].id = d["id"]
+                    row[tablename].name = d["name"]
+                else:
+                    row.name = d["name"]
+                    row.id = d["id"]
+                    row.lat = d["lat"]
+                    row.lon = d["lon"]
+                    row.lat_min = d["lat_min"]
+                    row.lon_min = d["lon_min"]
+                    row.lat_max = d["lat_max"]
+                    row.lon_max = d["lon_max"]
+                features.append(row)
+
+            return features
 
         elif SHAPELY:
             # Use Shapely routine
             # Is there one?
             return None
+
         else:
             # Do it manually
             # Formula from: http://blog.peoplesdns.com/archives/24
             # Spherical Law of Cosines (accurate down to around 1m & computationally quick): http://www.movable-type.co.uk/scripts/latlong.html
-            # IF PROJECTION CHANGES THIS WILL NOT WORK
+            # IF PROJECTION CHANGES THIS WILL NOT WORK (Should be fine if we always use 4326)
 
             # ToDo: complete port from PHP to Eden
             return None

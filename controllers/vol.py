@@ -102,6 +102,8 @@ def index():
 
 
 # -----------------------------------------------------------------------------
+# People
+# -----------------------------------------------------------------------------
 def person():
 
     """
@@ -161,45 +163,114 @@ def person():
 
 
 # -----------------------------------------------------------------------------
-def project():
+def view_map():
 
-    """ RESTful CRUD controller """
+    """
+        Show Location of a Volunteer on the Map
+        
+        Use most recent presence if available, else any address that's available.
+        
+        @ToDo: Convert to a custom method of the person resource
+    """
 
-    tabs = [
-            (T("Basic Details"), None),
-            #(T("Staff"), "staff"),
-            (T("Tasks"), "task"),
-            #(T("Donors"), "organisation"),
-            #(T("Sites"), "site"),  # Ticket 195
-           ]
+    person_id = request.args(0)
 
-    rheader = lambda r: shn_project_rheader(r, tabs)
-    return s3_rest_controller("project", resourcename, rheader=rheader)
+    # Shortcuts
+    persons = db.pr_person
+    presences = db.pr_presence
+    locations = db.gis_location
+    
+    # Include the person's last verified location, assuming that they're not missing
+    presence_query = (persons.id == person_id) & \
+                     (persons.missing == False) & \
+                     (presences.pe_id == persons.pe_id) & \
+                     (presences.presence_condition.belongs(vita.PERSISTANT_PRESENCE)) & \
+                     (presences.closed == False) & \
+                     (locations.id == presences.location_id)
 
+    # Need sql.Rows object for show_map, so don't extract individual row.
+    features = db(presence_query).select(locations.id,
+                                         locations.lat,
+                                         locations.lon,
+                                         persons.id,
+                                         limitby=(0, 1))
 
-# -----------------------------------------------------------------------------
-def task():
+    if not features:
+        # Use their Address
+        address_query = (persons.id == person_id) & \
+                        (db.pr_address.pe_id == persons.pe_id) & \
+                        (locations.id == db.pr_address.location_id)
+        # @ToDo: Lookup their schedule to see whether they should be at Work, Home or Holiday & lookup the correct address
+        # For now, take whichever address is supplied first.
+        features = db(address_query).select(locations.id,
+                                            locations.lat,
+                                            locations.lon,
+                                            persons.id,
+                                            limitby=(0, 1))
 
-    """ Manage current user's tasks """
+    if features:
+        # Center and zoom the map.
+        record = features.first()
+        lat = record.gis_location.lat
+        lon = record.gis_location.lon
+        zoom = 15
 
-    tablename = "project_%s" % (resourcename)
-    table = db[tablename]
+        config = gis.get_config()
 
-    my_person_id = s3_logged_in_person()
+        if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
+            catalogue_toolbar = True
+        else:
+            catalogue_toolbar = False
 
-    if not my_person_id:
-        session.error = T("No person record found for current user.")
-        redirect(URL(r=request, f="index"))
+        # Standard Feature Layers
+        feature_queries = []
+        feature_layers = db(db.gis_layer_feature.enabled == True).select()
+        for layer in feature_layers:
+            _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=False, polygons=layer.polygons)
+            if _layer:
+                feature_queries.append(_layer)
+        
+        # Add the Volunteer layer
+        try:
+            marker_id = db(db.gis_marker.name == "volunteer").select().first().id
+        except:
+            marker_id = 1
+        
+        # Can't use this since the location_id link is via pr_presence not pr_person
+        #_layer = gis.get_feature_layer("pr", "person", "Volunteer", "Volunteer", config=config, marker_id=marker_id, active=True, polygons=False)
+        #if _layer:
+        #    feature_queries.append(_layer)
+        
+        # Insert the name into the query & replace the location_id with the person_id
+        for i in range(0, len(features)):
+            features[i].gis_location.name = vita.fullname(db(db.pr_person.id == features[i].pr_person.id).select(limitby=(0, 1)).first())
+            features[i].gis_location.id = features[i].pr_person.id
+        
+        feature_queries.append({"name" : "Volunteer",
+                                "query" : features,
+                                "active" : True,
+                                "popup_label" : "Volunteer",
+                                "popup_url" : URL(r=request, c="vol", f="person") + "/<id>/read.plain",
+                                "marker" : marker_id})
 
-    table.person_id.default = my_person_id
-    #table.person_id.writable = False
+        html = gis.show_map(
+            feature_queries = feature_queries,
+            #wms_browser = {"name" : "Risk Maps",
+            #               "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+            catalogue_toolbar = catalogue_toolbar,
+            catalogue_overlays = True,
+            toolbar = True,
+            search = True,
+            lat = lat,
+            lon = lon,
+            zoom = zoom,
+            window = False  # We should provide a button within the map to make it go full-screen (ideally without reloading the page!)
+        )
+        return dict(map=html)
 
-    response.s3.filter = (db.project_task.person_id == my_person_id)
-
-    s3.crud_strings[tablename].title_list = T("My Tasks")
-    s3.crud_strings[tablename].subtitle_list = T("Task List")
-
-    return s3_rest_controller("project", resourcename)
+    # Redirect to person details if no location is available
+    session.error = T("No location found")
+    redirect(URL(r=request, c="vol", f="person", args=[person_id, "presence"]))
 
 
 # -----------------------------------------------------------------------------
@@ -211,72 +282,23 @@ def skill_types():
 
 
 # -----------------------------------------------------------------------------
-def view_map():
+def skill():
 
-    """ Map Location of Volunteer.
+    """ Select skills a volunteer has. """
 
-        Use most recent presence if available, else any address that's
-        available.
-
-    """
-
-    person_id = request.args(0)
-
-    presence_query = (db.pr_person.id == person_id) & \
-                     (db.pr_presence.pe_id == db.pr_person.pe_id) & \
-                     (db.gis_location.id == db.pr_presence.location_id)
-
-    # Need sql.Rows object for show_map, so don't extract individual row.
-    location = db(presence_query).select(db.gis_location.ALL,
-                                         orderby=~db.pr_presence.datetime,
-                                         limitby=(0, 1))
-
-    if not location:
-        address_query = (db.pr_person.id == person_id) & \
-                        (db.pr_address.pe_id == db.pr_person.pe_id) & \
-                        (db.gis_location.id == db.pr_address.location_id)
-        # TODO: If there are multiple addresses, which should we choose?
-        # For now, take whichever address is supplied first.
-        location = db(address_query).select(db.gis_location.ALL, limitby=(0, 1))
-
-    if location:
-        # Center and zoom the map.
-        location_row = location.first()  # location is a sql.Rows
-        lat = location_row.lat
-        lon = location_row.lon
-        # Use bounds if more than 1 feature
-        #bounds = gis.get_bounds(features=location)
-        zoom = 15
-
-        volunteer = {"feature_group" : "People"}
-        try:
-            marker_id = db(db.gis_marker.name == "volunteer").select().first().id
-        except:
-            marker_id = 1
-        html = gis.show_map(
-            feature_queries = [{"name" : "Volunteer",
-                                "query" : location,
-                                "active" : True,
-                                "marker" : marker_id}],
-            #wms_browser = {"name" : "Risk Maps",
-            #               "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
-            #catalogue_overlays = True,
-            #catalogue_toolbar = True,
-            toolbar = True,
-            search = True,
-            lat = lat,
-            lon = lon,
-            zoom = zoom,
-            #bbox = bounds,
-            window = True,
-        )
-        return dict(map=html)
-
-    # Redirect to person details if no location is available
-    response.error=T("Add location")
-    redirect(URL(r=request, c="vol", f="person", args=[person_id, "address"]))
+    return s3_rest_controller(prefix, "skill")
 
 
+# -----------------------------------------------------------------------------
+# TODO: Is resource a bad name, due to possible confusion with other usage?
+def resource():
+
+    """ Select resources a volunteer has """
+
+    return s3_rest_controller(prefix, "resource")
+
+# -----------------------------------------------------------------------------
+# Teams
 # -----------------------------------------------------------------------------
 def group():
 
@@ -331,7 +353,6 @@ def group():
     # Redirect to member list when a new group has been created
     s3xrc.model.configure(db.pr_group,
         create_next = URL(r=request, c="vol", f="group", args=["[id]", "group_membership"]))
-
     s3xrc.model.configure(db.pr_group_membership,
                           list_fields=["id",
                                        "person_id",
@@ -351,71 +372,302 @@ def group():
 
 
 # -----------------------------------------------------------------------------
-def skill():
-
-    """ Select skills a volunteer has. """
-
-    return s3_rest_controller(prefix, "skill")
-
-
-# -----------------------------------------------------------------------------
 def view_team_map():
 
-    """ Map Location of Volunteer in a Team.
-        Use most recent presence if available, else any address that's available.
+    """
+        Show Location of a Team of Volunteers on the Map
 
+        Use most recent presence if available
+
+        @ToDo: Fallback to addresses
+        
+        @ToDo: Convert to a custom method of the group resource
     """
 
     group_id = request.args(0)
 
     members_query = (db.pr_group_membership.group_id == group_id)
-    members = db(members_query).select(db.pr_group_membership.person_id) #members of a team aka group
-    member_person_ids = [ x.person_id for x in members ] #list of members
+    members = db(members_query).select(db.pr_group_membership.person_id) # Members of a team (aka group)
+    member_person_ids = [ x.person_id for x in members ] # List of members
 
-    #Presence Data of the members with Presence Logs
-    presence_rows = db(db.pr_person.id.belongs(member_person_ids) & \
-                      (db.pr_presence.pe_id == db.pr_person.pe_id) & \
-                      (db.gis_location.id ==  db.pr_presence.location_id)).select(db.gis_location.ALL, db.pr_person.id, orderby=~db.pr_presence.datetime)
-    #Get Latest Presence Data
-    person_location_sort = presence_rows.sort(lambda row:row.pr_person.id)
-    previous_person_id = None
-    locations_list = []
-    for row in person_location_sort:
-        if row.pr_person.id != previous_person_id:
-            locations_list.append(row["gis_location"])
-            member_person_ids.remove(row.pr_person.id)
-            previous_person_id = row.pr_person.id
+    # Shortcuts
+    persons = db.pr_person
+    presences = db.pr_presence
+    locations = db.gis_location
+    
+    # Presence Data for Members who aren't Missing & have a Verified Presence
+    features = db(persons.id.belongs(member_person_ids) & \
+                 (persons.missing == False) & \
+                 (presences.pe_id == persons.pe_id) & \
+                 (presences.presence_condition.belongs(vita.PERSISTANT_PRESENCE)) & \
+                 (presences.closed == False) & \
+                 (locations.id == presences.location_id)).select(locations.id,
+                                                                 locations.lat,
+                                                                 locations.lon,
+                                                                 locations.lat_min,
+                                                                 locations.lat_max,
+                                                                 locations.lon_min,
+                                                                 locations.lon_max,
+                                                                 persons.id)
 
-    #Address of those members without Presence data
-    address = db(db.pr_person.id.belongs(member_person_ids) & \
-                (db.pr_address.pe_id == db.pr_person.pe_id) & \
-                (db.gis_location.id ==  db.pr_address.location_id)).select(db.gis_location.ALL)
+    # Address of those members without Presence data
+    #address = db(persons.id.belongs(member_person_ids) & \
+    #            (db.pr_address.pe_id == persons.pe_id) & \
+    #            (locations.id ==  db.pr_address.location_id)).select(locations.id,
+    #                                                                 locations.lat,
+    #                                                                 locations.lon,
+    #                                                                 persons.id)
+    #locations_list.extend(address)
 
-    locations_list.extend(address)
+    if features:
 
-    if locations_list:
+        if len(features) > 1:
+            # Set the viewport to the appropriate area to see everyone
+            bounds = gis.get_bounds(features=features)
+        else:
+            # A 1-person bounds zooms in too far for many tilesets
+            lat = features.first().gis_location.lat
+            lon = features.first().gis_location.lon
+            zoom = 15
 
-        bounds = gis.get_bounds(features=locations_list)
+        config = gis.get_config()
 
-        volunteer = {"feature_group" : "People"}
-        html = gis.show_map(
-            feature_queries = [{"name" : "Volunteer", "query" : locations_list, "active" : True, "marker" : db(db.gis_marker.name == "volunteer").select().first().id}],
-            feature_groups = [volunteer],
-            wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
-            catalogue_overlays = True,
-            catalogue_toolbar = True,
-            toolbar = True,
-            search = True,
-            bbox = bounds,
-            window = True,
-        )
+        if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
+            catalogue_toolbar = True
+        else:
+            catalogue_toolbar = False
+
+        # Standard Feature Layers
+        feature_queries = []
+        feature_layers = db(db.gis_layer_feature.enabled == True).select()
+        for layer in feature_layers:
+            _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=False, polygons=layer.polygons)
+            if _layer:
+                feature_queries.append(_layer)
+        
+        # Add the Volunteer layer
+        try:
+            marker_id = db(db.gis_marker.name == "volunteer").select().first().id
+        except:
+            marker_id = 1
+        
+        # Can't use this since the location_id link is via pr_presence not pr_person
+        #_layer = gis.get_feature_layer("pr", "person", "Volunteer", "Volunteer", config=config, marker_id=marker_id, active=True, polygons=False)
+        #if _layer:
+        #    feature_queries.append(_layer)
+        
+        # Insert the name into the query & replace the location_id with the person_id
+        for i in range(0, len(features)):
+            features[i].gis_location.name = vita.fullname(db(db.pr_person.id == features[i].pr_person.id).select(limitby=(0, 1)).first())
+            features[i].gis_location.id = features[i].pr_person.id
+        
+        feature_queries.append({"name" : "Volunteers",
+                                "query" : features,
+                                "active" : True,
+                                "popup_label" : "Volunteer",
+                                "popup_url" : URL(r=request, c="vol", f="person") + "/<id>/read.plain",
+                                "marker" : marker_id})
+
+        try:
+            html = gis.show_map(
+                feature_queries = feature_queries,
+                #wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+                catalogue_toolbar = catalogue_toolbar,
+                catalogue_overlays = True,
+                toolbar = True,
+                search = True,
+                bbox = bounds,
+                window = True,  # @ToDo Change to False & create a way to convert an embedded map to a full-screen one without a screen refresh
+            )
+        except:
+            html = gis.show_map(
+                feature_queries = feature_queries,
+                #wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+                catalogue_toolbar = catalogue_toolbar,
+                catalogue_overlays = True,
+                toolbar = True,
+                search = True,
+                lat = lat,
+                lon = lon,
+                zoom = zoom,
+                window = True,  # @ToDo Change to False & create a way to convert an embedded map to a full-screen one without a screen refresh
+            )
         return dict(map=html)
 
     # Redirect to team details if no location is available
-    response.error=T("Add Location")
-    redirect(URL(r=request, c="vol", f="group", args=[group_id,"address"]))
+    session.error=T("Add Location")
+    redirect(URL(r=request, c="vol", f="group", args=[group_id, "address"]))
 
 
+# -----------------------------------------------------------------------------
+# Projects & Tasks
+# -----------------------------------------------------------------------------
+def project():
+
+    """ RESTful CRUD controller """
+
+    tabs = [
+            (T("Basic Details"), None),
+            #(T("Staff"), "staff"),
+            (T("Tasks"), "task"),
+            #(T("Donors"), "organisation"),
+            #(T("Sites"), "site"),  # Ticket 195
+           ]
+
+    rheader = lambda r: shn_project_rheader(r, tabs)
+    return s3_rest_controller("project", resourcename, rheader=rheader)
+
+
+# -----------------------------------------------------------------------------
+def task():
+
+    """ Manage current user's tasks """
+
+    tablename = "project_%s" % (resourcename)
+    table = db[tablename]
+
+    my_person_id = s3_logged_in_person()
+
+    if not my_person_id:
+        session.error = T("No person record found for current user.")
+        redirect(URL(r=request, f="index"))
+
+    table.person_id.default = my_person_id
+    #@ToDo: if not a team leader then:
+    #   can only assign themselves tasks
+
+    response.s3.filter = (db.project_task.person_id == my_person_id)
+
+    s3.crud_strings[tablename].title_list = T("My Tasks")
+    s3.crud_strings[tablename].subtitle_list = T("Task List")
+
+    return s3_rest_controller("project", resourcename)
+
+
+# -----------------------------------------------------------------------------
+def view_project_map():
+
+    """
+        Show Location of all Tasks on the Map
+        
+        @ToDo: Different Colours for Status
+            Green for Complete
+            Red for Urgent/Incomplete
+            Amber for Non-Urgent/Incomplete
+            
+        @ToDo: A single map with both Tasks & Volunteers displayed on it
+        
+        @ToDo: Convert to a custom method of the project resource
+    """
+
+    project_id = request.args(0)
+
+    # Shortcuts
+    tasks = db.project_task
+    locations = db.gis_location
+
+    features = db((tasks.project_id == project_id) & \
+                  (locations.id == tasks.location_id)).select(locations.id,
+                                                              locations.lat,
+                                                              locations.lon,
+                                                              locations.lat_min,
+                                                              locations.lat_max,
+                                                              locations.lon_min,
+                                                              locations.lon_max,
+                                                              tasks.subject,
+                                                              tasks.status,
+                                                              tasks.urgent,
+                                                              tasks.id)
+
+    if features:
+
+        if len(features) > 1:
+            # Set the viewport to the appropriate area to see all the tasks
+            bounds = gis.get_bounds(features=features)
+        else:
+            # A 1-task bounds zooms in too far for many tilesets
+            lat = features.first().gis_location.lat
+            lon = features.first().gis_location.lon
+            zoom = 15
+
+        config = gis.get_config()
+
+        if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
+            catalogue_toolbar = True
+        else:
+            catalogue_toolbar = False
+
+        # Standard Feature Layers
+        feature_queries = []
+        feature_layers = db(db.gis_layer_feature.enabled == True).select()
+        for layer in feature_layers:
+            _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=False, polygons=layer.polygons)
+            if _layer:
+                feature_queries.append(_layer)
+        
+        # Add the Tasks layer
+        # Can't use this since we want to use different colours, not markers
+        #_layer = gis.get_feature_layer("project", "task", "Tasks", "Task", config=config, marker_id=marker_id, active=True, polygons=False)
+        #if _layer:
+        #    feature_queries.append(_layer)
+        
+        # Insert the name into the query & replace the location_id with the task_id
+        for i in range(0, len(features)):
+            features[i].gis_location.name = features[i].project_task.subject
+            features[i].gis_location.id = features[i].project_task.id
+            features[i].gis_location.shape = "circle"
+            if features[i].project_task.status in [3, 4, 6]:
+                # Green for 'Completed', 'Postponed' or 'Cancelled'
+                features[i].gis_location.color = "green"
+            elif features[i].project_task.status == 1 and features[i].project_task.urgent == True:
+                # Red for 'Urgent' and 'New' (i.e. Unassigned)
+                features[i].gis_location.color = "red"
+            else:
+                # Amber for 'Feedback' or 'non-urgent'
+                features[i].gis_location.color = "	#FFBF00"
+            
+        
+        feature_queries.append({
+                                "name" : "Tasks",
+                                "query" : features,
+                                "active" : True,
+                                "popup_label" : "Task",
+                                "popup_url" : URL(r=request, c="project", f="task") + "/<id>/read.plain"
+                                })
+
+        try:
+            html = gis.show_map(
+                feature_queries = feature_queries,
+                #wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+                catalogue_toolbar = catalogue_toolbar,
+                catalogue_overlays = True,
+                toolbar = True,
+                search = True,
+                bbox = bounds,
+                window = True,  # @ToDo Change to False & create a way to convert an embedded map to a full-screen one without a screen refresh
+            )
+        except:
+            html = gis.show_map(
+                feature_queries = feature_queries,
+                #wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+                catalogue_toolbar = catalogue_toolbar,
+                catalogue_overlays = True,
+                toolbar = True,
+                search = True,
+                lat = lat,
+                lon = lon,
+                zoom = zoom,
+                window = True,  # @ToDo Change to False & create a way to convert an embedded map to a full-screen one without a screen refresh
+            )
+        return dict(map=html)
+
+    # Redirect to tasks if no task location is available
+    session.error=T("No Tasks with Location Data!")
+    redirect(URL(r=request, c="vol", f="project", args=[project_id, "task"]))
+
+
+# -----------------------------------------------------------------------------
+# Messaging
 # -----------------------------------------------------------------------------
 def compose_person():
 
@@ -444,14 +696,5 @@ def compose_group():
                            redirect_function="compose_group",
                            redirect_vars={"group_id":request.vars.group_id},
                            title_name="Send a message to a team of volunteers")
-
-
-# -----------------------------------------------------------------------------
-# TODO: Is resource a bad name, due to possible confusion with other usage?
-def resource():
-
-    """ Select resources a volunteer has """
-
-    return s3_rest_controller(prefix, "resource")
 
 # -----------------------------------------------------------------------------

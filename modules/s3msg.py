@@ -23,8 +23,17 @@
 
 __doc__ = \
 """
-Module providing an API to send messages
-- Currently SMS and Email
+    Module providing an API to send messages
+    - Currently SMS, Email & Twitter
+    
+    pr_message_method:
+    1: Email
+    2: SMS
+    4: Twitter
+    
+   Messages get sent to the Outbox (& Log)
+   From there, Cron tasks collect them & send them
+
 """
 
 __author__ = "Praneeth Bodduluri <lifeeth[at]gmail.com>"
@@ -318,7 +327,7 @@ class Msg(object):
                             pe_id,
                             subject="",
                             message="",
-                            sender_pe_id=None,
+                            sender_pe_id=None,  # s3_logged_in_person() is useful here
                             sender="",
                             fromaddress="",
                             system_generated=False):
@@ -339,7 +348,7 @@ class Msg(object):
     def send_sms_by_pe_id(self,
                           pe_id,
                           message="",
-                          sender_pe_id=None,
+                          sender_pe_id=None,  # s3_logged_in_person() is useful here
                           sender="",
                           fromaddress="",
                           system_generated=False):

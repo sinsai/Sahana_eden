@@ -316,6 +316,7 @@ if deployment_settings.has_module("project"):
     
             if jr.name == "project":
     
+                table = db.project_project
                 _next = jr.here()
                 _same = jr.same()
     
@@ -340,7 +341,7 @@ if deployment_settings.has_module("project"):
                             TH(T("Name") + ": "),
                             project.name,
                             TH(T("Location") + ": "),
-                            location_id.location_id.represent(project.location_id),
+                            table.location_id.represent(project.location_id),
                             ),
                         TR(
                             TH(T("Status") + ": "),
@@ -583,12 +584,12 @@ if deployment_settings.has_module("project"):
                                           org_office="office_id"))
     
     s3xrc.model.configure(table,
-                          listadd=False,
                           onvalidation = lambda form: shn_project_task_onvalidation(form),
                           list_fields=["id",
                                        "urgent",
-                                       "location_id",
                                        "subject",
+                                       "location_id",
+                                       "office_id",
                                        "person_id",
                                        "status"],
                           main="subject", extra="description")    

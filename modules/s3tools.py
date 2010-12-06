@@ -1271,7 +1271,7 @@ class S3ReusableField(object):
                     if requires:
                         r = requires[0]
                         if isinstance(r, IS_EMPTY_OR):
-                            requires[0] = r.other
+                            requires = r.other
                             ia.update(requires=requires)
             if "empty" in attr:
                 del attr["empty"]

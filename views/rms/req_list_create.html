@@ -3,9 +3,8 @@
 <script type="text/javascript">//<![CDATA[
 $(function() {
     var msg_default = '{{=T("Enter a summary of the request here.")}}\n\n{{=T("The next screen will allow you to enter a detailed list of items and quantities, if appropriate...")}}';
-    // Provide some default help text in the Message box
-    //$('#rms_req_message').attr({ value: msg_default }).addClass('default-text').focus(function(){
-	$('#rms_req_message').addClass('default-text').attr({ value: msg_default }).focus(function(){    	
+    // Provide some default help text in the Message box if message is empty
+    if(!$('#rms_req_message').val()) $('#rms_req_message').addClass('default-text').attr({ value: msg_default }).focus(function(){
             if($(this).val() == msg_default){
                 // Clear on click if still default
                 $(this).val('').removeClass('default-text');

@@ -1842,7 +1842,8 @@ class S3Resource(object):
                         validators = [validators]
                     for v in validators:
                         if hasattr(v, "options"):
-                            continue
+                            if hasattr(v, "zero") and v.zero is None:
+                                continue
                         val, error = v("")
                         if error:
                             required = True

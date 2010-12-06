@@ -515,21 +515,20 @@ if deployment_settings.has_module("project"):
     }
     
     project_task_priority_opts = {
-        4: T("normal"),
-        1: T("immediately"),
-        2: T("urgent"),
-        3: T("high"),
-        5: T("low")
+        1: T("normal"),
+        2: T("high"),
+        3: T("low")
     }
     
     resourcename = "task"
     tablename = application + "_" + resourcename
     table = db.define_table(tablename,
+                            Field("urgent", "boolean", label=T("Urgent")),
                             Field("priority", "integer",
-                                requires = IS_IN_SET(project_task_priority_opts, zero=None),
-                                # default = 4,
-                                label = T("Priority"),
-                                represent = lambda opt: project_task_priority_opts.get(opt, UNKNOWN_OPT)),
+                                  requires = IS_IN_SET(project_task_priority_opts, zero=None),
+                                  default = 1,
+                                  label = T("Priority"),
+                                  represent = lambda opt: project_task_priority_opts.get(opt, UNKNOWN_OPT)),
                             Field("subject", length=80, notnull=True),
                             Field("description", "text"),
                             project_id(),
@@ -537,10 +536,10 @@ if deployment_settings.has_module("project"):
                             office_id(label=T("Managing Office")),
                             person_id(label=T("Assigned to")),
                             Field("status", "integer",
-                                requires = IS_IN_SET(project_task_status_opts, zero=None),
-                                # default = 1,
-                                label = T("Status"),
-                                represent = lambda opt: project_task_status_opts.get(opt, UNKNOWN_OPT)),
+                                  requires = IS_IN_SET(project_task_status_opts, zero=None),
+                                  # default = 1,
+                                  label = T("Status"),
+                                  represent = lambda opt: project_task_status_opts.get(opt, UNKNOWN_OPT)),
                             migrate=migrate, *s3_meta_fields())
     
     
@@ -587,9 +586,8 @@ if deployment_settings.has_module("project"):
                           listadd=False,
                           onvalidation = lambda form: shn_project_task_onvalidation(form),
                           list_fields=["id",
-                                       "project_id",
-                                       "office_id",
-                                       "priority",
+                                       "urgent",
+                                       "location_id",
                                        "subject",
                                        "person_id",
                                        "status"],

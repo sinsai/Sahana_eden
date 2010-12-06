@@ -169,6 +169,8 @@ def view_map():
         Show Location of a Volunteer on the Map
         
         Use most recent presence if available, else any address that's available.
+        
+        @ToDo: Convert to a custom method of the person resource
     """
 
     person_id = request.args(0)
@@ -372,9 +374,11 @@ def view_team_map():
     """
         Show Location of a Team of Volunteers on the Map
 
-        Use most recent presence if available, else any address that's available
+        Use most recent presence if available
+
+        @ToDo: Fallback to addresses
         
-        @ToDo: Update for correct Presence settings, Popup details, etc (see view_map)
+        @ToDo: Convert to a custom method of the group resource
     """
 
     group_id = request.args(0)
@@ -541,55 +545,44 @@ def task():
 def view_project_map():
 
     """
-        Show Location of all Volunteers on the Map
-
-        Use most recent presence if available, else any address that's available
+        Show Location of all Tasks on the Map
         
-        @ToDo: Update for correct Presence settings, Popup details, etc (see view_map)
+        @ToDo: Different Colours for Status
+            Green for Complete
+            Red for Urgent/Incomplete
+            Amber for Non-Urgent/Incomplete
+            
+        @ToDo: A single map with both Tasks & Volunteers displayed on it
+        
+        @ToDo: Convert to a custom method of the project resource
     """
 
-    group_id = request.args(0)
-
-    members_query = (db.pr_group_membership.group_id == group_id)
-    members = db(members_query).select(db.pr_group_membership.person_id) # Members of a team (aka group)
-    member_person_ids = [ x.person_id for x in members ] # List of members
+    project_id = request.args(0)
 
     # Shortcuts
-    persons = db.pr_person
-    presences = db.pr_presence
+    tasks = db.project_task
     locations = db.gis_location
-    
-    # Presence Data for Members who aren't Missing & have a Verified Presence
-    features = db(persons.id.belongs(member_person_ids) & \
-                 (persons.missing == False) & \
-                 (presences.pe_id == persons.pe_id) & \
-                 (presences.presence_condition.belongs(vita.PERSISTANT_PRESENCE)) & \
-                 (presences.closed == False) & \
-                 (locations.id == presences.location_id)).select(locations.id,
-                                                                 locations.lat,
-                                                                 locations.lon,
-                                                                 locations.lat_min,
-                                                                 locations.lat_max,
-                                                                 locations.lon_min,
-                                                                 locations.lon_max,
-                                                                 persons.id)
 
-    # Address of those members without Presence data
-    #address = db(persons.id.belongs(member_person_ids) & \
-    #            (db.pr_address.pe_id == persons.pe_id) & \
-    #            (locations.id ==  db.pr_address.location_id)).select(locations.id,
-    #                                                                 locations.lat,
-    #                                                                 locations.lon,
-    #                                                                 persons.id)
-    #locations_list.extend(address)
+    features = db((tasks.project_id == project_id) & \
+                  (locations.id == tasks.location_id)).select(locations.id,
+                                                              locations.lat,
+                                                              locations.lon,
+                                                              locations.lat_min,
+                                                              locations.lat_max,
+                                                              locations.lon_min,
+                                                              locations.lon_max,
+                                                              tasks.subject,
+                                                              tasks.status,
+                                                              tasks.urgent,
+                                                              tasks.id)
 
     if features:
 
         if len(features) > 1:
-            # Set the viewport to the appropriate area to see everyone
+            # Set the viewport to the appropriate area to see all the tasks
             bounds = gis.get_bounds(features=features)
         else:
-            # A 1-person bounds zooms in too far for many tilesets
+            # A 1-task bounds zooms in too far for many tilesets
             lat = features.first().gis_location.lat
             lon = features.first().gis_location.lon
             zoom = 15
@@ -609,28 +602,35 @@ def view_project_map():
             if _layer:
                 feature_queries.append(_layer)
         
-        # Add the Volunteer layer
-        try:
-            marker_id = db(db.gis_marker.name == "volunteer").select().first().id
-        except:
-            marker_id = 1
-        
-        # Can't use this since the location_id link is via pr_presence not pr_person
-        #_layer = gis.get_feature_layer("pr", "person", "Volunteer", "Volunteer", config=config, marker_id=marker_id, active=True, polygons=False)
+        # Add the Tasks layer
+        # Can't use this since we want to use different colours, not markers
+        #_layer = gis.get_feature_layer("project", "task", "Tasks", "Task", config=config, marker_id=marker_id, active=True, polygons=False)
         #if _layer:
         #    feature_queries.append(_layer)
         
-        # Insert the name into the query & replace the location_id with the person_id
+        # Insert the name into the query & replace the location_id with the task_id
         for i in range(0, len(features)):
-            features[i].gis_location.name = vita.fullname(db(db.pr_person.id == features[i].pr_person.id).select(limitby=(0, 1)).first())
-            features[i].gis_location.id = features[i].pr_person.id
+            features[i].gis_location.name = features[i].project_task.subject
+            features[i].gis_location.id = features[i].project_task.id
+            features[i].gis_location.shape = "circle"
+            if features[i].project_task.status in [3, 4, 6]:
+                # Green for 'Completed', 'Postponed' or 'Cancelled'
+                features[i].gis_location.color = "green"
+            elif features[i].project_task.status == 1 and features[i].project_task.urgent == True:
+                # Red for 'Urgent' and 'New' (i.e. Unassigned)
+                features[i].gis_location.color = "red"
+            else:
+                # Amber for 'Feedback' or 'non-urgent'
+                features[i].gis_location.color = "	#FFBF00"
+            
         
-        feature_queries.append({"name" : "Volunteers",
+        feature_queries.append({
+                                "name" : "Tasks",
                                 "query" : features,
                                 "active" : True,
-                                "popup_label" : "Volunteer",
-                                "popup_url" : URL(r=request, c="vol", f="person") + "/<id>/read.plain",
-                                "marker" : marker_id})
+                                "popup_label" : "Task",
+                                "popup_url" : URL(r=request, c="project", f="task") + "/<id>/read.plain"
+                                })
 
         try:
             html = gis.show_map(
@@ -658,9 +658,9 @@ def view_project_map():
             )
         return dict(map=html)
 
-    # Redirect to team details if no location is available
-    session.error=T("Add Location")
-    redirect(URL(r=request, c="vol", f="group", args=[group_id, "address"]))
+    # Redirect to tasks if no task location is available
+    session.error=T("No Tasks with Location Data!")
+    redirect(URL(r=request, c="vol", f="project", args=[project_id, "task"]))
 
 
 # -----------------------------------------------------------------------------

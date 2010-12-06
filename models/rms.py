@@ -218,12 +218,16 @@ if deployment_settings.has_module(module):
                 wc = "%"
                 _l = "%s%s%s" % (wc, l, wc)
 
+                # We want to do case-insensitive searches
+                # (default anyway on MySQL/SQLite, but not PostgreSQL)
+                _l = _l.lower()
+
                 # build query
                 for f in search_fields:
                     if query:
-                        query = (db.rms_req[f].like(_l)) | query
+                        query = (db.rms_req[f].lower().like(_l)) | query
                     else:
-                        query = (db.rms_req[f].like(_l))
+                        query = (db.rms_req[f].lower().like(_l))
 
                 # undeleted records only
                 query = (db.rms_req.deleted == False) & (query)

@@ -12,11 +12,11 @@ if deployment_settings.has_module(module):
     ########
     resourcename = "group"
     tablename = module + "_" + resourcename
-    table = db.define_table(tablename, timestamp,
+    table = db.define_table(tablename,
                             Field("name", notnull=True),
                             Field("description", "text"),
                             Field("active", "boolean", default=True),
-                            migrate=migrate)
+                            migrate=migrate, *s3_timestamp())
 
     table.name.label = T("Group Title")
     table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "delphi_group.name")]

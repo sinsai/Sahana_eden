@@ -1673,8 +1673,11 @@ class S3SearchSimple(S3CRUDHandler):
                                             linkto=linkto,
                                             download_url=self.download_url,
                                             format=representation)
-                    session.s3.filter = {"%s.id" % resource.name:
-                                         ",".join(map(str,results))}
+                    if request.post_vars.label:
+                        session.s3.filter = {"%s.id" % resource.name:
+                                            ",".join(map(str,results))}
+                    else:
+                        session.s3.filter = None
                 else:
                     items = T("No matching records found.")
                 output.update(items=items, sortby=sortby)

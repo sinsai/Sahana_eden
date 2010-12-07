@@ -4,6 +4,11 @@
     Deployment settings
     All settings which are typically edited for a deployment should be done here
     Deployers shouldn't typically need to edit any other files.
+    NOTE FOR DEVELOPERS: 
+    /models/000_config.py is NOT in the BZR repository, as this file will be changed 
+    during deployments. 
+    To for changes to be committed to trunk, please also edit:
+    deployment-templates/models/000_config.py
 """
 
 # Remind admin to edit this file

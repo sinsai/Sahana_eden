@@ -339,10 +339,13 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             request_id(),
-                            item_id(),
+                            item_id(empty=False),
                             Field("quantity", "double"),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
+    
+    table.item_id.requires = IS_ONE_OF(db, "supply_item.id", "%(name)s (%(unit)s)", sort=True)
+    table.quantity.requires = IS_NOT_EMPTY()
 
     # CRUD strings
     ADD_REQUEST_ITEM = T("Add Request Item")

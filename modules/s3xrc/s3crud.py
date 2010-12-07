@@ -371,9 +371,13 @@ class S3MethodHandler(object):
                     resolve = True
                     try:
                         display = handler(r)
-                    except:
-                        # e.g. rheader fails since record is None
+                    except TypeError:
+                        # Argument list failure => pass callable to the view as-is
+                        display = handler
                         continue
+                    except:
+                        # Propagate all other errors to the caller
+                        raise
                 else:
                     display = handler
                 if isinstance(display, dict) and resolve:

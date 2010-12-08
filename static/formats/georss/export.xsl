@@ -35,11 +35,11 @@
 
     <!-- ****************************************************************** -->
     <xsl:template match="/">
-        <xsl:apply-templates select="s3xrc"/>
+        <xsl:apply-templates select="s3xml"/>
     </xsl:template>
 
     <!-- ****************************************************************** -->
-    <xsl:template match="/s3xrc">
+    <xsl:template match="/s3xml">
         <feed xmlns="http://www.w3.org/2005/Atom" xmlns:georss="http://www.georss.org/georss">
             <title>Sahana Eden Locations</title>
             <link href="{@url}"/>
@@ -72,7 +72,7 @@
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
-    
+
     <!-- ****************************************************************** -->
     <xsl:template match="resource">
         <xsl:if test="reference[@field='location_id']">

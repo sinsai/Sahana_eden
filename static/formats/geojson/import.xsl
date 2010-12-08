@@ -38,9 +38,9 @@
 
     <!-- ****************************************************************** -->
     <xsl:template match="/">
-        <s3xrc>
+        <s3xml>
             <xsl:apply-templates select="./geojson"/>
-        </s3xrc>
+        </s3xml>
     </xsl:template>
 
 
@@ -70,7 +70,7 @@
             <data field="name">
                 <xsl:value-of select="./id/text()"/>
             </data>
-            
+
             <xsl:choose>
 
                 <xsl:when test="./geometry/type/text()='Point'">

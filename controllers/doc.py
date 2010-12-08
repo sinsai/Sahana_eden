@@ -45,8 +45,8 @@ def index():
 # Used to display the number of Components in the tabs
 def shn_document_tabs(jr):
 
-    tab_opts = [{"tablename": "rat_assessment",
-                 "resource": "assessment",
+    tab_opts = [{"tablename": "assess_rat",
+                 "resource": "rat",
                  "one_title": T("1 Assessment"),
                  "num_title": " Assessments",
                 },
@@ -79,14 +79,15 @@ def shn_document_tabs(jr):
     tabs = [(T("Details"), None)]
     for tab_opt in tab_opts:
         tablename = tab_opt["tablename"]
-        tab_count = db( (db[tablename].deleted == False) & (db[tablename].document_id == jr.id) ).count()
-        if tab_count == 0:
-            label = shn_get_crud_string(tablename, "title_create")
-        elif tab_count == 1:
-            label = tab_opt["one_title"]
-        else:
-            label = T(str(tab_count) + tab_opt["num_title"] )
-        tabs.append( (label, tab_opt["resource"] ) )
+        if tablename in db and document_id in db[tablename]:
+            tab_count = db( (db[tablename].deleted == False) & (db[tablename].document_id == jr.id) ).count()
+            if tab_count == 0:
+                label = shn_get_crud_string(tablename, "title_create")
+            elif tab_count == 1:
+                label = tab_opt["one_title"]
+            else:
+                label = T(str(tab_count) + tab_opt["num_title"] )
+            tabs.append( (label, tab_opt["resource"] ) )
 
     return tabs
 
@@ -94,20 +95,21 @@ def shn_document_rheader(r):
     if r.representation == "html":
         rheader_tabs = shn_rheader_tabs(r, shn_document_tabs(r))
         doc_document = r.record
-        table = db.doc_document
-        rheader = DIV(B(T("Name") + ": "),doc_document.name,
-                      TABLE(TR(
-                               TH("%s: " % T("File")), table.file.represent( doc_document.file ),
-                               TH("%s: " % T("URL")), table.url.represent( doc_document.url ),
-                               ),
-                            TR(
-                               TH(T("Organization") + ": "), table.organisation_id.represent( doc_document.organisation_id ),
-                               TH(T("Person") + ": "), table.person_id.represent( doc_document.organisation_id ),
-                               ),
-                           ),
-                      rheader_tabs
-                      )
-        return rheader
+        if doc_document:
+            table = db.doc_document
+            rheader = DIV(B(T("Name") + ": "),doc_document.name,
+                        TABLE(TR(
+                                TH("%s: " % T("File")), table.file.represent( doc_document.file ),
+                                TH("%s: " % T("URL")), table.url.represent( doc_document.url ),
+                                ),
+                                TR(
+                                TH(T("Organization") + ": "), table.organisation_id.represent( doc_document.organisation_id ),
+                                TH(T("Person") + ": "), table.person_id.represent( doc_document.organisation_id ),
+                                ),
+                            ),
+                        rheader_tabs
+                        )
+            return rheader
     return None
 
 def document():

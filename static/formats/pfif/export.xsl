@@ -42,10 +42,10 @@
 
     <!-- ****************************************************************** -->
     <xsl:template match="/">
-        <xsl:apply-templates select="./s3xrc"/>
+        <xsl:apply-templates select="./s3xml"/>
     </xsl:template>
 
-    <xsl:template match="/s3xrc">
+    <xsl:template match="/s3xml">
         <pfif:pfif>
             <xsl:apply-templates select="./resource[@name='pr_person' and not(@ref)]"/>
         </pfif:pfif>
@@ -72,7 +72,7 @@
 
             <!-- Source Information -->
             <pfif:source_name>
-                <xsl:value-of select="/s3xrc/@domain"/>
+                <xsl:value-of select="/s3xml/@domain"/>
             </pfif:source_name>
             <pfif:source_date>
                 <xsl:call-template name="datetime2iso">

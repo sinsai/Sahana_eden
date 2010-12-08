@@ -6,7 +6,7 @@
     <xsl:variable name="outermostElementName" select="name(/*)" />
 
     <xsl:template match="/*">
-        <s3xrc>
+        <s3xml>
             <resource name="{$outermostElementName}">
                 <xsl:for-each select="child::*">
                     <xsl:variable name="ChildName" select="name(.)" />
@@ -26,6 +26,6 @@
                     </xsl:choose>
                 </xsl:for-each>
             </resource>
-        </s3xrc>
+        </s3xml>
     </xsl:template>
 </xsl:stylesheet>

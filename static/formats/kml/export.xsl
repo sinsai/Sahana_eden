@@ -36,13 +36,13 @@
     <xsl:template match="/">
         <kml xmlns="http://www.opengis.net/kml/2.2">
             <Document>
-                <xsl:apply-templates select="s3xrc"/>
+                <xsl:apply-templates select="s3xml"/>
             </Document>
         </kml>
     </xsl:template>
 
     <!-- ****************************************************************** -->
-    <xsl:template match="s3xrc">
+    <xsl:template match="s3xml">
         <Folder>
             <name>Sahana Eden Locations</name>
             <xsl:apply-templates select=".//resource[@name='gis_location']"/>

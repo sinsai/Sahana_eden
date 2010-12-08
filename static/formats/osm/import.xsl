@@ -23,7 +23,7 @@
     </xsl:template>
 
     <xsl:template match="osm">
-        <s3xrc>
+        <s3xml>
             <xsl:choose>
 
                 <!-- Hospitals -->
@@ -42,7 +42,7 @@
                 </xsl:otherwise>
 
             </xsl:choose>
-        </s3xrc>
+        </s3xml>
     </xsl:template>
 
     <xsl:template match="node|way">

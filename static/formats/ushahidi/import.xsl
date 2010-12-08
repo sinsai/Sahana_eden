@@ -23,12 +23,12 @@
     </xsl:template>
 
     <xsl:template match="response/payload">
-        <s3xrc>
+        <s3xml>
             <xsl:attribute name="domain">
                 <xsl:value-of select="$import_domain"/>
             </xsl:attribute>
             <xsl:apply-templates select="./incidents"/>
-        </s3xrc>
+        </s3xml>
     </xsl:template>
 
     <!-- ****************************************************************** -->

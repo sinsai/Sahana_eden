@@ -39,11 +39,11 @@
 
     <!-- ****************************************************************** -->
     <xsl:template match="/">
-        <xsl:apply-templates select="s3xrc"/>
+        <xsl:apply-templates select="s3xml"/>
     </xsl:template>
 
     <!-- ****************************************************************** -->
-    <xsl:template match="/s3xrc">
+    <xsl:template match="/s3xml">
         <gpx xsi:schemaLocation="http://www.topografix.com/GPX/1/1
             http://www.topografix.com/GPX/1/1/gpx.xsd"
             version="1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

@@ -31,11 +31,11 @@
 
     *********************************************************************** -->
     <xsl:template match="/">
-        <xsl:apply-templates select="./s3xrc"/>
+        <xsl:apply-templates select="./s3xml"/>
     </xsl:template>
 
     <!-- ****************************************************************** -->
-    <xsl:template match="s3xrc">
+    <xsl:template match="s3xml">
         <xsl:variable name="resource_url">
             <xsl:call-template name="resource_url"/>
         </xsl:variable>

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from urllib import quote_plus
-
 from gluon.http import HTTP
 from gluon.storage import Storage
 
@@ -50,18 +48,18 @@ class S3Config(Storage):
             db_string = "sqlite://storage.db"
         elif (db_type == "mysql"):
             db_string = "mysql://%s:%s@%s:%s/%s" % \
-                        (quote_plus(self.database.get("username", "sahana")),
-                         quote_plus(self.database.get("password", "password")),
-                         quote_plus(self.database.get("host", "localhost")),
+                        (self.database.get("username", "sahana"),
+                         self.database.get("password", "password"),
+                         self.database.get("host", "localhost"),
                          self.database.get("port", None) or "3306",
-                         quote_plus(self.database.get("database", "sahana")))
+                         self.database.get("database", "sahana"))
         elif (db_type == "postgres"):
             db_string = "postgres://%s:%s@%s:%s/%s" % \
-                        (quote_plus(self.database.get("username", "sahana")),
-                         quote_plus(self.database.get("password", "password")),
-                         quote_plus(self.database.get("host", "localhost")),
+                        (self.database.get("username", "sahana"),
+                         self.database.get("password", "password"),
+                         self.database.get("host", "localhost"),
                          self.database.get("port", None) or "5432",
-                         quote_plus(self.database.get("database", "sahana")))
+                         self.database.get("database", "sahana"))
         else:
             raise HTTP(501, body="Database type '%s' not recognised - please correct file models/000_config.py." % db_type)
         if pool_size:

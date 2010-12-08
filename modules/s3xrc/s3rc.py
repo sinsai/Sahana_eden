@@ -770,7 +770,8 @@ class S3ResourceController(object):
             cresource.load()
             ctablename = cresource.tablename
             crfields[ctablename], \
-            cdfields[ctablename] = self.__fields(cresource.table, skip=skip)
+            cdfields[ctablename] = self.__fields(cresource.table,
+                                                 skip=skip+[c.fkey])
 
         # Resource base URL
         if self.base_url:

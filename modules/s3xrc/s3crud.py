@@ -1700,12 +1700,37 @@ class S3SearchSimple(S3CRUDHandler):
 
             # View
             response.view = "search_simple.html"
-
-        elif representation == "aadata":
-            return self.select(r, **attr)
-
         else:
-            r.error(resource.ERROR.BAD_FORMAT)
+            if vars.label:
+                results = self.manager._search_simple(
+                    table,
+                    fields=self.__fields,
+                    label=vars.label
+                )
+
+                resource.build_query(id=results or -1)
+
+            exporter = S3Exporter(self.manager)
+
+            if representation == "aadata":
+                return self.select(r, **attr)
+            elif representation == "plain":
+                items = resource.select(resource.readable_fields(), as_list=True)
+                self.response.view = "plain.html"
+                return dict(item=items)
+
+            elif representation == "csv":
+                return exporter.csv(resource)
+
+            elif representation == "pdf":
+                return exporter.pdf(resource,
+                                    list_fields=list_fields)
+
+            elif representation == "xls":
+                return exporter.xls(resource,
+                                    list_fields=list_fields)
+            else:
+                r.error(501, resource.ERROR.BAD_FORMAT)
 
         return output
 

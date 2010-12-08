@@ -194,7 +194,8 @@ deployment_settings.security.archive_not_delete = True
 # Comment/uncomment modules here to disable/enable them
 # Modules menu is defined in 01_menu.py
 from gluon.storage import Storage
-deployment_settings.modules = Storage(
+from simplejson.ordered_dict import OrderedDict
+deployment_settings.modules = OrderedDict(
     default = Storage(
             name_nice = T("Home"),
             access = None,      # All Users (inc Anonymous) can see this module in the default menu & access the controller

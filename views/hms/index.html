@@ -7,25 +7,25 @@
       LI(
         SPAN(A(T("Hospital Status Report"),
           _href=URL(r=request, c="hms", f="hospital", args="search_simple")),_style="font-weight:bold;"),
-        P(T("View or update the status of a hospital.")),
+        P(T("View or update the status of a hospital."),_style="padding-left:0;"), 
           _style="margin-top:1em;"),
 
       LI(
         SPAN(A(T("Support Request"),
           _href=URL(r=request, c="rms", f="req", args="create")),_style="font-weight:bold;"),
-        P(T("Enter a new support request.")),
+        P(T("Enter a new support request."),_style="padding-left:0;"), 
           _style="margin-top:1em;"),
 
       LI(
         SPAN(A(T("Pledge Support"),
           _href=URL(r=request, c="rms", f="req")),_style="font-weight:bold;"),
-       P(T("View pending requests and pledge support.")),
+       P(T("View pending requests and pledge support."),_style="padding-left:0;"), 
           _style="margin-top:1em;"),
 
       LI(
         SPAN(A(T("Map of Hospitals"),
           _href=URL(r=request, c="gis", f="map_viewing_client", vars={"kml_feed" : "%s/%s/hms/hospital.kml" % (public_url, request.application), "kml_name" : "Hospitals_"})),_style="font-weight:bold;"),
-        P(T("View the hospitals on a map.")),
+        P(T("View the hospitals on a map."),_style="padding-left:0;"), 
           _style="margin-top:1em;"),
           _style="list-style-type: none;"
      )}}

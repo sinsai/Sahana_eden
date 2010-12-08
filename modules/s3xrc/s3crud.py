@@ -249,7 +249,7 @@ class S3MethodHandler(object):
             self.next = self.next.replace(placeholder, self.resource.lastid)
         r.next = self.next
 
-        # Add additional view variables
+        # Add additional view variables (e.g. rheader)
         self._extend_view(output, r, **attr)
 
         return output
@@ -352,11 +352,12 @@ class S3MethodHandler(object):
     @staticmethod
     def _extend_view(output, r, **attr):
 
-        """ Add additional view variables (invokes all callables)
+        """
+            Add additional view variables (invokes all callables)
 
             @param output: the output dict
             @param r: the S3Request
-            @param attr: the view variables
+            @param attr: the view variables (e.g. 'rheader')
 
             @note: overload this method in subclasses if you don't want
                    additional view variables to be added automatically
@@ -370,8 +371,13 @@ class S3MethodHandler(object):
                     resolve = True
                     try:
                         display = handler(r)
-                    except:
+                    except TypeError:
+                        # Argument list failure => pass callable to the view as-is
+                        display = handler
                         continue
+                    except:
+                        # Propagate all other errors to the caller
+                        raise
                 else:
                     display = handler
                 if isinstance(display, dict) and resolve:

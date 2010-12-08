@@ -39,12 +39,12 @@
         <osm>
             <xsl:attribute name="version">0.6</xsl:attribute>
             <xsl:attribute name="generator">Sahana Eden</xsl:attribute>
-            <xsl:apply-templates select="s3xrc"/>
+            <xsl:apply-templates select="s3xml"/>
         </osm>
     </xsl:template>
 
     <!-- ****************************************************************** -->
-    <xsl:template match="/s3xrc">
+    <xsl:template match="/s3xml">
         <xsl:variable name="domain" select="@domain" />
         <bounds>
             <xsl:attribute name="minlat"><xsl:value-of select="@latmin"/></xsl:attribute>
@@ -121,7 +121,7 @@
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
-    
+
     <!-- ****************************************************************** -->
     <xsl:template match="resource">
         <xsl:if test="reference[@field='location_id']">

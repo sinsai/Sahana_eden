@@ -112,8 +112,29 @@ def shn_document_rheader(r):
             return rheader
     return None
 
+def document_onvalidation(form):
+    s3deduplicator = local_import("s3deduplicator")
+    import cgi
+
+    # @ToDo: Fail gracefully if not present
+    p = request.post_vars["file"]
+    if isinstance(p, cgi.FieldStorage) and p.filename:
+        f = p.file
+        form.vars.checksum = s3deduplicator.docChecksum(f.read())
+    results = db(db.doc_document.id > 0).select(db.doc_document.checksum, db.doc_document.name)
+    for result in results:
+        if form.vars.checksum == result.checksum:
+            doc_name = result.name
+            form.errors["file"] = T("This file already exists on the server as") + " %s" % (doc_name)
+    return
+
 def document():
     """ RESTful CRUD controller """
+
+    s3xrc.model.configure(db.doc_document,
+        create_onvalidation=document_onvalidation,
+        update_onvalidation=document_onvalidation)
+
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -128,8 +149,28 @@ def document():
 
     return output
 #==============================================================================
+def image_onvalidation(form):
+    s3deduplicator = local_import("s3deduplicator")
+    import cgi
+
+    p = request.post_vars["image"]
+    if isinstance(p, cgi.FieldStorage) and p.filename:
+        f = p.file
+        form.vars.checksum = s3deduplicator.docChecksum(f.read())
+    results = db(db.doc_image.id > 0).select(db.doc_image.checksum, db.doc_image.name)
+    for result in results:
+        if form.vars.checksum == result.checksum:
+            image_name = result.name
+            form.errors["image"] = T("This file already exists on the server as") + " %s" % (image_name)
+    return
+
 def image():
     """ RESTful CRUD controller """
+
+    s3xrc.model.configure(db.doc_image,
+        create_onvalidation=image_onvalidation,
+        update_onvalidation=image_onvalidation)
+
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]

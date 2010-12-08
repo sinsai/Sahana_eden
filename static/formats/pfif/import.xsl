@@ -43,12 +43,12 @@
 
     <!-- ****************************************************************** -->
     <xsl:template match="/">
-        <s3xrc>
+        <s3xml>
             <xsl:attribute name="domain">
                 <xsl:value-of select="$domain"/>
             </xsl:attribute>
             <xsl:apply-templates select=".//pfif:person"/>
-        </s3xrc>
+        </s3xml>
     </xsl:template>
 
     <xsl:template match="text()"/>

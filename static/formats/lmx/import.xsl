@@ -14,9 +14,9 @@
     <xsl:output method="xml"/>
 
     <xsl:template match="/">
-        <s3xrc>
+        <s3xml>
             <xsl:apply-templates select=".//lm:landmark"/>
-        </s3xrc>
+        </s3xml>
     </xsl:template>
 
     <xsl:template match="lm:landmark">

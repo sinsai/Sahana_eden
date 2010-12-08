@@ -49,9 +49,9 @@
     <!-- ****************************************************************** -->
     <!-- HospitalStatus -->
     <xsl:template match="have:HospitalStatus">
-        <s3xrc>
+        <s3xml>
             <xsl:apply-templates select="./have:Hospital"/>
-        </s3xrc>
+        </s3xml>
     </xsl:template>
 
     <!-- ****************************************************************** -->

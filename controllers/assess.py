@@ -217,6 +217,11 @@ def shn_rat_rheader(r, tabs=[]):
         if r.name == "rat":
 
             report = r.record
+            
+            if report is None:
+                # List or Create form: rheader makes no sense here
+                raise("Please 'continue' to skip me")
+            
             location = report.location_id
             if location:
                 location = shn_gis_location_represent(location)
@@ -261,13 +266,13 @@ def shn_rat_rheader(r, tabs=[]):
 #==============================================================================
 # Flexible Impact Assessments
 #==============================================================================
-def shn_assess_rheader(jr, tabs=[]):
+def shn_assess_rheader(r, tabs=[]):
 
     """ @todo: docstring """
 
-    if jr.representation == "html":
-        rheader_tabs = shn_rheader_tabs(jr, tabs)
-        assess = jr.record
+    if r.representation == "html":
+        rheader_tabs = shn_rheader_tabs(r, tabs)
+        assess = r.record
         rheader = DIV(TABLE(TR(
                                TH(T("Date & Time") + ": "), assess.datetime,
                                TH(T("Location") + ": "), shn_gis_location_represent(assess.location_id),
@@ -297,7 +302,7 @@ def assess():
     response.s3.prep = shn_assess_prep
 
     table.incident_id.comment = DIV(_class="tooltip",
-                                     _title=T("Incident") + "|" + T("Optional link to an Incident which this Assessment was triggered by."))
+                                    _title=T("Incident") + "|" + T("Optional link to an Incident which this Assessment was triggered by."))
 
     tabs = [
             (T("Edit Details"), None),

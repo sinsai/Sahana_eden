@@ -422,6 +422,8 @@ def membership():
     table = db[tablename]
 
     # Model options
+    db.auth_membership.group_id.represent = shn_role_represent
+    db.auth_membership.user_id.represent = shn_user_represent
 
     # CRUD Strings
     ADD_MEMBERSHIP = T("Add Membership")

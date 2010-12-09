@@ -88,6 +88,7 @@ class AuthS3(Auth):
         self.settings.username_field = False
         self.settings.lock_keys = True
         self.messages.lock_keys = False
+        self.messages.registration_pending_approval = "Account registered, however registration is still pending approval - please wait until confirmation received."
         self.messages.email_approver_failed = "Failed to send mail to Approver - see if you can notify them manually!"
         self.messages.email_sent = "Verification Email sent - please check your email to validate. If you do not receive this email please check you junk email or spam filters"
         self.messages.email_verified = "Email verified - you can now login"
@@ -345,7 +346,7 @@ class AuthS3(Auth):
                     # user in db, check if registration pending or disabled
                     temp_user = users[0]
                     if temp_user.registration_key == "pending":
-                        response.warning = self.messages.registration_pending
+                        response.warning = self.messages.registration_pending                     
                         return form
                     elif temp_user.registration_key == "disabled":
                         response.error = self.messages.login_disabled
@@ -532,7 +533,7 @@ class AuthS3(Auth):
                     session.error = self.messages.email_approver_failed
                     #return form 
                 user[form.vars.id] = dict(registration_key="pending")
-                session.warning = self.messages.registration_pending
+                session.warning = self.messages.registration_pending_approval 
             else:
                 user[form.vars.id] = dict(registration_key="")
                 session.confirmation = self.messages.registration_successful

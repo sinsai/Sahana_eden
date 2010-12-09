@@ -145,6 +145,7 @@ auth.messages.reset_password = T("Click on the link ") + deployment_settings.get
 # Require Admin approval for self-registered users
 auth.settings.registration_requires_approval = deployment_settings.get_auth_registration_requires_approval()
 auth.messages.registration_pending = T("Email address verified, however registration is still pending approval - please wait until confirmation received.")
+auth.messages.registration_pending_approval = T("Account registered, however registration is still pending approval - please wait until confirmation received.") 
 # Notify UserAdmin of new pending user registration to action
 if deployment_settings.get_auth_registration_requires_approval():
     auth.settings.verify_email_onaccept = lambda form: \

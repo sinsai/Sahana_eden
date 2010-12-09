@@ -127,8 +127,13 @@ def outbox():
         msg_list_empty = T("No Messages currently in Outbox")
     )
 
+    add_btn = A(T("Compose"), 
+                _class="action-btn", 
+                _href=URL(r=request, f="compose")
+                ) 
+
     s3xrc.model.configure(table, listadd=False)
-    return s3_rest_controller(prefix, resourcename)
+    return s3_rest_controller(prefix, resourcename, add_btn = add_btn)
 
 
 #------------------------------------------------------------------------------

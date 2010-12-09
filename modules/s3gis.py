@@ -39,6 +39,7 @@ __name__ = "S3GIS"
 __all__ = ["GIS", "GoogleGeocoder", "YahooGeocoder"]
 
 #import logging
+import math             # Needed for greatCircleDistance
 import os
 import re
 import sys
@@ -96,6 +97,9 @@ GEOM_TYPES = {
     "polygon": 3,
     "multipolygon": 3,
 }
+
+# km
+RADIUS_EARTH = 6371
 
 # -----------------------------------------------------------------------------
 class GIS(object):
@@ -456,12 +460,10 @@ class GIS(object):
         db = self.db
         deployment_settings = self.deployment_settings
 
-        # km
-        RADIUS_EARTH = 6378.137
-
         if deployment_settings.gis.spatialdb and deployment_settings.database.db_type == "postgres":
-            # Use Postgres routine
+            # Use PostGIS routine
             # The ST_DWithin function call will automatically include a bounding box comparison that will make use of any indexes that are available on the geometries.
+            # @ToDo: Support optional Category (make this a generic filter?)
             
             import psycopg2
             import psycopg2.extras
@@ -472,7 +474,8 @@ class GIS(object):
             host = deployment_settings.database.host
             port = deployment_settings.database.port or "5432"
 
-            # @ToDo: Convert km to degrees? (since we're using the_geom not the_geog) [Not necessary?]
+            # Convert km to degrees (since we're using the_geom not the_geog)
+            radius = math.degrees(radius / RADIUS_EARTH)
 
             connection = psycopg2.connect("dbname=%s user=%s password=%s host=%s port=%s" % (dbname, username, password, host, port))
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -517,43 +520,71 @@ class GIS(object):
 
             return features
 
-        elif SHAPELY:
-            # Use Shapely routine
-            # Is there one?
-            return None
+        #elif deployment_settings.database.db_type == "mysql":
+            # Do the calculation in MySQL to pull back only the relevant rows
+            # Raw MySQL Formula from: http://blog.peoplesdns.com/archives/24
+            # PI = 3.141592653589793, mysql’s pi() function returns 3.141593
+            #pi = math.pi
+            #query = """SELECT name, lat, lon, acos(SIN( PI()* 40.7383040 /180 )*SIN( PI()*lat/180 ))+(cos(PI()* 40.7383040 /180)*COS( PI()*lat/180) *COS(PI()*lon/180-PI()* -73.99319 /180))* 3963.191
+            #AS distance
+            #FROM gis_location
+            #WHERE 1=1
+            #AND 3963.191 * ACOS( (SIN(PI()* 40.7383040 /180)*SIN(PI() * lat/180)) + (COS(PI()* 40.7383040 /180)*cos(PI()*lat/180)*COS(PI() * lon/180-PI()* -73.99319 /180))) < = 1.5
+            #ORDER BY 3963.191 * ACOS((SIN(PI()* 40.7383040 /180)*SIN(PI()*lat/180)) + (COS(PI()* 40.7383040 /180)*cos(PI()*lat/180)*COS(PI() * lon/180-PI()* -73.99319 /180)))"""
+            # db.executesql(query)
 
         else:
-            # Do it manually
-            # Formula from: http://blog.peoplesdns.com/archives/24
-            # Spherical Law of Cosines (accurate down to around 1m & computationally quick): http://www.movable-type.co.uk/scripts/latlong.html
-            # IF PROJECTION CHANGES THIS WILL NOT WORK (Should be fine if we always use 4326)
+            # Pull back all the rows & then do the calculation in Python
+            # @ToDo: Support optional Category (make this a generic filter?)
 
-            # ToDo: complete port from PHP to Eden
-            return None
+            # shortcut
+            locations = db.gis_location
+            table = db["tablename"]
 
-            import math
+            # @ToDo: Do a Square query 1st & then run the complex query over subset (to improve performance)
+            # e.g. http://janmatuschek.de/LatitudeLongitudeBoundingCoordinates
+            #latT = arcsin(sin(lat)/cos(r))
+            #lon_min = lonT1 = lon - dLon
+            #lon_max = lonT2 = lon + dLon
+            # @ToDo: Deal with Poles & 180 Meridian: http://janmatuschek.de/LatitudeLongitudeBoundingCoordinates
+            #lat_max = 90
+            #lat_min = -90
+            #lon_max = 180
+            #lon_min = -180
+            #query = (locations.lat > lat_min) & (locations.lat < lat_max) & (locations.lon < lon_max) & (locations.lon > lon_min)
+            #deleted = (locations.deleted==False)
+            #query = deleted & query
 
-            pi = math.pi
-
-            # ToDo: Do a Square query 1st & then run the complex query over subset (to improve performance)
-            lat_max = 90
-            lat_min = -90
-            lon_max = 180
-            lon_min = -180
-            table = db.gis_location
-            query = (table.lat > lat_min) & (table.lat < lat_max) & (table.lon < lon_max) & (table.lon > lon_min)
-            deleted = ((table.deleted==False) | (table.deleted==None))
-            query = deleted & query
-
-            pilat180 = pi * lat /180
-            #calc = "RADIUS_EARTH * math.acos((math.sin(pilat180) * math.sin(pi * table.lat /180)) + (math.cos(pilat180) * math.cos(pi*table.lat/180) * math.cos(pi * table.lon/180-pi* lon /180)))"
-            #query2 = "SELECT DISTINCT table.lon, table.lat, calc AS distance FROM table WHERE calc <= radius ORDER BY distance"
-            #query2 = (RADIUS_EARTH * math.acos((math.sin(pilat180) * math.sin(pi * table.lat /180)) + (math.cos(pilat180) * math.cos(pi*table.lat/180) * math.cos(pi * table.lon/180-pi* lon /180))) < radius)
-            # TypeError: unsupported operand type(s) for *: 'float' and 'Field'
-            query2 = (RADIUS_EARTH * math.acos((math.sin(pilat180) * math.sin(pi * table.lat /180))) < radius)
-            #query = query & query2
-            features = db(query).select()
-            #features = db(query).select(orderby=distance)
+            if tablename:
+                # @ToDo: Lookup the resource
+                pass
+            else:
+                # Lookup the raw Locations
+                records = db((locations.id > 0) & \
+                             (locations.deleted == False) & \
+                             (locations.lat != None) & \
+                             (locations.lon != None)).select(locations.id,
+                                                             locations.name,
+                                                             locations.level,
+                                                             locations.lat,
+                                                             locations.lon,
+                                                             locations.lat_min,
+                                                             locations.lon_min,
+                                                             locations.lat_max,
+                                                             locations.lon_max)
+            features = []
+            for record in records:
+                # Calculate the Great Circle distance
+                distance = self.greatCircleDistance(lat,
+                                                    lon,
+                                                    record.lat,
+                                                    record.lon)
+                if distance < radius:
+                    features.append(record)
+                else:
+                    # skip
+                    continue
+            
             return features
 
     # -----------------------------------------------------------------------------
@@ -707,6 +738,58 @@ class GIS(object):
             return marker
         else:
             return ""
+
+    # -----------------------------------------------------------------------------
+    def greatCircleDistance(self, lat1, lon1, lat2, lon2, quick=True):
+
+        """
+            Calculate the shortest distance (in km) over the earth's sphere between 2 points
+            Formulae from: http://www.movable-type.co.uk/scripts/latlong.html
+            (NB We should normally use PostGIS functions, where possible, instead of this query)
+        """
+
+        # km
+        RADIUS_EARTH = 6371
+        
+        # shortcuts
+        cos = math.cos
+        sin = math.sin
+        radians = math.radians
+
+        if quick:
+            # Spherical Law of Cosines (accurate down to around 1m & computationally quick)
+            # d = acos(sin(lat1).sin(lat2)+cos(lat1).cos(lat2).cos(long2-long1)).R
+            acos = math.acos
+            lat1 = radians(lat1)
+            lat2 = radians(lat2)
+            lon1 = radians(lon1)
+            lon2 = radians(lon2)
+            distance = acos(sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(lon2-lon1)) * RADIUS_EARTH
+            return distance
+            
+        else:
+            # Haversine
+            atan2 = math.atan2
+            sqrt = math.sqrt
+            pow = math.pow
+            dLat = radians(lat2-lat1)
+            dLon = radians(lon2-lon1)
+            a = pow(sin(dLat / 2), 2) + cos(radians(lat1)) * cos(radians(lat2)) * pow(sin(dLon / 2), 2)
+            c = 2 * atan2(sqrt(a), sqrt(1-a))
+            distance = RADIUS_EARTH * c
+            return distance
+
+        # Formula from unknown location (appears to be Haversine variation)
+        asin = math.asin
+        sqrt = math.sqrt
+        pow = math.pow
+        dLat = radians(lat2-lat1)
+        dLon = radians(lon2-lon1)
+        a = pow(sin(dLat / 2), 2) + cos(radians(lat1)) * cos(radians(lat2)) * pow(sin(dLon / 2), 2)
+        c = 2 * asin(sqrt(a))
+        # Convert radians to kilometers
+        distance = RADIUS_EARTH * c
+        return distance
 
     # -----------------------------------------------------------------------------
     def import_csv(self, filename, domain=None, check_duplicates=True):

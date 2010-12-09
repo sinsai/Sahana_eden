@@ -1,0 +1,10 @@
+{{extend 'layout.html'}}
+<br />
+<B>Skill Types:</B>
+<br />
+{{=search_form}}
+<br />
+{{try:}}
+{{=table}}
+{{except:}}
+{{pass}}

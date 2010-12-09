@@ -239,6 +239,7 @@ s3xrc.XSLT_EXPORT_TEMPLATES = "static/xslt/export" #: Path to XSLT templates for
 # and text/x-json for JSON formats, other content types must be
 # specified here:
 s3xrc.content_type = Storage(
+    tc = "application/atom+xml", # TableCast feeds
     rss = "application/rss+xml", # RSS
     georss = "application/rss+xml", # GeoRSS
     kml = "application/vnd.google-earth.kml+xml", # KML

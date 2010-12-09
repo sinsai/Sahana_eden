@@ -88,11 +88,7 @@
 
                 <!-- Last Update Time -->
                 <have:LastUpdateTime>
-                    <xsl:call-template name="datetime2iso">
-                        <xsl:with-param name="datetime">
-                            <xsl:value-of select="./@modified_on"/>
-                        </xsl:with-param>
-                    </xsl:call-template>
+                    <xsl:value-of select="@modified_on"/>
                 </have:LastUpdateTime>
 
             </have:Hospital>

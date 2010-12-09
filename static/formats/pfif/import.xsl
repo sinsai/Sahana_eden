@@ -67,9 +67,7 @@
                     <xsl:value-of select="$uuid"/>
                 </xsl:attribute>
                 <xsl:attribute name="modified_on">
-                    <xsl:call-template name="iso2datetime">
-                        <xsl:with-param name="datetime" select="./pfif:entry_date/text()"/>
-                    </xsl:call-template>
+                    <xsl:value-of select="./pfif:entry_date/text()"/>
                 </xsl:attribute>
                 <data field="last_name">
                     <xsl:value-of select="./pfif:last_name/text()"/>
@@ -174,9 +172,7 @@
 
             <!-- Date/Time -->
             <data field="time">
-                <xsl:call-template name="iso2datetime">
-                    <xsl:with-param name="datetime" select="./pfif:entry_date/text()"/>
-                </xsl:call-template>
+                <xsl:value-of select="./pfif:entry_date/text()"/>
             </data>
 
             <!-- Location details -->

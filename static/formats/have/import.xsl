@@ -63,12 +63,12 @@
                 <xsl:attribute name="modified_on">
                     <xsl:choose>
                         <xsl:when test="contains(./have:LastUpdateTime/text(), 'T')">
-                            <xsl:call-template name="iso2datetime">
-                                <xsl:with-param name="datetime" select="./have:LastUpdateTime/text()"/>
-                            </xsl:call-template>
+                            <xsl:value-of select="./have:LastUpdateTime/text()"/>
                         </xsl:when>
                         <xsl:otherwise>
-                            <xsl:value-of select="./have:LastUpdateTime/text()"/>
+                            <xsl:call-template name="datetime2iso">
+                                <xsl:with-param name="datetime" select="./have:LastUpdateTime/text()"/>
+                            </xsl:call-template>
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:attribute>
@@ -438,9 +438,16 @@
         <xsl:if test="../../have:LastUpdateTime/text()">
             <resource name="hms_activity">
                 <data field="date">
-                    <xsl:call-template name="iso2datetime">
-                        <xsl:with-param name="datetime" select="../../have:LastUpdateTime/text()"/>
-                    </xsl:call-template>
+                    <xsl:choose>
+                        <xsl:when test="contains(../../have:LastUpdateTime/text(), 'T')">
+                            <xsl:value-of select="../../have:LastUpdateTime/text()"/>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:call-template name="datetime2iso">
+                                <xsl:with-param name="datetime" select="../../have:LastUpdateTime/text()"/>
+                            </xsl:call-template>
+                        </xsl:otherwise>
+                    </xsl:choose>
                 </data>
                 <data field="admissions24">
                     <xsl:value-of select="./have:Admissions/text()"/>

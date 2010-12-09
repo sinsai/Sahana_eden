@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - XML/JSON Toolkit
 
-    @version: 2.2.7
+    @version: 2.2.8
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -82,7 +82,7 @@ class S3XML(object):
             "mci",
             "admin"]
 
-    ATTRIBUTES_TO_FIELDS = ["admin", "mci"]
+    ATTRIBUTES_TO_FIELDS = ["admin", "mci"] #, "modified_on", "modified_by"]
 
     TAG = Storage(
         root="s3xml",
@@ -150,6 +150,7 @@ class S3XML(object):
     XML2PY = [("<", "&lt;"), (">", "&gt;"), ('"', "&quot;"),
               ("'", "&apos;"), ("&", "&amp;")]
 
+    ISOFORMAT = "%Y-%m-%dT%H:%M:%SZ" #: universal timestamp
 
     # -------------------------------------------------------------------------
     def __init__(self, manager):
@@ -276,9 +277,7 @@ class S3XML(object):
         # would require a rework of all existing templates (which is
         # however useful)
         root = etree.Element(self.TAG.root)
-
         root.set(self.ATTRIBUTE.success, str(False))
-
         if resources is not None:
             if resources:
                 root.set(self.ATTRIBUTE.success, str(True))
@@ -289,13 +288,10 @@ class S3XML(object):
             if results is not None:
                 root.set(self.ATTRIBUTE.results, str(results))
             root.extend(resources)
-
         if domain:
             root.set(self.ATTRIBUTE.domain, self.domain)
-
         if url:
             root.set(self.ATTRIBUTE.url, self.base_url)
-
         root.set(self.ATTRIBUTE.latmin,
                  str(self.gis.get_bounds()["min_lat"]))
         root.set(self.ATTRIBUTE.latmax,
@@ -304,7 +300,6 @@ class S3XML(object):
                  str(self.gis.get_bounds()["min_lon"]))
         root.set(self.ATTRIBUTE.lonmax,
                  str(self.gis.get_bounds()["max_lon"]))
-
         return etree.ElementTree(root)
 
 
@@ -351,7 +346,6 @@ class S3XML(object):
 
         if not uid:
             return uid
-
         if uid.startswith("urn:"):
             return uid
         else:
@@ -500,13 +494,15 @@ class S3XML(object):
             reference.set(self.ATTRIBUTE.resource, r.table)
             if show_ids:
                 if r.multiple:
-                    ids = "|%s|" % "|".join(map(str, r.id))
+                    ids = json.dumps(r.id)
+                    #ids = "|%s|" % "|".join(map(str, r.id))
                 else:
                     ids = "%s" % r.id[0]
                 reference.set(self.ATTRIBUTE.id, self.xml_encode(ids))
             if r.uid:
                 if r.multiple:
-                    uids = "|%s|" % "|".join(map(str, r.uid))
+                    uids = json.dumps(r.uid)
+                    #uids = "|%s|" % "|".join(map(str, r.uid))
                 else:
                     uids = "%s" % r.uid[0]
                 reference.set(self.UID, self.xml_encode(str(uids).decode("utf-8")))
@@ -646,12 +642,13 @@ class S3XML(object):
 
             fieldtype = str(table[f].type)
 
-            if fieldtype.startswith("list:") and \
-               isinstance(v, (list, tuple)):
-                text = value = self.xml_encode("|%s|" % "|".join(map(str, v)))
+            if fieldtype == "datetime":
+                text = value = self.xml_encode(v.strftime(self.ISOFORMAT).decode("utf-8"))
+            elif fieldtype in ("date", "time"):
+                text = value = self.xml_encode(str(table[f].formatter(v)).decode("utf-8"))
             else:
-                text = value = self.xml_encode(
-                               str(table[f].formatter(v)).decode("utf-8"))
+                text = self.xml_encode(str(table[f].formatter(v)).decode("utf-8"))
+                value = self.xml_encode(json.dumps(v).decode("utf-8"))
 
             if table[f].represent:
                 text = self.represent(table, f, v)
@@ -681,7 +678,7 @@ class S3XML(object):
             else:
                 data = etree.SubElement(resource, self.TAG.data)
                 data.set(self.ATTRIBUTE.field, f)
-                if table[f].represent:
+                if table[f].represent or fieldtype not in ("string", "text"):
                     data.set(self.ATTRIBUTE.value, value)
                 data.text = text
 
@@ -856,9 +853,12 @@ class S3XML(object):
             if f in table.fields:
                 v = value = self.xml_decode(element.get(f, None))
                 if value is not None:
+                    field_type = str(table[f].type)
+                    if field_type == "datetime":
+                        d, t = v.split("T", 1)
+                        t = t.split("Z", 1)[0]
+                        v = value = "%s %s" % (d, t)
                     if validate is not None:
-                        if not isinstance(value, (str, unicode)):
-                            v = str(value)
                         (value, error) = validate(table, original, f, v)
                         if error:
                             element.set(self.ATTRIBUTE.error,
@@ -904,12 +904,6 @@ class S3XML(object):
                     value = child.get(self.ATTRIBUTE.value, None)
                     value = self.xml_decode(value)
 
-                if field_type == "boolean":
-                    if value and value in ["True", "true"]:
-                        value = True
-                    else:
-                        value = False
-
                 if value is None:
                     value = self.xml_decode(child.text)
                 if value == "" and not field_type == "string":
@@ -920,8 +914,11 @@ class S3XML(object):
                     value = ""
 
                 if value is not None:
-                    if field_type.startswith("list:"):
-                        value = value.strip("|").split("|")
+                    if isinstance(value, basestring) and len(value):
+                        try:
+                            value = json.loads(value)
+                        except:
+                            pass
                     if validate is not None:
                         if not isinstance(value, (basestring, list, tuple)):
                             v = str(value)

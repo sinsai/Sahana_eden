@@ -308,20 +308,23 @@ if deployment_settings.has_module("project"):
     s3xrc.model.set_method(application, "project", method="search_location", action=shn_project_search_location )
     
     # -----------------------------------------------------------------------------
-    def shn_project_rheader(jr, tabs=[]):
+    def shn_project_rheader(r, tabs=[]):
     
-        if jr.representation == "html":
+        if r.representation == "html":
     
-            rheader_tabs = shn_rheader_tabs(jr, tabs)
+            rheader_tabs = shn_rheader_tabs(r, tabs)
     
-            if jr.name == "project":
+            if r.name == "project":
     
                 table = db.project_project
-                _next = jr.here()
-                _same = jr.same()
+                _next = r.here()
+                _same = r.same()
     
-                project = jr.record
-    
+                project = r.record
+                if project is None:
+                    # List or Create form: rheader makes no sense here
+                    raise("Please 'continue' to skip me")
+
                 sectors = TABLE()
                 if project.cluster_id:
                     # @ToDo@ Fix for list: type
@@ -349,7 +352,7 @@ if deployment_settings.has_module("project"):
                             TH(T("Cluster(s)") + ": "),
                             sectors,
                             #TH(A(T("Edit Project"),
-                            #    _href=URL(r=request, f="project", args=[jr.id, "update"], vars={"_next": _next})))
+                            #    _href=URL(r=request, f="project", args=[r.id, "update"], vars={"_next": _next})))
                             )
                     ), rheader_tabs)
                     return rheader

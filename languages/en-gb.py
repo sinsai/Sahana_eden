@@ -2239,6 +2239,7 @@
 'No Need Types currently registered': 'No Need Types currently registered',
 'No Needs currently registered': 'No Needs currently registered',
 'No Offices currently registered': 'No Offices currently registered',
+'No Offices found!': 'No Offices found!',
 'No Organizations currently registered': 'No Organisations currently registered',
 'No Peers currently registered': 'No Peers currently registered',
 'No People currently registered in this shelter': 'No People currently registered in this shelter',

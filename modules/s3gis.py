@@ -4011,7 +4011,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 tooltipPopup.contentDiv.style.margin='10px';
                 tooltipPopup.closeOnMove = true;
                 tooltipPopup.autoSize = true;
-                tooltipPopup.opacity = 0.6;
+                tooltipPopup.opacity = 0.7;
                 feature.popup = tooltipPopup;
                 map.addPopup(tooltipPopup);
             }

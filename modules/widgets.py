@@ -256,7 +256,7 @@ class S3LocationSelectorWidget:
     Renders a gis_location SELECT as a hierarchical dropdown with the ability to add a new location from within the main form
     - new location can be specified as:
         * a simple name (hopefully within hierarchy)
-        * manual Lat/Lon entry (with optional GPS Coordinate Converter
+        * manual Lat/Lon entry (with optional GPS Coordinate Converter)
         * Geocoder lookup
         * Select location from Map
     """
@@ -264,8 +264,8 @@ class S3LocationSelectorWidget:
                  request,
                  response,
                  T,
-                 #hierarchy=True    # @ToDo Force selection of the hierarchy (useful when we have that data fully-populated)
-                 #level=None        # @ToDo Support forcing which level of the hierarchy is expected to be entered for this instance of the field
+                 #hierarchy=True    # @ToDo: Force selection of the hierarchy (useful when we have that data fully-populated)
+                 #level=None        # @ToDo: Support forcing which level of the hierarchy is expected to be entered for this instance of the field
                  ):
 
         self.request = request
@@ -307,6 +307,7 @@ class S3LocationSelectorWidget:
             lat = ""
             lon = ""
             addr_street = ""
+            parent = ""
         
         # Main Input
         default = dict(
@@ -332,8 +333,8 @@ class S3LocationSelectorWidget:
         select_location = T("Select a location")
         
         # Hierarchical Selector
-        # @ToDo if this is an Admin Level then set the right dropdown to this level
-        # @ToDo if there is parent detail, then set the parent dropdowns to the right levels
+        # @ToDo: If this is an Admin Level then set the right dropdown to this level
+        # @ToDo: If there is parent detail, then set the parent dropdowns to the right levels
         default_dropdown = dict(
             _type = "int",
             value = 0,
@@ -421,8 +422,8 @@ class S3LocationSelectorWidget:
     var gis_loading_locations = '<option value="">%s...</option>';
     var gis_select_location = '<option value="" selected>%s...</option>';
     var gis_url = '%s';
-    $(function() {
-    });
+    //$(function() {
+    //});
     """ % (location_id, maxlevel, empty_set, loading_locations, select_location, url)
         
         if value:

@@ -2035,9 +2035,16 @@ class S3QueryBuilder(object):
                                 query = (f >= v)
                             elif op == "in":
                                 for v in values:
-                                    q = (f.contains(v))
+                                    if v.find(",") != -1:
+                                        q = None
+                                        sv = v.split(",")
+                                        for s in sv:
+                                            sq = (f.contains(s))
+                                            q = q is not None and q | sq or sq
+                                    else:
+                                        q = (f.contains(v))
                                     if query:
-                                        query = query | q
+                                        query = query & q
                                     else:
                                         query = q
                                 query = (query)
@@ -2051,9 +2058,16 @@ class S3QueryBuilder(object):
                                 query = (query)
                             elif op == "like":
                                 for v in values:
-                                    q = (f.lower().contains(v.lower()))
+                                    if v.find(",") != -1:
+                                        q = None
+                                        sv = v.split(",")
+                                        for s in sv:
+                                            sq = (f.lower().contains(s.lower()))
+                                            q = q is not None and q | sq or sq
+                                    else:
+                                        q = (f.lower().contains(v.lower()))
                                     if query:
-                                        query = query | q
+                                        query = query & q
                                     else:
                                         query = q
                                 query = (query)

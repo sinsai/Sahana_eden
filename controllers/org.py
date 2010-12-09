@@ -190,6 +190,9 @@ def shn_org_rheader(r, tabs=[]):
             #_same = r.same()
 
             organisation = r.record
+            if organisation is None:
+                # List or Create form: rheader makes no sense here
+                raise("Please 'continue' to skip me")
 
             if organisation.cluster_id:
                 _sectors = shn_sector_represent(organisation.cluster_id)
@@ -224,6 +227,10 @@ def shn_org_rheader(r, tabs=[]):
             #_same = r.same()
 
             office = r.record
+            if office is None:
+                # List or Create form: rheader makes no sense here
+                raise("Please 'continue' to skip me")
+
             organisation = db(db.org_organisation.id == office.organisation_id).select(db.org_organisation.name, limitby=(0, 1)).first()
             if organisation:
                 org_name = organisation.name

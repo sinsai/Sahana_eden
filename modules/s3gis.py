@@ -99,7 +99,7 @@ GEOM_TYPES = {
 }
 
 # km
-RADIUS_EARTH = 6371
+RADIUS_EARTH = 6371.01
 
 # -----------------------------------------------------------------------------
 class GIS(object):
@@ -475,13 +475,13 @@ class GIS(object):
             port = deployment_settings.database.port or "5432"
 
             # Convert km to degrees (since we're using the_geom not the_geog)
-            radius = math.degrees(radius / RADIUS_EARTH)
+            radius = math.degrees(float(radius) / RADIUS_EARTH)
 
             connection = psycopg2.connect("dbname=%s user=%s password=%s host=%s port=%s" % (dbname, username, password, host, port))
             cursor = connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
             info_string = "SELECT column_name, udt_name FROM information_schema.columns WHERE table_name = 'gis_location' or table_name = '%s';" % tablename
             cursor.execute(info_string)
-            # @ToDo look at more optimal quries for just those fields we need
+            # @ToDo: Look at more optimal queries for just those fields we need
             if tablename:
                 # Lookup the resource
                 query_string = cursor.mogrify("SELECT * FROM gis_location, %s WHERE %s.location_id = gis_location.id and ST_DWithin (ST_GeomFromText ('POINT (%s %s)', 4326), the_geom, %s);" % (tablename, tablename, lat, lon, radius))
@@ -534,51 +534,99 @@ class GIS(object):
             # db.executesql(query)
 
         else:
-            # Pull back all the rows & then do the calculation in Python
+            # Calculate in Python
+            # Pull back all the rows within a square bounding box (faster than checking all features manually)
+            # Then check each feature within this subset
+            # http://janmatuschek.de/LatitudeLongitudeBoundingCoordinates
+
             # @ToDo: Support optional Category (make this a generic filter?)
+
+            # shortcuts
+            radians = math.radians
+            degrees = math.degrees
+
+            MIN_LAT = radians(-90)     # -PI/2
+            MAX_LAT = radians(90)      # PI/2
+            MIN_LON = radians(-180)    # -PI
+            MAX_LON = radians(180)     #  PI
+
+            # Convert to radians for the calculation
+            r = float(radius) / RADIUS_EARTH
+            radLat = radians(lat)
+            radLon = radians(lon)
+            
+            # Calculate the bounding box
+            minLat = radLat - r
+            maxLat = radLat + r
+
+            if (minLat > MIN_LAT) and (maxLat < MAX_LAT):
+                deltaLon = math.asin(math.sin(r) / math.cos(radLat))
+                minLon = radLon - deltaLon
+                if (minLon < MIN_LON):
+                    minLon += 2 * math.pi
+                maxLon = radLon + deltaLon
+                if (maxLon > MAX_LON):
+                    maxLon -= 2 * math.pi
+            else:
+                # Special care for Poles & 180 Meridian:
+                # http://janmatuschek.de/LatitudeLongitudeBoundingCoordinates#PolesAnd180thMeridian
+                minLat = max(minLat, MIN_LAT)
+                maxLat = min(maxLat, MAX_LAT)
+                minLon = MIN_LON
+                maxLon = MAX_LON
+
+            # Convert back to degrees
+            minLat = degrees(minLat)
+            minLon = degrees(minLon)
+            maxLat = degrees(maxLat)
+            maxLon = degrees(maxLon)
 
             # shortcut
             locations = db.gis_location
-            table = db["tablename"]
 
-            # @ToDo: Do a Square query 1st & then run the complex query over subset (to improve performance)
-            # e.g. http://janmatuschek.de/LatitudeLongitudeBoundingCoordinates
-            #latT = arcsin(sin(lat)/cos(r))
-            #lon_min = lonT1 = lon - dLon
-            #lon_max = lonT2 = lon + dLon
-            # @ToDo: Deal with Poles & 180 Meridian: http://janmatuschek.de/LatitudeLongitudeBoundingCoordinates
-            #lat_max = 90
-            #lat_min = -90
-            #lon_max = 180
-            #lon_min = -180
-            #query = (locations.lat > lat_min) & (locations.lat < lat_max) & (locations.lon < lon_max) & (locations.lon > lon_min)
-            #deleted = (locations.deleted==False)
-            #query = deleted & query
+            query = (locations.lat > minLat) & (locations.lat < maxLat) & (locations.lon > minLon) & (locations.lon < maxLon)
+            deleted = (locations.deleted == False)
+            empty = (locations.lat != None) & (locations.lon != None)
+            query = deleted & empty & query
 
             if tablename:
-                # @ToDo: Lookup the resource
-                pass
+                # Lookup the resource
+                table = db[tablename]
+                query = query & (table.location_id == locations.id)
+                records = db(query).select(table.ALL,
+                                           locations.id,
+                                           locations.name,
+                                           locations.level,
+                                           locations.lat,
+                                           locations.lon,
+                                           locations.lat_min,
+                                           locations.lon_min,
+                                           locations.lat_max,
+                                           locations.lon_max)
             else:
                 # Lookup the raw Locations
-                records = db((locations.id > 0) & \
-                             (locations.deleted == False) & \
-                             (locations.lat != None) & \
-                             (locations.lon != None)).select(locations.id,
-                                                             locations.name,
-                                                             locations.level,
-                                                             locations.lat,
-                                                             locations.lon,
-                                                             locations.lat_min,
-                                                             locations.lon_min,
-                                                             locations.lat_max,
-                                                             locations.lon_max)
+                records = db(query).select(locations.id,
+                                           locations.name,
+                                           locations.level,
+                                           locations.lat,
+                                           locations.lon,
+                                           locations.lat_min,
+                                           locations.lon_min,
+                                           locations.lat_max,
+                                           locations.lon_max)
             features = []
             for record in records:
                 # Calculate the Great Circle distance
-                distance = self.greatCircleDistance(lat,
-                                                    lon,
-                                                    record.lat,
-                                                    record.lon)
+                if tablename:
+                    distance = self.greatCircleDistance(lat,
+                                                        lon,
+                                                        record.gis_location.lat,
+                                                        record.gis_location.lon)
+                else:
+                    distance = self.greatCircleDistance(lat,
+                                                        lon,
+                                                        record.lat,
+                                                        record.lon)
                 if distance < radius:
                     features.append(record)
                 else:
@@ -748,9 +796,6 @@ class GIS(object):
             (NB We should normally use PostGIS functions, where possible, instead of this query)
         """
 
-        # km
-        RADIUS_EARTH = 6371
-        
         # shortcuts
         cos = math.cos
         sin = math.sin
@@ -758,7 +803,6 @@ class GIS(object):
 
         if quick:
             # Spherical Law of Cosines (accurate down to around 1m & computationally quick)
-            # d = acos(sin(lat1).sin(lat2)+cos(lat1).cos(lat2).cos(long2-long1)).R
             acos = math.acos
             lat1 = radians(lat1)
             lat2 = radians(lat2)
@@ -769,6 +813,7 @@ class GIS(object):
             
         else:
             # Haversine
+            #asin = math.asin
             atan2 = math.atan2
             sqrt = math.sqrt
             pow = math.pow
@@ -776,20 +821,10 @@ class GIS(object):
             dLon = radians(lon2-lon1)
             a = pow(sin(dLat / 2), 2) + cos(radians(lat1)) * cos(radians(lat2)) * pow(sin(dLon / 2), 2)
             c = 2 * atan2(sqrt(a), sqrt(1-a))
+            #c = 2 * asin(sqrt(a))              # Alternate version
+            # Convert radians to kilometers
             distance = RADIUS_EARTH * c
             return distance
-
-        # Formula from unknown location (appears to be Haversine variation)
-        asin = math.asin
-        sqrt = math.sqrt
-        pow = math.pow
-        dLat = radians(lat2-lat1)
-        dLon = radians(lon2-lon1)
-        a = pow(sin(dLat / 2), 2) + cos(radians(lat1)) * cos(radians(lat2)) * pow(sin(dLon / 2), 2)
-        c = 2 * asin(sqrt(a))
-        # Convert radians to kilometers
-        distance = RADIUS_EARTH * c
-        return distance
 
     # -----------------------------------------------------------------------------
     def import_csv(self, filename, domain=None, check_duplicates=True):

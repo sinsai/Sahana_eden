@@ -172,7 +172,7 @@
             </xsl:choose>
         </xsl:variable>
         <xsl:variable name="time"
-                      select="substring-after($iso_datetime, ' ')"/>
+                      select="substring-before(substring-after($iso_datetime, 'T'), 'Z')"/>
         <xsl:value-of select="concat($day, ' ', $month_name, ' ', $year, ' ', $time, ' GMT')"/>
     </xsl:template>
 

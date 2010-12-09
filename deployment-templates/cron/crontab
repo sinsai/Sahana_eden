@@ -1,4 +1,10 @@
 # Crontab - scheduled tasks
+# NOTE FOR DEVELOPERS: 
+# /cron/contab is NOT in the BZR repository, as this file will be changed 
+# during deployments. 
+# To for changes to be committed to trunk, please also edit:
+# deployment-templates/cron/crontab
+
 # Import data into database at startup (not used)
 #@reboot web2py *applications/eden/cron/1st_run.py
 # Collect Inbound SMS

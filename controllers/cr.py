@@ -341,6 +341,11 @@ def shn_shelter_rheader(r, tabs=[]):
         rheader_tabs = shn_rheader_tabs(r, tabs)
 
         record = r.record
+
+        if record is None:
+                # List or Create form: rheader makes no sense here
+                raise("Please 'continue' to skip me")
+
         rheader = DIV(TABLE(
                             TR(
                                 TH(T("Name") + ": "), record.name

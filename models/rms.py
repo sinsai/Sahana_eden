@@ -366,6 +366,9 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Request Item deleted"),
         msg_list_empty = T("No Items currently requested"))
 
+    table.item_id.requires = IS_ONE_OF(db, "supply_item.id", "%(name)s") 
+    #table.quantity.requires = IS_NOT_EMPTY() 
+
     # Items as component of Locations
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,

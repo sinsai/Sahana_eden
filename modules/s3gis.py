@@ -39,6 +39,7 @@ __name__ = "S3GIS"
 __all__ = ["GIS", "GoogleGeocoder", "YahooGeocoder"]
 
 #import logging
+import math
 import os
 import re
 import sys
@@ -456,9 +457,6 @@ class GIS(object):
         db = self.db
         deployment_settings = self.deployment_settings
 
-        # km
-        RADIUS_EARTH = 6378.137
-
         if deployment_settings.gis.spatialdb and deployment_settings.database.db_type == "postgres":
             # Use Postgres routine
             # The ST_DWithin function call will automatically include a bounding box comparison that will make use of any indexes that are available on the geometries.
@@ -524,9 +522,16 @@ class GIS(object):
 
         else:
             # Do it manually
-            # Formula from: http://blog.peoplesdns.com/archives/24
-            # Spherical Law of Cosines (accurate down to around 1m & computationally quick): http://www.movable-type.co.uk/scripts/latlong.html
-            # IF PROJECTION CHANGES THIS WILL NOT WORK (Should be fine if we always use 4326)
+            # Raw MySQL Formula from: http://blog.peoplesdns.com/archives/24
+            #SELECT name, lat, lon, acos(SIN( PI()* 40.7383040 /180 )*SIN( PI()*lat/180 ))+(cos(PI()* 40.7383040 /180)*COS( PI()*lat/180) *COS(PI()*lon/180-PI()* -73.99319 /180))* 3963.191
+            #AS distance
+            #FROM gis_location
+            #WHERE 1=1
+            #AND 3963.191 * ACOS( (SIN(PI()* 40.7383040 /180)*SIN(PI() * lat/180)) + (COS(PI()* 40.7383040 /180)*cos(PI()*lat/180)*COS(PI() * lon/180-PI()* -73.99319 /180))) < = 1.5
+            #ORDER BY 3963.191 * ACOS((SIN(PI()* 40.7383040 /180)*SIN(PI()*lat/180)) + (COS(PI()* 40.7383040 /180)*cos(PI()*lat/180)*COS(PI() * lon/180-PI()* -73.99319 /180)))
+
+            # km
+            RADIUS_EARTH = 6371
 
             # ToDo: complete port from PHP to Eden
             return None
@@ -707,6 +712,57 @@ class GIS(object):
             return marker
         else:
             return ""
+
+    # -----------------------------------------------------------------------------
+    def greatCircleDistance(self, lat1, lon1, lat2, lon2, quick=True):
+
+        """
+            Calculate the shortest distance (in km) over the earth's sphere between 2 points
+            Formulae from: http://www.movable-type.co.uk/scripts/latlong.html
+            (NB We should normally use PostGIS functions, where possible, instead of this query)
+        """
+
+        # km
+        RADIUS_EARTH = 6371
+        
+        # shortcuts
+        cos = math.cos
+        sin = math.sin
+        radians = math.radians
+
+        if quick:
+            # Spherical Law of Cosines (accurate down to around 1m & computationally quick)
+            # d = acos(sin(lat1).sin(lat2)+cos(lat1).cos(lat2).cos(long2-long1)).R
+            acos = math.acos
+            lat1 = radians(lat1)
+            lat2 = radians(lat2)
+            lon1 = radians(lon1)
+            lon2 = radians(lon2)
+            distance = acos(sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(lon2-lon1)) * RADIUS_EARTH
+            return distance
+            
+        else:
+            # Haversine
+            atan2 = math.atan2
+            sqrt = math.sqrt
+            pow = math.pow
+            dLat = radians(lat2-lat1)
+            dLon = radians(lon2-lon1)
+            a = pow(sin(dLat / 2), 2) + cos(radians(lat1)) * cos(radians(lat2)) * pow(sin(dLon / 2), 2)
+            c = 2 * atan2(sqrt(a), sqrt(1-a))
+            distance = RADIUS_EARTH * c
+            return distance
+
+        # Formula from unknown location (appears to be Haversine variation)
+        asin = math.asin
+        sqrt = math.sqrt
+        pow = math.pow
+        dLat = radians(lat2-lat1)
+        dLon = radians(lon2-lon1)
+        a = pow(sin(dLat / 2), 2) + cos(radians(lat1)) * cos(radians(lat2)) * pow(sin(dLon / 2), 2)
+        c = 2 * asin(sqrt(a))
+        distance = RADIUS_EARTH * c
+        return distance
 
     # -----------------------------------------------------------------------------
     def import_csv(self, filename, domain=None, check_duplicates=True):

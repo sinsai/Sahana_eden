@@ -24,9 +24,10 @@ def shn_menu():
             [T("List"), False, URL(r=request, f="group")],
             [T("Add"), False, URL(r=request, f="group", args="create")],
         ]]]
-    
-    if shn_has_role(1):
-        response.menu_options.append([T("De-duplicator"), False, URL(r=request, f="person_duplicates")])
+
+    #De-activating until fixed:
+    #if shn_has_role(1):
+        #response.menu_options.append([T("De-duplicator"), False, URL(r=request, f="person_duplicates")])
 
     menu_selected = []
     if session.rcvars and "pr_group" in session.rcvars:
@@ -254,10 +255,13 @@ def tooltip():
 #------------------------------------------------------------------------------------------------------------------
 def person_duplicates():
 
+    """ Handle De-duplication of People
+
+        @todo: permissions, audit, update super entity, PEP8, optimization?
+        @todo: check for component data!
+        @todo: user accounts, subscriptions?
     """
-        Handle De-duplication of People
-    """
-    
+
     # Import the s3deduplicator module necessary to find the soundex and match percentage of records
     s3deduplicator = local_import("s3deduplicator")
 
@@ -310,7 +314,7 @@ def person_duplicates():
             array1.append(onePerson.last_name)
             array1.append(onePerson.preferred_name)
             array1.append(onePerson.local_name)
-            array1.append(pr_age_group_opts.get(onePerson.age_group, T("None")))        
+            array1.append(pr_age_group_opts.get(onePerson.age_group, T("None")))
             array1.append(pr_gender_opts.get(onePerson.gender, T("None")))
             array1.append(str(onePerson.date_of_birth))
             array1.append(pr_nations.get(onePerson.nationality, T("None")))
@@ -328,7 +332,7 @@ def person_duplicates():
 
             else:
                 array1.append(onePerson.tags)
-            
+
             array1.append(onePerson.comments)
             i = i + 1
             j = 0
@@ -360,7 +364,7 @@ def person_duplicates():
                         array2.append(tagname)
                     else:
                         array2.append(anotherPerson.tags)
-                    
+
                     array2.append(anotherPerson.comments)
                     if count > end and request.vars.max != "undefined":
                         count = int(request.vars.max)
@@ -403,7 +407,12 @@ def person_duplicates():
 #----------------------------------------------------------------------------------------------------------
 def delete_person():
 
-    """ To delete references to the old record and replace it with the new one. """
+    """ To delete references to the old record and replace it with the new one.
+
+        @todo: components??? cannot simply be re-linked!
+        @todo: user accounts?
+        @todo: super entity not updated!
+    """
 
     # @ToDo: Error gracefully if conditions not satisfied
     old = request.vars.old
@@ -411,7 +420,7 @@ def delete_person():
 
     # Find all tables which link to the pr_person table
     tables = shn_table_links("pr_person")
-    
+
     for table in tables:
         for count in range(len(tables[table])):
             field = tables[str(db[table])][count]
@@ -425,7 +434,14 @@ def delete_person():
 #------------------------------------------------------------------------------------------------------------------
 def person_resolve():
 
-    """ This opens a popup screen where the de-duplication process takes place. """
+    """ This opens a popup screen where the de-duplication process takes place.
+
+        @todo: components??? cannot simply re-link!
+        @todo: user accounts linked to these records?
+        @todo: update the super entity!
+        @todo: use S3Resources, implement this as a method handler
+
+    """
 
     # @ToDo: Error gracefully if conditions not satisfied
     perID1 = request.vars.perID1
@@ -445,14 +461,12 @@ def person_resolve():
         record = persons[perID1]
     myUrl = URL(r=request, c="pr", f="person")
     form1 = SQLFORM(persons, record, _id="form1", _action=("%s/%s" % (myUrl, perID1)))
-    
+
     # For the second record remove all the comments to save space.
     for field in persons:
         field.comment = None
     record = persons[perID2]
     form2 = SQLFORM(persons, record, _id="form2", _action=("%s/%s" % (myUrl, perID2)))
-    return dict(form1=form1, form2=form2, perID1=perID1, perID2=perID2)    
+    return dict(form1=form1, form2=form2, perID1=perID1, perID2=perID2)
 
 # -----------------------------------------------------------------------------
-
-

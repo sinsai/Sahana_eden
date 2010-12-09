@@ -97,6 +97,9 @@
             <atom:id>
                 <xsl:value-of select="$entry_id"/>
             </atom:id>
+            <atom:title>
+                <xsl:value-of select="concat(@name, '/', @uuid)"/>
+            </atom:title>
             <atom:updated>
                 <xsl:value-of select="@modified_on"/>
             </atom:updated>

@@ -101,37 +101,35 @@ def shn_flood_rheader(r, tabs=[]):
     """ Resource Headers """
 
     if r.representation == "html":
-        rheader_tabs = shn_rheader_tabs(r, tabs)
-
         if r.name == "freport":
-
             report = r.record
-            location = report.location_id
-            if location:
-                location = shn_gis_location_represent(location)
-            doc_name = doc_url = None
-            document = db(db.doc_document.id == report.document_id).select(db.doc_document.name, db.doc_document.file, limitby=(0, 1)).first()
-            if document:
-                doc_name = document.name
-                doc_url = URL(r=request, f="download", args=[document.file])
-                #try:
-                #    doc_name, file = r.table.document.retrieve(document)
-                #    if hasattr(file, "close"):
-                #        file.close()
-                #except:
-                #    doc_name = document.name
-            rheader = DIV(TABLE(
-                            TR(
-                                TH(T("Location") + ": "), location,
-                                TH(T("Date") + ": "), report.datetime
-                              ),
-                            TR(
-                                TH(T("Document") + ": "), A(doc_name, _href=doc_url)
-                              )
-                            ),
-                          rheader_tabs)
+            if report:
+                rheader_tabs = shn_rheader_tabs(r, tabs)
+                location = report.location_id
+                if location:
+                    location = shn_gis_location_represent(location)
+                doc_name = doc_url = None
+                document = db(db.doc_document.id == report.document_id).select(db.doc_document.name, db.doc_document.file, limitby=(0, 1)).first()
+                if document:
+                    doc_name = document.name
+                    doc_url = URL(r=request, f="download", args=[document.file])
+                    #try:
+                    #    doc_name, file = r.table.document.retrieve(document)
+                    #    if hasattr(file, "close"):
+                    #        file.close()
+                    #except:
+                    #    doc_name = document.name
+                rheader = DIV(TABLE(
+                                TR(
+                                    TH(T("Location") + ": "), location,
+                                    TH(T("Date") + ": "), report.datetime
+                                  ),
+                                TR(
+                                    TH(T("Document") + ": "), A(doc_name, _href=doc_url)
+                                  )
+                                ),
+                              rheader_tabs)
 
-            return rheader
+                return rheader
 
-        else:
-            return None
+    return None

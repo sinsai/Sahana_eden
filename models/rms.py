@@ -6,6 +6,7 @@
 
 module = "rms"
 if deployment_settings.has_module(module):
+    # NB Current this module depends on HMS, CR & Project
 
     # -------------------------------
     # Load lists/dictionaries for drop down menus
@@ -48,14 +49,14 @@ if deployment_settings.has_module(module):
                             Field("datetime", "datetime"),  # 'timestamp' is a reserved word in Postgres
                             location_id(),
                             person_id("requestor_person_id"),
-                            hospital_id(),    # @ToDo Check if the module is enabled for adding FK: check CR for an example
-                            shelter_id(),     # @ToDo Check if the module is enabled for adding FK: check CR for an example
+                            hospital_id(),    # @ToDo: Check if the HMS module is enabled for adding FK: check CR for an example
+                            shelter_id(),     # @ToDo: Check if the CR module is enabled for adding FK: check CR for an example
                             organisation_id(),
                             inventory_store_id("from_inventory_store_id"),
                             Field("type", "integer"),
                             Field("priority", "integer"),
                             Field("message", "text"),
-                            activity_id(),
+                            activity_id(),     # @ToDo: Check if the Project module is enabled for adding FK: check CR for an example
                             #Field("verified", "boolean"),
                             #Field("verified_details"),
                             #Field("actionable", "boolean"),

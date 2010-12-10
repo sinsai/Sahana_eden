@@ -661,11 +661,10 @@ class S3ResourceController(object):
             raise TypeError
 
         # Build match query
-        if self.xml.UID in pvalues:
-            uid = pvalues[self.xml.UID]
-            if self.xml.domain_mapping:
-                uid = self.xml.import_uid(uid)
-            query = (table[self.xml.UID] == uid)
+        UID = self.xml.UID
+        if UID in pvalues:
+            uid = self.xml.import_uid(pvalues[UID])
+            query = (table[UID] == uid)
         else:
             query = None
             for f in pvalues:
@@ -954,20 +953,19 @@ class S3ResourceController(object):
 
         # if a record ID is given, import only matching elements
         # TODO: match all possible fields (see original())
-        if id and self.xml.UID in table:
+        UID = self.xml.UID
+        if id and UID in table:
             if not isinstance(id, (tuple, list)):
                 query = (table.id == id)
             else:
                 query = (table.id.belongs(id))
-            set = self.db(query).select(table[self.xml.UID])
-            uids = [row[self.xml.UID] for row in set]
+            set = self.db(query).select(table[UID])
+            uids = [row[UID] for row in set]
             matches = []
             for element in elements:
-                element_uid = element.get(self.xml.UID, None)
+                element_uid = self.xml.import_uid(element.get(UID, None))
                 if not element_uid:
                     continue
-                if self.xml.domain_mapping:
-                    element_uid = self.xml.import_uid(element_uid)
                 if element_uid in uids:
                     matches.append(element)
             if not matches:
@@ -1976,7 +1974,7 @@ class S3QueryBuilder(object):
                     if field in _table.fields:
                         for op in url_query[rname][field]:
                             values = url_query[rname][field][op]
-                            if field == xml.UID and xml.domain_mapping:
+                            if field == xml.UID:
                                 uids = map(xml.import_uid, values)
                                 values = uids
                             f = _table[field]

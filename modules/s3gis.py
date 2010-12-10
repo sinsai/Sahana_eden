@@ -2624,7 +2624,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                     attribution = ",attribution: '%s'" % layer.attribution
                 else:
                     attribution = ""
-                layers_openstreetmap += """
+                if layer.base or catalogue_overlays:
+                    layers_openstreetmap += """
         var osmLayer""" + name_safe + """ = new OpenLayers.Layer.TMS( '""" + name + """', """ + url + """, {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true """ + attribution + base + """ } );
         map.addLayer(osmLayer""" + name_safe + """);
         """ + visibility
@@ -4011,7 +4012,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 tooltipPopup.contentDiv.style.margin='10px';
                 tooltipPopup.closeOnMove = true;
                 tooltipPopup.autoSize = true;
-                tooltipPopup.opacity = 0.6;
+                tooltipPopup.opacity = 0.7;
                 feature.popup = tooltipPopup;
                 map.addPopup(tooltipPopup);
             }

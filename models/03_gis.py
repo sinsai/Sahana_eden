@@ -501,11 +501,9 @@ location_id = S3ReusableField("location_id", db.gis_location,
                     label = T("Location"),
                     # Not yet ready
                     #widget = S3LocationSelectorWidget(request, response, T),
-                    comment = DIV(A(ADD_LOCATION,
-                                    _class="colorbox",
-                                    _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
-                                    _target="top",
-                                    _title=ADD_LOCATION),
+                    # If enabling widget, then disable comment (widget incorporates it)
+                    comment = DIV(A(ADD_LOCATION, _class="colorbox", _target="top", _title=ADD_LOCATION,
+                                    _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup"))),
                                   DIV(_class="tooltip",
                                       _title=T("Location") + "|" + T("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                     ondelete = "RESTRICT")

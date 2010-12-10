@@ -676,17 +676,15 @@ class S3XML(object):
 
         if isinstance(tree, etree._ElementTree):
             root = tree.getroot()
-            if not root or not root.tag == cls.TAG.root:
+            if root is None or root.tag != cls.TAG.root:
                 return resources
         else:
             root = tree
 
         if root is None or not len(root):
             return resources
-
         expr = './%s[@%s="%s"]' % \
                (cls.TAG.resource, cls.ATTRIBUTE.name, tablename)
-
         resources = root.xpath(expr)
         return resources
 
@@ -895,7 +893,7 @@ class S3XML(object):
                         valid = False
                         continue
                 record[f] = value
-                
+
         return valid and record or None
 
 

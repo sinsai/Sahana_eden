@@ -375,7 +375,7 @@ class S3LocationSelectorWidget:
                     numberAncestors = len(ancestors)
                     if numberAncestors > 2:
                         del ancestors[numberAncestors - 1]  # Remove self
-                        del ancestors[numberAncestors - 2]      # Remove parent
+                        del ancestors[numberAncestors - 2]  # Remove parent
                         for i in range(numberAncestors - 2):
                             default["L%i" % i] = ancestors[i]
 
@@ -562,7 +562,30 @@ class S3LocationSelectorWidget:
     //});
     """ % (location_id, maxlevel, empty_set, loading_locations, select_location, url)
         
+        # Labels
+        name_label = DIV(LABEL(T("Name") + ":"), SPAN("*", _class="req"), _id="gis_location_name_label", _class="hidden")
+        street_label = LABEL(T("Street Address") + ":", _id="gis_location_addr_street_label", _class="hidden")
+        lat_label = LABEL(T("Latitude") + ":", _id="gis_location_lat_label", _class="hidden")
+        lon_label = LABEL(T("Longitude") + ":", _id="gis_location_lon_label", _class="hidden")
+
+        # Form Fields
+        street_widget = TEXTAREA(_id="gis_location_addr_street", _class="hidden", _value=addr_street)
+        lat_widget = INPUT(_id="gis_location_lat", _value=lat)
+        lon_widget = INPUT(_id="gis_location_lon", _value=lon)
+
+        # Rows
+        name_rows = DIV(TR(name_label),
+                        TR(INPUT(_id=dummy_input, _value=represent, _class="hidden")))
+        street_rows = DIV(TR(street_label),
+                          TR(street_widget, geocoder_button))
+        lat_rows = DIV(TR(lat_label),
+                       TR(lat_widget, locations.lat.comment, _id="gis_location_lat_row", _class="hidden"))
+        lon_rows = DIV(TR(lon_label),
+                       TR(lon_widget, locations.lon.comment, _id="gis_location_lon_row", _class="hidden"))
+        
+        # Buttons
         add_button = A(T("Add New Location"), _id="gis_location_add-btn", _href="#",
+                                              # Prefer simple Hyperlinks to action Buttons here
                                               #_class="action-btn"
                                               )
 
@@ -576,30 +599,30 @@ class S3LocationSelectorWidget:
                                               #_class="action-btn hidden"
                                               )
 
-        geocode_button = A(T("Lookup Address"), _id="gis_location_geocode-btn", _href="#",
-                                                _class="hidden"
-                                                #_class="action-btn hidden"
-                                                )
+        geocoder_button = A(T("Lookup Address"), _id="gis_location_geocoder-btn", _href="#",
+                                                 _class="hidden"
+                                                 #_class="action-btn hidden"
+                                                 )
 
         converter_button = A(T("Coordinate Converter"), _id="gis_location_converter-btn", _href="#",
                                                         _class="hidden"
                                                         #_class="action-btn hidden"
                                                         )
 
+        advanced_checkbox = DIV(T("Advanced") + ":", INPUT(_type="checkbox", _id="gis_location_advanced_checkbox"), _id="gis_location_advanced_div", _class="hidden")
+
+        # The overall layout of the components
         return TAG[""](
                         INPUT(**attr), # Real input, which is hidden
                         dropdowns,
                         TR(add_button),
-                        TR(DIV(geolocate_button, map_button)),
-                        TR(DIV(LABEL(T("Name") + ":"), SPAN("*", _class="req"), _id="gis_location_name_label", _class="hidden")),
-                        TR(INPUT(_id=dummy_input, _value=represent, _class="hidden")),
-                        TR(LABEL(T("Street Address") + ":", _id="gis_location_addr_street_label", _class="hidden")),
-                        TR(DIV(TEXTAREA(_id="gis_location_addr_street", _class="hidden", _value=addr_street), geocode_button)),
-                        TR(DIV(T("Advanced") + ":", INPUT(_type="checkbox", _id="gis_location_advanced_checkbox"), _id="gis_location_advanced_div", _class="hidden")),
-                        TR(LABEL(T("Latitude") + ":", _id="gis_location_lat_label", _class="hidden")),
-                        TR(INPUT(_id="gis_location_lat", _value=lat), locations.lat.comment, _id="gis_location_lat_row", _class="hidden"),
-                        TR(LABEL(T("Longitude") + ":", _id="gis_location_lon_label", _class="hidden")),
-                        TR(INPUT(_id="gis_location_lon", _value=lon), locations.lon.comment, _id="gis_location_lon_row", _class="hidden"),
+                        name_rows,
+                        street_rows,
+                        TR(geolocate_button),
+                        TR(map_button),
+                        TR(advanced_checkbox),
+                        lat_rows,
+                        lon_rows,
                         SCRIPT(js_location_selector)
                       )
 

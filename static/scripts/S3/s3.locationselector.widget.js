@@ -3,7 +3,7 @@
 // Dynamic constants (e.g. Internationalised strings) are set in server-side script
 
 var gis_dropdown_select = function(level) {
-    // When the dropdown is selected
+    // Read the new value of the dropdown
     var new_id = $('#gis_location_L' + (level - 1)).val();
     // Pull down contents of new level of hierarchy by AJAX
     var this_url  = gis_url + '&value=L' + level + '&parent=' + new_id;
@@ -45,6 +45,82 @@ var gis_dropdown_select = function(level) {
     }
 }
 
+var gis_save_location = function(name, lat, lon, addr_street) {
+        // Locate the Parent - try the lowest level 1st
+        _parent = $('#gis_location_L5').val();
+        if (undefined == _parent || '' == _parent){
+            _parent = $('#gis_location_L4').val();
+            if (undefined == _parent || '' == _parent){
+                _parent = $('#gis_location_L3').val();
+                if (undefined == _parent || '' == _parent){
+                    _parent = $('#gis_location_L2').val();
+                    if (undefined == _parent || '' == _parent){
+                        _parent = $('#gis_location_L1').val();
+                        if (undefined == _parent || '' == _parent){
+                            _parent = $('#gis_location_L0').val();
+                        }
+                    }
+                }
+            }
+        }
+        // Build the URL
+        if ('' == S3.gis.uuid) {
+            // Create a new record
+            url = '{{=URL(r=request, c="gis", f="location", args=["create.url"])}}' + '?name=' + name;
+        } else {
+            // Update an existing record
+            url = '{{=URL(r=request, c="gis", f="location", args=["update.url"])}}' + '?uuid=' + S3.gis.uuid + '&name=' + name;
+        }
+        if ('' == lat || '' == lon) {
+            // pass
+        } else {
+            url = url + '&lat=' + lat + '&lon=' + lon;
+        }
+        if ('' == addr_street) {
+            // pass
+        } else {
+            url = url + '&addr_street=' + addr_street;
+        }
+        if (undefined == _parent || '' == _parent){
+            // pass
+        } else {
+            url = url + '&parent=' + _parent;
+        }
+        // Submit the Location record
+        $.ajax({
+                // Block the form's return until we've updated the record
+                async: false,
+                url: url,
+                dataType: 'json',
+                success: function(data) {
+                    // Report Success/Failure
+                    //showStatus(data.message);
+
+                    if (('' == S3.gis.uuid) && (data.status == 'success')) {
+                        // Parse the new location
+                        var new_id = data.message.split('=')[1];
+                        // Update the value of the real field
+                        $('#' + location_id).val(new_id);
+                        // Store the UUID for future updates
+                        //var url_read = '{{=URL(r=request, c="gis", f="location")}}' + '/' + new_id + '.json';
+                        //$.getJSON(url_read, function(data) {
+                        //    var domain = data['@domain'];
+                            // Set global variable for later pickup
+                        //    var uuid = data['$_gis_location'][0]['@uuid'];
+                        //    if (uuid.split('/')[0] == domain) {
+                        //        S3.gis.uuid = uuid.split('/')[1];
+                        //    } else {
+                        //        S3.gis.uuid = uuid;
+                        //    }
+                        //});
+                    }
+
+                }
+            });
+        
+}
+
+
 $(function(){
     // When dropdowns are selected, open the next one in the hierarchy
     $('#gis_location_L0').change( function() {
@@ -73,6 +149,7 @@ $(function(){
         $('#gis_location_name').removeClass('hidden').show();
         $('#gis_location_addr_street_label').removeClass('hidden').show();
         $('#gis_location_addr_street').removeClass('hidden').show();
+        $('#gis_location_geocoder-btn').removeClass('hidden').show();
         $('#gis_location_advanced_div').removeClass('hidden').show();
     });
     $('#gis_location_advanced_checkbox').change( function() {
@@ -89,5 +166,32 @@ $(function(){
             $('#gis_location_lon_label').hide();
             $('#gis_location_lon_row').hide();
         }
+    });
+    $('form').submit( function() {
+        // The form is being submitted
+
+        // Check if a new location should be created
+        var name = $('#gis_location_name').val();
+        var lat = $('#gis_location_lat').val();
+        var lon = $('#gis_location_lon').val();
+        var addr_street = $('#gis_location_addr_street').val();
+
+        // Only save a new Location if we have data
+        if ('' == name)) {
+            if (('' == lat || '' == lon) && ('' == addr_street)) {
+                // We don't have a name, but we do have details, so prompt the user
+                // @ToDo!
+            } else {
+                // There are no specific location details specified
+                // (Hierarchy may have been done but that's not our issue here)
+                // Allow the Form's save to continue
+                return true;
+            }
+        }
+        // Save the new location
+        gis_save_location(name, lat, lon, addr_street);
+
+        // Allow the Form's save to continue
+        return true;
     });
 });

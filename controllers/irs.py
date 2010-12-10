@@ -90,12 +90,18 @@ def icategory():
 # -----------------------------------------------------------------------------
 def incident():
 
-    """ Incidents, RESTful controller """
+    """
+        Incidents, RESTful controller
+
+        These are the 'master' Incidents, for each of which there may be many Reports
+        @ToDo: Replace with 'Lead' Incident?
+    """
 
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
 
+    # @ToDo: Replace with doc_image
     db.irs_iimage.assessment_id.readable = \
     db.irs_iimage.assessment_id.writable = False
 
@@ -211,11 +217,11 @@ def shn_irs_rheader(r, tabs=[]):
     """ Resource Headers for IRS """
 
     if r.representation == "html":
-        rheader_tabs = shn_rheader_tabs(r, tabs)
-
         if r.record is None:
             # List or Create form: rheader makes no sense here
-            raise("Please 'continue' to skip me")
+            return None
+
+        rheader_tabs = shn_rheader_tabs(r, tabs)
 
         if r.name == "ireport":
             report = r.record

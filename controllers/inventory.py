@@ -13,19 +13,37 @@ module = request.controller
 
 response.menu_options = logs_menu
 
+def index():
+
+    """
+        Use main Logs homepage
+        @ToDo: Default to the inventory_store list view
+        - does not work with paginate!!!
+    """
+    response.view = "logs/index.html"
+    module_name = deployment_settings.modules["logs"].name_nice
+    return dict(module_name=module_name)    
+
+    #request.function = "store"
+    #request.args = []
+    #return store()
+    #module_name = deployment_settings.modules[module].name_nice
+    #return dict(module_name=module_name)
+
 #==============================================================================
 def shn_store_rheader(r, tabs=[]):
     if r.representation == "html":
-        rheader_tabs = shn_rheader_tabs(r, tabs)
         inventory_store = r.record
-        rheader = DIV(TABLE(TR(
-                               TH(T("Location") + ": "), shn_gis_location_represent(inventory_store.location_id),
-                               TH(T("Description") + ": "), inventory_store.comments,
+        if inventory_store:
+            rheader_tabs = shn_rheader_tabs(r, tabs)
+            rheader = DIV(TABLE(TR(
+                                   TH(T("Location") + ": "), shn_gis_location_represent(inventory_store.location_id),
+                                   TH(T("Description") + ": "), inventory_store.comments,
+                                   ),
                                ),
-                           ),
-                      rheader_tabs
-                      )
-        return rheader
+                          rheader_tabs
+                          )
+            return rheader
     return None
 
 def store():
@@ -65,22 +83,6 @@ def store():
                                 resource, 
                                 rheader=rheader)
     return output
-
-def index():
-
-    """
-        Default to the inventory_store list view
-        @TODO does not work with paginate!!!
-    """
-    response.view = "logs/index.html"
-    module_name = deployment_settings.modules["logs"].name_nice
-    return dict(module_name=module_name)    
-
-    #request.function = "store"
-    #request.args = []
-    #return store()
-    #module_name = deployment_settings.modules[module].name_nice
-    #return dict(module_name=module_name)
 
 #==============================================================================
 def store_item():

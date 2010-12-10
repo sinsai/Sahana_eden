@@ -106,6 +106,7 @@ class S3AutocompleteWidget:
                     $( '#%s' ).val( ui.item.%s );
                     $( '#%s' ).val( ui.item.id );
                     """ % (dummy_input, dummy_input, url, self.min_length, dummy_input, fieldname, dummy_input, fieldname, real_input) + self.post_process + """
+                    data.accept = true;
                     return false;
                 }
             })
@@ -113,10 +114,6 @@ class S3AutocompleteWidget:
                 return $( '<li></li>' )
                     .data( 'item.autocomplete', item )
                     .append( '<a>' + item.%s + '</a>' )
-                    .click(function()
-                    {
-                        data.accept = true;
-                    })
                     .appendTo( ul );
             };
 
@@ -227,6 +224,7 @@ class S3PersonAutocompleteWidget:
                     $( '#%s' ).val( name );
                     $( '#%s' ).val( ui.item.id );
                     """ % (dummy_input, dummy_input, url, self.min_length, dummy_input, dummy_input, real_input) + self.post_process + """
+                    data.accept = true;
                     return false;
                 }
             })
@@ -244,10 +242,6 @@ class S3PersonAutocompleteWidget:
                 return $( '<li></li>' )
                     .data( 'item.autocomplete', item )
                     .append( '<a>' + name + '</a>' )
-                    .click(function()
-                    {
-                        data.accept = true;
-                    })
                     .appendTo( ul );
             };
 

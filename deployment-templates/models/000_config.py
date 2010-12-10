@@ -292,7 +292,8 @@ deployment_settings.modules = OrderedDict(
             description = T("Managing, Storing and Distributing Relief Items"),
             module_type = 10
         ),
-    rms = Storage(
+    # NB RMS module depends on HMS, CR & Project
+    rms = Storage(      
             name_nice = T("Requests"),
             description = T("Tracks requests for aid and matches them against donors who have pledged aid"),
             module_type = 3,

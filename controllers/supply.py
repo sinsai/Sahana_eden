@@ -30,20 +30,22 @@ def item_category():
 #==============================================================================
 def shn_item_rheader(r, tabs=[]):
 
-    """ @todo: fix docstring, PEP8 """
+    """ Resource Header for Items """
 
     if r.representation == "html":
-        rheader_tabs = shn_rheader_tabs(r, tabs)
         item = r.record
-        category = db(db.supply_item_category.id == item.item_category_id).select(db.supply_item_category.name, limitby=(0, 1)).first().name
-        rheader = DIV(TABLE(TR(
-                               TH(T("Category") + ": "),   category,
-                               TH(T("Name") + ": "), item.name,
-                              ),
-                           ),
-                      rheader_tabs
-                     )
-        return rheader
+        if item:
+            rheader_tabs = shn_rheader_tabs(r, tabs)
+            category = db(db.supply_item_category.id == item.item_category_id).select(db.supply_item_category.name,
+                                                                                      limitby=(0, 1)).first().name
+            rheader = DIV(TABLE(TR(
+                                   TH(T("Category") + ": "),   category,
+                                   TH(T("Name") + ": "), item.name,
+                                  ),
+                               ),
+                          rheader_tabs
+                         )
+            return rheader
     return None
 
 

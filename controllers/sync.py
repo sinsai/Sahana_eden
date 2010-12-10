@@ -974,18 +974,18 @@ def sync_rheader(r, tabs=[]):
 
     if r.representation == "html":
 
-        _next = r.here()
-        _same = r.same()
-
-        if tabs:
-            rheader_tabs = shn_rheader_tabs(r, tabs)
-        else:
-            rheader_tabs = ""
-
         if r.name == "peer":
 
             peer = r.record
             if peer:
+                _next = r.here()
+                _same = r.same()
+
+                if tabs:
+                    rheader_tabs = shn_rheader_tabs(r, tabs)
+                else:
+                    rheader_tabs = ""
+
                 rheader = DIV(TABLE(
 
                     TR(TH("%s: " % T("Name")),

@@ -169,7 +169,6 @@ class S3XML(object):
         self.gis = manager.gis
         self.cache = manager.cache
 
-        self.domain_mapping = True
         self.error = None
 
         self.filter_mci = False # Set to true to suppress export at MCI<0
@@ -367,7 +366,6 @@ class S3XML(object):
 
         if not uid or not self.domain:
             return uid
-
         if uid.startswith("urn:"):
             return uid
         else:
@@ -414,13 +412,11 @@ class S3XML(object):
         reference_map = []
 
         for f in fields:
-
             ids = record.get(f, None)
             if not ids:
                 continue
             if not isinstance(ids, (list, tuple)):
                 ids = [ids]
-
             multiple = False
             fieldtype = str(table[f].type)
             if fieldtype.startswith("reference"):
@@ -446,8 +442,7 @@ class S3XML(object):
                 krecords = self.db(query).select(ktable[self.UID])
                 if krecords:
                     uids = [r[self.UID] for r in krecords if r[self.UID]]
-                    if self.domain_mapping:
-                        uids = [self.export_uid(u) for u in uids]
+                    uids = [self.export_uid(u) for u in uids]
                 else:
                     continue
             else:
@@ -472,7 +467,6 @@ class S3XML(object):
                                          uid=uids,
                                          text=text,
                                          value=value))
-
         return reference_map
 
 
@@ -495,14 +489,12 @@ class S3XML(object):
             if show_ids:
                 if r.multiple:
                     ids = json.dumps(r.id)
-                    #ids = "|%s|" % "|".join(map(str, r.id))
                 else:
                     ids = "%s" % r.id[0]
                 reference.set(self.ATTRIBUTE.id, self.xml_encode(ids))
             if r.uid:
                 if r.multiple:
                     uids = json.dumps(r.uid)
-                    #uids = "|%s|" % "|".join(map(str, r.uid))
                 else:
                     uids = "%s" % r.uid[0]
                 reference.set(self.UID, self.xml_encode(str(uids).decode("utf-8")))
@@ -583,11 +575,7 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
-    def element(self, table, record,
-                fields=[],
-                url=None,
-                download_url=None,
-                marker=None):
+    def element(self, table, record, fields=[], url=None):
 
         """ Creates an element from a Storage() record
 
@@ -595,43 +583,30 @@ class S3XML(object):
             @param record: the record
             @param fields: list of field names to include
             @param url: URL of the record
-            @param download_url: download URL of the current instance
-            @param marker: filename of the marker to override
-                marker URLs in location references
 
         """
 
-        if not download_url:
-            download_url = ""
+        download_url = self.manager.download_url or ""
 
-        resource = etree.Element(self.TAG.resource)
-        resource.set(self.ATTRIBUTE.name, table._tablename)
+        elem = etree.Element(self.TAG.resource)
+        elem.set(self.ATTRIBUTE.name, table._tablename)
 
+        # UID
         if self.UID in table.fields and self.UID in record:
-            _value = str(table[self.UID].formatter(record[self.UID])).decode("utf-8")
-            if self.domain_mapping:
-                value = self.export_uid(_value)
-            resource.set(self.UID, self.xml_encode(value))
-            if table._tablename == "gis_location" and self.gis:
-                # Look up the marker to display
-                marker = self.gis.get_marker(resource)
-                marker_url = "%s/%s" % (download_url, marker.image)
-                resource.set(self.ATTRIBUTE.marker,
-                                self.xml_encode(marker_url))
-                # Look up the GPS Marker
-                # @ToDo Fix for new FeatureClass
-                #symbol = None
-                #try:
-                #    db = self.db
-                #    query = (db.gis_feature_class.id == record.feature_class_id)
-                #    symbol = db(query).select(limitby=(0, 1)).first().gps_marker
-                #except:
-                #    # No Feature Class
-                #    pass
-                #if not symbol:
-                symbol = "White Dot"
-                resource.set(self.ATTRIBUTE.sym, self.xml_encode(symbol))
+            uid = record[self.UID]
+            uid = str(table[self.UID].formatter(uid)).decode("utf-8")
+            value = self.export_uid(uid)
+            elem.set(self.UID, self.xml_encode(value))
 
+        # GIS marker
+        if table._tablename == "gis_location" and self.gis:
+            marker = self.gis.get_marker(elem)
+            marker_url = "%s/%s" % (download_url, marker.image)
+            elem.set(self.ATTRIBUTE.marker, self.xml_encode(marker_url))
+            symbol = "White Dot"
+            elem.set(self.ATTRIBUTE.sym, self.xml_encode(symbol))
+
+        # Fields
         for i in xrange(0, len(fields)):
             f = fields[i]
             v = record.get(f, None)
@@ -641,51 +616,48 @@ class S3XML(object):
                 continue
 
             fieldtype = str(table[f].type)
-
             if fieldtype == "datetime":
-                text = value = self.xml_encode(v.strftime(self.ISOFORMAT).decode("utf-8"))
+                value = self.xml_encode(v.strftime(self.ISOFORMAT).decode("utf-8"))
+                text = value
             elif fieldtype in ("date", "time"):
-                text = value = self.xml_encode(str(table[f].formatter(v)).decode("utf-8"))
+                value = self.xml_encode(str(table[f].formatter(v)).decode("utf-8"))
+                text = value
             else:
-                text = self.xml_encode(str(table[f].formatter(v)).decode("utf-8"))
                 value = self.xml_encode(json.dumps(v).decode("utf-8"))
-
+                text = self.xml_encode(str(table[f].formatter(v)).decode("utf-8"))
             if table[f].represent:
                 text = self.represent(table, f, v)
 
             if f in self.FIELDS_TO_ATTRIBUTES:
                 if f == self.MCI:
-                    resource.set(self.MCI, str(int(v) + 1))
+                    elem.set(self.MCI, str(int(v) + 1))
                 else:
-                    resource.set(f, text)
-
+                    elem.set(f, text)
             elif fieldtype == "upload":
-                data = etree.SubElement(resource, self.TAG.data)
-                data.set(self.ATTRIBUTE.field, f)
                 fileurl = self.xml_encode("%s/%s" % (download_url, value))
                 filename = self.xml_encode(value)
+                data = etree.SubElement(elem, self.TAG.data)
+                data.set(self.ATTRIBUTE.field, f)
                 data.set(self.ATTRIBUTE.url, fileurl)
                 data.set(self.ATTRIBUTE.filename, filename)
-
             elif fieldtype == "password":
                 # Do not export password fields
                 continue
-
             elif fieldtype == "blob":
-                # Not implemented yet
+                # Not implemented
                 continue
-
             else:
-                data = etree.SubElement(resource, self.TAG.data)
+                data = etree.SubElement(elem, self.TAG.data)
                 data.set(self.ATTRIBUTE.field, f)
-                if table[f].represent or fieldtype not in ("string", "text"):
+                if table[f].represent or \
+                   fieldtype not in ("string", "text"):
                     data.set(self.ATTRIBUTE.value, value)
                 data.text = text
 
         if url:
-            resource.set(self.ATTRIBUTE.url, url)
+            elem.set(self.ATTRIBUTE.url, url)
 
-        return resource
+        return elem
 
 
     # Data import =============================================================
@@ -794,18 +766,15 @@ class S3XML(object):
                     else:
                         reference_list.append(Storage(field=field, entry=entry))
 
-                _uids = uids
-                if self.domain_mapping:
-                    _uids = map(self.import_uid, uids)
+                _uids = map(self.import_uid, uids)
                 records = self.db(ktable[self.UID].belongs(_uids)).select(ktable.id, ktable[self.UID])
                 id_map = dict()
                 map(lambda r: id_map.update({r[self.UID]:r.id}), records)
 
             for relement in relements:
 
-                uid = _uid = relement.get(self.UID, None)
-                if self.domain_mapping:
-                    _uid = self.import_uid(uid)
+                uid = relement.get(self.UID, None)
+                _uid = self.import_uid(uid)
                 id = _uid and id_map and id_map.get(_uid, None) or None
 
                 entry = dict(job=None,
@@ -826,12 +795,18 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
-    def record(self, table, element, original=None, files=[], validate=None, skip=[]):
+    def record(self, table, element,
+               original=None,
+               files=[],
+               validate=None,
+               skip=[]):
 
         """ Creates a Storage() record from an element and validates it
 
             @param table: the database table
             @param element: the element
+            @param original: the original record
+            @param files: list of attached upload files
             @param validate: validate hook (function to validate fields)
             @param skip: fields to skip
 
@@ -841,11 +816,7 @@ class S3XML(object):
         record = Storage()
 
         if self.UID in table.fields and self.UID not in skip:
-            uid = element.get(self.UID, None)
-            if uid:
-                if self.domain_mapping:
-                    uid = self.import_uid(uid)
-                record[self.UID] = uid
+            uid = self.import_uid(element.get(self.UID, None))
 
         for f in self.ATTRIBUTES_TO_FIELDS:
             if f in self.IGNORE_FIELDS or f in skip:
@@ -867,80 +838,65 @@ class S3XML(object):
                             continue
                     record[f]=value
 
-        for child in element:
-            if child.tag == self.TAG.data:
-                f = child.get(self.ATTRIBUTE.field, None)
-                if not f or f not in table.fields:
-                    continue
-                if f in self.IGNORE_FIELDS or f in skip:
-                    continue
-
-                field_type = str(table[f].type)
-                if field_type in ("id", "blob", "password"):
-                    continue
-                elif field_type == "upload":
-                    # Handling of uploads
-                    download_url = child.get(self.ATTRIBUTE.url, None)
-                    filename = child.get(self.ATTRIBUTE.filename, None)
-                    file = None
-                    if filename:
-                        if filename in files:
-                            file = files[filename]
-                        elif download_url:
-                            # Try to download the file
-                            import urllib
-                            try:
-                                file = urllib.urlopen(download_url)
-                            except IOError:
-                                pass
-                        if file:
-                            field = table[f]
-                            value = field.store(file, filename)
-                        else:
-                            continue
-                    elif filename is not None:
-                        value = ""
-                else:
-                    value = child.get(self.ATTRIBUTE.value, None)
-                    value = self.xml_decode(value)
-
-                if value is None:
-                    value = self.xml_decode(child.text)
-                if value == "" and not field_type == "string":
-                    value = None
-                if value is None:
-                    value = table[f].default
-                if value is None and field_type == "string":
-                    value = ""
-
-                if value is not None:
-                    if isinstance(value, basestring) and len(value):
+        for child in element.findall("data"):
+            f = child.get(self.ATTRIBUTE.field, None)
+            if not f or f not in table.fields:
+                continue
+            if f in self.IGNORE_FIELDS or f in skip:
+                continue
+            field_type = str(table[f].type)
+            if field_type in ("id", "blob", "password"):
+                continue
+            elif field_type == "upload":
+                download_url = child.get(self.ATTRIBUTE.url, None)
+                filename = child.get(self.ATTRIBUTE.filename, None)
+                upload = None
+                if filename:
+                    if filename in files:
+                        upload = files[filename]
+                    elif download_url:
+                        import urllib
                         try:
-                            value = json.loads(value)
-                        except:
+                            upload = urllib.urlopen(download_url)
+                        except IOError:
                             pass
-                    if validate is not None:
-                        if not isinstance(value, (basestring, list, tuple)):
-                            v = str(value)
-                        elif isinstance(value, basestring):
-                            v = value.encode("utf-8")
-                        else:
-                            v = value
-                        (value, error) = validate(table, original, f, v)
-                        if isinstance(v, (list, tuple)):
-                            child.set(self.ATTRIBUTE.value, str(v))
-                        else:
-                            child.set(self.ATTRIBUTE.value, str(v).decode("utf-8"))
-                        if error:
-                            child.set(self.ATTRIBUTE.error, "%s: %s" % (f, error))
-                            valid = False
-                            continue
-                    record[f] = value
+                    if upload:
+                        field = table[f]
+                        value = field.store(upload, filename)
+                    else:
+                        continue
+                elif filename is not None:
+                    value = ""
+            else:
+                value = self.xml_decode(child.get(self.ATTRIBUTE.value, None))
 
-        if valid:
-            return record
-        else:
-            return None
+            if value is None:
+                value = self.xml_decode(child.text)
+            if value == "" and not field_type in ("string", "text"):
+                value = None
+
+            if value is not None:
+                if isinstance(value, basestring) and len(value):
+                    try:
+                        value = json.loads(value)
+                    except:
+                        pass
+                if validate is not None:
+                    if not isinstance(value, (basestring, list, tuple)):
+                        v = str(value)
+                    elif isinstance(value, basestring):
+                        v = value.encode("utf-8")
+                    else:
+                        v = value
+                    (value, error) = validate(table, original, f, v)
+                    child.set(self.ATTRIBUTE.value, str(v).decode("utf-8"))
+                    if error:
+                        child.set(self.ATTRIBUTE.error, "%s: %s" % (f, error))
+                        valid = False
+                        continue
+                record[f] = value
+                
+        return valid and record or None
 
 
     # Data model helpers ======================================================
@@ -1037,23 +993,21 @@ class S3XML(object):
         table = db.get(tablename, None)
 
         fields = etree.Element(self.TAG.fields)
-
         if table:
             fields.set(self.ATTRIBUTE.resource, tablename)
             for f in table.fields:
-                field = etree.Element(self.TAG.field)
-                field.set(self.ATTRIBUTE.name, self.xml_encode(f))
                 ftype = str(table[f].type)
-                field.set(self.ATTRIBUTE.type, self.xml_encode(ftype))
                 readable = table[f].readable
                 writable = table[f].writable
+                options = self.get_field_options(table, f)
+                field = etree.Element(self.TAG.field)
+                field.set(self.ATTRIBUTE.name, self.xml_encode(f))
+                field.set(self.ATTRIBUTE.type, self.xml_encode(ftype))
                 field.set(self.ATTRIBUTE.readable, str(readable))
                 field.set(self.ATTRIBUTE.writable, str(writable))
-                options = self.get_field_options(table, f)
                 field.set(self.ATTRIBUTE.has_options,
                           str(len(options) and True or False))
                 fields.append(field)
-
         return fields
 
 

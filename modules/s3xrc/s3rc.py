@@ -105,68 +105,54 @@ class S3ResourceController(object):
         NOT_IMPLEMENTED = "Not implemented"
     )
 
-    def __init__(self,
-                 environment,
-                 domain=None, # @todo 2.3: read fromm environment
-                 base_url=None, # @todo 2.3: read from environment
-                 messages=None, # @todo 2.3: move into settings
-                 **attr):
+    def __init__(self, environment):
 
         # Environment
         environment = Storage(environment)
-
         self.T = environment.T
         self.ROWSPERPAGE = environment.ROWSPERPAGE
-
         self.db = environment.db
         self.cache = environment.cache
-
         self.session = environment.session
         self.request = environment.request
         self.response = environment.response
-
         self.migrate = environment.migrate
 
         # Settings
-        self.s3 = environment.s3 #@todo 2.3: rename variable?
-
-        self.domain = domain
-        self.base_url = base_url
-        self.download_url = "%s/default/download" % base_url
-
+        self.s3 = environment.s3
+        self.domain = self.request.env.server_name
+        self.base_url = self.s3.base_url
+        self.download_url = "%s/default/download" % self.base_url
         self.rlink_tablename = "s3_rlink"
-
         self.show_ids = False
 
         # Errors
         self.error = None
 
         # Toolkits
-        self.audit = environment.s3_audit       # Audit
-        self.auth = environment.auth            # Auth
-        self.gis = environment.gis              # GIS
+        self.audit = environment.s3_audit
+        self.auth = environment.auth
+        self.gis = environment.gis
 
-        self.query_builder = S3QueryBuilder(self) # Query Builder
-
-        self.model = S3ResourceModel(self.db)   # Resource Model
-        self.linker = S3ResourceLinker(self)    # Resource Linker
-        self.crud = S3CRUDHandler(self)         # CRUD Handler
-        self.xml = S3XML(self)                  # XML Toolkit
+        # Helpers
+        self.query_builder = S3QueryBuilder(self)
+        self.model = S3ResourceModel(self.db)
+        self.linker = S3ResourceLinker(self)
+        self.crud = S3CRUDHandler(self)
+        self.xml = S3XML(self)
+        self.exporter = S3Exporter(self)
+        self.importer = S3Importer(self)
 
         # Hooks
-        self.permit = self.auth.shn_has_permission  # Permission Checker
-        self.messages = None                        # Messages Finder
-        self.tree_resolve = None                    # Tree Resolver
+        self.permit = self.auth.shn_has_permission
+        self.messages = None
+        self.tree_resolve = None
+        self.resolve = None
+        self.log = None
 
-        self.resolve = None                         # Resolver
-        self.log = None                             # Logger
-
-        # JSON formats, content-type headers
+        # JSON formats and content-type headers
         self.json_formats = []
         self.content_type = Storage()
-
-        self.exporter = S3Exporter(self)    # Resource Exporter
-        self.importer = S3Importer(self)    # Resource Importer
 
         # Method Handlers, @todo 2.3: deprecate?
         self.__handler = Storage()
@@ -711,7 +697,7 @@ class S3ResourceController(object):
 
         """
 
-        raise NotImplementedError
+        return NotImplementedError
 
 
     # -------------------------------------------------------------------------
@@ -802,9 +788,7 @@ class S3ResourceController(object):
             rmap = self.xml.rmap(table, record, rfields)
             element = self.xml.element(table, record,
                                        fields=dfields,
-                                       url=resource_url,
-                                       download_url=self.download_url,
-                                       marker=marker)
+                                       url=resource_url)
             self.xml.add_references(element, rmap, show_ids=self.show_ids)
             self.xml.gis_encode(resource, record, rmap,
                                 download_url=self.download_url,
@@ -851,9 +835,7 @@ class S3ResourceController(object):
                     crmap = self.xml.rmap(ctable, crecord, _rfields)
                     celement = self.xml.element(ctable, crecord,
                                                 fields=_dfields,
-                                                url=resource_url,
-                                                download_url=self.download_url,
-                                                marker=marker)
+                                                url=resource_url)
                     self.xml.add_references(celement, crmap, show_ids=self.show_ids)
                     self.xml.gis_encode(cresource, crecord, rmap,
                                         download_url=self.download_url,
@@ -912,9 +894,7 @@ class S3ResourceController(object):
 
                     element = self.xml.element(table, record,
                                                fields=dfields,
-                                               url=resource_url,
-                                               download_url=self.download_url,
-                                               marker=marker)
+                                               url=resource_url)
                     self.xml.add_references(element, rmap, show_ids=self.show_ids)
                     self.xml.gis_encode(rresource, record, rmap,
                                         download_url=self.download_url,

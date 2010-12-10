@@ -105,10 +105,7 @@ vita = s3vita.S3Vita(globals(), db)
 _s3xrc = local_import("s3xrc")
 s3.crud = Storage()
 s3_audit = _s3xrc.S3Audit(db, session, migrate=migrate)
-s3xrc = _s3xrc.S3ResourceController(globals(),
-            domain=request.env.server_name,
-            base_url="%s/%s" % (deployment_settings.get_base_public_url(),
-                                request.application))
+s3xrc = _s3xrc.S3ResourceController(globals())
 
 # Logout session clearing
 # shn_on_login ----------------------------------------------------------------

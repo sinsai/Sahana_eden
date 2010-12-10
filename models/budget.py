@@ -8,8 +8,8 @@
     @author: Fran Boon
 """
 
-module = "budget"
-if deployment_settings.has_module(module):
+module = "budget"   # Requires 'project' module too
+if deployment_settings.has_module(module) and deployment_settings.has_module("project"):
 
     # Parameters
     # Only record 1 is used

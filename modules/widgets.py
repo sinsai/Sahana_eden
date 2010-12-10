@@ -122,13 +122,19 @@ class S3AutocompleteWidget:
 
             $('#%s').blur(function()
             {
+                if(!$('#%s').val())
+                {
+                    $('#%s').val("");
+                    data.accept = true;
+                }
+
                 if(!data.accept) $('#%s').val(data.val);
                 else data.val = $('#%s').val();
 
                 data.accept = false;
             });
         })();
-        """ % (fieldname, dummy_input, dummy_input, dummy_input)
+        """ % (fieldname, dummy_input, dummy_input, real_input, dummy_input, dummy_input)
         
         if value:
             text = str(field.represent(default["value"]))
@@ -247,13 +253,19 @@ class S3PersonAutocompleteWidget:
 
             $('#%s').blur(function()
             {
+                if(!$('#%s').val())
+                {
+                    $('#%s').val("");
+                    data.accept = true;
+                }
+
                 if(!data.accept) $('#%s').val(data.val);
                 else data.val = $('#%s').val();
 
                 data.accept = false;
             });
         })();
-        """ % (dummy_input, dummy_input, dummy_input)
+        """ % (dummy_input, dummy_input, real_input, dummy_input, dummy_input)
         
         if value:
             # Provide the representation for the current/default Value

@@ -217,7 +217,6 @@ def shn_rat_rheader(r, tabs=[]):
         if r.name == "rat":
 
             report = r.record
-            
             if report is None:
                 # List or Create form: rheader makes no sense here
                 raise("Please 'continue' to skip me")

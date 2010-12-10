@@ -4,19 +4,8 @@
 
 var gis_dropdown_select = function(level) {
     // When the dropdown is selected
-    var new_id = $('#gis_location_L' + level).val();
-    if (('' == $('#gis_location_lat').val() || '' == $('#gis_location_lon').val()) && ('' == $('#gis_location_addr_street').val()) ) {
-        // Populate the real location_id field (unless a lat/lon/addr_street are present)
-        if ('' != new_id) {
-            $('#' + gis_location_id).val(new_id);
-        }
-        // Set the name box to this value
-        $('#gis_location_name').val($('#gis_location_L' + level - 1 + ':selected').text());
-    }
-    // Show the next level of hierarchy
-    $('#gis_location_L' + level).removeClass('hidden').show();
-    $('#gis_location_label_L' + level).removeClass('hidden').show();
-    // Pull down contents by AJAX
+    var new_id = $('#gis_location_L' + (level - 1)).val();
+    // Pull down contents of new level of hierarchy by AJAX
     var this_url  = gis_url + '&value=L' + level + '&parent=' + new_id;
     var gis_load_locations = function(data, status){
         var options;
@@ -38,8 +27,19 @@ var gis_dropdown_select = function(level) {
         }
     }
     $.getJSONS3(this_url, gis_load_locations, false);
+    // Show the new level
+    $('#gis_location_L' + level).removeClass('hidden').show();
+    $('#gis_location_label_L' + level).removeClass('hidden').show();
+    // Populate the real location_id field (unless a lat/lon or addr_street are already present)
+    if (('' == $('#gis_location_lat').val() || '' == $('#gis_location_lon').val()) && ('' == $('#gis_location_addr_street').val()) ) {
+        if ('' != new_id) {
+            $('#' + gis_location_id).val(new_id);
+        }
+        // Set the name box to this value
+        //$('#gis_location_name').val($('#gis_location_L' + level - 1 + ':selected').text());
+    }
     // Hide other levels & reset their contents
-    for (l=level +1; l <= 5; l=l + 1) {
+    for (l=level + 1; l <= 5; l=l + 1) {
         $('#gis_location_L' + l).hide().html(gis_loading_locations);
         $('#gis_location_label_L' + l).hide();
     }

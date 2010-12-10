@@ -2624,7 +2624,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                     attribution = ",attribution: '%s'" % layer.attribution
                 else:
                     attribution = ""
-                layers_openstreetmap += """
+                if layer.base or catalogue_overlays:
+                    layers_openstreetmap += """
         var osmLayer""" + name_safe + """ = new OpenLayers.Layer.TMS( '""" + name + """', """ + url + """, {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true """ + attribution + base + """ } );
         map.addLayer(osmLayer""" + name_safe + """);
         """ + visibility

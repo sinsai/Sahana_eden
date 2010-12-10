@@ -827,7 +827,7 @@ def shn_search(r, **attr):
                         item = db(query).select().json()
 
             elif filter == "=":
-                query = query & (_field == value)
+                query = query & (_field.lower() == value)
                 if parent:
                     # e.g. gis_location hierarchical search
                     query = query & (_table.parent == parent)

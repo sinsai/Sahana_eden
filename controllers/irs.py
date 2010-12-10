@@ -213,6 +213,10 @@ def shn_irs_rheader(r, tabs=[]):
     if r.representation == "html":
         rheader_tabs = shn_rheader_tabs(r, tabs)
 
+        if r.record is None:
+            # List or Create form: rheader makes no sense here
+            raise("Please 'continue' to skip me")
+
         if r.name == "ireport":
             report = r.record
             reporter = report.person_id

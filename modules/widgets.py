@@ -92,27 +92,47 @@ class S3AutocompleteWidget:
         url = URL(r=self.request, c=self.prefix, f=self.resourcename, args="search.json", vars={"filter":"~", "field":fieldname})
         
         js_autocomplete = """
-        $('#%s').autocomplete({
-            source: '%s',
-            minLength: %d,
-            focus: function( event, ui ) {
-                $( '#%s' ).val( ui.item.%s );
-                return false;
-            },
-            select: function( event, ui ) {
-                $( '#%s' ).val( ui.item.%s );
-                $( '#%s' ).val( ui.item.id );
-                """ % (dummy_input, url, self.min_length, dummy_input, fieldname, dummy_input, fieldname, real_input) + self.post_process + """
-                return false;
-            }
-        })
-        .data( 'autocomplete' )._renderItem = function( ul, item ) {
-            return $( '<li></li>' )
-                .data( 'item.autocomplete', item )
-                .append( '<a>' + item.%s + '</a>' )
-                .appendTo( ul );
-        };
-        """ % (fieldname)
+        (function() {
+            var data = { val:$('#%s').val(), accept:false };
+
+            $('#%s').autocomplete({
+                source: '%s',
+                minLength: %d,
+                focus: function( event, ui ) {
+                    $( '#%s' ).val( ui.item.%s );
+                    return false;
+                },
+                select: function( event, ui ) {
+                    $( '#%s' ).val( ui.item.%s );
+                    $( '#%s' ).val( ui.item.id );
+                    """ % (dummy_input, dummy_input, url, self.min_length, dummy_input, fieldname, dummy_input, fieldname, real_input) + self.post_process + """
+                    data.accept = true;
+                    return false;
+                }
+            })
+            .data( 'autocomplete' )._renderItem = function( ul, item ) {
+                return $( '<li></li>' )
+                    .data( 'item.autocomplete', item )
+                    .append( '<a>' + item.%s + '</a>' )
+                    .appendTo( ul );
+            };
+
+            $('#%s').blur(function() {
+                if (!$('#%s').val()) {
+                    $('#%s').val('');
+                    data.accept = true;
+                }
+
+                if (!data.accept) {
+                    $('#%s').val(data.val);
+                } else {
+                    data.val = $('#%s').val();
+                }
+
+                data.accept = false;
+            });
+        })();
+        """ % (fieldname, dummy_input, dummy_input, real_input, dummy_input, dummy_input)
         
         if value:
             text = str(field.represent(default["value"]))
@@ -170,57 +190,77 @@ class S3PersonAutocompleteWidget:
         url = URL(r=self.request, c="pr", f="person", args="search.json", vars={"filter":"~", "field":"first_name", "field2":"middle_name", "field3":"last_name"})
         
         js_autocomplete = """
-        $('#%s').autocomplete({
-            source: '%s',
-            minLength: %d,
-            focus: function( event, ui ) {
+        (function() {
+            var data = { val:$('#%s').val(), accept:false };
+
+            $('#%s').autocomplete({
+                source: '%s',
+                minLength: %d,
+                focus: function( event, ui ) {
+                    var name = '';
+                    if (ui.item.first_name != null) {
+                        name += ui.item.first_name + ' ';
+                    }
+                    if (ui.item.middle_name != null) {
+                        name += ui.item.middle_name + ' ';
+                    }
+                    if (ui.item.last_name != null) {
+                        name += ui.item.last_name;
+                    }
+                    $( '#%s' ).val( name );
+                    return false;
+                },
+                select: function( event, ui ) {
+                    var name = '';
+                    if (ui.item.first_name != null) {
+                        name += ui.item.first_name + ' ';
+                    }
+                    if (ui.item.middle_name != null) {
+                        name += ui.item.middle_name + ' ';
+                    }
+                    if (ui.item.last_name != null) {
+                        name += ui.item.last_name;
+                    }
+                    $( '#%s' ).val( name );
+                    $( '#%s' ).val( ui.item.id );
+                    """ % (dummy_input, dummy_input, url, self.min_length, dummy_input, dummy_input, real_input) + self.post_process + """
+                    data.accept = true;
+                    return false;
+                }
+            })
+            .data( 'autocomplete' )._renderItem = function( ul, item ) {
                 var name = '';
-                if (ui.item.first_name != null) {
-                    name += ui.item.first_name + ' ';
+                if (item.first_name != null) {
+                    name += item.first_name + ' ';
                 }
-                if (ui.item.middle_name != null) {
-                    name += ui.item.middle_name + ' ';
+                if (item.middle_name != null) {
+                    name += item.middle_name + ' ';
                 }
-                if (ui.item.last_name != null) {
-                    name += ui.item.last_name;
+                if (item.last_name != null) {
+                    name += item.last_name;
                 }
-                $( '#%s' ).val( name );
-                return false;
-            },
-            select: function( event, ui ) {
-                var name = '';
-                if (ui.item.first_name != null) {
-                    name += ui.item.first_name + ' ';
+                return $( '<li></li>' )
+                    .data( 'item.autocomplete', item )
+                    .append( '<a>' + name + '</a>' )
+                    .appendTo( ul );
+            };
+
+            $('#%s').blur(function() {
+                if (!$('#%s').val()) {
+                    $('#%s').val('');
+                    data.accept = true;
                 }
-                if (ui.item.middle_name != null) {
-                    name += ui.item.middle_name + ' ';
+
+                if (!data.accept) {
+                    $('#%s').val(data.val);
+                } else {
+                    data.val = $('#%s').val();
                 }
-                if (ui.item.last_name != null) {
-                    name += ui.item.last_name;
-                }
-                $( '#%s' ).val( name );
-                $( '#%s' ).val( ui.item.id );
-                """ % (dummy_input, url, self.min_length, dummy_input, dummy_input, real_input) + self.post_process + """
-                return false;
-            }
-        })
-        .data( 'autocomplete' )._renderItem = function( ul, item ) {
-            var name = '';
-            if (item.first_name != null) {
-                name += item.first_name + ' ';
-            }
-            if (item.middle_name != null) {
-                name += item.middle_name + ' ';
-            }
-            if (item.last_name != null) {
-                name += item.last_name;
-            }
-            return $( '<li></li>' )
-                .data( 'item.autocomplete', item )
-                .append( '<a>' + name + '</a>' )
-                .appendTo( ul );
-        };
-        """
+
+                data.accept = false;
+            });
+        })();
+        """ % (dummy_input, dummy_input, real_input, dummy_input, dummy_input)
         
         if value:
             # Provide the representation for the current/default Value

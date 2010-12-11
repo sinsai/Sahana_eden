@@ -1,5 +1,5 @@
 {{extend "layout.html"}}
 {{include "_update.html"}}
 <P>&nbsp;</P>
-{{=A(T("Create Request"), _class="action-btn colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars={"format":"popup", "caller":"cr_shelter"}), _title=T("Add Request"))}}
+{{#=A(T("Create Request"), _class="action-btn colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars={"format":"popup", "caller":"cr_shelter"}), _title=T("Add Request"))}}
 {{include "cr/shelter_autocompletes.html"}}

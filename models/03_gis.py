@@ -482,11 +482,11 @@ table.osm_id.label = "OpenStreetMap ID"
 CONVERSION_TOOL = T("Conversion Tool")
 table.lat.comment = DIV(_class="tooltip",
                         _id="gis_location_lat_tooltip",
-                        _title=T("Latitude & Longitude") + "|" + T("You can click on the map to select the Lat/Lon fields. Longitude is West - East (sideways). Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees."))
+                        _title=T("Latitude & Longitude") + "|" + T("Longitude is West - East (sideways). Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  These need to be added in Decimal Degrees."))
 table.lon.comment = A(CONVERSION_TOOL,
                       _style="cursor:pointer;",
                       _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."),
-                      _id="btnConvert")
+                      _id="gis_location_converter-btn")
 
 s3xrc.model.configure(table, listadd=False)
     #list_fields=["id", "name", "level", "parent", "lat", "lon"])
@@ -500,7 +500,7 @@ location_id = S3ReusableField("location_id", db.gis_location,
                     represent = lambda id: shn_gis_location_represent(id),
                     label = T("Location"),
                     # Not yet ready
-                    #widget = S3LocationSelectorWidget(request, response, T),
+                    #widget = S3LocationSelectorWidget(gis, request, response, T),
                     # If enabling widget, then disable comment (widget incorporates it)
                     comment = DIV(A(ADD_LOCATION, _class="colorbox", _target="top", _title=ADD_LOCATION,
                                     _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup"))),

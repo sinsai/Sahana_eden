@@ -278,6 +278,9 @@ $(function(){
     $('form').submit( function() {
         // The form is being submitted
 
+        // Do the normal form-submission tasks
+        S3ClearNavigateAwayConfirm();
+
         // Check if a new location should be created
         var name = $('#gis_location_name').val();
         var lat = $('#gis_location_lat').val();

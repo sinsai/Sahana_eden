@@ -46,7 +46,33 @@ $(document).ready(function() {
             },
         function() { $('ul', this).css('display', 'none');  }
     );
+    // Colorbox Popups
+    $('a.colorbox').attr('href', function(index, attr) {
+        // Add the caller to the URL vars so that the popup knows which field to refresh/set
+        var caller = '';
+        try {
+            caller = $(this).parents('tr').attr('id').replace(/__row/, '');
+        } catch(e) {
+            // Do nothing
+            if(caller == '') return attr;
+        }
+        // Avoid Duplicate callers
+        var url_out = attr;
+        if (attr.indexOf('&caller=') == -1){
+            url_out = attr + '&caller=' + caller;
+        }
+        return url_out;
+    });
+    $('.colorbox').click(function(){
+        $.fn.colorbox({iframe:true, width:'99%', height:'99%', href:this.href, title:this.title});
+        return false;
+    });
 });
+
+function s3_tb_remove(){
+    // Colorbox Popup
+    $.fn.colorbox.close();
+}
 
 /*
   ajaxS3 ------------------------------------------------------------
@@ -253,7 +279,7 @@ function s3_hideStatus() {
 //  by: michael howden
 function S3SetNavigateAwayConfirm() {
 	window.onbeforeunload = function() {
-        return _s3_msg_unsaved_changes;
+            return _s3_msg_unsaved_changes;
 		};	
 };
 

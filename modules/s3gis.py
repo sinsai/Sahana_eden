@@ -3812,6 +3812,8 @@ OpenLayers.Util.extend( selectPdfControl, {
     var options = {
         displayProjection: proj4326,
         projection: projection_current,
+        // Use Manual stylesheet download (means can be done in HEAD to not delay pageload)
+        theme: null,
         paddingForPopups: new OpenLayers.Bounds(50, 10, 200, 300),
         units: '""" + units + """',
         maxResolution: """ + str(maxResolution) + """,

@@ -243,6 +243,7 @@ def docss():
     """ Compresses the  CSS files """
     listCSS = [
         "../../styles/S3/sahana.css",
+        "../../styles/S3/colorbox.css",
         "../../styles/S3/jquery.autocomplete.css",
         "../../styles/S3/jquery.cluetip.css",
         "../../styles/S3/jquery.dataTables.css",
@@ -285,6 +286,7 @@ def docss():
         os.remove("../../styles/S3/%s" % outputFilenameCSS)
     except:
         pass
+    print "Deleting %s." % outputFilenameCSS
     shutil.move(outputFilenameCSS, "../../styles/S3")
 
 def main(argv):

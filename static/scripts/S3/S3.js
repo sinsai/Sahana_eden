@@ -58,10 +58,10 @@ $(document).ready(function() {
         var options = jQuery.extend( {}, jQuery.ajaxS3Settings, s );
         options.tryCount = 0;
         if (s.message) {
-            showStatus(_ajaxS3_get_ + ' ' + (s.message ? s.message : _ajaxS3_fmd_) + '...', this.ajaxS3Settings.msgTimeout);
+            s3_showStatus(_ajaxS3_get_ + ' ' + (s.message ? s.message : _ajaxS3_fmd_) + '...', this.ajaxS3Settings.msgTimeout);
         }
         options.success = function(data, status) {
-            hideStatus();
+            s3_hideStatus();
             if (s.success)
                 s.success(data, status);
         }
@@ -70,19 +70,19 @@ $(document).ready(function() {
                 this.tryCount++;
                 if (this.tryCount <= this.retryLimit) {
                     // try again
-                    showStatus(_ajaxS3_get_ + ' ' + (s.message ? s.message : _ajaxS3_fmd_) + '... ' + _ajaxS3_rtr_ + ' ' + this.tryCount,
+                    s3_showStatus(_ajaxS3_get_ + ' ' + (s.message ? s.message : _ajaxS3_fmd_) + '... ' + _ajaxS3_rtr_ + ' ' + this.tryCount,
                         $.ajaxS3Settings.msgTimeout);
                     $.ajax(this);
                     return;
                 }
-                showStatus(_ajaxS3_wht_ + ' ' + (this.retryLimit + 1) + ' ' + _ajaxS3_gvn_,
+                s3_showStatus(_ajaxS3_wht_ + ' ' + (this.retryLimit + 1) + ' ' + _ajaxS3_gvn_,
                     $.ajaxS3Settings.msgTimeout, false, true);
                 return;
             }
             if (xhr.status == 500) {
-                showStatus(_ajaxS3_500_, $.ajaxS3Settings.msgTimeout, false, true);
+                s3_showStatus(_ajaxS3_500_, $.ajaxS3Settings.msgTimeout, false, true);
             } else {
-                showStatus(_ajaxS3_dwn_, $.ajaxS3Settings.msgTimeout, false, true);
+                s3_showStatus(_ajaxS3_dwn_, $.ajaxS3Settings.msgTimeout, false, true);
             }
         };
         jQuery.ajax(options);
@@ -153,16 +153,16 @@ $(document).ready(function() {
 // added and fixed by sunneach on Feb 16, 2010
 //
 //  to use make a call:
-//  showStatus(message, timeout, additive, isError)
+//  s3_showStatus(message, timeout, additive, isError)
 //     1. message  - string - message to display
 //     2. timeout  - integer - milliseconds to change the statusbar style - flash effect (1000 works OK)
 //     3. additive - boolean - default false - to accumulate messages in the bar
 //     4. isError  - boolean - default false - show in the statusbarerror class
 //
 //  to remove bar, use
-//  hideStatus()
+//  s3_hideStatus()
 //
-function StatusBar(sel, options) {
+function S3StatusBar(sel, options) {
     var _I = this;
     var _sb = null;
     // options
@@ -178,8 +178,9 @@ function StatusBar(sel, options) {
     this.closeButtonClass = 'statusbarclose';
     this.additive = false;
     $.extend(this, options);
-    if (sel)
+    if (sel) {
       _sb = $(sel);
+    }
     // Create statusbar object manually
     if (!_sb) {
         _sb = $("<div id='_statusbar' class='" + _I.cssClass + "'>" +
@@ -193,30 +194,33 @@ function StatusBar(sel, options) {
     this.show = function(message, timeout, additive, isError) {
         if (additive || ((additive == undefined) && _I.additive)) {
             var html = "<div style='margin-bottom: 2px;' >" + message + '</div>';
-            if (_I.prependMultiline)
+            if (_I.prependMultiline) {
                 _sb.prepend(html);
-            else
+            } else {
                 _sb.append(html);
+            }
         }
         else {
-            if (!_I.showCloseButton)
+            if (!_I.showCloseButton) {
                 _sb.text(message);
-            else {
+            } else {
                 var t = _sb.find('div.statusbarclose');
                 _sb.text(message).prepend(t);
             }
         }
         _sb.show();
         if (timeout) {
-            if (isError)
+            if (isError) {
                 _sb.addClass(_I.errorClass);
-            else
+            } else {
                 _sb.addClass(_I.highlightClass);
+            }
             setTimeout(
                 function() {
                     _sb.removeClass(_I.highlightClass);
-                    if (_I.afterTimeoutText)
+                    if (_I.afterTimeoutText) {
                        _I.show(_I.afterTimeoutText);
+                    }
                 },
                 timeout);
         }
@@ -231,34 +235,36 @@ function StatusBar(sel, options) {
 // Use this as a global instance to customize constructor
 // or do nothing and get a default status bar
 var _statusbar = null;
-function showStatus(message, timeout, additive, isError) {
-    if (!_statusbar)
-        _statusbar = new StatusBar();
+function s3_showStatus(message, timeout, additive, isError) {
+    if (!_statusbar) {
+        _statusbar = new S3StatusBar();
+    }
     _statusbar.show(message, timeout, additive, isError);
 }
-function hideStatus() {
-    if (_statusbar)
+function s3_hideStatus() {
+    if (_statusbar) {
         _statusbar.release();
+    }
 }
 
 
 //----------------------------------------------------------------------------------------------
 // Code to warn on exit without saving 
 //  by: michael howden
-function SetNavigateAwayConfirm() {
+function S3SetNavigateAwayConfirm() {
 	window.onbeforeunload = function() {
         return _s3_msg_unsaved_changes;
 		};	
 };
 
-function ClearNavigateAwayConfirm() {
+function S3ClearNavigateAwayConfirm() {
 	window.onbeforeunload = function() {};
 };
 
-function EnableNavigateAwayConfirm() {
-$(document).ready(function() {
-        $('input, select, textarea').keypress( SetNavigateAwayConfirm );		
-        $('input, select, textarea').change( SetNavigateAwayConfirm );	
-        $('form').submit( ClearNavigateAwayConfirm );
-	});
+function S3EnableNavigateAwayConfirm() {
+    $(document).ready(function() {
+        $('input, select, textarea').keypress( S3SetNavigateAwayConfirm );		
+        $('input, select, textarea').change( S3SetNavigateAwayConfirm );	
+        $('form').submit( S3ClearNavigateAwayConfirm );
+    });
 };

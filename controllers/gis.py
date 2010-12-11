@@ -1499,100 +1499,6 @@ def map_viewing_client():
     return dict(map=map)
 
 # -----------------------------------------------------------------------------
-def map_selector():
-    """
-        Map Selector.
-        UI for a user to select a Location from a Map
-    """
-
-    config = gis.get_config()
-
-    if lat in request.vars:
-        lat = request.vars.lat
-    else:
-        lat = config.lat
-
-    if lon in request.vars:
-        lon = request.vars.lon
-    else:
-        lon = config.lon
-
-    if zoom in request.vars:
-        zoom = request.vars.zoom
-    else:
-        zoom = config.zoom
-
-    if method in request.vars:
-        method = request.vars.method
-    else:
-        method = "create"
-
-    tablename = None
-    prefix = None
-    name = None
-
-    if method == "create":
-        map = self.show_map(add_feature = True,
-                            add_feature_active = True,
-                            toolbar = True,
-                            collapsed = True,
-                            window = True,
-                            window_hide = True)
-        return dict(map=map)
-
-    elif method == "update" and tablename and prefix and name:
-        # @ToDo: Finish porting this over from CRUD to a separate controller
-        _locations = db.gis_location
-        fields = [_locations.id, _locations.uuid, _locations.name, _locations.lat, _locations.lon, _locations.level, _locations.parent, _locations.addr_street]
-        if tablename == "gis_location":
-            location = db(db[tablename].id == r.id).select(limitby=(0, 1), *fields).first()
-        else:
-            location = db((db[tablename].id == r.id) & (_locations.id == db[tablename].location_id)).select(limitby=(0, 1), *fields).first()
-        if location and location.lat is not None and location.lon is not None:
-            lat = location.lat
-            lon = location.lon
-        else:
-            lat = config.lat
-            lon = config.lon
-        layername = T("Location")
-        popup_label = ""
-        filter = Storage(tablename = tablename,
-                         id = r.id
-                        )
-        layer = self.get_feature_layer(prefix, name, layername, popup_label, filter=filter)
-        if layer:
-            feature_queries = [layer]
-        else:
-            feature_queries = []
-        map = self.show_map(lat = lat,
-                            lon = lon,
-                            # Same as a single zoom on a cluster
-                            zoom = zoom + 2,
-                            feature_queries = feature_queries,
-                            add_feature = True,
-                            add_feature_active = False,
-                            toolbar = True,
-                            collapsed = True,
-                            window = True,
-                            window_hide = True)
-        if location and location.id:
-            _location = Storage(id = location.id,
-                                uuid = location.uuid,
-                                name = location.name,
-                                lat = location.lat,
-                                lon = location.lon,
-                                level = location.level,
-                                parent = location.parent,
-                                addr_street = location.addr_street
-                                )
-        else:
-            _location = None
-        return dict(map=map, oldlocation=_location)
-
-    else:
-        raise HTTP(501, BADMETHOD)
-
-# -----------------------------------------------------------------------------
 def display_feature():
     """
         Cut-down version of the Map Viewing Client.
@@ -2009,15 +1915,22 @@ def proxy():
     import cgi
     import sys, os
 
-    # ToDo - need to link to map_service_catalogue
-    # prevent Open Proxy abuse
+    # @ToDo: Link to map_service_catalogue to prevent Open Proxy abuse
+    # (although less-critical since we restrict content type)
     allowedHosts = []
-    #allowedHosts = ["www.openlayers.org", "openlayers.org",
-    #                "labs.metacarta.com", "world.freemap.in",
-    #                "prototype.openmnnd.org", "geo.openplans.org",
-    #                "sigma.openplans.org", "demo.opengeo.org",
-    #                "www.openstreetmap.org", "sample.avencia.com",
-    #                "v-swe.uni-muenster.de:8080"]
+    #allowedHosts = ["www.openlayers.org", "demo.opengeo.org"]
+
+    allowed_content_types = (
+        "application/xml", "text/xml",
+        "application/vnd.ogc.se_xml",           # OGC Service Exception 
+        "application/vnd.ogc.se+xml",           # OGC Service Exception
+        "application/vnd.ogc.success+xml",      # OGC Success (SLD Put)
+        "application/vnd.ogc.wms_xml",          # WMS Capabilities
+        "application/vnd.ogc.context+xml",      # WMC
+        "application/vnd.ogc.gml",              # GML
+        "application/vnd.ogc.sld+xml",          # SLD
+        "application/vnd.google-earth.kml+xml", # KML
+    )
 
     method = request["wsgi"].environ["REQUEST_METHOD"]
 
@@ -2032,8 +1945,6 @@ def proxy():
             url = "http://www.openlayers.org"
     else:
         # GET
-        #fs = cgi.FieldStorage()
-        #url = fs.getvalue("url", "http://www.openlayers.org")
         if "url" in request.vars:
             url = request.vars.url
         else:
@@ -2043,12 +1954,7 @@ def proxy():
     try:
         host = url.split("/")[2]
         if allowedHosts and not host in allowedHosts:
-            msg = "Status: 502 Bad Gateway\n"
-            msg += "Content-Type: text/plain\n\n"
-            msg += "This proxy does not allow you to access that location (%s).\n\n" % (host,)
-
-            msg += os.environ
-            return msg
+            raise(HTTP(403, "Host not permitted: %s" % host))
 
         elif url.startswith("http://") or url.startswith("https://"):
             if method == "POST":
@@ -2058,32 +1964,29 @@ def proxy():
                 r = urllib2.Request(url, body, headers)
                 y = urllib2.urlopen(r)
             else:
+                # GET
                 y = urllib2.urlopen(url)
 
-            # print content type header
-            # TODO: this doesn't work in web2py, need to figure out how that happens?
-            #i = y.info()
-            #if i.has_key("Content-Type"):
-            # msg = "Content-Type: %s" % (i["Content-Type"])
-            #else:
-            # msg = "Content-Type: text/plain"
-
-            #msg += "\n" + y.read()
+            # Check for allowed content types
+            i = y.info()
+            if i.has_key("Content-Type"):
+                ct = i["Content-Type"]
+                if not ct.split(";")[0] in allowed_content_types:
+                    # @ToDo?: Allow any content type from allowed hosts (any port)
+                    #if allowedHosts and not host in allowedHosts:
+                    raise(HTTP(403, "Content-Type not permitted"))
+            else:
+                raise(HTTP(406, "Unknown Content"))
 
             msg = y.read()
             y.close()
             return msg
         else:
-            msg = "Content-Type: text/plain\n\n"
-
-            msg += "Illegal request."
-            return msg
+            # Bad Request
+            raise(HTTP(400))
 
     except Exception, E:
-        msg = "Status: 500 Unexpected Error\n"
-        msg += "Content-Type: text/plain\n\n"
-        msg += "Some unexpected error occurred. Error text was: %s" % str(E)
-        return msg
+        raise(HTTP(500, "Some unexpected error occurred. Error text was: %s" % str(E)))
 
 # -----------------------------------------------------------------------------
 # Tests - not Production

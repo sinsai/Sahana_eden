@@ -599,7 +599,7 @@ class S3CRUDHandler(S3MethodHandler):
 
             # Navigate-away confirmation
             if self.settings.navigate_away_confirm:
-                form.append(SCRIPT("EnableNavigateAwayConfirm();"))
+                form.append(SCRIPT("S3EnableNavigateAwayConfirm();"))
 
             # Put the form into output
             output.update(form=form)
@@ -644,7 +644,7 @@ class S3CRUDHandler(S3MethodHandler):
                             #onvalidation=onvalidation, onaccept=_onaccept)
 
             #if deployment_settings.get_ui_navigate_away_confirm():
-                #form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
+                #form.append( SCRIPT ("S3EnableNavigateAwayConfirm();") )
 
             #response.view = "plain.html"
             #return dict(item=form)
@@ -890,7 +890,7 @@ class S3CRUDHandler(S3MethodHandler):
 
             # Navigate-away confirmation
             if self.settings.navigate_away_confirm:
-                form.append(SCRIPT("EnableNavigateAwayConfirm();"))
+                form.append(SCRIPT("S3EnableNavigateAwayConfirm();"))
 
             # Put form into output
             output.update(form=form)

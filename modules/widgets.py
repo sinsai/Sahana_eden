@@ -11,9 +11,8 @@ import copy
 
 from lxml import etree
 from gluon.sqlhtml import *
-from gluon.html import P, URL
+from gluon.html import B, P, URL
 from gluon.validators import *
-from s3gis import GIS
 from s3utils import *
 from validators import *
 
@@ -85,7 +84,7 @@ class S3AutocompleteWidget:
 
         # Hide the real field
         attr["_class"] = attr["_class"] + " hidden"
-        
+
         real_input = str(field).replace(".", "_")
         dummy_input = "dummy_%s" % real_input
         fieldname = self.fieldname
@@ -302,6 +301,7 @@ class S3LocationSelectorWidget:
             * Select location from Map
     """
     def __init__(self,
+                 gis,
                  request,
                  response,
                  T,
@@ -309,11 +309,10 @@ class S3LocationSelectorWidget:
                  #level=None        # @ToDo: Support forcing which level of the hierarchy is expected to be entered for this instance of the field
                  ):
 
+        self.gis = gis
         self.request = request
         self.response = response
         self.T = T
-        # Need to pass these extra pieces in to have gis.get_parents() available
-        #self.gis = GIS(globals(), deployment_settings, db, auth, cache=cache)
 
     def __call__(self, field, value, **attributes):
 
@@ -321,6 +320,7 @@ class S3LocationSelectorWidget:
         request = self.request
         response = self.response
         T = self.T
+        gis = self.gis
 
         # shortcut
         locations = db.gis_location
@@ -350,15 +350,20 @@ class S3LocationSelectorWidget:
         # Hide the real field
         attr["_class"] = attr["_class"] + " hidden"
 
+        map_popup = ""
+
         if value:
             # Read current record
-            this_location = db(locations.id == value).select(locations.level,
+            this_location = db(locations.id == value).select(locations.uuid,
+                                                             locations.name,
+                                                             locations.level,
                                                              locations.lat,
                                                              locations.lon,
                                                              locations.addr_street,
                                                              locations.parent,
                                                              locations.path,
                                                              limitby=(0, 1)).first()
+            uuid = this_location.uuid
             level = this_location.level
             default[level] = value
             lat = this_location.lat
@@ -375,46 +380,90 @@ class S3LocationSelectorWidget:
                     numberAncestors = len(ancestors)
                     if numberAncestors > 2:
                         del ancestors[numberAncestors - 1]  # Remove self
-                        del ancestors[numberAncestors - 2]      # Remove parent
+                        del ancestors[numberAncestors - 2]  # Remove parent
                         for i in range(numberAncestors - 2):
                             default["L%i" % i] = ancestors[i]
 
             # Provide the representation for the current/default Value
-            text = str(field.represent(default["value"]))
-            if "<" in text:
-                # Strip Markup
-                try:
-                    markup = etree.XML(text)
-                    text = markup.xpath(".//text()")
-                    if text:
-                        text = " ".join(text)
-                    else:
-                        text = ""
-                except etree.XMLSyntaxError:
-                    pass
-            represent = text
+            #text = str(field.represent(default["value"]))
+            #if "<" in text:
+            #    # Strip Markup
+            #    try:
+            #        markup = etree.XML(text)
+            #        text = markup.xpath(".//text()")
+            #        if text:
+            #            text = " ".join(text)
+            #        else:
+            #            text = ""
+            #    except etree.XMLSyntaxError:
+            #        pass
+            #represent = text
+            if level:
+                # If within the locations hierarchy then don't populate the visible name box
+                represent = ""
+            else:
+                represent = this_location.name
+
+            if _gis.map_selector:
+                config = gis.get_config()
+                zoom = config.zoom
+                if lat is None or lon is None:
+                    lat = config.lat
+                    lon = config.lon
+
+                layername = T("Location")
+                popup_label = ""
+                filter = Storage(tablename = "gis_location", id = value)
+                layer = gis.get_feature_layer("gis", "location", layername, popup_label, filter=filter)
+                if layer:
+                    feature_queries = [layer]
+                else:
+                    feature_queries = []
+                map_popup = gis.show_map(lat = lat,
+                                         lon = lon,
+                                         # Same as a single zoom on a cluster
+                                         zoom = zoom + 2,
+                                         feature_queries = feature_queries,
+                                         add_feature = True,
+                                         add_feature_active = False,
+                                         toolbar = True,
+                                         collapsed = True,
+                                         window = True,
+                                         window_hide = True)
 
         else:
             # No default value
-            level = None
+            uuid = ""
             represent = ""
+            level = None
             lat = ""
             lon = ""
             addr_street = ""
+            if _gis.map_selector:
+                map_popup = gis.show_map(add_feature = True,
+                                         add_feature_active = True,
+                                         toolbar = True,
+                                         collapsed = True,
+                                         window = True,
+                                         window_hide = True)
 
-        real_input = str(field).replace(".", "_")
-        dummy_input = "gis_location_name"
+        #real_input = str(field).replace(".", "_")
+        #dummy_input = "gis_location_name"
 
         # Settings to insert into static/scripts/S3/s3.locationselector.widget.js
         location_id = attr["_id"]
-        #def url(level):
-        #    return URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"%s" % level})
-        url = URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level"})
-        
+        url = URL(r=request, c="gis", f="location")
+
         # Localised strings
         empty_set = T("No locations registered at this level")
         loading_locations = T("Loading Locations")
         select_location = T("Select a location")
+        degrees_validation_error = T("Degrees must be a number between -180 and 180")
+        minutes_validation_error = T("Minutes must be a number greater than 0 and less than 60")
+        seconds_validation_error = T("Seconds must be a number greater than 0 and less than 60")
+        no_calculations_error = T("No calculations made")
+        fill_lat = T("Fill in Latitude")
+        fill_lon = T("Fill in Longitude")
         
         # Hierarchical Selector
         def level_dropdown(level, visible=False, current=None, required=False):
@@ -552,54 +601,166 @@ class S3LocationSelectorWidget:
 
         # Settings to be read by static/scripts/S3/s3.locationselector.widget.js
         js_location_selector = """
-    var gis_location_id = '%s';
-    var gis_maxlevel = '%s';
-    var gis_empty_set = '<option value="">%s</option>';
-    var gis_loading_locations = '<option value="">%s...</option>';
-    var gis_select_location = '<option value="" selected>%s...</option>';
-    var gis_url = '%s';
-    //$(function() {
-    //});
-    """ % (location_id, maxlevel, empty_set, loading_locations, select_location, url)
-        
-        add_button = A(T("Add New Location"), _id="gis_location_add-btn", _href="#",
-                                              #_class="action-btn"
-                                              )
+    var s3_gis_location_id = '%s';
+    var s3_gis_maxlevel = '%s';
+    var s3_gis_empty_set = '<option value="">%s</option>';
+    var s3_gis_loading_locations = '<option value="">%s...</option>';
+    var s3_gis_select_location = '<option value="" selected>%s...</option>';
+    var s3_gis_url = '%s';
+    S3.gis.uuid = '%s';
+    var s3_gis_degrees_validation_error = '%s';
+    var s3_gis_minutes_validation_error = '%s';
+    var s3_gis_seconds_validation_error = '%s';
+    var s3_gis_no_calculations_error = '%s';
+    var s3_gis_fill_lat = '%s';
+    var s3_gis_fill_lon = '%s';
+    """ % (location_id,
+           maxlevel,
+           empty_set,
+           loading_locations,
+           select_location,
+           url,
+           uuid,
+           degrees_validation_error,
+           minutes_validation_error,
+           seconds_validation_error,
+           no_calculations_error,
+           fill_lat,
+           fill_lon,
+          )
 
-        geolocate_button = A(T("Use Current Location"), _id="gis_location_geolocate-btn", _href="#",
-                                                        _class="hidden"
-                                                        #_class="action-btn hidden"
-                                                        )
+        # Labels
+        name_label = DIV(LABEL(T("Name") + ":"), SPAN("*", _class="req"), _id="gis_location_name_label", _class="hidden")
+        street_label = LABEL(T("Street Address") + ":", _id="gis_location_addr_street_label", _class="hidden")
+        lat_label = LABEL(T("Latitude") + ":", _id="gis_location_lat_label", _class="hidden")
+        lon_label = LABEL(T("Longitude") + ":", _id="gis_location_lon_label", _class="hidden")
 
-        map_button = A(T("Select using Map"), _id="gis_location_map-btn", _href="#",
-                                              _class="hidden"
-                                              #_class="action-btn hidden"
-                                              )
+        # Form Fields
+        street_widget = TEXTAREA(_id="gis_location_addr_street", _value=addr_street)
+        lat_widget = INPUT(_id="gis_location_lat", _value=lat)
+        lon_widget = INPUT(_id="gis_location_lon", _value=lon)
 
-        geocode_button = A(T("Lookup Address"), _id="gis_location_geocode-btn", _href="#",
-                                                _class="hidden"
-                                                #_class="action-btn hidden"
-                                                )
+        # Buttons
+        add_button = A(T("Add New Location"), _href="#",
+                       _id="gis_location_add-btn")
+                       # Prefer simple Hyperlinks to action Buttons here
+                       #_class="action-btn")
 
-        converter_button = A(T("Coordinate Converter"), _id="gis_location_converter-btn", _href="#",
-                                                        _class="hidden"
-                                                        #_class="action-btn hidden"
-                                                        )
+        geolocate_button = A(T("Use Current Location"), _href="#",
+                             _id="gis_location_geolocate-btn",
+                             _class="hidden")
 
+        if _gis.map_selector:
+            map_button = A(T("Select using Map"), _href="#",
+                           _id="gis_location_map-btn",
+                           _class="hidden")
+        else:
+            map_button = ""
+
+        geocoder_button = A(T("Lookup Address"), _href="#",
+                            _id="gis_location_geocoder-btn")
+
+        latlon_help = locations.lat.comment
+        converter_button = locations.lon.comment
+
+        advanced_checkbox = DIV(T("Advanced") + ":", INPUT(_type="checkbox", _id="gis_location_advanced_checkbox", value=""), _id="gis_location_advanced_div", _class="hidden")
+
+        # @ToDo: Replace with simple alternate input forms: Radio button defaults to decimal degrees (real inputs), but can select GPS or DDMMSS
+        gps_converter_popup = DIV(
+            DIV(T("Coordinate Conversion"), _class="x-window-header"),
+            DIV(
+                DIV(
+                    P(
+                        TABLE(
+                            TR(
+                                TD(
+                                    B(T("Enter a GPS Coordinate") + ":"),
+                                    INPUT(_type="text", _size="3", _id="gps_deg"), "deg",
+                                    INPUT(_type="text", _size="6", _id="gps_min"), "min",
+                                ),
+                            ),
+                            TR(
+                                TD(
+                                    B(T("Decimal Degrees") + ":"),
+                                    INPUT(_type="text", _size="8", _id="gps_dec"),
+                                ),
+                            ),
+                            TR(
+                                TD(
+                                    INPUT(_type="button", _value=T("Calculate"), _onclick="s3_gis_convertGps()"),
+                                    INPUT(_type="reset", _value=T("Reset"), _onclick="s3_gis_convertGps()"),
+                                ),
+                            ),
+                        _border="0", _cellpadding="2", _width="400"
+                        ),
+                    ),
+                _class="x-tab", _title=T("in GPS format")
+                ),
+                
+                DIV(
+                    P(
+                        TABLE(
+                            TR(
+                                TD(
+                                    B(T("Enter Coordinates") + ":"),
+                                    INPUT(_type="text", _size="3", _id="DDMMSS_deg"), "Deg",
+                                    INPUT(_type="text", _size="2", _id="DDMMSS_min"), "Min",
+                                    INPUT(_type="text", _size="2", _id="DDMMSS_sec"), "Sec",
+                                ),
+                            ),
+                            TR(
+                                TD(
+                                    B(T("Decimal Degrees") + ":"),
+                                    INPUT(_type="text", _size="8", _id="DDMMSS_dec"),
+                                ),
+                            ),
+                            TR(
+                                TD(
+                                    INPUT(_type="button", _value=T("Calculate"), _onclick="s3_gis_convertDD()"),
+                                    INPUT(_type="reset", _value=T("Reset")),
+                                ),
+                            ),
+                        _border="0", _cellpadding="2", _width="400"
+                        ),
+                    ),
+                _class="x-tab", _title=T("in Deg Min Sec format")
+                ),
+            _id="convert-tabs"),
+        _id="convert-win", _class="x-hidden")
+
+        # Rows
+        if represent:
+            # We have a specific location to show
+            name_rows = DIV(TR(name_label),
+                            TR(INPUT(_id="gis_location_name", _value=represent)))
+        else:
+            name_rows = DIV(TR(name_label),
+                            TR(INPUT(_id="gis_location_name", _class="hidden")))
+        street_rows = DIV(TR(street_label),
+                          #TR(street_widget, geocoder_button, _id="gis_street_addr_row", _class="hidden"))
+                          TR(street_widget, geocoder_button, _id="gis_street_addr_row", _class="hidden"))
+        lat_rows = DIV(TR(lat_label),
+                       TR(lat_widget, latlon_help, _id="gis_location_lat_row", _class="hidden"))
+        lon_rows = DIV(TR(lon_label),
+                       TR(lon_widget, converter_button, _id="gis_location_lon_row", _class="hidden"))
+        divider = TR("------------------------------------------------------------------")
+
+        # The overall layout of the components
         return TAG[""](
-                        INPUT(**attr), # Real input, which is hidden
+                        #divider,       # This is in the widget, so underneath the label :/ Add in JS? 'Sections'?
+                        INPUT(**attr),  # Real input, which is hidden
                         dropdowns,
                         TR(add_button),
-                        TR(DIV(geolocate_button, map_button)),
-                        TR(DIV(LABEL(T("Name") + ":"), SPAN("*", _class="req"), _id="gis_location_name_label", _class="hidden")),
-                        TR(INPUT(_id=dummy_input, _value=represent, _class="hidden")),
-                        TR(LABEL(T("Street Address") + ":", _id="gis_location_addr_street_label", _class="hidden")),
-                        TR(DIV(TEXTAREA(_id="gis_location_addr_street", _class="hidden", _value=addr_street), geocode_button)),
-                        TR(DIV(T("Advanced") + ":", INPUT(_type="checkbox", _id="gis_location_advanced_checkbox"), _id="gis_location_advanced_div", _class="hidden")),
-                        TR(LABEL(T("Latitude") + ":", _id="gis_location_lat_label", _class="hidden")),
-                        TR(INPUT(_id="gis_location_lat", _value=lat), locations.lat.comment, _id="gis_location_lat_row", _class="hidden"),
-                        TR(LABEL(T("Longitude") + ":", _id="gis_location_lon_label", _class="hidden")),
-                        TR(INPUT(_id="gis_location_lon", _value=lon), locations.lon.comment, _id="gis_location_lon_row", _class="hidden"),
+                        TR(gps_converter_popup),
+                        TR(map_popup),
+                        name_rows,
+                        street_rows,
+                        #TR(geolocate_button),
+                        TR(map_button),
+                        TR(advanced_checkbox),
+                        lat_rows,
+                        lon_rows,
+                        divider,
                         SCRIPT(js_location_selector)
                       )
 

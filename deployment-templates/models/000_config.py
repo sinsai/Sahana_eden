@@ -139,7 +139,7 @@ deployment_settings.gis.locations_hierarchy = {
     "L2":T("District"),
     "L3":T("Town"),
     "L4":T("Village"),
-    "L5":T("Location"), # Street Address
+    #"L5":T("Neighbourhood"),
     "XX":T("Imported")
 }
 # Maximum Marker Size
@@ -327,6 +327,7 @@ deployment_settings.modules = OrderedDict(
         description = T("Incident Reporting System"),
         module_type = 10
     ),
+    # Assess currently depends on IRS
     assess = Storage(
          name_nice = "Assessments",
          description = "Rapid Assessments & Flexible Impact Assessments",

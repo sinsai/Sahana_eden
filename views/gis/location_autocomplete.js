@@ -143,7 +143,7 @@ $(function() {
             // we don't assume that an L2 is parented to L1 - might skip a level!
             url = '{{=URL(r=request, c="gis", f="location")}}' + '/' + old_id + '/parents.json';
             $.getJSON(url, function(data) {
-                //showStatus('{{=T("Looking up Parents")}}');
+                //s3_showStatus('{{=T("Looking up Parents")}}');
                 // Parse the new location
                 S3.gis.old_l0 = data['L0'];
                 S3.gis.old_l1 = data['L1'];
@@ -1005,7 +1005,7 @@ $(function() {
         // we don't assume that an L2 is parented to L1 - might skip a level!
         url = '{{=URL(r=request, c="gis", f="location")}}' + '/' + old_id + '/parents.json';
         $.getJSON(url, function(data) {
-            //showStatus('{{=T("Looking up Parents")}}');
+            //s3_showStatus('{{=T("Looking up Parents")}}');
             // Parse the new location
             S3.gis.old_l0 = data['L0'];
             S3.gis.old_l1 = data['L1'];
@@ -1032,7 +1032,7 @@ $(function() {
     $(location_id_row).before(row2);
     var mapButton = Ext.get('openMap');
     mapButton.on('click', function(){
-        win.show(this);
+        mapWin.show(this);
     });
   {{else:}}
   {{pass}}
@@ -1130,7 +1130,7 @@ $(function() {
                 dataType: 'json',
                 success: function(data) {
                     // Report Success/Failure
-                    //showStatus(data.message);
+                    //s3_showStatus(data.message);
 
                     if (('' == S3.gis.uuid) && (data.status == 'success')) {
                         // Parse the new location

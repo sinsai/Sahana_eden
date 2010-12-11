@@ -39,6 +39,7 @@
 
     <!-- ****************************************************************** -->
     <xsl:param name="domain"/>
+    <xsl:param name="base_url"/>
     <xsl:param name="utcnow"/>
     <xsl:param name="prefix"/>
     <xsl:param name="name"/>
@@ -103,6 +104,9 @@
             <atom:updated>
                 <xsl:value-of select="@modified_on"/>
             </atom:updated>
+            <atom:link>
+                <xsl:value-of select="@url"/>
+            </atom:link>
             <atom:content type="application/tablecast+xml">
                 <tc:edit>
                     <xsl:attribute name="record">

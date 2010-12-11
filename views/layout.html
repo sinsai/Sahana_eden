@@ -90,12 +90,12 @@
 <!--[if (gt IE 9)|!(IE)]><!--> <body> <!--<![endif]-->
 
     <div id='menu_modules'>
-        {{=MENU2(response.menu, _id="modulenav")}}
+        {{=MENUS3(response.menu, _id="modulenav")}}
     </div>
 
     {{if response.menu_options:}}
       <div id='menu_options'>
-        {{=MENU2(response.menu_options, _id="subnav")}}
+        {{=MENUS3(response.menu_options, _id="subnav")}}
       </div>
     {{pass}}
 

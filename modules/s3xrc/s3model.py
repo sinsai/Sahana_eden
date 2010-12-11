@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Data Model Extensions
 
-    @version: 2.2.8
+    @version: 2.2.9
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 

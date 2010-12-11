@@ -66,7 +66,7 @@ shn_has_permission = auth.shn_has_permission
 shn_accessible_query = auth.shn_accessible_query
 FieldS3 = s3tools.FieldS3
 S3ReusableField = s3tools.S3ReusableField
-MENU2 = s3tools.MENU2
+MENUS3 = s3tools.MENUS3
 
 from gluon.tools import Service
 service = Service(globals())

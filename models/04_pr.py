@@ -157,16 +157,30 @@ s3xrc.model.add_component(prefix, resourcename,
                           multiple=True,
                           joinby=super_key(db.pr_pentity))
 
+def shn_pe_contact_onvalidation(form):
+
+    """ Contact form validation """
+
+    table = db.pr_pe_contact
+
+    if form.vars.contact_method == '1':
+        email, error = IS_EMAIL()(form.vars.value)
+        if error:          
+            form.errors.value = T("Enter a valid email")
+
+    return False
+
 s3xrc.model.configure(table,
-    list_fields=[
-        #"id",
-        #"pe_id",
-        "contact_method",
-        "value",
-        "priority",
-        #"contact_person",
-        #"name",
-    ])
+                      onvalidation=shn_pe_contact_onvalidation, 
+                      list_fields=[
+                        #"id",
+                        #"pe_id",
+                        "contact_method",
+                        "value",
+                        "priority",
+                        #"contact_person",
+                        #"name",
+                      ])
 
 s3.crud_strings[tablename] = Storage(
     title_create = T("Add Contact Information"),

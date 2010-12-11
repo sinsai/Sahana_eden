@@ -67,7 +67,7 @@ if deployment_settings.has_module(module):
         )
 
     table.base_unit.requires = IS_NULL_OR(IS_ONE_OF(db, "lms_unit.label", "lms_unit.name"))
-    table.label.requires=IS_NOT_IN_DB(db, "%s.label" % tablename)
+    table.label.requires=IS_NOT_ONE_OF(db, "%s.label" % tablename)
     table.label.label = T("Unit")
     table.label.comment = DIV( _class="tooltip", _title=T("Label") + "|" + T("Unit Short Code for e.g. m for meter."))
     table.name.comment = DIV( _class="tooltip", _title=T("Unit Name") + "|" + T("Complete Unit Label for e.g. meter for m."))
@@ -121,7 +121,7 @@ if deployment_settings.has_module(module):
                     comments(),
                     migrate=migrate,
                     *(s3_timestamp() + s3_uid() + s3_deletion_status()))
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     table.name.requires = IS_NOT_EMPTY()   # Sites don't have to have unique names
     table.name.label = T("Site Name")
     table.name.comment = DIV( _class="tooltip", _title=T("Site Name") + "|" + T("A Warehouse/Site is a physical location with an address and GIS data where Items are Stored. It can be a Building, a particular area in a city or anything similar."))
@@ -164,7 +164,7 @@ if deployment_settings.has_module(module):
                     migrate=migrate,
                     *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     table.name.requires = IS_NOT_EMPTY()   # Storage Locations don"t have to have unique names
     table.site_id.label = T("Site")
     table.site_id.requires = IS_IN_DB(db, "lms_site.id", "lms_storage_loc.name")
@@ -206,7 +206,7 @@ if deployment_settings.has_module(module):
                     Field("description"),
                     migrate=migrate,
                     *(s3_timestamp() + s3_uid() + s3_deletion_status()))
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     table.name.requires = IS_NOT_EMPTY()
     table.name.comment = DIV( _class="tooltip", _title=T("Storage Bin Type") + "|" + T("Name of Storage Bin Type."))
     table.description.comment = DIV( _class="tooltip", _title=T("Description of Bin Type") + "|" + T("Use this space to add a description about the Bin Type."))
@@ -243,7 +243,7 @@ if deployment_settings.has_module(module):
                     comments(),
                     migrate=migrate,
                     *(s3_timestamp() + s3_uid() + s3_deletion_status()))
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     table.site_id.requires = IS_IN_DB(db, "lms_site.id", "lms_storage_loc.name")
     table.site_id.label = T("Site/Warehouse")
     table.site_id.comment = DIV(A(T("Add Site"), _class="colorbox", _href=URL(r=request, c="lms", f="site", args="create", vars=dict(format="popup")), _target="top"), DIV( _class="tooltip", _title=T("Site") + "|" + T("Add the main Warehouse/Site information where this Bin belongs to.")))
@@ -294,7 +294,7 @@ if deployment_settings.has_module(module):
                     comments(),
                     migrate=migrate,
                     *(s3_timestamp()+s3_uid()+s3_deletion_status()))
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     table.name.requires = IS_NOT_EMPTY()
     table.name.label = T("Catalog Name")
     ADD_ITEM_CATALOG = T("Add Item Catalog ")
@@ -323,7 +323,7 @@ if deployment_settings.has_module(module):
                     comments(),
                     migrate=migrate,
                     *(s3_timestamp() + s3_uid() + s3_deletion_status()))
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     table.name.requires = IS_NOT_EMPTY()
     table.name.label = T("Item Catalog Category")
     ADD_ITEM_CATALOG_CATEGORY = T("Add Item Catalog Category ")
@@ -353,7 +353,7 @@ if deployment_settings.has_module(module):
                     comments(),
                     migrate=migrate,
                     *(s3_timestamp() + s3_uid() + s3_deletion_status()))
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     table.name.requires = IS_NOT_EMPTY()
     table.name.label = T("Item Sub-Category")
     table.parent_category.requires = IS_IN_DB(db, "lms_catalog_cat.id", "lms_catalog_cat.name")
@@ -430,7 +430,7 @@ if deployment_settings.has_module(module):
                             Field("track_status", readable="False"), # Linked to Shipment Transit Log table
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     table.way_bill.requires = IS_NOT_EMPTY()
     table.way_bill.label = T("Shipment/Way Bills")
     table.sender_site.requires = IS_IN_DB(db, "lms_site.id", "lms_site.name")
@@ -488,7 +488,7 @@ if deployment_settings.has_module(module):
                     Field("unit_cost", "double", default=0.00),
                     migrate=migrate,
                     *(s3_timestamp() + s3_uid() + s3_deletion_status()))
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     table.site_id.requires = IS_IN_DB(db, "lms_site.id", "lms_storage_loc.name") #this should be automatically done. Using LMS User Preferences
     table.site_id.label = T("Site/Warehouse")
     table.site_id.comment = DIV(A(T("Add Site"), _class="colorbox", _href=URL(r=request, c="lms", f="site", args="create", vars=dict(format="popup")), _target="top"), DIV( _class="tooltip", _title=T("Site") + "|" + T("Add the main Warehouse/Site information where this Item is to be added.")))
@@ -542,7 +542,7 @@ if deployment_settings.has_module(module):
                     Field("item_id", db.lms_item),
                     migrate=migrate,
                     *(s3_timestamp() + s3_uid() + s3_deletion_status()))
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     table.shipment_id.requires = IS_IN_DB(db, "lms_shipment.id", "lms_shipment.way_bill")
     table.item_id.requires = IS_IN_DB(db, "lms_item.id", "lms_item.name") #This needs to be represented as Name+Brand+Model+Description+Size
     s3.crud_strings[tablename] = Storage(
@@ -570,7 +570,7 @@ if deployment_settings.has_module(module):
                     Field("item_id", db.lms_item),
                     migrate=migrate,
                     *(s3_timestamp() + s3_uid() + s3_deletion_status()))
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     table.shipment_id.requires = IS_IN_DB(db, "lms_shipment.id", "lms_shipment.way_bill")
     table.item_id.requires = IS_IN_DB(db, "lms_item.id", "lms_item.name") #This needs to be represented as Name+Brand+Model+Description+Size
     ADD_SHIPMENT_TRANSIT_LOG = T("Add Shipment Transit Log")
@@ -603,7 +603,7 @@ if deployment_settings.has_module(module):
                     comments(),
                     migrate=migrate,
                     *(s3_timestamp() + s3_uid() + s3_deletion_status()))
-    table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % tablename)]
+    table.code.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.code" % tablename)]
     table.code.label = T("Code")
     table.description.label = T("Description")
     table.total_unit_cost.label = T("Total Unit Cost")

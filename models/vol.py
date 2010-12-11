@@ -193,8 +193,8 @@ if deployment_settings.has_module(module):
 
 
     # Field settings
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
     table.name.label = T("Name")
 
     # CRUD strings

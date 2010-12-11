@@ -148,7 +148,7 @@ if deployment_settings.has_module("project"):
     
     # Field settings
     table.code.requires = [IS_NOT_EMPTY(error_message=T("Please fill this!")),
-                             IS_NOT_IN_DB(db, "project_project.code")]
+                             IS_NOT_ONE_OF(db, "project_project.code")]
     table.start_date.requires = IS_NULL_OR(IS_DATE())
     table.end_date.requires = IS_NULL_OR(IS_DATE())
     table.budgeted_cost.requires = IS_NULL_OR(IS_FLOAT_IN_RANGE(0, 999999999))

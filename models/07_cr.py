@@ -138,7 +138,7 @@ if deployment_settings.has_module(module):
                                 fields_after_hospital,
                                 migrate=migrate, *s3_meta_fields())
 
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     # Shelters don't have to have unique names
     # @ToDo If we want to filter incoming reports automatically to see if
     # they apply to shelters, then we may need to reconsider whether names

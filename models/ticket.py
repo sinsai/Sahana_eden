@@ -18,7 +18,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate, *s3_meta_fields())
 
 
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 
     # -----------------
     # Tickets table (All sources get entered here : either manually or via S3XRC or Messaging)
@@ -50,7 +50,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate, *s3_meta_fields())
 
 
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     table.message.requires = IS_NOT_EMPTY()
     table.priority.requires = IS_NULL_OR(IS_IN_SET(ticket_priority_opts))
     table.categories.requires = IS_NULL_OR(IS_IN_DB(db, db.ticket_category.id, "%(name)s", multiple=True))

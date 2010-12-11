@@ -45,7 +45,7 @@ table = db.define_table(tablename,
 
 
 
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id", shn_pentity_represent,
                                  orderby="instance_type",
@@ -136,7 +136,7 @@ table = db.define_table(tablename,
                         migrate=migrate, *s3_meta_fields())
 
 
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id",
                                  shn_pentity_represent,
                                  orderby="instance_type",
@@ -230,7 +230,7 @@ table = db.define_table(tablename,
                         migrate=migrate, *s3_meta_fields())
 
 
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 
 table.title.requires = IS_NOT_EMPTY()
 table.title.comment = DIV(_class="tooltip",
@@ -350,7 +350,7 @@ table = db.define_table(tablename,
 
 
 
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 
 table.datetime.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
 table.datetime.represent = lambda value: shn_as_local_time(value)
@@ -484,7 +484,7 @@ table = db.define_table(tablename,
 
 
 
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id",
                                     shn_pentity_represent,
                                     filterby="instance_type",
@@ -555,9 +555,9 @@ table = db.define_table(tablename,
                         migrate=migrate, *s3_meta_fields())
 
 
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 table.person_id.label = T("Person")
-table.value.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.value" % tablename)]
+table.value.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.value" % tablename)]
 table.ia_name.label = T("Issuing Authority")
 
 # Identity as component of persons

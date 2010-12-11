@@ -41,7 +41,7 @@ table = db.define_table(tablename,
                         Field("width", "integer", writable=False),  # We could get size client-side using Javascript's Image() class, although this is unreliable!
                         migrate=migrate, *s3_timestamp())
 
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 # upload folder needs to be visible to the download() function as well as the upload
 table.image.uploadfolder = os.path.join(request.folder, "static/img/markers")
 table.image.represent = lambda filename: (filename and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=filename), _height=40))] or [""])[0]
@@ -91,8 +91,8 @@ table = db.define_table(tablename,
                         Field("units", notnull=True),
                         migrate=migrate,
                         *(s3_timestamp() + s3_uid()))
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 table.epsg.requires = IS_NOT_EMPTY()
 table.maxExtent.requires = IS_NOT_EMPTY()
 table.maxResolution.requires = IS_NOT_EMPTY()
@@ -167,7 +167,7 @@ table = db.define_table(tablename,
                         Field("wmsbrowser_url"),
                         migrate=migrate,
                         *(s3_timestamp() + s3_uid()))
-table.uuid.requires = IS_NOT_IN_DB(db, "gis_config.uuid")
+table.uuid.requires = IS_NOT_ONE_OF(db, "gis_config.uuid")
 table.pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.pe_id", shn_pentity_represent))
 table.pe_id.readable = table.pe_id.writable = False
 table.lat.requires = IS_LAT()
@@ -373,8 +373,8 @@ table = db.define_table(tablename,
                         migrate=migrate,
                         *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 table.gps_marker.requires = IS_NULL_OR(IS_IN_SET(gis_gps_marker_opts, zero=T("Use default")))
 # Configured in zzz_last.py when all tables are available
 #table.resource.requires = IS_NULL_OR(IS_IN_SET(db.tables))
@@ -445,7 +445,7 @@ table = db.define_table(tablename,
                         comments(),
                         migrate=migrate,
                         *(s3_timestamp() + s3_uid() + s3_deletion_status()))
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
 
 table.name.label = T("Primary Name")
@@ -535,7 +535,7 @@ table = db.define_table(tablename,
                         migrate=migrate,
                         *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
+table.uuid.requires = IS_NOT_ONE_OF(db, '%s.uuid' % tablename)
 table.language.requires = IS_IN_SET(s3.l10n_languages)
 table.language.represent = lambda opt: s3.l10n_languages.get(opt, UNKNOWN_OPT)
 table.language.label = T("Language")
@@ -801,7 +801,7 @@ table = db.define_table(tablename,
                         comments(),
                         migrate=migrate, )
 
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 table.name.label = T("Name")
 table.resource.label = T("Resource")
 # In zzz_last.py
@@ -821,9 +821,9 @@ table = db.define_table(tablename,
                         migrate=migrate, *s3_timestamp())
 
 # FIXME
-# We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
+# We want a THIS_NOT_ONE_OF here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_ONE_OF#fc129fd476558944
 table.name.requires = IS_IN_SET(["google", "multimap", "yahoo"], zero=None)
-#table.apikey.requires = THIS_NOT_IN_DB(db(table.name == request.vars.name), "gis_apikey.name", request.vars.name, "Service already in use")
+#table.apikey.requires = THIS_NOT_ONE_OF(db(table.name == request.vars.name), "gis_apikey.name", request.vars.name, "Service already in use")
 table.apikey.requires = IS_NOT_EMPTY()
 table.name.label = T("Service")
 table.apikey.label = T("Key")
@@ -870,7 +870,7 @@ table = db.define_table(tablename,
 
 # upload folder needs to be visible to the download() function as well as the upload
 table.track.uploadfolder = os.path.join(request.folder, "uploads/tracks")
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 table.name.label = T("Name")
 table.track.requires = IS_UPLOAD_FILENAME(extension="gpx")
 table.track.description = T("Description")
@@ -1146,4 +1146,4 @@ table.zoom.label = T("Zoom")
 #table = db.define_table(tablename,
 #                        Field("name", notnull=True, unique=True)
 #                        migrate=migrate, *s3_timestamp())
-#db.gis_style.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "gis_style.name")]
+#db.gis_style.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "gis_style.name")]

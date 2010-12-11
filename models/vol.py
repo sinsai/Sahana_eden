@@ -94,7 +94,7 @@ if deployment_settings.has_module(module):
             return status
 
     s3xrc.model.configure(table,
-                          onvalidation=vol_onvalidation)
+                          onvalidation=vol_onvalidation,
                           list_fields=["organisation_id",
                                        "status"])
 

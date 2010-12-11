@@ -32,7 +32,6 @@ if deployment_settings.has_module(module):
     # Survey Series
     resourcename = "series"
     tablename = module + "_" + resourcename
-    table = db[tablename]
     series = db.define_table(tablename,
                              Field("name", "string", default="", length=120),
                              Field("description", "text", default="", length=500),
@@ -42,7 +41,7 @@ if deployment_settings.has_module(module):
                              location_id(),
                              migrate=migrate,
                              *s3_meta_fields())
-                             
+
     def survey_series_onvalidation(form):
         status = form.vars.from_date <= form.vars.to_date
         if status:
@@ -53,7 +52,7 @@ if deployment_settings.has_module(module):
             form.errors["to_date"] = error_msg
             return status
 
-    s3xrc.model.configure(table,
+    s3xrc.model.configure(series,
                           onvalidation=survey_series_onvalidation)
 
     # Survey Section

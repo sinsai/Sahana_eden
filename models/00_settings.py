@@ -214,12 +214,14 @@ def s3_formstyle(id, label, widget, comment):
 s3_formstyle_mobile = s3_formstyle
 
 s3.crud.formstyle = s3_formstyle
-s3.crud.submit_buttom = T("Save")
+s3.crud.submit_button = T("Save")
 
 s3.crud.archive_not_delete = deployment_settings.get_security_archive_not_delete()
 s3.crud.navigate_away_confirm = deployment_settings.get_ui_navigate_away_confirm()
+
 s3.base_url = "%s/%s" % (deployment_settings.get_base_public_url(),
                          request.application)
+s3.download_url = "%s/default/download" % s3.base_url
 
 #############
 # Web2py/Crud
@@ -227,8 +229,8 @@ s3.base_url = "%s/%s" % (deployment_settings.get_base_public_url(),
 
 # Breaks refresh of List after Create: http://groups.google.com/group/web2py/browse_thread/thread/d5083ed08c685e34
 #crud.settings.keepvalues = True
-crud.messages.submit_button = T("Save")
-crud.settings.formstyle = s3_formstyle
+crud.messages.submit_button = s3.crud.submit_button
+crud.settings.formstyle = s3.crud.formstyle
 
 ##################
 # XML/JSON Formats

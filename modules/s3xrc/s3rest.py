@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource API
 
-    @version: 2.2.8
+    @version: 2.2.9
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -1011,7 +1011,7 @@ class S3Resource(object):
         if template:
             tfmt = "%Y-%m-%d %H:%M:%S"
             args = dict(domain=self.manager.domain,
-                        base_url=self.manager.base_url,
+                        base_url=self.manager.s3.base_url,
                         prefix=self.prefix,
                         name=self.name,
                         utcnow=datetime.datetime.utcnow().strftime(tfmt))
@@ -1738,7 +1738,7 @@ class S3Resource(object):
                        showid=False,
                        deletable=False,
                        upload=download_url,
-                       submit_button=settings.submit_button or self.manager.T("Save"),
+                       submit_button=settings.submit_button,
                        formstyle=settings.formstyle)
 
         # Set form name

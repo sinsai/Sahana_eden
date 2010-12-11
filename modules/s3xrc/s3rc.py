@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Controller
 
-    @version: 2.2.8
+    @version: 2.2.9
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -60,12 +60,6 @@ class S3ResourceController(object):
     """ S3 Resource Controller
 
         @param environment: the environment of this run
-        @param domain: name of the current domain
-        @param base_url: base URL of this instance
-        @param messages: a function to retrieve message URLs tagged for a resource
-        @param attr: configuration settings
-
-        @todo 2.3: error messages internationalization!
 
     """
 
@@ -121,8 +115,6 @@ class S3ResourceController(object):
         # Settings
         self.s3 = environment.s3
         self.domain = self.request.env.server_name
-        self.base_url = self.s3.base_url
-        self.download_url = "%s/default/download" % self.base_url
         self.rlink_tablename = "s3_rlink"
         self.show_ids = False
 
@@ -728,8 +720,8 @@ class S3ResourceController(object):
                                                  skip=skip+[c.fkey])
 
         # Resource base URL
-        if self.base_url:
-            url = "%s/%s/%s" % (self.base_url, prefix, name)
+        if self.s3.base_url:
+            url = "%s/%s/%s" % (self.s3.base_url, prefix, name)
         else:
             url = "/%s/%s" % (prefix, name)
 
@@ -759,7 +751,7 @@ class S3ResourceController(object):
                                        url=resource_url)
             self.xml.add_references(element, rmap, show_ids=self.show_ids)
             self.xml.gis_encode(resource, record, rmap,
-                                download_url=self.download_url,
+                                download_url=self.s3.download_url,
                                 marker=marker)
 
 
@@ -806,7 +798,7 @@ class S3ResourceController(object):
                                                 url=resource_url)
                     self.xml.add_references(celement, crmap, show_ids=self.show_ids)
                     self.xml.gis_encode(cresource, crecord, rmap,
-                                        download_url=self.download_url,
+                                        download_url=self.s3.download_url,
                                         marker=marker)
 
                     element.append(celement)
@@ -842,8 +834,8 @@ class S3ResourceController(object):
                 table = rresource.table
                 rresource.load()
 
-                if self.base_url:
-                    url = "%s/%s/%s" % (self.base_url, prefix, name)
+                if self.s3.base_url:
+                    url = "%s/%s/%s" % (self.s3.base_url, prefix, name)
                 else:
                     url = "/%s/%s" % (prefix, name)
 
@@ -865,7 +857,7 @@ class S3ResourceController(object):
                                                url=resource_url)
                     self.xml.add_references(element, rmap, show_ids=self.show_ids)
                     self.xml.gis_encode(rresource, record, rmap,
-                                        download_url=self.download_url,
+                                        download_url=self.s3.download_url,
                                         marker=marker)
 
                     element.set(self.xml.ATTRIBUTE.ref, "True")
@@ -880,7 +872,7 @@ class S3ResourceController(object):
         # Complete the tree
         return self.xml.tree(element_list,
                              domain=self.domain,
-                             url= show_urls and self.base_url or None,
+                             url= show_urls and self.s3.base_url or None,
                              results=results,
                              start=start,
                              limit=limit)

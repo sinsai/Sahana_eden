@@ -145,6 +145,7 @@ auth.messages.reset_password = T("Click on the link ") + deployment_settings.get
 # Require Admin approval for self-registered users
 auth.settings.registration_requires_approval = deployment_settings.get_auth_registration_requires_approval()
 auth.messages.registration_pending = T("Email address verified, however registration is still pending approval - please wait until confirmation received.")
+auth.messages.registration_pending_approval = T("Account registered, however registration is still pending approval - please wait until confirmation received.") 
 # Notify UserAdmin of new pending user registration to action
 if deployment_settings.get_auth_registration_requires_approval():
     auth.settings.verify_email_onaccept = lambda form: \
@@ -217,6 +218,8 @@ s3.crud.submit_buttom = T("Save")
 
 s3.crud.archive_not_delete = deployment_settings.get_security_archive_not_delete()
 s3.crud.navigate_away_confirm = deployment_settings.get_ui_navigate_away_confirm()
+s3.base_url = "%s/%s" % (deployment_settings.get_base_public_url(),
+                         request.application)
 
 #############
 # Web2py/Crud
@@ -239,6 +242,7 @@ s3xrc.XSLT_EXPORT_TEMPLATES = "static/xslt/export" #: Path to XSLT templates for
 # and text/x-json for JSON formats, other content types must be
 # specified here:
 s3xrc.content_type = Storage(
+    tc = "application/atom+xml", # TableCast feeds
     rss = "application/rss+xml", # RSS
     georss = "application/rss+xml", # GeoRSS
     kml = "application/vnd.google-earth.kml+xml", # KML

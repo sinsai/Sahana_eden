@@ -99,27 +99,30 @@ def activity_type():
 
 #==============================================================================
 def shn_activity_rheader(r, tabs=[]):
+    """ Resource Header for Activities"""
+
     if r.representation == "html":
-        rheader_tabs = shn_rheader_tabs(r, tabs)
         project_activity = r.record
-        rheader = DIV( TABLE(
-                           TR( TH( T("Short Description") + ": "), 
-                               project_activity.name,
-                              ),
-                           TR( TH( T("Location") + ": "), 
-                               shn_gis_location_represent(project_activity.location_id),
-                               TH( T("Duration") + ": "),
-                               "%s to %s" % (project_activity.start_date, project_activity.end_date),
-                              ),                                      
-                           TR( TH( T("Organisation") + ": "),
-                               shn_organisation_represent(project_activity.organisation_id),                                       
-                               TH( T("Sector") + ": "),
-                               shn_org_cluster_represent(project_activity.cluster_id),                               
-                             ),
-                            ),
-                        rheader_tabs
-                        )                    
-        return rheader
+        if project_activity:
+            rheader_tabs = shn_rheader_tabs(r, tabs)
+            rheader = DIV( TABLE(
+                               TR( TH( T("Short Description") + ": "), 
+                                   project_activity.name,
+                                  ),
+                               TR( TH( T("Location") + ": "), 
+                                   shn_gis_location_represent(project_activity.location_id),
+                                   TH( T("Duration") + ": "),
+                                   "%s to %s" % (project_activity.start_date, project_activity.end_date),
+                                  ),                                      
+                               TR( TH( T("Organisation") + ": "),
+                                   shn_organisation_represent(project_activity.organisation_id),                                       
+                                   TH( T("Sector") + ": "),
+                                   shn_org_cluster_represent(project_activity.cluster_id),                               
+                                 ),
+                                ),
+                            rheader_tabs
+                            )                    
+            return rheader
     return None
 #==============================================================================
 def activity():

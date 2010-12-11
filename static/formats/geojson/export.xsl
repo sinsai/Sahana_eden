@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <xsl:stylesheet
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-    
+
     <!-- **********************************************************************
 
          GeoJSON Export Templates for Sahana-Eden
@@ -36,14 +36,14 @@
 
     <xsl:param name="prefix"/>
     <xsl:param name="name"/>
-    
+
     <xsl:template match="/">
         <GeoJSON>
-            <xsl:apply-templates select="s3xrc"/>
+            <xsl:apply-templates select="s3xml"/>
         </GeoJSON>
     </xsl:template>
-    
-    <xsl:template match="s3xrc">
+
+    <xsl:template match="s3xml">
         <xsl:variable name="resource">
             <xsl:value-of select="concat($prefix,'_',$name)"/>
         </xsl:variable>
@@ -61,7 +61,7 @@
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
-    
+
     <xsl:template match="resource">
         <xsl:choose>
             <xsl:when test="@name='gis_location'">
@@ -87,7 +87,7 @@
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
-    
+
     <xsl:template match="reference[@resource='gis_location']">
         <xsl:variable name="uid" select="@uuid"/>
         <xsl:apply-templates select="//resource[@name='gis_location' and @uuid=$uid]"/>

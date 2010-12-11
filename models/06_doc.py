@@ -18,6 +18,7 @@ table = db.define_table(tablename,
                         Field("date", "date"),
                         comments(),
                         Field("entered", "boolean"),
+                        Field("checksum", readable=False, writable=False),
                         migrate=migrate, *s3_meta_fields())
 
 
@@ -45,6 +46,7 @@ table.location_id.readable = table.location_id.writable = False
 table.entered.comment = DIV( _class="tooltip",
                              _title="Entered" + "|" + T("Has data from this Reference Document been entered into Sahana?")
                              )
+
 # -----------------------------------------------------------------------------
 def document_represent(id):
     if not id:
@@ -119,8 +121,8 @@ table = db.define_table(tablename,
                         location_id(),
                         Field("date", "date"),
                         comments(),
+                        Field("checksum", readable=False, writable=False),
                         migrate=migrate, *s3_meta_fields())
-
 
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 #table.name.label = T("Name")

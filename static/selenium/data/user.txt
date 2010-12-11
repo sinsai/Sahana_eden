@@ -1,2 +1,2 @@
-dummy, tester, DT@example.com, testing, 5
+dummy, tester, user@example.com, testing, 5
 useradmin, tester, UAT@example.com, testing, 5 3

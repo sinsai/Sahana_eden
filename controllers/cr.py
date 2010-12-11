@@ -338,17 +338,16 @@ def shn_shelter_rheader(r, tabs=[]):
     """ Resource Headers """
 
     if r.representation == "html":
-        rheader_tabs = shn_rheader_tabs(r, tabs)
-
         record = r.record
-        rheader = DIV(TABLE(
-                            TR(
-                                TH(T("Name") + ": "), record.name
-                              ),
-                            ),
-                      rheader_tabs)
-        return rheader
-
+        if record:
+            rheader_tabs = shn_rheader_tabs(r, tabs)
+            rheader = DIV(TABLE(
+                                TR(
+                                    TH(T("Name") + ": "), record.name
+                                  ),
+                                ),
+                          rheader_tabs)
+            return rheader
     return None
 
 # -----------------------------------------------------------------------------

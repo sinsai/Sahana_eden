@@ -13,19 +13,36 @@ module = request.controller
 
 response.menu_options = logs_menu
 
-#==============================================================================
+#------------------------------------------------------------------------------
+def index():
+
+    """
+        Home page for the Logs Application
+        @ToDo: Add Dashboard functionality
+    """
+
+    # @ToDo: Default to the logs_distrib list view
+    # Does not work with paginate!!!
+    #request.function = "distrib"
+    #request.args = []
+    #return dict()
+    module_name = deployment_settings.modules[module].name_nice
+    return dict(module_name=module_name)
+
+#------------------------------------------------------------------------------
 def shn_distrib_rheader(r, tabs=[]):
     if r.representation == "html":
-        rheader_tabs = shn_rheader_tabs(r, tabs)
         logs_distrib = r.record
-        rheader = DIV(TABLE(TR(
-                               TH(T("Location") + ": "), shn_gis_location_represent(logs_distrib.location_id),
-                               TH(T("Date") + ": "), logs_distrib.date,
+        if logs_distrib:
+            rheader_tabs = shn_rheader_tabs(r, tabs)
+            rheader = DIV(TABLE(TR(
+                                   TH(T("Location") + ": "), shn_gis_location_represent(logs_distrib.location_id),
+                                   TH(T("Date") + ": "), logs_distrib.date,
+                                   ),
                                ),
-                           ),
-                      rheader_tabs
-                      )
-        return rheader
+                          rheader_tabs
+                          )
+            return rheader
     return None
 
 def distrib():
@@ -63,20 +80,7 @@ def distrib():
     output = s3_rest_controller(module, resource, rheader=rheader)
     return output
 
-def index():
-
-    """
-        Default to the logs_distrib list view
-        @TODO does not work with paginate!!!
-    """
-
-    #request.function = "distrib"
-    #request.args = []
-    #return dict()
-    module_name = deployment_settings.modules[module].name_nice
-    return dict(module_name=module_name)
-
-#==============================================================================
+#------------------------------------------------------------------------------
 def distrib_item():
 
     """ RESTful CRUD controller """
@@ -87,3 +91,4 @@ def distrib_item():
 
     output = s3_rest_controller(module, resource)
     return output
+#------------------------------------------------------------------------------

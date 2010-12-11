@@ -182,6 +182,10 @@ def shn_org_rheader(r, tabs=[]):
 
     if r.representation == "html":
 
+        if r.record is None:
+            # List or Create form: rheader makes no sense here
+            return None
+
         rheader_tabs = shn_rheader_tabs(r, tabs)
 
         if r.name == "organisation":
@@ -190,66 +194,64 @@ def shn_org_rheader(r, tabs=[]):
             #_same = r.same()
 
             organisation = r.record
-
-            if organisation.cluster_id:
-                _sectors = shn_sector_represent(organisation.cluster_id)
-            else:
-                _sectors = None
-
-            try:
-                _type = org_organisation_type_opts[organisation.type]
-            except KeyError:
-                _type = None
-
-            rheader = DIV(TABLE(
-                TR(
-                    TH(T("Organization") + ": "),
-                    organisation.name,
-                    TH(T("Cluster(s)") + ": "),
-                    _sectors
-                    ),
-                TR(
-                    #TH(A(T("Edit Organization"),
-                    #    _href=URL(r=request, c="org", f="organisation", args=[r.id, "update"], vars={"_next": _next})))
-                    TH(T("Type") + ": "),
-                    _type,
-                    )
-            ), rheader_tabs)
-
-            return rheader
-
-        elif r.name == "office":
-
-            #_next = r.here()
-            #_same = r.same()
-
-            office = r.record
-            organisation = db(db.org_organisation.id == office.organisation_id).select(db.org_organisation.name, limitby=(0, 1)).first()
             if organisation:
-                org_name = organisation.name
-            else:
-                org_name = None
+                if organisation.cluster_id:
+                    _sectors = shn_sector_represent(organisation.cluster_id)
+                else:
+                    _sectors = None
 
-            rheader = DIV(TABLE(
-                    TR(
-                        TH(T("Name") + ": "),
-                        office.name,
-                        TH(T("Type") + ": "),
-                        org_office_type_opts.get(office.type, UNKNOWN_OPT),
-                        ),
+                try:
+                    _type = org_organisation_type_opts[organisation.type]
+                except KeyError:
+                    _type = None
+
+                rheader = DIV(TABLE(
                     TR(
                         TH(T("Organization") + ": "),
-                        org_name,
-                        TH(T("Location") + ": "),
-                        shn_gis_location_represent(office.location_id),
+                        organisation.name,
+                        TH(T("Cluster(s)") + ": "),
+                        _sectors
                         ),
                     TR(
-                        #TH(A(T("Edit Office"),
-                        #    _href=URL(r=request, c="org", f="office", args=[r.id, "update"], vars={"_next": _next})))
+                        #TH(A(T("Edit Organization"),
+                        #    _href=URL(r=request, c="org", f="organisation", args=[r.id, "update"], vars={"_next": _next})))
+                        TH(T("Type") + ": "),
+                        _type,
                         )
                 ), rheader_tabs)
 
-            return rheader
+                return rheader
+
+        elif r.name == "office":
+
+            office = r.record
+            if office:
+                organisation = db(db.org_organisation.id == office.organisation_id).select(db.org_organisation.name, limitby=(0, 1)).first()
+                if organisation:
+                    org_name = organisation.name
+                else:
+                    org_name = None
+
+                rheader = DIV(TABLE(
+                        TR(
+                            TH(T("Name") + ": "),
+                            office.name,
+                            TH(T("Type") + ": "),
+                            org_office_type_opts.get(office.type, UNKNOWN_OPT),
+                            ),
+                        TR(
+                            TH(T("Organization") + ": "),
+                            org_name,
+                            TH(T("Location") + ": "),
+                            shn_gis_location_represent(office.location_id),
+                            ),
+                        TR(
+                            #TH(A(T("Edit Office"),
+                            #    _href=URL(r=request, c="org", f="office", args=[r.id, "update"], vars={"_next": _next})))
+                            )
+                    ), rheader_tabs)
+
+                return rheader
 
     return None
 

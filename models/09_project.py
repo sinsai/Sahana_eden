@@ -308,27 +308,28 @@ if deployment_settings.has_module("project"):
     s3xrc.model.set_method(application, "project", method="search_location", action=shn_project_search_location )
     
     # -----------------------------------------------------------------------------
-    def shn_project_rheader(jr, tabs=[]):
+    def shn_project_rheader(r, tabs=[]):
     
-        if jr.representation == "html":
+        if r.representation == "html":
     
-            rheader_tabs = shn_rheader_tabs(jr, tabs)
+            rheader_tabs = shn_rheader_tabs(r, tabs)
     
-            if jr.name == "project":
+            if r.name == "project":
     
-                _next = jr.here()
-                _same = jr.same()
+                table = db.project_project
+                _next = r.here()
+                _same = r.same()
     
-                project = jr.record
-    
-                sectors = TABLE()
-                if project.cluster_id:
-                    # @ToDo@ Fix for list: type
-                    _sectors = re.split("\|", project.cluster_id)[1:-1]
-                    for sector in _sectors:
-                        sectors.append(TR(db(db.org_cluster.id == sector).select(db.org_cluster.name, limitby=(0, 1)).first().name))
-    
+                project = r.record
+
                 if project:
+                    sectors = TABLE()
+                    if project.cluster_id:
+                        # @ToDo: Fix for list: type
+                        _sectors = re.split("\|", project.cluster_id)[1:-1]
+                        for sector in _sectors:
+                            sectors.append(TR(db(db.org_cluster.id == sector).select(db.org_cluster.name, limitby=(0, 1)).first().name))
+        
                     rheader = DIV(TABLE(
                         TR(
                             TH(T("Code") + ": "),
@@ -340,7 +341,7 @@ if deployment_settings.has_module("project"):
                             TH(T("Name") + ": "),
                             project.name,
                             TH(T("Location") + ": "),
-                            location_id.location_id.represent(project.location_id),
+                            table.location_id.represent(project.location_id),
                             ),
                         TR(
                             TH(T("Status") + ": "),
@@ -348,7 +349,7 @@ if deployment_settings.has_module("project"):
                             TH(T("Cluster(s)") + ": "),
                             sectors,
                             #TH(A(T("Edit Project"),
-                            #    _href=URL(r=request, f="project", args=[jr.id, "update"], vars={"_next": _next})))
+                            #    _href=URL(r=request, f="project", args=[r.id, "update"], vars={"_next": _next})))
                             )
                     ), rheader_tabs)
                     return rheader
@@ -515,21 +516,20 @@ if deployment_settings.has_module("project"):
     }
     
     project_task_priority_opts = {
-        4: T("normal"),
-        1: T("immediately"),
-        2: T("urgent"),
-        3: T("high"),
-        5: T("low")
+        1: T("normal"),
+        2: T("high"),
+        3: T("low")
     }
     
     resourcename = "task"
     tablename = application + "_" + resourcename
     table = db.define_table(tablename,
+                            Field("urgent", "boolean", label=T("Urgent")),
                             Field("priority", "integer",
-                                requires = IS_IN_SET(project_task_priority_opts, zero=None),
-                                # default = 4,
-                                label = T("Priority"),
-                                represent = lambda opt: project_task_priority_opts.get(opt, UNKNOWN_OPT)),
+                                  requires = IS_IN_SET(project_task_priority_opts, zero=None),
+                                  default = 1,
+                                  label = T("Priority"),
+                                  represent = lambda opt: project_task_priority_opts.get(opt, UNKNOWN_OPT)),
                             Field("subject", length=80, notnull=True),
                             Field("description", "text"),
                             project_id(),
@@ -537,10 +537,10 @@ if deployment_settings.has_module("project"):
                             office_id(label=T("Managing Office")),
                             person_id(label=T("Assigned to")),
                             Field("status", "integer",
-                                requires = IS_IN_SET(project_task_status_opts, zero=None),
-                                # default = 1,
-                                label = T("Status"),
-                                represent = lambda opt: project_task_status_opts.get(opt, UNKNOWN_OPT)),
+                                  requires = IS_IN_SET(project_task_status_opts, zero=None),
+                                  # default = 1,
+                                  label = T("Status"),
+                                  represent = lambda opt: project_task_status_opts.get(opt, UNKNOWN_OPT)),
                             migrate=migrate, *s3_meta_fields())
     
     
@@ -584,13 +584,12 @@ if deployment_settings.has_module("project"):
                                           org_office="office_id"))
     
     s3xrc.model.configure(table,
-                          listadd=False,
                           onvalidation = lambda form: shn_project_task_onvalidation(form),
                           list_fields=["id",
-                                       "project_id",
-                                       "office_id",
-                                       "priority",
+                                       "urgent",
                                        "subject",
+                                       "location_id",
+                                       "office_id",
                                        "person_id",
                                        "status"],
                           main="subject", extra="description")    

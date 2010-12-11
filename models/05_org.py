@@ -183,7 +183,9 @@ org_organisation_type_opts = {
     7:"UN",
     8:T("International Organization"),
     9:T("Military"),
-    10:T("Private")
+    10:T("Private"),
+    11:T("Intergovernmental Organisation"),
+    12:T("Institution"),
     #12:"MINUSTAH"   Haiti-specific
 }
 

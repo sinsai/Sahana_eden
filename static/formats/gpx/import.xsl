@@ -43,14 +43,14 @@
 
     <!-- ****************************************************************** -->
     <xsl:template match="gpx:gpx">
-        <s3xrc>
+        <s3xml>
             <!-- Waypoints -->
             <xsl:apply-templates select="gpx:wpt"/>
             <!-- Tracks -->
             <!--
             <xsl:apply-templates select="trk"/>
             -->
-        </s3xrc>
+        </s3xml>
     </xsl:template>
 
     <!-- ****************************************************************** -->
@@ -64,7 +64,7 @@
                 </xsl:call-template>
             </xsl:attribute>
             -->
-            
+
             <data field="name">
                 <xsl:value-of select="./gpx:name/text()"/>
             </data>

@@ -115,9 +115,11 @@ if deployment_settings.has_module(module):
     }
 
     vol_resource_status_opts = {
-        1:T("approved"),
-        2:T("unapproved"),
-        3:T("denied")
+        1:T("not needed"),
+        2:T("pending"),
+        3:T("approved"),
+        4:T("unapproved"),
+        5:T("denied")
     }
 
     resourcename = "resource"
@@ -235,7 +237,7 @@ if deployment_settings.has_module(module):
 
     # -------------------------------------------------------------------------
     # vol_skill
-    #   A volunteer's skills (component of pr)
+    #   A volunteer's skills (component of PR)
     #
 
     resourcename = "skill"
@@ -244,16 +246,17 @@ if deployment_settings.has_module(module):
                             person_id(),
                             skill_types_id(),
                             Field("status",
-                                  requires=IS_IN_SET(["approved", "unapproved", "denied"]),
+                                  requires=IS_IN_SET(vol_resource_status_opts),
                                   label=T("Status"),
                                   notnull=True,
-                                  default="unapproved"),
+                                  represent = lambda opt: vol_resource_status_opts.get(opt, UNKNOWN_OPT),
+                                  # unapproved
+                                  default=4),
                             migrate=migrate, *s3_meta_fields())
 
-
     s3xrc.model.add_component(module, resourcename,
-        multiple=True,
-        joinby=dict(pr_person="person_id"))
+                              multiple=True,
+                              joinby=dict(pr_person="person_id"))
 
     s3xrc.model.configure(table,
                           list_fields=["id",

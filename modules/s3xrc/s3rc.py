@@ -105,68 +105,54 @@ class S3ResourceController(object):
         NOT_IMPLEMENTED = "Not implemented"
     )
 
-    def __init__(self,
-                 environment,
-                 domain=None, # @todo 2.3: read fromm environment
-                 base_url=None, # @todo 2.3: read from environment
-                 messages=None, # @todo 2.3: move into settings
-                 **attr):
+    def __init__(self, environment):
 
         # Environment
         environment = Storage(environment)
-
         self.T = environment.T
         self.ROWSPERPAGE = environment.ROWSPERPAGE
-
         self.db = environment.db
         self.cache = environment.cache
-
         self.session = environment.session
         self.request = environment.request
         self.response = environment.response
-
         self.migrate = environment.migrate
 
         # Settings
-        self.s3 = environment.s3 #@todo 2.3: rename variable?
-
-        self.domain = domain
-        self.base_url = base_url
-        self.download_url = "%s/default/download" % base_url
-
+        self.s3 = environment.s3
+        self.domain = self.request.env.server_name
+        self.base_url = self.s3.base_url
+        self.download_url = "%s/default/download" % self.base_url
         self.rlink_tablename = "s3_rlink"
-
         self.show_ids = False
 
         # Errors
         self.error = None
 
         # Toolkits
-        self.audit = environment.s3_audit       # Audit
-        self.auth = environment.auth            # Auth
-        self.gis = environment.gis              # GIS
+        self.audit = environment.s3_audit
+        self.auth = environment.auth
+        self.gis = environment.gis
 
-        self.query_builder = S3QueryBuilder(self) # Query Builder
-
-        self.model = S3ResourceModel(self.db)   # Resource Model
-        self.linker = S3ResourceLinker(self)    # Resource Linker
-        self.crud = S3CRUDHandler(self)         # CRUD Handler
-        self.xml = S3XML(self)                  # XML Toolkit
+        # Helpers
+        self.query_builder = S3QueryBuilder(self)
+        self.model = S3ResourceModel(self.db)
+        self.linker = S3ResourceLinker(self)
+        self.crud = S3CRUDHandler(self)
+        self.xml = S3XML(self)
+        self.exporter = S3Exporter(self)
+        self.importer = S3Importer(self)
 
         # Hooks
-        self.permit = self.auth.shn_has_permission  # Permission Checker
-        self.messages = None                        # Messages Finder
-        self.tree_resolve = None                    # Tree Resolver
+        self.permit = self.auth.shn_has_permission
+        self.messages = None
+        self.tree_resolve = None
+        self.resolve = None
+        self.log = None
 
-        self.resolve = None                         # Resolver
-        self.log = None                             # Logger
-
-        # JSON formats, content-type headers
+        # JSON formats and content-type headers
         self.json_formats = []
         self.content_type = Storage()
-
-        self.exporter = S3Exporter(self)    # Resource Exporter
-        self.importer = S3Importer(self)    # Resource Importer
 
         # Method Handlers, @todo 2.3: deprecate?
         self.__handler = Storage()
@@ -675,11 +661,10 @@ class S3ResourceController(object):
             raise TypeError
 
         # Build match query
-        if self.xml.UID in pvalues:
-            uid = pvalues[self.xml.UID]
-            if self.xml.domain_mapping:
-                uid = self.xml.import_uid(uid)
-            query = (table[self.xml.UID] == uid)
+        UID = self.xml.UID
+        if UID in pvalues:
+            uid = self.xml.import_uid(pvalues[UID])
+            query = (table[UID] == uid)
         else:
             query = None
             for f in pvalues:
@@ -711,7 +696,7 @@ class S3ResourceController(object):
 
         """
 
-        raise NotImplementedError
+        return NotImplementedError
 
 
     # -------------------------------------------------------------------------
@@ -770,7 +755,8 @@ class S3ResourceController(object):
             cresource.load()
             ctablename = cresource.tablename
             crfields[ctablename], \
-            cdfields[ctablename] = self.__fields(cresource.table, skip=skip)
+            cdfields[ctablename] = self.__fields(cresource.table,
+                                                 skip=skip+[c.fkey])
 
         # Resource base URL
         if self.base_url:
@@ -801,9 +787,7 @@ class S3ResourceController(object):
             rmap = self.xml.rmap(table, record, rfields)
             element = self.xml.element(table, record,
                                        fields=dfields,
-                                       url=resource_url,
-                                       download_url=self.download_url,
-                                       marker=marker)
+                                       url=resource_url)
             self.xml.add_references(element, rmap, show_ids=self.show_ids)
             self.xml.gis_encode(resource, record, rmap,
                                 download_url=self.download_url,
@@ -850,9 +834,7 @@ class S3ResourceController(object):
                     crmap = self.xml.rmap(ctable, crecord, _rfields)
                     celement = self.xml.element(ctable, crecord,
                                                 fields=_dfields,
-                                                url=resource_url,
-                                                download_url=self.download_url,
-                                                marker=marker)
+                                                url=resource_url)
                     self.xml.add_references(celement, crmap, show_ids=self.show_ids)
                     self.xml.gis_encode(cresource, crecord, rmap,
                                         download_url=self.download_url,
@@ -911,9 +893,7 @@ class S3ResourceController(object):
 
                     element = self.xml.element(table, record,
                                                fields=dfields,
-                                               url=resource_url,
-                                               download_url=self.download_url,
-                                               marker=marker)
+                                               url=resource_url)
                     self.xml.add_references(element, rmap, show_ids=self.show_ids)
                     self.xml.gis_encode(rresource, record, rmap,
                                         download_url=self.download_url,
@@ -973,20 +953,19 @@ class S3ResourceController(object):
 
         # if a record ID is given, import only matching elements
         # TODO: match all possible fields (see original())
-        if id and self.xml.UID in table:
+        UID = self.xml.UID
+        if id and UID in table:
             if not isinstance(id, (tuple, list)):
                 query = (table.id == id)
             else:
                 query = (table.id.belongs(id))
-            set = self.db(query).select(table[self.xml.UID])
-            uids = [row[self.xml.UID] for row in set]
+            set = self.db(query).select(table[UID])
+            uids = [row[UID] for row in set]
             matches = []
             for element in elements:
-                element_uid = element.get(self.xml.UID, None)
+                element_uid = self.xml.import_uid(element.get(UID, None))
                 if not element_uid:
                     continue
-                if self.xml.domain_mapping:
-                    element_uid = self.xml.import_uid(element_uid)
                 if element_uid in uids:
                     matches.append(element)
             if not matches:
@@ -1188,7 +1167,8 @@ class S3ResourceController(object):
 
             for l in labels:
                 wc = "%"
-                _l = "%s%s%s" % (wc, l, wc)
+                _l = "%s%s%s" % (wc, l.lower(), wc)
+
                 query = None
                 for tablename in search_fields:
                     hq = mq[tablename]
@@ -1196,9 +1176,9 @@ class S3ResourceController(object):
                     fields = search_fields[tablename]
                     for f in fields:
                         if fq:
-                            fq = (f.like(_l)) | fq
+                            fq = (f.lower().like(_l)) | fq
                         else:
-                            fq = (f.like(_l))
+                            fq = (f.lower().like(_l))
                     q = hq & fq
                     if query is None:
                         query = q
@@ -1994,7 +1974,7 @@ class S3QueryBuilder(object):
                     if field in _table.fields:
                         for op in url_query[rname][field]:
                             values = url_query[rname][field][op]
-                            if field == xml.UID and xml.domain_mapping:
+                            if field == xml.UID:
                                 uids = map(xml.import_uid, values)
                                 values = uids
                             f = _table[field]
@@ -2033,9 +2013,16 @@ class S3QueryBuilder(object):
                                 query = (f >= v)
                             elif op == "in":
                                 for v in values:
-                                    q = (f.contains(v))
+                                    if v.find(",") != -1:
+                                        q = None
+                                        sv = v.split(",")
+                                        for s in sv:
+                                            sq = (f.contains(s))
+                                            q = q is not None and q | sq or sq
+                                    else:
+                                        q = (f.contains(v))
                                     if query:
-                                        query = query | q
+                                        query = query & q
                                     else:
                                         query = q
                                 query = (query)
@@ -2049,9 +2036,16 @@ class S3QueryBuilder(object):
                                 query = (query)
                             elif op == "like":
                                 for v in values:
-                                    q = (f.lower().contains(v.lower()))
+                                    if v.find(",") != -1:
+                                        q = None
+                                        sv = v.split(",")
+                                        for s in sv:
+                                            sq = (f.lower().contains(s.lower()))
+                                            q = q is not None and q | sq or sq
+                                    else:
+                                        q = (f.lower().contains(v.lower()))
                                     if query:
-                                        query = query | q
+                                        query = query & q
                                     else:
                                         query = q
                                 query = (query)

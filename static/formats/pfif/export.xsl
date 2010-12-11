@@ -42,10 +42,10 @@
 
     <!-- ****************************************************************** -->
     <xsl:template match="/">
-        <xsl:apply-templates select="./s3xrc"/>
+        <xsl:apply-templates select="./s3xml"/>
     </xsl:template>
 
-    <xsl:template match="/s3xrc">
+    <xsl:template match="/s3xml">
         <pfif:pfif>
             <xsl:apply-templates select="./resource[@name='pr_person' and not(@ref)]"/>
         </pfif:pfif>
@@ -62,9 +62,7 @@
 
             <!-- Entry date and Author -->
             <pfif:entry_date>
-                <xsl:call-template name="datetime2iso">
-                    <xsl:with-param name="datetime" select="./@modified_on" />
-                </xsl:call-template>
+                <xsl:value-of select="@modified_on" />
             </pfif:entry_date>
             <pfif:author_name>
                 <xsl:value-of select="./@modified_by" />
@@ -72,12 +70,10 @@
 
             <!-- Source Information -->
             <pfif:source_name>
-                <xsl:value-of select="/s3xrc/@domain"/>
+                <xsl:value-of select="/s3xml/@domain"/>
             </pfif:source_name>
             <pfif:source_date>
-                <xsl:call-template name="datetime2iso">
-                    <xsl:with-param name="datetime" select="./@created_on" />
-                </xsl:call-template>
+                <xsl:value-of select="@created_on" />
             </pfif:source_date>
             <pfif:source_url>
                 <xsl:value-of select="./@url"/>
@@ -122,18 +118,14 @@
             </pfif:note_record_id>
 
             <pfif:entry_date>
-                <xsl:call-template name="datetime2iso">
-                    <xsl:with-param name="datetime" select="./data[@field='time']/@value" />
-                </xsl:call-template>
+                <xsl:value-of select="./data[@field='time']/@value" />
             </pfif:entry_date>
             <pfif:author_name>
                 <xsl:value-of select="./reference[@field='reporter']/text()" />
             </pfif:author_name>
 
             <pfif:source_date>
-                <xsl:call-template name="datetime2iso">
-                    <xsl:with-param name="datetime" select="./@created_on" />
-                </xsl:call-template>
+                <xsl:value-of select="./@created_on" />
             </pfif:source_date>
 
             <pfif:found>

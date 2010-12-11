@@ -43,12 +43,12 @@
 
     <!-- ****************************************************************** -->
     <xsl:template match="/sahana_data_dump">
-        <s3xrc>
+        <s3xml>
             <xsl:attribute name="domain">
                 <xsl:value-of select="$import_domain"/>
             </xsl:attribute>
             <xsl:apply-templates select="./person_uuid/record"/>
-        </s3xrc>
+        </s3xml>
     </xsl:template>
 
     <!-- ****************************************************************** -->

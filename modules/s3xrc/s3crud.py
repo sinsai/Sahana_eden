@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - CRUD Method Handlers
 
-    @version: 2.2.7
+    @version: 2.2.8
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -249,7 +249,7 @@ class S3MethodHandler(object):
             self.next = self.next.replace(placeholder, self.resource.lastid)
         r.next = self.next
 
-        # Add additional view variables
+        # Add additional view variables (e.g. rheader)
         self._extend_view(output, r, **attr)
 
         return output
@@ -352,11 +352,12 @@ class S3MethodHandler(object):
     @staticmethod
     def _extend_view(output, r, **attr):
 
-        """ Add additional view variables (invokes all callables)
+        """
+            Add additional view variables (invokes all callables)
 
             @param output: the output dict
             @param r: the S3Request
-            @param attr: the view variables
+            @param attr: the view variables (e.g. 'rheader')
 
             @note: overload this method in subclasses if you don't want
                    additional view variables to be added automatically
@@ -370,8 +371,13 @@ class S3MethodHandler(object):
                     resolve = True
                     try:
                         display = handler(r)
-                    except:
+                    except TypeError:
+                        # Argument list failure => pass callable to the view as-is
+                        display = handler
                         continue
+                    except:
+                        # Propagate all other errors to the caller
+                        raise
                 else:
                     display = handler
                 if isinstance(display, dict) and resolve:
@@ -1673,8 +1679,11 @@ class S3SearchSimple(S3CRUDHandler):
                                             linkto=linkto,
                                             download_url=self.download_url,
                                             format=representation)
-                    session.s3.filter = {"%s.id" % resource.name:
-                                         ",".join(map(str,results))}
+                    if request.post_vars.label:
+                        session.s3.filter = {"%s.id" % resource.name:
+                                            ",".join(map(str,results))}
+                    else:
+                        session.s3.filter = None
                 else:
                     items = T("No matching records found.")
                 output.update(items=items, sortby=sortby)

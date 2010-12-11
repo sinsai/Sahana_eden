@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource API
 
-    @version: 2.2.7
+    @version: 2.2.8
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -1842,7 +1842,8 @@ class S3Resource(object):
                         validators = [validators]
                     for v in validators:
                         if hasattr(v, "options"):
-                            continue
+                            if hasattr(v, "zero") and v.zero is None:
+                                continue
                         val, error = v("")
                         if error:
                             required = True

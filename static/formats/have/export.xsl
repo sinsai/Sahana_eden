@@ -43,12 +43,12 @@
     <!-- ****************************************************************** -->
     <!-- Root Element -->
     <xsl:template match="/">
-        <xsl:apply-templates select="./s3xrc"/>
+        <xsl:apply-templates select="./s3xml"/>
     </xsl:template>
 
     <!-- ****************************************************************** -->
     <!-- Hospital Status -->
-    <xsl:template match="s3xrc">
+    <xsl:template match="s3xml">
         <have:HospitalStatus>
             <xsl:apply-templates select="./resource[@name='hms_hospital']"/>
         </have:HospitalStatus>
@@ -88,11 +88,7 @@
 
                 <!-- Last Update Time -->
                 <have:LastUpdateTime>
-                    <xsl:call-template name="datetime2iso">
-                        <xsl:with-param name="datetime">
-                            <xsl:value-of select="./@modified_on"/>
-                        </xsl:with-param>
-                    </xsl:call-template>
+                    <xsl:value-of select="@modified_on"/>
                 </have:LastUpdateTime>
 
             </have:Hospital>
@@ -125,7 +121,7 @@
                                 <xsl:value-of select="./reference[@field='location_id']/@uuid"/>
                             </xsl:when>
                             <xsl:otherwise>
-                                <xsl:value-of select="concat(/s3xrc/@domain, '/', ./reference[@field='location_id']/@uuid)"/>
+                                <xsl:value-of select="concat(/s3xml/@domain, '/', ./reference[@field='location_id']/@uuid)"/>
                             </xsl:otherwise>
                         </xsl:choose>
                     </xsl:attribute>

@@ -31,11 +31,11 @@
 
     *********************************************************************** -->
     <xsl:template match="/">
-        <xsl:apply-templates select="./s3xrc"/>
+        <xsl:apply-templates select="./s3xml"/>
     </xsl:template>
 
     <!-- ****************************************************************** -->
-    <xsl:template match="s3xrc">
+    <xsl:template match="s3xml">
         <xsl:variable name="resource_url">
             <xsl:call-template name="resource_url"/>
         </xsl:variable>
@@ -172,7 +172,7 @@
             </xsl:choose>
         </xsl:variable>
         <xsl:variable name="time"
-                      select="substring-after($iso_datetime, ' ')"/>
+                      select="substring-before(substring-after($iso_datetime, 'T'), 'Z')"/>
         <xsl:value-of select="concat($day, ' ', $month_name, ' ', $year, ' ', $time, ' GMT')"/>
     </xsl:template>
 

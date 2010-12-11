@@ -212,6 +212,17 @@ td.details {
 	*cursor: hand;
 }
 
+.paging_full_numbers span.paginate_button.disabled {
+	background-color: #EFEFEF;
+	color: #7F7F7F;
+	border-color: #B3B3B3;
+	cursor: default;
+}
+
+.paging_full_numbers span.paginate_button.disabled:hover {
+	background-color: #EFEFEF;
+}
+
 .paging_full_numbers span.paginate_button {
 	background-color: #ddd;
 }

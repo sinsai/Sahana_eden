@@ -622,7 +622,6 @@ class S3CRUDHandler(S3MethodHandler):
             if representation in ("popup", "iframe"):
                 self.next = None
             elif not create_next:
-                #self.next = r.there(representation=representation)
                 self.next = self.resource.url(id=[])
             else:
                 try:

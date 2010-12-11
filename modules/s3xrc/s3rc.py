@@ -154,9 +154,6 @@ class S3ResourceController(object):
         self.json_formats = []
         self.content_type = Storage()
 
-        # Method Handlers, @todo 2.3: deprecate?
-        self.__handler = Storage()
-
 
     # Utilities ===============================================================
 
@@ -412,30 +409,6 @@ class S3ResourceController(object):
 
 
     # -------------------------------------------------------------------------
-    def set_handler(self, method, handler):
-
-        """ Set the default handler for a resource method
-
-            @todo 2.3: deprecate?
-
-        """
-
-        self.__handler[method] = handler
-
-
-    # -------------------------------------------------------------------------
-    def get_handler(self, method):
-
-        """ Get the default handler for a resource method
-
-            @todo 2.3: deprecate?
-
-        """
-
-        return self.__handler.get(method, None)
-
-
-    # -------------------------------------------------------------------------
     def _resource(self, prefix, name,
                   id=None,
                   uid=None,
@@ -464,10 +437,6 @@ class S3ResourceController(object):
                               vars=vars,
                               parent=parent,
                               components=components)
-
-        # Set default handlers
-        for method in self.__handler:
-            resource.set_handler(method, self.__handler[method])
 
         return resource
 

@@ -93,9 +93,6 @@ class S3Resource(object):
         # XSLT Paths
         self.XSLT_PATH = "static/formats"
         self.XSLT_EXTENSION = "xsl"
-        #self.XSLT_FILE_EXTENSION = "xsl"
-        #self.XSLT_IMPORT_TEMPLATES = "static/xslt/import"
-        #self.XSLT_EXPORT_TEMPLATES = "static/xslt/export"
 
         # Authorization hooks
         self.permit = manager.permit

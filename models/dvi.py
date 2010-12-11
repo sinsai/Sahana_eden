@@ -49,7 +49,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate, *s3_meta_fields())
 
     # Settings and Restrictions
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % table)
 
     table.date.label = T("Date/Time of Find")
     table.date.default = request.utcnow
@@ -58,7 +58,7 @@ if deployment_settings.has_module(module):
     table.date.represent = lambda value: shn_as_local_time(value)
 
     table.site_id.label = T("Site ID")
-    #table.site_id.requires = IS_EMPTY_OR(IS_NOT_IN_DB(db, table.site_id))
+    #table.site_id.requires = IS_EMPTY_OR(IS_NOT_ONE_OF(db, table.site_id))
 
     table.location_id.label = T("Location")
     table.person_id.label = T("Finder")
@@ -130,7 +130,7 @@ if deployment_settings.has_module(module):
 
     table.pe_label.requires = [IS_NOT_EMPTY(
                                 error_message=T("Enter a unique label!")),
-                               IS_NOT_IN_DB(db, "dvi_body.pe_label")]
+                               IS_NOT_ONE_OF(db, "dvi_body.pe_label")]
 
     table.date_of_recovery.default = request.utcnow
     table.date_of_recovery.requires = IS_UTC_DATETIME(

@@ -173,7 +173,7 @@ table = db.define_table(tablename,
                         Field("col_btn_hover"),
                         migrate=migrate)
 
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 table.col_background.requires = IS_HTML_COLOUR()
 table.col_txt.requires = IS_HTML_COLOUR()
 table.col_txt_background.requires = IS_HTML_COLOUR()

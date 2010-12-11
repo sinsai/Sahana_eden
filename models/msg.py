@@ -143,7 +143,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     #table.priority.requires = IS_NULL_OR(IS_IN_SET(msg_priority_opts))
     #table.priority.label = T("Priority")
     table.inbound.label = T("Direction")
@@ -188,7 +188,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     s3xrc.model.configure(table,
                           list_fields=[ "id",
                                         "message_id",
@@ -298,7 +298,7 @@ if deployment_settings.has_module(module):
                               multiple=True,
                               joinby=dict(msg_log="message_id"))
 
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     s3xrc.model.configure(table,
                           list_fields=[ "id",
                                         "message_id",
@@ -316,7 +316,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     s3xrc.model.configure(table,
                           list_fields=[ "id",
                                         "message_id",
@@ -336,7 +336,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 
     # SMS store for persistence and scratch pad for combining incoming xform chunks
     resourcename = "xforms_store"
@@ -410,7 +410,7 @@ if deployment_settings.has_module(module):
                             Field("url", requires=IS_NULL_OR(IS_URL())),
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 
 #------------------------------------------------------------------------
 def shn_msg_compose( redirect_module = "msg",

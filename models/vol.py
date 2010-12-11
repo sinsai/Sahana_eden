@@ -83,7 +83,18 @@ if deployment_settings.has_module(module):
                               multiple=False,
                               joinby=dict(pr_person="person_id"))
 
+    def vol_onvalidation(form):
+        status = form.vars.date_avail_start <= form.vars.date_avail_end
+        if status:
+            return status
+        else:
+            error_msg = T("End date should be after start date")
+            #form.errors["date_avail_start"] = error_msg
+            form.errors["date_avail_end"] = error_msg
+            return status
+
     s3xrc.model.configure(table,
+                          onvalidation=vol_onvalidation,
                           list_fields=["organisation_id",
                                        "status"])
 
@@ -193,8 +204,8 @@ if deployment_settings.has_module(module):
 
 
     # Field settings
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
     table.name.label = T("Name")
 
     # CRUD strings

@@ -17,7 +17,7 @@ def create():
     http://oreilly.com/catalog/9780596003692/preview.html
     Known field requirements that don't work properly:
     IS_IN_DB
-    IS_NOT_IN_DB
+    IS_NOT_ONE_OF
     IS_EMAIL
     IS_DATE_IN_RANGE
     IS_DATETIME_IN_RANGE
@@ -155,7 +155,7 @@ def generate_controllers(table, field, ref):
     #elif uses_requirement("IS_IN_DB", field):
         # ToDo (similar to IS_IN_SET)?
         #pass
-    #elif uses_requirement("IS_NOT_IN_DB", field):
+    #elif uses_requirement("IS_NOT_ONE_OF", field):
         # ToDo
         #pass
     elif uses_requirement("IS_IN_SET", table[field]): # Defined below

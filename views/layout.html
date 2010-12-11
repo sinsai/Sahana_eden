@@ -39,6 +39,11 @@
 {{else:}}
     body { direction: ltr; }
 {{pass}}
+{{if request.controller == 'gis':}}
+body { min-width: 1024px; }
+{{else:}}
+body { min-width: 800px; }
+{{ pass }}
 </style>
 {{if session.s3.debug:}}
   {{include "sahana_styles_debug.html"}}

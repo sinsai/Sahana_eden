@@ -1008,13 +1008,13 @@ def s3_rest_controller(prefix, resourcename, **attr):
 
     """
 
-    # Set method handlers
-    s3xrc.set_handler("search", shn_search)
-    s3xrc.set_handler("copy", shn_copy)
-    s3xrc.set_handler("barchart", shn_barchart)
-
     # Parse and execute the request
     resource, r = s3xrc.parse_request(prefix, resourcename)
+
+    resource.set_handler("search", shn_search)
+    resource.set_handler("copy", shn_copy)
+    resource.set_handler("barchart", shn_barchart)
+
     output = resource.execute_request(r, **attr)
 
     # Add default action buttons in list views

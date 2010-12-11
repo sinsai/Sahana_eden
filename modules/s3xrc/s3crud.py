@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - CRUD Method Handlers
 
-    @version: 2.2.8
+    @version: 2.2.9
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -209,7 +209,7 @@ class S3MethodHandler(object):
         """
 
         # Settings
-        self.download_url = self.manager.download_url
+        self.download_url = self.manager.s3.download_url
 
         # Get the right table and method
         self.prefix, self.name, self.table, self.tablename = r.target()
@@ -622,7 +622,6 @@ class S3CRUDHandler(S3MethodHandler):
             if representation in ("popup", "iframe"):
                 self.next = None
             elif not create_next:
-                #self.next = r.there(representation=representation)
                 self.next = self.resource.url(id=[])
             else:
                 try:

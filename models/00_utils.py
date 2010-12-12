@@ -827,7 +827,13 @@ def shn_search(r, **attr):
                         item = db(query).select().json()
 
             elif filter == "=":
-                query = query & (_field.lower() == value)
+                if _field.type.split(" ")[0] in ["reference", "id", "float", "integer"]:
+                    # e.g. Organisations' offices_by_org
+                    query = query & (_field == value)
+                else:
+                    # e.g. Location Selector
+                    query = query & (_field.lower() == value)
+
                 if parent:
                     # e.g. gis_location hierarchical search
                     query = query & (_table.parent == parent)

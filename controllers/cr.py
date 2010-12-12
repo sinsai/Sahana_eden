@@ -169,7 +169,7 @@ def shelter():
     rheader = lambda r: shn_shelter_rheader(r, tabs=shelter_tabs)
 
     output = s3_rest_controller(module, resourcename,
-                                 rheader=rheader)
+                                rheader=rheader)
 
     return output
 

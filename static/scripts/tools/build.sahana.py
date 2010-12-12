@@ -262,9 +262,8 @@ def docss():
         "../../styles/gis/popup.css",
         "../../styles/gis/layerlegend.css",
         "../../styles/gis/printpreview.css",
-        #mfbase+"/ext/resources/css/ext-all.css", # would need to copy images if included here
         "../../styles/gis/google.css",
-        #"../../styles/gis/style.css",
+        "../../styles/gis/style.css",
         "../../styles/gis/ie6-style.css",
         "../../styles/gis/geoexplorer.css",
         "../../styles/gis/ie.css"

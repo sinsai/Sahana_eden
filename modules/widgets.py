@@ -523,7 +523,7 @@ class S3LocationSelectorWidget:
 
             else:
                 # We don't want to pre-populate the dropdown - it will be pulled dynamically via AJAX when the parent dropdown is selected
-                options = [(0, loading_locations)]
+                options = [("", loading_locations)]
 
             opts = [OPTION(v, _value=k) for (k, v) in options]
 

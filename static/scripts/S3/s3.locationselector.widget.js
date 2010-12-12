@@ -5,39 +5,57 @@
 function s3_gis_dropdown_select(level) {
     // Read the new value of the dropdown
     var new_id = $('#gis_location_L' + (level - 1)).val();
-    // Pull down contents of new level of hierarchy by AJAX
-    var this_url  = s3_gis_url + '/search.json?filter=%3D&field=level&value=L' + level + '&parent=' + new_id;
-    var s3_gis_load_locations = function(data, status){
-        var options;
-        var v = '';
-        if (data.length == 0) {
-            options = s3_gis_empty_set;
-        } else {
-            options = s3_gis_select_location;
-            for (var i = 0; i < data.length; i++){
-                v = data[i].id;
-                options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
+    if (new_id) {
+        // Pull down contents of new level of hierarchy by AJAX
+        var this_url  = s3_gis_url + '/search.json?filter=%3D&field=level&value=L' + level + '&parent=' + new_id;
+        var s3_gis_load_locations = function(data, status){
+            var options;
+            var v = '';
+            if (data.length == 0) {
+                options = s3_gis_empty_set;
+            } else {
+                options = s3_gis_select_location;
+                for (var i = 0; i < data.length; i++){
+                    v = data[i].id;
+                    options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
+                }
+            }
+            $('#gis_location_L' + level).html(options);
+            if (level == s3_gis_maxlevel && options == s3_gis_empty_set) {
+                // Don't show the last dropdown unless it has data in
+                $('#gis_location_L' + level).hide();
+                $('#gis_location_label_L' + level).hide();
             }
         }
-        $('#gis_location_L' + level).html(options);
-        if (level == s3_gis_maxlevel && options == s3_gis_empty_set) {
-            // Don't show the last dropdown unless it has data in
-            $('#gis_location_L' + level).hide();
-            $('#gis_location_label_L' + level).hide();
-        }
-    }
-    $.getJSONS3(this_url, s3_gis_load_locations, false);
-    // Show the new level
-    $('#gis_location_L' + level).removeClass('hidden').show();
-    $('#gis_location_label_L' + level).removeClass('hidden').show();
-    // Populate the real location_id field (unless a name is already present)
-    if ( '' == $('#gis_location_name').val() ) {
-        if ('' != new_id) {
+        $.getJSONS3(this_url, s3_gis_load_locations, false);
+
+        // Show the new level
+        $('#gis_location_L' + level).removeClass('hidden').show();
+        $('#gis_location_label_L' + level).removeClass('hidden').show();
+
+        // Hide other levels & reset their contents
+        s3_gis_dropdown_hide(level + 1);
+
+        // Populate the real location_id field (unless a name is already present)
+        if ( '' == $('#gis_location_name').val() ) {
             $('#' + s3_gis_location_id).val(new_id);
         }
+
+    } else {
+        // Zero selected: Hide other levels & reset their contents
+        s3_gis_dropdown_hide(level);
+        
+        // If we're the top-level selector & there is no name defined
+        if (( 1 == level ) && ( '' == $('#gis_location_name').val() )) {
+            // Clear the real location_id field
+            $('#' + s3_gis_location_id).val('');
+        }
     }
+}
+
+function s3_gis_dropdown_hide(level) {
     // Hide other levels & reset their contents
-    for (l=level + 1; l <= 5; l=l + 1) {
+    for (l=level; l <= 5; l=l + 1) {
         $('#gis_location_L' + l).hide().html(s3_gis_loading_locations);
         $('#gis_location_label_L' + l).hide();
     }
@@ -278,6 +296,9 @@ $(function(){
     $('form').submit( function() {
         // The form is being submitted
 
+        // Do the normal form-submission tasks
+        S3ClearNavigateAwayConfirm();
+
         // Check if a new location should be created
         var name = $('#gis_location_name').val();
         var lat = $('#gis_location_lat').val();
@@ -287,12 +308,14 @@ $(function(){
         // Only save a new Location if we have data
         if ('' == name) {
             if (('' == lat || '' == lon) && ('' == addr_street)) {
-                // We don't have a name, but we do have details, so prompt the user
-                // @ToDo!
-            } else {
                 // There are no specific location details specified
                 // (Hierarchy may have been done but that's not our issue here)
                 // Allow the Form's save to continue
+                return true;
+            } else {
+                // We don't have a name, but we do have details, so prompt the user?
+                // Need to distinguish between details from hierarchy & real details
+                // @ToDo
                 return true;
             }
         }

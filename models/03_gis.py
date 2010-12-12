@@ -740,10 +740,28 @@ s3xrc.model.set_method(module, "location", method="parents", action=s3_gis_locat
 def shn_gis_location_represent(id):
     """ Represent a Location """
     try:
-        location = db(db.gis_location.id == id).select(db.gis_location.name, db.gis_location.level, db.gis_location.lat, db.gis_location.lon, db.gis_location.id, limitby=(0, 1)).first()
-        if location.level in ["L0", "L1", "L2"]:
-            # Countries, Regions shouldn't be represented as Lat/Lon
+        location = db(db.gis_location.id == id).select(db.gis_location.name,
+                                                       db.gis_location.level,
+                                                       db.gis_location.parent,
+                                                       db.gis_location.lat,
+                                                       db.gis_location.lon,
+                                                       cache=(cache.ram, 60),
+                                                       limitby=(0, 1)).first()
+        if location.level == "L0":
+            # Countries don't have Parents & shouldn't be represented with Lat/Lon
             text = location.name
+        elif location.level == "L1" and _gis.countries and len(_gis.countries) == 1:
+            # Regions shouldn't show their Parent if the deployment is only for 1 country
+            text = location.name
+        elif location.level in ["L1", "L2", "L3"]:
+            try:
+                # Show the Parent location
+                parent = db(db.gis_location.id == location.parent).select(db.gis_location.name,
+                                                                          cache=(cache.ram, 60),
+                                                                          limitby=(0, 1)).first()
+                text = "%s (%s)" % (location.name, parent.name)
+            except:
+                text = location.name
         else:
             # Simple
             #represent = location.name
@@ -765,7 +783,7 @@ def shn_gis_location_represent(id):
         # Simple
         #represent = text
         # Hyperlink
-        #represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[location.id]))
+        #represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[id]))
         # Map
         represent = A(text, _href="#", _onclick="s3_viewMap(" + str(id) +");return false")
         # ToDo: Convert to popup? (HTML again!)

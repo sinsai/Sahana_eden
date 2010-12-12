@@ -495,7 +495,7 @@ def shn_table_links(reference):
     for table in db.tables:
         count = 0
         for field in db[table].fields:
-            if db[table][field].type == "reference %s" % reference:
+            if str(db[table][field].type) == "reference %s" % reference:
                 if count == 0:
                     tables[table] = {}
                 tables[table][count] = field
@@ -827,7 +827,14 @@ def shn_search(r, **attr):
                         item = db(query).select().json()
 
             elif filter == "=":
-                query = query & (_field.lower() == value)
+                fieldtype = str(_field.type)
+                if fieldtype.split(" ")[0] in ["reference", "id", "float", "integer"]:
+                    # e.g. Organisations' offices_by_org
+                    query = query & (_field == value)
+                else:
+                    # e.g. Location Selector
+                    query = query & (_field.lower() == value)
+
                 if parent:
                     # e.g. gis_location hierarchical search
                     query = query & (_table.parent == parent)

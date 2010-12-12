@@ -198,10 +198,10 @@ def series():
     table.survey_template_id.label = T("Survey Template")
     table.survey_template_id.requires = IS_ONE_OF(db, "survey_template.id", "%(name)s")
     table.survey_template_id.represent = lambda id: (id and [db(db.survey_template.id == id).select(db.survey_template.name, limitby=(0, 1)).first().name] or [""])[0]
-    table.from_date.label = T("Start of Period")
-    table.from_date.requires = IS_NOT_EMPTY()
-    table.to_date.label = T("End of Period")
-    table.to_date.requires = IS_NOT_EMPTY()
+    table.start_date.label = T("Start of Period")
+    table.start_date.requires = IS_NOT_EMPTY()
+    table.end_date.label = T("End of Period")
+    table.end_date.requires = IS_NOT_EMPTY()
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(

@@ -827,7 +827,13 @@ def shn_search(r, **attr):
                         item = db(query).select().json()
 
             elif filter == "=":
-                query = query & (_field.lower() == value)
+                if _field.type.split(" ")[0] in ["reference", "id", "float", "integer"]:
+                    # e.g. Organisations' offices_by_org
+                    query = query & (_field == value)
+                else:
+                    # e.g. Location Selector
+                    query = query & (_field.lower() == value)
+
                 if parent:
                     # e.g. gis_location hierarchical search
                     query = query & (_table.parent == parent)
@@ -1008,13 +1014,13 @@ def s3_rest_controller(prefix, resourcename, **attr):
 
     """
 
-    # Set method handlers
-    s3xrc.set_handler("search", shn_search)
-    s3xrc.set_handler("copy", shn_copy)
-    s3xrc.set_handler("barchart", shn_barchart)
-
     # Parse and execute the request
     resource, r = s3xrc.parse_request(prefix, resourcename)
+
+    resource.set_handler("search", shn_search)
+    resource.set_handler("copy", shn_copy)
+    resource.set_handler("barchart", shn_barchart)
+
     output = resource.execute_request(r, **attr)
 
     # Add default action buttons in list views

@@ -34,7 +34,12 @@ if db_string[0].find("sqlite") != -1:
     db = DAL(db_string[0], check_reserved=["mysql", "postgres"])
 else:
     # Tuple (inc pool_size)
-    db = DAL(db_string[0], pool_size=db_string[1])
+    try:
+        db = DAL(db_string[0], pool_size=db_string[1])
+    except:
+        db_type = db_string[0].split(":", 1)[0]
+        db_location = db_string[0].split("@", 1)[1]
+        raise(HTTP(503, "Cannot connect to %s Database: %s" % (db_type, db_location)))
 
 #if request.env.web2py_runtime_gae:        # if running on Google App Engine
 #session.connect(request, response, db=db) # Store sessions and tickets in DB
@@ -61,7 +66,7 @@ shn_has_permission = auth.shn_has_permission
 shn_accessible_query = auth.shn_accessible_query
 FieldS3 = s3tools.FieldS3
 S3ReusableField = s3tools.S3ReusableField
-MENU2 = s3tools.MENU2
+MENUS3 = s3tools.MENUS3
 
 from gluon.tools import Service
 service = Service(globals())

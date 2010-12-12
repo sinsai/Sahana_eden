@@ -391,9 +391,9 @@ class GIS(object):
         _markers = db.gis_marker
 
         tablename = "%s_%s" % (prefix, resourcename)
-        table = db[tablename]
 
         try:
+            table = db[tablename]
             if "deleted" in table.fields:
                 # Hide deleted Resources
                 query = (table.deleted == False)
@@ -2440,7 +2440,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         # Layout
         if window and window_hide:
             layout = """
-        win = new Ext.Window({
+        mapWin = new Ext.Window({
             collapsible: true,
             constrain: true,
             closeAction: 'hide',
@@ -2449,13 +2449,13 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
         elif window:
             layout = """
-        win = new Ext.Window({
+        mapWin = new Ext.Window({
             collapsible: true,
             constrain: true,
             """
             layout2 = """
-        win.show();
-        win.maximize();
+        mapWin.show();
+        mapWin.maximize();
         """
         else:
             # Embedded
@@ -3795,7 +3795,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         #############
 
         html.append(SCRIPT("""
-    var map, mapPanel, legendPanel, toolbar, win;
+    var map, mapPanel, legendPanel, toolbar, mapWin;
     var pointButton, lastDraftFeature, draftLayer;
     var centerPoint, currentFeature, popupControl, highlightControl;
     var wmsBrowser, printProvider;
@@ -3812,6 +3812,8 @@ OpenLayers.Util.extend( selectPdfControl, {
     var options = {
         displayProjection: proj4326,
         projection: projection_current,
+        // Use Manual stylesheet download (means can be done in HEAD to not delay pageload)
+        theme: null,
         paddingForPopups: new OpenLayers.Bounds(50, 10, 200, 300),
         units: '""" + units + """',
         maxResolution: """ + str(maxResolution) + """,
@@ -3851,17 +3853,17 @@ OpenLayers.Util.extend( selectPdfControl, {
 
     // HTML5 GeoLocation: http://dev.w3.org/geo/api/spec-source.html
     function getCurrentPosition(position){
-            // Level to zoom into
-            var zoomLevel = 15;
-            var lat = position.coords.latitude;
-            var lon = position.coords.longitude;
-            //var elevation = position.coords.altitude;
-            //var ce = position.coords.accuracy;
-            //var le = position.coords.altitudeAccuracy;
-            //position.coords.heading;
-            //position.coords.speed;
-            map.setCenter(new OpenLayers.LonLat(lon, lat).transform(proj4326, map.getProjectionObject()), zoomLevel);
-        };
+        // Level to zoom into
+        var zoomLevel = 15;
+        var lat = position.coords.latitude;
+        var lon = position.coords.longitude;
+        //var elevation = position.coords.altitude;
+        //var ce = position.coords.accuracy;
+        //var le = position.coords.altitudeAccuracy;
+        //position.coords.heading;
+        //position.coords.speed;
+        map.setCenter(new OpenLayers.LonLat(lon, lat).transform(proj4326, map.getProjectionObject()), zoomLevel);
+    };
 
     function addLayers(map) {
         // Base Layers
@@ -4167,7 +4169,7 @@ OpenLayers.Util.extend( selectPdfControl, {
     });
     """))
 
-        return html.xml()
+        return html
 
     # -----------------------------------------------------------------------------
     def form_map(self, r, method="create", tablename=None, prefix=None, name=None):

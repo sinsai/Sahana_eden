@@ -99,7 +99,7 @@ def shn_pentity_represent(id, default_label="[no label]"):
 # -----------------------------------------------------------------------------
 pe_label = S3ReusableField("pe_label", length=128,
                            label = T("ID Label"),
-                           requires = IS_NULL_OR(IS_NOT_IN_DB(db,
+                           requires = IS_NULL_OR(IS_NOT_ONE_OF(db,
                                       "pr_pentity.pe_label")))
 
 # *****************************************************************************

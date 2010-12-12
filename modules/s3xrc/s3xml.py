@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - XML/JSON Toolkit
 
-    @version: 2.2.8
+    @version: 2.2.9
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -165,7 +165,7 @@ class S3XML(object):
 
         self.db = manager.db
         self.domain = manager.domain
-        self.base_url = manager.base_url
+        self.s3 = manager.s3
         self.gis = manager.gis
         self.cache = manager.cache
 
@@ -290,7 +290,7 @@ class S3XML(object):
         if domain:
             root.set(self.ATTRIBUTE.domain, self.domain)
         if url:
-            root.set(self.ATTRIBUTE.url, self.base_url)
+            root.set(self.ATTRIBUTE.url, self.s3.base_url)
         root.set(self.ATTRIBUTE.latmin,
                  str(self.gis.get_bounds()["min_lat"]))
         root.set(self.ATTRIBUTE.latmax,
@@ -586,7 +586,7 @@ class S3XML(object):
 
         """
 
-        download_url = self.manager.download_url or ""
+        download_url = self.s3.download_url or ""
 
         elem = etree.Element(self.TAG.resource)
         elem.set(self.ATTRIBUTE.name, table._tablename)

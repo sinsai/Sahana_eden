@@ -210,8 +210,8 @@ table = db.define_table(tablename,
 
 
 # Field settings
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 table.type.requires = IS_NULL_OR(IS_IN_SET(org_organisation_type_opts))
 table.type.represent = lambda opt: org_organisation_type_opts.get(opt, UNKNOWN_OPT)
 table.country.requires = IS_NULL_OR(IS_IN_SET(s3_list_of_nations, sort=True))
@@ -338,9 +338,9 @@ table = db.define_table(tablename,
 
 
 # Field settings
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 #db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 table.type.requires = IS_NULL_OR(IS_IN_SET(org_office_type_opts))
 table.type.represent = lambda opt: org_office_type_opts.get(opt, UNKNOWN_OPT)
 table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "org_office.id", "%(name)s"))

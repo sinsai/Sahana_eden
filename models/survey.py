@@ -36,20 +36,19 @@ if deployment_settings.has_module(module):
                              Field("name", "string", default="", length=120),
                              Field("description", "text", default="", length=500),
                              Field("survey_template_id", db.survey_template),
-                             Field("from_date", "date", default=None),
-                             Field("to_date", "date", default=None),
+                             Field("start_date", "date", default=None),
+                             Field("end_date", "date", default=None),
                              location_id(),
                              migrate=migrate,
                              *s3_meta_fields())
 
     def survey_series_onvalidation(form):
-        status = form.vars.from_date <= form.vars.to_date
+        status = form.vars.start_date <= form.vars.end_date
         if status:
             return status
         else:
             error_msg = T("End date should be after start date")
-            #form.errors["from_date"] = error_msg
-            form.errors["to_date"] = error_msg
+            form.errors["end_date"] = error_msg
             return status
 
     s3xrc.model.configure(series,

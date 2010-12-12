@@ -736,18 +736,22 @@ div#rheader_tabs span.rheader_tab_here a { color: #col_txt;
 					   float: left;
 					   width: 150px; }
 
-.div_arrow	{ padding: 50px 0 0 35px;}
+.div_arrow	{ padding: 50px 0 0 35px;
+              text-align:left; }
 
 #content .menu_div h3  {border-bottom: 0px;
 			   font-size: 2.0em;
 			   padding-bottom: 10px;
+               text-align: justify;
 			   }
 
 .menu_box { height: 50px;
 		    width: 140px;
 		    background: url(../../img/menu_box.png) no-repeat;
 		    font-size: 1.4em;
-		    padding: 12px;
+		    padding-top:12px; 
+            margin-top:11px; 
+            text-align: center;
 		    }
 
 .menu_text { clear: both;}

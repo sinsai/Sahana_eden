@@ -1,4 +1,6 @@
 CreateTestAccount, createTestAccount.CreateTestAccount
 UserManagementCreate, userManagement.UserManagementCreate
+LocationEmpty, locationSelector.LocationEmpty
+LocationL0, locationSelector.LocationL0
 UserManagementFinal, userManagement.UserManagementFinal
 DeleteTestAccount, deleteTestAccount.DeleteTestAccount

@@ -534,7 +534,10 @@ class S3LocationSelectorWidget:
             else:
                 # Hide the Dropdown & the Label
                 attr_dropdown["_class"] = attr_dropdown["_class"] + " hidden"
-                label = LABEL(location_hierarchy[level], ":", _id="gis_location_label_%s" % level, _class="hidden")
+                if level:
+                    label = LABEL(location_hierarchy[level], ":", _id="gis_location_label_%s" % level, _class="hidden")
+                else:
+                    label = LABEL(T("Specific Location"), ":", _id="gis_location_label_%s" % level, _class="hidden")
 
             widget = SELECT(*opts, **attr_dropdown)
             row = DIV(TR(label), TR(widget))
@@ -589,6 +592,7 @@ class S3LocationSelectorWidget:
                 visible = False
             dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level]))
             maxlevel = _level
+        # L5 not supported by testSuite
         _level = "L5"
         if _level in location_hierarchy:
             if level and int(level[1:]) > 4:
@@ -598,6 +602,15 @@ class S3LocationSelectorWidget:
                 visible = False
             dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level]))
             maxlevel = _level
+        # Finally the level for specific locations
+        _level = ""
+        if not level and value:
+            # We have an existing value to display
+            visible = True
+        else:
+            visible = False
+        dropdowns.append(level_dropdown(_level, visible=visible, current=value))
+        
 
         # Settings to be read by static/scripts/S3/s3.locationselector.widget.js
         js_location_selector = """
@@ -615,7 +628,7 @@ class S3LocationSelectorWidget:
     var s3_gis_fill_lat = '%s';
     var s3_gis_fill_lon = '%s';
     """ % (location_id,
-           maxlevel,
+           maxlevel[1:],
            empty_set,
            loading_locations,
            select_location,

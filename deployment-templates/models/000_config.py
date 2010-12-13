@@ -139,8 +139,8 @@ deployment_settings.gis.locations_hierarchy = {
     "L2":T("District"),
     "L3":T("Town"),
     "L4":T("Village"),
-    #"L5":T("Neighbourhood"),
-    "XX":T("Imported")
+    #"L5":T("Neighbourhood"),   # Currently not supported by testSuite
+    "XX":T("Imported")          # Filtered from view as no detailed information & many duplicates (e.g. coming from Ushahidi)
 }
 # Maximum Marker Size
 # (takes effect only on display)

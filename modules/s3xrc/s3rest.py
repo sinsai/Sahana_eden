@@ -2235,12 +2235,16 @@ class S3Request(object):
 
         if self.representation == "html":
             self.session.error = self.UNAUTHORISED
-            login = URL(r=self.request,
-                        c="default",
-                        f="user",
-                        args="login",
-                        vars={"_next": self.here()})
-            redirect(login)
+            self.session.warning = None
+            if not self.session.auth.user:
+                login = URL(r=self.request,
+                            c="default",
+                            f="user",
+                            args="login",
+                            vars={"_next": self.here()})
+                redirect(login)
+            else:
+                redirect(URL(r=self.request, f="index"))
         else:
             raise HTTP(401, body=self.UNAUTHORISED)
 

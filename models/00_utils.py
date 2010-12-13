@@ -33,6 +33,8 @@ def s3_sessions():
                         _memberships.group_id)
         roles = [m.group_id for m in memberships]
     session.s3.roles = roles
+    if not auth.permission():
+        auth.permission.fail()
 
     # Are we running in debug mode?
     session.s3.debug = request.vars.get("debug", None) or \

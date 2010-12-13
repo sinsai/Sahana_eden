@@ -301,7 +301,9 @@ class S3LocationSelectorWidget:
             * Select location from Map
     """
     def __init__(self,
+                 db,
                  gis,
+                 deployment_settings,
                  request,
                  response,
                  T,
@@ -309,31 +311,40 @@ class S3LocationSelectorWidget:
                  #level=None        # @ToDo: Support forcing which level of the hierarchy is expected to be entered for this instance of the field
                  ):
 
+        self.db = db
         self.gis = gis
+        self.deployment_settings = deployment_settings
         self.request = request
         self.response = response
         self.T = T
 
     def __call__(self, field, value, **attributes):
 
-        db = field._db
+        #db = field._db  # old DAL
+        #db = field.db   # new DAL
+        db = self.db
+        gis = self.gis
+        deployment_settings = self.deployment_settings
         request = self.request
         response = self.response
         T = self.T
-        gis = self.gis
 
         # shortcut
         locations = db.gis_location
 
         # Read Options
-        _gis = response.s3.gis
+        countries = response.s3.gis.countries  # Also needed by location_represent hence want to keep in model, so useful not to repeat
+        # Should we use a Map-based selector?
+        map_selector = deployment_settings.get_gis_map_selector()
         # Which Levels do we have in our hierarchy & what are their Labels?
-        location_hierarchy = _gis.location_hierarchy
+        location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
         try:
             # Ignore the bad bulk-imported data
             del location_hierarchy["XX"]
         except KeyError:
             pass
+        # What is the maximum level of hierarchy?
+        max_hierarchy = deployment_settings.get_gis_max_hierarchy()
         
         # Main Input
         default = dict(
@@ -370,19 +381,34 @@ class S3LocationSelectorWidget:
             lon = this_location.lon
             addr_street = this_location.addr_street
             parent = this_location.parent
-            if parent:
-                parent_level = int(level[1:]) - 1
-                default["L%d" % parent_level] = parent
-                path = this_location.path
-                if path:
-                    # Lookup Ancestors
-                    ancestors = path.split("/")
-                    numberAncestors = len(ancestors)
-                    if numberAncestors > 2:
-                        del ancestors[numberAncestors - 1]  # Remove self
-                        del ancestors[numberAncestors - 2]  # Remove parent
-                        for i in range(numberAncestors - 2):
-                            default["L%i" % i] = ancestors[i]
+            path = this_location.path
+            if path:
+                # Lookup Ancestors
+                ancestors = path.split("/")
+                numberAncestors = len(ancestors)
+                if numberAncestors > 1:
+                    del ancestors[numberAncestors - 1]  # Remove self
+                    for i in range(numberAncestors - 1):
+                        # @ToDo: Can't assume strict hierarchy (unless deployment setting)
+                        # Do a single SQL query for all ancestors to look up their levels (limitby = len(options))
+                        default["L%i" % i] = ancestors[i]
+            elif parent:
+                # Path not populated, so need to do lookups manually :/
+                _parent = db(locations.id == parent).select(locations.level, locations.parent, limitby=(0, 1)).first()
+                if _parent.level:
+                    default[_parent.level] = parent
+                if _parent.parent:
+                    _grandparent = db(locations.id == _parent.parent).select(locations.level, locations.parent, limitby=(0, 1)).first()
+                    if _grandparent.level:
+                        default[_grandparentparent.level] = _parent.parent
+                    if _grandparent.parent:
+                        _greatgrandparent = db(locations.id == _grandparent.parent).select(locations.level, locations.parent, limitby=(0, 1)).first()
+                        if _greatgrandparent.level:
+                            default[_greatgrandparent.level] = _grandparent.parent
+                        if _greatgrandparent.parent:
+                            _greatgreatgrandparent = db(locations.id == _greatgrandparent.parent).select(locations.level, locations.parent, limitby=(0, 1)).first()
+                            if _greatgreatgrandparent.level:
+                                default[_greatgreatgrandparent.level] = _greatgrandparent.parent
 
             # Provide the representation for the current/default Value
             #text = str(field.represent(default["value"]))
@@ -404,7 +430,7 @@ class S3LocationSelectorWidget:
             else:
                 represent = this_location.name
 
-            if _gis.map_selector:
+            if map_selector:
                 config = gis.get_config()
                 zoom = config.zoom
                 if lat is None or lon is None:
@@ -439,7 +465,7 @@ class S3LocationSelectorWidget:
             lat = ""
             lon = ""
             addr_street = ""
-            if _gis.map_selector:
+            if map_selector:
                 map_popup = gis.show_map(add_feature = True,
                                          add_feature_active = True,
                                          toolbar = True,
@@ -488,18 +514,24 @@ class S3LocationSelectorWidget:
 
             deleted = (locations.deleted == False)
 
-            if level == "L0" and _gis.countries:
+            if level == "L0" and countries:
                 # Use the list of countries from deployment_settings instead of from DB
                 options = []
-                countries = db(locations.code.belongs(_gis.countries)).select(locations.id, locations.name)
                 for country in countries:
-                    options.append((country.id, country.name))
+                    options.append((countries[country].id, countries[country].name))
 
             elif current:
                 # Read values from database
                 options = []
                 query = (locations.level == level) & deleted
-                if level != "L0":
+                if level == "":
+                    # @ToDo: Assumes strict hierarchy
+                    #if strict:
+                    parent = default[max_hierarchy]
+                    query = query & (locations.parent == parent)
+                elif level != "L0":
+                    # @ToDo: Assumes strict hierarchy
+                    #if strict:
                     parent = default["L%d" % (int(level[1:]) - 1)]
                     query = query & (locations.parent == parent)
 
@@ -514,7 +546,7 @@ class S3LocationSelectorWidget:
                 else:
                     raise SyntaxError, "widget cannot determine options of %s" % field
 
-            elif level == "L1" and _gis.countries and len(_gis.countries) == 1:
+            elif level == "L1" and countries and len(countries) == 1:
                 # Propopulate top-level dropdown
                 if hasattr(requires[0], "options"):
                     options = requires[0].options()
@@ -530,7 +562,10 @@ class S3LocationSelectorWidget:
             attr_dropdown["_id"] = "gis_location_%s" % level
             attr_dropdown["_name"] = "gis_location_%s" % level
             if visible:
-                label = LABEL(location_hierarchy[level], ":", _id="gis_location_label_%s" % level)
+                if level:
+                    label = LABEL(location_hierarchy[level], ":", _id="gis_location_label_%s" % level)
+                else:
+                    label = LABEL(T("Specific Location"), ":", _id="gis_location_label_%s" % level)
             else:
                 # Hide the Dropdown & the Label
                 attr_dropdown["_class"] = attr_dropdown["_class"] + " hidden"
@@ -546,16 +581,15 @@ class S3LocationSelectorWidget:
         dropdowns = DIV()
         _level = "L0"
         if _level in location_hierarchy:
-            if _gis.countries and len(_gis.countries) == 1:
+            if countries and len(countries) == 1:
                 # Country hard-coded
                 visible = False
             else:
                 visible = True
-            dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level]))
-            maxlevel = _level
+            dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level]))            
         _level = "L1"
         if _level in location_hierarchy:
-            if _gis.countries and len(_gis.countries) == 1:
+            if countries and len(countries) == 1:
                 # Country is hard-coded, so display L1s by default
                 visible = True
             elif level and int(level[1:]) > 0:
@@ -563,8 +597,7 @@ class S3LocationSelectorWidget:
                 visible = True
             else:
                 visible = False
-            dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level]))
-            maxlevel = _level
+            dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level]))            
         _level = "L2"
         if _level in location_hierarchy:
             if level and int(level[1:]) > 1:
@@ -573,7 +606,6 @@ class S3LocationSelectorWidget:
             else:
                 visible = False
             dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level]))
-            maxlevel = "_level"
         _level = "L3"
         if _level in location_hierarchy:
             if level and int(level[1:]) > 2:
@@ -582,7 +614,6 @@ class S3LocationSelectorWidget:
             else:
                 visible = False
             dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level]))
-            maxlevel = _level
         _level = "L4"
         if _level in location_hierarchy:
             if level and int(level[1:]) > 3:
@@ -591,7 +622,6 @@ class S3LocationSelectorWidget:
             else:
                 visible = False
             dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level]))
-            maxlevel = _level
         # L5 not supported by testSuite
         _level = "L5"
         if _level in location_hierarchy:
@@ -601,7 +631,6 @@ class S3LocationSelectorWidget:
             else:
                 visible = False
             dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level]))
-            maxlevel = _level
         # Finally the level for specific locations
         _level = ""
         if not level and value:
@@ -628,7 +657,7 @@ class S3LocationSelectorWidget:
     var s3_gis_fill_lat = '%s';
     var s3_gis_fill_lon = '%s';
     """ % (location_id,
-           maxlevel[1:],
+           max_hierarchy[1:],
            empty_set,
            loading_locations,
            select_location,
@@ -663,7 +692,7 @@ class S3LocationSelectorWidget:
                              _id="gis_location_geolocate-btn",
                              _class="hidden")
 
-        if _gis.map_selector:
+        if map_selector:
             map_button = A(T("Select using Map"), _href="#",
                            _id="gis_location_map-btn",
                            _class="hidden")

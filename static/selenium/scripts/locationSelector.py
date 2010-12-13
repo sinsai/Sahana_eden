@@ -10,7 +10,7 @@ class LocationSelector(unittest.TestCase):
         self.selenium = testSuite.SahanaTestSuite.selenium
         # @ToDo: Import Test Data (e.g. Haiti subset)
 
-    def header(self):
+    def create_header(self):
         sel = self.selenium
         # Login
         self.action.login(self, "user@example.com", "testing" )
@@ -18,15 +18,38 @@ class LocationSelector(unittest.TestCase):
         # Load the Create Shelter page
         sel.open("/eden/cr/shelter/create")
 
+    def update_header(self, name):
+        sel = self.selenium
+        # Login
+        self.action.login(self, "user@example.com", "testing" )
+        self.assertTrue(self.selenium.is_element_present("link=user@example.com"))
+        # Load the Shelter List page
+        sel.open("/eden/cr/shelter")
+        # Search for the Record
+        # - see createTestAccount for an explanation
+        sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( '' );")
+        sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( %s );" % name)
+        for i in range(60):
+            try:
+                if re.search(r"^[\s\S]*1 entries[\s\S]*$", sel.get_text("//div[@class='dataTables_info']")): break
+            except: pass
+            time.sleep(1)
+        else: self.fail("time out")
+        # Open it
+        sel.click("link=Open")
+        sel.wait_for_page_to_load("30000")
+        # Check that the correct record is loaded
+        self.assertEqual(name, sel.get_text("//div[@class=\"confirmation\"]"))
+
     def tearDown(self):
         #self.assertEqual([], self.verificationErrors)
         pass
 
-class LocationEmpty(LocationSelector):
+class CreateLocationEmpty(LocationSelector):
     def test_locationEmpty(self):
         """ Create a new Shelter without any Location specified """
         sel = self.selenium
-        self.header()
+        self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with no Location")
         # Save the form
@@ -35,11 +58,24 @@ class LocationEmpty(LocationSelector):
         # Shelter saved
         self.assertEqual("Shelter added", sel.get_text("//div[@class=\"confirmation\"]"))
 
-class LocationNoParent(LocationSelector):
+class UpdateLocationEmpty(LocationSelector):
+    def test_updateLocationEmpty(self):
+        """ Update an existing Shelter without any Location specified """
+        sel = self.selenium
+        self.update_header()
+        # Check that our Location is selected correctly
+        sel.type("cr_shelter_name", "Shelter with no Location")
+        # Save the form
+        sel.click("//input[@value='Save']")
+        sel.wait_for_page_to_load("30000")
+        # Shelter saved
+        self.assertEqual("Shelter added", sel.get_text("//div[@class=\"confirmation\"]"))
+
+class CreateLocationNoParent(LocationSelector):
     def test_locationNoParent(self):
         """ Create a new Shelter without any Location specified """
         sel = self.selenium
-        self.header()
+        self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with no Parent")
         # Create a new location
@@ -53,11 +89,11 @@ class LocationNoParent(LocationSelector):
         # Shelter has correct location
         self.assertEqual("Location with no Parent", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
-class LocationL0(LocationSelector):
+class CreateLocationL0(LocationSelector):
     def test_locationL0(self):
         """ Create a new Shelter with an L0 location """
         sel = self.selenium
-        self.header()
+        self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with an L0 Location")
         # Select the L0
@@ -73,11 +109,11 @@ class LocationL0(LocationSelector):
         # Shelter has correct location
         self.assertEqual("Haiti", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
-class LocationInL0(LocationSelector):
+class CreateLocationInL0(LocationSelector):
     def test_locationInL0(self):
         """ Create a new Shelter inside an L0 location """
         sel = self.selenium
-        self.header()
+        self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter within L0 Location")
         # Select the L0
@@ -96,11 +132,11 @@ class LocationInL0(LocationSelector):
         # Shelter has correct location
         self.assertEqual("Specific Location in L0", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
-class LocationL1(LocationSelector):
+class CreateLocationL1(LocationSelector):
     def test_locationL1(self):
         """ Create a new Shelter with an L1 location """
         sel = self.selenium
-        self.header()
+        self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with an L1 Location")
         # Select the L0
@@ -121,11 +157,11 @@ class LocationL1(LocationSelector):
         # Shelter has correct location
         self.assertEqual("Ouest (Haiti)", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
-class LocationInL1(LocationSelector):
+class CreateLocationInL1(LocationSelector):
     def test_locationInL1(self):
         """ Create a new Shelter inside an L1 location """
         sel = self.selenium
-        self.header()
+        self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter within L1 Location")
         # Select the L0
@@ -149,11 +185,11 @@ class LocationInL1(LocationSelector):
         # Shelter has correct location
         self.assertEqual("Specific Location in L1", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
-class LocationL2(LocationSelector):
+class CreateLocationL2(LocationSelector):
     def test_locationL2(self):
         """ Create a new Shelter with an L2 location """
         sel = self.selenium
-        self.header()
+        self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with an L2 Location")
         # Select the L0
@@ -179,11 +215,11 @@ class LocationL2(LocationSelector):
         # Shelter has correct location
         self.assertEqual("Port-Au-Prince (Ouest)", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
-class LocationInL2(LocationSelector):
+class CreateLocationInL2(LocationSelector):
     def test_locationInL2(self):
         """ Create a new Shelter inside an L2 location """
         sel = self.selenium
-        self.header()
+        self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter within L2 Location")
         # Select the L0
@@ -212,11 +248,11 @@ class LocationInL2(LocationSelector):
         # Shelter has correct location
         self.assertEqual("Specific Location in L2", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
-class LocationL3(LocationSelector):
+class CreateLocationL3(LocationSelector):
     def test_locationL3(self):
         """ Create a new Shelter with an L3 location """
         sel = self.selenium
-        self.header()
+        self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with an L3 Location")
         # Select the L0
@@ -246,11 +282,11 @@ class LocationL3(LocationSelector):
         # Shelter has correct location
         self.assertEqual("Martissant (Port-Au-Prince)", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
-class LocationInL3(LocationSelector):
+class CreateLocationInL3(LocationSelector):
     def test_locationInL3(self):
         """ Create a new Shelter inside an L3 location """
         sel = self.selenium
-        self.header()
+        self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter within L3 Location")
         # Select the L0
@@ -284,11 +320,11 @@ class LocationInL3(LocationSelector):
         # Shelter has correct location
         self.assertEqual("Specific Location in L3", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
-class LocationL4(LocationSelector):
+class CreateLocationL4(LocationSelector):
     def test_locationL4(self):
         """ Create a new Shelter with an L4 location """
         sel = self.selenium
-        self.header()
+        self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with an L4 Location")
         # Select the L0
@@ -324,11 +360,11 @@ class LocationL4(LocationSelector):
         # Shelter has correct location
         self.assertEqual("Carrefour Feuilles", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
-class LocationInL4(LocationSelector):
+class CreateLocationInL4(LocationSelector):
     def test_locationInL4(self):
         """ Create a new Shelter inside an L4 location """
         sel = self.selenium
-        self.header()
+        self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter within L4 Location")
         # Select the L0
@@ -367,11 +403,11 @@ class LocationInL4(LocationSelector):
         # Shelter has correct location
         self.assertEqual("Specific Location in L4", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
-class LocationSelectSpecific(LocationSelector):
+class CreateLocationSelectSpecific(LocationSelector):
     def test_locationSelectSpecific(self):
         """ Create a new Shelter with a pre-existing specific location """
         sel = self.selenium
-        self.header()
+        self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with a pre-existing specific Location")
         # Select the L0

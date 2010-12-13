@@ -41,7 +41,7 @@ table = db.define_table(tablename,
                         Field("width", "integer", writable=False),  # We could get size client-side using Javascript's Image() class, although this is unreliable!
                         migrate=migrate, *s3_timestamp())
 
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 # upload folder needs to be visible to the download() function as well as the upload
 table.image.uploadfolder = os.path.join(request.folder, "static/img/markers")
 table.image.represent = lambda filename: (filename and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=filename), _height=40))] or [""])[0]
@@ -91,8 +91,8 @@ table = db.define_table(tablename,
                         Field("units", notnull=True),
                         migrate=migrate,
                         *(s3_timestamp() + s3_uid()))
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 table.epsg.requires = IS_NOT_EMPTY()
 table.maxExtent.requires = IS_NOT_EMPTY()
 table.maxResolution.requires = IS_NOT_EMPTY()
@@ -167,7 +167,7 @@ table = db.define_table(tablename,
                         Field("wmsbrowser_url"),
                         migrate=migrate,
                         *(s3_timestamp() + s3_uid()))
-table.uuid.requires = IS_NOT_IN_DB(db, "gis_config.uuid")
+table.uuid.requires = IS_NOT_ONE_OF(db, "gis_config.uuid")
 table.pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.pe_id", shn_pentity_represent))
 table.pe_id.readable = table.pe_id.writable = False
 table.lat.requires = IS_LAT()
@@ -373,8 +373,8 @@ table = db.define_table(tablename,
                         migrate=migrate,
                         *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 table.gps_marker.requires = IS_NULL_OR(IS_IN_SET(gis_gps_marker_opts, zero=T("Use default")))
 # Configured in zzz_last.py when all tables are available
 #table.resource.requires = IS_NULL_OR(IS_IN_SET(db.tables))
@@ -445,7 +445,7 @@ table = db.define_table(tablename,
                         comments(),
                         migrate=migrate,
                         *(s3_timestamp() + s3_uid() + s3_deletion_status()))
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
 
 table.name.label = T("Primary Name")
@@ -482,11 +482,11 @@ table.osm_id.label = "OpenStreetMap ID"
 CONVERSION_TOOL = T("Conversion Tool")
 table.lat.comment = DIV(_class="tooltip",
                         _id="gis_location_lat_tooltip",
-                        _title=T("Latitude & Longitude") + "|" + T("You can click on the map to select the Lat/Lon fields. Longitude is West - East (sideways). Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees."))
+                        _title=T("Latitude & Longitude") + "|" + T("Longitude is West - East (sideways). Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  These need to be added in Decimal Degrees."))
 table.lon.comment = A(CONVERSION_TOOL,
                       _style="cursor:pointer;",
                       _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."),
-                      _id="btnConvert")
+                      _id="gis_location_converter-btn")
 
 s3xrc.model.configure(table, listadd=False)
     #list_fields=["id", "name", "level", "parent", "lat", "lon"])
@@ -500,7 +500,7 @@ location_id = S3ReusableField("location_id", db.gis_location,
                     represent = lambda id: shn_gis_location_represent(id),
                     label = T("Location"),
                     # Not yet ready
-                    #widget = S3LocationSelectorWidget(request, response, T),
+                    #widget = S3LocationSelectorWidget(gis, request, response, T),
                     # If enabling widget, then disable comment (widget incorporates it)
                     comment = DIV(A(ADD_LOCATION, _class="colorbox", _target="top", _title=ADD_LOCATION,
                                     _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup"))),
@@ -535,7 +535,7 @@ table = db.define_table(tablename,
                         migrate=migrate,
                         *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
+table.uuid.requires = IS_NOT_ONE_OF(db, '%s.uuid' % tablename)
 table.language.requires = IS_IN_SET(s3.l10n_languages)
 table.language.represent = lambda opt: s3.l10n_languages.get(opt, UNKNOWN_OPT)
 table.language.label = T("Language")
@@ -740,10 +740,28 @@ s3xrc.model.set_method(module, "location", method="parents", action=s3_gis_locat
 def shn_gis_location_represent(id):
     """ Represent a Location """
     try:
-        location = db(db.gis_location.id == id).select(db.gis_location.name, db.gis_location.level, db.gis_location.lat, db.gis_location.lon, db.gis_location.id, limitby=(0, 1)).first()
-        if location.level in ["L0", "L1", "L2"]:
-            # Countries, Regions shouldn't be represented as Lat/Lon
+        location = db(db.gis_location.id == id).select(db.gis_location.name,
+                                                       db.gis_location.level,
+                                                       db.gis_location.parent,
+                                                       db.gis_location.lat,
+                                                       db.gis_location.lon,
+                                                       cache=(cache.ram, 60),
+                                                       limitby=(0, 1)).first()
+        if location.level == "L0":
+            # Countries don't have Parents & shouldn't be represented with Lat/Lon
             text = location.name
+        elif location.level == "L1" and _gis.countries and len(_gis.countries) == 1:
+            # Regions shouldn't show their Parent if the deployment is only for 1 country
+            text = location.name
+        elif location.level in ["L1", "L2", "L3"]:
+            try:
+                # Show the Parent location
+                parent = db(db.gis_location.id == location.parent).select(db.gis_location.name,
+                                                                          cache=(cache.ram, 60),
+                                                                          limitby=(0, 1)).first()
+                text = "%s (%s)" % (location.name, parent.name)
+            except:
+                text = location.name
         else:
             # Simple
             #represent = location.name
@@ -765,7 +783,7 @@ def shn_gis_location_represent(id):
         # Simple
         #represent = text
         # Hyperlink
-        #represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[location.id]))
+        #represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[id]))
         # Map
         represent = A(text, _href="#", _onclick="s3_viewMap(" + str(id) +");return false")
         # ToDo: Convert to popup? (HTML again!)
@@ -801,7 +819,7 @@ table = db.define_table(tablename,
                         comments(),
                         migrate=migrate, )
 
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 table.name.label = T("Name")
 table.resource.label = T("Resource")
 # In zzz_last.py
@@ -821,9 +839,9 @@ table = db.define_table(tablename,
                         migrate=migrate, *s3_timestamp())
 
 # FIXME
-# We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
+# We want a THIS_NOT_ONE_OF here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_ONE_OF#fc129fd476558944
 table.name.requires = IS_IN_SET(["google", "multimap", "yahoo"], zero=None)
-#table.apikey.requires = THIS_NOT_IN_DB(db(table.name == request.vars.name), "gis_apikey.name", request.vars.name, "Service already in use")
+#table.apikey.requires = THIS_NOT_ONE_OF(db(table.name == request.vars.name), "gis_apikey.name", request.vars.name, "Service already in use")
 table.apikey.requires = IS_NOT_EMPTY()
 table.name.label = T("Service")
 table.apikey.label = T("Key")
@@ -870,7 +888,7 @@ table = db.define_table(tablename,
 
 # upload folder needs to be visible to the download() function as well as the upload
 table.track.uploadfolder = os.path.join(request.folder, "uploads/tracks")
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 table.name.label = T("Name")
 table.track.requires = IS_UPLOAD_FILENAME(extension="gpx")
 table.track.description = T("Description")
@@ -1146,4 +1164,4 @@ table.zoom.label = T("Zoom")
 #table = db.define_table(tablename,
 #                        Field("name", notnull=True, unique=True)
 #                        migrate=migrate, *s3_timestamp())
-#db.gis_style.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "gis_style.name")]
+#db.gis_style.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "gis_style.name")]

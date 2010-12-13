@@ -19,7 +19,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate, *s3_timestamp())
 
     table.name.label = T("Group Title")
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "delphi_group.name")]
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "delphi_group.name")]
 
     # CRUD Strings
     ADD_GROUP = T("Add Group")
@@ -106,7 +106,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate)
 
     table.name.label = T("Problem Title")
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "delphi_problem.name")]
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "delphi_problem.name")]
     table.created_by.default = auth.user.id if auth.user else 0
     table.group_id.label = T("Problem Group")
     table.group_id.requires = IS_IN_DB(db, "delphi_group.id", "%(name)s")

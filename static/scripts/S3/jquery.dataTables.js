@@ -149,7 +149,7 @@
 		/* Full numbers paging buttons */
 		"sPageButton": "paginate_button",
 		"sPageButtonActive": "paginate_active",
-		"sPageButtonStaticDisabled": "paginate_button",
+		"sPageButtonStaticDisabled": "paginate_button disabled",
 		"sPageFirst": "first",
 		"sPagePrevious": "previous",
 		"sPageNext": "next",

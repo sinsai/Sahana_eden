@@ -43,11 +43,10 @@
 {{include "pagenav.html"}}
 {{include "searchbox.html"}}
 <p>&nbsp;</p>
-{{include "colorbox.html"}}
 {{include "dataTables.html"}}
 <script type="text/javascript">//<![CDATA[
 $(document).ready(function(){
-{{if jr.http=="POST" or not hide_listadd:}}
+{{if jr.http == "POST" or not hide_listadd:}}
     $('#list-add').show()
     $('#show-add-btn').hide()
 {{else:}}

@@ -139,8 +139,8 @@ deployment_settings.gis.locations_hierarchy = {
     "L2":T("District"),
     "L3":T("Town"),
     "L4":T("Village"),
-    "L5":T("Location"), # Street Address
-    "XX":T("Imported")
+    #"L5":T("Neighbourhood"),   # Currently not supported by testSuite
+    "XX":T("Imported")          # Filtered from view as no detailed information & many duplicates (e.g. coming from Ushahidi)
 }
 # Maximum Marker Size
 # (takes effect only on display)
@@ -292,7 +292,8 @@ deployment_settings.modules = OrderedDict(
             description = T("Managing, Storing and Distributing Relief Items"),
             module_type = 10
         ),
-    rms = Storage(
+    # NB RMS module depends on HMS, CR & Project
+    rms = Storage(      
             name_nice = T("Requests"),
             description = T("Tracks requests for aid and matches them against donors who have pledged aid"),
             module_type = 3,
@@ -326,6 +327,7 @@ deployment_settings.modules = OrderedDict(
         description = T("Incident Reporting System"),
         module_type = 10
     ),
+    # Assess currently depends on IRS
     assess = Storage(
          name_nice = "Assessments",
          description = "Rapid Assessments & Flexible Impact Assessments",

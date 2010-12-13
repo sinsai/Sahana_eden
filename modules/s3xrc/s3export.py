@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Export Toolkit
 
-    @version: 2.2.8
+    @version: 2.2.9
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -121,7 +121,7 @@ class S3Exporter(object):
         if tree and template is not None:
             tfmt = self.manager.xml.ISOFORMAT
             args.update(domain=self.manager.domain,
-                        base_url=self.manager.base_url,
+                        base_url=self.manager.s3.base_url,
                         prefix=resource.prefix,
                         name=resource.name,
                         utcnow=datetime.datetime.utcnow().strftime(tfmt))
@@ -176,7 +176,7 @@ class S3Exporter(object):
         if tree and template is not None:
             tfmt = self.manager.xml.ISOFORMAT
             args.update(domain=self.manager.domain,
-                        base_url=self.manager.base_url,
+                        base_url=self.manager.s3.base_url,
                         prefix=resource.prefix,
                         name=resource.name,
                         utcnow=datetime.datetime.utcnow().strftime(tfmt))

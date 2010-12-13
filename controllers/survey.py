@@ -48,7 +48,7 @@ def template():
         return True
     response.s3.prep = prep
 
-    table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db,"%s.uuid" % tablename)
     table.name.requires = IS_NOT_EMPTY()
     table.name.label = T("Survey Name")
     table.description.label = T("Description")
@@ -152,7 +152,7 @@ def table():
     # everything is good at this point!
     table = get_table_for_template(template.id)
     resourcename = "template_%s" % (template.id)
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % template.table_name)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % template.table_name)
     table.id.represent =  lambda id: A(id, _href=URL(r=request, f="table", args=[id, "update"], vars={"series_id":request.vars.series_id}))
      # CRUD Strings
     s3.crud_strings[template.table_name] = Storage(
@@ -191,17 +191,17 @@ def series():
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db,"%s.uuid" % tablename)
     table.name.requires = IS_NOT_EMPTY()
     table.name.label = T("Survey Series Name")
     table.description.label = T("Description")
     table.survey_template_id.label = T("Survey Template")
     table.survey_template_id.requires = IS_ONE_OF(db, "survey_template.id", "%(name)s")
     table.survey_template_id.represent = lambda id: (id and [db(db.survey_template.id == id).select(db.survey_template.name, limitby=(0, 1)).first().name] or [""])[0]
-    table.from_date.label = T("Start of Period")
-    table.from_date.requires = IS_NOT_EMPTY()
-    table.to_date.label = T("End of Period")
-    table.to_date.requires = IS_NOT_EMPTY()
+    table.start_date.label = T("Start of Period")
+    table.start_date.requires = IS_NOT_EMPTY()
+    table.end_date.label = T("End of Period")
+    table.end_date.requires = IS_NOT_EMPTY()
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(
@@ -238,7 +238,7 @@ def question():
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     table.name.requires = IS_NOT_EMPTY()
     table.name.label = T("Survey Question Display Name")
     table.description.label = T("Description")
@@ -463,7 +463,7 @@ def shn_survey_action_buttons(r, deletable=True):
 #    """ RESTful CRUD controller """
 #    tablename = "%s_%s" % (prefix, resourcename)
 #    table = db[tablename]
-#    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+#    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 #    table.name.requires = IS_NOT_EMPTY()
 #    table.name.label = T("Survey Section Display Name")
 #    table.description.label = T("Description")
@@ -491,7 +491,7 @@ def shn_survey_action_buttons(r, deletable=True):
 #    resourcename = "question"
 #    tablename = "%s_%s" % (prefix, resourcename)
 #    table = db[tablename]
-#    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+#    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 #    table.tf_ta_columns.label = T("Number of Columns")
 #    table.ta_rows.label = T("Number of Rows")
 ##    table.answer_choices.label = T("Answer Choices (One Per Line)")

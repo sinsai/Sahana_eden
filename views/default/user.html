@@ -6,6 +6,11 @@
 {{elif request.args(0) == "register":}}
  {{=H2(T("Register"))}}
  {{include "auth/_register.html"}}
+ {{if session.s3.debug:}}
+<script src="/{{=request.application}}/static/scripts/S3/jquery.validate.js" type="text/javascript" charset="utf-8"></script>
+ {{else:}}
+<script src="/{{=request.application}}/static/scripts/S3/jquery.validate.pack.js" type="text/javascript"></script>
+ {{pass}}
 {{elif request.args(0) == "profile":}}
  {{=H2(T("Profile"))}}
  {{=form}}

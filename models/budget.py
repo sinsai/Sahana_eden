@@ -82,7 +82,7 @@ if deployment_settings.has_module(module) and deployment_settings.has_module("pr
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-    table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
+    table.code.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.code" % table)]
     table.description.requires = IS_NOT_EMPTY()
 
     def item_cascade(form):
@@ -134,7 +134,7 @@ if deployment_settings.has_module(module) and deployment_settings.has_module("pr
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-    table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
+    table.code.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.code" % table)]
 
     def kit_totals(kit):
         "Calculate Totals for a Kit"
@@ -195,7 +195,7 @@ if deployment_settings.has_module(module) and deployment_settings.has_module("pr
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % table)]
 
     def bundle_totals(bundle):
         "Calculate Totals for a Bundle"
@@ -296,7 +296,7 @@ if deployment_settings.has_module(module) and deployment_settings.has_module("pr
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % table)]
     table.grade.requires = IS_NOT_EMPTY()
     table.salary.requires = IS_NOT_EMPTY()
 
@@ -312,7 +312,7 @@ if deployment_settings.has_module(module) and deployment_settings.has_module("pr
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-    table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
+    table.code.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.code" % table)]
 
     # Budgets
     resourcename = "budget"
@@ -326,7 +326,7 @@ if deployment_settings.has_module(module) and deployment_settings.has_module("pr
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % table)]
 
     # Budget<>Bundle Many2Many
     resourcename = "budget_bundle"

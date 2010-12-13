@@ -45,7 +45,7 @@ table = db.define_table(tablename,
 
 
 
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id", shn_pentity_represent,
                                  orderby="instance_type",
@@ -136,7 +136,7 @@ table = db.define_table(tablename,
                         migrate=migrate, *s3_meta_fields())
 
 
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id",
                                  shn_pentity_represent,
                                  orderby="instance_type",
@@ -157,16 +157,30 @@ s3xrc.model.add_component(prefix, resourcename,
                           multiple=True,
                           joinby=super_key(db.pr_pentity))
 
+def shn_pe_contact_onvalidation(form):
+
+    """ Contact form validation """
+
+    table = db.pr_pe_contact
+
+    if form.vars.contact_method == '1':
+        email, error = IS_EMAIL()(form.vars.value)
+        if error:          
+            form.errors.value = T("Enter a valid email")
+
+    return False
+
 s3xrc.model.configure(table,
-    list_fields=[
-        #"id",
-        #"pe_id",
-        "contact_method",
-        "value",
-        "priority",
-        #"contact_person",
-        #"name",
-    ])
+                      onvalidation=shn_pe_contact_onvalidation, 
+                      list_fields=[
+                        #"id",
+                        #"pe_id",
+                        "contact_method",
+                        "value",
+                        "priority",
+                        #"contact_person",
+                        #"name",
+                      ])
 
 s3.crud_strings[tablename] = Storage(
     title_create = T("Add Contact Information"),
@@ -216,7 +230,7 @@ table = db.define_table(tablename,
                         migrate=migrate, *s3_meta_fields())
 
 
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 
 table.title.requires = IS_NOT_EMPTY()
 table.title.comment = DIV(_class="tooltip",
@@ -336,7 +350,7 @@ table = db.define_table(tablename,
 
 
 
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 
 table.datetime.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
 table.datetime.represent = lambda value: shn_as_local_time(value)
@@ -470,7 +484,7 @@ table = db.define_table(tablename,
 
 
 
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id",
                                     shn_pentity_represent,
                                     filterby="instance_type",
@@ -541,9 +555,9 @@ table = db.define_table(tablename,
                         migrate=migrate, *s3_meta_fields())
 
 
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 table.person_id.label = T("Person")
-table.value.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.value" % tablename)]
+table.value.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.value" % tablename)]
 table.ia_name.label = T("Issuing Authority")
 
 # Identity as component of persons

@@ -321,18 +321,15 @@ if deployment_settings.has_module("project"):
                 _same = r.same()
     
                 project = r.record
-                if project is None:
-                    # List or Create form: rheader makes no sense here
-                    raise("Please 'continue' to skip me")
 
-                sectors = TABLE()
-                if project.cluster_id:
-                    # @ToDo@ Fix for list: type
-                    _sectors = re.split("\|", project.cluster_id)[1:-1]
-                    for sector in _sectors:
-                        sectors.append(TR(db(db.org_cluster.id == sector).select(db.org_cluster.name, limitby=(0, 1)).first().name))
-    
                 if project:
+                    sectors = TABLE()
+                    if project.cluster_id:
+                        # @ToDo: Fix for list: type
+                        _sectors = re.split("\|", project.cluster_id)[1:-1]
+                        for sector in _sectors:
+                            sectors.append(TR(db(db.org_cluster.id == sector).select(db.org_cluster.name, limitby=(0, 1)).first().name))
+        
                     rheader = DIV(TABLE(
                         TR(
                             TH(T("Code") + ": "),

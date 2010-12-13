@@ -92,9 +92,8 @@ class S3AutocompleteWidget:
         url = URL(r=self.request, c=self.prefix, f=self.resourcename, args="search.json", vars={"filter":"~", "field":fieldname})
         
         js_autocomplete = """
-        (function()
-        {
-            var data = { val : $('#%s').val(), accept : false };
+        (function() {
+            var data = { val:$('#%s').val(), accept:false };
 
             $('#%s').autocomplete({
                 source: '%s',
@@ -118,16 +117,17 @@ class S3AutocompleteWidget:
                     .appendTo( ul );
             };
 
-            $('#%s').blur(function()
-            {
-                if(!$('#%s').val())
-                {
-                    $('#%s').val("");
+            $('#%s').blur(function() {
+                if (!$('#%s').val()) {
+                    $('#%s').val('');
                     data.accept = true;
                 }
 
-                if(!data.accept) $('#%s').val(data.val);
-                else data.val = $('#%s').val();
+                if (!data.accept) {
+                    $('#%s').val(data.val);
+                } else {
+                    data.val = $('#%s').val();
+                }
 
                 data.accept = false;
             });
@@ -190,9 +190,8 @@ class S3PersonAutocompleteWidget:
         url = URL(r=self.request, c="pr", f="person", args="search.json", vars={"filter":"~", "field":"first_name", "field2":"middle_name", "field3":"last_name"})
         
         js_autocomplete = """
-        (function()
-        {
-            var data = { val : $('#%s').val(), accept : false };
+        (function() {
+            var data = { val:$('#%s').val(), accept:false };
 
             $('#%s').autocomplete({
                 source: '%s',
@@ -246,16 +245,17 @@ class S3PersonAutocompleteWidget:
                     .appendTo( ul );
             };
 
-            $('#%s').blur(function()
-            {
-                if(!$('#%s').val())
-                {
-                    $('#%s').val("");
+            $('#%s').blur(function() {
+                if (!$('#%s').val()) {
+                    $('#%s').val('');
                     data.accept = true;
                 }
 
-                if(!data.accept) $('#%s').val(data.val);
-                else data.val = $('#%s').val();
+                if (!data.accept) {
+                    $('#%s').val(data.val);
+                } else {
+                    data.val = $('#%s').val();
+                }
 
                 data.accept = false;
             });

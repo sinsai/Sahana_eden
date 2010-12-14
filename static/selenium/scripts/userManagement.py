@@ -20,6 +20,7 @@ class UserManagement(unittest.TestCase):
 
       
 class UserManagementCreate(UserManagement):
+
     def test_add_user(self):
         sel = self.selenium
         self.header()

@@ -828,14 +828,18 @@ def shn_search(r, **attr):
 
             elif filter == "=":
                 if _field.type.split(" ")[0] in ["reference", "id", "float", "integer"]:
-                    # e.g. Organisations' offices_by_org
+                    # Numeric, e.g. Organisations' offices_by_org
                     query = query & (_field == value)
                 else:
-                    # e.g. Location Selector
-                    query = query & (_field.lower() == value)
+                    # Text
+                    if value == "nullnone":
+                        # i.e. Location Selector
+                        query = query & (_field == None)
+                    else:
+                        query = query & (_field.lower() == value)
 
                 if parent:
-                    # e.g. gis_location hierarchical search
+                    # i.e. gis_location hierarchical search
                     query = query & (_table.parent == parent)
 
                 if _table == db.gis_location:

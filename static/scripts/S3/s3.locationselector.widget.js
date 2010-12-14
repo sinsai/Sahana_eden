@@ -4,10 +4,16 @@
 
 function s3_gis_dropdown_select(level) {
     // Read the new value of the dropdown
-    var new_id = $('#gis_location_L' + (level - 1)).val();
+    var new_id = $('#gis_location_L' + level).val();
     if (new_id) {
         // Pull down contents of new level of hierarchy by AJAX
-        var this_url  = s3_gis_url + '/search.json?filter=%3D&field=level&value=L' + level + '&parent=' + new_id;
+        if (level == s3_gis_maxlevel) {
+            // Next level = ""
+            var this_url  = s3_gis_url + '/search.json?filter=%3D&field=level&value=nullnone&parent=' + new_id;
+        } else {
+            // Next level = Level + 1
+            var this_url  = s3_gis_url + '/search.json?filter=%3D&field=level&value=L' + (level + 1) + '&parent=' + new_id;
+        }
         var s3_gis_load_locations = function(data, status){
             var options;
             var v = '';
@@ -20,21 +26,31 @@ function s3_gis_dropdown_select(level) {
                     options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
                 }
             }
-            $('#gis_location_L' + level).html(options);
-            if (level == s3_gis_maxlevel && options == s3_gis_empty_set) {
-                // Don't show the last dropdown unless it has data in
-                $('#gis_location_L' + level).hide();
-                $('#gis_location_label_L' + level).hide();
+            if (level == s3_gis_maxlevel) {
+                $('#gis_location_').html(options);
+            } else {
+                $('#gis_location_L' + (level + 1)).html(options);
             }
         }
         $.getJSONS3(this_url, s3_gis_load_locations, false);
 
         // Show the new level
-        $('#gis_location_L' + level).removeClass('hidden').show();
-        $('#gis_location_label_L' + level).removeClass('hidden').show();
+        if (level == s3_gis_maxlevel) {
+            // Specific Dropdown
+            if (options == s3_gis_empty_set) {
+                // Don't show unless it has data in
+            } else {
+                $('#gis_location_').removeClass('hidden').show();
+                $('#gis_location_label_').removeClass('hidden').show();
+            }
+        } else {
+            // Normal Level
+            $('#gis_location_L' + (level + 1)).removeClass('hidden').show();
+            $('#gis_location_label_L' + (level + 1)).removeClass('hidden').show();
+        }
 
         // Hide other levels & reset their contents
-        s3_gis_dropdown_hide(level + 1);
+        s3_gis_dropdown_hide(level + 2);
 
         // Populate the real location_id field (unless a name is already present)
         if ( '' == $('#gis_location_name').val() ) {
@@ -43,10 +59,10 @@ function s3_gis_dropdown_select(level) {
 
     } else {
         // Zero selected: Hide other levels & reset their contents
-        s3_gis_dropdown_hide(level);
+        s3_gis_dropdown_hide(level + 1);
         
         // If we're the top-level selector & there is no name defined
-        if (( 1 == level ) && ( '' == $('#gis_location_name').val() )) {
+        if (( 0 == level ) && ( '' == $('#gis_location_name').val() )) {
             // Clear the real location_id field
             $('#' + s3_gis_location_id).val('');
         }
@@ -55,9 +71,14 @@ function s3_gis_dropdown_select(level) {
 
 function s3_gis_dropdown_hide(level) {
     // Hide other levels & reset their contents
-    for (l=level; l <= 5; l=l + 1) {
+    for (l=level; l <= parseInt(s3_gis_maxlevel); l=l + 1) {
         $('#gis_location_L' + l).hide().html(s3_gis_loading_locations);
         $('#gis_location_label_L' + l).hide();
+    }
+    if (level < (parseInt(s3_gis_maxlevel) + 2)) {
+        // Hide the specific location level
+        $('#gis_location_').hide().html(s3_gis_loading_locations);
+        $('#gis_location_label_').hide();
     }
 }
 
@@ -118,18 +139,6 @@ function s3_gis_save_location(name, lat, lon, addr_street) {
                 var new_id = data.message.split('=')[1];
                 // Update the value of the real field
                 $('#' + s3_gis_location_id).val(new_id);
-                // Store the UUID for future updates
-                //var url_read = gis_url + '/' + new_id + '.json';
-                //$.getJSON(url_read, function(data) {
-                //    var domain = data['@domain'];
-                    // Set global variable for later pickup
-                //    var uuid = data['$_gis_location'][0]['@uuid'];
-                //    if (uuid.split('/')[0] == domain) {
-                //        S3.gis.uuid = uuid.split('/')[1];
-                //    } else {
-                //        S3.gis.uuid = uuid;
-                //    }
-                //});
             }
 
         }
@@ -238,93 +247,112 @@ function s3_gis_convertFillBack(whereto) {
     return false;
 }
 
-// Listen for Events & take appropriate Actions
+
 $(function(){
-    // When dropdowns are selected, open the next one in the hierarchy
-    $('#gis_location_L0').change( function() {
-        s3_gis_dropdown_select(1);
-    });
-    $('#gis_location_L1').change( function() {
-        s3_gis_dropdown_select(2);
-    });
-    $('#gis_location_L2').change( function() {
-        s3_gis_dropdown_select(3);
-    });
-    $('#gis_location_L3').change( function() {
-        s3_gis_dropdown_select(4);
-    });
-    $('#gis_location_L4').change( function() {
-        s3_gis_dropdown_select(5);
-    });
-    $('#gis_location_add-btn').click( function() {
-        // When 'Add Location' pressed
-        // Hide the now-redundant button
-        $('#gis_location_add-btn').hide();
-        // unhide the next part
-        if (navigator.geolocation) {
-            // HTML5 geolocation is available :)
-            $('#gis_location_geolocate-btn').removeClass('hidden').show();
-        } else {
-            // geolocation is not available...IE sucks! ;)
-        }
-        $('#gis_location_map-btn').removeClass('hidden').show();
-        $('#gis_location_name_label').removeClass('hidden').show();
-        $('#gis_location_name').removeClass('hidden').show();
-        $('#gis_location_addr_street_label').removeClass('hidden').show();
-        $('#gis_street_addr_row').removeClass('hidden').show();
-        $('#gis_location_advanced_div').removeClass('hidden').show();
-    });
-    $('#gis_location_advanced_checkbox').change( function() {
-        if ($('#gis_location_advanced_checkbox').is(':checked')) {
-            // When 'Advanced' checked, unhide the next part
-            $('#gis_location_lat_label').removeClass('hidden').show();
-            $('#gis_location_lat_row').removeClass('hidden').show();
-            $('#gis_location_lon_label').removeClass('hidden').show();
-            $('#gis_location_lon_row').removeClass('hidden').show();
-        } else {
-            // Hide again
-            $('#gis_location_lat_label').hide();
-            $('#gis_location_lat_row').hide();
-            $('#gis_location_lon_label').hide();
-            $('#gis_location_lon_row').hide();
-        }
-    });
-    $('#gis_location_geolocate-btn').click( function() {
-        // Do an HTML5 GeoLocate: http://dev.w3.org/geo/api/spec-source.html
-        navigator.geolocation.getCurrentPosition(s3_gis_geolocate);
-    });
-    $('form').submit( function() {
-        // The form is being submitted
-
-        // Do the normal form-submission tasks
-        S3ClearNavigateAwayConfirm();
-
-        // Check if a new location should be created
-        var name = $('#gis_location_name').val();
-        var lat = $('#gis_location_lat').val();
-        var lon = $('#gis_location_lon').val();
-        var addr_street = $('#gis_location_addr_street').val();
-
-        // Only save a new Location if we have data
-        if ('' == name) {
-            if (('' == lat || '' == lon) && ('' == addr_street)) {
-                // There are no specific location details specified
-                // (Hierarchy may have been done but that's not our issue here)
-                // Allow the Form's save to continue
-                return true;
-            } else {
-                // We don't have a name, but we do have details, so prompt the user?
-                // Need to distinguish between details from hierarchy & real details
-                // @ToDo
-                return true;
+    if ( typeof(s3_gis_location_id) == "undefined" ) {
+        // This page doesn't include the Location Selector Widget
+    } else {
+        // Listen for Events & take appropriate Actions
+    
+        // When dropdowns are selected, open the next one in the hierarchy
+        $('#gis_location_L0').change( function() {
+            s3_gis_dropdown_select(0);
+        });
+        $('#gis_location_L1').change( function() {
+            s3_gis_dropdown_select(1);
+        });
+        $('#gis_location_L2').change( function() {
+            s3_gis_dropdown_select(2);
+        });
+        $('#gis_location_L3').change( function() {
+            s3_gis_dropdown_select(3);
+        });
+        $('#gis_location_L4').change( function() {
+            s3_gis_dropdown_select(4);
+        });
+        $('#gis_location_').change( function() {
+            // Populate the real location_id field (unless a name is already present)
+            var new_id = $(this).val();
+            if ( '' == $('#gis_location_name').val() ) {
+                $('#' + s3_gis_location_id).val(new_id);
             }
-        }
-        // Save the new location
-        s3_gis_save_location(name, lat, lon, addr_street);
+        });
 
-        // Allow the Form's save to continue
-        return true;
-    });
+        $('#gis_location_add-btn').click( function() {
+            // When 'Add Location' pressed
+            // Hide the now-redundant button
+            $('#gis_location_add-btn').hide();
+            // unhide the next part
+            if (navigator.geolocation) {
+                // HTML5 geolocation is available :)
+                $('#gis_location_geolocate-btn').removeClass('hidden').show();
+            } else {
+                // geolocation is not available...IE sucks! ;)
+            }
+            $('#gis_location_map-btn').removeClass('hidden').show();
+            $('#gis_location_name_label').removeClass('hidden').show();
+            $('#gis_location_name').removeClass('hidden').show();
+            $('#gis_location_addr_street_label').removeClass('hidden').show();
+            $('#gis_street_addr_row').removeClass('hidden').show();
+            $('#gis_location_advanced_div').removeClass('hidden').show();
+        });
+        $('#gis_location_advanced_checkbox').change( function() {
+            if ($('#gis_location_advanced_checkbox').is(':checked')) {
+                // When 'Advanced' checked, unhide the next part
+                $('#gis_location_lat_label').removeClass('hidden').show();
+                $('#gis_location_lat_row').removeClass('hidden').show();
+                $('#gis_location_lon_label').removeClass('hidden').show();
+                $('#gis_location_lon_row').removeClass('hidden').show();
+            } else {
+                // Hide again
+                $('#gis_location_lat_label').hide();
+                $('#gis_location_lat_row').hide();
+                $('#gis_location_lon_label').hide();
+                $('#gis_location_lon_row').hide();
+            }
+        });
+
+        $('#gis_location_geolocate-btn').click( function() {
+            // Do an HTML5 GeoLocate: http://dev.w3.org/geo/api/spec-source.html
+            navigator.geolocation.getCurrentPosition(s3_gis_geolocate);
+        });
+
+        $('form').submit( function() {
+            // The form is being submitted
+
+            // Do the normal form-submission tasks
+            // @ToDo: Look to have this happen automatically
+            // http://forum.jquery.com/topic/multiple-event-handlers-on-form-submit
+            // http://api.jquery.com/bind/
+            S3ClearNavigateAwayConfirm();
+
+            // Check if a new location should be created
+            var name = $('#gis_location_name').val();
+            var lat = $('#gis_location_lat').val();
+            var lon = $('#gis_location_lon').val();
+            var addr_street = $('#gis_location_addr_street').val();
+
+            // Only save a new Location if we have data
+            if ('' == name) {
+                if (('' == lat || '' == lon) && ('' == addr_street)) {
+                    // There are no specific location details specified
+                    // (Hierarchy may have been done but that's not our issue here)
+                    // Allow the Form's save to continue
+                    return true;
+                } else {
+                    // We don't have a name, but we do have details, so prompt the user?
+                    // Need to distinguish between details from hierarchy & real details
+                    // @ToDo
+                    return true;
+                }
+            }
+            // Save the new location
+            s3_gis_save_location(name, lat, lon, addr_street);
+
+            // Allow the Form's save to continue
+            return true;
+        });
+    }
 });
 
 // Popups: Map & GPS Converter

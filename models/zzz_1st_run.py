@@ -941,7 +941,8 @@ if populate:
                 name = "OpenStreetMap (Relief)",
                 url1 = "http://toolserver.org/~cmarqu/hill/",
                 attribution = 'Relief by <a href="http://hikebikemap.de/">Hike &amp; Bike Map</a>',
-                base = False
+                base = False,
+                visible = False
             )
         table.insert(
                 name = "OpenStreetMap (Osmarender)",

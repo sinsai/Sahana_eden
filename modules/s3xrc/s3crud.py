@@ -951,7 +951,6 @@ class S3CRUDHandler(S3MethodHandler):
             @todo 2.3: move confirmation form into resource
 
         """
-
         session = self.session
         request = self.request
         response = self.response

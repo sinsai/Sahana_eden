@@ -821,7 +821,7 @@ class S3CRUDHandler(S3MethodHandler):
 
         # Get the target record ID
         record_id = self._record_id(r)
-        if not record_id:
+        if r.interactive and not record_id:
             r.error(404, self.resource.ERROR.BAD_RECORD)
 
         # Check if editable

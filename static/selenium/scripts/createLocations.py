@@ -23,12 +23,15 @@ class CreateLocations(unittest.TestCase):
         self.createLocation("Port-Au-Prince", "L2", "Ouest")
         self.createLocation("Martissant", "L3", "Port-Au-Prince")
         self.createLocation("Carrefour Feuilles", "L4", "Martissant")
+        self.createLocation("Turgeau", "L3", "Port-Au-Prince")
+        self.createLocation("Babiole", "L4", "Turgeau")
         self.createLocation("Clinique Communautaire de Martissant", "", "Carrefour Feuilles", lat=18.528000848953, lon=-72.348998382827)
 
     def createLocation(self, name, level, parent, lat=None, lon=None):
         sel = self.selenium
         # Load the Create Location page
         sel.open("/eden/gis/location/create")
+        sel.wait_for_page_to_load("30000")
         # Create the Location
         sel.type("gis_location_name", name)
         if level:

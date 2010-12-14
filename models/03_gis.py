@@ -421,16 +421,12 @@ table = db.define_table(tablename,
                         Field("name", notnull=True),    # Primary name
                         Field("name_dummy"),            # Dummy field to provide Widget (real data is stored in the separate table which links back to this one)
                         Field("code"),
-                        #feature_class_id(),    # Being removed
-                        #marker_id(),           # Being removed
                         Field("level", length=2),
                         Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
-                        Field("path", length=500, readable=False, writable=False),
-                        #Field("lft", "integer", readable=False, writable=False), # Left will be for MPTT: http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
-                        #Field("rght", "integer", readable=False, writable=False),# Right currently unused
+                        Field("path", length=500, readable=False, writable=False),  # Materialised Path
                         # Street Address (other address fields come from hierarchy)
                         Field("addr_street"),
-                        #Field("addr_postcode"),
+                        #Field("addr_postcode"),    # Do we want this as a separate field?
                         Field("gis_feature_type", "integer", default=1, notnull=True),
                         Field("lat", "double"), # Points or Centroid for Polygons
                         Field("lon", "double"), # Points or Centroid for Polygons
@@ -674,7 +670,7 @@ def gis_location_onvalidation(form):
     if not "gis_feature_type" in form.vars or (form.vars.gis_feature_type == "1"):
         # Skip if no Lat/Lon provided
         if (lat != None) and (lon != None):
-            if _parent and _parent.gis_feature_type == 3:
+            if parent and _parent.gis_feature_type == 3:
                 # Check within Bounds of the Parent
                 # Rough (Bounding Box)
                 min_lat = _parent.lat_min
@@ -1024,7 +1020,7 @@ gis_layer = db.Table(db, "gis_layer",
                      # System default priority is set in s3gis. User priorities will be set in WMC.
                      #Field("priority", "integer", label=T("Priority")),
                      Field("enabled", "boolean", default=True, label=T("Available in Viewer?")),
-                     *s3_timestamp(), migrate=migrate)
+                     migrate=migrate, *s3_timestamp())
 for layertype in gis_layer_types:
     resourcename = "layer_" + layertype
     tablename = "%s_%s" % (module, resourcename)

@@ -33,6 +33,8 @@ def s3_sessions():
                         _memberships.group_id)
         roles = [m.group_id for m in memberships]
     session.s3.roles = roles
+    if not auth.permission():
+        auth.permission.fail()
 
     # Are we running in debug mode?
     session.s3.debug = request.vars.get("debug", None) or \
@@ -494,7 +496,7 @@ def shn_table_links(reference):
     for table in db.tables:
         count = 0
         for field in db[table].fields:
-            if db[table][field].type == "reference %s" % reference:
+            if str(db[table][field].type) == "reference %s" % reference:
                 if count == 0:
                     tables[table] = {}
                 tables[table][count] = field
@@ -826,7 +828,8 @@ def shn_search(r, **attr):
                         item = db(query).select().json()
 
             elif filter == "=":
-                if _field.type.split(" ")[0] in ["reference", "id", "float", "integer"]:
+                fieldtype = str(_field.type)
+                if fieldtype.split(" ")[0] in ["reference", "id", "float", "integer"]:
                     # Numeric, e.g. Organisations' offices_by_org
                     query = query & (_field == value)
                 else:

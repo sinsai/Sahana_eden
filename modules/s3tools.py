@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Sahana Eden Tools Module
+""" Sahana Eden Tools Module
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
 
     @author: Fran Boon <francisboon@gmail.com>
-    @author: nursix
+    @author: nursix <dominic@aidiq.com>
     @author: sunneach
     @copyright: (c) 2010 Sahana Software Foundation
     @license: MIT
@@ -51,20 +50,37 @@ from gluon.validators import *
 #    from gluon.contrib.gql import Field, Row, Query
 #except ImportError:
 from gluon.sql import Field, Row, Query
-from gluon.sqlhtml import SQLFORM
+from gluon.sqlhtml import SQLFORM, SQLTABLE
 from gluon.tools import Auth
 from gluon.tools import Crud
 
 DEFAULT = lambda: None
 table_field = re.compile("[\w_]+\.[\w_]+")
 
-class AuthS3(Auth):
+# =============================================================================
+class S3Authorization(object):
+
+    """ Class to handle permissions
+
+        @param environment: the global environment dict
+
     """
-        Extended version of Auth from gluon/tools.py
+
+    def __init__(self, environment):
+
+        self.db = environment.db
+
+
+# =============================================================================
+class AuthS3(Auth):
+
+    """ S3 extended version of Auth from gluon/tools.py
+
         - override:
             login()
             register()
             requires_membership()
+
         - add
             shn_has_role()
             shn_has_permission()
@@ -72,7 +88,9 @@ class AuthS3(Auth):
             shn_accessible_query()
             shn_register() callback
             shn_link_to_person()
+
         - language
+
     """
 
     def __init__(self, environment, deployment_settings, db=None):
@@ -88,9 +106,11 @@ class AuthS3(Auth):
         self.settings.username_field = False
         self.settings.lock_keys = True
         self.messages.lock_keys = False
-        self.messages.email_sent = 'Verification Email sent - please check your email to validate. If you do not receive this email please check you junk email or spam filters'
-        self.messages.email_verified = 'Email verified - you can now login'
-        self.messages.registration_disabled = "Registration Disabled!"
+        self.messages.registration_pending_approval = "Account registered, however registration is still pending approval - please wait until confirmation received."
+        self.messages.email_approver_failed = "Failed to send mail to Approver - see if you can notify them manually!"
+        self.messages.email_sent = "Verification Email sent - please check your email to validate. If you do not receive this email please check you junk email or spam filters"
+        self.messages.email_verified = "Email verified - you can now login"
+        self.messages.registration_disabled = "Registration Disabled!'"
         self.messages.lock_keys = True
 
     def __get_migrate(self, tablename, migrate=True):
@@ -344,7 +364,7 @@ class AuthS3(Auth):
                     # user in db, check if registration pending or disabled
                     temp_user = users[0]
                     if temp_user.registration_key == "pending":
-                        response.warning = self.messages.registration_pending
+                        response.warning = self.messages.registration_pending                     
                         return form
                     elif temp_user.registration_key == "disabled":
                         response.error = self.messages.login_disabled
@@ -517,16 +537,21 @@ class AuthS3(Auth):
             if self.settings.registration_requires_verification and self.db(self.settings.table_user.id > 0).count() > 1:
                 if not self.settings.mailer or \
                    not self.settings.mailer.send(to=form.vars.email,
-                        subject=self.messages.verify_email_subject,
-                        message=self.messages.verify_email
-                         % dict(key=key)):
+                                                 subject=self.messages.verify_email_subject,
+                                                 message=self.messages.verify_email % dict(key=key)):
                     self.db.rollback()
                     response.error = self.messages.invalid_email
                     return form
                 session.confirmation = self.messages.email_sent
             elif self.settings.registration_requires_approval and self.db(self.settings.table_user.id > 0).count() > 1:
+                if not self.settings.mailer or \
+                   not self.settings.verify_email_onaccept(form.vars):
+                    # We don't wish to prevent registration if the approver mail fails to send
+                    #self.db.rollback() 
+                    session.error = self.messages.email_approver_failed
+                    #return form 
                 user[form.vars.id] = dict(registration_key="pending")
-                session.warning = self.messages.registration_pending
+                session.warning = self.messages.registration_pending_approval 
             else:
                 user[form.vars.id] = dict(registration_key="")
                 session.confirmation = self.messages.registration_successful
@@ -890,11 +915,13 @@ class AuthS3(Auth):
                     self.user.person_uuid = person_uuid
 
 
-
+# =============================================================================
 class CrudS3(Crud):
-    """
-        Extended version of Crud from gluon/tools.py
-        - select() uses SQLTABLE2 (to allow different linkto construction)
+
+    """ S3 extension of the Crud class
+
+        - select() uses SQLTABLES3 (to allow different linkto construction)
+
     """
 
     def __init__(self, environment, db=None):
@@ -934,144 +961,145 @@ class CrudS3(Crud):
             attr["upload"] = self.url("download")
         if request.extension != "html":
             return rows.as_list()
-        return SQLTABLE2(rows, headers=headers, **attr)
+        return SQLTABLES3(rows, headers=headers, **attr)
 
 
-# Modified version of SQLTABLE from gluon/sqlhtml.py
-# we need a different linkto construction for our CRUD controller
-# we need to specify a different ID field to direct to for the M2M controller
-class SQLTABLE2(TABLE):
+# *****************************************************************************
+class SQLTABLES3(SQLTABLE):
+
+    """ S3 custom version of gluon.sqlhtml.SQLTABLE
+
+        given a SQLRows object, as returned by a db().select(), generates
+        an html table with the rows.
+        - we need a different linkto construction for our CRUD controller
+        - we need to specify a different ID field to direct to for the M2M controller
+        - used by S3XRC
+
+        optional arguments:
+
+        @param linkto: URL (or lambda to generate a URL) to edit individual records
+        @param upload: URL to download uploaded files
+        @param orderby: Add an orderby link to column headers.
+        @param headers: dictionary of headers to headers redefinions
+        @param truncate: length at which to truncate text in table cells.
+            Defaults to 16 characters.
+
+        optional names attributes for passed to the <table> tag
+
+        Simple linkto example::
+
+            rows = db.select(db.sometable.ALL)
+            table = SQLTABLES3(rows, linkto="someurl")
+
+        This will link rows[id] to .../sometable/value_of_id
+
+        More advanced linkto example::
+
+            def mylink(field):
+                return URL(r=request, args=[field])
+
+            rows = db.select(db.sometable.ALL)
+            table = SQLTABLES3(rows, linkto=mylink)
+
+        This will link rows[id] to
+            current_app/current_controller/current_function/value_of_id
+
     """
-    given a SQLRows object, as returned by a db().select(), generates
-    an html table with the rows.
 
-    optional arguments:
+    def __init__(self, sqlrows,
+                 linkto=None,
+                 upload=None,
+                 orderby=None,
+                 headers={},
+                 truncate=16,
+                 columns=None,
+                 th_link='',
+                 **attributes):
 
-    :param linkto: URL (or lambda to generate a URL) to edit individual records
-    :param upload: URL to download uploaded files
-    :param orderby: Add an orderby link to column headers.
-    :param headers: dictionary of headers to headers redefinions
-    :param truncate: length at which to truncate text in table cells.
-        Defaults to 16 characters.
-
-    optional names attributes for passed to the <table> tag
-
-    Simple linkto example::
-
-        rows = db.select(db.sometable.ALL)
-        table = SQLTABLE2(rows, linkto="someurl")
-
-    This will link rows[id] to .../sometable/value_of_id
-
-
-    More advanced linkto example::
-
-        def mylink(field):
-            return URL(r=request, args=[field])
-
-        rows = db.select(db.sometable.ALL)
-        table = SQLTABLE2(rows, linkto=mylink)
-
-    This will link rows[id] to
-        current_app/current_controller/current_function/value_of_id
-    """
-
-    def __init__(
-        self,
-        sqlrows,
-        linkto=None,
-        upload=None,
-        orderby=None,
-        headers={},
-        truncate=16,
-        **attributes
-        ):
+        table_field = re.compile('[\w_]+\.[\w_]+')
 
         TABLE.__init__(self, **attributes)
         self.components = []
         self.attributes = attributes
         self.sqlrows = sqlrows
         (components, row) = (self.components, [])
-        if not orderby:
-            for c in sqlrows.colnames:
-                colname = c.split(".")[-1]
-                row.append(TH(headers.get(c, c), _class="column_%s" % colname))
-        else:
-            for c in sqlrows.colnames:
-                colname = c.split(".")[-1]
-                row.append(TH(A(headers.get(c, c), _href="?orderby="
-                            + c), _class="column_%s" % colname))
+        if not columns:
+            columns = sqlrows.colnames
+        if headers=="fieldname:capitalize":
+            headers = {}
+            for c in columns:
+                headers[c] = " ".join([w.capitalize() for w in c.split(".")[-1].split("_")])
+
+        for c in columns:
+            if orderby:
+                row.append(TH(A(headers.get(c, c),
+                                _href=th_link+"?orderby=" + c)))
+            else:
+                row.append(TH(headers.get(c, c)))
+
         components.append(THEAD(TR(*row)))
         tbody = []
         for (rc, record) in enumerate(sqlrows):
             row = []
-            row_id = None
             if rc % 2 == 0:
                 _class = "even"
             else:
                 _class = "odd"
-            for colname in sqlrows.colnames:
+            for colname in columns:
                 if not table_field.match(colname):
                     r = record._extra[colname]
-                    row.append(TD(r), _class="column_%s" % colname)
+                    row.append(TD(r))
                     continue
                 (tablename, fieldname) = colname.split(".")
                 field = sqlrows.db[tablename][fieldname]
-                if tablename in record and isinstance(record,
-                        Row) and isinstance(record[tablename],
-                        Row):
+                if tablename in record \
+                        and isinstance(record,Row) \
+                        and isinstance(record[tablename],Row):
                     r = record[tablename][fieldname]
                 elif fieldname in record:
                     r = record[fieldname]
                 else:
-                    raise SyntaxError, "something wrong in SQLRows object"
-                if fieldname == "id":
-                    row_id = r
+                    raise SyntaxError, "something wrong in Rows object"
+                r_old = r
                 if field.represent:
                     r = field.represent(r)
-                    row.append(TD(r, _class="column_%s" % fieldname))
-                    continue
-                if field.type == "blob" and r:
-                    row.append(TD("DATA", _class="column_%s" % fieldname))
-                    continue
-                r = str(field.formatter(r))
-                if field.type == "upload":
+                elif field.type == "blob" and r:
+                    r = "DATA"
+                elif field.type == "upload":
                     if upload and r:
-                        row.append(TD(A("file", _href="%s/%s" % (upload, r)),
-                                      _class="column_%s" % fieldname))
+                        r = A("file", _href="%s/%s" % (upload, r))
                     elif r:
-                        row.append(TD("file", _class="column_%s" % fieldname))
+                        r = "file"
                     else:
-                        row.append(TD(_class="column_%s" % fieldname))
-                    continue
-                ur = unicode(r, "utf8")
-                if len(ur) > truncate:
-                    r = ur[:truncate - 3].encode("utf8") + "..."
-                if linkto and field.type == "id":
-                    try:
+                        r = ""
+                elif field.type in ["string","text"]:
+                    r = str(field.formatter(r))
+                    ur = unicode(r, "utf8")
+                    if truncate!=None and len(ur) > truncate:
+                        r = ur[:truncate - 3].encode("utf8") + "..."
+                elif linkto and field.type == "id":
+                    #try:
                         #href = linkto(r, "table", tablename)
+                    #except TypeError:
+                        #href = "%s/%s/%s" % (linkto, tablename, r_old)
+                    #r = A(r, _href=href)
+                    try:
                         href = linkto(r)
                     except TypeError:
-                        #href = "%s/%s/%s" % (linkto, tablename, r)
                         href = "%s/%s" % (linkto, r)
-                    row.append(TD(A(r, _href=href), _class="column_%s" % fieldname))
-                # Reference record without a .represent defined
-                # We can't assume  controller exists for linked resources
-                # so better to use response.s3.actions for this
-                #elif linkto and field.type[:9] == "reference":
-                #    ref = field.type[10:]
-                #    try:
-                #        #href = linkto(r, "reference", ref)
-                #        href = linkto(r)
-                #    except TypeError:
-                #        href = "%s/%s/%s" % (linkto, ref, r)
-                #        if ref.find(".") >= 0:
-                #            tref,fref = ref.split(".")
-                #            if hasattr(sqlrows.db[tref], "_primarykey"):
-                #                href = "%s/%s?%s" % (linkto, tref, urllib.urlencode({fref:ur}))
-                #
-                #    row.append(TD(A(r, _href=href, _class="column_%s" % fieldname)))
-                elif linkto and hasattr(field._table, "_primarykey") and fieldname in field._table._primarykey:
+                    r = A(r, _href=href)
+                #elif linkto and str(field.type).startswith("reference"):
+                    #ref = field.type[10:]
+                    #try:
+                        #href = linkto(r, "reference", ref)
+                    #except TypeError:
+                        #href = "%s/%s/%s" % (linkto, ref, r_old)
+                        #if ref.find(".") >= 0:
+                            #tref,fref = ref.split(".")
+                            #if hasattr(sqlrows.db[tref],"_primarykey"):
+                                #href = "%s/%s?%s" % (linkto, tref, urllib.urlencode({fref:ur}))
+                    #r = A(r, _href=href)
+                elif linkto and hasattr(field._table,"_primarykey") and fieldname in field._table._primarykey:
                     # have to test this with multi-key tables
                     key = urllib.urlencode(dict( [ \
                                 ((tablename in record \
@@ -1079,23 +1107,17 @@ class SQLTABLE2(TABLE):
                                       and isinstance(record[tablename], Row)) and
                                  (k, record[tablename][k])) or (k, record[k]) \
                                     for k in field._table._primarykey ] ))
-                    row.append(TD(A(r, _href="%s/%s?%s" % (linkto, tablename, key)),
-                                  _class="column_%s" % fieldname))
-                else:
-                    row.append(TD(r, _class="column_%s" % fieldname))
-            rowattrs = {}
-            if row_id:
-                rowattrs["_id"] = "row_%s_%d" % (tablename, row_id)
-            tbody.append(TR(_class=_class, *row, **rowattrs))
+                    r = A(r, _href="%s/%s?%s" % (linkto, tablename, key))
+                row.append(TD(r))
+            tbody.append(TR(_class=_class, *row))
         components.append(TBODY(*tbody))
 
 
-# Modified version of MENU2
-# Only supports 2 levels
-# Each menu is a UL not an LI
-# A tags have classes
-class MENU2(DIV):
-    """
+# =============================================================================
+class MENUS3(DIV):
+    
+    """ S3 extensions of the MENU class
+    
         Used to build modules menu
         Each list has 3 options: Name, Right & Link
         (NB In Web2Py's MENU, the 2nd option is 'Active')
@@ -1109,8 +1131,11 @@ class MENU2(DIV):
           a_class: defaults to 'S3menuA'
 
         Example:
-            menu = MENU2([["name", False, URL(...), [submenu]], ...])
+            menu = MENUS3([["name", False, URL(...), [submenu]], ...])
             {{=menu}}
+
+        @author: Fran Boon
+
     """
 
     tag = "div"
@@ -1155,13 +1180,19 @@ class MENU2(DIV):
     def xml(self):
         return self.serialize(self.data, 0).xml()
 
-# class QueryS3 -----------------------------------------------------------------------
-# added by sunneach on Feb 9, 2010
-#
+
+# =============================================================================
 class QueryS3(Query):
+
+    """ S3 extensions of the Query class
+    
+        If Server Side Pagination is on, the proper CAST is needed to match
+        the string-typed id to lookup table id
+
+        @author: sunneach
+        
     """
-    If Server Side Pagination is on, the proper CAST is needed to match the string-typed id to lookup table id
-    """
+
     def __init__(self,
                  left,
                  op=None,
@@ -1173,14 +1204,19 @@ class QueryS3(Query):
         else:
             self.sql = "CAST(TRIM(%s,"|") AS INTEGER)=%s" % (left, right)
 
-#
-# class FieldS3 -----------------------------------------------------------------------
-# added by sunneach on Feb 9, 2010
-#
+
+# =============================================================================
 class FieldS3(Field):
+
+    """ S3 extensions of the Field clas
+    
+        If Server Side Pagination is on, the proper CAST is needed to
+        match the lookup table id
+
+        @author: sunneach
+
     """
-    If Server Side Pagination is on, the proper CAST is needed to match the lookup table id
-    """
+
     def __init__(
         self,
         fieldname,
@@ -1238,7 +1274,8 @@ class FieldS3(Field):
         else:
             return QueryS3(self, "join_via", value)
 
-# -----------------------------------------------------------------------------
+
+# =============================================================================
 class S3ReusableField(object):
 
     """ Helper for DRY reusable fields:
@@ -1246,6 +1283,8 @@ class S3ReusableField(object):
         This creates neither a Table nor a Field, but just
         an argument store. The field is created with the __call__
         method, which is faster than copying an existing field.
+
+        @author: nursix
 
     """
 
@@ -1271,7 +1310,7 @@ class S3ReusableField(object):
                     if requires:
                         r = requires[0]
                         if isinstance(r, IS_EMPTY_OR):
-                            requires[0] = r.other
+                            requires = r.other
                             ia.update(requires=requires)
             if "empty" in attr:
                 del attr["empty"]
@@ -1283,4 +1322,4 @@ class S3ReusableField(object):
             return Field(name, self.__type, **ia)
 
 
-# -----------------------------------------------------------------------------
+# =============================================================================

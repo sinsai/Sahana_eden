@@ -151,11 +151,11 @@ if deployment_settings.has_module(module):
                     comments(),
                     migrate=migrate, *s3_meta_fields())
 
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     table.gov_uuid.label = T("Government UID")
-    table.gov_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "%s.gov_uuid" % tablename))
+    table.gov_uuid.requires = IS_NULL_OR(IS_NOT_ONE_OF(db, "%s.gov_uuid" % tablename))
     table.name.label = T("Name")
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
     table.aka1.label = T("Other Name")
     table.aka2.label = T("Other Name")
     table.address.label = T("Address")

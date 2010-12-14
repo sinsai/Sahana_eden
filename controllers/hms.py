@@ -146,16 +146,15 @@ def shn_hms_hospital_rheader(r, tabs=[]):
 
     """ Page header for component resources """
 
-    if r.name == "hospital":
-        if r.representation == "html":
-
-            _next = r.here()
-            _same = r.same()
-
-            rheader_tabs = shn_rheader_tabs(r, tabs)
-
+    if r.representation == "html":
+        if r.name == "hospital":
             hospital = r.record
             if hospital:
+                _next = r.here()
+                _same = r.same()
+
+                rheader_tabs = shn_rheader_tabs(r, tabs)
+
                 rheader = DIV(TABLE(
 
                     TR(TH("%s: " % T("Name")),

@@ -1,5 +1,3 @@
-{{include "colorbox.html"}}
-
 <script type="text/javascript">//<![CDATA[
 function s3_tb_call_cleanup(caller) {
     if (self.parent.s3_tb_cleanup)
@@ -20,7 +18,7 @@ function s3_tb_refresh() {
         s3_tb_call_cleanup(level);
         return;
     }
-    
+
     var caller = $_GET['caller'];
     if (caller.match(/but_add_/)){
         // OR Dashboard (deprecated)
@@ -32,7 +30,7 @@ function s3_tb_refresh() {
         var url = '{{=URL(r=request, c="survey", f="template_link")}}';
         url += '/options.json?field=survey_question_id'
         var selector = self.parent.$('#survey_question_id');
-        var selected_values = selector.selectedValues(); 
+        var selected_values = selector.selectedValues();
         var options = self.parent.$('#survey_question_id *');
         var dropdown = options.length
         var append = {}
@@ -68,7 +66,7 @@ function s3_tb_refresh() {
             setTimeout(function() {
                 // Set the newly-created value (one with highest value) retaining selected values.
                 selected_values.push(value_high);
-                selector.selectOptions(selected_values, false).change();            
+                selector.selectOptions(selected_values, false).change();
                 }, 1);
             // Clean-up
             s3_tb_call_cleanup('survey_question_id');
@@ -92,6 +90,7 @@ function s3_tb_refresh() {
         var rel_url = parent_url.replace(/.*\/{{=request.application}}\//, '');
         var args = rel_url.split('?')[0].split('/');
         var parent_component = null;
+        caller_prefix = args[0]
         parent_function = args[1]
         if (args.length > 2) {
           if (args[2].match(/\d*/) != null) {
@@ -107,7 +106,7 @@ function s3_tb_refresh() {
         }
 
         // URL to retrieve the Options list for the field of the master resource
-        var url = '{{=URL(r=request, c="aaa", f="bbb")}}'.replace('aaa/bbb', parent_module + '/' + parent_resource);
+        var url = '{{=URL(r=request, c="aaa", f="bbb")}}'.replace('aaa/bbb', caller_prefix + '/' + parent_resource);
         url += '/options.json?field=' + child_resource;
         var selector = self.parent.$('#' + caller);
         var dummy = self.parent.$('#dummy_' + caller);

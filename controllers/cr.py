@@ -59,8 +59,7 @@ def shelter_type():
     # Post-processor
     def postp(r, output):
         if r.representation in shn_interactive_view_formats:
-            # Don't provide delete button in list view
-            shn_action_buttons(r, deletable=False)
+            shn_action_buttons(r)
         return output
     response.s3.postp = postp
 
@@ -87,8 +86,7 @@ def shelter_service():
     # Post-processor
     def postp(r, output):
         if r.representation in shn_interactive_view_formats:
-            # Don't provide delete button in list view
-            shn_action_buttons(r, deletable=False)
+            shn_action_buttons(r)
         return output
     response.s3.postp = postp
 
@@ -171,7 +169,7 @@ def shelter():
     rheader = lambda r: shn_shelter_rheader(r, tabs=shelter_tabs)
 
     output = s3_rest_controller(module, resourcename,
-                                 rheader=rheader)
+                                rheader=rheader)
 
     return output
 
@@ -338,17 +336,31 @@ def shn_shelter_rheader(r, tabs=[]):
     """ Resource Headers """
 
     if r.representation == "html":
-        rheader_tabs = shn_rheader_tabs(r, tabs)
-
         record = r.record
-        rheader = DIV(TABLE(
-                            TR(
-                                TH(T("Name") + ": "), record.name
-                              ),
-                            ),
-                      rheader_tabs)
-        return rheader
+        if record:
+            rheader_tabs = shn_rheader_tabs(r, tabs)
+            
+            if r.name == "shelter":
+                location = shn_gis_location_represent(record.location_id)
+            
+                rheader = DIV(TABLE(
+                                    TR(
+                                        TH(T("Name") + ": "), record.name
+                                      ),
+                                    TR(
+                                        TH(T("Location") + ": "), location
+                                      ),
+                                    ),
+                              rheader_tabs)
+            else:
+                rheader = DIV(TABLE(
+                                    TR(
+                                        TH(T("Name") + ": "), record.name
+                                      ),
+                                    ),
+                              rheader_tabs)
 
+            return rheader
     return None
 
 # -----------------------------------------------------------------------------

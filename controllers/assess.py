@@ -212,71 +212,73 @@ def shn_rat_rheader(r, tabs=[]):
     """ Resource Headers """
 
     if r.representation == "html":
-        rheader_tabs = shn_rheader_tabs(r, tabs, paging=True)
-
         if r.name == "rat":
-
             report = r.record
-            location = report.location_id
-            if location:
-                location = shn_gis_location_represent(location)
-            staff = report.staff_id
-            if staff:
-                organisation_id = db(db.org_staff.id == staff).select(db.org_staff.organisation_id).first().organisation_id
-                organisation = shn_organisation_represent(organisation_id)
-            else:
-                organisation = None
-            staff = report.staff2_id
-            if staff:
-                organisation_id = db(db.org_staff.id == staff).select(db.org_staff.organisation_id).first().organisation_id
-                organisation2 = shn_organisation_represent(organisation_id)
-            else:
-                organisation2 = None
-            if organisation2:
-                orgs = organisation + ", " + organisation2
-            else:
-                orgs = organisation
-            doc_name = doc_url = None
-            document = db(db.doc_document.id == report.document_id).select(db.doc_document.name, db.doc_document.file, limitby=(0, 1)).first()
-            if document:
-                doc_name = document.name
-                doc_url = URL(r=request, c="default", f="download", args=[document.file])
-            rheader = DIV(TABLE(
-                            TR(
-                                TH(T("Location") + ": "), location,
-                                TH(T("Date") + ": "), report.date
-                              ),
-                            TR(
-                                TH(T("Organizations") + ": "), orgs,
-                                TH(T("Document") + ": "), A(doc_name, _href=doc_url)
-                              )
-                            ),
-                          rheader_tabs)
+            if report:
+                rheader_tabs = shn_rheader_tabs(r, tabs, paging=True)
+                location = report.location_id
+                if location:
+                    location = shn_gis_location_represent(location)
+                staff = report.staff_id
+                if staff:
+                    organisation_id = db(db.org_staff.id == staff).select(db.org_staff.organisation_id).first().organisation_id
+                    organisation = shn_organisation_represent(organisation_id)
+                else:
+                    organisation = None
+                staff = report.staff2_id
+                if staff:
+                    organisation_id = db(db.org_staff.id == staff).select(db.org_staff.organisation_id).first().organisation_id
+                    organisation2 = shn_organisation_represent(organisation_id)
+                else:
+                    organisation2 = None
+                if organisation2:
+                    orgs = organisation + ", " + organisation2
+                else:
+                    orgs = organisation
+                doc_name = doc_url = None
+                document = db(db.doc_document.id == report.document_id).select(db.doc_document.name, db.doc_document.file, limitby=(0, 1)).first()
+                if document:
+                    doc_name = document.name
+                    doc_url = URL(r=request, c="default", f="download", args=[document.file])
+                rheader = DIV(TABLE(
+                                TR(
+                                    TH(T("Location") + ": "), location,
+                                    TH(T("Date") + ": "), report.date
+                                  ),
+                                TR(
+                                    TH(T("Organizations") + ": "), orgs,
+                                    TH(T("Document") + ": "), A(doc_name, _href=doc_url)
+                                  )
+                                ),
+                              rheader_tabs)
 
-            return rheader
-
-        else:
-            return None
+                return rheader
+    return None
 
 #==============================================================================
 # Flexible Impact Assessments
 #==============================================================================
-def shn_assess_rheader(jr, tabs=[]):
+def shn_assess_rheader(r, tabs=[]):
 
-    """ @todo: docstring """
+    """ Resource Headers for Flexible Impact Assessments """
 
-    if jr.representation == "html":
-        rheader_tabs = shn_rheader_tabs(jr, tabs)
-        assess = jr.record
-        rheader = DIV(TABLE(TR(
-                               TH(T("Date & Time") + ": "), assess.datetime,
-                               TH(T("Location") + ": "), shn_gis_location_represent(assess.location_id),
-                               TH(T("Assessor") + ": "), shn_pr_person_represent(assess.assessor_person_id),
-                              ),
-                           ),
-                      rheader_tabs
-                     )
-        return rheader
+    if r.representation == "html":
+
+        rheader_tabs = shn_rheader_tabs(r, tabs)
+
+        assess = r.record
+
+        if assess:
+            rheader = DIV(TABLE(TR(
+                                   TH(T("Date & Time") + ": "), assess.datetime,
+                                   TH(T("Location") + ": "), shn_gis_location_represent(assess.location_id),
+                                   TH(T("Assessor") + ": "), shn_pr_person_represent(assess.assessor_person_id),
+                                  ),
+                               ),
+                          rheader_tabs
+                         )
+            return rheader
+
     return None
 
 
@@ -297,7 +299,7 @@ def assess():
     response.s3.prep = shn_assess_prep
 
     table.incident_id.comment = DIV(_class="tooltip",
-                                     _title=T("Incident") + "|" + T("Optional link to an Incident which this Assessment was triggered by."))
+                                    _title=T("Incident") + "|" + T("Optional link to an Incident which this Assessment was triggered by."))
 
     tabs = [
             (T("Edit Details"), None),

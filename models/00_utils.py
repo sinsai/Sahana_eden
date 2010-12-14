@@ -745,9 +745,13 @@ def shn_search(r, **attr):
         _vars = request.vars
         _table = r.table
 
-        # JQuery Autocomplete uses "q" instead of "value"
         # JQueryUI Autocomplete uses "term" instead of "value"
+        # (old JQuery Autocomplete uses "q" instead of "value")
         value = _vars.value or _vars.term or _vars.q or None
+
+        # We want to do case-insensitive searches
+        # (default anyway on MySQL/SQLite, but not PostgreSQL)
+        value = value.lower()
 
         if _vars.field and _vars.filter and value:
             field = str.lower(_vars.field)
@@ -787,18 +791,18 @@ def shn_search(r, **attr):
                     # pr_person name search
                     if " " in value:
                         value1, value2 = value.split(" ", 1)
-                        query = query & ((_field.like("%" + value1 + "%")) & \
-                                        (_table[field2].like("%" + value2 + "%")) | \
-                                        (_table[field3].like("%" + value2 + "%")))
+                        query = query & ((_field.lower().like("%" + value1 + "%")) & \
+                                        (_table[field2].lower().like("%" + value2 + "%")) | \
+                                        (_table[field3].lower().like("%" + value2 + "%")))
                     else:
-                        query = query & ((_field.like("%" + value + "%")) | \
-                                        (_table[field2].like("%" + value + "%")) | \
-                                        (_table[field3].like("%" + value + "%")))
+                        query = query & ((_field.lower().like("%" + value + "%")) | \
+                                        (_table[field2].lower().like("%" + value + "%")) | \
+                                        (_table[field3].lower().like("%" + value + "%")))
 
                 elif exclude_field and exclude_value:
                     # gis_location hierarchical search
                     # Filter out poor-quality data, such as from Ushahidi
-                    query = query & (_field.like("%" + value + "%")) & \
+                    query = query & (_field.lower().like("%" + value + "%")) & \
                                     (_table[exclude_field] != exclude_value)
 
                 elif parent:
@@ -814,7 +818,7 @@ def shn_search(r, **attr):
 
                 else:
                     # Normal single-field
-                    query = query & (_field.like("%" + value + "%"))
+                    query = query & (_field.lower().like("%" + value + "%"))
 
                 if query:
                     if limit:
@@ -823,7 +827,13 @@ def shn_search(r, **attr):
                         item = db(query).select().json()
 
             elif filter == "=":
-                query = query & (_field == value)
+                if _field.type.split(" ")[0] in ["reference", "id", "float", "integer"]:
+                    # e.g. Organisations' offices_by_org
+                    query = query & (_field == value)
+                else:
+                    # e.g. Location Selector
+                    query = query & (_field.lower() == value)
+
                 if parent:
                     # e.g. gis_location hierarchical search
                     query = query & (_table.parent == parent)
@@ -1004,13 +1014,13 @@ def s3_rest_controller(prefix, resourcename, **attr):
 
     """
 
-    # Set method handlers
-    s3xrc.set_handler("search", shn_search)
-    s3xrc.set_handler("copy", shn_copy)
-    s3xrc.set_handler("barchart", shn_barchart)
-
     # Parse and execute the request
     resource, r = s3xrc.parse_request(prefix, resourcename)
+
+    resource.set_handler("search", shn_search)
+    resource.set_handler("copy", shn_copy)
+    resource.set_handler("barchart", shn_barchart)
+
     output = resource.execute_request(r, **attr)
 
     # Add default action buttons in list views

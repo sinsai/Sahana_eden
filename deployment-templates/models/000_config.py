@@ -4,6 +4,11 @@
     Deployment settings
     All settings which are typically edited for a deployment should be done here
     Deployers shouldn't typically need to edit any other files.
+    NOTE FOR DEVELOPERS: 
+    /models/000_config.py is NOT in the BZR repository, as this file will be changed 
+    during deployments. 
+    To for changes to be committed to trunk, please also edit:
+    deployment-templates/models/000_config.py
 """
 
 # Remind admin to edit this file
@@ -134,7 +139,7 @@ deployment_settings.gis.locations_hierarchy = {
     "L2":T("District"),
     "L3":T("Town"),
     "L4":T("Village"),
-    "L5":T("Location"), # Street Address
+    #"L5":T("Neighbourhood"),
     "XX":T("Imported")
 }
 # Maximum Marker Size
@@ -189,7 +194,8 @@ deployment_settings.security.archive_not_delete = True
 # Comment/uncomment modules here to disable/enable them
 # Modules menu is defined in 01_menu.py
 from gluon.storage import Storage
-deployment_settings.modules = Storage(
+from gluon.contrib.simplejson.ordered_dict import OrderedDict
+deployment_settings.modules = OrderedDict(
     default = Storage(
             name_nice = T("Home"),
             access = None,      # All Users (inc Anonymous) can see this module in the default menu & access the controller
@@ -286,7 +292,8 @@ deployment_settings.modules = Storage(
             description = T("Managing, Storing and Distributing Relief Items"),
             module_type = 10
         ),
-    rms = Storage(
+    # NB RMS module depends on HMS, CR & Project
+    rms = Storage(      
             name_nice = T("Requests"),
             description = T("Tracks requests for aid and matches them against donors who have pledged aid"),
             module_type = 3,
@@ -320,6 +327,7 @@ deployment_settings.modules = Storage(
         description = T("Incident Reporting System"),
         module_type = 10
     ),
+    # Assess currently depends on IRS
     assess = Storage(
          name_nice = "Assessments",
          description = "Rapid Assessments & Flexible Impact Assessments",

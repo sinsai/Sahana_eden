@@ -13,6 +13,13 @@ def shn_user_represent(id):
         return user.email
     return None
 
+def shn_role_represent(id):
+    table = db.auth_group
+    role = db(table.id == id).select(table.role, limitby=(0, 1), cache=(cache.ram, 10)).first()
+    if role:
+        return role.role
+    return None
+
 # -----------------------------------------------------------------------------
 # "Reusable" fields for table meta-data
 #
@@ -69,8 +76,16 @@ meta_created_by = S3ReusableField("created_by", db.auth_user,
                                   writable=False,
                                   requires=None,
                                   default=session.auth.user.id if auth.is_logged_in() else None,
-                                  represent = lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
+                                  represent=lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
                                   ondelete="RESTRICT")
+
+meta_owned_by = S3ReusableField("owned_by", db.auth_group,
+                                readable=False, # Enable when needed, not by default
+                                writable=False,
+                                requires=None,
+                                default=None,
+                                represent=lambda id: id and shn_role_represent(id) or UNKNOWN_OPT,
+                                ondelete="RESTRICT")
 
 meta_modified_by = S3ReusableField("modified_by", db.auth_user,
                                    readable=False, # Enable when needed, not by default
@@ -78,104 +93,45 @@ meta_modified_by = S3ReusableField("modified_by", db.auth_user,
                                    requires=None,
                                    default=session.auth.user.id if auth.is_logged_in() else None,
                                    update=session.auth.user.id if auth.is_logged_in() else None,
-                                   represent = lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
+                                   represent=lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
                                    ondelete="RESTRICT")
 
 def s3_authorstamp():
-    return (meta_created_by(), meta_modified_by())
+    return (meta_created_by(), meta_owned_by(), meta_modified_by())
 
 def s3_meta_fields():
 
-    fields = (
-        meta_uuidstamp(),
-        meta_mci(),
-        meta_deletion_status(),
-        meta_created_on(),
-        meta_modified_on(),
-        meta_created_by(),
-        meta_modified_by()
-    )
+    fields = (meta_uuidstamp(),
+              meta_mci(),
+              meta_deletion_status(),
+              meta_created_on(),
+              meta_modified_on(),
+              meta_created_by(),
+              meta_owned_by(),
+              meta_modified_by())
 
     return fields
 
 # -----------------------------------------------------------------------------
-# Reusable timestamp fields to include in other table definitions
-timestamp = db.Table(None, "timestamp",
-            Field("created_on", "datetime",
-                  readable=False,
-                  writable=False,
-                  default=request.utcnow),
-            Field("modified_on", "datetime",
-                  readable=False,
-                  writable=False,
-                  default=request.utcnow,
-                  update=request.utcnow)
-            )
-
-authorstamp = db.Table(None, "authorstamp",
-            Field("created_by", db.auth_user,
-                  readable=False, # Enable when needed, not by default
-                  writable=False,
-                  default=session.auth.user.id if auth.is_logged_in() else None,
-                  represent = lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
-                  ondelete="RESTRICT"),
-            Field("modified_by", db.auth_user,
-                  readable=False, # Enable when needed, not by default
-                  writable=False,
-                  default=session.auth.user.id if auth.is_logged_in() else None,
-                  update=session.auth.user.id if auth.is_logged_in() else None,
-                  represent = lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
-                  ondelete="RESTRICT")
-            )
-
+# Reusable comments field to include in other table definitions
 comments = S3ReusableField("comments", "text",
                            label = T("Comments"),
                            comment = DIV(_class="tooltip",
                                          _title=T("Comments") + "|" + T("Please use this field to record any additional information, including a history of the record if it is updated.")))
 
-uuidstamp = db.Table(None, "uuidstamp",
-            Field("uuid",
-                  type=s3uuid,
-                  length=128,
-                  notnull=True,
-                  unique=True,
-                  readable=False,
-                  writable=False,
-                  default=""),
-            Field("mci", "integer", # Master-Copy-Index
-                  default=0,
-                  readable=False,
-                  writable=False))
-
-# Reusable Deletion_Status field to include in other table definitions
-deletion_status = db.Table(None, "deletion_status",
-                           Field("deleted", "boolean",
-                                 readable=False,
-                                 writable=False,
-                                 default=False))
-
-# Reusable Admin field to include in other table definitions
-# Deprecated: http://eden.sahanafoundation.org/wiki/BluePrintAuthorization#Recordrestriction
-#admin_id = db.Table(None, "admin_id",
-#            FieldS3("admin", db.auth_group, sortby="role",
-#                requires = IS_NULL_OR(IS_ONE_OF(db, "auth_group.id", "%(role)s")),
-#                represent = lambda id: (id and [db(db.auth_group.id == id).select(db.auth_group.role, limitby=(0, 1)).first().role] or ["None"])[0],
-#                comment = DIV(A(T("Add Role"), _class="colorbox", _href=URL(r=request, c="admin", f="group", args="create", vars=dict(format="popup")), _target="top", _title=T("Add Role")), DIV( _class="tooltip", _title=str(T("Admin")) + "|" + str(T("The Group whose members can edit data in this record.")))),
-#                ondelete="RESTRICT"
-#                ))
-
-# Reusable Currency field to include in other table definitions
+# Reusable currency field to include in other table definitions
 currency_type_opts = {
     1:T("Dollars"),
     2:T("Euros"),
     3:T("Pounds")
 }
-opt_currency_type = db.Table(None, "currency_type",
-                             Field("currency_type", "integer", notnull=True,
-                             requires = IS_IN_SET(currency_type_opts, zero=None),
-                             #default = 1,
-                             label = T("Currency"),
-                             represent = lambda opt: currency_type_opts.get(opt, UNKNOWN_OPT)))
+currency_type = S3ReusableField("currency_type", "integer",
+                                notnull=True,
+                                requires = IS_IN_SET(currency_type_opts, zero=None),
+                                #default = 1,
+                                label = T("Currency"),
+                                represent = lambda opt: \
+                                    currency_type_opts.get(opt, UNKNOWN_OPT))
 
 # Default CRUD strings
 ADD_RECORD = T("Add Record")
@@ -217,7 +173,7 @@ table = db.define_table(tablename,
                         Field("col_btn_hover"),
                         migrate=migrate)
 
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 table.col_background.requires = IS_HTML_COLOUR()
 table.col_txt.requires = IS_HTML_COLOUR()
 table.col_txt_background.requires = IS_HTML_COLOUR()
@@ -240,12 +196,13 @@ s3_setting_security_policy_opts = {
 # @ToDo Move these to deployment_settings
 resource = "setting"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, uuidstamp,
+table = db.define_table(tablename,
+                        meta_uuidstamp(),
                         Field("admin_name"),
                         Field("admin_email"),
                         Field("admin_tel"),
                         Field("theme", db.admin_theme),
-                        migrate=migrate)
+                        migrate=migrate, *s3_timestamp())
 
 table.theme.requires = IS_IN_DB(db, "admin_theme.id", "admin_theme.name", zero=None)
 table.theme.represent = lambda name: db(db.admin_theme.id == name).select(db.admin_theme.name, limitby=(0, 1)).first().name

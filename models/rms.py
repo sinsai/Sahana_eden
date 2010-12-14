@@ -6,6 +6,7 @@
 
 module = "rms"
 if deployment_settings.has_module(module):
+    # NB Current this module depends on HMS, CR & Project
 
     # -------------------------------
     # Load lists/dictionaries for drop down menus
@@ -48,14 +49,14 @@ if deployment_settings.has_module(module):
                             Field("datetime", "datetime"),  # 'timestamp' is a reserved word in Postgres
                             location_id(),
                             person_id("requestor_person_id"),
-                            hospital_id(),    # @ToDo Check if the module is enabled for adding FK: check CR for an example
-                            shelter_id(),     # @ToDo Check if the module is enabled for adding FK: check CR for an example
+                            hospital_id(),    # @ToDo: Check if the HMS module is enabled for adding FK: check CR for an example
+                            shelter_id(),     # @ToDo: Check if the CR module is enabled for adding FK: check CR for an example
                             organisation_id(),
                             inventory_store_id("from_inventory_store_id"),
                             Field("type", "integer"),
                             Field("priority", "integer"),
                             Field("message", "text"),
-                            activity_id(),
+                            activity_id(),     # @ToDo: Check if the Project module is enabled for adding FK: check CR for an example
                             #Field("verified", "boolean"),
                             #Field("verified_details"),
                             #Field("actionable", "boolean"),
@@ -218,12 +219,16 @@ if deployment_settings.has_module(module):
                 wc = "%"
                 _l = "%s%s%s" % (wc, l, wc)
 
+                # We want to do case-insensitive searches
+                # (default anyway on MySQL/SQLite, but not PostgreSQL)
+                _l = _l.lower()
+
                 # build query
                 for f in search_fields:
                     if query:
-                        query = (db.rms_req[f].like(_l)) | query
+                        query = (db.rms_req[f].lower().like(_l)) | query
                     else:
-                        query = (db.rms_req[f].like(_l))
+                        query = (db.rms_req[f].lower().like(_l))
 
                 # undeleted records only
                 query = (db.rms_req.deleted == False) & (query)
@@ -339,11 +344,10 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             request_id(),
-                            item_id(),
+                            item_id(empty=False),
                             Field("quantity", "double"),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
-
     # CRUD strings
     ADD_REQUEST_ITEM = T("Add Request Item")
     LIST_REQUEST_ITEMS = T("List Request Items")
@@ -362,6 +366,9 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Request Item updated"),
         msg_record_deleted = T("Request Item deleted"),
         msg_list_empty = T("No Items currently requested"))
+
+    table.item_id.requires = IS_ONE_OF(db, "supply_item.id", "%(name)s") 
+    #table.quantity.requires = IS_NOT_EMPTY() 
 
     # Items as component of Locations
     s3xrc.model.add_component(module, resourcename,

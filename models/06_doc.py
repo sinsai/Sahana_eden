@@ -18,10 +18,11 @@ table = db.define_table(tablename,
                         Field("date", "date"),
                         comments(),
                         Field("entered", "boolean"),
+                        Field("checksum", readable=False, writable=False),
                         migrate=migrate, *s3_meta_fields())
 
 
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 #table.name.label = T("Name")
 
 def shn_file_represent( file, table):
@@ -35,7 +36,7 @@ table.file.represent = lambda file, table=table: shn_file_represent(file, table)
 table.url.label = T("URL")
 table.url.represent = lambda url: url and A(url,_href=url) or NONE
 
-table.url.requires = [IS_NULL_OR(IS_URL()),IS_NULL_OR(IS_NOT_IN_DB(db, "%s.url" % tablename))]
+table.url.requires = [IS_NULL_OR(IS_URL()),IS_NULL_OR(IS_NOT_ONE_OF(db, "%s.url" % tablename))]
 
 table.person_id.label = T("Author")
 table.person_id.comment = shn_person_comment(T("Author"), T("The Author of this Document (optional)"))
@@ -45,6 +46,7 @@ table.location_id.readable = table.location_id.writable = False
 table.entered.comment = DIV( _class="tooltip",
                              _title="Entered" + "|" + T("Has data from this Reference Document been entered into Sahana?")
                              )
+
 # -----------------------------------------------------------------------------
 def document_represent(id):
     if not id:
@@ -119,10 +121,10 @@ table = db.define_table(tablename,
                         location_id(),
                         Field("date", "date"),
                         comments(),
+                        Field("checksum", readable=False, writable=False),
                         migrate=migrate, *s3_meta_fields())
 
-
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 #table.name.label = T("Name")
 table.url.label = T("URL")
 table.person_id.label = T("Person")

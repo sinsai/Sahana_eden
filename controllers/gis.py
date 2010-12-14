@@ -26,6 +26,7 @@ response.menu_options = [
 if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
     response.menu_options.append([T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")])
     response.menu_options.append([T("De-duplicator"), False, URL(r=request, f="location_duplicates")])
+    
 
 # -----------------------------------------------------------------------------
 # Web2Py Tools functions
@@ -232,9 +233,13 @@ def location():
     parent = _vars.get("parent_", None)
     # Don't use 'parent' as the var name as otherwise it conflicts with the form's var of the same name & hence this will be triggered during form submission
     if parent:
+        # We want to do case-insensitive searches
+        # (default anyway on MySQL/SQLite, but not PostgreSQL)
+        _parent = parent.lower()
+
         # Can't do this using a JOIN in DAL syntax
         # .belongs() not GAE-compatible!
-        filters.append((db.gis_location.parent.belongs(db(db.gis_location.name.like(parent)).select(db.gis_location.id))))
+        filters.append((db.gis_location.parent.belongs(db(db.gis_location.name.lower().like(_parent)).select(db.gis_location.id))))
         # ToDo: Make this recursive - want descendants not just direct children!
         # Use new gis.get_children() function
 
@@ -278,72 +283,139 @@ def location():
 
 def location_duplicates():
     """
-        Handle De-duplication of Locations
+        Handle De-duplication of Locations by comparing the ones which are closest together
+
+        @ToDo: Extend to being able to check locations for which we have no Lat<>Lon info (i.e. just names & maybe parents)
     """
 
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
-        unauthorised()
+    # @ToDo: Set this via the UI & pass in as a var
+    dupe_distance = 50 # km
 
-    def delete_location(old, new):
-        # Find all tables which link to the Locations table
-        # @ToDo Replace with db.gis_location._referenced_by
-        tables = shn_table_links("gis_location")
+    # Shortcut
+    locations = db.gis_location
 
-        for table in tables:
-            for count in range(len(tables[table])):
-                field = tables[str(db[table])][count]
-                query = db[table][field] == old
-                db(query).update(**{field:XXX})
+    table_header = THEAD(TR(TH(T("Location 1")),
+                            TH(T("Location 2")),
+                            TH(T("Distance(Kms)")),
+                            TH(T("Resolve"))))
 
-        # Remove the record
-        db(db.gis_location.id == old).update(deleted=True)
+    # Calculate max possible combinations of records
+    # To handle the AJAX requests by the dataTables jQuery plugin.
+    totalLocations = db(locations.id > 0).count()
 
-        return
+    item_list = []
+    if request.vars.iDisplayStart:
+        end = int(request.vars.iDisplayLength) + int(request.vars.iDisplayStart)
+        locations = db((locations.id > 0) & \
+                       (locations.deleted == False) & \
+                       (locations.lat != None) & \
+                       (locations.lon != None)).select(locations.id,
+                                                       locations.name,
+                                                       locations.level,
+                                                       locations.lat,
+                                                       locations.lon)
+        # Calculate the Great Circle distance
+        count = 1
+        for oneLocation in locations[:len(locations) / 2]:
+            for anotherLocation in locations[len(locations) / 2:]:
+                if count > end and request.vars.max != "undefined":
+                    count = int(request.vars.max)
+                    break
+                if oneLocation.id == anotherLocation.id:
+                    continue
+                else:
+                    dist = gis.greatCircleDistance(oneLocation.lat,
+                                                   oneLocation.lon,
+                                                   anotherLocation.lat,
+                                                   anotherLocation.lon)
+                    if dist < dupe_distance:
+                        count = count + 1
+                        item_list.append([oneLocation.name,
+                                          anotherLocation.name,
+                                          dist,
+                                          "<a href=\"../gis/location_resolve?locID1=%i&locID2=%i\", class=\"action-btn\">Resolve</a>" % (oneLocation.id, anotherLocation.id)
+                                         ])
+                    else:
+                        continue
 
-    def open_btn(id):
-        return A(T("Load Details"), _id=id, _href=URL(r=request, f="location"), _class="action-btn", _target="_blank")
-
-    def links_btn(id):
-        return A(T("Linked Records"), _id=id, _href=URL(r=request, f="location_links"), _class="action-btn", _target="_blank")
-
-    # Unused: we do all filtering client-side using AJAX
-    filter = request.vars.get("filter", None)
-
-    #repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
-    repr_select = lambda l: l.level and "%s (%s)" % (l.name, response.s3.gis.location_hierarchy[l.level]) or l.name
-    if filter:
-        requires = IS_ONE_OF(db, "gis_location.id", repr_select, filterby="level", filter_opts=(filter,), orderby="gis_location.name", sort=True)
+        item_list = item_list[int(request.vars.iDisplayStart):end]
+        # Convert data to JSON
+        result  = []
+        result.append({
+                    "sEcho" : request.vars.sEcho,
+                    "iTotalRecords" : count,
+                    "iTotalDisplayRecords" : count,
+                    "aaData" : item_list
+                    })
+        output = json.dumps(result)
+        # Remove unwanted brackets
+        output = output[1:]
+        output = output[:-1]
+        return output
     else:
-        requires = IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True, zero=T("Select a location"))
-    table = db.gis_location
-    form = SQLFORM.factory(
-                           Field("old", table, requires=requires, label = SPAN(B(T("Old")), " (" + T("To delete") + ")"), comment=DIV(links_btn("linkbtn_old"), open_btn("btn_old"))),
-                           Field("new", table, requires=requires, label = B(T("New")), comment=DIV(links_btn("linkbtn_new"), open_btn("btn_new"))),
-                           formstyle = s3_formstyle
-                          )
+        # Don't load records except via dataTables (saves duplicate loading & less confusing for user)
+        items = DIV((TABLE(table_header, TBODY(), _id="list", _class="display")))
+        return(dict(items=items))
 
-    form.custom.submit.attributes['_value'] = T("Delete Old")
+def delete_location():
 
-    if form.accepts(request.vars, session):
-        _vars = form.vars
+    """ Delete references to a old record and replacing it with the new one. """
 
-        if not _vars.old == _vars.new:
-            # Take Action
-            delete_location(_vars.old, _vars.new)
-            session.confirmation = T("Location De-duplicated")
-            redirect(URL(r=request))
-        else:
-            response.error = T("Locations should be different!")
+    old = request.vars.old
+    new = request.vars.new
 
-    elif form.errors:
-        response.error = T("Need to select 2 Locations")
+    # Find all tables which link to the Locations table
+    # @ToDo Replace with db.gis_location._referenced_by
+    tables = shn_table_links("gis_location")
 
-    return dict(form=form)
+    for table in tables:
+        for count in range(len(tables[table])):
+            field = tables[str(db[table])][count]
+            query = db[table][field] == old
+            db(query).update(**{field:new})
+
+    # Remove the record
+    db(db.gis_location.id == old).update(deleted=True)
+    return "Record Gracefully Deleted"
+
+def location_resolve():
+
+    """ Opens a popup screen where the de-duplication process takes place. """
+
+    # @ToDo: Error gracefully if conditions not satisfied
+    locID1 = request.vars.locID1
+    locID2 = request.vars.locID2
+
+    # Shortcut
+    locations = db.gis_location
+
+    # Remove the comment and replace it with buttons for each of the fields 
+    count = 0
+    for field in locations:
+        id1 = str(count) + "Right"      # Gives a unique number to each of the arrow keys
+        id2 = str(count) + "Left"
+        count  = count + 1
+
+        # Comment field filled with buttons
+        field.comment = DIV(TABLE(TR(TD(INPUT(_type="button", _id=id1, _class="rightArrows", _value="-->")),
+                                     TD(INPUT(_type="button", _id=id2, _class="leftArrows", _value="<--")))))
+        record = locations[locID1]
+    myUrl = URL(r=request, c="gis", f="location")
+    form1 = SQLFORM(locations, record, _id="form1", _action=("%s/%s" % (myUrl, locID1)))
+    
+    # For the second location remove all the comments to save space.
+    for field in locations:
+        field.comment = None
+    record = locations[locID2]
+    form2 = SQLFORM(locations, record,_id="form2", _action=("%s/%s" % (myUrl, locID2)))
+    return dict(form1=form1, form2=form2, locID1=locID1, locID2=locID2)
 
 def location_links():
     """
         @arg id - the location record id
         Returns a JSON array of records which link to the specified location
+        
+        @ToDo: Deprecated with new de-duplicator?
     """
 
     try:
@@ -353,16 +425,19 @@ def location_links():
         raise HTTP(400, body=item)
 
     try:
-        deleted = (db.gis_location.deleted == False)
-        query = (db.gis_location.id == record_id)
+        # Shortcut
+        locations = db.gis_location
+
+        deleted = (locations.deleted == False)
+        query = (locations.id == record_id)
         query = deleted & query
-        record = db(query).select(db.gis_location.id, limitby=(0, 1)).first().id
+        record = db(query).select(locations.id, limitby=(0, 1)).first().id
     except:
         item = s3xrc.xml.json_message(False, 404, "Record not found!")
         raise HTTP(404, body=item)
 
     # Find all tables which link to the Locations table
-    # @ToDo Replace with db.gis_location._referenced_by
+    # @ToDo: Replace with db.gis_location._referenced_by
     tables = shn_table_links("gis_location")
 
     results = []
@@ -1424,100 +1499,6 @@ def map_viewing_client():
     return dict(map=map)
 
 # -----------------------------------------------------------------------------
-def map_selector():
-    """
-        Map Selector.
-        UI for a user to select a Location from a Map
-    """
-
-    config = gis.get_config()
-
-    if lat in request.vars:
-        lat = request.vars.lat
-    else:
-        lat = config.lat
-
-    if lon in request.vars:
-        lon = request.vars.lon
-    else:
-        lon = config.lon
-
-    if zoom in request.vars:
-        zoom = request.vars.zoom
-    else:
-        zoom = config.zoom
-
-    if method in request.vars:
-        method = request.vars.method
-    else:
-        method = "create"
-
-    tablename = None
-    prefix = None
-    name = None
-
-    if method == "create":
-        map = self.show_map(add_feature = True,
-                            add_feature_active = True,
-                            toolbar = True,
-                            collapsed = True,
-                            window = True,
-                            window_hide = True)
-        return dict(map=map)
-
-    elif method == "update" and tablename and prefix and name:
-        # @ToDo: Finish porting this over from CRUD to a separate controller
-        _locations = db.gis_location
-        fields = [_locations.id, _locations.uuid, _locations.name, _locations.lat, _locations.lon, _locations.level, _locations.parent, _locations.addr_street]
-        if tablename == "gis_location":
-            location = db(db[tablename].id == r.id).select(limitby=(0, 1), *fields).first()
-        else:
-            location = db((db[tablename].id == r.id) & (_locations.id == db[tablename].location_id)).select(limitby=(0, 1), *fields).first()
-        if location and location.lat is not None and location.lon is not None:
-            lat = location.lat
-            lon = location.lon
-        else:
-            lat = config.lat
-            lon = config.lon
-        layername = T("Location")
-        popup_label = ""
-        filter = Storage(tablename = tablename,
-                         id = r.id
-                        )
-        layer = self.get_feature_layer(prefix, name, layername, popup_label, filter=filter)
-        if layer:
-            feature_queries = [layer]
-        else:
-            feature_queries = []
-        map = self.show_map(lat = lat,
-                            lon = lon,
-                            # Same as a single zoom on a cluster
-                            zoom = zoom + 2,
-                            feature_queries = feature_queries,
-                            add_feature = True,
-                            add_feature_active = False,
-                            toolbar = True,
-                            collapsed = True,
-                            window = True,
-                            window_hide = True)
-        if location and location.id:
-            _location = Storage(id = location.id,
-                                uuid = location.uuid,
-                                name = location.name,
-                                lat = location.lat,
-                                lon = location.lon,
-                                level = location.level,
-                                parent = location.parent,
-                                addr_street = location.addr_street
-                                )
-        else:
-            _location = None
-        return dict(map=map, oldlocation=_location)
-
-    else:
-        raise HTTP(501, BADMETHOD)
-
-# -----------------------------------------------------------------------------
 def display_feature():
     """
         Cut-down version of the Map Viewing Client.
@@ -1934,15 +1915,22 @@ def proxy():
     import cgi
     import sys, os
 
-    # ToDo - need to link to map_service_catalogue
-    # prevent Open Proxy abuse
+    # @ToDo: Link to map_service_catalogue to prevent Open Proxy abuse
+    # (although less-critical since we restrict content type)
     allowedHosts = []
-    #allowedHosts = ["www.openlayers.org", "openlayers.org",
-    #                "labs.metacarta.com", "world.freemap.in",
-    #                "prototype.openmnnd.org", "geo.openplans.org",
-    #                "sigma.openplans.org", "demo.opengeo.org",
-    #                "www.openstreetmap.org", "sample.avencia.com",
-    #                "v-swe.uni-muenster.de:8080"]
+    #allowedHosts = ["www.openlayers.org", "demo.opengeo.org"]
+
+    allowed_content_types = (
+        "application/xml", "text/xml",
+        "application/vnd.ogc.se_xml",           # OGC Service Exception 
+        "application/vnd.ogc.se+xml",           # OGC Service Exception
+        "application/vnd.ogc.success+xml",      # OGC Success (SLD Put)
+        "application/vnd.ogc.wms_xml",          # WMS Capabilities
+        "application/vnd.ogc.context+xml",      # WMC
+        "application/vnd.ogc.gml",              # GML
+        "application/vnd.ogc.sld+xml",          # SLD
+        "application/vnd.google-earth.kml+xml", # KML
+    )
 
     method = request["wsgi"].environ["REQUEST_METHOD"]
 
@@ -1957,8 +1945,6 @@ def proxy():
             url = "http://www.openlayers.org"
     else:
         # GET
-        #fs = cgi.FieldStorage()
-        #url = fs.getvalue("url", "http://www.openlayers.org")
         if "url" in request.vars:
             url = request.vars.url
         else:
@@ -1968,12 +1954,7 @@ def proxy():
     try:
         host = url.split("/")[2]
         if allowedHosts and not host in allowedHosts:
-            msg = "Status: 502 Bad Gateway\n"
-            msg += "Content-Type: text/plain\n\n"
-            msg += "This proxy does not allow you to access that location (%s).\n\n" % (host,)
-
-            msg += os.environ
-            return msg
+            raise(HTTP(403, "Host not permitted: %s" % host))
 
         elif url.startswith("http://") or url.startswith("https://"):
             if method == "POST":
@@ -1983,32 +1964,29 @@ def proxy():
                 r = urllib2.Request(url, body, headers)
                 y = urllib2.urlopen(r)
             else:
+                # GET
                 y = urllib2.urlopen(url)
 
-            # print content type header
-            # TODO: this doesn't work in web2py, need to figure out how that happens?
-            #i = y.info()
-            #if i.has_key("Content-Type"):
-            # msg = "Content-Type: %s" % (i["Content-Type"])
-            #else:
-            # msg = "Content-Type: text/plain"
-
-            #msg += "\n" + y.read()
+            # Check for allowed content types
+            i = y.info()
+            if i.has_key("Content-Type"):
+                ct = i["Content-Type"]
+                if not ct.split(";")[0] in allowed_content_types:
+                    # @ToDo?: Allow any content type from allowed hosts (any port)
+                    #if allowedHosts and not host in allowedHosts:
+                    raise(HTTP(403, "Content-Type not permitted"))
+            else:
+                raise(HTTP(406, "Unknown Content"))
 
             msg = y.read()
             y.close()
             return msg
         else:
-            msg = "Content-Type: text/plain\n\n"
-
-            msg += "Illegal request."
-            return msg
+            # Bad Request
+            raise(HTTP(400))
 
     except Exception, E:
-        msg = "Status: 500 Unexpected Error\n"
-        msg += "Content-Type: text/plain\n\n"
-        msg += "Some unexpected error occurred. Error text was: %s" % str(E)
-        return msg
+        raise(HTTP(500, "Some unexpected error occurred. Error text was: %s" % str(E)))
 
 # -----------------------------------------------------------------------------
 # Tests - not Production

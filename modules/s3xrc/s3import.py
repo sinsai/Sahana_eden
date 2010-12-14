@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Import Toolkit
 
-    @version: 2.2.7
+    @version: 2.2.9
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -207,9 +207,9 @@ class S3Importer(object):
 
         if tree:
             if template is not None:
-                tfmt = "%Y-%m-%d %H:%M:%S"
+                tfmt = self.manager.xml.ISOFORMAT
                 args.update(domain=self.manager.domain,
-                            base_url=self.manager.base_url,
+                            base_url=self.manager.s3.base_url,
                             prefix=resource.prefix,
                             name=resource.name,
                             utcnow=datetime.datetime.utcnow().strftime(tfmt))

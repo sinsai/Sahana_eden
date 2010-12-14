@@ -113,16 +113,15 @@ def req():
 
 def shn_rms_req_rheader(r):
 
-    """ @todo: fix docstring """
+    """ Resource Header for Requests """
 
     if r.representation == "html":
-
-        _next = r.here()
-        _same = r.same()
-
         if r.name == "req":
             req_record = r.record
             if req_record:
+                _next = r.here()
+                _same = r.same()
+
                 try:
                     location = db(db.gis_location.id == req_record.location_id).select(limitby=(0, 1)).first()
                     location_represent = shn_gis_location_represent(location.id)

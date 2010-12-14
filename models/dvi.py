@@ -49,7 +49,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate, *s3_meta_fields())
 
     # Settings and Restrictions
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
+    table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % table)
 
     table.date.label = T("Date/Time of Find")
     table.date.default = request.utcnow
@@ -58,7 +58,7 @@ if deployment_settings.has_module(module):
     table.date.represent = lambda value: shn_as_local_time(value)
 
     table.site_id.label = T("Site ID")
-    #table.site_id.requires = IS_EMPTY_OR(IS_NOT_IN_DB(db, table.site_id))
+    #table.site_id.requires = IS_EMPTY_OR(IS_NOT_ONE_OF(db, table.site_id))
 
     table.location_id.label = T("Location")
     table.person_id.label = T("Finder")
@@ -130,7 +130,7 @@ if deployment_settings.has_module(module):
 
     table.pe_label.requires = [IS_NOT_EMPTY(
                                 error_message=T("Enter a unique label!")),
-                               IS_NOT_IN_DB(db, "dvi_body.pe_label")]
+                               IS_NOT_ONE_OF(db, "dvi_body.pe_label")]
 
     table.date_of_recovery.default = request.utcnow
     table.date_of_recovery.requires = IS_UTC_DATETIME(
@@ -161,7 +161,7 @@ if deployment_settings.has_module(module):
         title_display = T("Dead Body Details"),
         title_list = T("Body Recovery Reports"),
         title_update = T("Edit Recovery Details"),
-        title_search = T("Find Recovery Report"),
+        title_search = T("Find Dead Body Report"),
         subtitle_create = T("Add New Report"),
         subtitle_list = T("List of Reports"),
         label_list_button = T("List Reports"),
@@ -181,6 +181,14 @@ if deployment_settings.has_module(module):
                                        "incomplete",
                                        "date_of_recovery",
                                        "location_id"])
+
+    dvi_body_search_simple = s3xrc.search_simple(
+            label = T("ID Tag"),
+            comment = T("To search for a body, enter the ID label of the body. You may use % as wildcard. Press 'Search' without input to list all bodies."),
+            fields = ["pe_label"])
+
+    # Plug into REST controller
+    s3xrc.model.set_method(module, "body", method="search_simple", action=dvi_body_search_simple )
 
     #
     # Checklist of operations -----------------------------------------------------
@@ -472,18 +480,18 @@ if deployment_settings.has_module(module):
 
     # -----------------------------------------------------------------------------
     #
-    def shn_dvi_rheader(jr, tabs=[]):
+    def shn_dvi_rheader(r, tabs=[]):
 
         """ Page header for component pages """
 
-        if jr.name == "body":
-            if jr.representation == "html":
-                _next = jr.here()
-                _same = jr.same()
+        if r.name == "body":
+            if r.representation == "html":
+                _next = r.here()
+                _same = r.same()
 
-                rheader_tabs = shn_rheader_tabs(jr, tabs)
+                rheader_tabs = shn_rheader_tabs(r, tabs)
 
-                body = jr.record
+                body = r.record
                 if body:
                     rheader = DIV(TABLE(
 
@@ -507,80 +515,5 @@ if deployment_settings.has_module(module):
                     return rheader
 
         return None
-
-
-    # -----------------------------------------------------------------------------
-    #
-    def shn_dvi_body_search_simple(r, **attr):
-
-        """ Simple search form for bodies (recovery reports) """
-
-        resource = r.resource
-        table = resource.table
-
-        r.id = None
-
-        # Check permission
-        if not shn_has_permission("read", table):
-            r.unauthorised()
-
-        if r.representation == "html":
-
-            # Check for redirection
-            next = r.request.vars.get("_next", None)
-            if not next:
-                next = URL(r=request, f="body", args="[id]")
-
-            # Select form
-            form = FORM(TABLE(
-                    TR("%s: " % T("ID Tag"),
-                    INPUT(_type="text", _name="label", _size="40"),
-                    DIV(DIV(_class="tooltip",
-                            _title=T("ID Tag") + "|" + T("To search for a body, enter the ID label of the body. You may use % as wildcard. Press 'Search' without input to list all bodies.")))),
-                    TR("", INPUT(_type="submit", _value=T("Search")))))
-
-            output = dict(form=form, vars=form.vars)
-
-            # Accept action
-            items = None
-            if form.accepts(request.vars, session):
-
-                if form.vars.label == "":
-                    form.vars.label = "%"
-
-                # Search
-                results = s3xrc.search_simple(table,
-                            fields = ["pe_label",],
-                            label = form.vars.label)
-
-                # Get the results
-                if results:
-                    resource.build_query(id=results)
-                    report = resource.crud(r, method="list", **attr)["items"]
-                    r.next = None
-                else:
-                    report = T("No matching records found.")
-
-                output.update(items=report)
-
-            # Title and subtitle
-            title = T("Search Recovery Reports")
-            subtitle = T("Matching Records")
-
-            # Add-button
-            label_create_button = shn_get_crud_string("dvi_body", "label_create_button")
-            add_btn = A(label_create_button, _class="action-btn",
-                        _href=URL(r=request, f="body", args="create"))
-
-            output.update(title=title, subtitle=subtitle, add_btn=add_btn)
-            response.view = "search_simple.html"
-            return output
-
-        else:
-            session.error = BADFORMAT
-            redirect(URL(r=request))
-
-    # Plug into REST controller
-    s3xrc.model.set_method(module, "body", method="search_simple", action=shn_dvi_body_search_simple )
 
     # -----------------------------------------------------------------------------

@@ -2,14 +2,14 @@
 
 """
     Budgetting module
-    
+
     NB Depends on Project Tracking module
 
     @author: Fran Boon
 """
 
-module = "budget"
-if deployment_settings.has_module(module):
+module = "budget"   # Requires 'project' module too
+if deployment_settings.has_module(module) and deployment_settings.has_module("project"):
 
     # Parameters
     # Only record 1 is used
@@ -82,7 +82,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-    table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
+    table.code.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.code" % table)]
     table.description.requires = IS_NOT_EMPTY()
 
     def item_cascade(form):
@@ -134,7 +134,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-    table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
+    table.code.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.code" % table)]
 
     def kit_totals(kit):
         "Calculate Totals for a Kit"
@@ -195,7 +195,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % table)]
 
     def bundle_totals(bundle):
         "Calculate Totals for a Bundle"
@@ -286,7 +286,7 @@ if deployment_settings.has_module(module):
                             Field("name", length=128, notnull=True, unique=True),
                             Field("grade", notnull=True),
                             Field("salary", "integer", notnull=True),
-                            opt_currency_type,
+                            currency_type(),
                             Field("travel", "integer", default=0),
                             # Shouldn't be grade-dependent, but purely location-dependent
                             #Field("subsistence", "double", default=0.00),
@@ -296,7 +296,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % table)]
     table.grade.requires = IS_NOT_EMPTY()
     table.salary.requires = IS_NOT_EMPTY()
 
@@ -312,7 +312,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-    table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
+    table.code.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.code" % table)]
 
     # Budgets
     resourcename = "budget"
@@ -326,7 +326,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % table)]
 
     # Budget<>Bundle Many2Many
     resourcename = "budget_bundle"

@@ -83,12 +83,12 @@ sync_message_types = ("OK", "ERROR", "SUCCESS", "FAILURE", "DONE", "SKIPPED", ""
 
 resourcename = "notification"
 tablename = "%s_%s" % (prefix, resourcename)
-table = db.define_table(tablename, timestamp,
+table = db.define_table(tablename,
                         Field("pid", "integer"),
                         Field("type", default=""),
                         Field("message", "text"),
                         Field("notified", "boolean", default=False),
-                        migrate=migrate)
+                        migrate=migrate, *s3_timestamp())
 
 
 # -----------------------------------------------------------------------------

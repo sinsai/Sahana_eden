@@ -12,11 +12,11 @@ class UserManagement(unittest.TestCase):
         self.newUsers = Utilities().getUserDetails()
     
     def header(self):
-        # *** NOTE this script needs to be run by the user testing@example.com END NOTE ***
-        self.action.login(self, "testing@example.com", "testing" )
+        # *** NOTE this script needs to be run by the user admin@example.com END NOTE ***
+        self.action.login(self, "admin@example.com", "testing" )
         # This script will run various test cases against the User Management module found within the Administrator menu
         # All users created by this test case will 'belong' to the example.com domain
-        self.assertTrue(self.selenium.is_element_present("link=testing@example.com"))
+        self.assertTrue(self.selenium.is_element_present("link=admin@example.com"))
 
       
 class UserManagementCreate(UserManagement):

@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - CRUD Method Handlers
 
-    @version: 2.2.7
+    @version: 2.2.9
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -209,7 +209,7 @@ class S3MethodHandler(object):
         """
 
         # Settings
-        self.download_url = self.manager.download_url
+        self.download_url = self.manager.s3.download_url
 
         # Get the right table and method
         self.prefix, self.name, self.table, self.tablename = r.target()
@@ -249,7 +249,7 @@ class S3MethodHandler(object):
             self.next = self.next.replace(placeholder, self.resource.lastid)
         r.next = self.next
 
-        # Add additional view variables
+        # Add additional view variables (e.g. rheader)
         self._extend_view(output, r, **attr)
 
         return output
@@ -352,11 +352,12 @@ class S3MethodHandler(object):
     @staticmethod
     def _extend_view(output, r, **attr):
 
-        """ Add additional view variables (invokes all callables)
+        """
+            Add additional view variables (invokes all callables)
 
             @param output: the output dict
             @param r: the S3Request
-            @param attr: the view variables
+            @param attr: the view variables (e.g. 'rheader')
 
             @note: overload this method in subclasses if you don't want
                    additional view variables to be added automatically
@@ -370,8 +371,13 @@ class S3MethodHandler(object):
                     resolve = True
                     try:
                         display = handler(r)
-                    except:
+                    except TypeError:
+                        # Argument list failure => pass callable to the view as-is
+                        display = handler
                         continue
+                    except:
+                        # Propagate all other errors to the caller
+                        raise
                 else:
                     display = handler
                 if isinstance(display, dict) and resolve:
@@ -593,7 +599,7 @@ class S3CRUDHandler(S3MethodHandler):
 
             # Navigate-away confirmation
             if self.settings.navigate_away_confirm:
-                form.append(SCRIPT("EnableNavigateAwayConfirm();"))
+                form.append(SCRIPT("S3EnableNavigateAwayConfirm();"))
 
             # Put the form into output
             output.update(form=form)
@@ -616,7 +622,6 @@ class S3CRUDHandler(S3MethodHandler):
             if representation in ("popup", "iframe"):
                 self.next = None
             elif not create_next:
-                #self.next = r.there(representation=representation)
                 self.next = self.resource.url(id=[])
             else:
                 try:
@@ -639,7 +644,7 @@ class S3CRUDHandler(S3MethodHandler):
                             #onvalidation=onvalidation, onaccept=_onaccept)
 
             #if deployment_settings.get_ui_navigate_away_confirm():
-                #form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
+                #form.append( SCRIPT ("S3EnableNavigateAwayConfirm();") )
 
             #response.view = "plain.html"
             #return dict(item=form)
@@ -885,7 +890,7 @@ class S3CRUDHandler(S3MethodHandler):
 
             # Navigate-away confirmation
             if self.settings.navigate_away_confirm:
-                form.append(SCRIPT("EnableNavigateAwayConfirm();"))
+                form.append(SCRIPT("S3EnableNavigateAwayConfirm();"))
 
             # Put form into output
             output.update(form=form)
@@ -1673,8 +1678,11 @@ class S3SearchSimple(S3CRUDHandler):
                                             linkto=linkto,
                                             download_url=self.download_url,
                                             format=representation)
-                    session.s3.filter = {"%s.id" % resource.name:
-                                         ",".join(map(str,results))}
+                    if request.post_vars.label:
+                        session.s3.filter = {"%s.id" % resource.name:
+                                            ",".join(map(str,results))}
+                    else:
+                        session.s3.filter = None
                 else:
                     items = T("No matching records found.")
                 output.update(items=items, sortby=sortby)

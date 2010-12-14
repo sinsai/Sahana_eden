@@ -45,8 +45,8 @@ def index():
 # Used to display the number of Components in the tabs
 def shn_document_tabs(jr):
 
-    tab_opts = [{"tablename": "rat_assessment",
-                 "resource": "assessment",
+    tab_opts = [{"tablename": "assess_rat",
+                 "resource": "rat",
                  "one_title": T("1 Assessment"),
                  "num_title": " Assessments",
                 },
@@ -79,39 +79,62 @@ def shn_document_tabs(jr):
     tabs = [(T("Details"), None)]
     for tab_opt in tab_opts:
         tablename = tab_opt["tablename"]
-        tab_count = db( (db[tablename].deleted == False) & (db[tablename].document_id == jr.id) ).count()
-        if tab_count == 0:
-            label = shn_get_crud_string(tablename, "title_create")
-        elif tab_count == 1:
-            label = tab_opt["one_title"]
-        else:
-            label = T(str(tab_count) + tab_opt["num_title"] )
-        tabs.append( (label, tab_opt["resource"] ) )
+        if tablename in db and document_id in db[tablename]:
+            tab_count = db( (db[tablename].deleted == False) & (db[tablename].document_id == jr.id) ).count()
+            if tab_count == 0:
+                label = shn_get_crud_string(tablename, "title_create")
+            elif tab_count == 1:
+                label = tab_opt["one_title"]
+            else:
+                label = T(str(tab_count) + tab_opt["num_title"] )
+            tabs.append( (label, tab_opt["resource"] ) )
 
     return tabs
 
 def shn_document_rheader(r):
     if r.representation == "html":
-        rheader_tabs = shn_rheader_tabs(r, shn_document_tabs(r))
         doc_document = r.record
-        table = db.doc_document
-        rheader = DIV(B(T("Name") + ": "),doc_document.name,
-                      TABLE(TR(
-                               TH("%s: " % T("File")), table.file.represent( doc_document.file ),
-                               TH("%s: " % T("URL")), table.url.represent( doc_document.url ),
-                               ),
-                            TR(
-                               TH(T("Organization") + ": "), table.organisation_id.represent( doc_document.organisation_id ),
-                               TH(T("Person") + ": "), table.person_id.represent( doc_document.organisation_id ),
-                               ),
-                           ),
-                      rheader_tabs
-                      )
-        return rheader
+        if doc_document:
+            rheader_tabs = shn_rheader_tabs(r, shn_document_tabs(r))
+            table = db.doc_document
+            rheader = DIV(B(T("Name") + ": "),doc_document.name,
+                        TABLE(TR(
+                                TH("%s: " % T("File")), table.file.represent( doc_document.file ),
+                                TH("%s: " % T("URL")), table.url.represent( doc_document.url ),
+                                ),
+                                TR(
+                                TH(T("Organization") + ": "), table.organisation_id.represent( doc_document.organisation_id ),
+                                TH(T("Person") + ": "), table.person_id.represent( doc_document.organisation_id ),
+                                ),
+                            ),
+                        rheader_tabs
+                        )
+            return rheader
     return None
+
+def document_onvalidation(form):
+    s3deduplicator = local_import("s3deduplicator")
+    import cgi
+
+    # @ToDo: Fail gracefully if not present
+    p = request.post_vars["file"]
+    if isinstance(p, cgi.FieldStorage) and p.filename:
+        f = p.file
+        form.vars.checksum = s3deduplicator.docChecksum(f.read())
+    results = db(db.doc_document.id > 0).select(db.doc_document.checksum, db.doc_document.name)
+    for result in results:
+        if form.vars.checksum == result.checksum:
+            doc_name = result.name
+            form.errors["file"] = T("This file already exists on the server as") + " %s" % (doc_name)
+    return
 
 def document():
     """ RESTful CRUD controller """
+
+    s3xrc.model.configure(db.doc_document,
+        create_onvalidation=document_onvalidation,
+        update_onvalidation=document_onvalidation)
+
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -126,8 +149,28 @@ def document():
 
     return output
 #==============================================================================
+def image_onvalidation(form):
+    s3deduplicator = local_import("s3deduplicator")
+    import cgi
+
+    p = request.post_vars["image"]
+    if isinstance(p, cgi.FieldStorage) and p.filename:
+        f = p.file
+        form.vars.checksum = s3deduplicator.docChecksum(f.read())
+    results = db(db.doc_image.id > 0).select(db.doc_image.checksum, db.doc_image.name)
+    for result in results:
+        if form.vars.checksum == result.checksum:
+            image_name = result.name
+            form.errors["image"] = T("This file already exists on the server as") + " %s" % (image_name)
+    return
+
 def image():
     """ RESTful CRUD controller """
+
+    s3xrc.model.configure(db.doc_image,
+        create_onvalidation=image_onvalidation,
+        update_onvalidation=image_onvalidation)
+
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]

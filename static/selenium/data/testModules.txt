@@ -1,5 +1,6 @@
 CreateTestAccount, createTestAccount.CreateTestAccount
 UserManagementCreate, userManagement.UserManagementCreate
+Organisation, organisationTest
 CreateLocations, createLocations.CreateLocations
 CreateLocationEmpty, locationSelector.CreateLocationEmpty
 UpdateLocationEmptyL0, locationSelector.UpdateLocationEmptyL0

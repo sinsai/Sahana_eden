@@ -233,8 +233,7 @@ def shn_action_buttons(r,
 
         Designed to be called from a postp
 
-        @note: standard action buttons will be inserted automatically
-
+        @note: standard action buttons will be inserted automatically unless already overridden
     """
 
     if r.component:
@@ -1025,16 +1024,17 @@ def s3_rest_controller(prefix, resourcename, **attr):
     resource, r = s3xrc.parse_request(prefix, resourcename)
 
     resource.set_handler("search", shn_search)
+    # When ready, replace with:
+    #resource.set_handler("search", s3xrc.S3Search(s3xrc))
     resource.set_handler("copy", shn_copy)
     resource.set_handler("barchart", shn_barchart)
 
     output = resource.execute_request(r, **attr)
 
-    # Add default action buttons in list views
     if isinstance(output, dict) and not r.method or r.method=="search_simple":
-
         if response.s3.actions is None:
 
+            # Add default action buttons
             prefix, name, table, tablename = r.target()
             authorised = shn_has_permission("update", tablename)
 

@@ -2157,7 +2157,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             search = """
         var mapSearch = new GeoExt.ux.GeoNamesSearchCombo({
             map: map,
-            zoom: 8
+            zoom: 12
          });
 
         var searchCombo = new Ext.Panel({
@@ -2441,6 +2441,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         if window and window_hide:
             layout = """
         mapWin = new Ext.Window({
+            id: 'gis-map-window',
             collapsible: true,
             constrain: true,
             closeAction: 'hide',
@@ -2450,6 +2451,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         elif window:
             layout = """
         mapWin = new Ext.Window({
+            id: 'gis-map-window',
             collapsible: true,
             constrain: true,
             """
@@ -2461,7 +2463,8 @@ OpenLayers.Util.extend( selectPdfControl, {
             # Embedded
             layout = """
         var panel = new Ext.Panel({
-            renderTo: "map_panel",
+            id: 'gis-map-panel',
+            renderTo: 'map_panel',
             """
             layout2 = ""
 

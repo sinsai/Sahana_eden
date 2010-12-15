@@ -145,7 +145,7 @@ auth.messages.reset_password = T("Click on the link ") + deployment_settings.get
 # Require Admin approval for self-registered users
 auth.settings.registration_requires_approval = deployment_settings.get_auth_registration_requires_approval()
 auth.messages.registration_pending = T("Email address verified, however registration is still pending approval - please wait until confirmation received.")
-auth.messages.registration_pending_approval = T("Account registered, however registration is still pending approval - please wait until confirmation received.") 
+auth.messages.registration_pending_approval = T("Account registered, however registration is still pending approval - please wait until confirmation received.")
 # Notify UserAdmin of new pending user registration to action
 if deployment_settings.get_auth_registration_requires_approval():
     auth.settings.verify_email_onaccept = lambda form: \
@@ -215,6 +215,7 @@ s3_formstyle_mobile = s3_formstyle
 
 s3.crud.formstyle = s3_formstyle
 s3.crud.submit_button = T("Save")
+s3.crud.confirm_delete = T("Do you really want to delete these records?")
 
 s3.crud.archive_not_delete = deployment_settings.get_security_archive_not_delete()
 s3.crud.navigate_away_confirm = deployment_settings.get_ui_navigate_away_confirm()

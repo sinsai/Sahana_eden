@@ -42,11 +42,13 @@ function s3_gis_dropdown_select(level) {
             } else {
                 $('#gis_location_').removeClass('hidden').show();
                 $('#gis_location_label_').removeClass('hidden').show();
+                $('#gis_location_details-btn').removeClass('hidden').show();
             }
         } else {
             // Normal Level
             $('#gis_location_L' + (level + 1)).removeClass('hidden').show();
             $('#gis_location_label_L' + (level + 1)).removeClass('hidden').show();
+            $('#gis_location_details-btn').removeClass('hidden').show();
         }
 
         // Hide other levels & reset their contents
@@ -79,6 +81,7 @@ function s3_gis_dropdown_hide(level) {
         // Hide the specific location level
         $('#gis_location_').hide().html(s3_gis_loading_locations);
         $('#gis_location_label_').hide();
+        $('#gis_location_details-btn').hide();
     }
 }
 
@@ -106,8 +109,8 @@ function s3_gis_save_location(name, lat, lon, addr_street) {
         // Create a new record
         url = s3_gis_url + '/create.url?name=' + name;
     } else {
-        // Update an existing record
-        url = s3_gis_url + 'update.url?uuid=' + S3.gis.uuid + '&name=' + name;
+        // Update an existing record (encodeURIComponent on uuid not needed for the /)
+        url = s3_gis_url + '/update.url?uuid=' + S3.gis.uuid + '&name=' + name;
     }
     if ('' == lat || '' == lon) {
         // pass
@@ -280,9 +283,30 @@ $(function(){
 
         $('#gis_location_add-btn').click( function() {
             // When 'Add Location' pressed
-            // Hide the now-redundant button
+            if ( '' != S3.gis.uuid ) {
+                // Save the value of S3.gis.uuid in case we cancel
+                $('body').data('uuid', S3.gis.uuid);
+                // Blank the UUID
+                S3.gis.uuid = '';
+            }
+            var lat = $('#gis_location_lat').val();
+            var lon = $('#gis_location_lat').val();
+            if ( ('' != lat) || ('' != lon) ) {
+                // Save the value of Lat/Lon in case we cancel
+                $('body').data('lat', lat);
+                $('body').data('lon', lon);
+                // Blank the Lat/Lon
+                $('#gis_location_lat').val('');
+                $('#gis_location_lon').val('');
+            }
+            // Hide the now-redundant Add button
             $('#gis_location_add-btn').hide();
-            // unhide the next part
+            // Show the Cancel button
+            $('#gis_location_cancel-btn').removeClass('hidden').show();
+            // Hide the now-redundant specific-location dropdown
+            $('#gis_location_').hide();
+            $('#gis_location_label_').hide();
+            // Unhide the create form
             if (navigator.geolocation) {
                 // HTML5 geolocation is available :)
                 $('#gis_location_geolocate-btn').removeClass('hidden').show();
@@ -293,9 +317,10 @@ $(function(){
             $('#gis_location_name_label').removeClass('hidden').show();
             $('#gis_location_name').removeClass('hidden').show();
             $('#gis_location_addr_street_label').removeClass('hidden').show();
-            $('#gis_street_addr_row').removeClass('hidden').show();
+            $('#gis_location_addr_street_row').removeClass('hidden').show();
             $('#gis_location_advanced_div').removeClass('hidden').show();
         });
+
         $('#gis_location_advanced_checkbox').change( function() {
             if ($('#gis_location_advanced_checkbox').is(':checked')) {
                 // When 'Advanced' checked, unhide the next part
@@ -310,6 +335,41 @@ $(function(){
                 $('#gis_location_lon_label').hide();
                 $('#gis_location_lon_row').hide();
             }
+        });
+
+        $('#gis_location_details-btn').click( function() {
+            // Show the details
+            $('#gis_location_map-btn').removeClass('hidden').show();
+            $('#gis_location_addr_street_label').removeClass('hidden').show();
+            $('#gis_location_addr_street_row').removeClass('hidden').show();
+            $('#gis_location_advanced_div').removeClass('hidden').show();
+        });
+
+        $('#gis_location_cancel-btn').click( function() {
+            // Restore the value of S3.gis.uuid
+            S3.gis.uuid = $('body').data('uuid');
+            // Restore the Lat/Lon
+            $('#gis_location_lat').val($('body').data('lat'));
+            $('#gis_location_lon').val($('body').data('lon'));
+            // Hide the Cancel button again
+            $('#gis_location_cancel-btn').hide();
+            // Empty the 'name' field
+            $('#gis_location_name').val('');
+            // Show the Add button again
+            $('#gis_location_add-btn').show();
+            if ( "" != $('#gis_location_').val() ) {
+                // Show the Specific Location row if it has data
+                $('#gis_location_').show();
+                $('#gis_location_label_').show();
+                $('#gis_location_details-btn').show();
+            }
+            // Hide the details
+            $('#gis_location_map-btn').hide();
+            $('#gis_location_name_label').hide();
+            $('#gis_location_name').hide();
+            $('#gis_location_addr_street_label').hide();
+            $('#gis_location_addr_street_row').hide();
+            $('#gis_location_advanced_div').hide();
         });
 
         $('#gis_location_geolocate-btn').click( function() {
@@ -373,7 +433,7 @@ Ext.onReady(function(){
             // create the window on the first click and reuse on subsequent clicks
             if (!converterWin) {
                 converterWin = new Ext.Window({
-                    applyTo: 'convert-win',
+                    applyTo: 'gis-convert-win',
                     layout: 'fit',
                     width: 400,
                     height: 250,
@@ -381,7 +441,7 @@ Ext.onReady(function(){
                     plain: true,
 
                     items: new Ext.TabPanel({
-                        applyTo: 'convert-tabs',
+                        applyTo: 'gis-convert-tabs',
                         autoTabs: true,
                         activeTab: 0,
                         deferredRender: false,

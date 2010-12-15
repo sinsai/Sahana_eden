@@ -118,6 +118,9 @@ def location():
     # Pre-processor
     def prep(r, vars):
 
+        # When-ready, override the default Search MethodHandler
+        #r.resource.set_handler("search", s3xrc.S3LocationSearch(s3xrc))
+
         # Restrict access to Polygons to just MapAdmins
         if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
             table.code.writable = False

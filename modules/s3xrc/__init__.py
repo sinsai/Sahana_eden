@@ -42,4 +42,4 @@
 from s3rc import S3ResourceController
 from s3rest import S3Resource
 from s3crud import S3Audit, S3MethodHandler, S3CRUDHandler, S3SearchSimple
-
+from s3search import S3Search, S3LocationSearch, S3PersonSearch

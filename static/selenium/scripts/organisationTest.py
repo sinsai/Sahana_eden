@@ -59,6 +59,7 @@ class OrganisationTest(unittest.TestCase):
                                          details[4].strip(),
                                          details[5].strip(),
                                          )
+        self.action.logout(self)
 
     def test_org_UI(self):
         sel = self.selenium
@@ -81,6 +82,9 @@ class OrganisationTest(unittest.TestCase):
         self.action.helpBallon(self, "Twitter")
         self.action.helpBallon(self, "Donation")
         self.action.helpBallon(self, "Comments")
+        # Log out
+        self.action.logout(self)
+
             
     def tearDown(self):
         self.selenium.stop()

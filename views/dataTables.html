@@ -4,6 +4,54 @@
  <script src="/{{=request.application}}/static/scripts/S3/jquery.dataTables.min.js" type="text/javascript" charset="utf-8"></script>
 {{pass}}
 <script type="text/javascript">//<![CDATA[
+var Utf8 = {
+    // http://www.webtoolkit.info
+    // @ToDo: Move to S3.min.js
+    encode : function (string) {
+        string = string.replace(/\r\n/g, '\n');
+        var utftext = '';
+        for (var n = 0; n < string.length; n++) {
+            var c = string.charCodeAt(n);
+            if (c < 128) {
+                utftext += String.fromCharCode(c);
+            }
+            else if((c > 127) && (c < 2048)) {
+                utftext += String.fromCharCode((c >> 6) | 192);
+                utftext += String.fromCharCode((c & 63) | 128);
+            }
+            else {
+                utftext += String.fromCharCode((c >> 12) | 224);
+                utftext += String.fromCharCode(((c >> 6) & 63) | 128);
+                utftext += String.fromCharCode((c & 63) | 128);
+            }
+        }
+        return utftext;
+    },
+    decode : function (utftext) {
+        var string = '';
+        var i = 0;
+        var c = c1 = c2 = 0;
+        while ( i < utftext.length ) {
+            c = utftext.charCodeAt(i);
+            if (c < 128) {
+                string += String.fromCharCode(c);
+                i++;
+            }
+            else if((c > 191) && (c < 224)) {
+                c2 = utftext.charCodeAt(i+1);
+                string += String.fromCharCode(((c & 31) << 6) | (c2 & 63));
+                i += 2;
+            }
+            else {
+                c2 = utftext.charCodeAt(i+1);
+                c3 = utftext.charCodeAt(i+2);
+                string += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));
+                i += 3;
+            }
+        }
+        return string;
+    }
+}
 $(document).ready(function() {
     // Create an array for the column settings (this is required, otherwise the column widths don't autosize)
     var myList = document.getElementById('list');
@@ -148,7 +196,7 @@ $(document).ready(function() {
                 id = re.exec(aData[0])[1];
                 c = Actions[i]._class
                 re = /%5Bid%5D/g;
-                Buttons = Buttons + '<a class="'+ c +'" href="' + Actions[i].url.replace(re, id) + '">' + Actions[i].label + '</a>' + '&nbsp;';
+                Buttons = Buttons + '<a class="'+ c +'" href="' + Actions[i].url.replace(re, id) + '">' + Utf8.decode(Actions[i].label) + '</a>' + '&nbsp;';
             }
             // Set the first column to the action buttons
             $('td:eq(0)', nRow).html( Buttons );

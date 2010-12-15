@@ -1033,7 +1033,8 @@ class S3ResourceController(object):
                         self.error = self.ERROR.DATA_IMPORT_ERROR
                     if job.element:
                         if not job.element.get(self.xml.ATTRIBUTE.error):
-                            job.element.set(self.xml.ATTRIBUTE.error, self.error)
+                            job.element.set(self.xml.ATTRIBUTE.error,
+                                            self.xml.xml_encode(str(self.error).decode("utf-8")))
                     if ignore_errors:
                         continue
                     else:

@@ -142,6 +142,8 @@ deployment_settings.gis.locations_hierarchy = {
     #"L5":T("Neighbourhood"),   # Currently not supported by testSuite
     "XX":T("Imported")          # Filtered from view as no detailed information & many duplicates (e.g. coming from Ushahidi)
 }
+# Should we require locations to follow strict hierarchy?
+deployment_settings.gis.strict_hierarchy = False
 # Maximum Marker Size
 # (takes effect only on display)
 deployment_settings.gis.marker_max_height = 35

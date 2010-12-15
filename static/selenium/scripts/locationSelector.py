@@ -452,8 +452,8 @@ class UpdateLocationEmptyNewNoParent(LocationSelector):
         self.failUnless(sel.is_visible("gis_location_lon_row"))
 
         # Check that the Lat/Lon are populated
-        self.assertEqual("51", sel.get_text("gis_location_lat"))
-        self.assertEqual("1", sel.get_text("gis_location_lon"))
+        self.assertEqual("51", sel.get_value("gis_location_lat"))
+        self.assertEqual("1", sel.get_value("gis_location_lon"))
 
 class UpdateLocationNoParentL0(LocationSelector):
     def test_updateLocationNoParentL0(self):
@@ -976,8 +976,8 @@ class UpdateLocationInL4NewInL3(LocationSelector):
         self.failUnless(sel.is_visible("gis_location_lon_row"))
 
         # Check that the Lat/Lon are populated
-        self.assertEqual("18.53171116", sel.get_text("gis_location_lat"))
-        self.assertEqual("-72.33020758", sel.get_text("gis_location_lon"))
+        self.assertEqual("18.53171116", sel.get_value("gis_location_lat"))
+        self.assertEqual("-72.33020758", sel.get_value("gis_location_lon"))
 
 class CreateLocationSelectSpecific(LocationSelector):
     def test_locationSelectSpecific(self):

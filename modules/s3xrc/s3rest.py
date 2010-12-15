@@ -42,7 +42,7 @@ import os, sys, cgi, uuid, datetime, time, urllib, StringIO, re
 import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
-from gluon.sql import Row
+from gluon.sql import Row, Rows
 from gluon.html import *
 from gluon.http import HTTP, redirect
 from gluon.sqlhtml import SQLTABLE, SQLFORM
@@ -344,7 +344,7 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def records(self):
+    def records(self, fields=None):
 
         """ Get the current set
 
@@ -353,9 +353,12 @@ class S3Resource(object):
         """
 
         if self._set is None:
-            return []
+            return Rows(self.db)
         else:
-            return self._set
+            if fields is None:
+                return self._set
+            else:
+                return Rows(records=self._set, colnames=map(str, fields))
 
 
     # -------------------------------------------------------------------------

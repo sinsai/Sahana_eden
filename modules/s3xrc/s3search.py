@@ -90,6 +90,8 @@ class S3Search(S3MethodHandler):
             # We want to do case-insensitive searches
             # (default anyway on MySQL/SQLite, but not PostgreSQL)
             value = value.lower()
+            limit = None
+            query = None
 
             if _vars.field and _vars.filter and value:
                 fieldname = str.lower(_vars.field)
@@ -103,32 +105,27 @@ class S3Search(S3MethodHandler):
                 filter = _vars.filter
                 if filter == "~":
                     # Normal single-field Autocomplete
-                    resource.add_filter((field.lower().like("%" + value + "%")))
-
-                    if limit:
-                        item = db(resource.get_query()).select(limitby=(0, limit), *fields).json()
+                    query = (field.lower().like("%" + value + "%"))
 
                 elif filter == "=":
                     if field.type.split(" ")[0] in ["reference", "id", "float", "integer"]:
-                        # Numeric, e.g. Organisations' offices_by_org
-                        query = (field == value)
+                        query = (field == value) # Numeric, e.g. Organisations' offices_by_org
                     else:
-                        # Text
-                        query = (field.lower() == value)
-
+                        query = (field.lower() == value) # Text
                 elif filter == "<":
                     query = (field < value)
-
                 elif filter == ">":
                     query = (field > value)
-
                 else:
                     item = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
                     raise HTTP(400, body=item)
 
+                if query:
+                    resource.add_filter(query)
+
             if not item:
-                resource.add_filter(query)
-                item = db(resource.get_query()).select(*fields).json()
+                resource.load(start=0, limit=limit)
+                item = resource.exporter.sjson(resource, fields=fields)
 
             response.headers["Content-Type"] = "text/json"
             return item
@@ -145,7 +142,7 @@ class S3LocationSearch(S3Search):
     """
         Location-Specific Searches
         - just supports JSON format
-        
+
         @ToDo: Support Components
     """
 

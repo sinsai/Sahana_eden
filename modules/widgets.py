@@ -157,6 +157,136 @@ class S3AutocompleteWidget:
                       )
 
 # -----------------------------------------------------------------------------
+class S3LocationAutocompleteWidget:
+    """
+        @author: Fran Boon (fran@aidiq.com)
+
+        Renders a gis_location SELECT as an INPUT field with AJAX Autocomplete
+        
+        Differs from the S3AutocompleteWidget:
+        - needs to have deployment_settings passed-in
+        - excludes unreliable imported records (Level 'XX')
+        - @ToDo: .represent for the returned data
+        - @ToDo: Refreshes all dropdowns as-necessary (post_process)
+    """
+    def __init__(self,
+                 request,
+                 deployment_settings,
+                 prefix="gis",
+                 resourcename="location",
+                 fieldname="name",
+                 post_process = "",
+                 min_length=2):
+
+        self.request = request
+        self.deployment_settings = deployment_settings
+        self.prefix = prefix
+        self.resourcename = resourcename
+        self.fieldname = fieldname
+        self.post_process = post_process
+        self.min_length = min_length
+
+    def __call__(self ,field, value, **attributes):
+        default = dict(
+            _type = "text",
+            value = (value != None and str(value)) or "",
+            )
+        attr = StringWidget._attributes(field, default, **attributes)
+
+        # Hide the real field
+        attr["_class"] = attr["_class"] + " hidden"
+
+        real_input = str(field).replace(".", "_")
+        dummy_input = "dummy_%s" % real_input
+        fieldname = self.fieldname
+        url = URL(r=self.request, c=self.prefix, f=self.resourcename, args="search.json", vars={"filter":"~", "field":fieldname, "exclude_field":"level", "exclude_value":"XX"})
+
+        # Which Levels do we have in our hierarchy & what are their Labels?
+        deployment_settings = self.deployment_settings
+        location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
+        try:
+            # Ignore the bad bulk-imported data
+            del location_hierarchy["XX"]
+        except KeyError:
+            pass
+        # What is the maximum level of hierarchy?
+        max_hierarchy = deployment_settings.get_gis_max_hierarchy()
+        # Is full hierarchy mandatory?
+        strict = deployment_settings.get_gis_strict_hierarchy()
+
+        post_process = self.post_process
+        if not post_process:
+            # @ToDo: Refreshes all dropdowns as-necessary
+            post_process = ""
+        
+        js_autocomplete = """
+        (function() {
+            var data = { val:$('#%s').val(), accept:false };
+
+            $('#%s').autocomplete({
+                source: '%s',
+                minLength: %d,
+                focus: function( event, ui ) {
+                    $( '#%s' ).val( ui.item.name );
+                    return false;
+                },
+                select: function( event, ui ) {
+                    $( '#%s' ).val( ui.item.name );
+                    $( '#%s' ).val( ui.item.id );
+                    """ % (dummy_input, dummy_input, url, self.min_length, dummy_input, dummy_input, real_input) + post_process + """
+                    data.accept = true;
+                    return false;
+                }
+            })
+            .data( 'autocomplete' )._renderItem = function( ul, item ) {
+                // @ToDo: .represent for returned data
+                return $( '<li></li>' )
+                    .data( 'item.autocomplete', item )
+                    .append( '<a>' + item.name + '</a>' )
+                    .appendTo( ul );
+            };
+
+            $('#%s').blur(function() {
+                if (!$('#%s').val()) {
+                    $('#%s').val('');
+                    data.accept = true;
+                }
+
+                if (!data.accept) {
+                    $('#%s').val(data.val);
+                } else {
+                    data.val = $('#%s').val();
+                }
+
+                data.accept = false;
+            });
+        })();
+        """ % (dummy_input, dummy_input, real_input, dummy_input, dummy_input)
+        
+        if value:
+            text = str(field.represent(default["value"]))
+            if "<" in text:
+                # Strip Markup
+                try:
+                    markup = etree.XML(text)
+                    text = markup.xpath(".//text()")
+                    if text:
+                        text = " ".join(text)
+                    else:
+                        text = ""
+                except etree.XMLSyntaxError:
+                    pass
+            represent = text
+        else:
+            represent = ""
+        
+        return TAG[""](
+                        INPUT(_id=dummy_input, _value=represent),
+                        INPUT(**attr),
+                        SCRIPT(js_autocomplete)
+                      )
+
+# -----------------------------------------------------------------------------
 class S3PersonAutocompleteWidget:
     """
         @author: Fran Boon (fran@aidiq.com)
@@ -728,11 +858,14 @@ class S3LocationSelectorWidget:
         lat_widget = INPUT(_id="gis_location_lat", _value=lat)
         lon_widget = INPUT(_id="gis_location_lon", _value=lon)
 
+        autocomplete = DIV(self.S3LocationAutocompleteWidget(request, deployment_settings), _id="gis_location_autocomplete_div", _class="hidden")
+
         # Buttons
+        search_button = A(T("Search Locations"), _href="#",
+                          _id="gis_location_search-btn")
+
         add_button = A(T("Add New Location"), _href="#",
                        _id="gis_location_add-btn")
-                       # Prefer simple Hyperlinks to action Buttons here
-                       #_class="action-btn")
 
         cancel_button = A(T("Cancel Add"), _href="#",
                           _id="gis_location_cancel-btn",
@@ -843,6 +976,7 @@ class S3LocationSelectorWidget:
                         #divider,       # This is in the widget, so underneath the label :/ Add in JS? 'Sections'?
                         INPUT(**attr),  # Real input, which is hidden
                         dropdowns,
+                        TR(TD(search_button, autocomplete)),
                         TR(TD(add_button, cancel_button)),
                         TR(gps_converter_popup),
                         TR(map_popup),

@@ -502,6 +502,8 @@ location_id = S3ReusableField("location_id", db.gis_location,
                     label = T("Location"),
                     # Not yet ready
                     #widget = S3LocationSelectorWidget(db, gis, deployment_settings, request, response, T),
+                    # Testing
+                    #widget = S3LocationAutocompleteWidget(request, deployment_settings),
                     # If enabling widget, then disable comment (widget incorporates it)
                     comment = DIV(A(ADD_LOCATION, _class="colorbox", _target="top", _title=ADD_LOCATION,
                                     _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup"))),

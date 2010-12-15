@@ -165,6 +165,7 @@ class S3LocationSearch(S3Search):
         response = self.response
 
         s3xrc = self.manager
+        gis = s3xrc.gis
         resource = self.resource
         table = self.table
         representation = r.representation
@@ -283,6 +284,9 @@ class S3LocationSearch(S3Search):
 
             response.headers["Content-Type"] = "text/json"
             return item
+
+        #elif r.interactive:
+            # @ToDo: merge with search_simple
 
         else:
             # Only JSON supported

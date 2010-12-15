@@ -269,7 +269,15 @@ def user():
 
     # Pre-processor
     def user_prep(jr):
-        if jr.method == "update":
+        if jr.method == "delete" and jr.http=="GET":
+            if jr.id == jr.session.auth.user.id: # we're trying to delete ourself
+                request.get_vars.update({"user.id":str(jr.id)})
+                jr.id = None
+                s3xrc.model.configure(table,
+                                      delete_next = URL(r=request, c="default", f="user/logout"))
+                s3.crud.confirm_delete = T("You are attempting to delete your own account - are you sure you want to proceed?")
+
+        elif jr.method == "update":
             # Send an email to user if their account is approved
             # (=moved from 'pending' to 'blank'(i.e. enabled))
             s3xrc.model.configure(table,

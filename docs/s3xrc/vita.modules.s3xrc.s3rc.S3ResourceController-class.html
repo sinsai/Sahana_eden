@@ -73,11 +73,7 @@ object --+
 <hr />
 <p>S3 Resource Controller</p>
 
-<hr />
-<div class="fields">      <p><strong>To Do (2.3):</strong>
-        error messages internationalization!
-      </p>
-</div><!-- ==================== INSTANCE METHODS ==================== -->
+<!-- ==================== INSTANCE METHODS ==================== -->
 <a name="section-InstanceMethods"></a>
 <table class="summary" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
@@ -101,11 +97,7 @@ object --+
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">environment</span>,
-        <span class="summary-sig-arg">domain</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">base_url</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">messages</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">**attr</span>)</span><br />
+        <span class="summary-sig-arg">environment</span>)</span><br />
       x.__init__(...) initializes x; see x.__class__.__doc__ for signature</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.__init__">source&nbsp;code</a></span>
@@ -255,43 +247,6 @@ object --+
       Clears one or all record IDs stored in a session</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.clear_session">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#set_handler" class="summary-sig-name">set_handler</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">method</span>,
-        <span class="summary-sig-arg">handler</span>)</span><br />
-      Set the default handler for a resource method</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.set_handler">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#get_handler" class="summary-sig-name">get_handler</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">method</span>)</span><br />
-      Get the default handler for a resource method</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.get_handler">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -687,11 +642,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">environment</span>,
-        <span class="sig-arg">domain</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">base_url</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">messages</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">**attr</span>)</span>
+        <span class="sig-arg">environment</span>)</span>
     <br /><em class="fname">(Constructor)</em>
   </h3>
   </td><td align="right" valign="top"
@@ -705,10 +656,6 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>environment</code></strong> - the environment of this run</li>
-        <li><strong class="pname"><code>domain</code></strong> - name of the current domain</li>
-        <li><strong class="pname"><code>base_url</code></strong> - base URL of this instance</li>
-        <li><strong class="pname"><code>messages</code></strong> - a function to retrieve message URLs tagged for a resource</li>
-        <li><strong class="pname"><code>attr</code></strong> - configuration settings</li>
     </ul></dd>
     <dt>Overrides:
         object.__init__
@@ -926,53 +873,6 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
     </ul></dd>
   </dl>
 </td></tr></table>
-</div>
-<a name="set_handler"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">set_handler</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">method</span>,
-        <span class="sig-arg">handler</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.set_handler">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Set the default handler for a resource method</p>
-  <dl class="fields">
-  </dl>
-<div class="fields">      <p><strong>To Do (2.3):</strong>
-        deprecate?
-      </p>
-</div></td></tr></table>
-</div>
-<a name="get_handler"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_handler</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">method</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.get_handler">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Get the default handler for a resource method</p>
-  <dl class="fields">
-  </dl>
-<div class="fields">      <p><strong>To Do (2.3):</strong>
-        deprecate?
-      </p>
-</div></td></tr></table>
 </div>
 <a name="_resource"></a>
 <div class="private">
@@ -1531,7 +1431,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Fri Dec  3 23:49:43 2010
+    Generated by Epydoc 3.0.1 on Tue Dec 14 18:57:45 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

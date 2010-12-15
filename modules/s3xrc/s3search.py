@@ -81,7 +81,7 @@ class S3Search(S3MethodHandler):
 
             _vars = request.vars
 
-            item = None
+            output = None
 
             # JQueryUI Autocomplete uses "term" instead of "value"
             # (old JQuery Autocomplete uses "q" instead of "value")
@@ -90,6 +90,8 @@ class S3Search(S3MethodHandler):
             # We want to do case-insensitive searches
             # (default anyway on MySQL/SQLite, but not PostgreSQL)
             value = value.lower()
+            limit = int(_vars.limit or 0)
+            query = None
 
             if _vars.field and _vars.filter and value:
                 fieldname = str.lower(_vars.field)
@@ -98,15 +100,10 @@ class S3Search(S3MethodHandler):
                 # Default fields to return
                 fields = [table.id, field]
 
-                limit = int(_vars.limit or 0)
-
                 filter = _vars.filter
                 if filter == "~":
                     # Normal single-field Autocomplete
-                    resource.add_filter((field.lower().like("%" + value + "%")))
-
-                    if limit:
-                        item = db(resource.get_query()).select(limitby=(0, limit), *fields).json()
+                    query = (field.lower().like("%" + value + "%"))
 
                 elif filter == "=":
                     if field.type.split(" ")[0] in ["reference", "id", "float", "integer"]:
@@ -115,23 +112,35 @@ class S3Search(S3MethodHandler):
                     else:
                         # Text
                         query = (field.lower() == value)
-
                 elif filter == "<":
                     query = (field < value)
-
                 elif filter == ">":
                     query = (field > value)
-
                 else:
-                    item = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
-                    raise HTTP(400, body=item)
+                    output = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
+                    raise HTTP(400, body=output)
 
-            if not item:
-                resource.add_filter(query)
-                item = db(resource.get_query()).select(*fields).json()
+                if query:
+                    resource.add_filter(query)
 
-            response.headers["Content-Type"] = "text/json"
-            return item
+                # Web2Py syntax
+                # Read the final query back
+                query = resource.get_query()
+                if limit:
+                    output = db(query).select(limitby=(0, limit), *fields).json()
+                else:
+                    output = db(query).select(*fields).json()
+
+                # Alternate S3 syntax:
+                #resource.load(start=0, limit=limit)
+                #output = resource.exporter.sjson(resource, fields=fields)
+
+                response.headers["Content-Type"] = "text/json"
+                return output
+
+            else:
+                output = s3xrc.xml.json_message(False, 400, "Missing options! Require: field, filter & value")
+                raise HTTP(400, body=output)
 
         #elif r.interactive:
             # @ToDo: merge with search_simple
@@ -145,7 +154,7 @@ class S3LocationSearch(S3Search):
     """
         Location-Specific Searches
         - just supports JSON format
-        
+
         @ToDo: Support Components
     """
 
@@ -179,7 +188,7 @@ class S3LocationSearch(S3Search):
 
             _vars = request.vars
 
-            item = None
+            output = None
 
             # JQueryUI Autocomplete uses "term" instead of "value"
             # (old JQuery Autocomplete uses "q" instead of "value")
@@ -227,7 +236,7 @@ class S3LocationSearch(S3Search):
                         #                (field.like("%" + value + "%"))
                         children = gis.get_children(parent)
                         children = children.find(lambda row: value in str.lower(row.name))
-                        item = children.json()
+                        output = children.json()
 
                     elif exclude_field and exclude_value:
                         # gis_location hierarchical search
@@ -241,8 +250,8 @@ class S3LocationSearch(S3Search):
 
                     resource.add_filter(query)
 
-                    if limit and not item:
-                        item = db(resource.get_query()).select(limitby=(0, limit), *fields).json()
+                    if limit and not output:
+                        output = db(resource.get_query()).select(limitby=(0, limit), *fields).json()
 
                 elif filter == "=":
                     if field.type.split(" ")[0] in ["reference", "id", "float", "integer"]:
@@ -265,7 +274,7 @@ class S3LocationSearch(S3Search):
                         resource.add_filter(query)
 
                     fields = [table.id, table.name, table.level, table.uuid, table.parent, table.lat, table.lon, table.addr_street]
-                    item = db(resource.get_query()).select(*fields).json()
+                    output = db(resource.get_query()).select(*fields).json()
 
                 elif filter == "<":
                     query = (field < value)
@@ -276,14 +285,14 @@ class S3LocationSearch(S3Search):
                     resource.add_filter(query)
 
                 else:
-                    item = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
-                    raise HTTP(400, body=item)
+                    output = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
+                    raise HTTP(400, body=output)
 
-            if not item:
-                item = db(resource.get_query()).select(*fields).json()
+            if not output:
+                output = db(resource.get_query()).select(*fields).json()
 
             response.headers["Content-Type"] = "text/json"
-            return item
+            return output
 
         #elif r.interactive:
             # @ToDo: merge with search_simple
@@ -331,7 +340,7 @@ class S3PersonSearch(S3Search):
 
             _vars = request.vars
 
-            item = None
+            output = None
 
             # JQueryUI Autocomplete uses "term" instead of "value"
             # (old JQuery Autocomplete uses "q" instead of "value")
@@ -382,7 +391,7 @@ class S3PersonSearch(S3Search):
                         resource.add_filter((field.lower().like("%" + value + "%")))
 
                     if limit:
-                        item = db(resource.get_query()).select(limitby=(0, limit), *fields).json()
+                        output = db(resource.get_query()).select(limitby=(0, limit), *fields).json()
 
                 elif filter == "=":
                     if field.type.split(" ")[0] in ["reference", "id", "float", "integer"]:
@@ -399,15 +408,15 @@ class S3PersonSearch(S3Search):
                     query = (field > value)
 
                 else:
-                    item = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
-                    raise HTTP(400, body=item)
+                    output = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
+                    raise HTTP(400, body=output)
 
-            if not item:
+            if not output:
                 resource.add_filter(query)
-                item = db(resource.get_query()).select(*fields).json()
+                output = db(resource.get_query()).select(*fields).json()
 
             response.headers["Content-Type"] = "text/json"
-            return item
+            return output
 
         #elif r.interactive:
             # @ToDo: merge with search_simple

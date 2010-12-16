@@ -337,6 +337,13 @@ $(function(){
             }
         });
 
+        $('#gis_location_search-btn').click( function() {
+            // Hide the search button
+            $(this).hide();
+            // Show the Search Box
+            $('#gis_location_autocomplete_div').removeClass('hidden').show();
+        });
+
         $('#gis_location_details-btn').click( function() {
             // Show the details
             $('#gis_location_map-btn').removeClass('hidden').show();

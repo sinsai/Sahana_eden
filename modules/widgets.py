@@ -858,7 +858,7 @@ class S3LocationSelectorWidget:
         lat_widget = INPUT(_id="gis_location_lat", _value=lat)
         lon_widget = INPUT(_id="gis_location_lon", _value=lon)
 
-        autocomplete = DIV(self.S3LocationAutocompleteWidget(request, deployment_settings), _id="gis_location_autocomplete_div", _class="hidden")
+        autocomplete = DIV(S3LocationAutocompleteWidget(request, deployment_settings), _id="gis_location_autocomplete_div", _class="hidden")
 
         # Buttons
         search_button = A(T("Search Locations"), _href="#",

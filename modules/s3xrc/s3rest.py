@@ -2239,7 +2239,7 @@ class S3Request(object):
         if self.representation == "html":
             self.session.error = self.UNAUTHORISED
             self.session.warning = None
-            if not self.session.auth.user:
+            if not self.session.auth:
                 login = URL(r=self.request,
                             c="default",
                             f="user",

@@ -90,8 +90,8 @@ class S3Search(S3MethodHandler):
             # We want to do case-insensitive searches
             # (default anyway on MySQL/SQLite, but not PostgreSQL)
             value = value.lower()
+
             limit = int(_vars.limit or 0)
-            query = None
 
             if _vars.field and _vars.filter and value:
                 fieldname = str.lower(_vars.field)
@@ -112,28 +112,20 @@ class S3Search(S3MethodHandler):
                     else:
                         # Text
                         query = (field.lower() == value)
+
                 elif filter == "<":
                     query = (field < value)
+
                 elif filter == ">":
                     query = (field > value)
+
                 else:
                     output = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
                     raise HTTP(400, body=output)
 
-                if query:
-                    resource.add_filter(query)
-
-                # Web2Py syntax
-                # Read the final query back
-                query = resource.get_query()
-                if limit:
-                    output = db(query).select(limitby=(0, limit), *fields).json()
-                else:
-                    output = db(query).select(*fields).json()
-
-                # Alternate S3 syntax:
-                #resource.load(start=0, limit=limit)
-                #output = resource.exporter.sjson(resource, fields=fields)
+                resource.add_filter(query)
+                resource.load(start=0, limit=limit)
+                output = resource.exporter.sjson(resource, fields=fields)
 
                 response.headers["Content-Type"] = "text/json"
                 return output
@@ -198,6 +190,8 @@ class S3LocationSearch(S3Search):
             # (default anyway on MySQL/SQLite, but not PostgreSQL)
             value = value.lower()
 
+            limit = int(_vars.limit or 0)
+
             if _vars.field and _vars.filter and value:
                 fieldname = str.lower(_vars.field)
                 field = table[fieldname]
@@ -237,6 +231,8 @@ class S3LocationSearch(S3Search):
                         children = gis.get_children(parent)
                         children = children.find(lambda row: value in str.lower(row.name))
                         output = children.json()
+                        response.headers["Content-Type"] = "text/json"
+                        return output
 
                     elif exclude_field and exclude_value:
                         # gis_location hierarchical search
@@ -248,48 +244,38 @@ class S3LocationSearch(S3Search):
                         # Normal single-field
                         query = (field.lower().like("%" + value + "%"))
 
-                    resource.add_filter(query)
-
-                    if limit and not output:
-                        output = db(resource.get_query()).select(limitby=(0, limit), *fields).json()
-
                 elif filter == "=":
                     if field.type.split(" ")[0] in ["reference", "id", "float", "integer"]:
                         # Numeric, e.g. Organisations' offices_by_org
                         query = (field == value)
-                        resource.add_filter(query)
                     else:
                         # Text
                         if value == "nullnone":
                             # i.e. Location Selector
                             query = (field == None)
-                            resource.add_filter(query)
                         else:
                             query = (field.lower() == value)
-                            resource.add_filter(query)
 
                     if parent:
                         # i.e. gis_location hierarchical search
-                        query = (table.parent == parent)
                         resource.add_filter(query)
+                        query = (table.parent == parent)
 
                     fields = [table.id, table.name, table.level, table.uuid, table.parent, table.lat, table.lon, table.addr_street]
-                    output = db(resource.get_query()).select(*fields).json()
 
                 elif filter == "<":
                     query = (field < value)
-                    resource.add_filter(query)
 
                 elif filter == ">":
                     query = (field > value)
-                    resource.add_filter(query)
 
                 else:
                     output = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
                     raise HTTP(400, body=output)
 
-            if not output:
-                output = db(resource.get_query()).select(*fields).json()
+            resource.add_filter(query)
+            resource.load(start=0, limit=limit)
+            output = resource.exporter.sjson(resource, fields=fields)
 
             response.headers["Content-Type"] = "text/json"
             return output
@@ -350,6 +336,8 @@ class S3PersonSearch(S3Search):
             # (default anyway on MySQL/SQLite, but not PostgreSQL)
             value = value.lower()
 
+            limit = int(_vars.limit or 0)
+
             if _vars.field and _vars.filter and value:
                 fieldname = str.lower(_vars.field)
                 field = table[fieldname]
@@ -383,15 +371,11 @@ class S3PersonSearch(S3Search):
                                     (table[fieldname2].lower().like("%" + value + "%")) | \
                                     (table[fieldname3].lower().like("%" + value + "%")))
 
-                        resource.add_filter(query)
                         fields = [table.id, field, table[fieldname2], table[fieldname3]]
 
                     else:
                         # Normal single-field Autocomplete
-                        resource.add_filter((field.lower().like("%" + value + "%")))
-
-                    if limit:
-                        output = db(resource.get_query()).select(limitby=(0, limit), *fields).json()
+                        query = (field.lower().like("%" + value + "%"))
 
                 elif filter == "=":
                     if field.type.split(" ")[0] in ["reference", "id", "float", "integer"]:
@@ -411,9 +395,9 @@ class S3PersonSearch(S3Search):
                     output = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
                     raise HTTP(400, body=output)
 
-            if not output:
-                resource.add_filter(query)
-                output = db(resource.get_query()).select(*fields).json()
+            resource.add_filter(query)
+            resource.load(start=0, limit=limit)
+            output = resource.exporter.sjson(resource, fields=fields)
 
             response.headers["Content-Type"] = "text/json"
             return output

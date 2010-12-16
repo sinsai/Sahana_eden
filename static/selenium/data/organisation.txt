@@ -1,0 +1,2 @@
+Example.com, eCom, Private, Logistics, United Kingdom, www.example.com
+Example.net, eNet, International NGO, Recovery, United States, www.example.net

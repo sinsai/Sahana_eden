@@ -445,5 +445,12 @@ class S3Exporter(object):
         response.headers["Content-disposition"] = "attachment; filename=\"%s\"" % filename
         return output.read()
 
+    # -------------------------------------------------------------------------
+    def sjson(self, resource, start=None, limit=None, fields=None):
+
+        resource.load(start=start, limit=limit)
+        set = resource.records(fields=fields)
+        return set.json()
+
 
 # *****************************************************************************

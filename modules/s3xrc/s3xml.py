@@ -815,6 +815,8 @@ class S3XML(object):
 
         if self.UID in table.fields and self.UID not in skip:
             uid = self.import_uid(element.get(self.UID, None))
+            if uid:
+                record[self.UID] = uid
 
         for f in self.ATTRIBUTES_TO_FIELDS:
             if f in self.IGNORE_FIELDS or f in skip:

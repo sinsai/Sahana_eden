@@ -821,7 +821,7 @@ class S3CRUDHandler(S3MethodHandler):
 
         # Get the target record ID
         record_id = self._record_id(r)
-        if not record_id:
+        if r.interactive and not record_id:
             r.error(404, self.resource.ERROR.BAD_RECORD)
 
         # Check if editable
@@ -990,7 +990,7 @@ class S3CRUDHandler(S3MethodHandler):
         elif r.http == "GET" and not record_id:
             # Provide a confirmation form and a record list
             form = FORM(TABLE(TR(
-                        TD(T("Do you really want to delete these records?"),
+                        TD(self.settings.confirm_delete,
                            _style="color: red;"),
                         TD(INPUT(_type="submit", _value=T("Delete"),
                            _style="margin-left: 10px;")))))
@@ -1222,6 +1222,13 @@ class S3CRUDHandler(S3MethodHandler):
             exporter = S3Exporter(self.manager)
             return exporter.xls(self.resource,
                                 list_fields=list_fields)
+
+        elif representation == "sjson":
+            exporter = S3Exporter(self.manager)
+            return exporter.sjson(self.resource,
+                                  start=start,
+                                  limit=limit,
+                                  fields=fields)
 
         else:
             r.error(501, self.manager.ERROR.BAD_FORMAT)

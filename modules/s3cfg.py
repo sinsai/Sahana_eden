@@ -78,6 +78,25 @@ class S3Config(Storage):
             "L4":T("Village")
         }
         return self.gis.get("locations_hierarchy", gis_location_hierarchy)
+    def get_gis_max_hierarchy(self):
+        location_hierarchy = self.get_gis_locations_hierarchy()
+        if "L5" in location_hierarchy:
+            max_hierarchy = "L5"
+        elif "L4" in location_hierarchy:
+            max_hierarchy = "L4"
+        elif "L3" in location_hierarchy:
+            max_hierarchy = "L3"
+        elif "L2" in location_hierarchy:
+            max_hierarchy = "L2"
+        elif "L1" in location_hierarchy:
+            max_hierarchy = "L1"
+        elif "L0" in location_hierarchy:
+            max_hierarchy = "L0"
+        else:
+            max_hierarchy = ""
+        return max_hierarchy
+    def get_gis_strict_hierarchy(self):
+        return self.gis.get("strict_hierarchy", False)
     def get_gis_map_selector(self):
         return self.gis.get("map_selector", True)
     def get_gis_display_l0(self):

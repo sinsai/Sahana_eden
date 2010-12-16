@@ -116,7 +116,7 @@ class S3Importer(object):
 
         # Check for update
         if record and xml.UID in table.fields:
-            r.request.vars.update({xml.UID:record[xml.UID]})
+            r.request.vars.update({xml.UID:xml.export_uid(record[xml.UID])})
 
         # Build tree
         element = etree.Element(xml.TAG.resource)

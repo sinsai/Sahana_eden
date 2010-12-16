@@ -1,7 +1,7 @@
-{{extend 'layout.html'}}
+{{extend "layout.html"}}
 {{=H2(title)}}
 {{=P(description)}}
-{{=P(A(T("Edit User"),_href=URL(r=request,f='user',args=('update',user))))}}
+{{=P(A(T("Edit User"),_href=URL(r=request,f="user",args=("update", user))))}}
 {{try:}}
  {{=H3(subtitle)}}
 {{except:}}
@@ -25,13 +25,14 @@
 {{except:}}
 {{pass}}
 </div>
-{{include 'key.html'}}
+{{include "key.html"}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
     // Set the Crud dropdown to the current User
     var options = '<option value="' + {{=user}} + '"></option>';
-    $("#auth_membership_user_id").html(options);
+    $('#auth_membership_user_id').html(options);
     // Hide the dropdown
-    $("#auth_membership_user_id__row").hide();
-    });
+    $('#auth_membership_user_id__row').hide();
+    $('#auth_membership_user_id__row1').hide();
+});
 //]]></script>

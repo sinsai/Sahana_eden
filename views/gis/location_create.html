@@ -13,13 +13,30 @@ $(function() {
 	$('#gis_location_level').change(function() {
 		// What is the new type?
         var level = $(this).val();
-        if (level){
+        if (level) {
             // If the Location is a Admin Boundary then Street Address makes no sense
             $('#gis_location_addr_street__row').hide();
+            $('#gis_location_addr_street__row1').hide();
             // If the Location is a Country then Parent makes no sense
-            if (level == 'L0'){
+            if (level == 'L0') {
                 $('#gis_location_parent__row').hide();
+                $('#gis_location_parent__row1').hide();
+                $('#gis_location_parent').val('');
+        {{if len(response.s3.gis.countries) == 1:}}
+            } else if (level == 'L1') {
+                $('#gis_location_parent__row').hide();
+                $('#gis_location_parent__row1').hide();
+                $('#gis_location_parent').val({{=response.s3.gis.countries.popitem()[1].id}});
+        {{pass}}
+            } else {
+                $('#gis_location_parent__row').show();
+                $('#gis_location_parent__row1').show();
             }
+        } else {
+            $('#gis_location_addr_street__row').show();
+            $('#gis_location_addr_street__row1').show();
+            $('#gis_location_parent__row').show();
+            $('#gis_location_parent__row1').show();
         }
     });
 });

@@ -98,10 +98,15 @@ class TestWindow(Frame):
         self.checkboxModules = []
         i = 0
         for module in self.moduleList:
-            var=IntVar()
+            var = IntVar()
             chk = Checkbutton(detailPanel, text=module[0], variable=var)
             self.checkboxModules.append(var)
-            chk.grid(row=i, column=0, sticky=NW)
+            if i % 2:
+                # Even
+                chk.grid(row=i - 1, column=1, sticky=NW)
+            else:
+                # Odd
+                chk.grid(row=i, column=0, sticky=NW)
             i += 1
         
     def serverStatus(self, event):
@@ -150,7 +155,7 @@ class TestWindow(Frame):
         self.logFilename.pack(side=TOP, anchor=W, expand=YES, fill=X)
         self.radioLog.set("None")
         self.serverCommand = Entry(detailPanel, state="readonly", width=50)
-        self.serverCommand.grid(row=5,column=0, columnspan=2, sticky=NSEW)
+        self.serverCommand.grid(row=5, column=0, columnspan=2, sticky=NSEW)
         self.updateServerCommand()
         button = Frame(logPanel)
         button.pack(side=TOP, fill=BOTH)

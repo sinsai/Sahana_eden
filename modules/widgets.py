@@ -316,7 +316,7 @@ class S3PersonAutocompleteWidget:
         
         real_input = str(field).replace(".", "_")
         dummy_input = "dummy_%s" % real_input
-        url = URL(r=self.request, c="pr", f="person", args="search.json", vars={"filter":"~", "field":"first_name", "field2":"middle_name", "field3":"last_name"})
+        url = URL(r=self.request, c="pr", f="person", args="search.json", vars={"filter":"~"})
         
         js_autocomplete = """
         (function() {

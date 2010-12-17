@@ -43,7 +43,7 @@ class ModemThread( threading.Thread ):
     def __init__(self, modem):
         self.modem = modem
         threading.Thread.__init__ ( self )
-        self.msg = s3msg.Msg(globals(), deployment_settings, db, T, modem=modem)
+        self.msg = s3msg.S3Msg(globals(), deployment_settings, db, T, modem=modem)
 
     def run(self):
         boxdata = self.modem.query("AT+CMGD=?")

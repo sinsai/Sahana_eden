@@ -72,7 +72,7 @@ TWITTER_MAX_CHARS = 140
 TWITTER_HAS_NEXT_SUFFIX = u' \u2026'
 TWITTER_HAS_PREV_PREFIX = u'\u2026 '
 
-class Msg(object):
+class S3Msg(object):
     """ Toolkit for hooking into the Messaging framework """
 
     sms_api_post_config = {}
@@ -81,6 +81,9 @@ class Msg(object):
     def __init__(self, environment, deployment_settings, db=None, T=None, mail=None, modem=None):
         try:
             self.deployment_settings = deployment_settings
+            # @ToDo: We currently have 4x DAL calls every request here to load Messaging settings.
+            # - merge to a single table?
+            # - move to deployment_settings?
             self.db = db
             settings = db(db.msg_setting.id > 0).select(limitby=(0, 1)).first()
             self.default_country_code = settings.default_country_code

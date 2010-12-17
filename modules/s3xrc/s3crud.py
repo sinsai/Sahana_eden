@@ -1225,7 +1225,7 @@ class S3CRUDHandler(S3MethodHandler):
 
         elif representation == "sjson":
             exporter = S3Exporter(self.manager)
-            return exporter.sjson(self.resource,
+            return exporter.json(self.resource,
                                   start=start,
                                   limit=limit,
                                   fields=fields)

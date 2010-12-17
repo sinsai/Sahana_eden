@@ -318,8 +318,12 @@ class S3Resource(object):
             else:
                 limitby = None
 
-        self._set = self.db(self._query).select(self.table.ALL,
+        if limitby:
+            self._set = self.db(self._query).select(self.table.ALL,
                                                 limitby=limitby)
+        else:
+            self._set = self.db(self._query).select(self.table.ALL)
+
         self._ids = [row.id for row in self._set]
         uid = self.manager.UID
         if uid in self.table.fields:
@@ -2239,7 +2243,7 @@ class S3Request(object):
         if self.representation == "html":
             self.session.error = self.UNAUTHORISED
             self.session.warning = None
-            if not self.session.auth.user:
+            if not self.session.auth:
                 login = URL(r=self.request,
                             c="default",
                             f="user",

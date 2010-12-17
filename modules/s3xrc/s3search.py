@@ -81,7 +81,7 @@ class S3Search(S3MethodHandler):
 
             _vars = request.vars
 
-            item = None
+            output = None
 
             # JQueryUI Autocomplete uses "term" instead of "value"
             # (old JQuery Autocomplete uses "q" instead of "value")
@@ -90,8 +90,8 @@ class S3Search(S3MethodHandler):
             # We want to do case-insensitive searches
             # (default anyway on MySQL/SQLite, but not PostgreSQL)
             value = value.lower()
-            limit = None
-            query = None
+
+            limit = int(_vars.limit or 0)
 
             if _vars.field and _vars.filter and value:
                 fieldname = str.lower(_vars.field)
@@ -100,8 +100,6 @@ class S3Search(S3MethodHandler):
                 # Default fields to return
                 fields = [table.id, field]
 
-                limit = int(_vars.limit or 0)
-
                 filter = _vars.filter
                 if filter == "~":
                     # Normal single-field Autocomplete
@@ -109,26 +107,31 @@ class S3Search(S3MethodHandler):
 
                 elif filter == "=":
                     if field.type.split(" ")[0] in ["reference", "id", "float", "integer"]:
-                        query = (field == value) # Numeric, e.g. Organisations' offices_by_org
+                        # Numeric, e.g. Organisations' offices_by_org
+                        query = (field == value)
                     else:
-                        query = (field.lower() == value) # Text
+                        # Text
+                        query = (field.lower() == value)
+
                 elif filter == "<":
                     query = (field < value)
+
                 elif filter == ">":
                     query = (field > value)
+
                 else:
-                    item = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
-                    raise HTTP(400, body=item)
+                    output = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
+                    raise HTTP(400, body=output)
 
-                if query:
-                    resource.add_filter(query)
+                resource.add_filter(query)
+                output = resource.exporter.sjson(resource, start=0, limit=limit, fields=fields)
 
-            if not item:
-                resource.load(start=0, limit=limit)
-                item = resource.exporter.sjson(resource, fields=fields)
+                response.headers["Content-Type"] = "text/json"
+                return output
 
-            response.headers["Content-Type"] = "text/json"
-            return item
+            else:
+                output = s3xrc.xml.json_message(False, 400, "Missing options! Require: field, filter & value")
+                raise HTTP(400, body=output)
 
         #elif r.interactive:
             # @ToDo: merge with search_simple
@@ -162,6 +165,7 @@ class S3LocationSearch(S3Search):
         response = self.response
 
         s3xrc = self.manager
+        gis = s3xrc.gis
         resource = self.resource
         table = self.table
         representation = r.representation
@@ -175,7 +179,7 @@ class S3LocationSearch(S3Search):
 
             _vars = request.vars
 
-            item = None
+            output = None
 
             # JQueryUI Autocomplete uses "term" instead of "value"
             # (old JQuery Autocomplete uses "q" instead of "value")
@@ -190,7 +194,7 @@ class S3LocationSearch(S3Search):
                 field = table[fieldname]
 
                 # Default fields to return
-                fields = [table.id, table.name, table.level]
+                fields = [table.id, table.name, table.level, table.parent]
 
                 # Optional fields
                 if "parent" in _vars and _vars.parent:
@@ -211,8 +215,6 @@ class S3LocationSearch(S3Search):
                     exclude_field = None
                     exclude_value = None
 
-                limit = int(_vars.limit or 0)
-
                 filter = _vars.filter
                 if filter == "~":
                     if parent:
@@ -223,7 +225,9 @@ class S3LocationSearch(S3Search):
                         #                (field.like("%" + value + "%"))
                         children = gis.get_children(parent)
                         children = children.find(lambda row: value in str.lower(row.name))
-                        item = children.json()
+                        output = children.json()
+                        response.headers["Content-Type"] = "text/json"
+                        return output
 
                     elif exclude_field and exclude_value:
                         # gis_location hierarchical search
@@ -235,51 +239,42 @@ class S3LocationSearch(S3Search):
                         # Normal single-field
                         query = (field.lower().like("%" + value + "%"))
 
-                    resource.add_filter(query)
-
-                    if limit and not item:
-                        item = db(resource.get_query()).select(limitby=(0, limit), *fields).json()
-
                 elif filter == "=":
                     if field.type.split(" ")[0] in ["reference", "id", "float", "integer"]:
                         # Numeric, e.g. Organisations' offices_by_org
                         query = (field == value)
-                        resource.add_filter(query)
                     else:
                         # Text
                         if value == "nullnone":
                             # i.e. Location Selector
                             query = (field == None)
-                            resource.add_filter(query)
                         else:
                             query = (field.lower() == value)
-                            resource.add_filter(query)
 
                     if parent:
                         # i.e. gis_location hierarchical search
-                        query = (table.parent == parent)
                         resource.add_filter(query)
+                        query = (table.parent == parent)
 
                     fields = [table.id, table.name, table.level, table.uuid, table.parent, table.lat, table.lon, table.addr_street]
-                    item = db(resource.get_query()).select(*fields).json()
-
-                elif filter == "<":
-                    query = (field < value)
-                    resource.add_filter(query)
-
-                elif filter == ">":
-                    query = (field > value)
-                    resource.add_filter(query)
 
                 else:
-                    item = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
-                    raise HTTP(400, body=item)
+                    output = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =")
+                    raise HTTP(400, body=output)
 
-            if not item:
-                item = db(resource.get_query()).select(*fields).json()
+            resource.add_filter(query)
+
+            limit = _vars.limit
+            if limit:
+                output = resource.exporter.sjson(resource, start=0, limit=int(limit), fields=fields)
+            else:
+                output = resource.exporter.sjson(resource, fields=fields)
 
             response.headers["Content-Type"] = "text/json"
-            return item
+            return output
+
+        #elif r.interactive:
+            # @ToDo: merge with search_simple
 
         else:
             # Only JSON supported
@@ -288,7 +283,9 @@ class S3LocationSearch(S3Search):
 # *****************************************************************************
 class S3PersonSearch(S3Search):
     """
-        Person-Specific Searches
+        Person-Specific Searches:
+        - uses first_name, middle_name & last_name
+        - only support '~' filter
         - just supports JSON format
 
         @ToDo: Support components
@@ -324,7 +321,7 @@ class S3PersonSearch(S3Search):
 
             _vars = request.vars
 
-            item = None
+            output = None
 
             # JQueryUI Autocomplete uses "term" instead of "value"
             # (old JQuery Autocomplete uses "q" instead of "value")
@@ -334,73 +331,40 @@ class S3PersonSearch(S3Search):
             # (default anyway on MySQL/SQLite, but not PostgreSQL)
             value = value.lower()
 
-            if _vars.field and _vars.filter and value:
-                fieldname = str.lower(_vars.field)
-                field = table[fieldname]
+            filter = _vars.filter
 
-                # Default fields to return
-                fields = [table.id, field]
+            limit = int(_vars.limit or 0)
 
-                # Optional fields (PR only)
-                if "field2" in _vars:
-                    fieldname2 = str.lower(_vars.field2)
-                else:
-                    fieldname2 = None
-                if "field3" in _vars:
-                    fieldname3 = str.lower(_vars.field3)
-                else:
-                    fieldname3 = None
+            if filter and value:
 
-                limit = int(_vars.limit or 0)
+                field = table.first_name
+                field2 = table.middle_name
+                field3 = table.last_name
 
-                filter = _vars.filter
+                # Fields to return
+                fields = [table.id, field, field2, field3]
+
                 if filter == "~":
-                    if fieldname2 and fieldname3:
-                        # pr_person Autocomplete
-                        if " " in value:
-                            value1, value2 = value.split(" ", 1)
-                            query = (field.lower().like("%" + value1 + "%")) & \
-                                    (table[fieldname2].lower().like("%" + value2 + "%")) | \
-                                    (table[fieldname3].lower().like("%" + value2 + "%"))
-                        else:
-                            query = ((field.lower().like("%" + value + "%")) | \
-                                    (table[fieldname2].lower().like("%" + value + "%")) | \
-                                    (table[fieldname3].lower().like("%" + value + "%")))
-
-                        resource.add_filter(query)
-                        fields = [table.id, field, table[fieldname2], table[fieldname3]]
-
+                    # pr_person Autocomplete
+                    if " " in value:
+                        value1, value2 = value.split(" ", 1)
+                        query = (field.lower().like("%" + value1 + "%")) & \
+                                (field2.lower().like("%" + value2 + "%")) | \
+                                (field3.lower().like("%" + value2 + "%"))
                     else:
-                        # Normal single-field Autocomplete
-                        resource.add_filter((field.lower().like("%" + value + "%")))
-
-                    if limit:
-                        item = db(resource.get_query()).select(limitby=(0, limit), *fields).json()
-
-                elif filter == "=":
-                    if field.type.split(" ")[0] in ["reference", "id", "float", "integer"]:
-                        # Numeric, e.g. Organisations' offices_by_org
-                        query = (field == value)
-                    else:
-                        # Text
-                        query = (field.lower() == value)
-
-                elif filter == "<":
-                    query = (field < value)
-
-                elif filter == ">":
-                    query = (field > value)
+                        query = ((field.lower().like("%" + value + "%")) | \
+                                (field2.lower().like("%" + value + "%")) | \
+                                (field3.lower().like("%" + value + "%")))
 
                 else:
-                    item = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
-                    raise HTTP(400, body=item)
+                    output = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~")
+                    raise HTTP(400, body=output)
 
-            if not item:
-                resource.add_filter(query)
-                item = db(resource.get_query()).select(*fields).json()
+            resource.add_filter(query)
+            output = resource.exporter.sjson(resource, start=0, limit=limit, fields=fields)
 
             response.headers["Content-Type"] = "text/json"
-            return item
+            return output
 
         #elif r.interactive:
             # @ToDo: merge with search_simple

@@ -196,7 +196,7 @@ def shn_org_rheader(r, tabs=[]):
             organisation = r.record
             if organisation:
                 if organisation.cluster_id:
-                    _sectors = shn_sector_represent(organisation.cluster_id)
+                    _sectors = shn_org_cluster_represent(organisation.cluster_id)
                 else:
                     _sectors = None
 

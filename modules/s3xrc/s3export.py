@@ -446,7 +446,7 @@ class S3Exporter(object):
         return output.read()
 
     # -------------------------------------------------------------------------
-    def sjson(self, resource, start=0, limit=0, fields=None):
+    def sjson(self, resource, start=None, limit=None, fields=None):
 
         resource.load(start=start, limit=limit)
         set = resource.records(fields=fields)

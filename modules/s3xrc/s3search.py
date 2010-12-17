@@ -189,14 +189,12 @@ class S3LocationSearch(S3Search):
             # (default anyway on MySQL/SQLite, but not PostgreSQL)
             value = value.lower()
 
-            limit = int(_vars.limit or 0)
-
             if _vars.field and _vars.filter and value:
                 fieldname = str.lower(_vars.field)
                 field = table[fieldname]
 
                 # Default fields to return
-                fields = [table.id, table.name, table.level]
+                fields = [table.id, table.name, table.level, table.parent]
 
                 # Optional fields
                 if "parent" in _vars and _vars.parent:
@@ -260,18 +258,17 @@ class S3LocationSearch(S3Search):
 
                     fields = [table.id, table.name, table.level, table.uuid, table.parent, table.lat, table.lon, table.addr_street]
 
-                elif filter == "<":
-                    query = (field < value)
-
-                elif filter == ">":
-                    query = (field > value)
-
                 else:
-                    output = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
+                    output = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =")
                     raise HTTP(400, body=output)
 
             resource.add_filter(query)
-            output = resource.exporter.sjson(resource, start=0, limit=limit, fields=fields)
+
+            limit = _vars.limit
+            if limit:
+                output = resource.exporter.sjson(resource, start=0, limit=int(limit), fields=fields)
+            else:
+                output = resource.exporter.sjson(resource, fields=fields)
 
             response.headers["Content-Type"] = "text/json"
             return output

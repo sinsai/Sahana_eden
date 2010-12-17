@@ -2,10 +2,10 @@
 // This script is in Static to allow caching
 // Dynamic constants (e.g. Internationalised strings) are set in server-generated script
 
-function s3_gis_dropdown_select(level) {
+function s3_gis_dropdown_select(level, force) {
     // Read the new value of the dropdown
     var new_id = $('#gis_location_L' + level).val();
-    if (new_id) {
+    if ( new_id || force ) {
         // Pull down contents of new level of hierarchy by AJAX
         if (level == s3_gis_maxlevel) {
             // Next level = ""
@@ -32,7 +32,7 @@ function s3_gis_dropdown_select(level) {
                 $('#gis_location_L' + (level + 1)).html(options);
             }
         }
-        $.getJSONS3(this_url, s3_gis_load_locations, false);
+        $.getJSONS3(this_url, s3_gis_load_locations, force);
 
         // Show the new level
         if (level == s3_gis_maxlevel) {
@@ -250,7 +250,7 @@ function s3_gis_convertFillBack(whereto) {
     return false;
 }
 
-
+// Main function
 $(function(){
     if ( typeof(s3_gis_location_id) == "undefined" ) {
         // This page doesn't include the Location Selector Widget
@@ -383,6 +383,71 @@ $(function(){
             // Do an HTML5 GeoLocate: http://dev.w3.org/geo/api/spec-source.html
             navigator.geolocation.getCurrentPosition(s3_gis_geolocate);
         });
+
+
+        // Search box (Autocomplete widget)
+        var s3_gis_ac_data = { val:$('#gis_location_autocomplete').val(), accept:false };
+
+        $('#gis_location_autocomplete').autocomplete({
+            // Search across all locations bar only those from unreliable imports
+            source: s3_gis_url + '/search.json?filter=~&field=name&exclude_field=level&exclude_value=XX',
+            minLength: 2,
+            focus: function( event, ui ) {
+                $('#gis_location_autocomplete').val( ui.item.name );
+                return false;
+            },
+            select: function( event, ui ) {
+                $('#gis_location_autocomplete').val( ui.item.name );
+                $('#' + s3_gis_location_id).val( ui.item.id );
+                s3_gis_ac_data.accept = true;
+                // Display/Set the dropdowns as-required
+                switch (ui.item.level) {
+                    case 'L0':
+                        $('#gis_location_L0').val( ui.item.id );
+                        s3_gis_dropdown_select(0);
+                        break;
+                    case 'L1':
+                        s3_gis_dropdown_select(0, true);
+                        if (ui.item.parent) {
+                            $('#gis_location_L0').val( ui.item.parent );
+                        }
+                        $('#gis_location_L1').val( ui.item.id );
+                        s3_gis_dropdown_select(1);
+                        break;
+                    default:
+                        $('#gis_location_').val( ui.item.id );
+                }
+                // Hide the search box again
+                $('#gis_location_autocomplete_div').hide();
+                // Show the search button again
+                $('#gis_location_search-btn').show();
+                return false;
+            }
+        })
+        .data( 'autocomplete' )._renderItem = function( ul, item ) {
+            // @ToDo: Better .represent for returned data
+            // (Level or Parent in brackets after it? Currently we have level but not it's name)
+            return $( '<li></li>' )
+                .data( 'item.autocomplete', item )
+                .append( '<a>' + item.name + '</a>' )
+                .appendTo( ul );
+        };
+
+        $('#gis_location_autocomplete').blur(function() {
+            if ( !$('#gis_location_autocomplete').val() ) {
+                $('#' + s3_gis_location_id).val('');
+                s3_gis_ac_data.accept = true;
+            }
+
+            if ( !s3_gis_ac_data.accept ) {
+                $('#gis_location_autocomplete').val(s3_gis_ac_data.val);
+            } else {
+                s3_gis_ac_data.val = $('#gis_location_autocomplete').val();
+            }
+
+            s3_gis_ac_data.accept = false;
+        });
+
 
         $('form').submit( function() {
             // The form is being submitted

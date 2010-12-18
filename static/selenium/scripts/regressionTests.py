@@ -2,6 +2,7 @@ from Tkinter import *
 from subprocess import call
 
 from testSuite import SahanaTestSuite
+from sahanaTest import SahanaTest
 import thread
 import unittest
 
@@ -13,12 +14,14 @@ from subprocess import Popen
 class TestWindow(Frame):
 
     def runTestSuite(self):
-        SahanaTestSuite.startSelenium(self.radioB.get(),
-                                      self.browserPath.get(),
-                                      self.ipAddr.get(),
-                                      self.ipPort.get(),
-                                      self.URL.get()
-                                     )
+        # call static method of the base class for all Sahana test case classes
+        # this method will ensure that one Selenium instance exists and can be shared 
+        SahanaTest.setUpHierarchy(self.radioB.get(),
+                                  self.browserPath.get(),
+                                  self.ipAddr.get(),
+                                  self.ipPort.get(),
+                                  self.URL.get()
+                                  )
         SahanaTestSuite.setSahanaAdminDetails(self.adminUser.get(),
                                               self.adminPassword.get(),
                                              )
@@ -26,7 +29,7 @@ class TestWindow(Frame):
         test = SahanaTestSuite()
         test.test_main(self.getTestModules())
         call(["firefox", os.path.join("..", "results", "regressionTest.html")])
-        SahanaTestSuite.stopSelenium() # Debug comment out to keep the Selenium window open 
+        SahanaTest.selenium.stop() # Debug comment out to keep the Selenium window open 
         self.clean = True
     
     def __del__(self):

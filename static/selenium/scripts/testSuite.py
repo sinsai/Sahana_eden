@@ -23,22 +23,22 @@ from selenium import selenium
 
 class SahanaTestSuite():
         
-    def startSelenium(className, browser, path, ipaddr, ipport, webURL):
-        if browser == "*custom":
-            browser += " " + path
-        print "selenium %s %s %s %s" % (ipaddr, ipport, browser, webURL)
-        className.selenium = selenium(ipaddr, ipport, browser, webURL)
-        className.selenium.start()
-    startSelenium = classmethod(startSelenium)
+#    def startSelenium(className, browser, path, ipaddr, ipport, webURL):
+#        if browser == "*custom":
+#            browser += " " + path
+#        print "selenium %s %s %s %s" % (ipaddr, ipport, browser, webURL)
+#        className.selenium = selenium(ipaddr, ipport, browser, webURL)
+#        className.selenium.start()
+#    startSelenium = classmethod(startSelenium)
 
     def setSahanaAdminDetails(className, email, password):
         className.user = email
         className.password = password
     setSahanaAdminDetails = classmethod(setSahanaAdminDetails)
 
-    def stopSelenium(className):        
-        className.selenium.stop()
-    stopSelenium = classmethod(stopSelenium)
+#    def stopSelenium(className):        
+#        className.selenium.stop()
+#    stopSelenium = classmethod(stopSelenium)
                 
     def test_main(self, testList):
 

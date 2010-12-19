@@ -2020,6 +2020,7 @@
 'Manage volunteers by capturing their skills, availability and allocation': 'Manage volunteers by capturing their skills, availability and allocation',
 'Manager': 'Manager',
 'Managing Office': 'Managing Office',
+'Managing, Storing and Distributing Catalog Items.': 'Managing, Storing and Distributing Catalog Items.',
 'Managing, Storing and Distributing Relief Items': 'Managing, Storing and Distributing Relief Items',
 'Managing, Storing and Distributing Relief Items.': 'Managing, Storing and Distributing Relief Items.',
 'Mandatory. In GeoServer, this is the Layer Name. Within the WFS getCapabilities, this is the FeatureType Name part after the colon(:).': 'Mandatory. In GeoServer, this is the Layer Name. Within the WFS getCapabilities, this is the FeatureType Name part after the colon(:).',

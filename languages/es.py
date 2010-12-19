@@ -756,6 +756,7 @@
 'Check if the URL is pointing to a directory instead of a webpage.': 'Check if the URL is pointing to a directory instead of a webpage.',
 'Check outbox for the message status': 'Check outbox for the message status',
 'Check to delete': 'Verifique para eliminar',
+'Check to delete:': 'Check to delete:',
 'Checklist': 'Lista de verificación',
 'Checklist created': 'Lista creada',
 'Checklist deleted': 'Lista de verificación de borrado',

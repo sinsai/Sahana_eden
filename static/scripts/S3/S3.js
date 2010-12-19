@@ -77,6 +77,7 @@ function s3_tb_remove(){
 /*
   ajaxS3 ------------------------------------------------------------
   added by sunneach 2010-feb-14
+  modified by flavour
   Strings get set in a localised in views/l10n.js :
 */
 (function($) {
@@ -127,12 +128,14 @@ function s3_tb_remove(){
     jQuery.getS3 = function(url, data, callback, type, message, sync) {
         // shift arguments if data argument was omitted
         if ( jQuery.isFunction( data ) ) {
+            sync = message;
+            message = type;
+            type = callback;
             callback = data;
             data = null;
         }
-        // Not yet proven to work!
-        if (!sync) {
-            var async = true;
+        if (sync) {
+            var async = false;
         }
         return jQuery.ajaxS3({
             type: 'GET',
@@ -153,7 +156,6 @@ function s3_tb_remove(){
             callback = data;
             data = null;
         }
-        // Not yet proven to work!
         if (!sync) {
             var sync = false;
         }
@@ -165,6 +167,7 @@ function s3_tb_remove(){
         msgTimeout: 2000,
         retryLimit : 10,
         dataType: 'json',
+        async: true,
         type: 'GET'
     };
 

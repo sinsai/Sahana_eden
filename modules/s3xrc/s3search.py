@@ -124,8 +124,7 @@ class S3Search(S3MethodHandler):
                     raise HTTP(400, body=output)
 
                 resource.add_filter(query)
-                resource.load(start=0, limit=limit)
-                output = resource.exporter.sjson(resource, fields=fields)
+                output = resource.exporter.sjson(resource, start=0, limit=limit, fields=fields)
 
                 response.headers["Content-Type"] = "text/json"
                 return output
@@ -190,14 +189,12 @@ class S3LocationSearch(S3Search):
             # (default anyway on MySQL/SQLite, but not PostgreSQL)
             value = value.lower()
 
-            limit = int(_vars.limit or 0)
-
             if _vars.field and _vars.filter and value:
                 fieldname = str.lower(_vars.field)
                 field = table[fieldname]
 
                 # Default fields to return
-                fields = [table.id, table.name, table.level]
+                fields = [table.id, table.name, table.level, table.path]
 
                 # Optional fields
                 if "parent" in _vars and _vars.parent:
@@ -217,8 +214,6 @@ class S3LocationSearch(S3Search):
                 else:
                     exclude_field = None
                     exclude_value = None
-
-                limit = int(_vars.limit or 0)
 
                 filter = _vars.filter
                 if filter == "~":
@@ -263,19 +258,17 @@ class S3LocationSearch(S3Search):
 
                     fields = [table.id, table.name, table.level, table.uuid, table.parent, table.lat, table.lon, table.addr_street]
 
-                elif filter == "<":
-                    query = (field < value)
-
-                elif filter == ">":
-                    query = (field > value)
-
                 else:
-                    output = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
+                    output = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =")
                     raise HTTP(400, body=output)
 
             resource.add_filter(query)
-            resource.load(start=0, limit=limit)
-            output = resource.exporter.sjson(resource, fields=fields)
+
+            limit = _vars.limit
+            if limit:
+                output = resource.exporter.sjson(resource, start=0, limit=int(limit), fields=fields)
+            else:
+                output = resource.exporter.sjson(resource, fields=fields)
 
             response.headers["Content-Type"] = "text/json"
             return output
@@ -290,7 +283,9 @@ class S3LocationSearch(S3Search):
 # *****************************************************************************
 class S3PersonSearch(S3Search):
     """
-        Person-Specific Searches
+        Person-Specific Searches:
+        - uses first_name, middle_name & last_name
+        - only support '~' filter
         - just supports JSON format
 
         @ToDo: Support components
@@ -336,68 +331,37 @@ class S3PersonSearch(S3Search):
             # (default anyway on MySQL/SQLite, but not PostgreSQL)
             value = value.lower()
 
+            filter = _vars.filter
+
             limit = int(_vars.limit or 0)
 
-            if _vars.field and _vars.filter and value:
-                fieldname = str.lower(_vars.field)
-                field = table[fieldname]
+            if filter and value:
 
-                # Default fields to return
-                fields = [table.id, field]
+                field = table.first_name
+                field2 = table.middle_name
+                field3 = table.last_name
 
-                # Optional fields (PR only)
-                if "field2" in _vars:
-                    fieldname2 = str.lower(_vars.field2)
-                else:
-                    fieldname2 = None
-                if "field3" in _vars:
-                    fieldname3 = str.lower(_vars.field3)
-                else:
-                    fieldname3 = None
+                # Fields to return
+                fields = [table.id, field, field2, field3]
 
-                limit = int(_vars.limit or 0)
-
-                filter = _vars.filter
                 if filter == "~":
-                    if fieldname2 and fieldname3:
-                        # pr_person Autocomplete
-                        if " " in value:
-                            value1, value2 = value.split(" ", 1)
-                            query = (field.lower().like("%" + value1 + "%")) & \
-                                    (table[fieldname2].lower().like("%" + value2 + "%")) | \
-                                    (table[fieldname3].lower().like("%" + value2 + "%"))
-                        else:
-                            query = ((field.lower().like("%" + value + "%")) | \
-                                    (table[fieldname2].lower().like("%" + value + "%")) | \
-                                    (table[fieldname3].lower().like("%" + value + "%")))
-
-                        fields = [table.id, field, table[fieldname2], table[fieldname3]]
-
+                    # pr_person Autocomplete
+                    if " " in value:
+                        value1, value2 = value.split(" ", 1)
+                        query = (field.lower().like("%" + value1 + "%")) & \
+                                (field2.lower().like("%" + value2 + "%")) | \
+                                (field3.lower().like("%" + value2 + "%"))
                     else:
-                        # Normal single-field Autocomplete
-                        query = (field.lower().like("%" + value + "%"))
-
-                elif filter == "=":
-                    if field.type.split(" ")[0] in ["reference", "id", "float", "integer"]:
-                        # Numeric, e.g. Organisations' offices_by_org
-                        query = (field == value)
-                    else:
-                        # Text
-                        query = (field.lower() == value)
-
-                elif filter == "<":
-                    query = (field < value)
-
-                elif filter == ">":
-                    query = (field > value)
+                        query = ((field.lower().like("%" + value + "%")) | \
+                                (field2.lower().like("%" + value + "%")) | \
+                                (field3.lower().like("%" + value + "%")))
 
                 else:
-                    output = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
+                    output = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~")
                     raise HTTP(400, body=output)
 
             resource.add_filter(query)
-            resource.load(start=0, limit=limit)
-            output = resource.exporter.sjson(resource, fields=fields)
+            output = resource.exporter.sjson(resource, start=0, limit=limit, fields=fields)
 
             response.headers["Content-Type"] = "text/json"
             return output

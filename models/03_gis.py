@@ -500,15 +500,9 @@ location_id = S3ReusableField("location_id", db.gis_location,
                     requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True)),
                     represent = lambda id: shn_gis_location_represent(id),
                     label = T("Location"),
-                    # Not yet ready
-                    #widget = S3LocationSelectorWidget(db, gis, deployment_settings, request, response, T),
-                    # Testing
+                    widget = S3LocationSelectorWidget(db, gis, deployment_settings, request, response, T),
+                    # Alternate simple Autocomplete (e.g. used by pr_person_presence)
                     #widget = S3LocationAutocompleteWidget(request, deployment_settings),
-                    # If enabling widget, then disable comment (widget incorporates it)
-                    comment = DIV(A(ADD_LOCATION, _class="colorbox", _target="top", _title=ADD_LOCATION,
-                                    _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup"))),
-                                  DIV(_class="tooltip",
-                                      _title=T("Location") + "|" + T("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                     ondelete = "RESTRICT")
 
 # This is needed for Location represents & Location Selector
@@ -632,7 +626,7 @@ def gis_location_onvalidation(form):
                                                           cache=(cache.ram, 3600)).first()
     
     # Check Parents are in sane order
-    if level and _parent:
+    if level and parent and _parent:
         # Check that parent is of a higher level (http://eden.sahanafoundation.org/ticket/450)
         if level[1:] < _parent.level[1:]:
             response.error = T("Parent level should be higher than this record's level. Parent level is") + ": %s" % gis_location_hierarchy[_parent.level]

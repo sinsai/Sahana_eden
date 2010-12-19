@@ -167,7 +167,9 @@ class S3LocationAutocompleteWidget:
         - needs to have deployment_settings passed-in
         - excludes unreliable imported records (Level 'XX')
         - @ToDo: .represent for the returned data
-        - @ToDo: Refreshes all dropdowns as-necessary (post_process)
+        - @ToDo: Refreshes any dropdowns as-necessary (post_process)
+
+        NB Currently not used. The LocationSelector widget include this functionality & more.
     """
     def __init__(self,
                  request,
@@ -210,9 +212,9 @@ class S3LocationAutocompleteWidget:
         except KeyError:
             pass
         # What is the maximum level of hierarchy?
-        max_hierarchy = deployment_settings.get_gis_max_hierarchy()
+        #max_hierarchy = deployment_settings.get_gis_max_hierarchy()
         # Is full hierarchy mandatory?
-        strict = deployment_settings.get_gis_strict_hierarchy()
+        #strict = deployment_settings.get_gis_strict_hierarchy()
 
         post_process = self.post_process
         if not post_process:
@@ -316,7 +318,7 @@ class S3PersonAutocompleteWidget:
         
         real_input = str(field).replace(".", "_")
         dummy_input = "dummy_%s" % real_input
-        url = URL(r=self.request, c="pr", f="person", args="search.json", vars={"filter":"~", "field":"first_name", "field2":"middle_name", "field3":"last_name"})
+        url = URL(r=self.request, c="pr", f="person", args="search.json", vars={"filter":"~"})
         
         js_autocomplete = """
         (function() {
@@ -816,7 +818,8 @@ class S3LocationSelectorWidget:
                        _class="hidden")
         dropdowns.append(level_dropdown(_level, visible=visible, current=value, button=button))
         
-
+        
+        
         # Settings to be read by static/scripts/S3/s3.locationselector.widget.js
         js_location_selector = """
     var s3_gis_location_id = '%s';
@@ -858,7 +861,7 @@ class S3LocationSelectorWidget:
         lat_widget = INPUT(_id="gis_location_lat", _value=lat)
         lon_widget = INPUT(_id="gis_location_lon", _value=lon)
 
-        autocomplete = DIV(self.S3LocationAutocompleteWidget(request, deployment_settings), _id="gis_location_autocomplete_div", _class="hidden")
+        autocomplete = DIV(LABEL(T("Search") + ":"), BR(), INPUT(_id="gis_location_autocomplete"), _id="gis_location_autocomplete_div", _class="hidden")
 
         # Buttons
         search_button = A(T("Search Locations"), _href="#",

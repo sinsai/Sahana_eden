@@ -77,7 +77,6 @@ if deployment_settings.has_module(module):
     
     # Hide Add Assessment functionality. Users should only add assessments through the Basic Assessment.
     s3xrc.model.configure(table,
-                          listadd=False,
                           insertable=False)    
     
     #==============================================================================
@@ -481,7 +480,7 @@ if deployment_settings.has_module(module):
                                           doc_document="document_id"))
 
     s3xrc.model.configure(table,
-                          listadd=False,
+                          listadd=False,    # We override this in the RAT controller for when not a component
                           onaccept=lambda form: rat_assessment_onaccept(form))
 
     # Section 2: Demographic --------------------------------------------------

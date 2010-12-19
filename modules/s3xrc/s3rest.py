@@ -318,8 +318,12 @@ class S3Resource(object):
             else:
                 limitby = None
 
-        self._set = self.db(self._query).select(self.table.ALL,
+        if limitby:
+            self._set = self.db(self._query).select(self.table.ALL,
                                                 limitby=limitby)
+        else:
+            self._set = self.db(self._query).select(self.table.ALL)
+
         self._ids = [row.id for row in self._set]
         uid = self.manager.UID
         if uid in self.table.fields:
@@ -621,6 +625,7 @@ class S3Resource(object):
             if handler is not None:
                 output = handler(r, **attr)
             else:
+                # Execute main CRUD handler
                 output = self.crud(r, **attr)
 
         # Post-process
@@ -629,6 +634,7 @@ class S3Resource(object):
         if postprocess is not None:
             output = postprocess(r, output)
         if output is not None and isinstance(output, dict):
+            # Put a copy of r into the output for the View to be able to make use of
             output.update(jr=r)
 
         # Redirection (makes no sense in GET)
@@ -1110,11 +1116,11 @@ class S3Resource(object):
 
         importer = self.importer.xml
 
-        return importer(self, source,
-                        files=files,
-                        id=id,
-                        template=template,
-                        ignore_errors=ignore_errors, **args)
+        result = importer(self, source, files=files, id=id,
+                          template=template, ignore_errors=ignore_errors,
+                          **args)
+
+        return result
 
 
     # -------------------------------------------------------------------------
@@ -2239,7 +2245,7 @@ class S3Request(object):
         if self.representation == "html":
             self.session.error = self.UNAUTHORISED
             self.session.warning = None
-            if not self.session.auth.user:
+            if not self.session.auth:
                 login = URL(r=self.request,
                             c="default",
                             f="user",

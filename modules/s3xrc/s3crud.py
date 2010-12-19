@@ -238,6 +238,7 @@ class S3MethodHandler(object):
                     self.method = "list"
 
         # Invoke the responder
+        # (execute the method handler)
         output = self.respond(r, **attr)
 
         # Redirection
@@ -604,15 +605,6 @@ class S3CRUDHandler(S3MethodHandler):
             # Put the form into output
             output.update(form=form)
 
-            # Add map
-            location_id = [f for f in table if f.writable and
-                           str(f.type) == "reference gis_location"]
-            if location_id:
-                response.s3.gis.location_id = True
-                if response.s3.gis.map_selector:
-                    _map = self.manager.gis.form_map(r, method="create")
-                    output.update(_map=_map)
-
             # Buttons
             buttons = self.insert_buttons(r, "list")
             if buttons:
@@ -651,7 +643,8 @@ class S3CRUDHandler(S3MethodHandler):
 
         elif representation == "url":
             importer = self.resource.importer.url
-            return importer(r)
+            results = importer(r) 
+            return results
 
         elif representation == "csv":
             import csv, cgi
@@ -895,21 +888,6 @@ class S3CRUDHandler(S3MethodHandler):
             # Put form into output
             output.update(form=form)
 
-            # Add map
-            location_id = [f for f in table if f.writable and
-                            str(f.type) == "reference gis_location"]
-            if location_id:
-                response.s3.gis.location_id = True
-                if response.s3.gis.map_selector:
-                    gis = self.manager.gis
-                    _map = gis.form_map(r, method="update",
-                                        tablename=tablename,
-                                        prefix=self.prefix,
-                                        name=self.name)
-                    oldlocation = _map["oldlocation"]
-                    _map = _map["_map"]
-                    output.update(_map=_map, oldlocation=oldlocation)
-
             # Add delete and list buttons
             buttons = self.insert_buttons(r, "delete", "list",
                                           record_id=record_id)
@@ -1104,24 +1082,20 @@ class S3CRUDHandler(S3MethodHandler):
                     output.update(form=form)
                     addtitle = self.crud_string(tablename, "subtitle_create")
                     output.update(addtitle=addtitle)
+
                     # Show-Add button to activate the form:
                     showadd_btn = self.crud_button(None,
                                                    tablename=tablename,
                                                    name="label_create_button",
                                                    _id="show-add-btn")
                     output.update(showadd_btn=showadd_btn)
-                    # Add map where appropriate:
-                    location_id = [f for f in table if f.writable and
-                                str(f.type) == "reference gis_location"]
-                    if location_id:
-                        response.s3.gis.location_id = True
-                        if response.s3.gis.map_selector:
-                            _map = self.manager.gis.form_map(r, method="create")
-                            output.update(_map=_map)
+
                     # Switch to list_create view
                     self.response.view = self._view(r, "list_create.html")
+
                 else:
                     self.response.view = self._view(r, "list.html")
+
             elif insertable:
                 buttons = self.insert_buttons(r, "add")
                 if buttons:

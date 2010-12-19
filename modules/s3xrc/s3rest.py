@@ -625,6 +625,7 @@ class S3Resource(object):
             if handler is not None:
                 output = handler(r, **attr)
             else:
+                # Execute main CRUD handler
                 output = self.crud(r, **attr)
 
         # Post-process
@@ -633,6 +634,7 @@ class S3Resource(object):
         if postprocess is not None:
             output = postprocess(r, output)
         if output is not None and isinstance(output, dict):
+            # Put a copy of r into the output for the View to be able to make use of
             output.update(jr=r)
 
         # Redirection (makes no sense in GET)
@@ -1114,11 +1116,11 @@ class S3Resource(object):
 
         importer = self.importer.xml
 
-        return importer(self, source,
-                        files=files,
-                        id=id,
-                        template=template,
-                        ignore_errors=ignore_errors, **args)
+        result = importer(self, source, files=files, id=id,
+                          template=template, ignore_errors=ignore_errors,
+                          **args)
+
+        return result
 
 
     # -------------------------------------------------------------------------

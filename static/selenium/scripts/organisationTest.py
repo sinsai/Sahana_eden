@@ -106,7 +106,24 @@ class OrganisationTest(SahanaTest):
                    ("Save",),
                    ("Twitter", "Donation", "Comments")
                   )
+        self.action.clickTab(self, "Staff")
+        self.action.btnLink (self, "show-add-btn", "Add Staff")
             
+        self.action.clickTab(self, "Offices")
+        self.action.btnLink (self, "show-add-btn", "Add Office")
+
+        self.action.clickTab(self, "Warehouses")
+        self.action.btnLink (self, "show-add-btn", "Add Warehouse")
+
+        self.action.clickTab(self, "Assessments")
+#        self.action.btnLink (self, "show-add-btn", "Add Assessment")
+
+        self.action.clickTab(self, "Projects")
+        self.action.btnLink (self, "show-add-btn", "Add Project")
+
+        self.action.clickTab(self, "Activities")
+        self.action.btnLink (self, "show-add-btn", "Add Activity")
+
     def lastRun(self):
         # Delete the test organisations
         sel = OrganisationTest.selenium

@@ -146,6 +146,22 @@ class Action:
         test.assertTrue(sel.is_element_present(element), "%s element %s is missing" % (type, id))
         print "Form %s element %s is present" % (type, id)
         
+    # Method to click on a tab
+    def clickTab(self, test, name):
+        sel = test.selenium
+        element = "//div[@id='rheader_tabs']/span/a[text()='%s']" % (name)
+        sel.click(element)
+        sel.wait_for_page_to_load("30000")
+        
+    # Method to check button link
+    def btnLink(self, test, id, name):
+        sel = test.selenium
+        element = '//a[@id="%s"]' % (id)
+        errMsg = "%s button is missing" % (name)
+        test.assertTrue(sel.is_element_present(element), errMsg)
+        test.assertTrue(sel.get_text(element),errMsg)
+        print "%s button is present" % (name)
+        
     # Method to check that form button is present
     def button(self, test, name):
         sel = test.selenium

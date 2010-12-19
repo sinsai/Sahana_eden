@@ -40,7 +40,6 @@ class SahanaTest(unittest.TestCase):
 
     @classmethod
     def start(cls):
-        print "class %s first time %s" % (cls, cls._classDetailsCollected)
         if not cls._classDetailsCollected:
             cls.testcaseStartedCount = 0
             cls.testcaseFinishedCount = 0

@@ -7,23 +7,15 @@ import inspect
 
 class OrganisationTest(SahanaTest):
     orgs = []
-    
-    @classmethod
-    def setUpClass(cls):
-        cls.start()
-
-    def setUp(self):
-        if OrganisationTest.testcaseStartedCount == 0:
-            OrganisationTest.testcaseStartedCount += 1
-            self.firstRun()
                 
     def firstRun(self):
+        self.action.logout(self)
         # Log in as admin an then move to the add organisation page 
         OrganisationTest.selenium.open("/eden/org/organisation/create")
-        time.sleep(1)
-        self.assertEqual("Not Authorised", self.selenium.get_text("//div[@class=\"error\"]"))
+        self.action.errorMsg(self, "Not Authorised")
         self.assertEqual("Login", self.selenium.get_text("//h2"))
-        self.action.login(self, "admin@example.com", "testing" )
+        self.useSahanaAdminAccount()
+        self.action.login(self, self._user, self._password )
         # Add the test organisations
         self.addOrg()
 
@@ -51,6 +43,7 @@ class OrganisationTest(SahanaTest):
         sel.wait_for_page_to_load("30000")
         self.action.successMsg(self,"Organization added")
         self.assertEqual("List Organizations", sel.get_text("//h2"))
+        print "Organisation %s created" % (name)
         
     def addOrg(self):
         sel = OrganisationTest.selenium
@@ -70,6 +63,7 @@ class OrganisationTest(SahanaTest):
                 OrganisationTest.orgs.append(details[0].strip())
 
     def test_CreateOrgUI(self):
+        """ Test to check the elements of the create organisation form """ 
         sel = OrganisationTest.selenium
         sel.open("/eden/org/organisation/create")
         # check that the UI controls are present
@@ -88,6 +82,11 @@ class OrganisationTest(SahanaTest):
                   )
 
     def test_OpenOrgUI(self):
+        """ Test to check the elements of the list organisation form
+        
+        In turn it will check each of the tabs on the list screen
+        and ensure that the data on the screen has been properly displayed.   
+        """ 
         sel = OrganisationTest.selenium
         sel.open("/eden/org/organisation")
         self.action.searchUnique(self,self.orgs[0])
@@ -118,14 +117,6 @@ class OrganisationTest(SahanaTest):
             self.assertTrue(re.search(r"^Sure you want to delete this object[\s\S]$", sel.get_confirmation()))
             # pause to allow the delete to work
             self.action.successMsg(self,"Organization deleted")
-
-        self.action.logout(self)
-
-    def tearDown(self):
-        if OrganisationTest.finish():
-            self.lastRun()
-            
-OrganisationTest.setUpClass()
     
 if __name__ == "__main__":
     SahanaTest.setUpHierarchy()

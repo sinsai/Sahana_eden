@@ -1,15 +1,19 @@
 from Tkinter import *
-from subprocess import call
 
-from testSuite import SahanaTestSuite
-from sahanaTest import SahanaTest
+from subprocess import call
+from subprocess import Popen
 import thread
+
 import unittest
+from sahanaTest import SahanaTest
+import HTMLTestRunner
+from selenium import selenium
 
 import os
-import thread
 import time
-from subprocess import Popen
+import sys
+import StringIO
+
 
 class TestWindow(Frame):
 
@@ -21,17 +25,38 @@ class TestWindow(Frame):
                                   self.ipAddr.get(),
                                   self.ipPort.get(),
                                   self.URL.get()
-                                  )
-        SahanaTestSuite.setSahanaAdminDetails(self.adminUser.get(),
-                                              self.adminPassword.get(),
-                                             )
+                                 )
+        SahanaTest.useSahanaAccount(self.adminUser.get(),
+                                    self.adminPassword.get(),
+                                   )
         self.clean = False
-        test = SahanaTestSuite()
-        test.test_main(self.getTestModules())
+        self.test_main(self.getTestModules())
         call(["firefox", os.path.join("..", "results", "regressionTest.html")])
         SahanaTest.selenium.stop() # Debug comment out to keep the Selenium window open 
         self.clean = True
     
+    def test_main(self, testList):
+        testLoader = unittest.defaultTestLoader
+        self.suite = unittest.TestSuite()
+        for testName in testList: #dotted notation module[.class[.method]]
+            self.suite.addTests(testLoader.loadTestsFromName(testName))
+        # Invoke TestRunner
+        buf = StringIO.StringIO()
+        runner = HTMLTestRunner.HTMLTestRunner(
+                    stream=buf,
+                    title='<Sahana Eden Test>',
+                    description='Suite of regressions tests for Sahana Eden.'
+                    )
+        runner.run(self.suite)
+        # check out the output
+        byte_output = buf.getvalue()
+        # output the main test output for debugging & demo
+        # print byte_output
+        # HTMLTestRunner pumps UTF-8 output
+        output = byte_output.decode('utf-8')
+        file = open('../results/regressionTest.html','w')
+        file.write(output)
+        
     def __del__(self):
         if (not self.clean):
             SahanaTestSuite.stopSelenium()

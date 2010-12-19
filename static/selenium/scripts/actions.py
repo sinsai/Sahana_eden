@@ -2,8 +2,15 @@ import unittest, time, re
 
 class Action:
     def login(self, test, username, password, reveal=True):
-        # TODO add test for no user logged in, if user logged in check that it is different from username
         sel = test.selenium
+        if sel.is_element_present("link=Logout"):
+            # Already logged in check the account
+            if sel.is_element_present("link=%s" % username):
+                # already logged in
+                return
+            else:
+                # logged in but as a different user
+                self.logout(test)
         sel.open("/eden/default/user/login")
         sel.click("auth_user_email")
         sel.type("auth_user_email", username)
@@ -16,10 +23,10 @@ class Action:
         test.assertTrue(self.successMsg(test, "Logged in"),msg)
 
     def logout(self, test):
-        # TODO add test for user to be logged in
         sel = test.selenium
-        sel.click("link=Logout")
-        sel.wait_for_page_to_load("30000")
+        if sel.is_element_present("link=Logout"):
+            sel.click("link=Logout")
+            sel.wait_for_page_to_load("30000")
 
     def search(self, test, searchString, expected):
         sel = test.selenium

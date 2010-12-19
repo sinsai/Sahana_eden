@@ -26,9 +26,9 @@ def shn_menu():
         ]],
         [T("Impact Assessments"), False, URL(r=request, f="assess"), [
             [T("List"), False, URL(r=request, f="assess")],
-            [T("Add"), False, URL(r=request, f="assess", args="create")],
-            [T("Basic"), False, URL(r=request, f="basic_assess")],
-            [T("Mobile Basic"), False, URL(r=request, f="mobile_basic_assess")],
+            #[T("Add"), False, URL(r=request, f="assess", args="create")],
+            [T("Add"), False, URL(r=request, f="basic_assess")],
+            [T("Mobile"), False, URL(r=request, f="mobile_basic_assess")],
             #[T("Search"), False, URL(r=request, f="assess", args="search")],
         ]],
     ]
@@ -187,7 +187,8 @@ def rat():
         return output
     response.s3.postp = postp
 
-    s3xrc.model.configure(table, create_next="", listadd=False)
+    # Over-ride the listadd since we're not a component here
+    s3xrc.model.configure(table, create_next="", listadd=True)
 
     rheader = lambda r: shn_rat_rheader(r,
                                         tabs = [(T("Identification"), None),

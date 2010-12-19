@@ -48,22 +48,22 @@ def index():
                   A(DIV(T("Incidents"),
                         _class = "menu_box"
                         ),
-                    _href = URL( r=request, c="irs", f= "ireport")
+                    _href = URL( r=request, c="irs", f="ireport")
                     ),
-                  A(DIV(T("Basic Assess."),
+                  A(DIV(T("Assessments"),
                         _class = "menu_box"
                         ),
-                    _href = URL( r=request, c="assess", f= "basic_assess")
+                    _href = URL( r=request, c="assess", f="rat")
                     ),
-                  A(DIV(T("Mobile Assess."),
-                        _class = "menu_box"
-                        ),
-                    _href = URL( r=request, c="assess", f= "mobile_basic_assess")
-                    ),                      
+                  #A(DIV(T("Mobile Assess"),
+                  #      _class = "menu_box"
+                  #      ),
+                  #  _href = URL( r=request, c="assess", f="mobile_basic_assess")
+                  #  ),                      
                   A(DIV(T("Warehouses"),
                         _class = "menu_box"
                         ),
-                    _href = URL( r=request, c="inventory", f= "store")
+                    _href = URL( r=request, c="inventory", f="store")
                     ),                    
                   _class = "menu_div"
                   )
@@ -73,12 +73,12 @@ def index():
                   A(DIV(T("Gap Report"),
                         _class = "menu_box"
                         ),
-                    _href = URL( r=request, c="project", f= "gap_report")
+                    _href = URL( r=request, c="project", f="gap_report")
                     ),
                   A(DIV(T("Gap Map"),
                         _class = "menu_box"
                         ),
-                    _href = URL( r=request, c="project", f= "gap_map")
+                    _href = URL( r=request, c="project", f="gap_map")
                     ),
                   A(DIV(T("Map"),
                         _class = "menu_box"

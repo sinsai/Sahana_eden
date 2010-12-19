@@ -53,7 +53,7 @@ def index():
                   A(DIV(T("Assessments"),
                         _class = "menu_box"
                         ),
-                    _href = URL( r=request, c="assess", f="rat")
+                    _href = URL( r=request, c="assess", f="assess")
                     ),
                   #A(DIV(T("Mobile Assess"),
                   #      _class = "menu_box"

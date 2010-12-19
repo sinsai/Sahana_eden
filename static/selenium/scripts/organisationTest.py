@@ -116,7 +116,7 @@ class OrganisationTest(SahanaTest):
         self.action.btnLink (self, "show-add-btn", "Add Warehouse")
 
         self.action.clickTab(self, "Assessments")
-#        self.action.btnLink (self, "show-add-btn", "Add Assessment")
+        self.action.btnLink (self, "show-add-btn", "Add Assessment")
 
         self.action.clickTab(self, "Projects")
         self.action.btnLink (self, "show-add-btn", "Add Project")

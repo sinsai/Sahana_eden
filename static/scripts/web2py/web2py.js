@@ -29,7 +29,7 @@ function web2py_ajax_init() {
   jQuery('textarea.text').attr('cols',50).attr('rows',10);
   jQuery('input.integer').keyup(function(){this.value=this.value.reverse().replace(/[^0-9\-]|\-(?=.)/g,'').reverse();});
   jQuery('input.double').keyup(function(){this.value=this.value.reverse().replace(/[^0-9\-\.]|[\-](?=.)|[\.](?=[0-9]*[\.])/g,'').reverse();});
-  try { jQuery('input.time').timeEntry(); } catch(e) {};
+  //try { jQuery('input.time').timeEntry(); } catch(e) {};
 };
 jQuery(document).ready(function() {
     jQuery('.flash').hide().slideDown('slow')

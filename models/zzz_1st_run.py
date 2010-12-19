@@ -665,8 +665,8 @@ if populate:
     db.commit()
     symbology_us = db(db.gis_symbology.name == "US").select(db.gis_symbology.id, limitby=(0, 1)).first().id
     if not db(table.id > 0).count():
-        # We want to start at ID 1
-        table.truncate()
+        # We want to start at ID 1, but postgres won't let us truncate() & not needed anyway this is only run on 1st_run.
+        #table.truncate()
         table.insert(
             lat = "51.8",
             lon = "-1.3",

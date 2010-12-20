@@ -307,7 +307,8 @@ def submission():
         r.headers["Location"] = request.env.http_host
         raise r
     else:
-        raise HTTP(500, "Internal server error")
+        # @ToDo: have the exact Validation Error bubble up to be returnable to the client
+        raise HTTP(400, "Validation Error")
 
 def formList():
     """

@@ -565,12 +565,8 @@ def gis_location_onaccept(form):
             name_dummy = "|".join(ids) # That's not how it should be
             table = db.gis_location
             db(table.id == location_id).update(name_dummy=name_dummy)
-    # Update the parent Hierarchy
-    # Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
-    # Associating path for the new node once it is inserted
-    parent = form.vars.parent
-    level = form.vars.level
-    gis.update_location_tree(parent, level, form.vars.id)
+    # Update the Path
+    gis.update_location_tree(form.vars.id, form.vars.parent)
     return
 
 def gis_location_onvalidation(form):

@@ -38,6 +38,8 @@
 
 __all__ = ["S3Importer"]
 
+import datetime
+
 from gluon.storage import Storage
 from lxml import etree
 

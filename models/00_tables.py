@@ -5,7 +5,7 @@
 """
 
 # -----------------------------------------------------------------------------
-# Reusable Author fields to include in other table definitions
+
 def shn_user_represent(id):
     table = db.auth_user
     user = db(table.id == id).select(table.email, limitby=(0, 1), cache=(cache.ram, 10)).first()
@@ -71,6 +71,7 @@ meta_modified_on = S3ReusableField("modified_on", "datetime",
 def s3_timestamp():
     return (meta_created_on(), meta_modified_on())
 
+# Reusable Author fields to include in other table definitions
 meta_created_by = S3ReusableField("created_by", db.auth_user,
                                   readable=False, # Enable when needed, not by default
                                   writable=False,

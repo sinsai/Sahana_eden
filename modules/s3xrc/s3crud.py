@@ -742,7 +742,7 @@ class S3CRUD(S3Method):
 
         # Add asterisk to labels of required fields
         labels = Storage()
-        mark_required = model.get_config(table, "mark_required")
+        mark_required = self._config("mark_required")
         for field in table:
             if field.writable:
                 required = field.required or \
@@ -886,8 +886,8 @@ class S3CRUD(S3Method):
         elif r.http == "POST" or \
              r.http == "GET" and record_id:
             # Delete the records, notify success and redirect to the next view
-            numrows = self._delete(ondelete=ondelete,
-                                   format=representation)
+            numrows = self.resource.delete(ondelete=ondelete,
+                                           format=representation)
             if numrows > 1:
                 response.confirmation = "%s %s" % \
                                         (numrows, T("records deleted"))
@@ -899,8 +899,8 @@ class S3CRUD(S3Method):
 
         elif r.http == "DELETE":
             # Delete the records and return a JSON message
-            numrows = self._delete(ondelete=ondelete,
-                                   format=representation)
+            numrows = self.resource.delete(ondelete=ondelete,
+                                           format=representation)
             message = "%s %s" % (numrows, T("records deleted"))
             item = self.datastore.xml.json_message(message=message)
             self.response.view = "xml.html"
@@ -910,67 +910,6 @@ class S3CRUD(S3Method):
             r.error(400, self.datastore.ERROR.BAD_METHOD)
 
         return output
-
-
-    # -------------------------------------------------------------------------
-    def _delete(self, ondelete=None, format=None):
-        """
-        Delete all (deletable) records in this resource
-
-        @param ondelete: on-delete callback
-        @param format: the representation format of the request
-
-        @returns: number of records deleted
-
-        @todo 2.3: move error message into resource controller
-        @todo 2.3: check for integrity error exception explicitly
-
-        """
-
-        archive_not_delete = self.settings.archive_not_delete
-
-        T = self.datastore.T
-        INTEGRITY_ERROR = T("Cannot delete whilst there are linked records. Please delete linked records first.")
-
-        self.resource.load()
-        records = self.resource.records()
-
-        permit = self.permit
-        audit = self.datastore.audit
-
-        numrows = 0
-        for row in records:
-            if permit("delete", self.tablename, row.id):
-
-                # Clear session
-                if self.datastore.get_session(prefix=self.prefix, name=self.name) == row.id:
-                    self.datastore.clear_session(prefix=self.prefix, name=self.name)
-
-                # Archive record?
-                if archive_not_delete and "deleted" in self.table:
-                    self.db(self.table.id == row.id).update(deleted=True)
-                    numrows += 1
-                    audit("delete", self.prefix, self.name,
-                          record=row.id, representation=format)
-                    self.datastore.model.delete_super(self.table, row)
-                    if ondelete:
-                        ondelete(row)
-
-                # otherwise: delete record
-                else:
-                    try:
-                        del self.table[row.id]
-                    except: # Integrity Error
-                        self.datastore.session.error = INTEGRITY_ERROR
-                    else:
-                        numrows += 1
-                        audit("delete", self.prefix, self.name,
-                              record=row.id, representation=format)
-                        self.datastore.model.delete_super(self.table, row)
-                        if ondelete:
-                            ondelete(row)
-
-        return numrows
 
 
     # -------------------------------------------------------------------------
@@ -1207,8 +1146,8 @@ class S3CRUD(S3Method):
 
         db = self.db
         table = self.table
-        query = self.resource.get_query()
 
+        # Check for slicing
         if not fields:
             fields = [table.id]
         if limit is not None:
@@ -1216,31 +1155,30 @@ class S3CRUD(S3Method):
         else:
             limitby = None
 
-        # Audit
-        audit = self.datastore.audit
-        audit("list", self.prefix, self.name, representation=format)
-
-        rows = db(query).select(*fields, **dict(left=left,
-                                                orderby=orderby,
-                                                limitby=limitby))
-
+        # Retrieve the rows
+        attributes = dict(left=left, orderby=orderby, limitby=limitby)
+        rows = self.resource.select(*fields, **attributes)
         if not rows:
             return None
+
+        # Render as...
         if as_page:
+            # ...JSON page (for pagination)
             represent = self.datastore.represent
             items = [[represent(f, record=row, linkto=linkto)
-                    for f in fields]
-                    for row in rows]
+                      for f in fields]
+                     for row in rows]
         elif as_list:
+            # ...Python list
             items = rows.as_list()
         else:
+            # ...SQLTABLE
             headers = dict(map(lambda f: (str(f), f.label), fields))
             items= SQLTABLES3(rows,
                               headers=headers,
                               linkto=linkto,
                               upload=download_url,
                               _id="list", _class="display")
-
         return items
 
     # -------------------------------------------------------------------------

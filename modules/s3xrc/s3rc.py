@@ -97,7 +97,8 @@ class S3DataStore(object):
         VALIDATION_ERROR = "Validation error",
         DATA_IMPORT_ERROR = "Data import error",
         NOT_PERMITTED = "Operation not permitted",
-        NOT_IMPLEMENTED = "Not implemented"
+        NOT_IMPLEMENTED = "Not implemented",
+        INTEGRITY_ERROR = "Integrity error" #T("Cannot delete whilst there are linked records. Please delete linked records first.")
     )
 
     def __init__(self, environment, db):

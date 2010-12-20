@@ -37,6 +37,7 @@ __name__ = "S3TOOLS"
 
 __all__ = ["AuthS3", "CrudS3", "FieldS3", "S3ReusableField", "S3Audit"]
 
+import sys
 import datetime
 import re
 import urllib
@@ -113,6 +114,8 @@ class S3Audit(object):
         """
 
         settings = self.session.s3
+
+        #print >>sys.stderr, "Audit %s: %s_%s record=%s representation=%s" % (operation, prefix, name, record, representation)
 
         now = datetime.datetime.utcnow()
         db = self.db
@@ -552,7 +555,7 @@ class AuthS3(Auth):
 
         table_user = self.settings.table_user
         table_membership = self.settings.table_membership_name
-        
+
 
         if self.settings.login_userfield:
             userfield = self.settings.login_userfield

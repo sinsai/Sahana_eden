@@ -262,38 +262,46 @@ class S3Resource(object):
 
     # Data access =============================================================
 
-    # @todo 2.3 - implement:
-    #   - select(...)
-    #   - delete(...)
-    #   - insert(...)
-    #   - update(...)
-
-    def count(self, left=None):
+    def select(self, *fields, **attributes):
         """
-        Get the total number of available records in this resource
+        Select records with the current query
 
-        @param left: left joins, if required
+        @param fields: fields to select
+        @param attributes: select attributes
 
         """
 
-        # Build the query, if not present
+        table = self.table
         if not self._query:
             self.build_query()
 
-        if self._length is None:
-            cnt = self.table[self.table.fields[0]].count()
-            row = self.db(self._query).select(cnt, left=left).first()
-            if row:
-                self._length = row[cnt]
+        # Get the rows
+        rows = self.db(self._query).select(*fields, **attributes)
 
-        return self._length
+        # Audit
+        audit = self.datastore.audit
+        try:
+            if self.tablename in rows:
+                ids = [r[str(self.table.id)] for r in rows]
+            else:
+                ids = [r.id for r in rows]
+            for i in ids:
+                audit("read", self.prefix, self.name, record=i)
+        except KeyError:
+            audit("list", self.prefix, self.name)
+
+        # Keep the rows for later access
+        self._rows = rows
+
+        return rows
 
 
     # -------------------------------------------------------------------------
     def load(self, start=None, limit=None):
         """
-        Loads a set of records of the current resource, which can be
-        either a slice (for pagination) or all records
+        Simplified syntax for select():
+            - reads all fields
+            - start+limit instead of limitby
 
         @param start: the index of the first record to load
         @param limit: the maximum number of records to load
@@ -302,6 +310,7 @@ class S3Resource(object):
 
         if self._rows is not None:
             self.clear()
+
         if not self._query:
             self.build_query()
         if not self._multiple:
@@ -321,17 +330,134 @@ class S3Resource(object):
                 limitby = None
 
         if limitby:
-            self._rows = self.db(self._query).select(self.table.ALL,
-                                                    limitby=limitby)
+            rows = self.select(self.table.ALL, limitby=limitby)
         else:
-            self._rows = self.db(self._query).select(self.table.ALL)
+            rows = self.select(self.table.ALL)
 
-        self._ids = [row.id for row in self._rows]
+        self._ids = [row.id for row in rows]
         uid = self.datastore.UID
         if uid in self.table.fields:
-            self._uids = [row[uid] for row in self._rows]
+            self._uids = [row[uid] for row in rows]
 
         return self
+
+
+    # -------------------------------------------------------------------------
+    def insert(self, **fields):
+        """
+        Insert records into this resource
+
+        @param fields: dict of fields to insert
+
+        """
+
+        # Check permission
+        authorised = self.permit("create", self.tablename)
+        if not authorised:
+            raise IOError("Operation not permitted: INSERT INTO %s" % self.tablename)
+
+        # Insert new record
+        record_id = self.table.insert(**fields)
+
+        # Audit
+        if record_id:
+            record = Storage(fields).update(id=record_id)
+            self.audit("create", self.prefix, self.name, form=record)
+
+        return record_id
+
+
+    # -------------------------------------------------------------------------
+    def delete(self, ondelete=None, format=None):
+        """
+        Delete all (deletable) records in this resource
+
+        @param ondelete: on-delete callback
+        @param format: the representation format of the request (optional)
+
+        @returns: number of records deleted
+
+        """
+
+        model = self.datastore.model
+
+        settings = self.datastore.s3.crud
+        archive_not_delete = settings.archive_not_delete
+
+        records = self.select(self.table.id)
+
+        numrows = 0
+        for row in records:
+            if self.permit("delete", self.tablename, row.id):
+
+                # Clear session
+                if self.datastore.get_session(prefix=self.prefix, name=self.name) == row.id:
+                    self.datastore.clear_session(prefix=self.prefix, name=self.name)
+
+                # Archive record?
+                if archive_not_delete and "deleted" in self.table:
+                    self.db(self.table.id == row.id).update(deleted=True)
+                    numrows += 1
+                    audit("delete", self.prefix, self.name,
+                          record=row.id, representation=format)
+                    model.delete_super(self.table, row)
+                    if ondelete:
+                        ondelete(row)
+
+                # otherwise: delete record
+                else:
+                    try:
+                        del self.table[row.id]
+                    except: # Integrity Error
+                        self.datastore.session.error = self.ERROR.INTEGRITY_ERROR
+                    else:
+                        numrows += 1
+                        self.audit("delete", self.prefix, self.name,
+                                   record=row.id,
+                                   representation=format)
+                        model.delete_super(self.table, row)
+                        if ondelete:
+                            ondelete(row)
+
+        return numrows
+
+
+    # -------------------------------------------------------------------------
+    def update(self, **update_fields):
+        """
+        Update all records in this resource
+
+        @todo: permission check
+        @todo: audit
+
+        """
+
+        if not self._query:
+            self.build_query()
+
+        success = self.db(self._query).update(**update_fields)
+        return success
+
+
+    # -------------------------------------------------------------------------
+    def count(self, left=None):
+        """
+        Get the total number of available records in this resource
+
+        @param left: left joins, if required
+
+        """
+
+        if not self._query:
+            self.build_query()
+
+        if self._length is None:
+            cnt = self.table[self.table.fields[0]].count()
+            row = self.db(self._query).select(cnt, left=left).first()
+            if row:
+                self._length = row[cnt]
+
+        return self._length
 
 
     # -------------------------------------------------------------------------
@@ -393,9 +519,7 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def __iter__(self):
         """
-        Generator for the current set
-
-        @returns: an Iterator
+        Iterate over the selected rows
 
         """
 
@@ -521,7 +645,7 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def __len__(self):
         """
-        The number of records in the current set
+        The number of currently loaded rows
 
         """
 
@@ -565,7 +689,7 @@ class S3Resource(object):
 
     def execute_request(self, r, **attr):
         """
-        Execute a request
+        Execute a HTTP request
 
         @param r: the request to execute
         @type r: S3Request
@@ -1527,10 +1651,11 @@ class S3Resource(object):
             method = "export"
         filename = "%s.%s" % (method, extension)
         stylesheet = os.path.join(folder, path, format, filename)
-        if not os.path.exists(stylesheet) and not skip_error:
-            r.error(501, "%s: %s" % (self.ERROR.BAD_TEMPLATE, stylesheet))
-        else:
-            stylesheet = None
+        if not os.path.exists(stylesheet):
+            if not skip_error:
+                r.error(501, "%s: %s" % (self.ERROR.BAD_TEMPLATE, stylesheet))
+            else:
+                stylesheet = None
 
         return stylesheet
 

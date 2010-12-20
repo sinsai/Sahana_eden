@@ -1,16 +1,8 @@
-from selenium import selenium
-import unittest, time, re
-import testSuite
-import actions
+from sahanaTest import SahanaTest
 
-class CreateLocations(unittest.TestCase):
-    def setUp(self):
-        self.verificationErrors = []
-        self.action = actions.Action()
-        self.selenium = testSuite.SahanaTestSuite.selenium
+class CreateLocations(SahanaTest):
 
     def header(self):
-        sel = self.selenium
         # Login
         self.action.login(self, "admin@example.com", "testing" )
         self.assertTrue(self.selenium.is_element_present("link=admin@example.com"))
@@ -62,9 +54,6 @@ class CreateLocations(unittest.TestCase):
         # Location saved
         self.assertEqual("Location added", sel.get_text("//div[@class=\"confirmation\"]"))
 
-    def tearDown(self):
-        #self.assertEqual([], self.verificationErrors)
-        pass
-
 if __name__ == "__main__":
+    SahanaTest.setUpHierarchy()
     unittest.main()

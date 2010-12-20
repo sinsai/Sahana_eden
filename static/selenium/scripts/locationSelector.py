@@ -1,23 +1,17 @@
-from selenium import selenium
-import unittest, time, re
-import testSuite
-import actions
+from sahanaTest import SahanaTest
+import time, re
 
-class LocationSelector(unittest.TestCase):
-    def setUp(self):
-        """
-            Tests assume that data has been preloaded by createLocations.py
+class LocationSelector(SahanaTest):
+    """
+        Tests assume that data has been preloaded by createLocations.py
 
-            Tests assume these settings in 000_config.py:
-                #deployment_settings.L10n.countries
-                #"L5":T("Neighbourhood"),
-                deployment_settings.gis.strict_hierarchy = False
-                # In case of errors:
-                deployment_settings.ui.navigate_away_confirm = False
-        """
-        self.verificationErrors = []
-        self.action = actions.Action()
-        self.selenium = testSuite.SahanaTestSuite.selenium
+        Tests assume these settings in 000_config.py:
+            #deployment_settings.L10n.countries
+            #"L5":T("Neighbourhood"),
+            deployment_settings.gis.strict_hierarchy = False
+            # In case of errors:
+            deployment_settings.ui.navigate_away_confirm = False
+    """
 
     def login(self):
         """ Login """
@@ -45,28 +39,24 @@ class LocationSelector(unittest.TestCase):
         for i in range(60):
             try:
                 if re.search(r"^[\s\S]*1 entries[\s\S]*$", sel.get_text("//div[@class='dataTables_info']")): break
-            except: pass
+            except:
+                pass
             time.sleep(1)
         else: self.fail("time out")
         # Open it
         sel.click("link=Open")
         sel.wait_for_page_to_load("30000")
         # Check that the correct record is loaded
-        try:
-            self.assertEqual(name, sel.get_value("cr_shelter_name"))
-        except AssertionError, e:
-            self.verificationErrors.append(str(e))
+        self.assertEqual(name, sel.get_value("cr_shelter_name"))
 
     def check_blank(self):
         """ Check that a form is free of location (create or update empty) """
         sel = self.selenium
 
         # Check that the location is currently blank
-        try: self.assertEqual("", sel.get_value("cr_shelter_location_id"))
-        except AssertionError, e: self.verificationErrors.append(str(e))
+        self.assertEqual("", sel.get_value("cr_shelter_location_id"))
         # Check that the L0 dropdown is blank
-        try: self.assertEqual("", sel.get_value("gis_location_L0"))
-        except AssertionError, e: self.verificationErrors.append(str(e))
+        self.assertEqual("", sel.get_value("gis_location_L0"))
 
         # Check that the components which should be visible, are
         self.failUnless(sel.is_visible("gis_location_L0"))
@@ -92,11 +82,6 @@ class LocationSelector(unittest.TestCase):
         self.failIf(sel.is_visible("gis_location_addr_street_label"))
         self.failIf(sel.is_visible("gis_location_map-btn"))
         self.failIf(sel.is_visible("gis_location_advanced_div"))
-    
-    def tearDown(self):
-        """ Cleanup afterwards """
-        self.assertEqual([], self.verificationErrors)
-        pass
 
 class CreateLocationEmpty(LocationSelector):
     def test_locationEmpty(self):
@@ -155,11 +140,9 @@ class UpdateLocationEmptyL0(LocationSelector):
         self.assertEqual("Haiti", sel.get_table("//div[@id='rheader']/div/table.1.1"))
         location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
         location_id = location.split("(")[1].split(")")[0]
-        try: self.assertEqual(location_id, sel.get_value("cr_shelter_location_id"))
-        except AssertionError, e: self.verificationErrors.append(str(e))
+        self.assertEqual(location_id, sel.get_value("cr_shelter_location_id"))
         # Check that the dropdown is set
-        try: self.assertEqual(location_id, sel.get_value("gis_location_L0"))
-        except AssertionError, e: self.verificationErrors.append(str(e))
+        self.assertEqual(location_id, sel.get_value("gis_location_L0"))
 
         # Check that the components which should be visible, are
         self.failUnless(sel.is_visible("gis_location_L0"))
@@ -198,11 +181,9 @@ class UpdateLocationL0Empty(LocationSelector):
         self.assertEqual("Haiti", sel.get_table("//div[@id='rheader']/div/table.1.1"))
         location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
         location_id = location.split("(")[1].split(")")[0]
-        try: self.assertEqual(location_id, sel.get_value("cr_shelter_location_id"))
-        except AssertionError, e: self.verificationErrors.append(str(e))
+        self.assertEqual(location_id, sel.get_value("cr_shelter_location_id"))
         # Check that the dropdown is set
-        try: self.assertEqual(location_id, sel.get_value("gis_location_L0"))
-        except AssertionError, e: self.verificationErrors.append(str(e))
+        self.assertEqual(location_id, sel.get_value("gis_location_L0"))
 
         # Check that the components which should be visible, are
         self.failUnless(sel.is_visible("gis_location_L0"))
@@ -232,8 +213,7 @@ class UpdateLocationL0Empty(LocationSelector):
         # De-select the L0
         sel.select("gis_location_L0", "label=Select a location...")
         # Check that the real location has been set to blank
-        try: self.assertEqual("", sel.get_value("cr_shelter_location_id"))
-        except AssertionError, e: self.verificationErrors.append(str(e))
+        self.assertEqual("", sel.get_value("cr_shelter_location_id"))
         # Check that L1 dropdown disappears correctly
         time.sleep(1)
         self.failIf(sel.is_visible("gis_location_L1"))
@@ -279,11 +259,9 @@ class UpdateLocationNoParentEmpty(LocationSelector):
         self.assertEqual("Location with no Parent", sel.get_table("//div[@id='rheader']/div/table.1.1"))
         location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
         location_id = location.split("(")[1].split(")")[0]
-        try: self.assertEqual(location_id, sel.get_value("cr_shelter_location_id"))
-        except AssertionError, e: self.verificationErrors.append(str(e))
+        self.assertEqual(location_id, sel.get_value("cr_shelter_location_id"))
         # Check that the dropdown is set
-        try: self.assertEqual(location_id, sel.get_value("gis_location_"))
-        except AssertionError, e: self.verificationErrors.append(str(e))
+        self.assertEqual(location_id, sel.get_value("gis_location_"))
 
         # Check that the components which should be visible, are
         self.failUnless(sel.is_visible("gis_location_L0"))
@@ -313,8 +291,7 @@ class UpdateLocationNoParentEmpty(LocationSelector):
         # De-select the Specific
         sel.select("gis_location_", "label=Select a location...")
         # Check that the real location has been set to blank
-        try: self.assertEqual("", sel.get_value("cr_shelter_location_id"))
-        except AssertionError, e: self.verificationErrors.append(str(e))
+        self.assertEqual("", sel.get_value("cr_shelter_location_id"))
         # Save the form (with changes)
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
@@ -399,11 +376,9 @@ class UpdateLocationEmptyNewNoParent(LocationSelector):
         self.assertEqual("New parentless Location (N 51.0 E 1.0)", sel.get_table("//div[@id='rheader']/div/table.1.1"))
         location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
         location_id = location.split("(")[1].split(")")[0]
-        try: self.assertEqual(location_id, sel.get_value("cr_shelter_location_id"))
-        except AssertionError, e: self.verificationErrors.append(str(e))
+        self.assertEqual(location_id, sel.get_value("cr_shelter_location_id"))
         # Check that the dropdown is set
-        try: self.assertEqual(location_id, sel.get_value("gis_location_"))
-        except AssertionError, e: self.verificationErrors.append(str(e))
+        self.assertEqual(location_id, sel.get_value("gis_location_"))
 
         # Check that the components which should be visible, are
         self.failUnless(sel.is_visible("gis_location_L0"))
@@ -470,11 +445,9 @@ class UpdateLocationNoParentL0(LocationSelector):
         self.assertEqual("New parentless Location (N 51.0 E 1.0)", sel.get_table("//div[@id='rheader']/div/table.1.1"))
         location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
         location_id = location.split("(")[1].split(")")[0]
-        try: self.assertEqual(location_id, sel.get_value("cr_shelter_location_id"))
-        except AssertionError, e: self.verificationErrors.append(str(e))
+        self.assertEqual(location_id, sel.get_value("cr_shelter_location_id"))
         # Check that the dropdown is set
-        try: self.assertEqual(location_id, sel.get_value("gis_location_"))
-        except AssertionError, e: self.verificationErrors.append(str(e))
+        self.assertEqual(location_id, sel.get_value("gis_location_"))
 
         # Check that the components which should be visible, are
         self.failUnless(sel.is_visible("gis_location_L0"))
@@ -864,11 +837,9 @@ class UpdateLocationInL4NewInL3(LocationSelector):
         self.assertEqual("Specific Location in L4", sel.get_table("//div[@id='rheader']/div/table.1.1"))
         location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
         location_id = location.split("(")[1].split(")")[0]
-        try: self.assertEqual(location_id, sel.get_value("cr_shelter_location_id"))
-        except AssertionError, e: self.verificationErrors.append(str(e))
+        self.assertEqual(location_id, sel.get_value("cr_shelter_location_id"))
         # Check that the dropdown is set
-        try: self.assertEqual(location_id, sel.get_value("gis_location_"))
-        except AssertionError, e: self.verificationErrors.append(str(e))
+        self.assertEqual(location_id, sel.get_value("gis_location_"))
 
         # Check that the components which should be visible, are
         self.failUnless(sel.is_visible("gis_location_L0"))
@@ -943,11 +914,9 @@ class UpdateLocationInL4NewInL3(LocationSelector):
         self.assertEqual("New in L3 (N 18.53171116 W -72.33020758)", sel.get_table("//div[@id='rheader']/div/table.1.1"))
         location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
         location_id = location.split("(")[1].split(")")[0]
-        try: self.assertEqual(location_id, sel.get_value("cr_shelter_location_id"))
-        except AssertionError, e: self.verificationErrors.append(str(e))
+        self.assertEqual(location_id, sel.get_value("cr_shelter_location_id"))
         # Check that the dropdown is set
-        try: self.assertEqual(location_id, sel.get_value("gis_location_"))
-        except AssertionError, e: self.verificationErrors.append(str(e))
+        self.assertEqual(location_id, sel.get_value("gis_location_"))
 
         # Check that the components which should be visible, are
         self.failUnless(sel.is_visible("gis_location_L0"))
@@ -1795,4 +1764,5 @@ class SearchLocations(LocationSelector):
         self.failIf(sel.is_visible("gis_location_lon_row"))
 
 if __name__ == "__main__":
+    SahanaTest.setUpHierarchy()
     unittest.main()

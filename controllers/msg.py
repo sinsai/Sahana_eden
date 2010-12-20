@@ -114,6 +114,7 @@ def outbox():
 
     # Subject works for Email but not SMS
     table.message_id.represent = lambda id: db(db.msg_log.id == id).select(db.msg_log.message, limitby=(0, 1)).first().message
+    table.pe_id.represent = lambda id: shn_pentity_represent(id, default_label = "")
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(

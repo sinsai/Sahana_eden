@@ -736,7 +736,8 @@ div#rheader_tabs span.rheader_tab_here a { color: #006699;
 /* Demo Page Specific */
 .menu_div, .div_arrow { margin-top: 10px;
 					   float: left;
-					   width: 150px; }
+					   min-width: 150px;
+					    }
 
 .div_arrow	{ padding: 50px 0 0 35px;
               text-align:left; }
@@ -749,13 +750,24 @@ div#rheader_tabs span.rheader_tab_here a { color: #006699;
 
 
 .menu_box { height: 50px;
-		    width: 140px;
-		    background: url(../../img/menu_box.png) no-repeat;
+		    white-space:nowrap;
+		    background: url(../../img/menu_box.png) repeat-x;
 		    font-size: 1.4em;
 		    padding-top:12px; 
+		    padding-right: 15px;
             margin-top:11px; 
             text-align: center;
 		    }
+
+.menu_box-r {
+    float: right;
+    margin-top:11px;
+}
+
+.menu_box-l {
+    float: left;
+    margin-top:11px;
+}
 
 #login_form, #register_form, .menu_text { clear: both;}
 

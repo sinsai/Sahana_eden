@@ -45,11 +45,15 @@ def index():
     """ Main Home Page """
 
     div_sit = DIV(H3(T("SITUATION")),
-                  A(DIV(T("Incidents"),
+                  IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l", _style="margin-top:1px;"),
+                  IMG(_src = "/%s/static/img/menu_box-r.png" % request.application, _class="menu_box-r", _style="margin-top:1px;"),
+                  A(DIV(T("Incidents thisisareallylongstring"),
                         _class = "menu_box"
                         ),
                     _href = URL( r=request, c="irs", f="ireport")
                     ),
+                  IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l"),
+                  IMG(_src = "/%s/static/img/menu_box-r.png" % request.application, _class="menu_box-r"),
                   A(DIV(T("Assessments"),
                         _class = "menu_box"
                         ),
@@ -59,7 +63,9 @@ def index():
                   #      _class = "menu_box"
                   #      ),
                   #  _href = URL( r=request, c="assess", f="mobile_basic_assess")
-                  #  ),                      
+                  #  ),
+                  IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l"),
+                  IMG(_src = "/%s/static/img/menu_box-r.png" % request.application, _class="menu_box-r"),
                   A(DIV(T("Warehouses"),
                         _class = "menu_box"
                         ),
@@ -70,16 +76,22 @@ def index():
     div_arrow_1 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % request.application),
                           _class = "div_arrow")
     div_dec = DIV(H3(T("DECISION")),
+                  IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l", _style="margin-top:1px;"),
+                  IMG(_src = "/%s/static/img/menu_box-r.png" % request.application, _class="menu_box-r", _style="margin-top:1px;"),
                   A(DIV(T("Gap Report"),
                         _class = "menu_box"
                         ),
                     _href = URL( r=request, c="project", f="gap_report")
                     ),
+                  IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l"),
+                  IMG(_src = "/%s/static/img/menu_box-r.png" % request.application, _class="menu_box-r"),
                   A(DIV(T("Gap Map"),
                         _class = "menu_box"
                         ),
                     _href = URL( r=request, c="project", f="gap_map")
                     ),
+                  IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l"),
+                  IMG(_src = "/%s/static/img/menu_box-r.png" % request.application, _class="menu_box-r"),
                   A(DIV(T("Map"),
                         _class = "menu_box"
                         ),
@@ -90,11 +102,15 @@ def index():
     div_arrow_2 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % request.application),
                           _class = "div_arrow")
     div_res = DIV(H3(T("RESPONSE")),
+                  IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l", _style="margin-top:1px;"),
+                  IMG(_src = "/%s/static/img/menu_box-r.png" % request.application, _class="menu_box-r", _style="margin-top:1px;"),
                   A(DIV(T("Activities"),
                         _class = "menu_box"
                         ),
                     _href = URL( r=request, c="project", f= "activity")
                     ),
+                  IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l"),
+                  IMG(_src = "/%s/static/img/menu_box-r.png" % request.application, _class="menu_box-r"),
                   A(DIV(T("Requests"),
                         _class = "menu_box"
                         ),

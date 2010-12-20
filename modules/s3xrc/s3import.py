@@ -175,7 +175,7 @@ class S3Importer(object):
             files=None,
             id=None,
             template=None,
-            from_json=False,
+            as_json=False,
             ignore_errors=False, **args):
 
         """ Import data from an XML source into a resource
@@ -185,7 +185,8 @@ class S3Importer(object):
             @param files: file attachments as {filename:file}
             @param id: the ID or list of IDs of records to update (None for all)
             @param template: the XSLT template
-            @param ignore_errors: do not stop on errors (skip invalid elements)
+            @param as_json: source is JSONified XML
+            @param ignore_errors: do not stop at errors (skip invalid elements)
             @param args: arguments to pass to the XSLT template
 
             @raise SyntaxError: in case of a parser or transformation error
@@ -203,7 +204,7 @@ class S3Importer(object):
 
         if isinstance(source, etree._ElementTree):
             tree = source
-        elif from_json:
+        elif as_json:
             if isinstance(source, basestring):
                 from StringIO import StringIO
                 source = StringIO(source)

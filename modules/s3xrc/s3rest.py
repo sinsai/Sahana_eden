@@ -818,7 +818,7 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def __get_tree(self, r, **attr):
         """
-        Export this resource in XML or JSON formats
+        Export this resource as XML
 
         @param r: the request
         @param attr: request attributes
@@ -869,13 +869,11 @@ class S3Resource(object):
 
         # Get the exporter, set response headers
         if r.representation in json_formats:
-            as_json = True
-            #exporter = self.exporter.json
+            as_json = True # convert the output into JSON
             r.response.headers["Content-Type"] = \
                 content_type.get(r.representation, "text/x-json")
         else:
             as_json = False
-            #exporter = self.exporter.xml
             r.response.headers["Content-Type"] = \
                 content_type.get(r.representation, "application/xml")
 
@@ -1070,6 +1068,7 @@ class S3Resource(object):
         Export this resource as XML
 
         @param template: path to the XSLT stylesheet (if not native S3-XML)
+        @param as_json: convert the output into JSON
         @param pretty_print: insert newlines/indentation in the output
         @param args: arguments to pass to the XSLT stylesheet
         @returns: the XML as string
@@ -1089,7 +1088,7 @@ class S3Resource(object):
                    files=None,
                    id=None,
                    template=None,
-                   from_json=False,
+                   as_json=False,
                    ignore_errors=False, **args):
         """
         Import data from an XML source into this resource
@@ -1098,6 +1097,7 @@ class S3Resource(object):
         @param files: file attachments as {filename:file}
         @param id: the ID or list of IDs of records to update (None for all)
         @param template: the XSLT template
+        @param as_json: the source is JSONified XML
         @param ignore_errors: do not stop on errors (skip invalid elements)
         @param args: arguments to pass to the XSLT template
         @returns: a JSON message as string
@@ -1116,7 +1116,7 @@ class S3Resource(object):
                         files=files,
                         id=id,
                         template=template,
-                        from_json=from_json,
+                        as_json=as_json,
                         ignore_errors=ignore_errors, **args)
 
 
@@ -1140,6 +1140,7 @@ class S3Resource(object):
 
         @param exporter: the exporter function
         @param template: path to the XSLT stylesheet to be used by the exporter
+        @param as_json: convert the output into JSON before push
         @param xsltmode: "mode" parameter for the XSLT stylesheet
         @param start: index of the first record to export (slicing)
         @param limit: maximum number of records to export (slicing)
@@ -1227,7 +1228,7 @@ class S3Resource(object):
               username=None,
               password=None,
               proxy=None,
-              from_json=False,
+              as_json=False,
               template=None,
               ignore_errors=False, **args):
         """
@@ -1237,8 +1238,8 @@ class S3Resource(object):
         @param username: username to authenticate at the peer site
         @param password: password to authenticate at the peer site
         @param proxy: URL of the proxy server to use
-        @param json: use JSON importer instead of XML importer
         @param template: path to the XSLT stylesheet to transform the data
+        @param as_json: source is JSONified XML
         @param ignore_errors: skip invalid records
 
         """
@@ -1300,7 +1301,7 @@ class S3Resource(object):
         try:
             success = self.import_xml(response,
                                       template=template,
-                                      from_json=from_json,
+                                      as_json=as_json,
                                       ignore_errors=ignore_errors,
                                       args=args)
         except IOError, e:
@@ -1322,6 +1323,7 @@ class S3Resource(object):
             requested of, None for the primary table
         @param fields: list of names of fields for which the options
             are requested, None for all fields (which have options)
+        @param as_json: convert the output into JSON
 
         """
 
@@ -1351,6 +1353,7 @@ class S3Resource(object):
 
         @param component: name of the component to lookup the fields
                             (None for primary table)
+        @param as_json: convert the output XML into JSON
 
         """
 

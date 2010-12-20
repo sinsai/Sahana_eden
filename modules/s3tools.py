@@ -423,6 +423,46 @@ class AuthS3(Auth):
         self.permission.define_table()
 
 
+    def login_bare(self, username, password):
+        """
+        logins user
+        - extended to understand session.s3.roles
+        """
+
+        request = self.environment.request
+        session = self.environment.session
+        db = self.db
+
+        table_user = self.settings.table_user
+        table_membership = self.settings.table_membership_name
+        
+
+        if self.settings.login_userfield:
+            userfield = self.settings.login_userfield
+        elif 'username' in table_user.fields:
+            userfield = 'username'
+        else:
+            userfield = 'email'
+        passfield = self.settings.password_field
+        user = db(table_user[userfield] == username).select().first()
+        user_id = user.id
+        password = table_user[passfield].validate(password)[0]
+        if user:
+            if not user.registration_key and user[passfield] == password:
+                user = Storage(table_user._filter_fields(user, id=True))
+                session.auth = Storage(user=user, last_visit=request.now,
+                                       expiration=self.settings.expiration)
+                self.user = user
+
+                # Add the Roles to session.s3
+                roles = []
+                set = db(db[table_membership].user_id == user_id).select(db[table_membership].group_id)
+                session.s3.roles = [s.group_id for s in set]
+
+                return user
+
+        return False
+
     def login(
         self,
         next=DEFAULT,
@@ -721,17 +761,13 @@ class AuthS3(Auth):
     def shn_logged_in(self):
         """
             Check whether the user is currently logged-in
+            - tries Basic if not
         """
 
         session = self.session
         if not self.is_logged_in():
             if not self.basic():
                 return False
-            else:
-                roles = []
-                table = self.db.auth_membership
-                set = self.db(table.user_id == self.user.id).select(table.group_id)
-                session.s3.roles = [s.group_id for s in set]
 
         return True
 

@@ -58,9 +58,8 @@ from s3import import S3Importer
 # *****************************************************************************
 class S3DataStore(object):
 
-    """ Data Store Manager
-
-        @param environment: the environment of this run
+    """
+    Data Store Manager
 
     """
 
@@ -102,6 +101,13 @@ class S3DataStore(object):
     )
 
     def __init__(self, environment, db):
+        """
+        Constructor
+
+        @param environment: the environment of this run
+        @param db: the database
+
+        """
 
         self.db = db
 
@@ -194,17 +200,17 @@ class S3DataStore(object):
                      directory=None,
                      joblist=None,
                      lookahead=True):
+        """
+        Builds a list of import jobs from an element
 
-        """ Builds a list of import jobs from an element
-
-            @param resource: the resource name (=tablename)
-            @param element: the element
-            @param id: target record ID
-            @param validate: validate hook (function to validate record)
-            @param tree: the element tree of the source
-            @param directory: the resource directory of the tree
-            @param joblist: the job list for the import
-            @param lookahead: resolve any references
+        @param resource: the resource name (=tablename)
+        @param element: the element
+        @param id: target record ID
+        @param validate: validate hook (function to validate record)
+        @param tree: the element tree of the source
+        @param directory: the resource directory of the tree
+        @param joblist: the job list for the import
+        @param lookahead: resolve any references
 
         """
 
@@ -286,14 +292,14 @@ class S3DataStore(object):
 
     # -------------------------------------------------------------------------
     def __directory(self, d, l, k, v, e={}):
+        """
+        Converts a list of dicts into a directory
 
-        """ Converts a list of dicts into a directory
-
-            @param d: the directory
-            @param l: the list
-            @param k: the key field
-            @param v: the value field
-            @param e: directory of elements to exclude
+        @param d: the directory
+        @param l: the list
+        @param k: the key field
+        @param v: the value field
+        @param e: directory of elements to exclude
 
         """
 
@@ -353,11 +359,11 @@ class S3DataStore(object):
     # REST Functions ==========================================================
 
     def get_session(self, prefix, name):
+        """
+        Reads the last record ID for a resource from a session
 
-        """ Reads the last record ID for a resource from a session
-
-            @param prefix: the prefix of the resource name (=module name)
-            @param name: the name of the resource (=without prefix)
+        @param prefix: the prefix of the resource name (=module name)
+        @param name: the name of the resource (=without prefix)
 
         """
 
@@ -372,12 +378,12 @@ class S3DataStore(object):
 
     # -------------------------------------------------------------------------
     def store_session(self, prefix, name, id):
+        """
+        Stores a record ID for a resource in a session
 
-        """ Stores a record ID for a resource in a session
-
-            @param prefix: the prefix of the resource name (=module name)
-            @param name: the name of the resource (=without prefix)
-            @param id: the ID to store
+        @param prefix: the prefix of the resource name (=module name)
+        @param name: the name of the resource (=without prefix)
+        @param id: the ID to store
 
         """
 
@@ -423,17 +429,17 @@ class S3DataStore(object):
                   vars=None,
                   parent=None,
                   components=None):
+        """
+        Wrapper function for S3Resource, creates a resource
 
-        """ Wrapper function for S3Resource, creates a resource
-
-            @param prefix: the application prefix of the resource
-            @param name: the resource name (without prefix)
-            @param id: record ID or list of record IDs
-            @param uid: record UID or list of record UIDs
-            @param filter: web2py query to filter the resource query
-            @param vars: dict of URL query parameters
-            @param parent: the parent resource (if this is a component)
-            @param components: list of component (names)
+        @param prefix: the application prefix of the resource
+        @param name: the resource name (without prefix)
+        @param id: record ID or list of record IDs
+        @param uid: record UID or list of record UIDs
+        @param filter: web2py query to filter the resource query
+        @param vars: dict of URL query parameters
+        @param parent: the parent resource (if this is a component)
+        @param components: list of component (names)
 
         """
 
@@ -450,13 +456,13 @@ class S3DataStore(object):
 
     # -------------------------------------------------------------------------
     def _request(self, prefix, name):
+        """
+        Wrapper function for S3Request
 
-        """ Wrapper function for S3Request
+        @param prefix: the module prefix of the resource
+        @param name: the resource name (without prefix)
 
-            @param prefix: the module prefix of the resource
-            @param name: the resource name (without prefix)
-
-            @todo 2.3: deprecate
+        @todo 2.3: deprecate
 
         """
 
@@ -465,14 +471,14 @@ class S3DataStore(object):
 
     # -------------------------------------------------------------------------
     def parse_request(self, prefix, name):
+        """
+        Parse an HTTP request and generate the corresponding S3Request and
+        S3Resource objects.
 
-        """ Parse an HTTP request and generate the corresponding
-            S3Request and S3Resource objects.
+        @param prefix: the module prefix of the resource
+        @param name: the resource name (without prefix)
 
-            @param prefix: the module prefix of the resource
-            @param name: the resource name (without prefix)
-
-            @todo 2.3: move into S3Resource
+        @todo 2.3: move into S3Resource
 
         """
 
@@ -492,16 +498,16 @@ class S3DataStore(object):
     # Resource functions ======================================================
 
     def validate(self, table, record, fieldname, value):
+        """
+        Validates a single value
 
-        """ Validates a single value
+        @param table: the DB table
+        @param record: the existing DB record
+        @param fieldname: name of the field
+        @param value: value to check
 
-            @param table: the DB table
-            @param record: the existing DB record
-            @param fieldname: name of the field
-            @param value: value to check
-
-            @todo 2.3: make static method
-            @todo 2.3: move into model
+        @todo 2.3: make static method
+        @todo 2.3: move into model
 
         """
 
@@ -528,15 +534,15 @@ class S3DataStore(object):
                   linkto=None,
                   strip_markup=False,
                   xml_escape=False):
+        """
+        Represent a field value
 
-        """ Represent a field value
-
-            @param field: the field (Field)
-            @param value: the value
-            @param record: record to retrieve the value from
-            @param linkto: function or format string to link an ID column
-            @param strip_markup: strip away markup from representation
-            @param xml_escape: XML-escape the output
+        @param field: the field (Field)
+        @param value: the value
+        @param record: record to retrieve the value from
+        @param linkto: function or format string to link an ID column
+        @param strip_markup: strip away markup from representation
+        @param xml_escape: XML-escape the output
 
         """
 
@@ -602,17 +608,15 @@ class S3DataStore(object):
 
     # -------------------------------------------------------------------------
     def original(self, table, record):
+        """
+        Find the original record for a possible duplicate:
+            - if the record contains a UUID, then only that UUID is used
+              to match the record with an existing DB record
+            - otherwise, if the record contains some values for unique fields,
+              all of them must match the same existing DB record
 
-        """ Find the original record for a possible duplicate:
-
-                - if the record contains a UUID, then only that UUID is used
-                    to match the record with an existing DB record
-
-                - otherwise, if the record contains some values for unique fields,
-                    all of them must match the same existing DB record
-
-            @param table: the table
-            @param record: the record as dict or S3XML Element
+        @param table: the table
+        @param record: the record as dict or S3XML Element
 
         """
 
@@ -666,16 +670,16 @@ class S3DataStore(object):
 
     # -------------------------------------------------------------------------
     def match(self, tree, table, id):
+        """
+        Find the matching element for a record
 
-        """ Find the matching element for a record
+        @param tree: the S3XML element tree
+        @param table: the table
+        @param id: the record ID or a list of record IDs
 
-            @param tree: the S3XML element tree
-            @param table: the table
-            @param id: the record ID or a list of record IDs
+        @returns: a list of matching elements
 
-            @returns: a list of matching elements
-
-            @todo 2.3: implement this and use in import_tree()
+        @todo 2.3: implement this and use in import_tree()
 
         """
 
@@ -692,21 +696,21 @@ class S3DataStore(object):
                     msince=None,
                     show_urls=True,
                     dereference=True):
+        """
+        Export a resource as S3XML element tree
 
-        """ Export a resource as S3XML element tree
+        @param resource: the resource
+        @param skip: list of fieldnames to skip
+        @param audit: audit hook function
+        @param start: index of the first record to export
+        @param limit: maximum number of records to export
+        @param marker: URL of the GIS default marker
+        @param msince: to export only records which have been modified
+            after that date/time (minimum modification date/time)
+        @param show_urls: show URLs in resource elements
+        @param dereference: export referenced resources in the tree
 
-            @param resource: the resource
-            @param skip: list of fieldnames to skip
-            @param audit: audit hook function
-            @param start: index of the first record to export
-            @param limit: maximum number of records to export
-            @param marker: URL of the GIS default marker
-            @param msince: to export only records which have been modified
-                after that date/time (minimum modification date/time)
-            @param show_urls: show URLs in resource elements
-            @param dereference: export referenced resources in the tree
-
-            @todo 2.3: move into S3Resource
+        @todo 2.3: move into S3Resource
 
         """
 
@@ -905,15 +909,15 @@ class S3DataStore(object):
     # -------------------------------------------------------------------------
     def import_tree(self, resource, id, tree,
                     ignore_errors=False):
+        """
+        Imports data from an S3XML element tree into a resource
 
-        """ Imports data from an S3XML element tree into a resource
+        @param resource: the resource
+        @param id: record ID or list of record IDs to update
+        @param tree: the element tree
+        @param ignore_errors: continue at errors (=skip invalid elements)
 
-            @param resource: the resource
-            @param id: record ID or list of record IDs to update
-            @param tree: the element tree
-            @param ignore_errors: continue at errors (=skip invalid elements)
-
-            @todo 2.3: move into S3Resource
+        @todo 2.3: move into S3Resource
 
         """
 

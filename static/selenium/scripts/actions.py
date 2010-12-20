@@ -2,8 +2,15 @@ import unittest, time, re
 
 class Action:
     def login(self, test, username, password, reveal=True):
-        # TODO add test for no user logged in, if user logged in check that it is different from username
         sel = test.selenium
+        if sel.is_element_present("link=Logout"):
+            # Already logged in check the account
+            if sel.is_element_present("link=%s" % username):
+                # already logged in
+                return
+            else:
+                # logged in but as a different user
+                self.logout(test)
         sel.open("/eden/default/user/login")
         sel.click("auth_user_email")
         sel.type("auth_user_email", username)
@@ -16,16 +23,13 @@ class Action:
         test.assertTrue(self.successMsg(test, "Logged in"),msg)
 
     def logout(self, test):
-        # TODO add test for user to be logged in
         sel = test.selenium
-        sel.click("link=Logout")
-        sel.wait_for_page_to_load("30000")
+        if sel.is_element_present("link=Logout"):
+            sel.click("link=Logout")
+            sel.wait_for_page_to_load("30000")
 
-    def searchUser(self, test, searchString, expected):
+    def search(self, test, searchString, expected):
         sel = test.selenium
-        result = ""
-        # TODO only open this page if on another page
-        sel.open("/eden/admin/user")
         # The search filter is part of the http://datatables.net/ JavaScript getting it to work with Selenium needs a bit of care.
         # Entering text in the filter textbox doesn't always trigger off the filtering and it is not possible with this method to clear the filter.
         # The solution is to put in a call to the DataTables API, namely the fnFilter function
@@ -41,6 +45,16 @@ class Action:
             except: pass
             time.sleep(5)
         else: test.fail("time out: Looking for %s within %s" % (expected, result ))
+        
+    def searchUnique(self, test, uniqueName):
+        self.search(test, uniqueName, r"1 entries")
+        
+    def searchUser(self, test, searchString, expected):
+        sel = test.selenium
+        result = ""
+        # TODO only open this page if on another page
+        sel.open("/eden/admin/user")
+        self.search(test, searchString, expected)
 
     def searchUniqueUser(self, test, userName):
         self.searchUser(test, userName, r"1 entries")
@@ -97,7 +111,8 @@ class Action:
     def delUser(self, test, email):
         email = email.strip()
         sel = test.selenium
-        self.searchUniqueUser(test, email)
+        sel.open("/eden/admin/user")
+        self.searchUnique(test, email)
 
         sel.click("link=Delete")
         test.assertTrue(re.search(r"^Sure you want to delete this object[\s\S]$", sel.get_confirmation()))
@@ -128,14 +143,31 @@ class Action:
     def element(self, test, type, id):
         sel = test.selenium
         element = '//%s[@id="%s"]' % (type, id)
-        test.assertTrue(sel.is_element_present(element))
-        print "Form element %s is present" % (id)
+        test.assertTrue(sel.is_element_present(element), "%s element %s is missing" % (type, id))
+        print "Form %s element %s is present" % (type, id)
+        
+    # Method to click on a tab
+    def clickTab(self, test, name):
+        sel = test.selenium
+        element = "//div[@id='rheader_tabs']/span/a[text()='%s']" % (name)
+        sel.click(element)
+        sel.wait_for_page_to_load("30000")
+        
+    # Method to check button link
+    def btnLink(self, test, id, name):
+        sel = test.selenium
+        element = '//a[@id="%s"]' % (id)
+        errMsg = "%s button is missing" % (name)
+        test.assertTrue(sel.is_element_present(element), errMsg)
+        test.assertTrue(sel.get_text(element),errMsg)
+        print "%s button is present" % (name)
         
     # Method to check that form button is present
     def button(self, test, name):
         sel = test.selenium
         element = '//input[@value="%s"]' % (name)
-        test.assertTrue(sel.is_element_present(element))
+        errmsg = "%s button is missing" % (name)
+        test.assertTrue(sel.is_element_present(element), errmsg)
         print "%s button is present" % (name)
         
     # Method to check that the help message is displayed
@@ -144,7 +176,14 @@ class Action:
         element = "//div[contains(@title,'%s')]" % (helpTitle)
         test.assertTrue(sel.is_element_present(element))
         sel.mouse_over(element)
-        test.assertFalse(sel.is_element_present(element))
+        test.assertFalse(sel.is_element_present(element), "Help %s is missing" % (helpTitle))
         print "Help %s is present" % (helpTitle)
 
-        
+    # Method to check that the layout of a form
+    def checkForm (self, test, elementList, buttonList, helpList):
+        for (type, id) in elementList:
+            self.element(test, type, id)
+        for name in buttonList:
+            self.button(test, name)
+        for title in helpList:
+            self.helpBallon(test, title)

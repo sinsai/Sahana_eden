@@ -6,6 +6,7 @@ import actions
 import inspect
 
 class OrganisationTest(SahanaTest):
+    """ Test the Organisation registry """
     orgs = []
                 
     def firstRun(self):
@@ -81,13 +82,15 @@ class OrganisationTest(SahanaTest):
                    ("Twitter", "Donation", "Comments")
                   )
 
-    def test_OpenOrgUI(self):
-        """ Test to check the elements of the list organisation form
+    def test_OpenOrgUIAdmin(self):
+        """ Test to check the elements of the list organisation form logged in with the admin account
         
         In turn it will check each of the tabs on the list screen
         and ensure that the data on the screen has been properly displayed.   
         """ 
         sel = OrganisationTest.selenium
+        self.useSahanaAdminAccount()
+        self.action.login(self, self._user, self._password )
         sel.open("/eden/org/organisation")
         self.action.searchUnique(self,self.orgs[0])
         sel.click("link=Open")
@@ -116,13 +119,57 @@ class OrganisationTest(SahanaTest):
         self.action.btnLink (self, "show-add-btn", "Add Warehouse")
 
         self.action.clickTab(self, "Assessments")
-        self.action.btnLink (self, "show-add-btn", "Add Assessment")
+        self.action.btnLink (self, "add-btn", "Add Assessment")
 
         self.action.clickTab(self, "Projects")
         self.action.btnLink (self, "show-add-btn", "Add Project")
 
         self.action.clickTab(self, "Activities")
         self.action.btnLink (self, "show-add-btn", "Add Activity")
+
+    def test_OpenOrgUIUser(self):
+        """ Test to check the elements of the list organisation form when not logged in 
+        
+        In turn it will check each of the tabs on the list screen
+        and ensure that the data on the screen has been properly displayed.   
+        """ 
+        sel = OrganisationTest.selenium
+        self.action.logout(self)
+        sel.open("/eden/org/organisation")
+        self.action.searchUnique(self,self.orgs[0])
+        sel.click("link=Open")
+        sel.wait_for_page_to_load("30000")
+#        # check that the UI controls are present
+#        self.action.checkForm (self,(("input", "org_organisation_name"),
+#                    ("input", "org_organisation_acronym"),
+#                    ("select", "org_organisation_type"),
+#                    ("select", "org_organisation_cluster_id"),
+#                    ("select", "org_organisation_country"),
+#                    ("input", "org_organisation_website"),
+#                    ("input", "org_organisation_twitter"),
+#                    ("input", "org_organisation_donation_phone"),
+#                    ("textarea", "org_organisation_comments")
+#                   ),
+#                   ("Save",),
+#                   ("Twitter", "Donation", "Comments")
+#                  )
+        self.action.clickTab(self, "Staff")
+        self.action.noBtnLink (self, "show-add-btn", "Add Staff")
+            
+        self.action.clickTab(self, "Offices")
+        self.action.noBtnLink (self, "show-add-btn", "Add Office")
+
+        self.action.clickTab(self, "Warehouses")
+        self.action.noBtnLink (self, "show-add-btn", "Add Warehouse")
+
+        self.action.clickTab(self, "Assessments")
+        self.action.noBtnLink (self, "add-btn", "Add Assessment")
+
+        self.action.clickTab(self, "Projects")
+        self.action.noBtnLink (self, "show-add-btn", "Add Project")
+
+        self.action.clickTab(self, "Activities")
+        self.action.noBtnLink (self, "show-add-btn", "Add Activity")
 
     def lastRun(self):
         # Delete the test organisations

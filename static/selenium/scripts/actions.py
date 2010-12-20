@@ -162,6 +162,15 @@ class Action:
         test.assertTrue(sel.get_text(element),errMsg)
         print "%s button is present" % (name)
         
+    # Method to check button link is not present
+    def noBtnLink(self, test, id, name):
+        sel = test.selenium
+        element = '//a[@id="%s"]' % (id)
+        errMsg = "Unexpected presence of %s button" % (name)
+        if sel.is_element_present(element):
+            test.assertFalse(sel.get_text(element),errMsg)
+        print "%s button is not present" % (name)
+
     # Method to check that form button is present
     def button(self, test, name):
         sel = test.selenium

@@ -1281,7 +1281,7 @@ class S3Resource(object):
             ignore_errors = False
 
         success = self.datastore.import_tree(self, id, tree,
-                                           ignore_errors=ignore_errors)
+                                             ignore_errors=ignore_errors)
 
         if success:
             item = xml.json_message()

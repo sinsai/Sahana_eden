@@ -41,7 +41,7 @@ __all__ = ["S3CRUD"]
 import datetime, os, sys
 
 from gluon.storage import Storage
-from gluon.html import URL, DIV, A, SCRIPT, FORM, TABLE, TR, TD, INPUT
+from gluon.html import *
 from gluon.http import HTTP, redirect
 from gluon.serializers import json
 from gluon.sql import Field, Row
@@ -50,6 +50,9 @@ from gluon.validators import IS_EMPTY_OR
 from s3rest import S3Method
 from s3import import S3Importer
 from s3export import S3Exporter
+
+from gluon.sqlhtml import SQLFORM
+from ..s3tools import SQLTABLES3
 
 # *****************************************************************************
 class S3CRUD(S3Method):
@@ -232,24 +235,24 @@ class S3CRUD(S3Method):
                 request.post_vars.update(_formname=formname, id=original)
                 request.vars.update(**request.post_vars)
 
-                form = self.resource.update(original,
-                                            message=message,
-                                            onvalidation=onvalidation,
-                                            onaccept=onaccept,
-                                            link=link,
-                                            download_url=self.download_url,
-                                            format=representation)
+                form = self._update(original,
+                                    message=message,
+                                    onvalidation=onvalidation,
+                                    onaccept=onaccept,
+                                    link=link,
+                                    download_url=self.download_url,
+                                    format=representation)
 
             else:
-                form = self.resource.create(onvalidation=onvalidation,
-                                            onaccept=onaccept,
-                                            message=message,
-                                            from_table=from_table,
-                                            from_record=from_record,
-                                            map_fields=map_fields,
-                                            link=link,
-                                            download_url=self.download_url,
-                                            format=representation)
+                form = self._create(onvalidation=onvalidation,
+                                    onaccept=onaccept,
+                                    message=message,
+                                    from_table=from_table,
+                                    from_record=from_record,
+                                    map_fields=map_fields,
+                                    link=link,
+                                    download_url=self.download_url,
+                                    format=representation)
 
             # Insert subheadings
             if subheadings:
@@ -337,6 +340,91 @@ class S3CRUD(S3Method):
 
 
     # -------------------------------------------------------------------------
+    def _create(self,
+                onvalidation=None,
+                onaccept=None,
+                message="Record created",
+                download_url=None,
+                from_table=None,
+                from_record=None,
+                map_fields=None,
+                link=None,
+                format=None):
+        """
+        Provides and processes an Add-form for this resource
+
+        @param onvalidation: onvalidation callback
+        @param onaccept: onaccept callback
+        @param message: flash message after successul operation
+        @param download_url: default download URL of the application
+        @param from_table: copy a record from this table
+        @param from_record: copy from this record ID
+        @param map_fields: field mapping for copying of records
+        @param format: the representation format of the request
+
+        """
+
+        # Get the table
+        table = self.table
+
+        # Copy data from a previous record?
+        data = None
+        if from_table is not None:
+            if map_fields:
+                if isinstance(map_fields, dict):
+                    fields = [from_table[map_fields[f]]
+                              for f in map_fields
+                                  if f in table.fields and
+                                  map_fields[f] in from_table.fields and
+                                  table[f].writable]
+                elif isinstance(map_fields, (list, tuple)):
+                    fields = [from_table[f]
+                              for f in map_fields
+                                  if f in table.fields and
+                                  f in from_table.fields and
+                                  table[f].writable]
+                else:
+                    raise TypeError
+            else:
+                fields = [from_table[f]
+                          for f in table.fields
+                              if f in from_table.fields and
+                              table[f].writable]
+
+            # Audit read => this is a read method, finally
+            audit = self.datastore.audit
+            prefix, name = from_table._tablename.split("_", 1)
+            audit("read", prefix, name, record=from_record, representation=format)
+
+            row = self.db(from_table.id == from_record).select(limitby=(0,1), *fields).first()
+            if row:
+                if isinstance(map_fields, dict):
+                    data = Storage([(f, row[map_fields[f]]) for f in map_fields])
+                else:
+                    data = Storage(row)
+
+            if data:
+                missing_fields = Storage()
+                for f in table.fields:
+                    if f not in data and table[f].writable:
+                        missing_fields[f] = table[f].default
+                data.update(missing_fields)
+                data.update(id=None)
+
+        # Get the form
+        form = self._update(None,
+                            data=data,
+                            onvalidation=onvalidation,
+                            onaccept=onaccept,
+                            message=message,
+                            download_url=download_url,
+                            format=format,
+                            link=link)
+
+        return form
+
+
+    # -------------------------------------------------------------------------
     def read(self, r, **attr):
         """
         Read a single record
@@ -391,9 +479,9 @@ class S3CRUD(S3Method):
 
             # Item
             if record_id:
-                item = self.resource.read(record_id,
-                                          download_url=self.download_url,
-                                          format=representation)
+                item = self._read(record_id,
+                                  download_url=self.download_url,
+                                  format=representation)
                 if subheadings:
                     self.insert_subheadings(item, self.tablename, subheadings)
             else:
@@ -415,9 +503,9 @@ class S3CRUD(S3Method):
                 output.update(buttons)
 
         elif representation == "plain":
-            item = self.resource.read(record_id,
-                                      download_url=self.download_url,
-                                      format=representation)
+            item = self._read(record_id,
+                              download_url=self.download_url,
+                              format=representation)
             response.view = "plain.html"
             output.update(item=item)
 
@@ -439,6 +527,35 @@ class S3CRUD(S3Method):
             r.error(501, self.datastore.ERROR.BAD_FORMAT)
 
         return output
+
+
+    # -------------------------------------------------------------------------
+    def _read(self, id, download_url=None, format=None):
+        """
+        View a record of this resource
+
+        @param id: the ID of the record to display
+        @param download_url: download URL for uploaded files in this resource
+        @param format: the representation format
+
+        """
+
+        # Get the table
+        table = self.table
+
+        # Audit
+        audit = self.datastore.audit
+        audit("read", self.prefix, self.name, record=id, representation=format)
+
+        # Get the form
+        form = SQLFORM(table, id,
+                       readonly=True,
+                       comments=False,
+                       showid=False,
+                       upload=download_url,
+                       formstyle=self.settings.formstyle)
+
+        return form
 
 
     # -------------------------------------------------------------------------
@@ -527,12 +644,12 @@ class S3CRUD(S3Method):
             message = self.crud_string(self.tablename, "msg_record_modified")
 
             # Get the form
-            form = self.resource.update(record_id,
-                                        message=message,
-                                        onvalidation=onvalidation,
-                                        onaccept=onaccept,
-                                        download_url=self.download_url,
-                                        format=representation)
+            form = self._update(record_id,
+                                message=message,
+                                onvalidation=onvalidation,
+                                onaccept=onaccept,
+                                download_url=self.download_url,
+                                format=representation)
 
             # Insert subheadings
             if subheadings:
@@ -562,10 +679,6 @@ class S3CRUD(S3Method):
             if representation in ("popup", "iframe"):
                 self.next = None
             elif not update_next:
-                #if r.component:
-                    #self.next = r.there(representation=r.representation)
-                #else:
-                    #self.next = r.here(representation=r.representation)
                 self.next = self.resource.url(id=[])
             else:
                 try:
@@ -584,6 +697,136 @@ class S3CRUD(S3Method):
             r.error(501, self.datastore.ERROR.BAD_FORMAT)
 
         return output
+
+
+    # -------------------------------------------------------------------------
+    def _update(self, id,
+                data=None,
+                onvalidation=None,
+                onaccept=None,
+                message="Record updated",
+                download_url=None,
+                format=None,
+                link=None):
+        """
+        Update form for this resource
+
+        @param id: the ID of the record to update (None to create a new record)
+        @param data: the data to prepopulate the form with (only with id=None)
+        @param onvalidation: onvalidation callback hook
+        @param onaccept: onaccept callback hook
+        @param message: success message
+        @param download_url: Download URL for uploaded files in this resource
+        @param format: the representation format
+
+        """
+
+        # Environment
+        session = self.datastore.session
+        request = self.datastore.request
+        response = self.datastore.response
+
+        # Get the CRUD settings
+        s3 = self.datastore.s3
+        settings = s3.crud
+
+        # Table
+        table = self.table
+        model = self.datastore.model
+
+        # Copy from another record?
+        if id is None and data:
+            record = Storage(data)
+        else:
+            record = id
+
+        # Add asterisk to labels of required fields
+        labels = Storage()
+        mark_required = model.get_config(table, "mark_required")
+        for field in table:
+            if field.writable:
+                required = field.required or \
+                           field.notnull or \
+                           mark_required and field.name in mark_required
+                validators = field.requires
+                if not validators and not required:
+                    continue
+                if not required:
+                    if not isinstance(validators, (list, tuple)):
+                        validators = [validators]
+                    for v in validators:
+                        if hasattr(v, "options"):
+                            if hasattr(v, "zero") and v.zero is None:
+                                continue
+                        val, error = v("")
+                        if error:
+                            required = True
+                            break
+                if required:
+                    labels[field.name] = DIV("%s:" % field.label, SPAN(" *", _class="req"))
+
+        # Get the form
+        form = SQLFORM(table,
+                       record=record,
+                       record_id=id,
+                       labels = labels,
+                       showid=False,
+                       deletable=False,
+                       upload=download_url,
+                       submit_button=self.settings.submit_button,
+                       formstyle=self.settings.formstyle)
+
+        # Set form name
+        formname = "%s/%s" % (self.tablename, form.record_id)
+
+        # Get the proper onvalidation routine
+        if isinstance(onvalidation, dict):
+            onvalidation = onvalidation.get(self.tablename, [])
+
+        # Run the form
+        audit = self.datastore.audit
+        if form.accepts(request.post_vars,
+                        session,
+                        formname=formname,
+                        onvalidation=onvalidation,
+                        keepvalues=False,
+                        hideerror=False):
+
+            # Message
+            response.flash = message
+
+            # Audit
+            if id is None:
+                audit("create", self.prefix, self.name, form=form, representation=format)
+            else:
+                audit("update", self.prefix, self.name, form=form, representation=format)
+
+            # Update super entity links
+            model.update_super(table, form.vars)
+
+            # Link record
+            if link and form.vars.id:
+                linker = self.datastore.linker
+                if link.linkdir == "to":
+                    linker.link(table, form.vars.id, link.linktable, link.linkid,
+                                link_class=link.linkclass)
+                else:
+                    linker.link(link.linktable, link.linkid, table, form.vars.id,
+                                link_class=link.linkclass)
+
+            # Store session vars
+            if form.vars.id:
+                self.resource.lastid = str(form.vars.id)
+                self.datastore.store_session(self.prefix, self.name, form.vars.id)
+
+            # Execute onaccept
+            self.datastore.callback(onaccept, form, name=self.tablename)
+
+        elif id:
+            # Audit read (user is reading even when not updating the data)
+            audit("read", self.prefix, self.name, form=form, representation=format)
+
+        return form
 
 
     # -------------------------------------------------------------------------
@@ -643,8 +886,8 @@ class S3CRUD(S3Method):
         elif r.http == "POST" or \
              r.http == "GET" and record_id:
             # Delete the records, notify success and redirect to the next view
-            numrows = self.resource.delete(ondelete=ondelete,
-                                           format=representation)
+            numrows = self._delete(ondelete=ondelete,
+                                   format=representation)
             if numrows > 1:
                 response.confirmation = "%s %s" % \
                                         (numrows, T("records deleted"))
@@ -656,8 +899,8 @@ class S3CRUD(S3Method):
 
         elif r.http == "DELETE":
             # Delete the records and return a JSON message
-            numrows = self.resource.delete(ondelete=ondelete,
-                                           format=representation)
+            numrows = self._delete(ondelete=ondelete,
+                                   format=representation)
             message = "%s %s" % (numrows, T("records deleted"))
             item = self.datastore.xml.json_message(message=message)
             self.response.view = "xml.html"
@@ -667,6 +910,67 @@ class S3CRUD(S3Method):
             r.error(400, self.datastore.ERROR.BAD_METHOD)
 
         return output
+
+
+    # -------------------------------------------------------------------------
+    def _delete(self, ondelete=None, format=None):
+        """
+        Delete all (deletable) records in this resource
+
+        @param ondelete: on-delete callback
+        @param format: the representation format of the request
+
+        @returns: number of records deleted
+
+        @todo 2.3: move error message into resource controller
+        @todo 2.3: check for integrity error exception explicitly
+
+        """
+
+        archive_not_delete = self.settings.archive_not_delete
+
+        T = self.datastore.T
+        INTEGRITY_ERROR = T("Cannot delete whilst there are linked records. Please delete linked records first.")
+
+        self.resource.load()
+        records = self.resource.records()
+
+        permit = self.permit
+        audit = self.datastore.audit
+
+        numrows = 0
+        for row in records:
+            if permit("delete", self.tablename, row.id):
+
+                # Clear session
+                if self.datastore.get_session(prefix=self.prefix, name=self.name) == row.id:
+                    self.datastore.clear_session(prefix=self.prefix, name=self.name)
+
+                # Archive record?
+                if archive_not_delete and "deleted" in self.table:
+                    self.db(self.table.id == row.id).update(deleted=True)
+                    numrows += 1
+                    audit("delete", self.prefix, self.name,
+                          record=row.id, representation=format)
+                    self.datastore.model.delete_super(self.table, row)
+                    if ondelete:
+                        ondelete(row)
+
+                # otherwise: delete record
+                else:
+                    try:
+                        del self.table[row.id]
+                    except: # Integrity Error
+                        self.datastore.session.error = INTEGRITY_ERROR
+                    else:
+                        numrows += 1
+                        audit("delete", self.prefix, self.name,
+                              record=row.id, representation=format)
+                        self.datastore.model.delete_super(self.table, row)
+                        if ondelete:
+                            ondelete(row)
+
+        return numrows
 
 
     # -------------------------------------------------------------------------
@@ -767,13 +1071,13 @@ class S3CRUD(S3Method):
                 self.response.view = self._view(r, "list.html")
 
             # Get the list
-            items = self.resource.select(fields=fields,
-                                         start=start,
-                                         limit=limit,
-                                         orderby=orderby,
-                                         linkto=linkto,
-                                         download_url=self.download_url,
-                                         format=representation)
+            items = self._select(fields=fields,
+                                 start=start,
+                                 limit=limit,
+                                 orderby=orderby,
+                                 linkto=linkto,
+                                 download_url=self.download_url,
+                                 format=representation)
 
             # Empty table - or just no match?
             if not items:
@@ -825,15 +1129,15 @@ class S3CRUD(S3Method):
             sEcho = int(vars.sEcho or 0)
 
             # Get the list
-            items = self.resource.select(fields=fields,
-                                         left=left,
-                                         start=start,
-                                         limit=limit,
-                                         orderby=orderby,
-                                         linkto=linkto,
-                                         download_url=self.download_url,
-                                         as_page=True,
-                                         format=representation) or []
+            items = self._select(fields=fields,
+                                 left=left,
+                                 start=start,
+                                 limit=limit,
+                                 orderby=orderby,
+                                 linkto=linkto,
+                                 download_url=self.download_url,
+                                 as_page=True,
+                                 format=representation) or []
 
             result = dict(sEcho = sEcho,
                           iTotalRecords = totalrows,
@@ -843,7 +1147,7 @@ class S3CRUD(S3Method):
             output = json(result)
 
         elif representation == "plain":
-            items = self.resource.select(fields, as_list=True)
+            items = self._select(fields, as_list=True)
             self.response.view = "plain.html"
             return dict(item=items)
 
@@ -864,14 +1168,80 @@ class S3CRUD(S3Method):
         elif representation == "json":
             exporter = S3Exporter(self.datastore)
             return exporter.json(self.resource,
-                                  start=start,
-                                  limit=limit,
-                                  fields=fields)
+                                 start=start,
+                                 limit=limit,
+                                 fields=fields)
 
         else:
             r.error(501, self.datastore.ERROR.BAD_FORMAT)
 
         return output
+
+    # -------------------------------------------------------------------------
+    def _select(self,
+                fields=None,
+                left=None,
+                start=0,
+                limit=None,
+                orderby=None,
+                linkto=None,
+                download_url=None,
+                as_page=False,
+                as_list=False,
+                format=None):
+        """
+        List of all records of this resource
+
+        @param fields: list of fields to display
+        @param left: left outer joins
+        @param start: index of the first record to display
+        @param limit: maximum number of records to display
+        @param orderby: orderby for the query
+        @param linkto: hook to link record IDs
+        @param download_url: the default download URL of the application
+        @param as_page: return the list as JSON page
+        @param as_list: return the list as Python list
+        @param format: the representation format
+
+        """
+
+        db = self.db
+        table = self.table
+        query = self.resource.get_query()
+
+        if not fields:
+            fields = [table.id]
+        if limit is not None:
+            limitby = (start, start + limit)
+        else:
+            limitby = None
+
+        # Audit
+        audit = self.datastore.audit
+        audit("list", self.prefix, self.name, representation=format)
+
+        rows = db(query).select(*fields, **dict(left=left,
+                                                orderby=orderby,
+                                                limitby=limitby))
+
+        if not rows:
+            return None
+        if as_page:
+            represent = self.datastore.represent
+            items = [[represent(f, record=row, linkto=linkto)
+                    for f in fields]
+                    for row in rows]
+        elif as_list:
+            items = rows.as_list()
+        else:
+            headers = dict(map(lambda f: (str(f), f.label), fields))
+            items= SQLTABLES3(rows,
+                              headers=headers,
+                              linkto=linkto,
+                              upload=download_url,
+                              _id="list", _class="display")
+
+        return items
 
     # -------------------------------------------------------------------------
     def crud_button(self, label,

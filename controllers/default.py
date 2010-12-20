@@ -47,7 +47,7 @@ def index():
     div_sit = DIV(H3(T("SITUATION")),
                   IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l", _style="margin-top:1px;"),
                   IMG(_src = "/%s/static/img/menu_box-r.png" % request.application, _class="menu_box-r", _style="margin-top:1px;"),
-                  A(DIV(T("Incidents thisisareallylongstring"),
+                  A(DIV(T("Incidents"),
                         _class = "menu_box"
                         ),
                     _href = URL( r=request, c="irs", f="ireport")

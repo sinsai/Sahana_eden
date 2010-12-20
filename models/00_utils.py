@@ -837,13 +837,14 @@ def s3_rest_controller(prefix, resourcename, **attr):
 
     """
 
-    # Parse and execute the request
+    # Parse the request
     resource, r = s3xrc.parse_request(prefix, resourcename)
 
     resource.set_handler("search", _s3xrc.S3Search())
     resource.set_handler("copy", shn_copy)
     resource.set_handler("barchart", shn_barchart)
 
+    # Execute the request
     output = resource.execute_request(r, **attr)
 
     if isinstance(output, dict) and not r.method or r.method=="search_simple":

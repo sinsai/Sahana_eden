@@ -32,7 +32,7 @@ class S3DateWidget:
                 ):
         self.min = before
         self.max = after
-    
+
     def __call__(self ,field, value, **attributes):
         default = dict(
             _type = "text",
@@ -41,18 +41,18 @@ class S3DateWidget:
         attr = StringWidget._attributes(field, default, **attributes)
 
         selector = str(field).replace(".", "_")
-        
+
         date_options = """
     $(function() {
         $( '#%s' ).datepicker( 'option', 'yearRange', 'c-%s:c+%s' );
     });
     """ % (selector, self.min, self.max)
-        
+
         return TAG[""](
                         INPUT(**attr),
                         SCRIPT(date_options)
                       )
-                      
+
 # -----------------------------------------------------------------------------
 class S3AutocompleteWidget:
     """
@@ -89,7 +89,7 @@ class S3AutocompleteWidget:
         dummy_input = "dummy_%s" % real_input
         fieldname = self.fieldname
         url = URL(r=self.request, c=self.prefix, f=self.resourcename, args="search.json", vars={"filter":"~", "field":fieldname})
-        
+
         js_autocomplete = """
         (function() {
             var data = { val:$('#%s').val(), accept:false };
@@ -132,7 +132,7 @@ class S3AutocompleteWidget:
             });
         })();
         """ % (fieldname, dummy_input, dummy_input, real_input, dummy_input, dummy_input)
-        
+
         if value:
             text = str(field.represent(default["value"]))
             if "<" in text:
@@ -149,7 +149,7 @@ class S3AutocompleteWidget:
             represent = text
         else:
             represent = ""
-        
+
         return TAG[""](
                         INPUT(_id=dummy_input, _value=represent),
                         INPUT(**attr),
@@ -162,7 +162,7 @@ class S3LocationAutocompleteWidget:
         @author: Fran Boon (fran@aidiq.com)
 
         Renders a gis_location SELECT as an INPUT field with AJAX Autocomplete
-        
+
         Differs from the S3AutocompleteWidget:
         - needs to have deployment_settings passed-in
         - excludes unreliable imported records (Level 'XX')
@@ -220,7 +220,7 @@ class S3LocationAutocompleteWidget:
         if not post_process:
             # @ToDo: Refreshes all dropdowns as-necessary
             post_process = ""
-        
+
         js_autocomplete = """
         (function() {
             var data = { val:$('#%s').val(), accept:false };
@@ -264,7 +264,7 @@ class S3LocationAutocompleteWidget:
             });
         })();
         """ % (dummy_input, dummy_input, real_input, dummy_input, dummy_input)
-        
+
         if value:
             text = str(field.represent(default["value"]))
             if "<" in text:
@@ -281,7 +281,7 @@ class S3LocationAutocompleteWidget:
             represent = text
         else:
             represent = ""
-        
+
         return TAG[""](
                         INPUT(_id=dummy_input, _value=represent),
                         INPUT(**attr),
@@ -294,7 +294,7 @@ class S3PersonAutocompleteWidget:
         @author: Fran Boon (fran@aidiq.com)
 
         Renders a pr_person SELECT as an INPUT field with AJAX Autocomplete
-        
+
         Differs from the S3AutocompleteWidget in that it uses 3 name fields
     """
     def __init__(self,
@@ -315,11 +315,11 @@ class S3PersonAutocompleteWidget:
 
         # Hide the real field
         attr["_class"] = attr["_class"] + " hidden"
-        
+
         real_input = str(field).replace(".", "_")
         dummy_input = "dummy_%s" % real_input
         url = URL(r=self.request, c="pr", f="person", args="search.json", vars={"filter":"~"})
-        
+
         js_autocomplete = """
         (function() {
             var data = { val:$('#%s').val(), accept:false };
@@ -392,7 +392,7 @@ class S3PersonAutocompleteWidget:
             });
         })();
         """ % (dummy_input, dummy_input, real_input, dummy_input, dummy_input)
-        
+
         if value:
             # Provide the representation for the current/default Value
             text = str(field.represent(default["value"]))
@@ -410,7 +410,7 @@ class S3PersonAutocompleteWidget:
             represent = text
         else:
             represent = ""
-        
+
         return TAG[""](
                         INPUT(_id=dummy_input, _value=represent),
                         INPUT(**attr),
@@ -479,7 +479,7 @@ class S3LocationSelectorWidget:
         max_hierarchy = deployment_settings.get_gis_max_hierarchy()
         # Is full hierarchy mandatory?
         strict = deployment_settings.get_gis_strict_hierarchy()
-        
+
         # Main Input
         default = dict(
                         _type = "text",
@@ -633,7 +633,7 @@ class S3LocationSelectorWidget:
         no_calculations_error = T("No calculations made")
         fill_lat = T("Fill in Latitude")
         fill_lon = T("Fill in Longitude")
-        
+
         # Hierarchical Selector
         def level_dropdown(level, visible=False, current=None, required=False, button=None):
 
@@ -744,7 +744,7 @@ class S3LocationSelectorWidget:
                 visible = True
             # @ToDo: Add button, if have rights
             button = ""
-            dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level], button=button))            
+            dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level], button=button))
         _level = "L1"
         if _level in location_hierarchy:
             if countries and len(countries) == 1:
@@ -757,7 +757,7 @@ class S3LocationSelectorWidget:
                 visible = False
             # @ToDo: Add button, if have rights
             button = ""
-            dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level], button=button))            
+            dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level], button=button))
         _level = "L2"
         if _level in location_hierarchy:
             if default[_level] or default["L%i" % (int(_level[1:]) - 1)]:
@@ -817,9 +817,9 @@ class S3LocationSelectorWidget:
                        _id="gis_location_details-btn",
                        _class="hidden")
         dropdowns.append(level_dropdown(_level, visible=visible, current=value, button=button))
-        
-        
-        
+
+
+
         # Settings to be read by static/scripts/S3/s3.locationselector.widget.js
         js_location_selector = """
     var s3_gis_location_id = '%s';
@@ -924,7 +924,7 @@ class S3LocationSelectorWidget:
                     ),
                 _class="x-tab", _title=T("in GPS format")
                 ),
-                
+
                 DIV(
                     P(
                         TABLE(

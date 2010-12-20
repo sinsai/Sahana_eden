@@ -646,6 +646,7 @@ class S3Resource(object):
         if postprocess is not None:
             output = postprocess(r, output)
         if output is not None and isinstance(output, dict):
+            # Put a copy of r into the output for the View to be able to make use of
             output.update(jr=r)
 
         # Redirection (makes no sense in GET)

@@ -201,7 +201,7 @@ class S3LocationSearch(S3Search):
                 field = table[fieldname]
 
                 # Default fields to return
-                fields = [table.id, table.name, table.level, table.parent]
+                fields = [table.id, table.name, table.level, table.path]
 
                 # Optional fields
                 if "parent" in _vars and _vars.parent:

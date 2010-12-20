@@ -28,8 +28,6 @@ class LocationSelector(unittest.TestCase):
     def create_header(self):
         """ Start a new Create form """
         sel = self.selenium
-        # Login
-        self.login()
         # Load the Create Shelter page
         sel.open("/eden/cr/shelter/create")
         # Check that the location is currently blank
@@ -104,6 +102,8 @@ class CreateLocationEmpty(LocationSelector):
     def test_locationEmpty(self):
         """ Create a new Shelter without any Location specified """
         sel = self.selenium
+        # Login
+        self.login()
         self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with no Location")
@@ -250,6 +250,8 @@ class CreateLocationNoParent(LocationSelector):
     def test_locationNoParent(self):
         """ Create a new Shelter with a parentless Location """
         sel = self.selenium
+        # Login
+        self.login()
         self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with no Parent")
@@ -452,8 +454,8 @@ class UpdateLocationEmptyNewNoParent(LocationSelector):
         self.failUnless(sel.is_visible("gis_location_lon_row"))
 
         # Check that the Lat/Lon are populated
-        self.assertEqual("51", sel.get_value("gis_location_lat"))
-        self.assertEqual("1", sel.get_value("gis_location_lon"))
+        self.assertEqual("51.0", sel.get_value("gis_location_lat"))
+        self.assertEqual("1.0", sel.get_value("gis_location_lon"))
 
 class UpdateLocationNoParentL0(LocationSelector):
     def test_updateLocationNoParentL0(self):
@@ -516,6 +518,8 @@ class CreateLocationL0(LocationSelector):
     def test_locationL0(self):
         """ Create a new Shelter with an L0 location """
         sel = self.selenium
+        # Login
+        self.login()
         self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with an L0 Location")
@@ -539,6 +543,8 @@ class CreateLocationInL0(LocationSelector):
             NB This should fail if deployment_settings.gis.strict_hierarchy = True
         """
         sel = self.selenium
+        # Login
+        self.login()
         self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter within L0 Location")
@@ -562,6 +568,8 @@ class CreateLocationL1(LocationSelector):
     def test_locationL1(self):
         """ Create a new Shelter with an L1 location """
         sel = self.selenium
+        # Login
+        self.login()
         self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with an L1 Location")
@@ -587,6 +595,8 @@ class CreateLocationInL1(LocationSelector):
     def test_locationInL1(self):
         """ Create a new Shelter inside an L1 location """
         sel = self.selenium
+        # Login
+        self.login()
         self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter within L1 Location")
@@ -615,6 +625,8 @@ class CreateLocationL2(LocationSelector):
     def test_locationL2(self):
         """ Create a new Shelter with an L2 location """
         sel = self.selenium
+        # Login
+        self.login()
         self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with an L2 Location")
@@ -645,6 +657,8 @@ class CreateLocationInL2(LocationSelector):
     def test_locationInL2(self):
         """ Create a new Shelter inside an L2 location """
         sel = self.selenium
+        # Login
+        self.login()
         self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter within L2 Location")
@@ -678,6 +692,8 @@ class CreateLocationL3(LocationSelector):
     def test_locationL3(self):
         """ Create a new Shelter with an L3 location """
         sel = self.selenium
+        # Login
+        self.login()
         self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with an L3 Location")
@@ -712,6 +728,8 @@ class CreateLocationInL3(LocationSelector):
     def test_locationInL3(self):
         """ Create a new Shelter inside an L3 location """
         sel = self.selenium
+        # Login
+        self.login()
         self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter within L3 Location")
@@ -750,6 +768,8 @@ class CreateLocationL4(LocationSelector):
     def test_locationL4(self):
         """ Create a new Shelter with an L4 location """
         sel = self.selenium
+        # Login
+        self.login()
         self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with an L4 Location")
@@ -790,6 +810,8 @@ class CreateLocationInL4(LocationSelector):
     def test_locationInL4(self):
         """ Create a new Shelter inside an L4 location """
         sel = self.selenium
+        # Login
+        self.login()
         self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter within L4 Location")
@@ -983,6 +1005,8 @@ class CreateLocationSelectSpecific(LocationSelector):
     def test_locationSelectSpecific(self):
         """ Create a new Shelter with a pre-existing specific location """
         sel = self.selenium
+        # Login
+        self.login()
         self.create_header()
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with a pre-existing specific Location")
@@ -1020,6 +1044,755 @@ class CreateLocationSelectSpecific(LocationSelector):
         self.assertEqual("Shelter added", sel.get_text("//div[@class=\"confirmation\"]"))
         # Shelter has correct location
         self.assertEqual("Clinique Communautaire de Martissant (N 18.528000849 W -72.3489983828)", sel.get_table("//div[@id='rheader']/div/table.1.1"))
+
+class SearchLocations(LocationSelector):
+    def test_locationSearch(self):
+        """ Search for Locations using the Autocomplete """
+        sel = self.selenium
+        
+        # Login
+        self.login()
+
+        # L2inL0
+        # Create a new Shelter
+        self.create_header()
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Verify it opens
+        self.failUnless(sel.is_visible("gis_location_autocomplete_div"))
+        # & that button disappears
+        self.failIf(sel.is_visible("gis_location_search-btn"))
+        # Enter the search String
+        sel.type("gis_location_autocomplete", "L2inL0")
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if "L2inL0" == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        time.sleep(4)
+        # Verify that the dropdowns are set/opened
+        self.failUnless(sel.is_visible("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_label_L0"))
+        self.assertEqual("Haiti", sel.get_selected_label("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_label_L1"))
+        self.assertEqual("Select a location...Ouest", sel.get_table("//div[@id='content']/div[2]/form/table.11.0"))
+        self.failUnless(sel.is_visible("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_label_L2"))
+        self.assertEqual("L2inL0", sel.get_selected_label("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_label_L3"))
+        self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_add-btn"))
+        self.failUnless(sel.is_visible("gis_location_search-btn"))
+        # Check that the components which should be hidden, are
+        self.failIf(sel.is_visible("gis_location_autocomplete_div"))
+        self.failIf(sel.is_visible("cr_shelter_location_id"))
+        self.failIf(sel.is_visible("gis_location_L4"))
+        self.failIf(sel.is_visible("gis_location_label_L4"))
+        self.failIf(sel.is_visible("gis_location_"))
+        self.failIf(sel.is_visible("gis_location_label_"))
+        self.failIf(sel.is_visible("gis_location_details-btn"))
+        self.failIf(sel.is_visible("gis_location_name"))
+        self.failIf(sel.is_visible("gis_location_name_label"))
+        self.failIf(sel.is_visible("gis_location_cancel-btn"))
+        self.failIf(sel.is_visible("gis_location_addr_street_row"))
+        self.failIf(sel.is_visible("gis_location_addr_street_label"))
+        self.failIf(sel.is_visible("gis_location_map-btn"))
+        self.failIf(sel.is_visible("gis_location_advanced_div"))
+        self.failIf(sel.is_visible("gis_location_lat_row"))
+        self.failIf(sel.is_visible("gis_location_lon_row"))
+ 
+        # @ToDo: Verify that the result is stored correctly
+        # How do we get name from number without submitting? SHould we just submit every time?
+        
+
+        # L2inL1withNoParent
+        # Create a new Shelter
+        self.create_header()
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Verify it opens
+        self.failUnless(sel.is_visible("gis_location_autocomplete_div"))
+        # & that button disappears
+        self.failIf(sel.is_visible("gis_location_search-btn"))
+        # Enter the search String
+        sel.type("gis_location_autocomplete", "L2inL1withNoParent")
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if "L2inL1withNoParent" == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        time.sleep(4)
+        # Verify that the dropdowns are set/opened
+        self.failUnless(sel.is_visible("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_label_L0"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_label_L1"))
+        self.assertEqual("L1withNoParent", sel.get_selected_label("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_label_L2"))
+        self.assertEqual("L2inL1withNoParent", sel.get_selected_label("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_label_L3"))
+        self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_add-btn"))
+        self.failUnless(sel.is_visible("gis_location_search-btn"))
+        # Check that the components which should be hidden, are
+        self.failIf(sel.is_visible("gis_location_autocomplete_div"))
+        self.failIf(sel.is_visible("cr_shelter_location_id"))
+        self.failIf(sel.is_visible("gis_location_L4"))
+        self.failIf(sel.is_visible("gis_location_label_L4"))
+        self.failIf(sel.is_visible("gis_location_"))
+        self.failIf(sel.is_visible("gis_location_label_"))
+        self.failIf(sel.is_visible("gis_location_details-btn"))
+        self.failIf(sel.is_visible("gis_location_name"))
+        self.failIf(sel.is_visible("gis_location_name_label"))
+        self.failIf(sel.is_visible("gis_location_cancel-btn"))
+        self.failIf(sel.is_visible("gis_location_addr_street_row"))
+        self.failIf(sel.is_visible("gis_location_addr_street_label"))
+        self.failIf(sel.is_visible("gis_location_map-btn"))
+        self.failIf(sel.is_visible("gis_location_advanced_div"))
+        self.failIf(sel.is_visible("gis_location_lat_row"))
+        self.failIf(sel.is_visible("gis_location_lon_row"))
+
+        # L3inL0
+        # Create a new Shelter
+        self.create_header()
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Verify it opens
+        self.failUnless(sel.is_visible("gis_location_autocomplete_div"))
+        # & that button disappears
+        self.failIf(sel.is_visible("gis_location_search-btn"))
+        # Enter the search String
+        sel.type("gis_location_autocomplete", "L3inL0")
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if "L3inL0" == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        time.sleep(4)
+        # Verify that the dropdowns are set/opened
+        self.failUnless(sel.is_visible("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_label_L0"))
+        self.assertEqual("Haiti", sel.get_selected_label("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_label_L1"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_label_L2"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_label_L3"))
+        self.assertEqual("L3inL0", sel.get_selected_label("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_label_L4"))
+        self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_add-btn"))
+        self.failUnless(sel.is_visible("gis_location_search-btn"))
+        # Check that the components which should be hidden, are
+        self.failIf(sel.is_visible("gis_location_autocomplete_div"))
+        self.failIf(sel.is_visible("cr_shelter_location_id"))
+        self.failIf(sel.is_visible("gis_location_"))
+        self.failIf(sel.is_visible("gis_location_label_"))
+        self.failIf(sel.is_visible("gis_location_details-btn"))
+        self.failIf(sel.is_visible("gis_location_name"))
+        self.failIf(sel.is_visible("gis_location_name_label"))
+        self.failIf(sel.is_visible("gis_location_cancel-btn"))
+        self.failIf(sel.is_visible("gis_location_addr_street_row"))
+        self.failIf(sel.is_visible("gis_location_addr_street_label"))
+        self.failIf(sel.is_visible("gis_location_map-btn"))
+        self.failIf(sel.is_visible("gis_location_advanced_div"))
+        self.failIf(sel.is_visible("gis_location_lat_row"))
+        self.failIf(sel.is_visible("gis_location_lon_row"))
+        
+        # L3inL1withL0
+        # Create a new Shelter
+        self.create_header()
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Verify it opens
+        self.failUnless(sel.is_visible("gis_location_autocomplete_div"))
+        # & that button disappears
+        self.failIf(sel.is_visible("gis_location_search-btn"))
+        # Enter the search String
+        sel.type("gis_location_autocomplete", "L3inL1withL0")
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if "L3inL1withL0" == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        time.sleep(4)
+        # Verify that the dropdowns are set/opened
+        self.failUnless(sel.is_visible("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_label_L0"))
+        self.assertEqual("Haiti", sel.get_selected_label("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_label_L1"))
+        self.assertEqual("Ouest", sel.get_selected_label("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_label_L2"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_label_L3"))
+        self.assertEqual("L3inL1withL0", sel.get_selected_label("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_label_L4"))
+        self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_add-btn"))
+        self.failUnless(sel.is_visible("gis_location_search-btn"))
+        # Check that the components which should be hidden, are
+        self.failIf(sel.is_visible("gis_location_autocomplete_div"))
+        self.failIf(sel.is_visible("cr_shelter_location_id"))
+        self.failIf(sel.is_visible("gis_location_"))
+        self.failIf(sel.is_visible("gis_location_label_"))
+        self.failIf(sel.is_visible("gis_location_details-btn"))
+        self.failIf(sel.is_visible("gis_location_name"))
+        self.failIf(sel.is_visible("gis_location_name_label"))
+        self.failIf(sel.is_visible("gis_location_cancel-btn"))
+        self.failIf(sel.is_visible("gis_location_addr_street_row"))
+        self.failIf(sel.is_visible("gis_location_addr_street_label"))
+        self.failIf(sel.is_visible("gis_location_map-btn"))
+        self.failIf(sel.is_visible("gis_location_advanced_div"))
+        self.failIf(sel.is_visible("gis_location_lat_row"))
+        self.failIf(sel.is_visible("gis_location_lon_row"))
+
+        # L3inL1withNoParent
+        # Create a new Shelter
+        self.create_header()
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Verify it opens
+        self.failUnless(sel.is_visible("gis_location_autocomplete_div"))
+        # & that button disappears
+        self.failIf(sel.is_visible("gis_location_search-btn"))
+        # Enter the search String
+        sel.type("gis_location_autocomplete", "L3inL1withNoParent")
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if "L3inL1withNoParent" == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        time.sleep(4)
+        # Verify that the dropdowns are set/opened
+        self.failUnless(sel.is_visible("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_label_L0"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_label_L1"))
+        self.assertEqual("L1withNoParent", sel.get_selected_label("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_label_L2"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_label_L3"))
+        self.assertEqual("L3inL1withNoParent", sel.get_selected_label("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_label_L4"))
+        self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_add-btn"))
+        self.failUnless(sel.is_visible("gis_location_search-btn"))
+        # Check that the components which should be hidden, are
+        self.failIf(sel.is_visible("gis_location_autocomplete_div"))
+        self.failIf(sel.is_visible("cr_shelter_location_id"))
+        self.failIf(sel.is_visible("gis_location_"))
+        self.failIf(sel.is_visible("gis_location_label_"))
+        self.failIf(sel.is_visible("gis_location_details-btn"))
+        self.failIf(sel.is_visible("gis_location_name"))
+        self.failIf(sel.is_visible("gis_location_name_label"))
+        self.failIf(sel.is_visible("gis_location_cancel-btn"))
+        self.failIf(sel.is_visible("gis_location_addr_street_row"))
+        self.failIf(sel.is_visible("gis_location_addr_street_label"))
+        self.failIf(sel.is_visible("gis_location_map-btn"))
+        self.failIf(sel.is_visible("gis_location_advanced_div"))
+        self.failIf(sel.is_visible("gis_location_lat_row"))
+        self.failIf(sel.is_visible("gis_location_lon_row"))
+
+        # L4inL0
+        # Create a new Shelter
+        self.create_header()
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Verify it opens
+        self.failUnless(sel.is_visible("gis_location_autocomplete_div"))
+        # & that button disappears
+        self.failIf(sel.is_visible("gis_location_search-btn"))
+        # Enter the search String
+        sel.type("gis_location_autocomplete", "L4inL0")
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if "L4inL0" == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        time.sleep(4)
+        # Verify that the dropdowns are set/opened
+        self.failUnless(sel.is_visible("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_label_L0"))
+        self.assertEqual("Haiti", sel.get_selected_label("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_label_L1"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_label_L2"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_label_L3"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_label_L4"))
+        self.assertEqual("L4inL0", sel.get_selected_label("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_add-btn"))
+        self.failUnless(sel.is_visible("gis_location_search-btn"))
+        self.failUnless(sel.is_visible("gis_location_"))
+        self.failUnless(sel.is_visible("gis_location_label_"))
+        self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_"))
+        self.failUnless(sel.is_visible("gis_location_details-btn"))
+        # Check that the components which should be hidden, are
+        self.failIf(sel.is_visible("gis_location_autocomplete_div"))
+        self.failIf(sel.is_visible("cr_shelter_location_id"))
+        self.failIf(sel.is_visible("gis_location_name"))
+        self.failIf(sel.is_visible("gis_location_name_label"))
+        self.failIf(sel.is_visible("gis_location_cancel-btn"))
+        self.failIf(sel.is_visible("gis_location_addr_street_row"))
+        self.failIf(sel.is_visible("gis_location_addr_street_label"))
+        self.failIf(sel.is_visible("gis_location_map-btn"))
+        self.failIf(sel.is_visible("gis_location_advanced_div"))
+        self.failIf(sel.is_visible("gis_location_lat_row"))
+        self.failIf(sel.is_visible("gis_location_lon_row"))
+
+        # L4inL1withL0
+        # Create a new Shelter
+        self.create_header()
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Verify it opens
+        self.failUnless(sel.is_visible("gis_location_autocomplete_div"))
+        # & that button disappears
+        self.failIf(sel.is_visible("gis_location_search-btn"))
+        # Enter the search String
+        sel.type("gis_location_autocomplete", "L4inL1withL0")
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if "L4inL1withL0" == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        time.sleep(4)
+        # Verify that the dropdowns are set/opened
+        self.failUnless(sel.is_visible("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_label_L0"))
+        self.assertEqual("Haiti", sel.get_selected_label("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_label_L1"))
+        self.assertEqual("Ouest", sel.get_selected_label("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_label_L2"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_label_L3"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_label_L4"))
+        self.assertEqual("L4inL1withL0", sel.get_selected_label("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_add-btn"))
+        self.failUnless(sel.is_visible("gis_location_search-btn"))
+        self.failUnless(sel.is_visible("gis_location_"))
+        self.failUnless(sel.is_visible("gis_location_label_"))
+        self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_"))
+        self.failUnless(sel.is_visible("gis_location_details-btn"))
+        # Check that the components which should be hidden, are
+        self.failIf(sel.is_visible("gis_location_autocomplete_div"))
+        self.failIf(sel.is_visible("cr_shelter_location_id"))
+        self.failIf(sel.is_visible("gis_location_name"))
+        self.failIf(sel.is_visible("gis_location_name_label"))
+        self.failIf(sel.is_visible("gis_location_cancel-btn"))
+        self.failIf(sel.is_visible("gis_location_addr_street_row"))
+        self.failIf(sel.is_visible("gis_location_addr_street_label"))
+        self.failIf(sel.is_visible("gis_location_map-btn"))
+        self.failIf(sel.is_visible("gis_location_advanced_div"))
+        self.failIf(sel.is_visible("gis_location_lat_row"))
+        self.failIf(sel.is_visible("gis_location_lon_row"))
+
+        # L4inL1withNoParent
+        # Create a new Shelter
+        self.create_header()
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Verify it opens
+        self.failUnless(sel.is_visible("gis_location_autocomplete_div"))
+        # & that button disappears
+        self.failIf(sel.is_visible("gis_location_search-btn"))
+        # Enter the search String
+        sel.type("gis_location_autocomplete", "L4inL1withNoParent")
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if "L4inL1withNoParent" == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        time.sleep(4)
+        # Verify that the dropdowns are set/opened
+        self.failUnless(sel.is_visible("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_label_L0"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_label_L1"))
+        self.assertEqual("L1withNoParent", sel.get_selected_label("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_label_L2"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_label_L3"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_label_L4"))
+        self.assertEqual("L4inL1withNoParent", sel.get_selected_label("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_add-btn"))
+        self.failUnless(sel.is_visible("gis_location_search-btn"))
+        self.failUnless(sel.is_visible("gis_location_"))
+        self.failUnless(sel.is_visible("gis_location_label_"))
+        self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_"))
+        self.failUnless(sel.is_visible("gis_location_details-btn"))
+        # Check that the components which should be hidden, are
+        self.failIf(sel.is_visible("gis_location_autocomplete_div"))
+        self.failIf(sel.is_visible("cr_shelter_location_id"))
+        self.failIf(sel.is_visible("gis_location_name"))
+        self.failIf(sel.is_visible("gis_location_name_label"))
+        self.failIf(sel.is_visible("gis_location_cancel-btn"))
+        self.failIf(sel.is_visible("gis_location_addr_street_row"))
+        self.failIf(sel.is_visible("gis_location_addr_street_label"))
+        self.failIf(sel.is_visible("gis_location_map-btn"))
+        self.failIf(sel.is_visible("gis_location_advanced_div"))
+        self.failIf(sel.is_visible("gis_location_lat_row"))
+        self.failIf(sel.is_visible("gis_location_lon_row"))
+
+        # L4inL2withL1L0          
+        # Create a new Shelter
+        self.create_header()
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Verify it opens
+        self.failUnless(sel.is_visible("gis_location_autocomplete_div"))
+        # & that button disappears
+        self.failIf(sel.is_visible("gis_location_search-btn"))
+        # Enter the search String
+        sel.type("gis_location_autocomplete", "L4inL2withL1L0")
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if "L4inL2withL1L0" == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        time.sleep(4)
+        # Verify that the dropdowns are set/opened
+        self.failUnless(sel.is_visible("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_label_L0"))
+        self.assertEqual("Haiti", sel.get_selected_label("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_label_L1"))
+        self.assertEqual("Ouest", sel.get_selected_label("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_label_L2"))
+        self.assertEqual("Port-Au-Prince", sel.get_selected_label("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_label_L3"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_label_L4"))
+        self.assertEqual("L4inL2withL1L0", sel.get_selected_label("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_add-btn"))
+        self.failUnless(sel.is_visible("gis_location_search-btn"))
+        self.failUnless(sel.is_visible("gis_location_"))
+        self.failUnless(sel.is_visible("gis_location_label_"))
+        self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_"))
+        self.failUnless(sel.is_visible("gis_location_details-btn"))
+        # Check that the components which should be hidden, are
+        self.failIf(sel.is_visible("gis_location_autocomplete_div"))
+        self.failIf(sel.is_visible("cr_shelter_location_id"))
+        self.failIf(sel.is_visible("gis_location_name"))
+        self.failIf(sel.is_visible("gis_location_name_label"))
+        self.failIf(sel.is_visible("gis_location_cancel-btn"))
+        self.failIf(sel.is_visible("gis_location_addr_street_row"))
+        self.failIf(sel.is_visible("gis_location_addr_street_label"))
+        self.failIf(sel.is_visible("gis_location_map-btn"))
+        self.failIf(sel.is_visible("gis_location_advanced_div"))
+        self.failIf(sel.is_visible("gis_location_lat_row"))
+        self.failIf(sel.is_visible("gis_location_lon_row"))
+        
+        # L4inL2withL1only
+        # Create a new Shelter
+        self.create_header()
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Verify it opens
+        self.failUnless(sel.is_visible("gis_location_autocomplete_div"))
+        # & that button disappears
+        self.failIf(sel.is_visible("gis_location_search-btn"))
+        # Enter the search String
+        sel.type("gis_location_autocomplete", "L4inL2withL1only")
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if "L4inL2withL1only" == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        time.sleep(4)
+        # Verify that the dropdowns are set/opened
+        self.failUnless(sel.is_visible("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_label_L0"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_label_L1"))
+        self.assertEqual("L1withNoParent", sel.get_selected_label("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_label_L2"))
+        self.assertEqual("L2inL1withNoParent", sel.get_selected_label("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_label_L3"))
+        self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_label_L4"))
+        self.assertEqual("L4inL2withL1only", sel.get_selected_label("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_add-btn"))
+        self.failUnless(sel.is_visible("gis_location_search-btn"))
+        self.failUnless(sel.is_visible("gis_location_"))
+        self.failUnless(sel.is_visible("gis_location_label_"))
+        self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_"))
+        self.failUnless(sel.is_visible("gis_location_details-btn"))
+        # Check that the components which should be hidden, are
+        self.failIf(sel.is_visible("gis_location_autocomplete_div"))
+        self.failIf(sel.is_visible("cr_shelter_location_id"))
+        self.failIf(sel.is_visible("gis_location_name"))
+        self.failIf(sel.is_visible("gis_location_name_label"))
+        self.failIf(sel.is_visible("gis_location_cancel-btn"))
+        self.failIf(sel.is_visible("gis_location_addr_street_row"))
+        self.failIf(sel.is_visible("gis_location_addr_street_label"))
+        self.failIf(sel.is_visible("gis_location_map-btn"))
+        self.failIf(sel.is_visible("gis_location_advanced_div"))
+        self.failIf(sel.is_visible("gis_location_lat_row"))
+        self.failIf(sel.is_visible("gis_location_lon_row"))
+        
+        # L4inL2withL0only
+        # Create a new Shelter
+        self.create_header()
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Verify it opens
+        self.failUnless(sel.is_visible("gis_location_autocomplete_div"))
+        # & that button disappears
+        self.failIf(sel.is_visible("gis_location_search-btn"))
+        # Enter the search String
+        sel.type("gis_location_autocomplete", "L4inL2withL0only")
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if "L4inL2withL0only" == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        time.sleep(4)
+        # Verify that the dropdowns are set/opened
+        self.failUnless(sel.is_visible("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_label_L0"))
+        self.assertEqual("Haiti", sel.get_selected_label("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_label_L1"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_label_L2"))
+        self.assertEqual("L2inL0", sel.get_selected_label("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_label_L3"))
+        self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_label_L4"))
+        self.assertEqual("L4inL2withL0only", sel.get_selected_label("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_add-btn"))
+        self.failUnless(sel.is_visible("gis_location_search-btn"))
+        self.failUnless(sel.is_visible("gis_location_"))
+        self.failUnless(sel.is_visible("gis_location_label_"))
+        self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_"))
+        self.failUnless(sel.is_visible("gis_location_details-btn"))
+        # Check that the components which should be hidden, are
+        self.failIf(sel.is_visible("gis_location_autocomplete_div"))
+        self.failIf(sel.is_visible("cr_shelter_location_id"))
+        self.failIf(sel.is_visible("gis_location_name"))
+        self.failIf(sel.is_visible("gis_location_name_label"))
+        self.failIf(sel.is_visible("gis_location_cancel-btn"))
+        self.failIf(sel.is_visible("gis_location_addr_street_row"))
+        self.failIf(sel.is_visible("gis_location_addr_street_label"))
+        self.failIf(sel.is_visible("gis_location_map-btn"))
+        self.failIf(sel.is_visible("gis_location_advanced_div"))
+        self.failIf(sel.is_visible("gis_location_lat_row"))
+        self.failIf(sel.is_visible("gis_location_lon_row"))
+        
+        # L4inL2withNoParent
+        # Create a new Shelter
+        self.create_header()
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Verify it opens
+        self.failUnless(sel.is_visible("gis_location_autocomplete_div"))
+        # & that button disappears
+        self.failIf(sel.is_visible("gis_location_search-btn"))
+        # Enter the search String
+        sel.type("gis_location_autocomplete", "L4inL2withNoParent")
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if "L4inL2withNoParent" == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        time.sleep(4)
+        # Verify that the dropdowns are set/opened
+        self.failUnless(sel.is_visible("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_label_L0"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L0"))
+        self.failUnless(sel.is_visible("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_label_L1"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L1"))
+        self.failUnless(sel.is_visible("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_label_L2"))
+        self.assertEqual("L2withNoParent", sel.get_selected_label("gis_location_L2"))
+        self.failUnless(sel.is_visible("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_label_L3"))
+        self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_L3"))
+        self.failUnless(sel.is_visible("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_label_L4"))
+        self.assertEqual("L4inL2withNoParent", sel.get_selected_label("gis_location_L4"))
+        self.failUnless(sel.is_visible("gis_location_add-btn"))
+        self.failUnless(sel.is_visible("gis_location_search-btn"))
+        self.failUnless(sel.is_visible("gis_location_"))
+        self.failUnless(sel.is_visible("gis_location_label_"))
+        self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_"))
+        self.failUnless(sel.is_visible("gis_location_details-btn"))
+        # Check that the components which should be hidden, are
+        self.failIf(sel.is_visible("gis_location_autocomplete_div"))
+        self.failIf(sel.is_visible("cr_shelter_location_id"))
+        self.failIf(sel.is_visible("gis_location_name"))
+        self.failIf(sel.is_visible("gis_location_name_label"))
+        self.failIf(sel.is_visible("gis_location_cancel-btn"))
+        self.failIf(sel.is_visible("gis_location_addr_street_row"))
+        self.failIf(sel.is_visible("gis_location_addr_street_label"))
+        self.failIf(sel.is_visible("gis_location_map-btn"))
+        self.failIf(sel.is_visible("gis_location_advanced_div"))
+        self.failIf(sel.is_visible("gis_location_lat_row"))
+        self.failIf(sel.is_visible("gis_location_lon_row"))
 
 if __name__ == "__main__":
     unittest.main()

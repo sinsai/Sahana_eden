@@ -92,6 +92,7 @@ deployment_settings.twitter.oauth_consumer_secret = ""
 # http://www.loc.gov/standards/iso639-2/php/code_list.php
 deployment_settings.L10n.languages = {
     "en":T("English"),
+    "el":T("Greek"),
     "es":T("Spanish"),
     #"fr":T("French"),
     #"pa":T("Punjabi"),

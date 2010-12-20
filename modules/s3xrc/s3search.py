@@ -134,7 +134,7 @@ class S3Search(S3Method):
                     raise HTTP(400, body=output)
 
                 resource.add_filter(query)
-                output = resource.exporter.sjson(resource, start=0, limit=limit, fields=fields)
+                output = resource.exporter.json(resource, start=0, limit=limit, list_fields=fields)
 
                 response.headers["Content-Type"] = "text/json"
                 return output
@@ -277,9 +277,9 @@ class S3LocationSearch(S3Search):
 
             limit = _vars.limit
             if limit:
-                output = resource.exporter.sjson(resource, start=0, limit=int(limit), fields=fields)
+                output = resource.exporter.json(resource, start=0, limit=int(limit), list_fields=fields)
             else:
-                output = resource.exporter.sjson(resource, fields=fields)
+                output = resource.exporter.json(resource, list_fields=fields)
 
             response.headers["Content-Type"] = "text/json"
             return output
@@ -374,7 +374,7 @@ class S3PersonSearch(S3Search):
                     raise HTTP(400, body=output)
 
             resource.add_filter(query)
-            output = resource.exporter.sjson(resource, start=0, limit=limit, fields=fields)
+            output = resource.exporter.json(resource, start=0, limit=limit, list_fields=fields)
 
             response.headers["Content-Type"] = "text/json"
             return output

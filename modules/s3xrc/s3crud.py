@@ -1462,7 +1462,8 @@ class S3CRUD(S3Method):
                 if isinstance(field.sortby, (list, tuple)):
                     flist.extend([self.db[tn][f] for f in field.sortby])
                 else:
-                    flist.append(self.db[tn][field.sortby])
+                    if field.sortby in self.db[tn]:
+                        flist.append(self.db[tn][field.sortby])
             else:
                 flist.append(field)
 

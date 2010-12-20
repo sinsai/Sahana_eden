@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Import Toolkit
 
-    @version: 2.2.9
+    @version: 2.2.10
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -38,36 +38,41 @@
 
 __all__ = ["S3Importer"]
 
+import datetime
+
 from gluon.storage import Storage
 from lxml import etree
 
 # *****************************************************************************
 class S3Importer(object):
 
-    """ Importer class """
+    """
+    Data Import functions
+
+    """
 
     # -------------------------------------------------------------------------
-    def __init__(self, manager):
+    def __init__(self, datastore):
+        """
+        Constructor
 
-        """ Constructor
-
-            @param manager: the resource controller
+        @param datastore: the resource controller
 
         """
 
-        self.manager = manager
-        self.db = self.manager.db
+        self.datastore = datastore
+        self.db = self.datastore.db
 
 
     # -------------------------------------------------------------------------
     def csv(self, file, table=None):
+        """
+        Import CSV file into database
 
-        """ Import CSV file into database
+        @param file: file handle
+        @param table: the table to import to
 
-            @param file: file handle
-            @param table: the table to import to
-
-            @todo 2.3: make this resource-based (files!)
+        @todo 2.3: make this resource-based (files!)
 
         """
 
@@ -82,18 +87,18 @@ class S3Importer(object):
 
     # -------------------------------------------------------------------------
     def url(self, r):
+        """
+        Import data from URL query
 
-        """ Import data from URL query
+        @param r: the S3Request
+        @note: can only update single records (no mass-update)
 
-            @param r: the S3Request
-            @note: can only update single records (no mass-update)
-
-            @todo 2.3: make this resource-based
+        @todo 2.3: make this resource-based
 
         """
 
-        manager = self.manager
-        xml = manager.xml
+        datastore = self.datastore
+        xml = datastore.xml
 
         prefix, name, table, tablename = r.target()
 
@@ -137,11 +142,11 @@ class S3Importer(object):
                     else:
                         data.text = value
                     element.append(data)
-        tree = xml.tree([element], domain=manager.domain)
+        tree = xml.tree([element], domain=datastore.domain)
 
         # Import data
         result = Storage(committed=False)
-        manager.resolve = lambda job, result=result: result.update(job=job)
+        datastore.resolve = lambda job, result=result: result.update(job=job)
         try:
             success = resource.import_xml(tree)
         except SyntaxError:
@@ -164,7 +169,7 @@ class S3Importer(object):
         else:
             item = xml.json_message(False, 403,
                         "Could not create/update record: %s" %
-                            manager.error or xml.error,
+                            datastore.error or xml.error,
                         tree=xml.tree2json(tree))
 
         return dict(item=item)
@@ -175,114 +180,73 @@ class S3Importer(object):
             files=None,
             id=None,
             template=None,
+            as_json=False,
             ignore_errors=False, **args):
+        """
+        Import data from an XML source into a resource
 
-        """ Import data from an XML source into a resource
+        @param resource: the resource to import to
+        @param source: the XML source (or ElementTree)
+        @param files: file attachments as {filename:file}
+        @param id: the ID or list of IDs of records to update (None for all)
+        @param template: the XSLT template
+        @param as_json: source is JSONified XML
+        @param ignore_errors: do not stop at errors (skip invalid elements)
+        @param args: arguments to pass to the XSLT template
 
-            @param resource: the resource to import to
-            @param source: the XML source (or ElementTree)
-            @param files: file attachments as {filename:file}
-            @param id: the ID or list of IDs of records to update (None for all)
-            @param template: the XSLT template
-            @param ignore_errors: do not stop on errors (skip invalid elements)
-            @param args: arguments to pass to the XSLT template
-
-            @raise SyntaxError: in case of a parser or transformation error
-            @raise IOError: at insufficient permissions
+        @raise SyntaxError: in case of a parser or transformation error
+        @raise IOError: at insufficient permissions
 
         """
 
-        xml = self.manager.xml
-        permit = self.manager.permit
+        xml = self.datastore.xml
+        permit = self.datastore.permit
 
+        # Check permission for the resource
         authorised = permit("create", resource.table) and \
                      permit("update", resource.table)
         if not authorised:
             raise IOError("Insufficient permissions")
 
+        # Get the tree
         if isinstance(source, etree._ElementTree):
             tree = source
+        elif as_json:
+            if isinstance(source, basestring):
+                from StringIO import StringIO
+                source = StringIO(source)
+                tree = xml.json2tree(source)
+            else:
+                tree = xml.json2tree(source)
         else:
             tree = xml.parse(source)
+        if not tree:
+            raise SyntaxError("Invalid source")
 
-        if tree:
-            if template is not None:
-                tfmt = self.manager.xml.ISOFORMAT
-                args.update(domain=self.manager.domain,
-                            base_url=self.manager.s3.base_url,
-                            prefix=resource.prefix,
-                            name=resource.name,
-                            utcnow=datetime.datetime.utcnow().strftime(tfmt))
-                tree = xml.transform(tree, template, **args)
-                if not tree:
-                    raise SyntaxError(xml.error)
+        # XSLT transformation
+        if template is not None:
+            tfmt = self.datastore.xml.ISOFORMAT
+            args.update(domain=self.datastore.domain,
+                        base_url=self.datastore.s3.base_url,
+                        prefix=resource.prefix,
+                        name=resource.name,
+                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
+            tree = xml.transform(tree, template, **args)
+            if not tree:
+                raise SyntaxError(xml.error)
 
-            if files is not None and isinstance(files, dict):
-                resource.files(files=Storage(files))
+        # Attach files
+        if files is not None and isinstance(files, dict):
+            resource.files = Storage(files)
 
-            success = self.manager.import_tree(resource, id, tree,
-                                               ignore_errors=ignore_errors)
+        # Import the tree
+        success = self.datastore.import_tree(resource, id, tree,
+                                             ignore_errors=ignore_errors)
 
-            resource.files(files=Storage())
-            return success
-        else:
-            raise SyntaxError("Invalid XML source")
+        # Remove the attached files
+        resource.files = Storage()
 
-
-    # -------------------------------------------------------------------------
-    def json(self, resource, source,
-             files=None,
-             id=None,
-             template=None,
-             ignore_errors=False, **args):
-
-        """ Import data from a JSON source into a resource
-
-            @param resource: the resource to import data to
-            @param source: the JSON source (or ElementTree)
-            @param files: file attachments as {filename:file}
-            @param id: the ID or list of IDs of records to update (None for all)
-            @param template: the XSLT template
-            @param ignore_errors: do not stop on errors (skip invalid elements)
-            @param args: arguments to pass to the XSLT template
-
-            @raise SyntaxError: in case of a parser or transformation error
-            @raise IOError: at insufficient permissions
-
-        """
-
-        xml = self.manager.xml
-        permit = self.manager.permit
-
-        authorised = permit("create", resource.table) and \
-                     permit("update", resource.table)
-        if not authorised:
-            raise IOError("Insufficient permissions")
-
-        if isinstance(source, etree._ElementTree):
-            tree = source
-        elif isinstance(source, basestring):
-            from StringIO import StringIO
-            source = StringIO(source)
-            tree = xml.json2tree(source)
-        else:
-            tree = xml.json2tree(source)
-
-        if tree:
-            if template is not None:
-                tree = xml.transform(tree, template, **args)
-                if not tree:
-                    raise SyntaxError(xml.error)
-            if files is not None and isinstance(files, dict):
-                resource.files(files=Storage(files))
-
-            success = self.manager.import_tree(resource, id, tree,
-                                               ignore_errors=ignore_errors)
-
-            resource.files(files=Storage())
-            return success
-        else:
-            raise SyntaxError("Invalid JSON source.")
+        return success
 
 
 # *****************************************************************************

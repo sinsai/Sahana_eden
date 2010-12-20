@@ -35,9 +35,10 @@
 
 __name__ = "S3TOOLS"
 
-__all__ = ["AuthS3", "CrudS3", "FieldS3", "S3ReusableField"]
+__all__ = ["AuthS3", "CrudS3", "FieldS3", "S3ReusableField", "S3Audit"]
 
-#import datetime
+import sys
+import datetime
 import re
 import urllib
 import uuid
@@ -56,6 +57,125 @@ from gluon.tools import Crud
 
 DEFAULT = lambda: None
 table_field = re.compile("[\w_]+\.[\w_]+")
+
+# =============================================================================
+class S3Audit(object):
+
+    """ Audit Trail Writer Class
+
+        @param db: the database
+        @param session: the current session
+        @param tablename: the name of the audit table
+        @param migrate: migration setting
+
+    """
+
+    def __init__(self, db, session,
+                 tablename="s3_audit",
+                 migrate=True):
+
+        self.db = db
+        self.table = db.get(tablename, None)
+        if not self.table:
+            self.table = db.define_table(tablename,
+                            Field("timestmp", "datetime"),
+                            Field("person", "integer"),
+                            Field("operation"),
+                            Field("tablename"),
+                            Field("record", "integer"),
+                            Field("representation"),
+                            Field("old_value", "text"),
+                            Field("new_value", "text"),
+                            migrate=migrate)
+
+        self.session = session
+        if session.auth and session.auth.user:
+            self.user = session.auth.user.id
+        else:
+            self.user = None
+
+
+    # -------------------------------------------------------------------------
+    def __call__(self, operation, prefix, name,
+                 form=None,
+                 record=None,
+                 representation="unknown"):
+
+        """ Caller
+
+            @param operation: Operation to log, one of
+                "create", "update", "read", "list" or "delete"
+            @param prefix: the module prefix of the resource
+            @param name: the name of the resource (without prefix)
+            @param form: the form
+            @param record: the record ID
+            @param representation: the representation format
+
+        """
+
+        settings = self.session.s3
+
+        #print >>sys.stderr, "Audit %s: %s_%s record=%s representation=%s" % (operation, prefix, name, record, representation)
+
+        now = datetime.datetime.utcnow()
+        db = self.db
+        table = self.table
+        tablename = "%s_%s" % (prefix, name)
+
+        if record:
+            if isinstance(record, Row):
+                record = record.get("id", None)
+                if not record:
+                    return True
+            try:
+                record = int(record)
+            except ValueError:
+                record = None
+        else:
+            record = None
+
+        if operation in ("list", "read"):
+            if settings.audit_read:
+                table.insert(timestmp = now,
+                             person = self.user,
+                             operation = operation,
+                             tablename = tablename,
+                             record = record,
+                             representation = representation)
+
+        elif operation in ("create", "update"):
+            if settings.audit_write:
+                if form:
+                    record =  form.vars.id
+                    new_value = ["%s:%s" % (var, str(form.vars[var]))
+                                 for var in form.vars]
+                else:
+                    new_value = []
+                table.insert(timestmp = now,
+                             person = self.user,
+                             operation = operation,
+                             tablename = tablename,
+                             record = record,
+                             representation = representation,
+                             new_value = new_value)
+
+        elif operation == "delete":
+            if settings.audit_write:
+
+                row = db(db[tablename].id == record).select(limitby=(0, 1)).first()
+                old_value = []
+                if row:
+                    old_value = ["%s:%s" % (field, row[field]) for field in row]
+                table.insert(timestmp = now,
+                             person = self.user,
+                             operation = operation,
+                             tablename = tablename,
+                             record = record,
+                             representation = representation,
+                             old_value = old_value)
+
+        return True
+
 
 # =============================================================================
 class S3Permission(object):
@@ -423,6 +543,46 @@ class AuthS3(Auth):
         self.permission.define_table()
 
 
+    def login_bare(self, username, password):
+        """
+        logins user
+        - extended to understand session.s3.roles
+        """
+
+        request = self.environment.request
+        session = self.environment.session
+        db = self.db
+
+        table_user = self.settings.table_user
+        table_membership = self.settings.table_membership_name
+
+
+        if self.settings.login_userfield:
+            userfield = self.settings.login_userfield
+        elif 'username' in table_user.fields:
+            userfield = 'username'
+        else:
+            userfield = 'email'
+        passfield = self.settings.password_field
+        user = db(table_user[userfield] == username).select().first()
+        user_id = user.id
+        password = table_user[passfield].validate(password)[0]
+        if user:
+            if not user.registration_key and user[passfield] == password:
+                user = Storage(table_user._filter_fields(user, id=True))
+                session.auth = Storage(user=user, last_visit=request.now,
+                                       expiration=self.settings.expiration)
+                self.user = user
+
+                # Add the Roles to session.s3
+                roles = []
+                set = db(db[table_membership].user_id == user_id).select(db[table_membership].group_id)
+                session.s3.roles = [s.group_id for s in set]
+
+                return user
+
+        return False
+
     def login(
         self,
         next=DEFAULT,
@@ -721,17 +881,13 @@ class AuthS3(Auth):
     def shn_logged_in(self):
         """
             Check whether the user is currently logged-in
+            - tries Basic if not
         """
 
         session = self.session
         if not self.is_logged_in():
             if not self.basic():
                 return False
-            else:
-                roles = []
-                table = self.db.auth_membership
-                set = self.db(table.user_id == self.user.id).select(table.group_id)
-                session.s3.roles = [s.group_id for s in set]
 
         return True
 

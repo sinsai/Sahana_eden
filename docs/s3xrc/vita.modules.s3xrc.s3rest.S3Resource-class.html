@@ -97,7 +97,7 @@ object --+
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">manager</span>,
+        <span class="summary-sig-arg">datastore</span>,
         <span class="summary-sig-arg">prefix</span>,
         <span class="summary-sig-arg">name</span>,
         <span class="summary-sig-arg">id</span>=<span class="summary-sig-default">None</span>,
@@ -106,7 +106,7 @@ object --+
         <span class="summary-sig-arg">vars</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">parent</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">components</span>=<span class="summary-sig-default">None</span>)</span><br />
-      x.__init__(...) initializes x; see x.__class__.__doc__ for signature</td>
+      Constructor</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.__init__">source&nbsp;code</a></span>
             
@@ -146,24 +146,6 @@ object --+
       Get a REST method handler for this resource</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.get_handler">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr class="private">
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#__attach" class="summary-sig-name" onclick="show_private();">__attach</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">select</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Attach components to this resource</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.__attach">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -250,6 +232,78 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#select" class="summary-sig-name">select</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">*fields</span>,
+        <span class="summary-sig-arg">**attributes</span>)</span><br />
+      Select records with the current query</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.select">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#insert" class="summary-sig-name">insert</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">**fields</span>)</span><br />
+      Insert records into this resource</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.insert">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#delete" class="summary-sig-name">delete</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Delete all records in this resource</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.delete">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#update" class="summary-sig-name">update</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">**update_fields</span>)</span><br />
+      Update all records in this resource</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.update">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#count" class="summary-sig-name">count</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">left</span>=<span class="summary-sig-default">None</span>)</span><br />
       Get the total number of available records in this resource</td>
@@ -305,7 +359,8 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#records" class="summary-sig-name">records</a>(<span class="summary-sig-arg">self</span>)</span><br />
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#records" class="summary-sig-name">records</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">fields</span>=<span class="summary-sig-default">None</span>)</span><br />
       Get the current set</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.records">source&nbsp;code</a></span>
@@ -341,7 +396,7 @@ object --+
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#__iter__" class="summary-sig-name">__iter__</a>(<span class="summary-sig-arg">self</span>)</span><br />
-      Generator for the current set</td>
+      Iterate over the selected rows</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.__iter__">source&nbsp;code</a></span>
             
@@ -502,7 +557,7 @@ object --+
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#execute_request" class="summary-sig-name">execute_request</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">r</span>,
         <span class="summary-sig-arg">**attr</span>)</span><br />
-      Execute a request</td>
+      Execute a HTTP request</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.execute_request">source&nbsp;code</a></span>
             
@@ -593,7 +648,7 @@ object --+
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#__get_tree" class="summary-sig-name" onclick="show_private();">__get_tree</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">r</span>,
         <span class="summary-sig-arg">**attr</span>)</span><br />
-      Export this resource in XML or JSON formats</td>
+      Export this resource as XML</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.__get_tree">source&nbsp;code</a></span>
             
@@ -686,6 +741,7 @@ object --+
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#export_xml" class="summary-sig-name">export_xml</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">template</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">as_json</span>=<span class="summary-sig-default">False</span>,
         <span class="summary-sig-arg">pretty_print</span>=<span class="summary-sig-default">False</span>,
         <span class="summary-sig-arg">**args</span>)</span><br />
       Export this resource as XML</td>
@@ -704,31 +760,12 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#export_json" class="summary-sig-name">export_json</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">template</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">pretty_print</span>=<span class="summary-sig-default">False</span>,
-        <span class="summary-sig-arg">**args</span>)</span><br />
-      Export this resource as JSON</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.export_json">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#import_xml" class="summary-sig-name">import_xml</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">source</span>,
         <span class="summary-sig-arg">files</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">id</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">template</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">as_json</span>=<span class="summary-sig-default">False</span>,
         <span class="summary-sig-arg">ignore_errors</span>=<span class="summary-sig-default">False</span>,
         <span class="summary-sig-arg">**args</span>)</span><br />
       Import data from an XML source into this resource</td>
@@ -747,54 +784,24 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#import_json" class="summary-sig-name">import_json</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">source</span>,
-        <span class="summary-sig-arg">files</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">id</span>=<span class="summary-sig-default">None</span>,
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#push" class="summary-sig-name">push</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">url</span>,
         <span class="summary-sig-arg">template</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">ignore_errors</span>=<span class="summary-sig-default">False</span>,
-        <span class="summary-sig-arg">**args</span>)</span><br />
-      Import data from a JSON source into this resource</td>
+        <span class="summary-sig-arg">as_json</span>=<span class="summary-sig-default">False</span>,
+        <span class="summary-sig-arg">xsltmode</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">start</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">limit</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">marker</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">msince</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">show_urls</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">dereference</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">content_type</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">username</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">password</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">proxy</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Push (=POST) the current resource to a target URL</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.import_json">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#push_xml" class="summary-sig-name">push_xml</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">url</span>,
-        <span class="summary-sig-arg">**args</span>)</span><br />
-      Push (=POST) this resource as XML to a target URL</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.push_xml">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#push_json" class="summary-sig-name">push_json</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">url</span>,
-        <span class="summary-sig-arg">**args</span>)</span><br />
-      Push (=POST) this resource as JSON to a target URL</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.push_json">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.push">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -813,11 +820,11 @@ object --+
         <span class="summary-sig-arg">username</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">password</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">proxy</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">json</span>=<span class="summary-sig-default">False</span>,
+        <span class="summary-sig-arg">as_json</span>=<span class="summary-sig-default">False</span>,
         <span class="summary-sig-arg">template</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">ignore_errors</span>=<span class="summary-sig-default">False</span>,
         <span class="summary-sig-arg">**args</span>)</span><br />
-      Fetch XML (JSON) data to the current resource from a remote URL</td>
+      Fetch XML data from a remote URL into the current resource</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.fetch">source&nbsp;code</a></span>
             
@@ -833,57 +840,10 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#fetch_xml" class="summary-sig-name">fetch_xml</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">url</span>,
-        <span class="summary-sig-arg">username</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">password</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">proxy</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">template</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">ignore_errors</span>=<span class="summary-sig-default">False</span>,
-        <span class="summary-sig-arg">**args</span>)</span><br />
-      Fetch resource data from a remote HTTP XML source</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.fetch_xml">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#fetch_json" class="summary-sig-name">fetch_json</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">url</span>,
-        <span class="summary-sig-arg">username</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">password</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">proxy</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">template</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">ignore_errors</span>=<span class="summary-sig-default">False</span>,
-        <span class="summary-sig-arg">**args</span>)</span><br />
-      Fetch resource data from a remote HTTP JSON source</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.fetch_json">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#options" class="summary-sig-name">options</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">component</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">fields</span>=<span class="summary-sig-default">None</span>)</span><br />
+        <span class="summary-sig-arg">fields</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">as_json</span>=<span class="summary-sig-default">False</span>)</span><br />
       Export field options of this resource as element tree</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.options">source&nbsp;code</a></span>
@@ -900,202 +860,12 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#options_xml" class="summary-sig-name">options_xml</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">component</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">fields</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Export field options of this resource as XML</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.options_xml">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#options_json" class="summary-sig-name">options_json</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">component</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">fields</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Export field options of this resource as JSON</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.options_json">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#fields" class="summary-sig-name">fields</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">component</span>=<span class="summary-sig-default">None</span>)</span><br />
+        <span class="summary-sig-arg">component</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">as_json</span>=<span class="summary-sig-default">False</span>)</span><br />
       Export a list of fields in the resource as element tree</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.fields">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#fields_xml" class="summary-sig-name">fields_xml</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">component</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Export a list of fields in the resource as XML</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.fields_xml">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#fields_json" class="summary-sig-name">fields_json</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">component</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Export a list of fields in the resource as JSON</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.fields_json">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#create" class="summary-sig-name">create</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">onvalidation</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">onaccept</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">message</span>=<span class="summary-sig-default">&quot;Record created&quot;</span>,
-        <span class="summary-sig-arg">download_url</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">from_table</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">from_record</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">map_fields</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">link</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">format</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Provides and processes an Add-form for this resource</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.create">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#read" class="summary-sig-name">read</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">id</span>,
-        <span class="summary-sig-arg">download_url</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">format</span>=<span class="summary-sig-default">None</span>)</span><br />
-      View a record of this resource</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.read">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#update" class="summary-sig-name">update</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">id</span>,
-        <span class="summary-sig-arg">data</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">onvalidation</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">onaccept</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">message</span>=<span class="summary-sig-default">&quot;Record updated&quot;</span>,
-        <span class="summary-sig-arg">download_url</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">format</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">link</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Update form for this resource</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.update">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#delete" class="summary-sig-name">delete</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">ondelete</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">format</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Delete all (deletable) records in this resource</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.delete">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#select" class="summary-sig-name">select</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">fields</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">left</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">start</span>=<span class="summary-sig-default">0</span>,
-        <span class="summary-sig-arg">limit</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">orderby</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">linkto</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">download_url</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">as_page</span>=<span class="summary-sig-default">False</span>,
-        <span class="summary-sig-arg">as_list</span>=<span class="summary-sig-default">False</span>,
-        <span class="summary-sig-arg">format</span>=<span class="summary-sig-default">None</span>)</span><br />
-      List of all records of this resource</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.select">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -1171,44 +941,11 @@ object --+
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#stylesheet" class="summary-sig-name">stylesheet</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">r</span>,
-        <span class="summary-sig-arg">method</span>=<span class="summary-sig-default">None</span>)</span><br />
+        <span class="summary-sig-arg">method</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">skip_error</span>=<span class="summary-sig-default">False</span>)</span><br />
       Find the XSLT stylesheet for a request</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.stylesheet">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#content_type" class="summary-sig-name">content_type</a>(<span class="summary-sig-arg">self</span>)</span></td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.content_type">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#files" class="summary-sig-name">files</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">files</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Get/set the list of attached files</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.files">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -1231,54 +968,6 @@ object --+
       <code>__str__</code>,
       <code>__subclasshook__</code>
       </p>
-    </td>
-  </tr>
-</table>
-<!-- ==================== STATIC METHODS ==================== -->
-<a name="section-StaticMethods"></a>
-<table class="summary" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr bgcolor="#70b0f0" class="table-header">
-  <td colspan="2" class="table-header">
-    <table border="0" cellpadding="0" cellspacing="0" width="100%">
-      <tr valign="top">
-        <td align="left"><span class="table-header">Static Methods</span></td>
-        <td align="right" valign="top"
-         ><span class="options">[<a href="#section-StaticMethods"
-         class="privatelink" onclick="toggle_private();"
-         >hide private</a>]</span></td>
-      </tr>
-    </table>
-  </td>
-</tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#push" class="summary-sig-name">push</a>(<span class="summary-sig-arg">url</span>,
-        <span class="summary-sig-arg">exporter</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">template</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">xsltmode</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">start</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">limit</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">marker</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">msince</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">show_urls</span>=<span class="summary-sig-default">True</span>,
-        <span class="summary-sig-arg">dereference</span>=<span class="summary-sig-default">True</span>,
-        <span class="summary-sig-arg">content_type</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">username</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">password</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">proxy</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Push (=POST) the current resource to a target URL</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.push">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
     </td>
   </tr>
 </table>
@@ -1333,7 +1022,7 @@ object --+
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">manager</span>,
+        <span class="sig-arg">datastore</span>,
         <span class="sig-arg">prefix</span>,
         <span class="sig-arg">name</span>,
         <span class="sig-arg">id</span>=<span class="sig-default">None</span>,
@@ -1349,12 +1038,11 @@ object --+
     </td>
   </tr></table>
   
-  <p>x.__init__(...) initializes x; see x.__class__.__doc__ for 
-  signature</p>
+  <p>Constructor</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>manager</code></strong> - the resource controller</li>
+        <li><strong class="pname"><code>datastore</code></strong> - the data store manager</li>
         <li><strong class="pname"><code>prefix</code></strong> - prefix of the resource name (=module name)</li>
         <li><strong class="pname"><code>name</code></strong> - name of the resource (without prefix)</li>
         <li><strong class="pname"><code>id</code></strong> - record ID (or list of record IDs)</li>
@@ -1366,7 +1054,6 @@ object --+
     </ul></dd>
     <dt>Overrides:
         object.__init__
-        <dd><em class="note">(inherited documentation)</em></dd>
     </dt>
   </dl>
 </td></tr></table>
@@ -1423,32 +1110,6 @@ object --+
   </dl>
 </td></tr></table>
 </div>
-<a name="__attach"></a>
-<div class="private">
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">__attach</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">select</span>=<span class="sig-default">None</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.__attach">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Attach components to this resource</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>select</code></strong> - name or list of names of components to attach. If select is None 
-          (default), then all declared components of this resource will be 
-          attached, to attach none of the components, pass an empty list.</li>
-    </ul></dd>
-  </dl>
-</td></tr></table>
-</div>
 <a name="build_query"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -1498,7 +1159,7 @@ object --+
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>filter</code></strong> - a web2py query</li>
+        <li><strong class="pname"><code>filter</code></strong> - a web2py Query object</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -1541,6 +1202,116 @@ object --+
   </dl>
 </td></tr></table>
 </div>
+<a name="select"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">select</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">*fields</span>,
+        <span class="sig-arg">**attributes</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.select">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Select records with the current query</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>fields</code></strong> - fields to select</li>
+        <li><strong class="pname"><code>attributes</code></strong> - select attributes</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="insert"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">insert</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">**fields</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.insert">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Insert records into this resource</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>fields</code></strong> - dict of fields to insert</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="delete"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">delete</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.delete">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Delete all records in this resource</p>
+  <dl class="fields">
+  </dl>
+<div class="fields">      <strong>To Do:</strong>
+      <ul class="nomargin-top">
+        <li>
+        permission check
+        </li>
+        <li>
+        implement audit
+        </li>
+        <li>
+        deletion status awareness
+        </li>
+      </ul>
+</div></td></tr></table>
+</div>
+<a name="update"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">update</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">**update_fields</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.update">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Update all records in this resource</p>
+  <dl class="fields">
+  </dl>
+<div class="fields">      <strong>To Do:</strong>
+      <ul class="nomargin-top">
+        <li>
+        permission check
+        </li>
+        <li>
+        audit
+        </li>
+      </ul>
+</div></td></tr></table>
+</div>
 <a name="count"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -1558,6 +1329,10 @@ object --+
   
   <p>Get the total number of available records in this resource</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>left</code></strong> - left joins, if required</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1614,7 +1389,8 @@ object --+
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">records</span>(<span class="sig-arg">self</span>)</span>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">records</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">fields</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.records">source&nbsp;code</a></span>&nbsp;
@@ -1669,10 +1445,8 @@ object --+
     </td>
   </tr></table>
   
-  <p>Generator for the current set</p>
+  <p>Iterate over the selected rows</p>
   <dl class="fields">
-    <dt>Returns:</dt>
-        <dd>an Iterator</dd>
   </dl>
 </td></tr></table>
 </div>
@@ -1869,7 +1643,7 @@ object --+
     </td>
   </tr></table>
   
-  <p>Execute a request</p>
+  <p>Execute a HTTP request</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
@@ -1991,7 +1765,7 @@ object --+
     </td>
   </tr></table>
   
-  <p>Export this resource in XML or JSON formats</p>
+  <p>Export this resource as XML</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
@@ -2112,6 +1886,7 @@ object --+
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">export_xml</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">template</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">as_json</span>=<span class="sig-default">False</span>,
         <span class="sig-arg">pretty_print</span>=<span class="sig-default">False</span>,
         <span class="sig-arg">**args</span>)</span>
   </h3>
@@ -2125,49 +1900,14 @@ object --+
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>template</code></strong> - path to the XSLT stylesheet (if not native S3-XML)</li>
+        <li><strong class="pname"><code>as_json</code></strong> - convert the output into JSON</li>
         <li><strong class="pname"><code>pretty_print</code></strong> - insert newlines/indentation in the output</li>
         <li><strong class="pname"><code>args</code></strong> - arguments to pass to the XSLT stylesheet</li>
     </ul></dd>
     <dt>Returns:</dt>
         <dd>the XML as string</dd>
   </dl>
-<div class="fields">      <p><strong>To Do (2.3):</strong>
-        slicing?
-      </p>
-</div></td></tr></table>
-</div>
-<a name="export_json"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">export_json</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">template</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">pretty_print</span>=<span class="sig-default">False</span>,
-        <span class="sig-arg">**args</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.export_json">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Export this resource as JSON</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>template</code></strong> - path to the XSLT stylesheet (if not native S3-JSON)</li>
-        <li><strong class="pname"><code>pretty_print</code></strong> - insert newlines/indentation in the output</li>
-        <li><strong class="pname"><code>args</code></strong> - arguments to pass to the XSLT stylesheet</li>
-    </ul></dd>
-    <dt>Returns:</dt>
-        <dd>the JSON as string</dd>
-  </dl>
-<div class="fields">      <p><strong>To Do (2.3):</strong>
-        slicing?
-      </p>
-</div></td></tr></table>
+</td></tr></table>
 </div>
 <a name="import_xml"></a>
 <div>
@@ -2181,6 +1921,7 @@ object --+
         <span class="sig-arg">files</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">id</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">template</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">as_json</span>=<span class="sig-default">False</span>,
         <span class="sig-arg">ignore_errors</span>=<span class="sig-default">False</span>,
         <span class="sig-arg">**args</span>)</span>
   </h3>
@@ -2197,6 +1938,7 @@ object --+
         <li><strong class="pname"><code>files</code></strong> - file attachments as {filename:file}</li>
         <li><strong class="pname"><code>id</code></strong> - the ID or list of IDs of records to update (None for all)</li>
         <li><strong class="pname"><code>template</code></strong> - the XSLT template</li>
+        <li><strong class="pname"><code>as_json</code></strong> - the source is JSONified XML</li>
         <li><strong class="pname"><code>ignore_errors</code></strong> - do not stop on errors (skip invalid elements)</li>
         <li><strong class="pname"><code>args</code></strong> - arguments to pass to the XSLT template</li>
     </ul></dd>
@@ -2208,48 +1950,10 @@ object --+
         <li><code><strong class='fraise'>IOError</strong></code> - at insufficient permissions</li>
     </ul></dd>
   </dl>
-</td></tr></table>
-</div>
-<a name="import_json"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">import_json</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">source</span>,
-        <span class="sig-arg">files</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">id</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">template</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">ignore_errors</span>=<span class="sig-default">False</span>,
-        <span class="sig-arg">**args</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.import_json">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Import data from a JSON source into this resource</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>source</code></strong> - the JSON source (or ElementTree)</li>
-        <li><strong class="pname"><code>files</code></strong> - file attachments as {filename:file}</li>
-        <li><strong class="pname"><code>id</code></strong> - the ID or list of IDs of records to update (None for all)</li>
-        <li><strong class="pname"><code>template</code></strong> - the XSLT template</li>
-        <li><strong class="pname"><code>ignore_errors</code></strong> - do not stop on errors (skip invalid elements)</li>
-        <li><strong class="pname"><code>args</code></strong> - arguments to pass to the XSLT template</li>
-    </ul></dd>
-    <dt>Returns:</dt>
-        <dd>a JSON message as string</dd>
-    <dt>Raises:</dt>
-    <dd><ul class="nomargin-top">
-        <li><code><strong class='fraise'>SyntaxError</strong></code> - in case of a parser or transformation error</li>
-        <li><code><strong class='fraise'>IOError</strong></code> - at insufficient permissions</li>
-    </ul></dd>
-  </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.3):</strong>
+        deprecate?
+      </p>
+</div></td></tr></table>
 </div>
 <a name="push"></a>
 <div>
@@ -2258,9 +1962,10 @@ object --+
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">push</span>(<span class="sig-arg">url</span>,
-        <span class="sig-arg">exporter</span>=<span class="sig-default">None</span>,
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">push</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">url</span>,
         <span class="sig-arg">template</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">as_json</span>=<span class="sig-default">False</span>,
         <span class="sig-arg">xsltmode</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">start</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">limit</span>=<span class="sig-default">None</span>,
@@ -2272,7 +1977,6 @@ object --+
         <span class="sig-arg">username</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">password</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">proxy</span>=<span class="sig-default">None</span>)</span>
-    <br /><em class="fname">Static Method</em>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.push">source&nbsp;code</a></span>&nbsp;
@@ -2285,6 +1989,7 @@ object --+
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>exporter</code></strong> - the exporter function</li>
         <li><strong class="pname"><code>template</code></strong> - path to the XSLT stylesheet to be used by the exporter</li>
+        <li><strong class="pname"><code>as_json</code></strong> - convert the output into JSON before push</li>
         <li><strong class="pname"><code>xsltmode</code></strong> - &quot;mode&quot; parameter for the XSLT stylesheet</li>
         <li><strong class="pname"><code>start</code></strong> - index of the first record to export (slicing)</li>
         <li><strong class="pname"><code>limit</code></strong> - maximum number of records to export (slicing)</li>
@@ -2303,62 +2008,6 @@ object --+
       </p>
 </div></td></tr></table>
 </div>
-<a name="push_xml"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">push_xml</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">url</span>,
-        <span class="sig-arg">**args</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.push_xml">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Push (=POST) this resource as XML to a target URL</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>url</code></strong> - the URL to push to</li>
-        <li><strong class="pname"><code>args</code></strong> - see push argument list</li>
-    </ul></dd>
-    <dt>Returns:</dt>
-        <dd>the response from the peer as string</dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="push_json"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">push_json</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">url</span>,
-        <span class="sig-arg">**args</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.push_json">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Push (=POST) this resource as JSON to a target URL</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>url</code></strong> - the URL to push to</li>
-        <li><strong class="pname"><code>args</code></strong> - see push argument list</li>
-    </ul></dd>
-    <dt>Returns:</dt>
-        <dd>the response from the peer as string</dd>
-  </dl>
-</td></tr></table>
-</div>
 <a name="fetch"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -2371,7 +2020,7 @@ object --+
         <span class="sig-arg">username</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">password</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">proxy</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">json</span>=<span class="sig-default">False</span>,
+        <span class="sig-arg">as_json</span>=<span class="sig-default">False</span>,
         <span class="sig-arg">template</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">ignore_errors</span>=<span class="sig-default">False</span>,
         <span class="sig-arg">**args</span>)</span>
@@ -2381,7 +2030,7 @@ object --+
     </td>
   </tr></table>
   
-  <p>Fetch XML (JSON) data to the current resource from a remote URL</p>
+  <p>Fetch XML data from a remote URL into the current resource</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
@@ -2389,83 +2038,9 @@ object --+
         <li><strong class="pname"><code>username</code></strong> - username to authenticate at the peer site</li>
         <li><strong class="pname"><code>password</code></strong> - password to authenticate at the peer site</li>
         <li><strong class="pname"><code>proxy</code></strong> - URL of the proxy server to use</li>
-        <li><strong class="pname"><code>json</code></strong> - use JSON importer instead of XML importer</li>
         <li><strong class="pname"><code>template</code></strong> - path to the XSLT stylesheet to transform the data</li>
+        <li><strong class="pname"><code>as_json</code></strong> - source is JSONified XML</li>
         <li><strong class="pname"><code>ignore_errors</code></strong> - skip invalid records</li>
-    </ul></dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="fetch_xml"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">fetch_xml</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">url</span>,
-        <span class="sig-arg">username</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">password</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">proxy</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">template</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">ignore_errors</span>=<span class="sig-default">False</span>,
-        <span class="sig-arg">**args</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.fetch_xml">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Fetch resource data from a remote HTTP XML source</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>url</code></strong> - the URL of the source</li>
-        <li><strong class="pname"><code>username</code></strong> - username to authenticate at the source</li>
-        <li><strong class="pname"><code>password</code></strong> - password to authenticate at the source</li>
-        <li><strong class="pname"><code>proxy</code></strong> - URL of the proxy server to use</li>
-        <li><strong class="pname"><code>template</code></strong> - the URL or path to the XSLT stylesheet to transform the import 
-          data into S3XML</li>
-        <li><strong class="pname"><code>ignore_errors</code></strong> - skip any invalid records</li>
-        <li><strong class="pname"><code>args</code></strong> - arguments for the XSLT stylesheet</li>
-    </ul></dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="fetch_json"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">fetch_json</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">url</span>,
-        <span class="sig-arg">username</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">password</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">proxy</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">template</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">ignore_errors</span>=<span class="sig-default">False</span>,
-        <span class="sig-arg">**args</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.fetch_json">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Fetch resource data from a remote HTTP JSON source</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>url</code></strong> - the URL of the source</li>
-        <li><strong class="pname"><code>username</code></strong> - username to authenticate at the source</li>
-        <li><strong class="pname"><code>password</code></strong> - password to authenticate at the source</li>
-        <li><strong class="pname"><code>proxy</code></strong> - URL of the proxy server to use</li>
-        <li><strong class="pname"><code>template</code></strong> - the URL or path to the XSLT stylesheet to transform the import 
-          data into S3XML</li>
-        <li><strong class="pname"><code>ignore_errors</code></strong> - skip any invalid records</li>
-        <li><strong class="pname"><code>args</code></strong> - arguments for the XSLT stylesheet</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -2479,7 +2054,8 @@ object --+
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">options</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">component</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">fields</span>=<span class="sig-default">None</span>)</span>
+        <span class="sig-arg">fields</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">as_json</span>=<span class="sig-default">False</span>)</span>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.options">source&nbsp;code</a></span>&nbsp;
@@ -2494,62 +2070,7 @@ object --+
           for the primary table</li>
         <li><strong class="pname"><code>fields</code></strong> - list of names of fields for which the options are requested, None
           for all fields (which have options)</li>
-    </ul></dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="options_xml"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">options_xml</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">component</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">fields</span>=<span class="sig-default">None</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.options_xml">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Export field options of this resource as XML</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>component</code></strong> - name of the component which the options are requested of, None 
-          for the primary table</li>
-        <li><strong class="pname"><code>fields</code></strong> - list of names of fields for which the options are requested, None
-          for all fields (which have options)</li>
-    </ul></dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="options_json"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">options_json</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">component</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">fields</span>=<span class="sig-default">None</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.options_json">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Export field options of this resource as JSON</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>component</code></strong> - name of the component which the options are requested of, None 
-          for the primary table</li>
-        <li><strong class="pname"><code>fields</code></strong> - list of names of fields for which the options are requested, None
-          for all fields (which have options)</li>
+        <li><strong class="pname"><code>as_json</code></strong> - convert the output into JSON</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -2562,7 +2083,8 @@ object --+
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">fields</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">component</span>=<span class="sig-default">None</span>)</span>
+        <span class="sig-arg">component</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">as_json</span>=<span class="sig-default">False</span>)</span>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.fields">source&nbsp;code</a></span>&nbsp;
@@ -2575,239 +2097,7 @@ object --+
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>component</code></strong> - name of the component to lookup the fields (None for primary 
           table)</li>
-    </ul></dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="fields_xml"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">fields_xml</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">component</span>=<span class="sig-default">None</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.fields_xml">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Export a list of fields in the resource as XML</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>component</code></strong> - name of the component to lookup the fields (None for primary 
-          table)</li>
-    </ul></dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="fields_json"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">fields_json</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">component</span>=<span class="sig-default">None</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.fields_json">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Export a list of fields in the resource as JSON</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>component</code></strong> - name of the component to lookup the fields (None for primary 
-          table)</li>
-    </ul></dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="create"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">create</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">onvalidation</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">onaccept</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">message</span>=<span class="sig-default">&quot;Record created&quot;</span>,
-        <span class="sig-arg">download_url</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">from_table</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">from_record</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">map_fields</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">link</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">format</span>=<span class="sig-default">None</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.create">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Provides and processes an Add-form for this resource</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>onvalidation</code></strong> - onvalidation callback</li>
-        <li><strong class="pname"><code>onaccept</code></strong> - onaccept callback</li>
-        <li><strong class="pname"><code>message</code></strong> - flash message after successul operation</li>
-        <li><strong class="pname"><code>download_url</code></strong> - default download URL of the application</li>
-        <li><strong class="pname"><code>from_table</code></strong> - copy a record from this table</li>
-        <li><strong class="pname"><code>from_record</code></strong> - copy from this record ID</li>
-        <li><strong class="pname"><code>map_fields</code></strong> - field mapping for copying of records</li>
-        <li><strong class="pname"><code>format</code></strong> - the representation format of the request</li>
-    </ul></dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="read"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">read</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">id</span>,
-        <span class="sig-arg">download_url</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">format</span>=<span class="sig-default">None</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.read">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>View a record of this resource</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>id</code></strong> - the ID of the record to display</li>
-        <li><strong class="pname"><code>download_url</code></strong> - download URL for uploaded files in this resource</li>
-        <li><strong class="pname"><code>format</code></strong> - the representation format</li>
-    </ul></dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="update"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">update</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">id</span>,
-        <span class="sig-arg">data</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">onvalidation</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">onaccept</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">message</span>=<span class="sig-default">&quot;Record updated&quot;</span>,
-        <span class="sig-arg">download_url</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">format</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">link</span>=<span class="sig-default">None</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.update">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Update form for this resource</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>id</code></strong> - the ID of the record to update (None to create a new record)</li>
-        <li><strong class="pname"><code>data</code></strong> - the data to prepopulate the form with (only with id=None)</li>
-        <li><strong class="pname"><code>onvalidation</code></strong> - onvalidation callback hook</li>
-        <li><strong class="pname"><code>onaccept</code></strong> - onaccept callback hook</li>
-        <li><strong class="pname"><code>message</code></strong> - success message</li>
-        <li><strong class="pname"><code>download_url</code></strong> - Download URL for uploaded files in this resource</li>
-        <li><strong class="pname"><code>format</code></strong> - the representation format</li>
-    </ul></dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="delete"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">delete</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">ondelete</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">format</span>=<span class="sig-default">None</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.delete">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Delete all (deletable) records in this resource</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>ondelete</code></strong> - on-delete callback</li>
-        <li><strong class="pname"><code>format</code></strong> - the representation format of the request</li>
-    </ul></dd>
-    <dt>Returns:</dt>
-        <dd>number of records deleted</dd>
-  </dl>
-<div class="fields">      <strong>To Do (2.3):</strong>
-      <ul class="nomargin-top">
-        <li>
-        move error message into resource controller
-        </li>
-        <li>
-        check for integrity error exception explicitly
-        </li>
-      </ul>
-</div></td></tr></table>
-</div>
-<a name="select"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">select</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">fields</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">left</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">start</span>=<span class="sig-default">0</span>,
-        <span class="sig-arg">limit</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">orderby</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">linkto</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">download_url</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">as_page</span>=<span class="sig-default">False</span>,
-        <span class="sig-arg">as_list</span>=<span class="sig-default">False</span>,
-        <span class="sig-arg">format</span>=<span class="sig-default">None</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.select">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>List of all records of this resource</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>fields</code></strong> - list of fields to display</li>
-        <li><strong class="pname"><code>left</code></strong> - left outer joins</li>
-        <li><strong class="pname"><code>start</code></strong> - index of the first record to display</li>
-        <li><strong class="pname"><code>limit</code></strong> - maximum number of records to display</li>
-        <li><strong class="pname"><code>orderby</code></strong> - orderby for the query</li>
-        <li><strong class="pname"><code>linkto</code></strong> - hook to link record IDs</li>
-        <li><strong class="pname"><code>download_url</code></strong> - the default download URL of the application</li>
-        <li><strong class="pname"><code>as_page</code></strong> - return the list as JSON page</li>
-        <li><strong class="pname"><code>as_list</code></strong> - return the list as Python list</li>
-        <li><strong class="pname"><code>format</code></strong> - the representation format</li>
+        <li><strong class="pname"><code>as_json</code></strong> - convert the output XML into JSON</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -2905,7 +2195,8 @@ object --+
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">stylesheet</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">r</span>,
-        <span class="sig-arg">method</span>=<span class="sig-default">None</span>)</span>
+        <span class="sig-arg">method</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">skip_error</span>=<span class="sig-default">False</span>)</span>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.stylesheet">source&nbsp;code</a></span>&nbsp;
@@ -2919,52 +2210,6 @@ object --+
         <li><strong class="pname"><code>r</code></strong> - the S3Request</li>
         <li><strong class="pname"><code>method</code></strong> - &quot;import&quot; for data imports, else None</li>
     </ul></dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="content_type"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">content_type</span>(<span class="sig-arg">self</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.content_type">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  
-  <dl class="fields">
-  </dl>
-</td></tr></table>
-</div>
-<a name="files"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">files</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">files</span>=<span class="sig-default">None</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.files">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Get/set the list of attached files</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>files</code></strong> - the file list as dict {filename:file}, None to not update the 
-          current list</li>
-    </ul></dd>
-    <dt>Returns:</dt>
-        <dd>the file list as dict {filename:file}</dd>
   </dl>
 </td></tr></table>
 </div>
@@ -3000,7 +2245,7 @@ object --+
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Tue Dec 14 18:57:45 2010
+    Generated by Epydoc 3.0.1 on Mon Dec 20 19:56:50 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

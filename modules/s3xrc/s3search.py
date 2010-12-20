@@ -134,7 +134,7 @@ class S3Search(S3Method):
                     raise HTTP(400, body=output)
 
                 resource.add_filter(query)
-                output = resource.exporter.json(resource, start=0, limit=limit, list_fields=fields)
+                output = resource.exporter.json(resource, start=0, limit=limit, fields=fields, orderby=field)
 
                 response.headers["Content-Type"] = "text/json"
                 return output
@@ -277,9 +277,9 @@ class S3LocationSearch(S3Search):
 
             limit = _vars.limit
             if limit:
-                output = resource.exporter.json(resource, start=0, limit=int(limit), list_fields=fields)
+                output = resource.exporter.json(resource, start=0, limit=int(limit), fields=fields, orderby=field)
             else:
-                output = resource.exporter.json(resource, list_fields=fields)
+                output = resource.exporter.json(resource, fields=fields, orderby=field)
 
             response.headers["Content-Type"] = "text/json"
             return output
@@ -374,7 +374,7 @@ class S3PersonSearch(S3Search):
                     raise HTTP(400, body=output)
 
             resource.add_filter(query)
-            output = resource.exporter.json(resource, start=0, limit=limit, list_fields=fields)
+            output = resource.exporter.json(resource, start=0, limit=limit, fields=fields, orderby=field)
 
             response.headers["Content-Type"] = "text/json"
             return output
@@ -458,9 +458,8 @@ class S3SearchSimple(S3CRUD):
             if form.accepts(request.vars, session, keepvalues=True):
                 if form.vars.label == "":
                     form.vars.label = "%"
-                results = self.datastore._search_simple(table,
-                                                      fields = self.__fields,
-                                                      label = form.vars.label)
+                results = resource.search_simple(fields=self.__fields,
+                                                 label=form.vars.label)
                 if results:
                     linkto = self._linkto(r)
                     if not list_fields:

@@ -281,6 +281,7 @@ class S3Resource(object):
         # Audit
         audit = self.datastore.audit
         try:
+            # Audit "read" record by record
             if self.tablename in rows:
                 ids = [r[str(self.table.id)] for r in rows]
             else:
@@ -288,6 +289,7 @@ class S3Resource(object):
             for i in ids:
                 audit("read", self.prefix, self.name, record=i)
         except KeyError:
+            # Audit "list" if no IDs available
             audit("list", self.prefix, self.name)
 
         # Keep the rows for later access
@@ -437,6 +439,105 @@ class S3Resource(object):
 
         success = self.db(self._query).update(**update_fields)
         return success
+
+
+    # -------------------------------------------------------------------------
+    def search_simple(self, fields=None, label=None, filterby=None):
+        """
+        Simple fulltext search
+
+        @param fields: list of fields to search for the label
+        @param label: label to be found
+        @param filterby: filter query for results
+
+        """
+
+        table = self.table
+        prefix = self.prefix
+        name = self.name
+
+        model = self.datastore.model
+
+        mq = Storage()
+        search_fields = Storage()
+
+        if fields and not isinstance(fields, (list, tuple)):
+            fields = [fields]
+        elif not fields:
+            raise SyntaxError("No search fields specified.")
+
+        for f in fields:
+            _table = None
+            component = None
+
+            if f.find(".") != -1:
+                cname, f = f.split(".", 1)
+                component, pkey, fkey = model.get_component(prefix, name, cname)
+                if component:
+                    _table = component.table
+                    tablename = component.tablename
+                    # Do not add queries for empty component tables
+                    if not self.db(_table.id>0).select(_table.id, limitby=(0,1)).first():
+                        continue
+            else:
+                _table = table
+                tablename = table._tablename
+
+            if _table and tablename not in mq:
+                query = (self.accessible_query("read", _table))
+                if "deleted" in _table.fields:
+                    query = (query & (_table.deleted == "False"))
+                if component:
+                    join = (table[pkey] == _table[fkey])
+                    query = (query & join)
+                mq[_table._tablename] = query
+
+            if _table and f in _table.fields:
+                if _table._tablename not in search_fields:
+                    search_fields[tablename] = [_table[f]]
+                else:
+                    search_fields[tablename].append(_table[f])
+
+        if not search_fields:
+            return None
+
+        if label and isinstance(label,str):
+            labels = label.split()
+            results = []
+
+            for l in labels:
+                wc = "%"
+                _l = "%s%s%s" % (wc, l.lower(), wc)
+
+                query = None
+                for tablename in search_fields:
+                    hq = mq[tablename]
+                    fq = None
+                    fields = search_fields[tablename]
+                    for f in fields:
+                        if fq:
+                            fq = (f.lower().like(_l)) | fq
+                        else:
+                            fq = (f.lower().like(_l))
+                    q = hq & fq
+                    if query is None:
+                        query = q
+                    else:
+                        query = query | q
+
+                if results:
+                    query = (table.id.belongs(results)) & query
+                if filterby:
+                    query = (filterby) & (query)
+
+                records = self.db(query).select(table.id)
+                results = [r.id for r in records]
+                if not results:
+                    return None
+
+            return results
+        else:
+            return None
 
 
     # -------------------------------------------------------------------------

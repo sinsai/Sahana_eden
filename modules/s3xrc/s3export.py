@@ -413,7 +413,11 @@ class S3Exporter(object):
 
 
     # -------------------------------------------------------------------------
-    def json(self, resource, start=None, limit=None, list_fields=None):
+    def json(self, resource,
+             start=None,
+             limit=None,
+             fields=None,
+             orderby=None):
         """
         Export a resource as JSON
 
@@ -424,14 +428,28 @@ class S3Exporter(object):
         @param limit: maximum number of records to export (for slicing)
         @param list_fields: names of fields to include in the export
                             (None for all fields)
+        @param
 
         """
 
-        # load the slice
-        resource.load(start=start, limit=limit)
+        attributes = dict()
+
+        if orderby is not None:
+            attributes.update(orderby=orderby)
+
+        # Slicing
+        if start is not None:
+            if not limit:
+                limit = self.datastore.ROWSPERPAGE
+            if limit <= 0:
+                limit = 1
+            if start < 0:
+                start = 0
+            limitby = (start, start + limit)
+            attributes.update(limitby=limitby)
 
         # Get the rows and return as json
-        rows = resource.records(fields=list_fields)
+        rows = resource.select(*fields, **attributes)
         return rows.json()
 
 

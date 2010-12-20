@@ -1,16 +1,27 @@
 from selenium import selenium
+
+from sahanaTest import SahanaTest
 import unittest, time, re
 import actions
+import inspect
 
-class OrganisationTest(unittest.TestCase):
-    def setUp(self):
-        self.verificationErrors = []
-        self.action = actions.Action()
-        self.selenium = selenium("localhost", 4444, "*chrome", "http://127.0.0.1:8000/")
-        self.selenium.start()
+class OrganisationTest(SahanaTest):
+    orgs = []
+                
+    def firstRun(self):
+        self.action.logout(self)
+        # Log in as admin an then move to the add organisation page 
+        OrganisationTest.selenium.open("/eden/org/organisation/create")
+        self.action.errorMsg(self, "Not Authorised")
+        self.assertEqual("Login", self.selenium.get_text("//h2"))
+        self.useSahanaAdminAccount()
+        self.action.login(self, self._user, self._password )
+        # Add the test organisations
+        self.addOrg()
+
     
     def create_organisation(self, name, acronym, type, cluster, country, website):
-        sel = self.selenium
+        sel = OrganisationTest.selenium
 
         name = name.strip()
         acronym = acronym.strip()
@@ -30,22 +41,12 @@ class OrganisationTest(unittest.TestCase):
         sel.type("org_organisation_website", website)
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
-        time.sleep(1)
-        self.assertEqual("Organization added", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg(self,"Organization added")
         self.assertEqual("List Organizations", sel.get_text("//h2"))
+        print "Organisation %s created" % (name)
         
-    def test_org_add(self):
-        sel = self.selenium
-        sel.open("/eden/default/index")
-        sel.click("link=Organisation Registry")
-        sel.wait_for_page_to_load("30000")
-        sel.click("link=Add")
-        sel.wait_for_page_to_load("30000")
-        time.sleep(1)
-        self.assertEqual("Not Authorised", sel.get_text("//div[@class=\"error\"]"))
-        self.assertEqual("Login", sel.get_text("//h2"))
-        self.action.login(self, "admin@example.com", "testing" )
-        
+    def addOrg(self):
+        sel = OrganisationTest.selenium
         source = open("../data/organisation.txt", "r")
         values = source.readlines()
         source.close()
@@ -59,32 +60,82 @@ class OrganisationTest(unittest.TestCase):
                                          details[4].strip(),
                                          details[5].strip(),
                                          )
+                OrganisationTest.orgs.append(details[0].strip())
 
-    def test_org_UI(self):
-        sel = self.selenium
-        # Log in as admin an then move to the add organisation page 
-        self.action.login(self, "admin@example.com", "testing" )
+    def test_CreateOrgUI(self):
+        """ Test to check the elements of the create organisation form """ 
+        sel = OrganisationTest.selenium
         sel.open("/eden/org/organisation/create")
         # check that the UI controls are present
-        self.action.element(self,"input", "org_organisation_name")
-        self.action.element(self,"input", "org_organisation_acronym")
-        self.action.element(self,"select", "org_organisation_type")
-        self.action.element(self,"select", "org_organisation_cluster_id")
-        self.action.element(self,"select", "org_organisation_country")
-        self.action.element(self,"input", "org_organisation_website")
-        self.action.element(self,"input", "org_organisation_twitter")
-        self.action.element(self,"input", "org_organisation_donation_phone")
-        self.action.element(self,"textarea", "org_organisation_comments")
-        self.action.button(self,"Save")
-        
-        # check the help balloons
-        self.action.helpBallon(self, "Twitter")
-        self.action.helpBallon(self, "Donation")
-        self.action.helpBallon(self, "Comments")
-            
-    def tearDown(self):
-        self.selenium.stop()
-        self.assertEqual([], self.verificationErrors)
+        self.action.checkForm (self,(("input", "org_organisation_name"),
+                    ("input", "org_organisation_acronym"),
+                    ("select", "org_organisation_type"),
+                    ("select", "org_organisation_cluster_id"),
+                    ("select", "org_organisation_country"),
+                    ("input", "org_organisation_website"),
+                    ("input", "org_organisation_twitter"),
+                    ("input", "org_organisation_donation_phone"),
+                    ("textarea", "org_organisation_comments")
+                   ),
+                   ("Save",),
+                   ("Twitter", "Donation", "Comments")
+                  )
 
+    def test_OpenOrgUI(self):
+        """ Test to check the elements of the list organisation form
+        
+        In turn it will check each of the tabs on the list screen
+        and ensure that the data on the screen has been properly displayed.   
+        """ 
+        sel = OrganisationTest.selenium
+        sel.open("/eden/org/organisation")
+        self.action.searchUnique(self,self.orgs[0])
+        sel.click("link=Open")
+        sel.wait_for_page_to_load("30000")
+        # check that the UI controls are present
+        self.action.checkForm (self,(("input", "org_organisation_name"),
+                    ("input", "org_organisation_acronym"),
+                    ("select", "org_organisation_type"),
+                    ("select", "org_organisation_cluster_id"),
+                    ("select", "org_organisation_country"),
+                    ("input", "org_organisation_website"),
+                    ("input", "org_organisation_twitter"),
+                    ("input", "org_organisation_donation_phone"),
+                    ("textarea", "org_organisation_comments")
+                   ),
+                   ("Save",),
+                   ("Twitter", "Donation", "Comments")
+                  )
+        self.action.clickTab(self, "Staff")
+        self.action.btnLink (self, "show-add-btn", "Add Staff")
+            
+        self.action.clickTab(self, "Offices")
+        self.action.btnLink (self, "show-add-btn", "Add Office")
+
+        self.action.clickTab(self, "Warehouses")
+        self.action.btnLink (self, "show-add-btn", "Add Warehouse")
+
+        self.action.clickTab(self, "Assessments")
+#        self.action.btnLink (self, "show-add-btn", "Add Assessment")
+
+        self.action.clickTab(self, "Projects")
+        self.action.btnLink (self, "show-add-btn", "Add Project")
+
+        self.action.clickTab(self, "Activities")
+        self.action.btnLink (self, "show-add-btn", "Add Activity")
+
+    def lastRun(self):
+        # Delete the test organisations
+        sel = OrganisationTest.selenium
+        sel.open("/eden/org/organisation")
+        for org in OrganisationTest.orgs:
+            self.action.searchUnique(self,org)
+            sel.click("link=Delete")
+            self.assertTrue(re.search(r"^Sure you want to delete this object[\s\S]$", sel.get_confirmation()))
+            # pause to allow the delete to work
+            self.action.successMsg(self,"Organization deleted")
+    
 if __name__ == "__main__":
+    SahanaTest.setUpHierarchy()
     unittest.main()
+    OrganisationTest.selenium.stop()

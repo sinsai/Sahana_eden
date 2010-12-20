@@ -46,7 +46,7 @@ class UserManagementFinal(UserManagement):
         for user in self.newUsers:
             details = user.split(',')
             self.assertTrue(len(details)>=4,user)
-            # Add the new user
+            # Delete the user
             self.action.delUser(self, details[2])
         self.action.clearSearch(self)
         sel.click("link=Logout")

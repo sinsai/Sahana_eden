@@ -140,7 +140,7 @@ gis_config_layout_opts = {
     1:T("window"),
     2:T("embedded")
     }
-opt_gis_layout = db.Table(None, "opt_gis_layout",
+opt_gis_layout = db.Table(db, "opt_gis_layout",
                           Field("opt_gis_layout", "integer",
                                 requires = IS_IN_SET(gis_config_layout_opts, zero=None),
                                 default = 1,
@@ -565,12 +565,8 @@ def gis_location_onaccept(form):
             name_dummy = "|".join(ids) # That's not how it should be
             table = db.gis_location
             db(table.id == location_id).update(name_dummy=name_dummy)
-    # Update the parent Hierarchy
-    # Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
-    # Associating path for the new node once it is inserted
-    parent = form.vars.parent
-    level = form.vars.level
-    gis.update_location_tree(parent, level, form.vars.id)
+    # Update the Path
+    gis.update_location_tree(form.vars.id, form.vars.parent)
     return
 
 def gis_location_onvalidation(form):
@@ -624,7 +620,7 @@ def gis_location_onvalidation(form):
                                                           db.gis_location.lon_max,
                                                           limitby=(0, 1),
                                                           cache=(cache.ram, 3600)).first()
-    
+
     # Check Parents are in sane order
     if level and parent and _parent:
         # Check that parent is of a higher level (http://eden.sahanafoundation.org/ticket/450)
@@ -659,7 +655,7 @@ def gis_location_onvalidation(form):
                 response.error = T("Locations of this level need to have a parent of level") + ": %s" % gis_location_hierarchy["L%i" % (int(level[1:]) - 1)]
                 form.errors["parent"] = T("Parent needs to be of the correct level")
                 return
-        
+
     # Check within permitted bounds
     # (avoid incorrect data entry)
     # Points only for now

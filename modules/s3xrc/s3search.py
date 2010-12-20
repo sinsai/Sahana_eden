@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Search Extensions
 
-    @version: 2.2.9
+    @version: 2.2.10
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -11,6 +11,7 @@
     @requires: U{B{I{Geraldo}} <http://www.geraldoreports.org>}
     @requires: U{B{I{Xlwt}} <http://pypi.python.org/pypi/xlwt>}
 
+    @author: Fran Boon
     @author: nursix
     @contact: dominic AT nursix DOT org
     @copyright: 2009-2010 (c) Sahana Software Foundation
@@ -40,26 +41,35 @@
 """
 
 from gluon.http import HTTP
+from gluon.html import *
 
-from s3crud import S3MethodHandler
+from s3rest import S3Method
+from s3crud import S3CRUD
+
+__all__ = ["S3Search",
+           "S3LocationSearch",
+           "S3PersonSearch",
+           "S3SearchSimple"]
 
 # *****************************************************************************
-class S3Search(S3MethodHandler):
+class S3Search(S3Method):
+
     """
-        Search MethodHandler for S3CRUD
+    Search method for S3Resources
 
-        @ToDo: Support components
+    @todo: Support components
+
     """
 
-    def respond(self, r, **attr):
-
+    def apply_method(self, r, **attr):
         """
-            Responder
+        Apply method
 
-            @param r: the S3Request
-            @param attr: dictionary of parameters for the method handler
+        @param r: the S3Request
+        @param attr: dictionary of parameters for the method handler
 
-            @returns: output object to send to the view
+        @returns: output object to send to the view
+
         """
 
         # Get environment
@@ -67,7 +77,7 @@ class S3Search(S3MethodHandler):
         request = self.request
         response = self.response
 
-        s3xrc = self.manager
+        s3xrc = self.datastore
         resource = self.resource
         table = self.table
         representation = r.representation
@@ -143,15 +153,16 @@ class S3Search(S3MethodHandler):
 # *****************************************************************************
 class S3LocationSearch(S3Search):
     """
-        Location-Specific Searches
+    Location-specific search method for S3Resources
         - just supports JSON format
 
-        @ToDo: Support Components
+    @todo: Support Components
+
     """
 
-    def respond(self, r, **attr):
+    def apply_method(self, r, **attr):
         """
-            Responder
+            Apply method
 
             @param r: the S3Request
             @param attr: dictionary of parameters for the method handler
@@ -164,7 +175,7 @@ class S3LocationSearch(S3Search):
         request = self.request
         response = self.response
 
-        s3xrc = self.manager
+        s3xrc = self.datastore
         gis = s3xrc.gis
         resource = self.resource
         table = self.table
@@ -282,24 +293,26 @@ class S3LocationSearch(S3Search):
 
 # *****************************************************************************
 class S3PersonSearch(S3Search):
+
     """
-        Person-Specific Searches:
+    Person-specific search method for S3Resources:
         - uses first_name, middle_name & last_name
         - only support '~' filter
         - just supports JSON format
 
-        @ToDo: Support components
+    @todo: Support components
+
     """
 
-    def respond(self, r, **attr):
-
+    def apply_method(self, r, **attr):
         """
-            Responder
+        Apply method
 
-            @param r: the S3Request
-            @param attr: dictionary of parameters for the method handler
+        @param r: the S3Request
+        @param attr: dictionary of parameters for the method handler
 
-            @returns: output object to send to the view
+        @returns: output object to send to the view
+
         """
 
         # Get environment
@@ -307,7 +320,7 @@ class S3PersonSearch(S3Search):
         request = self.request
         response = self.response
 
-        s3xrc = self.manager
+        s3xrc = self.datastore
         resource = self.resource
         table = self.table
         representation = r.representation
@@ -373,3 +386,127 @@ class S3PersonSearch(S3Search):
             # Only JSON supported
             raise HTTP(501, body=BADFORMAT)
 
+
+# *****************************************************************************
+class S3SearchSimple(S3CRUD):
+
+    """
+    Simple fulltext search method for S3Resources
+
+    """
+
+
+    def __init__(self, label=None, comment=None, fields=None):
+        """
+        Constructor
+
+        @param label: the label for the input field in the search form
+        @param comment: help text for the input field in the search form
+        @param fields: the fields to search for the string
+
+        """
+
+        S3CRUD.__init__(self)
+        self.__label = label
+        self.__comment = comment
+        self.__fields = fields
+
+
+    # -------------------------------------------------------------------------
+    def apply_method(self, r, **attr):
+        """
+        Apply method
+
+        @param r: the S3Request
+        @param attr: request parameters
+
+        """
+
+        # Get environment
+        session = self.session
+        request = self.request
+        response = self.response
+        resource = self.resource
+        table = self.table
+        tablename = self.tablename
+        T = self.datastore.T
+
+        # Get representation
+        representation = r.representation
+
+        # Initialize output
+        output = dict()
+
+        # Get table-specific parameters
+        sortby = self._config("sortby", [[1,'asc']])
+        orderby = self._config("orderby", None)
+        list_fields = self._config("list_fields")
+
+        # GET vars
+        vars = request.get_vars
+
+        if r.interactive:
+            form = FORM(TABLE(TR("%s: " % self.__label,
+                                 INPUT(_type="text", _name="label", _size="40"),
+                                 DIV(DIV(_class="tooltip",
+                                         _title="%s|%s" % (self.__label,
+                                                           self.__comment)))),
+                              TR("", INPUT(_type="submit",
+                                           _value=T("Search")))))
+            output.update(form=form)
+
+            if form.accepts(request.vars, session, keepvalues=True):
+                if form.vars.label == "":
+                    form.vars.label = "%"
+                results = self.datastore._search_simple(table,
+                                                      fields = self.__fields,
+                                                      label = form.vars.label)
+                if results:
+                    linkto = self._linkto(r)
+                    if not list_fields:
+                        fields = resource.readable_fields()
+                    else:
+                        fields = [table[f]
+                                  for f in list_fields if f in table.fields]
+                    if not fields:
+                        fields = []
+                    if fields[0].name != table.fields[0]:
+                        fields.insert(0, table[table.fields[0]])
+                    resource.build_query(id=results)
+                    items = self._select(fields=fields,
+                                         orderby=orderby,
+                                         linkto=linkto,
+                                         download_url=self.download_url,
+                                         format=representation)
+                    if request.post_vars.label:
+                        session.s3.filter = {"%s.id" % resource.name:
+                                            ",".join(map(str,results))}
+                    else:
+                        session.s3.filter = None
+                else:
+                    items = T("No matching records found.")
+                output.update(items=items, sortby=sortby)
+
+                # Add-button
+                buttons = self.insert_buttons(r, "add")
+                if buttons:
+                    output.update(buttons)
+
+            # Title and subtitle
+            title = self.crud_string(tablename, "title_search")
+            subtitle = T("Matching Records")
+            output.update(title=title, subtitle=subtitle)
+
+            # View
+            response.view = "search_simple.html"
+
+        elif representation == "aadata":
+            return self.select(r, **attr)
+
+        else:
+            r.error(resource.ERROR.BAD_FORMAT)
+
+        return output
+
+
+# *****************************************************************************

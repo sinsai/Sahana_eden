@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-""" S3XRC Resource Framework - Resource Controller
+""" S3XRC Resource Framework - Data Store Manager
 
-    @version: 2.2.9
+    @version: 2.2.10
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -36,7 +36,7 @@
 
 """
 
-__all__ = ["S3ResourceController", "S3ImportJob"]
+__all__ = ["S3DataStore", "S3ImportJob"]
 
 import sys, datetime, time
 
@@ -50,14 +50,15 @@ from lxml import etree
 from s3xml import S3XML
 from s3rest import S3Resource, S3Request
 from s3model import S3ResourceModel, S3ResourceLinker
-from s3crud import S3CRUDHandler, S3SearchSimple
+from s3crud import S3CRUD
+from s3search import S3SearchSimple
 from s3export import S3Exporter
 from s3import import S3Importer
 
 # *****************************************************************************
-class S3ResourceController(object):
+class S3DataStore(object):
 
-    """ S3 Resource Controller
+    """ Data Store Manager
 
         @param environment: the environment of this run
 
@@ -96,16 +97,18 @@ class S3ResourceController(object):
         VALIDATION_ERROR = "Validation error",
         DATA_IMPORT_ERROR = "Data import error",
         NOT_PERMITTED = "Operation not permitted",
-        NOT_IMPLEMENTED = "Not implemented"
+        NOT_IMPLEMENTED = "Not implemented",
+        INTEGRITY_ERROR = "Integrity error" #T("Cannot delete whilst there are linked records. Please delete linked records first.")
     )
 
-    def __init__(self, environment):
+    def __init__(self, environment, db):
+
+        self.db = db
 
         # Environment
         environment = Storage(environment)
         self.T = environment.T
         self.ROWSPERPAGE = environment.ROWSPERPAGE
-        self.db = environment.db
         self.cache = environment.cache
         self.session = environment.session
         self.request = environment.request
@@ -130,7 +133,7 @@ class S3ResourceController(object):
         self.query_builder = S3QueryBuilder(self)
         self.model = S3ResourceModel(self.db)
         self.linker = S3ResourceLinker(self)
-        self.crud = S3CRUDHandler(self)
+        self.crud = S3CRUD()
         self.xml = S3XML(self)
         self.exporter = S3Exporter(self)
         self.importer = S3Importer(self)
@@ -150,12 +153,12 @@ class S3ResourceController(object):
     # Utilities ===============================================================
 
     def __fields(self, table, skip=[]):
+        """
+        Find all readable fields in a table and split them into reference
+        and non-reference fields
 
-        """ Finds all readable fields in a table and splits
-            them into reference and non-reference fields
-
-            @param table: the DB table
-            @param skip: list of field names to skip
+        @param table: the DB table
+        @param skip: list of field names to skip
 
         """
 
@@ -211,12 +214,18 @@ class S3ResourceController(object):
             return imports
 
         table = self.db[resource]
+
+        # Get the original record
         original = self.original(table, element)
+
+        # Convert element into a record and validate it
         record = self.xml.record(table, element,
                                  original=original,
                                  files=files,
                                  validate=validate)
 
+        # Get the modification date/time from the element
+        # @todo: import this
         mtime = element.get(self.xml.MTIME, None)
         if mtime:
             mtime, error = self.validate(table, None, self.xml.MTIME, mtime)
@@ -227,6 +236,7 @@ class S3ResourceController(object):
             self.error = self.ERROR.VALIDATION_ERROR
             return None
 
+        # Look ahead for referenced elements
         if lookahead:
             (rfields, dfields) = self.__fields(table)
             rmap = self.xml.lookahead(table, element, rfields,
@@ -234,6 +244,7 @@ class S3ResourceController(object):
         else:
             rmap = []
 
+        # Create an import job
         (prefix, name) = resource.split("_", 1)
         onvalidation = self.model.get_config(table, "onvalidation")
         onaccept = self.model.get_config(table, "onaccept")
@@ -246,9 +257,11 @@ class S3ResourceController(object):
                           onvalidation=onvalidation,
                           onaccept=onaccept)
 
+        # Create a job list
         if joblist is not None:
             joblist[element] = job
 
+        # Create import jobs for the referenced elements
         for r in rmap:
             entry = r.get("entry")
             relement = entry.get("element")
@@ -265,7 +278,9 @@ class S3ResourceController(object):
                     entry["job"] = jobs[-1]
                 imports.extend(jobs)
 
+        # Add job to the import list
         imports.append(job)
+
         return imports
 
 
@@ -306,17 +321,17 @@ class S3ResourceController(object):
 
     # -------------------------------------------------------------------------
     def callback(self, hook, *args, **vars):
+        """
+        Invoke a hook or a list of hooks
 
-        """ Invoke a hook or a list of hooks
-
-            @param hook: the hook function, a list or tuple of hook
-                functions, or a tablename-keyed dict of hook functions
-            @param args: args (position arguments) to pass to the hook
-                function(s)
-            @param vars: vars (named arguments) to pass to the hook
-                function(s), may contain a name=tablename which is used
-                to select a function from the dict (the "name" argument
-                will not be passed to the functions)
+        @param hook: the hook function, a list or tuple of hook
+            functions, or a tablename-keyed dict of hook functions
+        @param args: args (position arguments) to pass to the hook
+            function(s)
+        @param vars: vars (named arguments) to pass to the hook
+            function(s), may contain a name=tablename which is used
+            to select a function from the dict (the "name" argument
+            will not be passed to the functions)
 
         """
 
@@ -379,11 +394,11 @@ class S3ResourceController(object):
 
     # -------------------------------------------------------------------------
     def clear_session(self, prefix=None, name=None):
+        """
+        Clears one or all record IDs stored in a session
 
-        """ Clears one or all record IDs stored in a session
-
-            @param prefix: the prefix of the resource name (=module name)
-            @param name: the name of the resource (=without prefix)
+        @param prefix: the prefix of the resource name (=module name)
+        @param name: the name of the resource (=without prefix)
 
         """
 
@@ -441,6 +456,8 @@ class S3ResourceController(object):
             @param prefix: the module prefix of the resource
             @param name: the resource name (without prefix)
 
+            @todo 2.3: deprecate
+
         """
 
         return S3Request(self, prefix, name)
@@ -454,6 +471,8 @@ class S3ResourceController(object):
 
             @param prefix: the module prefix of the resource
             @param name: the resource name (without prefix)
+
+            @todo 2.3: move into S3Resource
 
         """
 
@@ -480,6 +499,9 @@ class S3ResourceController(object):
             @param record: the existing DB record
             @param fieldname: name of the field
             @param value: value to check
+
+            @todo 2.3: make static method
+            @todo 2.3: move into model
 
         """
 
@@ -683,6 +705,8 @@ class S3ResourceController(object):
                 after that date/time (minimum modification date/time)
             @param show_urls: show URLs in resource elements
             @param dereference: export referenced resources in the tree
+
+            @todo 2.3: move into S3Resource
 
         """
 
@@ -889,6 +913,8 @@ class S3ResourceController(object):
             @param tree: the element tree
             @param ignore_errors: continue at errors (=skip invalid elements)
 
+            @todo 2.3: move into S3Resource
+
         """
 
         self.error = None
@@ -945,7 +971,7 @@ class S3ResourceController(object):
             element = elements[i]
             jobs = self.__create_job(tablename, element,
                                      id=id,
-                                     files = resource.files(),
+                                     files = resource.files,
                                      validate=self.validate,
                                      tree=tree,
                                      directory=directory,
@@ -995,7 +1021,7 @@ class S3ResourceController(object):
                         celement = celements[k]
                         cjobs = self.__create_job(ctablename,
                                                   celement,
-                                                  files = resource.files(),
+                                                  files = resource.files,
                                                   validate=self.validate,
                                                   tree=tree,
                                                   directory=directory,
@@ -1060,8 +1086,7 @@ class S3ResourceController(object):
         if not fields:
             fields = ["id"]
 
-        return S3SearchSimple(self,
-                              label=label,
+        return S3SearchSimple(label=label,
                               comment=comment,
                               fields=fields)
 
@@ -1075,6 +1100,8 @@ class S3ResourceController(object):
             @param fields: list of fields to search for the label
             @param label: label to be found
             @param filterby: filter query for results
+
+            @todo 2.3: move into S3Resource
 
         """
 
@@ -1167,7 +1194,7 @@ class S3ImportJob(object):
 
     """ Helper class for data imports
 
-        @param manager: the resource controller
+        @param datastore: the resource controller
         @param prefix: prefix of the resource name (=module name)
         @param name: the resource name (=without prefix)
         @param id: the target record ID
@@ -1199,7 +1226,7 @@ class S3ImportJob(object):
 
 
     # -------------------------------------------------------------------------
-    def __init__(self, manager, prefix, name, id,
+    def __init__(self, datastore, prefix, name, id,
                  record=None,
                  element=None,
                  mtime=None,
@@ -1208,13 +1235,13 @@ class S3ImportJob(object):
                  onvalidation=None,
                  onaccept=None):
 
-        self.manager = manager
-        self.db = manager.db
+        self.datastore = datastore
+        self.db = datastore.db
 
-        self.permit = manager.permit
-        self.audit = manager.audit
-        self.resolve = manager.resolve
-        self.log = manager.log
+        self.permit = datastore.permit
+        self.audit = datastore.audit
+        self.resolve = datastore.resolve
+        self.log = datastore.log
 
         self.prefix = prefix
         self.name = name
@@ -1253,7 +1280,7 @@ class S3ImportJob(object):
         if not self.id:
             self.id = 0
             self.method = permission = self.METHOD.CREATE
-            orig = self.manager.original(self.table, self.record)
+            orig = self.datastore.original(self.table, self.record)
             if orig:
                 self.id = orig.id
                 self.uid = orig.get(self.UID, None)
@@ -1264,7 +1291,7 @@ class S3ImportJob(object):
                 self.id = 0
                 self.method = permission = self.METHOD.CREATE
 
-        if self.prefix in self.manager.PROTECTED:
+        if self.prefix in self.datastore.PROTECTED:
             self.permitted = False
         elif self.permit and not \
            self.permit(permission, self.tablename, record_id=self.id):
@@ -1303,8 +1330,8 @@ class S3ImportJob(object):
 
         self.resolve_references()
 
-        xml = self.manager.xml
-        model = self.manager.model
+        xml = self.datastore.xml
+        model = self.datastore.model
 
         skip_components = False
 
@@ -1316,10 +1343,11 @@ class S3ImportJob(object):
                 form = Storage()
                 form.method = self.method
                 form.vars = self.record
-                form.vars.id = self.id
+                if self.id:
+                    form.vars.id = self.id
                 form.errors = Storage()
                 if self.onvalidation:
-                    self.manager.callback(self.onvalidation, form, name=self.tablename)
+                    self.datastore.callback(self.onvalidation, form, name=self.tablename)
                 if form.errors:
                     for k in form.errors:
                         e = self.element.findall("data[@field='%s']" % k)
@@ -1330,7 +1358,7 @@ class S3ImportJob(object):
                             e = e[0]
                         e.set(xml.ATTRIBUTE.error,
                               xml.xml_encode(str(form.errors[k])))
-                    self.manager.error = self.manager.ERROR.VALIDATION_ERROR
+                    self.datastore.error = self.datastore.ERROR.VALIDATION_ERROR
                     return False
 
                 # Resolve+Log
@@ -1387,7 +1415,7 @@ class S3ImportJob(object):
                         try:
                             success = self.db(self.table.id == self.id).update(**dict(self.record))
                         except:
-                            self.manager.error = sys.exc_info()[1]
+                            self.datastore.error = sys.exc_info()[1]
                             return False
                         if success:
                             self.committed = True
@@ -1414,7 +1442,7 @@ class S3ImportJob(object):
                         try:
                             success = self.table.insert(**dict(self.record))
                         except:
-                            self.manager.error = sys.exc_info()[1]
+                            self.datastore.error = sys.exc_info()[1]
                             return False
                         if success:
                             self.id = success
@@ -1428,7 +1456,7 @@ class S3ImportJob(object):
                                    form=form, record=self.id, representation="xml")
                     model.update_super(self.table, form.vars)
                     if self.onaccept:
-                        self.manager.callback(self.onaccept, form, name=self.tablename)
+                        self.datastore.callback(self.onaccept, form, name=self.tablename)
 
         # Commit components
         if self.id and self.components and not skip_components:
@@ -1513,13 +1541,13 @@ class S3QueryBuilder(object):
 
     """ Query Builder
 
-        @param manager: the resource controller
+        @param datastore: the resource controller
 
     """
 
-    def __init__(self, manager):
+    def __init__(self, datastore):
 
-        self.manager = manager
+        self.datastore = datastore
 
 
     # -------------------------------------------------------------------------
@@ -1533,7 +1561,7 @@ class S3QueryBuilder(object):
 
         """
 
-        linker = self.manager.linker
+        linker = self.datastore.linker
         q = None
 
         for k in vars:
@@ -1544,8 +1572,8 @@ class S3QueryBuilder(object):
                 else:
                     link = link[1:]
                 o_tn = link.pop()
-                if o_tn in self.manager.db:
-                    link_table = self.manager.db[o_tn]
+                if o_tn in self.datastore.db:
+                    link_table = self.datastore.db[o_tn]
                 else:
                     continue
                 operator = link.pop()
@@ -1674,7 +1702,7 @@ class S3QueryBuilder(object):
                 else:
                     op = "eq"
                 if field == "uid":
-                    field = self.manager.UID
+                    field = self.datastore.UID
                 if field not in table.fields:
                     continue
                 else:
@@ -1790,8 +1818,8 @@ class S3QueryBuilder(object):
         resource.clear()
         resource.clear_query()
 
-        xml = self.manager.xml
-        deletion_status = self.manager.DELETED
+        xml = self.datastore.xml
+        deletion_status = self.datastore.DELETED
 
         if vars:
             url_query = self.parse_url_query(resource, vars)
@@ -1866,7 +1894,7 @@ class S3QueryBuilder(object):
                 if not isinstance(uid, (list, tuple)):
                     resource._multiple = False # single result expected
                     uid = [uid]
-                uid_queries = url_query[name].get(self.manager.UID, Storage())
+                uid_queries = url_query[name].get(self.datastore.UID, Storage())
 
                 ne = uid_queries.get("ne", [])
                 eq = uid_queries.get("eq", [])
@@ -1877,8 +1905,8 @@ class S3QueryBuilder(object):
                 if eq and "eq" not in uid_queries:
                     uid_queries.eq = eq
 
-                if self.manager.UID not in url_query[name]:
-                    url_query[name][self.manager.__UID] = uid_queries
+                if self.datastore.UID not in url_query[name]:
+                    url_query[name][self.datastore.__UID] = uid_queries
 
             # URL Queries
             contexts = url_query.context

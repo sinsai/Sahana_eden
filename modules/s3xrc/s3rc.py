@@ -919,6 +919,7 @@ class S3DataStore(object):
 
         self.error = None
 
+        # Call the tree-resolver to cleanup the tree
         if self.tree_resolve:
             if not isinstance(tree, etree._ElementTree):
                 tree = etree.ElementTree(tree)
@@ -930,16 +931,18 @@ class S3DataStore(object):
         tablename = resource.tablename
         table = resource.table
 
-        if "id" not in table:
+        # Do not import into tables without "id" field
+        if "id" not in table.fields:
             self.error = self.ERROR.BAD_RESOURCE
             return False
 
+        # Select the elements for this table
         elements = self.xml.select_resources(tree, tablename)
         if not elements:
-            return True
+            return True # nothing to import => still ok
 
         # if a record ID is given, import only matching elements
-        # TODO: match all possible fields (see original())
+        # @todo: match all possible fields (see original())
         UID = self.xml.UID
         if id and UID in table:
             if not isinstance(id, (tuple, list)):
@@ -1071,12 +1074,12 @@ class S3DataStore(object):
 
     # -------------------------------------------------------------------------
     def search_simple(self, label=None, comment=None, fields=[]):
+        """
+        Generate a search_simple method handler
 
-        """ Generate a search_simple method handler
-
-            @param label: the label for the input field in the search form
-            @param comment: help text for the input field in the search form
-            @param fields: the fields to search for the string
+        @param label: the label for the input field in the search form
+        @param comment: help text for the input field in the search form
+        @param fields: the fields to search for the string
 
         """
 
@@ -1089,104 +1092,6 @@ class S3DataStore(object):
         return S3SearchSimple(label=label,
                               comment=comment,
                               fields=fields)
-
-
-    # -------------------------------------------------------------------------
-    def _search_simple(self, table, fields=None, label=None, filterby=None):
-
-        """ Simple search function for resources
-
-            @param table: the DB table
-            @param fields: list of fields to search for the label
-            @param label: label to be found
-            @param filterby: filter query for results
-
-            @todo 2.3: move into S3Resource
-
-        """
-
-        mq = Storage()
-        search_fields = Storage()
-
-        prefix, name = table._tablename.split("_", 1)
-
-        if fields and not isinstance(fields, (list, tuple)):
-            fields = [fields]
-        elif not fields:
-            raise SyntaxError("No search fields specified.")
-
-        for f in fields:
-            _table = None
-            component = None
-
-            if f.find(".") != -1:
-                cname, f = f.split(".", 1)
-                component, pkey, fkey = self.model.get_component(prefix, name, cname)
-                if component:
-                    _table = component.table
-                    tablename = component.tablename
-                    # Do not add queries for empty component tables
-                    if not self.db(_table.id>0).select(_table.id, limitby=(0,1)).first():
-                        continue
-            else:
-                _table = table
-                tablename = table._tablename
-
-            if _table and tablename not in mq:
-                query = (self.auth.shn_accessible_query("read", _table))
-                if "deleted" in _table.fields:
-                    query = (query & (_table.deleted == "False"))
-                if component:
-                    join = (table[pkey] == _table[fkey])
-                    query = (query & join)
-                mq[_table._tablename] = query
-
-            if _table and f in _table.fields:
-                if _table._tablename not in search_fields:
-                    search_fields[tablename] = [_table[f]]
-                else:
-                    search_fields[tablename].append(_table[f])
-
-        if not search_fields:
-            return None
-
-        if label and isinstance(label,str):
-            labels = label.split()
-            results = []
-
-            for l in labels:
-                wc = "%"
-                _l = "%s%s%s" % (wc, l.lower(), wc)
-
-                query = None
-                for tablename in search_fields:
-                    hq = mq[tablename]
-                    fq = None
-                    fields = search_fields[tablename]
-                    for f in fields:
-                        if fq:
-                            fq = (f.lower().like(_l)) | fq
-                        else:
-                            fq = (f.lower().like(_l))
-                    q = hq & fq
-                    if query is None:
-                        query = q
-                    else:
-                        query = query | q
-
-                if results:
-                    query = (table.id.belongs(results)) & query
-                if filterby:
-                    query = (filterby) & (query)
-
-                records = self.db(query).select(table.id)
-                results = [r.id for r in records]
-                if not results:
-                    return None
-
-            return results
-        else:
-            return None
 
 
 # *****************************************************************************

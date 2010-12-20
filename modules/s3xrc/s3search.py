@@ -458,9 +458,8 @@ class S3SearchSimple(S3CRUD):
             if form.accepts(request.vars, session, keepvalues=True):
                 if form.vars.label == "":
                     form.vars.label = "%"
-                results = self.datastore._search_simple(table,
-                                                      fields = self.__fields,
-                                                      label = form.vars.label)
+                results = resource.search_simple(fields=self.__fields,
+                                                 label=form.vars.label)
                 if results:
                     linkto = self._linkto(r)
                     if not list_fields:

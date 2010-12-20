@@ -59,6 +59,7 @@ mail = Mail()
 s3tools = local_import("s3tools")
 auth = s3tools.AuthS3(globals(), deployment_settings, db)
 crud = s3tools.CrudS3(globals(), db)
+s3_audit = s3tools.S3Audit(db, session, migrate=migrate)
 
 # Shortcuts
 shn_has_role = auth.shn_has_role
@@ -109,8 +110,7 @@ vita = s3vita.S3Vita(globals(), db)
 # S3XRC
 _s3xrc = local_import("s3xrc")
 s3.crud = Storage()
-s3_audit = _s3xrc.S3Audit(db, session, migrate=migrate)
-s3xrc = _s3xrc.S3ResourceController(globals())
+s3xrc = _s3xrc.S3DataStore(globals(), db)
 
 # Logout session clearing
 # shn_on_login ----------------------------------------------------------------

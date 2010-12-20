@@ -125,7 +125,7 @@ def person():
     def prep(r):
 
         # Override the default Search MethodHandler
-        r.resource.set_handler("search", _s3xrc.S3PersonSearch(s3xrc))
+        r.resource.set_handler("search", _s3xrc.S3PersonSearch())
 
         if r.component_name == "config":
             _config = db.gis_config

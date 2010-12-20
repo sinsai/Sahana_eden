@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - CRUD Method Handlers
 
-    @version: 2.2.9
+    @version: 2.2.10
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -36,377 +36,44 @@
 
 """
 
-__all__ = ["S3Audit",
-           "S3MethodHandler",
-           "S3CRUDHandler",
-           "S3SearchSimple"]
+__all__ = ["S3CRUD"]
 
 import datetime, os, sys
 
 from gluon.storage import Storage
-from gluon.html import URL, DIV, A, SCRIPT, FORM, TABLE, TR, TD, INPUT
+from gluon.html import *
 from gluon.http import HTTP, redirect
 from gluon.serializers import json
 from gluon.sql import Field, Row
 from gluon.validators import IS_EMPTY_OR
 
+from s3rest import S3Method
 from s3import import S3Importer
 from s3export import S3Exporter
 
+from gluon.sqlhtml import SQLFORM
+from ..s3tools import SQLTABLES3
+
 # *****************************************************************************
-class S3Audit(object):
-
-    """ Audit Trail Writer Class
-
-        @param db: the database
-        @param session: the current session
-        @param tablename: the name of the audit table
-        @param migrate: migration setting
+class S3CRUD(S3Method):
+    """
+    Interactive CRUD Method Handler
 
     """
 
-    def __init__(self, db, session,
-                 tablename="s3_audit",
-                 migrate=True):
-
-        self.db = db
-        self.table = db.get(tablename, None)
-        if not self.table:
-            self.table = db.define_table(tablename,
-                            Field("timestmp", "datetime"),
-                            Field("person", "integer"),
-                            Field("operation"),
-                            Field("tablename"),
-                            Field("record", "integer"),
-                            Field("representation"),
-                            Field("old_value", "text"),
-                            Field("new_value", "text"),
-                            migrate=migrate)
-
-        self.session = session
-        if session.auth and session.auth.user:
-            self.user = session.auth.user.id
-        else:
-            self.user = None
-
-
     # -------------------------------------------------------------------------
-    def __call__(self, operation, prefix, name,
-                 form=None,
-                 record=None,
-                 representation="unknown"):
+    def apply_method(self, r, **attr):
+        """
+        Apply CRUD methods
 
-        """ Caller
+        @param r: the S3Request
+        @param attr: dictionary of parameters for the method handler
 
-            @param operation: Operation to log, one of
-                "create", "update", "read", "list" or "delete"
-            @param prefix: the module prefix of the resource
-            @param name: the name of the resource (without prefix)
-            @param form: the form
-            @param record: the record ID
-            @param representation: the representation format
+        @returns: output object to send to the view
 
         """
 
-        settings = self.session.s3
-
-        now = datetime.datetime.utcnow()
-        db = self.db
-        table = self.table
-        tablename = "%s_%s" % (prefix, name)
-
-        if record:
-            if isinstance(record, Row):
-                record = record.get("id", None)
-                if not record:
-                    return True
-            try:
-                record = int(record)
-            except ValueError:
-                record = None
-        else:
-            record = None
-
-        if operation in ("list", "read"):
-            if settings.audit_read:
-                table.insert(timestmp = now,
-                             person = self.user,
-                             operation = operation,
-                             tablename = tablename,
-                             record = record,
-                             representation = representation)
-
-        elif operation in ("create", "update"):
-            if settings.audit_write:
-                if form:
-                    record =  form.vars.id
-                    new_value = ["%s:%s" % (var, str(form.vars[var]))
-                                 for var in form.vars]
-                else:
-                    new_value = []
-                table.insert(timestmp = now,
-                             person = self.user,
-                             operation = operation,
-                             tablename = tablename,
-                             record = record,
-                             representation = representation,
-                             new_value = new_value)
-
-        elif operation == "delete":
-            if settings.audit_write:
-
-                row = db(db[tablename].id == record).select(limitby=(0, 1)).first()
-                old_value = []
-                if row:
-                    old_value = ["%s:%s" % (field, row[field]) for field in row]
-                table.insert(timestmp = now,
-                             person = self.user,
-                             operation = operation,
-                             tablename = tablename,
-                             record = record,
-                             representation = representation,
-                             old_value = old_value)
-
-        return True
-
-
-# *****************************************************************************
-class S3MethodHandler(object):
-
-    """ REST Method Handler Base Class
-
-        @param manager: the resource controller
-        @type manager: S3ResourceController
-
-    """
-
-    def __init__(self, manager):
-
-        self.manager = manager
-        self.db = manager.db
-        self.T = manager.T
-
-        self.session = manager.session
-        self.request = manager.request
-        self.response = manager.response
-
-        self.permit = manager.auth.shn_has_permission
-
-        self.next = None
-
-
-    # -------------------------------------------------------------------------
-    def __call__(self, r, method=None, **attr):
-
-        """ Caller, invoked by REST interface
-
-            @param r: the S3Request
-            @param method: the method established by the REST interface
-            @param attr: dict of parameters for the method handler
-
-            @returns: output object to send to the view
-
-        """
-
-        # Settings
-        self.download_url = self.manager.s3.download_url
-
-        # Get the right table and method
-        self.prefix, self.name, self.table, self.tablename = r.target()
-
-        # Override request method
-        if method is not None:
-            self.method = method
-        else:
-            self.method = r.method
-        if r.component:
-            self.record = r.component_id
-            component = r.resource.components.get(r.component_name, None)
-            self.resource = component.resource
-            if not self.method:
-                if r.multiple and not r.component_id:
-                    self.method = "list"
-                else:
-                    self.method = "read"
-        else:
-            self.record = r.id
-            self.resource = r.resource
-            if not self.method:
-                if r.id or r.method in ("read", "display"):
-                    self.method = "read"
-                else:
-                    self.method = "list"
-
-        # Invoke the responder
-        # (execute the method handler)
-        output = self.respond(r, **attr)
-
-        # Redirection
-        if self.next and self.resource.lastid:
-            self.next = str(self.next)
-            placeholder = "%5Bid%5D"
-            self.next = self.next.replace(placeholder, self.resource.lastid)
-            placeholder = "[id]"
-            self.next = self.next.replace(placeholder, self.resource.lastid)
-        r.next = self.next
-
-        # Add additional view variables (e.g. rheader)
-        self._extend_view(output, r, **attr)
-
-        return output
-
-
-    # -------------------------------------------------------------------------
-    def respond(self, r, **attr):
-
-        """ Responder stub, to be overloaded in subclass
-
-            @param r: the S3Request
-            @param attr: dictionary of parameters for the method handler
-
-            @returns: output object to send to the view
-
-        """
-
-        output = dict()
-        return output
-
-
-    # Utilities ===============================================================
-
-    @staticmethod
-    def _record_id(r):
-
-        """ Get the ID of the target record of a S3Request
-
-            @param r: the S3Request
-
-        """
-
-        if r.component:
-            if r.multiple and not r.component_id:
-                return None
-            resource = r.resource.components.get(r.component_name).resource
-            resource.load(start=0, limit=1)
-            if len(resource):
-                return resource.records().first().id
-        else:
-            return r.id
-
-        return None
-
-
-    # -------------------------------------------------------------------------
-    def _config(self, key, default=None):
-
-        """ Get a configuration setting of the current table
-
-            @param key: the setting key
-            @param default: the default value
-
-        """
-
-        return self.manager.model.get_config(self.table, key, default)
-
-
-    # -------------------------------------------------------------------------
-    @staticmethod
-    def _view(r, default, format=None):
-
-        """ Get the path to the view template file
-
-            @param r: the S3Request
-            @param default: name of the default view template file
-            @param format: format string (optional)
-
-        """
-
-        request = r.request
-        folder = request.folder
-        prefix = request.controller
-
-        if r.component:
-            view = "%s_%s_%s" % (r.name, r.component_name, default)
-            path = os.path.join(folder, "views", prefix, view)
-            if os.path.exists(path):
-                return "%s/%s" % (prefix, view)
-            else:
-                view = "%s_%s" % (r.name, default)
-                path = os.path.join(folder, "views", prefix, view)
-        else:
-            if format:
-                view = "%s_%s_%s" % (r.name, default, format)
-            else:
-                view = "%s_%s" % (r.name, default)
-            path = os.path.join(folder, "views", prefix, view)
-
-        if os.path.exists(path):
-            return "%s/%s" % (prefix, view)
-        else:
-            if format:
-                return default.replace(".html", "_%s.html" % format)
-            else:
-                return default
-
-
-    # -------------------------------------------------------------------------
-    @staticmethod
-    def _extend_view(output, r, **attr):
-
-        """
-            Add additional view variables (invokes all callables)
-
-            @param output: the output dict
-            @param r: the S3Request
-            @param attr: the view variables (e.g. 'rheader')
-
-            @note: overload this method in subclasses if you don't want
-                   additional view variables to be added automatically
-
-        """
-
-        if r.interactive and isinstance(output, dict):
-            for key in attr:
-                handler = attr[key]
-                if callable(handler):
-                    resolve = True
-                    try:
-                        display = handler(r)
-                    except TypeError:
-                        # Argument list failure => pass callable to the view as-is
-                        display = handler
-                        continue
-                    except:
-                        # Propagate all other errors to the caller
-                        raise
-                else:
-                    display = handler
-                if isinstance(display, dict) and resolve:
-                    output.update(**display)
-                elif display is not None:
-                    output.update(**{key:display})
-                elif key in output:
-                    del output[key]
-
-
-# *****************************************************************************
-class S3CRUDHandler(S3MethodHandler):
-
-    """ Interactive CRUD Method Handler """
-
-    # -------------------------------------------------------------------------
-    def respond(self, r, **attr):
-
-        """ Responder
-
-            @param r: the S3Request
-            @param attr: dictionary of parameters for the method handler
-
-            @returns: output object to send to the view
-
-        """
-
-        self.settings = self.manager.s3.crud
+        self.settings = self.datastore.s3.crud
 
         if r.http == "DELETE" or self.method == "delete":
             output = self.delete(r, **attr)
@@ -419,24 +86,24 @@ class S3CRUDHandler(S3MethodHandler):
         elif self.method == "list":
             output = self.select(r, **attr)
         else:
-            r.error(501, self.manager.ERROR.BAD_METHOD)
+            r.error(501, self.datastore.ERROR.BAD_METHOD)
 
         return output
 
 
     # -------------------------------------------------------------------------
     def create(self, r, **attr):
+        """
+        Create new records
 
-        """ Create new records
+        @param r: the S3Request
+        @param attr: dictionary of parameters for the method handler
 
-            @param r: the S3Request
-            @param attr: dictionary of parameters for the method handler
-
-            @todo 2.3: plain representation
+        @todo 2.3: plain representation
 
         """
 
-        T = self.manager.T
+        T = self.datastore.T
 
         session = self.session
         request = self.request
@@ -568,24 +235,24 @@ class S3CRUDHandler(S3MethodHandler):
                 request.post_vars.update(_formname=formname, id=original)
                 request.vars.update(**request.post_vars)
 
-                form = self.resource.update(original,
-                                            message=message,
-                                            onvalidation=onvalidation,
-                                            onaccept=onaccept,
-                                            link=link,
-                                            download_url=self.download_url,
-                                            format=representation)
+                form = self._update(original,
+                                    message=message,
+                                    onvalidation=onvalidation,
+                                    onaccept=onaccept,
+                                    link=link,
+                                    download_url=self.download_url,
+                                    format=representation)
 
             else:
-                form = self.resource.create(onvalidation=onvalidation,
-                                            onaccept=onaccept,
-                                            message=message,
-                                            from_table=from_table,
-                                            from_record=from_record,
-                                            map_fields=map_fields,
-                                            link=link,
-                                            download_url=self.download_url,
-                                            format=representation)
+                form = self._create(onvalidation=onvalidation,
+                                    onaccept=onaccept,
+                                    message=message,
+                                    from_table=from_table,
+                                    from_record=from_record,
+                                    map_fields=map_fields,
+                                    link=link,
+                                    download_url=self.download_url,
+                                    format=representation)
 
             # Insert subheadings
             if subheadings:
@@ -643,7 +310,7 @@ class S3CRUDHandler(S3MethodHandler):
 
         elif representation == "url":
             importer = self.resource.importer.url
-            results = importer(r) 
+            results = importer(r)
             return results
 
         elif representation == "csv":
@@ -667,20 +334,105 @@ class S3CRUDHandler(S3MethodHandler):
                 session.flash = T("Data uploaded")
 
         else:
-            r.error(501, self.manager.ERROR.BAD_FORMAT)
+            r.error(501, self.datastore.ERROR.BAD_FORMAT)
 
         return output
 
 
     # -------------------------------------------------------------------------
+    def _create(self,
+                onvalidation=None,
+                onaccept=None,
+                message="Record created",
+                download_url=None,
+                from_table=None,
+                from_record=None,
+                map_fields=None,
+                link=None,
+                format=None):
+        """
+        Provides and processes an Add-form for this resource
+
+        @param onvalidation: onvalidation callback
+        @param onaccept: onaccept callback
+        @param message: flash message after successul operation
+        @param download_url: default download URL of the application
+        @param from_table: copy a record from this table
+        @param from_record: copy from this record ID
+        @param map_fields: field mapping for copying of records
+        @param format: the representation format of the request
+
+        """
+
+        # Get the table
+        table = self.table
+
+        # Copy data from a previous record?
+        data = None
+        if from_table is not None:
+            if map_fields:
+                if isinstance(map_fields, dict):
+                    fields = [from_table[map_fields[f]]
+                              for f in map_fields
+                                  if f in table.fields and
+                                  map_fields[f] in from_table.fields and
+                                  table[f].writable]
+                elif isinstance(map_fields, (list, tuple)):
+                    fields = [from_table[f]
+                              for f in map_fields
+                                  if f in table.fields and
+                                  f in from_table.fields and
+                                  table[f].writable]
+                else:
+                    raise TypeError
+            else:
+                fields = [from_table[f]
+                          for f in table.fields
+                              if f in from_table.fields and
+                              table[f].writable]
+
+            # Audit read => this is a read method, finally
+            audit = self.datastore.audit
+            prefix, name = from_table._tablename.split("_", 1)
+            audit("read", prefix, name, record=from_record, representation=format)
+
+            row = self.db(from_table.id == from_record).select(limitby=(0,1), *fields).first()
+            if row:
+                if isinstance(map_fields, dict):
+                    data = Storage([(f, row[map_fields[f]]) for f in map_fields])
+                else:
+                    data = Storage(row)
+
+            if data:
+                missing_fields = Storage()
+                for f in table.fields:
+                    if f not in data and table[f].writable:
+                        missing_fields[f] = table[f].default
+                data.update(missing_fields)
+                data.update(id=None)
+
+        # Get the form
+        form = self._update(None,
+                            data=data,
+                            onvalidation=onvalidation,
+                            onaccept=onaccept,
+                            message=message,
+                            download_url=download_url,
+                            format=format,
+                            link=link)
+
+        return form
+
+
+    # -------------------------------------------------------------------------
     def read(self, r, **attr):
+        """
+        Read a single record
 
-        """ Read a single record
+        @param r: the S3Request
+        @param attr: dictionary of parameters for the method handler
 
-            @param r: the S3Request
-            @param attr: dictionary of parameters for the method handler
-
-            @todo 2.3: add update form if permitted + show_add_btn
+        @todo 2.3: add update form if permitted + show_add_btn
 
         """
 
@@ -727,9 +479,9 @@ class S3CRUDHandler(S3MethodHandler):
 
             # Item
             if record_id:
-                item = self.resource.read(record_id,
-                                          download_url=self.download_url,
-                                          format=representation)
+                item = self._read(record_id,
+                                  download_url=self.download_url,
+                                  format=representation)
                 if subheadings:
                     self.insert_subheadings(item, self.tablename, subheadings)
             else:
@@ -751,9 +503,9 @@ class S3CRUDHandler(S3MethodHandler):
                 output.update(buttons)
 
         elif representation == "plain":
-            item = self.resource.read(record_id,
-                                      download_url=self.download_url,
-                                      format=representation)
+            item = self._read(record_id,
+                              download_url=self.download_url,
+                              format=representation)
             response.view = "plain.html"
             output.update(item=item)
 
@@ -772,20 +524,49 @@ class S3CRUDHandler(S3MethodHandler):
             return exporter(self.resource, list_fields=list_fields)
 
         else:
-            r.error(501, self.manager.ERROR.BAD_FORMAT)
+            r.error(501, self.datastore.ERROR.BAD_FORMAT)
 
         return output
 
 
     # -------------------------------------------------------------------------
+    def _read(self, id, download_url=None, format=None):
+        """
+        View a record of this resource
+
+        @param id: the ID of the record to display
+        @param download_url: download URL for uploaded files in this resource
+        @param format: the representation format
+
+        """
+
+        # Get the table
+        table = self.table
+
+        # Audit
+        audit = self.datastore.audit
+        audit("read", self.prefix, self.name, record=id, representation=format)
+
+        # Get the form
+        form = SQLFORM(table, id,
+                       readonly=True,
+                       comments=False,
+                       showid=False,
+                       upload=download_url,
+                       formstyle=self.settings.formstyle)
+
+        return form
+
+
+    # -------------------------------------------------------------------------
     def update(self, r, **attr):
+        """
+        Update a record
 
-        """ Update a record
+        @param r: the S3Request
+        @param attr: dictionary of parameters for the method handler
 
-            @param r: the S3Request
-            @param attr: dictionary of parameters for the method handler
-
-            @todo 2.3: plain representation
+        @todo 2.3: plain representation
 
         """
 
@@ -796,7 +577,7 @@ class S3CRUDHandler(S3MethodHandler):
         table = self.table
         tablename = self.tablename
 
-        T = self.manager.T
+        T = self.datastore.T
 
         representation = r.representation
 
@@ -863,12 +644,12 @@ class S3CRUDHandler(S3MethodHandler):
             message = self.crud_string(self.tablename, "msg_record_modified")
 
             # Get the form
-            form = self.resource.update(record_id,
-                                        message=message,
-                                        onvalidation=onvalidation,
-                                        onaccept=onaccept,
-                                        download_url=self.download_url,
-                                        format=representation)
+            form = self._update(record_id,
+                                message=message,
+                                onvalidation=onvalidation,
+                                onaccept=onaccept,
+                                download_url=self.download_url,
+                                format=representation)
 
             # Insert subheadings
             if subheadings:
@@ -898,10 +679,6 @@ class S3CRUDHandler(S3MethodHandler):
             if representation in ("popup", "iframe"):
                 self.next = None
             elif not update_next:
-                #if r.component:
-                    #self.next = r.there(representation=r.representation)
-                #else:
-                    #self.next = r.here(representation=r.representation)
                 self.next = self.resource.url(id=[])
             else:
                 try:
@@ -917,21 +694,151 @@ class S3CRUDHandler(S3MethodHandler):
             return importer(r)
 
         else:
-            r.error(501, self.manager.ERROR.BAD_FORMAT)
+            r.error(501, self.datastore.ERROR.BAD_FORMAT)
 
         return output
 
 
     # -------------------------------------------------------------------------
+    def _update(self, id,
+                data=None,
+                onvalidation=None,
+                onaccept=None,
+                message="Record updated",
+                download_url=None,
+                format=None,
+                link=None):
+        """
+        Update form for this resource
+
+        @param id: the ID of the record to update (None to create a new record)
+        @param data: the data to prepopulate the form with (only with id=None)
+        @param onvalidation: onvalidation callback hook
+        @param onaccept: onaccept callback hook
+        @param message: success message
+        @param download_url: Download URL for uploaded files in this resource
+        @param format: the representation format
+
+        """
+
+        # Environment
+        session = self.datastore.session
+        request = self.datastore.request
+        response = self.datastore.response
+
+        # Get the CRUD settings
+        s3 = self.datastore.s3
+        settings = s3.crud
+
+        # Table
+        table = self.table
+        model = self.datastore.model
+
+        # Copy from another record?
+        if id is None and data:
+            record = Storage(data)
+        else:
+            record = id
+
+        # Add asterisk to labels of required fields
+        labels = Storage()
+        mark_required = self._config("mark_required")
+        for field in table:
+            if field.writable:
+                required = field.required or \
+                           field.notnull or \
+                           mark_required and field.name in mark_required
+                validators = field.requires
+                if not validators and not required:
+                    continue
+                if not required:
+                    if not isinstance(validators, (list, tuple)):
+                        validators = [validators]
+                    for v in validators:
+                        if hasattr(v, "options"):
+                            if hasattr(v, "zero") and v.zero is None:
+                                continue
+                        val, error = v("")
+                        if error:
+                            required = True
+                            break
+                if required:
+                    labels[field.name] = DIV("%s:" % field.label, SPAN(" *", _class="req"))
+
+        # Get the form
+        form = SQLFORM(table,
+                       record=record,
+                       record_id=id,
+                       labels = labels,
+                       showid=False,
+                       deletable=False,
+                       upload=download_url,
+                       submit_button=self.settings.submit_button,
+                       formstyle=self.settings.formstyle)
+
+        # Set form name
+        formname = "%s/%s" % (self.tablename, form.record_id)
+
+        # Get the proper onvalidation routine
+        if isinstance(onvalidation, dict):
+            onvalidation = onvalidation.get(self.tablename, [])
+
+        # Run the form
+        audit = self.datastore.audit
+        if form.accepts(request.post_vars,
+                        session,
+                        formname=formname,
+                        onvalidation=onvalidation,
+                        keepvalues=False,
+                        hideerror=False):
+
+            # Message
+            response.flash = message
+
+            # Audit
+            if id is None:
+                audit("create", self.prefix, self.name, form=form, representation=format)
+            else:
+                audit("update", self.prefix, self.name, form=form, representation=format)
+
+            # Update super entity links
+            model.update_super(table, form.vars)
+
+            # Link record
+            if link and form.vars.id:
+                linker = self.datastore.linker
+                if link.linkdir == "to":
+                    linker.link(table, form.vars.id, link.linktable, link.linkid,
+                                link_class=link.linkclass)
+                else:
+                    linker.link(link.linktable, link.linkid, table, form.vars.id,
+                                link_class=link.linkclass)
+
+            # Store session vars
+            if form.vars.id:
+                self.resource.lastid = str(form.vars.id)
+                self.datastore.store_session(self.prefix, self.name, form.vars.id)
+
+            # Execute onaccept
+            self.datastore.callback(onaccept, form, name=self.tablename)
+
+        elif id:
+            # Audit read (user is reading even when not updating the data)
+            audit("read", self.prefix, self.name, form=form, representation=format)
+
+        return form
+
+
+    # -------------------------------------------------------------------------
     def delete(self, r, **attr):
+        """
+        Delete record(s)
 
-        """ Delete record(s)
+        @param r: the S3Request
+        @param attr: dictionary of parameters for the method handler
 
-            @param r: the S3Request
-            @param attr: dictionary of parameters for the method handler
-
-            @todo 2.3: put style information into stylesheet
-            @todo 2.3: move confirmation form into resource
+        @todo 2.3: put style information into stylesheet
+        @todo 2.3: move confirmation form into resource
 
         """
 
@@ -942,7 +849,7 @@ class S3CRUDHandler(S3MethodHandler):
         table = self.table
         tablename = self.tablename
 
-        T = self.manager.T
+        T = self.datastore.T
 
         representation = r.representation
 
@@ -960,7 +867,7 @@ class S3CRUDHandler(S3MethodHandler):
 
         # Check permission for delete
         if not deletable:
-            r.error(403, self.manager.ERROR.NOT_PERMITTED)
+            r.error(403, self.datastore.ERROR.NOT_PERMITTED)
         authorised = self.permit("delete", self.tablename, record_id)
         if not authorised:
             r.unauthorised()
@@ -995,23 +902,23 @@ class S3CRUDHandler(S3MethodHandler):
             numrows = self.resource.delete(ondelete=ondelete,
                                            format=representation)
             message = "%s %s" % (numrows, T("records deleted"))
-            item = self.manager.xml.json_message(message=message)
+            item = self.datastore.xml.json_message(message=message)
             self.response.view = "xml.html"
             output.update(item=item)
 
         else:
-            r.error(400, self.manager.ERROR.BAD_METHOD)
+            r.error(400, self.datastore.ERROR.BAD_METHOD)
 
         return output
 
 
     # -------------------------------------------------------------------------
     def select(self, r, **attr):
+        """
+        Get a list view of the requested resource
 
-        """ Get a list view of the requested resource
-
-            @param r: the S3Request
-            @param attr: dictionary of parameters for the method handler
+        @param r: the S3Request
+        @param attr: dictionary of parameters for the method handler
 
         """
 
@@ -1103,13 +1010,13 @@ class S3CRUDHandler(S3MethodHandler):
                 self.response.view = self._view(r, "list.html")
 
             # Get the list
-            items = self.resource.select(fields=fields,
-                                         start=start,
-                                         limit=limit,
-                                         orderby=orderby,
-                                         linkto=linkto,
-                                         download_url=self.download_url,
-                                         format=representation)
+            items = self._select(fields=fields,
+                                 start=start,
+                                 limit=limit,
+                                 orderby=orderby,
+                                 linkto=linkto,
+                                 download_url=self.download_url,
+                                 format=representation)
 
             # Empty table - or just no match?
             if not items:
@@ -1161,15 +1068,15 @@ class S3CRUDHandler(S3MethodHandler):
             sEcho = int(vars.sEcho or 0)
 
             # Get the list
-            items = self.resource.select(fields=fields,
-                                         left=left,
-                                         start=start,
-                                         limit=limit,
-                                         orderby=orderby,
-                                         linkto=linkto,
-                                         download_url=self.download_url,
-                                         as_page=True,
-                                         format=representation) or []
+            items = self._select(fields=fields,
+                                 left=left,
+                                 start=start,
+                                 limit=limit,
+                                 orderby=orderby,
+                                 linkto=linkto,
+                                 download_url=self.download_url,
+                                 as_page=True,
+                                 format=representation) or []
 
             result = dict(sEcho = sEcho,
                           iTotalRecords = totalrows,
@@ -1179,35 +1086,100 @@ class S3CRUDHandler(S3MethodHandler):
             output = json(result)
 
         elif representation == "plain":
-            items = self.resource.select(fields, as_list=True)
+            items = self._select(fields, as_list=True)
             self.response.view = "plain.html"
             return dict(item=items)
 
         elif representation == "csv":
-            exporter = S3Exporter(self.manager)
+            exporter = S3Exporter(self.datastore)
             return exporter.csv(self.resource)
 
         elif representation == "pdf":
-            exporter = S3Exporter(self.manager)
+            exporter = S3Exporter(self.datastore)
             return exporter.pdf(self.resource,
                                 list_fields=list_fields)
 
         elif representation == "xls":
-            exporter = S3Exporter(self.manager)
+            exporter = S3Exporter(self.datastore)
             return exporter.xls(self.resource,
                                 list_fields=list_fields)
 
-        elif representation == "sjson":
-            exporter = S3Exporter(self.manager)
-            return exporter.sjson(self.resource,
-                                  start=start,
-                                  limit=limit,
-                                  fields=fields)
+        elif representation == "json":
+            exporter = S3Exporter(self.datastore)
+            return exporter.json(self.resource,
+                                 start=start,
+                                 limit=limit,
+                                 fields=fields)
 
         else:
-            r.error(501, self.manager.ERROR.BAD_FORMAT)
+            r.error(501, self.datastore.ERROR.BAD_FORMAT)
 
         return output
+
+    # -------------------------------------------------------------------------
+    def _select(self,
+                fields=None,
+                left=None,
+                start=0,
+                limit=None,
+                orderby=None,
+                linkto=None,
+                download_url=None,
+                as_page=False,
+                as_list=False,
+                format=None):
+        """
+        List of all records of this resource
+
+        @param fields: list of fields to display
+        @param left: left outer joins
+        @param start: index of the first record to display
+        @param limit: maximum number of records to display
+        @param orderby: orderby for the query
+        @param linkto: hook to link record IDs
+        @param download_url: the default download URL of the application
+        @param as_page: return the list as JSON page
+        @param as_list: return the list as Python list
+        @param format: the representation format
+
+        """
+
+        db = self.db
+        table = self.table
+
+        # Check for slicing
+        if not fields:
+            fields = [table.id]
+        if limit is not None:
+            limitby = (start, start + limit)
+        else:
+            limitby = None
+
+        # Retrieve the rows
+        attributes = dict(left=left, orderby=orderby, limitby=limitby)
+        rows = self.resource.select(*fields, **attributes)
+        if not rows:
+            return None
+
+        # Render as...
+        if as_page:
+            # ...JSON page (for pagination)
+            represent = self.datastore.represent
+            items = [[represent(f, record=row, linkto=linkto)
+                      for f in fields]
+                     for row in rows]
+        elif as_list:
+            # ...Python list
+            items = rows.as_list()
+        else:
+            # ...SQLTABLE
+            headers = dict(map(lambda f: (str(f), f.label), fields))
+            items= SQLTABLES3(rows,
+                              headers=headers,
+                              linkto=linkto,
+                              upload=download_url,
+                              _id="list", _class="display")
+        return items
 
     # -------------------------------------------------------------------------
     def crud_button(self, label,
@@ -1216,15 +1188,15 @@ class S3CRUDHandler(S3MethodHandler):
                     _href=None,
                     _id=None,
                     _class="action-btn"):
+        """
+        Generate a link button
 
-        """ Generate a link button
-
-            @param label: the link label (None if using CRUD string)
-            @param tablename: the name of table for CRUD string selection
-            @param name: name of CRUD string for the button label
-            @param _href: the target URL
-            @param _id: the HTML-ID of the link
-            @param _class: the HTML-class of the link
+        @param label: the link label (None if using CRUD string)
+        @param tablename: the name of table for CRUD string selection
+        @param name: name of CRUD string for the button label
+        @param _href: the target URL
+        @param _id: the HTML-ID of the link
+        @param _class: the HTML-class of the link
 
         """
 
@@ -1243,15 +1215,15 @@ class S3CRUDHandler(S3MethodHandler):
 
     # -------------------------------------------------------------------------
     def crud_string(self, tablename, name):
+        """
+        Get a CRUD info string for interactive pages
 
-        """ Get a CRUD info string for interactive pages
-
-            @param tablename: the table name
-            @param name: the name of the CRUD string
+        @param tablename: the table name
+        @param name: the name of the CRUD string
 
         """
 
-        s3 = self.manager.s3
+        s3 = self.datastore.s3
 
         crud_strings = s3.crud_strings.get(tablename, s3.crud_strings)
         not_found = s3.crud_strings.get(name, None)
@@ -1262,14 +1234,14 @@ class S3CRUDHandler(S3MethodHandler):
     # -----------------------------------------------------------------------------
     @staticmethod
     def insert_subheadings(form, tablename, subheadings):
+        """
+        Insert subheadings into forms
 
-        """ Insert subheadings into forms
-
-            @param form: the form
-            @param tablename: the tablename
-            @param subheadings: a dict of {"Headline": Fieldnames}, where Fieldname can
-                be either a single field name or a list/tuple of field names belonging
-                under that headline
+        @param form: the form
+        @param tablename: the tablename
+        @param subheadings: a dict of {"Headline": Fieldnames}, where Fieldname can
+            be either a single field name or a list/tuple of field names belonging
+            under that headline
 
         """
 
@@ -1310,18 +1282,18 @@ class S3CRUDHandler(S3MethodHandler):
 
     # -------------------------------------------------------------------------
     def insert_buttons(self, r, *buttons, **attr):
+        """
+        Insert resource action buttons
 
-        """ Insert resource action buttons
-
-            @param r: the S3Request
-            @param buttons: button names ("add", "edit", "delete", "list")
-            @keyword record_id: the record ID
+        @param r: the S3Request
+        @param buttons: button names ("add", "edit", "delete", "list")
+        @keyword record_id: the record ID
 
         """
 
         output = dict()
 
-        T = self.manager.T
+        T = self.datastore.T
 
         tablename = self.tablename
         representation = r.representation
@@ -1383,25 +1355,25 @@ class S3CRUDHandler(S3MethodHandler):
 
     # -------------------------------------------------------------------------
     def _linkto(self, r, authorised=None, update=None, native=False):
+        """
+        Returns a linker function for the record ID column in list views
 
-        """ Returns a linker function for the record ID column in list views
-
-            @param r: the S3Request
-            @param authorised: user authorised for update (override internal check)
-            @param update: provide link to update rather than to read
-            @param native: link to the native controller rather than to
-                           component controller
+        @param r: the S3Request
+        @param authorised: user authorised for update (override internal check)
+        @param update: provide link to update rather than to read
+        @param native: link to the native controller rather than to
+                        component controller
 
         """
 
         c = None
         f = None
 
-        response = self.response
+        response = r.response
 
         prefix, name, table, tablename = r.target()
-        permit = self.manager.auth.shn_has_permission
-        model = self.manager.model
+        permit = r.datastore.auth.shn_has_permission
+        model = r.datastore.model
 
         if authorised is None:
             authorised = permit("update", tablename)
@@ -1456,12 +1428,12 @@ class S3CRUDHandler(S3MethodHandler):
 
     # -------------------------------------------------------------------------
     def ssp_filter(self, table, fields, left=[]):
+        """
+        Convert the SSPag GET vars into a filter query
 
-        """ Convert the SSPag GET vars into a filter query
-
-            @param table: the table
-            @param fields: list of fields displayed in the list view (same order!)
-            @param left: list of joins
+        @param table: the table
+        @param fields: list of fields displayed in the list view (same order!)
+        @param left: list of joins
 
         """
 
@@ -1529,12 +1501,12 @@ class S3CRUDHandler(S3MethodHandler):
 
     # -------------------------------------------------------------------------
     def ssp_orderby(self, table, fields, left=[]):
+        """
+        Convert the SSPag GET vars into a sorting query
 
-        """ Convert the SSPag GET vars into a sorting query
-
-            @param table: the table
-            @param fields: list of fields displayed in the list view (same order!)
-            @param left: list of joins
+        @param table: the table
+        @param fields: list of fields displayed in the list view (same order!)
+        @param left: list of joins
 
         """
 
@@ -1570,124 +1542,6 @@ class S3CRUDHandler(S3MethodHandler):
                 orderby.append("%s%s" % (c, direction(i)))
 
         return ", ".join(orderby)
-
-
-# *****************************************************************************
-class S3SearchSimple(S3CRUDHandler):
-
-    """ Simple string-search method handler
-
-        @param manager: the resource controller
-        @param label: the label for the input field in the search form
-        @param comment: help text for the input field in the search form
-        @param fields: the fields to search for the string
-
-    """
-
-
-    def __init__(self, manager, label=None, comment=None, fields=None):
-
-        S3CRUDHandler.__init__(self, manager)
-        self.__label = label
-        self.__comment = comment
-        self.__fields = fields
-
-
-    # -------------------------------------------------------------------------
-    def respond(self, r, **attr):
-
-        """ Responder
-
-            @param r: the S3Request
-            @param attr: request parameters
-
-        """
-
-        # Get environment
-        session = self.session
-        request = self.request
-        response = self.response
-        resource = self.resource
-        table = self.table
-        tablename = self.tablename
-        T = self.manager.T
-
-        # Get representation
-        representation = r.representation
-
-        # Initialize output
-        output = dict()
-
-        # Get table-specific parameters
-        sortby = self._config("sortby", [[1,'asc']])
-        orderby = self._config("orderby", None)
-        list_fields = self._config("list_fields")
-
-        # GET vars
-        vars = request.get_vars
-
-        if r.interactive:
-            form = FORM(TABLE(TR("%s: " % self.__label,
-                                 INPUT(_type="text", _name="label", _size="40"),
-                                 DIV(DIV(_class="tooltip",
-                                         _title="%s|%s" % (self.__label,
-                                                           self.__comment)))),
-                              TR("", INPUT(_type="submit",
-                                           _value=T("Search")))))
-            output.update(form=form)
-
-            if form.accepts(request.vars, session, keepvalues=True):
-                if form.vars.label == "":
-                    form.vars.label = "%"
-                results = self.manager._search_simple(table,
-                                                      fields = self.__fields,
-                                                      label = form.vars.label)
-                if results:
-                    linkto = self._linkto(r)
-                    if not list_fields:
-                        fields = resource.readable_fields()
-                    else:
-                        fields = [table[f]
-                                  for f in list_fields if f in table.fields]
-                    if not fields:
-                        fields = []
-                    if fields[0].name != table.fields[0]:
-                        fields.insert(0, table[table.fields[0]])
-                    resource.build_query(id=results)
-                    items = resource.select(fields=fields,
-                                            orderby=orderby,
-                                            linkto=linkto,
-                                            download_url=self.download_url,
-                                            format=representation)
-                    if request.post_vars.label:
-                        session.s3.filter = {"%s.id" % resource.name:
-                                            ",".join(map(str,results))}
-                    else:
-                        session.s3.filter = None
-                else:
-                    items = T("No matching records found.")
-                output.update(items=items, sortby=sortby)
-
-                # Add-button
-                buttons = self.insert_buttons(r, "add")
-                if buttons:
-                    output.update(buttons)
-
-            # Title and subtitle
-            title = self.crud_string(tablename, "title_search")
-            subtitle = T("Matching Records")
-            output.update(title=title, subtitle=subtitle)
-
-            # View
-            response.view = "search_simple.html"
-
-        elif representation == "aadata":
-            return self.select(r, **attr)
-
-        else:
-            r.error(resource.ERROR.BAD_FORMAT)
-
-        return output
 
 
 # END

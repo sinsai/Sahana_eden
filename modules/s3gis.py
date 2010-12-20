@@ -1243,7 +1243,7 @@ class GIS(object):
         return res
 
     # -----------------------------------------------------------------------------
-    def update_location_tree(self, parent, level, location_id):
+    def update_location_tree(self, location_id, parent=None):
         """
             Update the Tree for GIS Locations:
             @author: Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
@@ -1253,16 +1253,17 @@ class GIS(object):
 
         db = self.db
         table = db.gis_location
-        if (level == "L0"):
-            node_path = str(location_id)
-            db(table.id == location_id).update(path=node_path)
-        else:
+
+        if parent:
             path = db(table.id == parent).select(table.path).first()
-            if path:
-                if (path.path == None):
-                    path.path = parent
-                node_path = str(path.path) + "/" + str(location_id)
-                db(table.id == location_id).update(path=node_path)
+            if path and path.path:
+                node_path = "%s/%s" % (str(path.path), str(location_id))
+            else:
+                node_path = "%s/%s" % (str(parent), str(location_id))
+        else:
+            node_path = str(location_id)
+
+        db(table.id == location_id).update(path=node_path)
 
         return
 

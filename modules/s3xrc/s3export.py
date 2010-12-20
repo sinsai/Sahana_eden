@@ -53,15 +53,18 @@ from lxml import etree
 # *****************************************************************************
 class S3Exporter(object):
 
-    """ Exporter toolkit """
+    """
+    Exporter toolkit
+
+    """
 
     def __init__(self, datastore):
+        """
+        Constructor
 
-        """ Constructor
+        @param datastore: the resource controller
 
-            @param datastore: the resource controller
-
-            @todo 2.3: error message completion
+        @todo 2.3: error message completion
 
         """
 
@@ -109,9 +112,12 @@ class S3Exporter(object):
 
         """
 
+        output = None
+
         args = Storage(args)
         xml = self.datastore.xml
 
+        # Export as element tree
         tree = self.datastore.export_tree(resource,
                                           audit=self.datastore.audit,
                                           start=start,
@@ -121,6 +127,7 @@ class S3Exporter(object):
                                           show_urls=show_urls,
                                           dereference=dereference)
 
+        # XSLT transformation
         if tree and template is not None:
             tfmt = xml.ISOFORMAT
             args.update(domain=self.datastore.domain,
@@ -129,25 +136,29 @@ class S3Exporter(object):
                         name=resource.name,
                         utcnow=datetime.datetime.utcnow().strftime(tfmt))
 
+            # @todo 2.3: catch transformation errors!
             tree = xml.transform(tree, template, **args)
 
+        # Convert into string
         if tree:
             if as_json:
-                return self.datastore.xml.tree2json(tree, pretty_print=pretty_print)
+                output = xml.tree2json(tree, pretty_print=pretty_print)
             else:
-                return xml.tostring(tree, pretty_print=pretty_print)
-        else:
-            return None
+                output = xml.tostring(tree, pretty_print=pretty_print)
+
+        return output
 
 
     # -------------------------------------------------------------------------
     def csv(self, resource):
+        """
+        Export resource as CSV (does not include components)
 
-        """ Export resource as CSV (does not include components)
+        @param resource: the resource to export
 
-            @param resource: the resource to export
+        @note: export does not include components!
 
-            @todo: implement audit
+        @todo: implement audit
 
         """
 
@@ -170,18 +181,20 @@ class S3Exporter(object):
 
     # -------------------------------------------------------------------------
     def pdf(self, resource, list_fields=None):
+        """
+        Export a resource as Adobe PDF (does not include components!)
 
-        """ Export resource as Adobe PDF (does not include components)
+        @param resource: the resource
+        @param list_fields: fields to include in list views
 
-            @param resource: the resource
-            @param list_fields: fields to include in list views
+        @note: export does not include components!
 
-            @todo 2.3: fix error messages
-            @todo 2.3: do not redirect
-            @todo 2.3: PEP-8
-            @todo 2.3: test this!
+        @todo 2.3: fix error messages
+        @todo 2.3: do not redirect
+        @todo 2.3: PEP-8
+        @todo 2.3: test this!
 
-            @todo: implement audit
+        @todo: implement audit
 
         """
 
@@ -317,16 +330,18 @@ class S3Exporter(object):
 
     # -------------------------------------------------------------------------
     def xls(self, resource, list_fields=None):
+        """
+        Export a resource as Microsoft Excel spreadsheet
 
-        """ Export record(s) as Microsoft Excel spreadsheet
+        @param resource: the resource
+        @param list_fields: fields to include in list views
 
-            @param resource: the resource
-            @param list_fields: fields to include in list views
+        @note: export does not include components!
 
-            @todo 2.3: PEP-8
-            @todo 2.3: implement audit
-            @todo 2.3: use S3Resource.readable_fields
-            @todo 2.3: use separate export_fields instead of list_fields
+        @todo 2.3: PEP-8
+        @todo 2.3: implement audit
+        @todo 2.3: use S3Resource.readable_fields
+        @todo 2.3: use separate export_fields instead of list_fields
 
         """
 
@@ -396,12 +411,28 @@ class S3Exporter(object):
         response.headers["Content-disposition"] = "attachment; filename=\"%s\"" % filename
         return output.read()
 
-    # -------------------------------------------------------------------------
-    def json(self, resource, start=None, limit=None, fields=None):
 
+    # -------------------------------------------------------------------------
+    def json(self, resource, start=None, limit=None, list_fields=None):
+        """
+        Export a resource as JSON
+
+        @note: export does not include components!
+
+        @param resource: the resource to export
+        @param start: index of the first record to export (for slicing)
+        @param limit: maximum number of records to export (for slicing)
+        @param list_fields: names of fields to include in the export
+                            (None for all fields)
+
+        """
+
+        # load the slice
         resource.load(start=start, limit=limit)
-        set = resource.records(fields=fields)
-        return set.json()
+
+        # Get the rows and return as json
+        rows = resource.records(fields=list_fields)
+        return rows.json()
 
 
 # *****************************************************************************

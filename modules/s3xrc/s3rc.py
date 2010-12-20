@@ -213,12 +213,18 @@ class S3DataStore(object):
             return imports
 
         table = self.db[resource]
+
+        # Get the original record
         original = self.original(table, element)
+
+        # Convert element into a record and validate it
         record = self.xml.record(table, element,
                                  original=original,
                                  files=files,
                                  validate=validate)
 
+        # Get the modification date/time from the element
+        # @todo: import this
         mtime = element.get(self.xml.MTIME, None)
         if mtime:
             mtime, error = self.validate(table, None, self.xml.MTIME, mtime)
@@ -229,6 +235,7 @@ class S3DataStore(object):
             self.error = self.ERROR.VALIDATION_ERROR
             return None
 
+        # Look ahead for referenced elements
         if lookahead:
             (rfields, dfields) = self.__fields(table)
             rmap = self.xml.lookahead(table, element, rfields,
@@ -236,6 +243,7 @@ class S3DataStore(object):
         else:
             rmap = []
 
+        # Create an import job
         (prefix, name) = resource.split("_", 1)
         onvalidation = self.model.get_config(table, "onvalidation")
         onaccept = self.model.get_config(table, "onaccept")
@@ -248,9 +256,11 @@ class S3DataStore(object):
                           onvalidation=onvalidation,
                           onaccept=onaccept)
 
+        # Create a job list
         if joblist is not None:
             joblist[element] = job
 
+        # Create import jobs for the referenced elements
         for r in rmap:
             entry = r.get("entry")
             relement = entry.get("element")
@@ -267,7 +277,9 @@ class S3DataStore(object):
                     entry["job"] = jobs[-1]
                 imports.extend(jobs)
 
+        # Add job to the import list
         imports.append(job)
+
         return imports
 
 
@@ -1330,7 +1342,8 @@ class S3ImportJob(object):
                 form = Storage()
                 form.method = self.method
                 form.vars = self.record
-                form.vars.id = self.id
+                if self.id:
+                    form.vars.id = self.id
                 form.errors = Storage()
                 if self.onvalidation:
                     self.datastore.callback(self.onvalidation, form, name=self.tablename)

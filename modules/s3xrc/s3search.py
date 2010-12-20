@@ -11,6 +11,7 @@
     @requires: U{B{I{Geraldo}} <http://www.geraldoreports.org>}
     @requires: U{B{I{Xlwt}} <http://pypi.python.org/pypi/xlwt>}
 
+    @author: Fran Boon
     @author: nursix
     @contact: dominic AT nursix DOT org
     @copyright: 2009-2010 (c) Sahana Software Foundation
@@ -52,21 +53,23 @@ __all__ = ["S3Search",
 
 # *****************************************************************************
 class S3Search(S3Method):
-    """
-        Search MethodHandler for S3CRUD
 
-        @ToDo: Support components
+    """
+    Search method for S3Resources
+
+    @todo: Support components
+
     """
 
     def apply_method(self, r, **attr):
-
         """
-            Apply method
+        Apply method
 
-            @param r: the S3Request
-            @param attr: dictionary of parameters for the method handler
+        @param r: the S3Request
+        @param attr: dictionary of parameters for the method handler
 
-            @returns: output object to send to the view
+        @returns: output object to send to the view
+
         """
 
         # Get environment
@@ -150,10 +153,11 @@ class S3Search(S3Method):
 # *****************************************************************************
 class S3LocationSearch(S3Search):
     """
-        Location-Specific Searches
+    Location-specific search method for S3Resources
         - just supports JSON format
 
-        @ToDo: Support Components
+    @todo: Support Components
+
     """
 
     def apply_method(self, r, **attr):
@@ -289,24 +293,26 @@ class S3LocationSearch(S3Search):
 
 # *****************************************************************************
 class S3PersonSearch(S3Search):
+
     """
-        Person-Specific Searches:
+    Person-specific search method for S3Resources:
         - uses first_name, middle_name & last_name
         - only support '~' filter
         - just supports JSON format
 
-        @ToDo: Support components
+    @todo: Support components
+
     """
 
     def apply_method(self, r, **attr):
-
         """
-            Apply method
+        Apply method
 
-            @param r: the S3Request
-            @param attr: dictionary of parameters for the method handler
+        @param r: the S3Request
+        @param attr: dictionary of parameters for the method handler
 
-            @returns: output object to send to the view
+        @returns: output object to send to the view
+
         """
 
         # Get environment
@@ -384,17 +390,21 @@ class S3PersonSearch(S3Search):
 # *****************************************************************************
 class S3SearchSimple(S3CRUD):
 
-    """ Simple string-search method handler
-
-        @param datastore: the resource controller
-        @param label: the label for the input field in the search form
-        @param comment: help text for the input field in the search form
-        @param fields: the fields to search for the string
+    """
+    Simple fulltext search method for S3Resources
 
     """
 
 
     def __init__(self, label=None, comment=None, fields=None):
+        """
+        Constructor
+
+        @param label: the label for the input field in the search form
+        @param comment: help text for the input field in the search form
+        @param fields: the fields to search for the string
+
+        """
 
         S3CRUD.__init__(self)
         self.__label = label
@@ -404,11 +414,11 @@ class S3SearchSimple(S3CRUD):
 
     # -------------------------------------------------------------------------
     def apply_method(self, r, **attr):
+        """
+        Apply method
 
-        """ Apply method
-
-            @param r: the S3Request
-            @param attr: request parameters
+        @param r: the S3Request
+        @param attr: request parameters
 
         """
 
@@ -497,5 +507,6 @@ class S3SearchSimple(S3CRUD):
             r.error(resource.ERROR.BAD_FORMAT)
 
         return output
+
 
 # *****************************************************************************

@@ -56,6 +56,7 @@ class S3Resource(object):
 
     """
     API for resources
+
     """
 
     def __init__(self, datastore, prefix, name,
@@ -67,7 +68,8 @@ class S3Resource(object):
                  components=None):
         """
         Constructor
-        @param datastore: the resource controller
+
+        @param datastore: the data store manager
         @param prefix: prefix of the resource name (=module name)
         @param name: name of the resource (without prefix)
         @param id: record ID (or list of record IDs)
@@ -2385,7 +2387,7 @@ class S3Method(object):
     # -------------------------------------------------------------------------
     def apply_method(self, r, **attr):
         """
-        Method application stub, to be implemented in subclass
+        Stub for apply_method, to be implemented in subclass
 
         @param r: the S3Request
         @param attr: dictionary of parameters for the method handler

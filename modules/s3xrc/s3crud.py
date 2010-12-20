@@ -90,13 +90,13 @@ class S3CRUD(S3Method):
 
     # -------------------------------------------------------------------------
     def create(self, r, **attr):
+        """
+        Create new records
 
-        """ Create new records
+        @param r: the S3Request
+        @param attr: dictionary of parameters for the method handler
 
-            @param r: the S3Request
-            @param attr: dictionary of parameters for the method handler
-
-            @todo 2.3: plain representation
+        @todo 2.3: plain representation
 
         """
 
@@ -338,13 +338,13 @@ class S3CRUD(S3Method):
 
     # -------------------------------------------------------------------------
     def read(self, r, **attr):
+        """
+        Read a single record
 
-        """ Read a single record
+        @param r: the S3Request
+        @param attr: dictionary of parameters for the method handler
 
-            @param r: the S3Request
-            @param attr: dictionary of parameters for the method handler
-
-            @todo 2.3: add update form if permitted + show_add_btn
+        @todo 2.3: add update form if permitted + show_add_btn
 
         """
 
@@ -443,13 +443,13 @@ class S3CRUD(S3Method):
 
     # -------------------------------------------------------------------------
     def update(self, r, **attr):
+        """
+        Update a record
 
-        """ Update a record
+        @param r: the S3Request
+        @param attr: dictionary of parameters for the method handler
 
-            @param r: the S3Request
-            @param attr: dictionary of parameters for the method handler
-
-            @todo 2.3: plain representation
+        @todo 2.3: plain representation
 
         """
 
@@ -588,14 +588,14 @@ class S3CRUD(S3Method):
 
     # -------------------------------------------------------------------------
     def delete(self, r, **attr):
+        """
+        Delete record(s)
 
-        """ Delete record(s)
+        @param r: the S3Request
+        @param attr: dictionary of parameters for the method handler
 
-            @param r: the S3Request
-            @param attr: dictionary of parameters for the method handler
-
-            @todo 2.3: put style information into stylesheet
-            @todo 2.3: move confirmation form into resource
+        @todo 2.3: put style information into stylesheet
+        @todo 2.3: move confirmation form into resource
 
         """
 
@@ -671,11 +671,11 @@ class S3CRUD(S3Method):
 
     # -------------------------------------------------------------------------
     def select(self, r, **attr):
+        """
+        Get a list view of the requested resource
 
-        """ Get a list view of the requested resource
-
-            @param r: the S3Request
-            @param attr: dictionary of parameters for the method handler
+        @param r: the S3Request
+        @param attr: dictionary of parameters for the method handler
 
         """
 
@@ -880,15 +880,15 @@ class S3CRUD(S3Method):
                     _href=None,
                     _id=None,
                     _class="action-btn"):
+        """
+        Generate a link button
 
-        """ Generate a link button
-
-            @param label: the link label (None if using CRUD string)
-            @param tablename: the name of table for CRUD string selection
-            @param name: name of CRUD string for the button label
-            @param _href: the target URL
-            @param _id: the HTML-ID of the link
-            @param _class: the HTML-class of the link
+        @param label: the link label (None if using CRUD string)
+        @param tablename: the name of table for CRUD string selection
+        @param name: name of CRUD string for the button label
+        @param _href: the target URL
+        @param _id: the HTML-ID of the link
+        @param _class: the HTML-class of the link
 
         """
 
@@ -907,11 +907,11 @@ class S3CRUD(S3Method):
 
     # -------------------------------------------------------------------------
     def crud_string(self, tablename, name):
+        """
+        Get a CRUD info string for interactive pages
 
-        """ Get a CRUD info string for interactive pages
-
-            @param tablename: the table name
-            @param name: the name of the CRUD string
+        @param tablename: the table name
+        @param name: the name of the CRUD string
 
         """
 
@@ -926,14 +926,14 @@ class S3CRUD(S3Method):
     # -----------------------------------------------------------------------------
     @staticmethod
     def insert_subheadings(form, tablename, subheadings):
+        """
+        Insert subheadings into forms
 
-        """ Insert subheadings into forms
-
-            @param form: the form
-            @param tablename: the tablename
-            @param subheadings: a dict of {"Headline": Fieldnames}, where Fieldname can
-                be either a single field name or a list/tuple of field names belonging
-                under that headline
+        @param form: the form
+        @param tablename: the tablename
+        @param subheadings: a dict of {"Headline": Fieldnames}, where Fieldname can
+            be either a single field name or a list/tuple of field names belonging
+            under that headline
 
         """
 
@@ -974,12 +974,12 @@ class S3CRUD(S3Method):
 
     # -------------------------------------------------------------------------
     def insert_buttons(self, r, *buttons, **attr):
+        """
+        Insert resource action buttons
 
-        """ Insert resource action buttons
-
-            @param r: the S3Request
-            @param buttons: button names ("add", "edit", "delete", "list")
-            @keyword record_id: the record ID
+        @param r: the S3Request
+        @param buttons: button names ("add", "edit", "delete", "list")
+        @keyword record_id: the record ID
 
         """
 
@@ -1047,25 +1047,25 @@ class S3CRUD(S3Method):
 
     # -------------------------------------------------------------------------
     def _linkto(self, r, authorised=None, update=None, native=False):
+        """
+        Returns a linker function for the record ID column in list views
 
-        """ Returns a linker function for the record ID column in list views
-
-            @param r: the S3Request
-            @param authorised: user authorised for update (override internal check)
-            @param update: provide link to update rather than to read
-            @param native: link to the native controller rather than to
-                           component controller
+        @param r: the S3Request
+        @param authorised: user authorised for update (override internal check)
+        @param update: provide link to update rather than to read
+        @param native: link to the native controller rather than to
+                        component controller
 
         """
 
         c = None
         f = None
 
-        response = self.response
+        response = r.response
 
         prefix, name, table, tablename = r.target()
-        permit = self.datastore.auth.shn_has_permission
-        model = self.datastore.model
+        permit = r.datastore.auth.shn_has_permission
+        model = r.datastore.model
 
         if authorised is None:
             authorised = permit("update", tablename)
@@ -1120,12 +1120,12 @@ class S3CRUD(S3Method):
 
     # -------------------------------------------------------------------------
     def ssp_filter(self, table, fields, left=[]):
+        """
+        Convert the SSPag GET vars into a filter query
 
-        """ Convert the SSPag GET vars into a filter query
-
-            @param table: the table
-            @param fields: list of fields displayed in the list view (same order!)
-            @param left: list of joins
+        @param table: the table
+        @param fields: list of fields displayed in the list view (same order!)
+        @param left: list of joins
 
         """
 
@@ -1193,12 +1193,12 @@ class S3CRUD(S3Method):
 
     # -------------------------------------------------------------------------
     def ssp_orderby(self, table, fields, left=[]):
+        """
+        Convert the SSPag GET vars into a sorting query
 
-        """ Convert the SSPag GET vars into a sorting query
-
-            @param table: the table
-            @param fields: list of fields displayed in the list view (same order!)
-            @param left: list of joins
+        @param table: the table
+        @param fields: list of fields displayed in the list view (same order!)
+        @param left: list of joins
 
         """
 

@@ -35,9 +35,9 @@
 
 __name__ = "S3TOOLS"
 
-__all__ = ["AuthS3", "CrudS3", "FieldS3", "S3ReusableField"]
+__all__ = ["AuthS3", "CrudS3", "FieldS3", "S3ReusableField", "S3Audit"]
 
-#import datetime
+import datetime
 import re
 import urllib
 import uuid
@@ -56,6 +56,123 @@ from gluon.tools import Crud
 
 DEFAULT = lambda: None
 table_field = re.compile("[\w_]+\.[\w_]+")
+
+# =============================================================================
+class S3Audit(object):
+
+    """ Audit Trail Writer Class
+
+        @param db: the database
+        @param session: the current session
+        @param tablename: the name of the audit table
+        @param migrate: migration setting
+
+    """
+
+    def __init__(self, db, session,
+                 tablename="s3_audit",
+                 migrate=True):
+
+        self.db = db
+        self.table = db.get(tablename, None)
+        if not self.table:
+            self.table = db.define_table(tablename,
+                            Field("timestmp", "datetime"),
+                            Field("person", "integer"),
+                            Field("operation"),
+                            Field("tablename"),
+                            Field("record", "integer"),
+                            Field("representation"),
+                            Field("old_value", "text"),
+                            Field("new_value", "text"),
+                            migrate=migrate)
+
+        self.session = session
+        if session.auth and session.auth.user:
+            self.user = session.auth.user.id
+        else:
+            self.user = None
+
+
+    # -------------------------------------------------------------------------
+    def __call__(self, operation, prefix, name,
+                 form=None,
+                 record=None,
+                 representation="unknown"):
+
+        """ Caller
+
+            @param operation: Operation to log, one of
+                "create", "update", "read", "list" or "delete"
+            @param prefix: the module prefix of the resource
+            @param name: the name of the resource (without prefix)
+            @param form: the form
+            @param record: the record ID
+            @param representation: the representation format
+
+        """
+
+        settings = self.session.s3
+
+        now = datetime.datetime.utcnow()
+        db = self.db
+        table = self.table
+        tablename = "%s_%s" % (prefix, name)
+
+        if record:
+            if isinstance(record, Row):
+                record = record.get("id", None)
+                if not record:
+                    return True
+            try:
+                record = int(record)
+            except ValueError:
+                record = None
+        else:
+            record = None
+
+        if operation in ("list", "read"):
+            if settings.audit_read:
+                table.insert(timestmp = now,
+                             person = self.user,
+                             operation = operation,
+                             tablename = tablename,
+                             record = record,
+                             representation = representation)
+
+        elif operation in ("create", "update"):
+            if settings.audit_write:
+                if form:
+                    record =  form.vars.id
+                    new_value = ["%s:%s" % (var, str(form.vars[var]))
+                                 for var in form.vars]
+                else:
+                    new_value = []
+                table.insert(timestmp = now,
+                             person = self.user,
+                             operation = operation,
+                             tablename = tablename,
+                             record = record,
+                             representation = representation,
+                             new_value = new_value)
+
+        elif operation == "delete":
+            if settings.audit_write:
+
+                row = db(db[tablename].id == record).select(limitby=(0, 1)).first()
+                old_value = []
+                if row:
+                    old_value = ["%s:%s" % (field, row[field]) for field in row]
+                table.insert(timestmp = now,
+                             person = self.user,
+                             operation = operation,
+                             tablename = tablename,
+                             record = record,
+                             representation = representation,
+                             old_value = old_value)
+
+        return True
+
 
 # =============================================================================
 class S3Permission(object):

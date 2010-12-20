@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Data Model Extensions
 
-    @version: 2.2.9
+    @version: 2.2.10
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -486,15 +486,15 @@ class S3ResourceLinker(object):
 
     """ Hyperlinks between resources
 
-        @param manager: the resource controller
+        @param datastore: the resource controller
 
     """
 
-    def __init__(self, manager):
+    def __init__(self, datastore):
 
-        self.db = manager.db
-        self.tablename = manager.rlink_tablename
-        migrate = manager.migrate
+        self.db = datastore.db
+        self.tablename = datastore.rlink_tablename
+        migrate = datastore.migrate
 
         self.table = self.db.get(self.tablename, None)
         if not self.table:

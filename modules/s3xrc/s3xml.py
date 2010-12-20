@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - XML/JSON Toolkit
 
-    @version: 2.2.9
+    @version: 2.2.10
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -153,21 +153,21 @@ class S3XML(object):
     ISOFORMAT = "%Y-%m-%dT%H:%M:%SZ" #: universal timestamp
 
     # -------------------------------------------------------------------------
-    def __init__(self, manager):
+    def __init__(self, datastore):
 
         """ Constructor
 
-            @param manager: the resource controller
+            @param datastore: the resource controller
 
         """
 
-        self.manager = manager
+        self.datastore = datastore
 
-        self.db = manager.db
-        self.domain = manager.domain
-        self.s3 = manager.s3
-        self.gis = manager.gis
-        self.cache = manager.cache
+        self.db = datastore.db
+        self.domain = datastore.domain
+        self.s3 = datastore.s3
+        self.gis = datastore.gis
+        self.cache = datastore.cache
 
         self.error = None
 
@@ -392,7 +392,7 @@ class S3XML(object):
 
         """
 
-        return self.manager.represent(table[f],
+        return self.datastore.represent(table[f],
                                       value=v,
                                       strip_markup=True,
                                       xml_escape=True)
@@ -1158,7 +1158,11 @@ class S3XML(object):
 
         """
 
-        if element.tag == cls.TAG.list:
+        TAG = cls.TAG
+        ATTRIBUTE = cls.ATTRIBUTE
+        PREFIX = cls.PREFIX
+
+        if element.tag == TAG.list:
             obj = []
             for child in element:
                 tag = child.tag
@@ -1176,18 +1180,18 @@ class S3XML(object):
                     tag = tag.rsplit("}",1)[1]
                 collapse = True
                 if native:
-                    if tag == cls.TAG.resource:
-                        resource = child.get(cls.ATTRIBUTE.name)
-                        tag = "%s_%s" % (cls.PREFIX.resource, resource)
+                    if tag == TAG.resource:
+                        resource = child.get(ATTRIBUTE.name)
+                        tag = "%s_%s" % (PREFIX.resource, resource)
                         collapse = False
-                    elif tag == cls.TAG.options:
-                        resource = child.get(cls.ATTRIBUTE.resource)
-                        tag = "%s_%s" % (cls.PREFIX.options, resource)
-                    elif tag == cls.TAG.reference:
-                        tag = "%s_%s" % (cls.PREFIX.reference,
-                                         child.get(cls.ATTRIBUTE.field))
-                    elif tag == cls.TAG.data:
-                        tag = child.get(cls.ATTRIBUTE.field)
+                    elif tag == TAG.options:
+                        resource = child.get(ATTRIBUTE.resource)
+                        tag = "%s_%s" % (PREFIX.options, resource)
+                    elif tag == TAG.reference:
+                        tag = "%s_%s" % (PREFIX.reference,
+                                         child.get(ATTRIBUTE.field))
+                    elif tag == TAG.data:
+                        tag = child.get(ATTRIBUTE.field)
                 child_obj = cls.__element2json(child, native=native)
                 if child_obj:
                     if not tag in obj:
@@ -1203,23 +1207,23 @@ class S3XML(object):
             attributes = element.attrib
             for a in attributes:
                 if native:
-                    if a == cls.ATTRIBUTE.name and \
-                       element.tag == cls.TAG.resource:
+                    if a == ATTRIBUTE.name and \
+                       element.tag == TAG.resource:
                         continue
-                    if a == cls.ATTRIBUTE.resource and \
-                       element.tag == cls.TAG.options:
+                    if a == ATTRIBUTE.resource and \
+                       element.tag == TAG.options:
                         continue
-                    if a == cls.ATTRIBUTE.field and \
-                    element.tag in (cls.TAG.data, cls.TAG.reference):
+                    if a == ATTRIBUTE.field and \
+                    element.tag in (TAG.data, TAG.reference):
                         continue
-                obj[cls.PREFIX.attribute + a] = \
+                obj[PREFIX.attribute + a] = \
                     cls.xml_decode(attributes[a])
 
             if element.text:
-                obj[cls.PREFIX.text] = cls.xml_decode(element.text)
+                obj[PREFIX.text] = cls.xml_decode(element.text)
 
             if len(obj) == 1 and obj.keys()[0] in \
-               (cls.PREFIX.text, cls.TAG.item, cls.TAG.list):
+               (PREFIX.text, TAG.item, TAG.list):
                 obj = obj[obj.keys()[0]]
 
             return obj

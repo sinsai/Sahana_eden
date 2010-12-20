@@ -840,7 +840,7 @@ def s3_rest_controller(prefix, resourcename, **attr):
     # Parse and execute the request
     resource, r = s3xrc.parse_request(prefix, resourcename)
 
-    resource.set_handler("search", _s3xrc.S3Search(s3xrc))
+    resource.set_handler("search", _s3xrc.S3Search())
     resource.set_handler("copy", shn_copy)
     resource.set_handler("barchart", shn_barchart)
 

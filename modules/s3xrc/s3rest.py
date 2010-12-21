@@ -400,8 +400,8 @@ class S3Resource(object):
                 if archive_not_delete and "deleted" in self.table:
                     self.db(self.table.id == row.id).update(deleted=True)
                     numrows += 1
-                    audit("delete", self.prefix, self.name,
-                          record=row.id, representation=format)
+                    self.audit("delete", self.prefix, self.name,
+                               record=row.id, representation=format)
                     model.delete_super(self.table, row)
                     if ondelete:
                         ondelete(row)

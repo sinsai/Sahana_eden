@@ -1278,7 +1278,7 @@ class S3XML(object):
             output = '%s, "message": "%s"' % (output, message)
 
         if not success and tree:
-            output = '%s, "tree": "%s"' % (output, tree)
+            output = '%s, "tree": %s' % (output, tree)
 
         return "%s}" % output
 

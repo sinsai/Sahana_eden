@@ -44,33 +44,19 @@ _table_user.language.represent = lambda opt: s3_languages.get(opt, UNKNOWN_OPT)
 def index():
     """ Main Home Page """
 
+    def menu_box( title, margin_top=11):
+          box = (IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l", _style="margin-top:%spx;" % margin_top),
+          IMG(_src = "/%s/static/img/menu_box-r.png" % request.application, _class="menu_box-r", _style="margin-top:%spx;" % margin_top),
+          A(DIV(title, _class = "menu_box"), _href = URL( r=request, c="irs", f="ireport") ) )
+          return box#IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l"), A(DIV(T("Incidents"), _class = "menu_box"), _href = URL( r=request, c="irs", f="ireport") )
+    
     div_sit = DIV(H3(T("SITUATION")),
-                  IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l", _style="margin-top:1px;"),
-                  IMG(_src = "/%s/static/img/menu_box-r.png" % request.application, _class="menu_box-r", _style="margin-top:1px;"),
-                  A(DIV(T("Incidents"),
-                        _class = "menu_box"
-                        ),
-                    _href = URL( r=request, c="irs", f="ireport")
-                    ),
-                  IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l"),
-                  IMG(_src = "/%s/static/img/menu_box-r.png" % request.application, _class="menu_box-r"),
-                  A(DIV(T("Assessments"),
-                        _class = "menu_box"
-                        ),
-                    _href = URL( r=request, c="assess", f="assess")
-                    ),
-                  #A(DIV(T("Mobile Assess"),
-                  #      _class = "menu_box"
-                  #      ),
-                  #  _href = URL( r=request, c="assess", f="mobile_basic_assess")
-                  #  ),
-                  IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l"),
-                  IMG(_src = "/%s/static/img/menu_box-r.png" % request.application, _class="menu_box-r"),
-                  A(DIV(T("Warehouses"),
-                        _class = "menu_box"
-                        ),
-                    _href = URL( r=request, c="inventory", f="store")
-                    ),                    
+                  # Begin menu_box deep magic.
+                  # Basically, menu_box returns a tuple of 3 elements, and the *() 
+                  # concatenates them all together into a string of arguments to the DIV.
+                  *(menu_box(T("Incidents"), 1)+
+                    menu_box(T("Assessments"), 11)+
+                    menu_box(T("Warehouses"), 11)),
                   _class = "menu_div"
                   )
     div_arrow_1 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % request.application),

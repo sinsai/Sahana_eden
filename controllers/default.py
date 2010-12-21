@@ -44,70 +44,34 @@ _table_user.language.represent = lambda opt: s3_languages.get(opt, UNKNOWN_OPT)
 def index():
     """ Main Home Page """
 
-    div_sit = DIV(H3(T("SITUATION")),
-                  A(DIV(T("Incidents"),
-                        _class = "menu_box"
-                        ),
-                    _href = URL( r=request, c="irs", f="ireport")
-                    ),
-                  A(DIV(T("Assessments"),
-                        _class = "menu_box"
-                        ),
-                    _href = URL( r=request, c="assess", f="assess")
-                    ),
-                  #A(DIV(T("Mobile Assess"),
-                  #      _class = "menu_box"
-                  #      ),
-                  #  _href = URL( r=request, c="assess", f="mobile_basic_assess")
-                  #  ),                      
-                  A(DIV(T("Warehouses"),
-                        _class = "menu_box"
-                        ),
-                    _href = URL( r=request, c="inventory", f="store")
-                    ),                    
-                  _class = "menu_div"
-                  )
+    def menu_box( title, ci, fi ):
+          """ Returns a menu_box linking to URL(ci, fi) """
+          return A( DIV(title, _class = "menu-box-r"), _class = "menu-box-l", _href = URL( r=request, c=ci, f=fi) )
+
+    div_sit = DIV( H3(T("SITUATION")),
+                   menu_box(T("Incidents"),   "irs",      "ireport"),
+                   menu_box(T("Assessments"), "assess",   "assess"),
+                   menu_box(T("Warehouses"),  "inventory","store"),
+                  _class = "menu_div")
+
     div_arrow_1 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % request.application),
                           _class = "div_arrow")
-    div_dec = DIV(H3(T("DECISION")),
-                  A(DIV(T("Gap Report"),
-                        _class = "menu_box"
-                        ),
-                    _href = URL( r=request, c="project", f="gap_report")
-                    ),
-                  A(DIV(T("Gap Map"),
-                        _class = "menu_box"
-                        ),
-                    _href = URL( r=request, c="project", f="gap_map")
-                    ),
-                  A(DIV(T("Map"),
-                        _class = "menu_box"
-                        ),
-                    _href = URL( r=request, c="gis", f= "index")
-                    ),
-                  _class = "menu_div"
-                  )
+
+    div_dec = DIV( H3(T("DECISION")),
+                   menu_box(T("Gap Report"), "project", "gap_report"),
+                   menu_box(T("Gap Map"),    "project", "gap_map"),
+                   menu_box(T("Map"), "gis", "index"),
+                  _class = "menu_div")
+
     div_arrow_2 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % request.application),
                           _class = "div_arrow")
+
     div_res = DIV(H3(T("RESPONSE")),
-                  A(DIV(T("Activities"),
-                        _class = "menu_box"
-                        ),
-                    _href = URL( r=request, c="project", f= "activity")
-                    ),
-                  A(DIV(T("Requests"),
-                        _class = "menu_box"
-                        ),
-                    _href = URL( r=request, c="rms", f= "req")
-                    ),                    
-                  #A(DIV(T("Distribution"),
-                  #      _class = "menu_box"
-                  #      ),
-                  #  _href = URL( r=request, c="logs", f= "distrib")
-                  #  ),
+                  menu_box(T("Activities"), "project", "activity"),
+                  menu_box(T("Requests"),   "rms",     "req"),
+                  #+menu_box(T("Distribution"), "logs", "distrib") 
                   _class = "menu_div",
-                  _id = "menu_div_response"
-                  )
+                  _id = "menu_div_response")
     
     #div_additional = DIV(A(DIV(T("Mobile Assess."),
     #                       _class = "menu_box"

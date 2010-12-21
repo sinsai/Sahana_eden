@@ -4,9 +4,6 @@
     XForms - Controllers
 """
 
-import StringIO
-import xml.dom.minidom
-from lxml import etree
 module = request.controller
 
 def create():
@@ -234,10 +231,14 @@ def importxml(db, xmlinput):
     ToDo: rewrite this to go via S3XRC for proper Authz checking, Audit, Create/Update checking.
     """
 
+    import StringIO
+    import xml.dom.minidom
+
     try:
         doc = xml.dom.minidom.parseString(xmlinput)
     except:
         raise Exception("XML parse error")
+
     parent = doc.childNodes[0].tagName
     csvout = csvheader(parent, doc.childNodes[0].childNodes)
     for subnode in doc.childNodes:
@@ -274,6 +275,7 @@ def submission():
     using the S3XRC framework.
     """
 
+    import StringIO
     import cgi
 
     source = request.post_vars.get("xml_submission_file", None)

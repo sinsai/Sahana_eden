@@ -112,28 +112,8 @@ def shn_document_rheader(r):
             return rheader
     return None
 
-def document_onvalidation(form):
-    s3deduplicator = local_import("s3deduplicator")
-    import cgi
-
-    # @ToDo: Fail gracefully if not present
-    p = request.post_vars["file"]
-    if isinstance(p, cgi.FieldStorage) and p.filename:
-        f = p.file
-        form.vars.checksum = s3deduplicator.docChecksum(f.read())
-    results = db(db.doc_document.id > 0).select(db.doc_document.checksum, db.doc_document.name)
-    for result in results:
-        if form.vars.checksum == result.checksum:
-            doc_name = result.name
-            form.errors["file"] = T("This file already exists on the server as") + " %s" % (doc_name)
-    return
-
 def document():
     """ RESTful CRUD controller """
-
-    s3xrc.model.configure(db.doc_document,
-        create_onvalidation=document_onvalidation,
-        update_onvalidation=document_onvalidation)
 
     resource = request.function
     tablename = "%s_%s" % (module, resource)
@@ -149,21 +129,6 @@ def document():
 
     return output
 #==============================================================================
-def image_onvalidation(form):
-    s3deduplicator = local_import("s3deduplicator")
-    import cgi
-
-    p = request.post_vars["image"]
-    if isinstance(p, cgi.FieldStorage) and p.filename:
-        f = p.file
-        form.vars.checksum = s3deduplicator.docChecksum(f.read())
-    results = db(db.doc_image.id > 0).select(db.doc_image.checksum, db.doc_image.name)
-    for result in results:
-        if form.vars.checksum == result.checksum:
-            image_name = result.name
-            form.errors["image"] = T("This file already exists on the server as") + " %s" % (image_name)
-    return
-
 def image():
     """ RESTful CRUD controller """
 
@@ -182,116 +147,78 @@ def image():
 
     return output
 #==============================================================================
-# END - Following code is not utilised
-
-def metadata():
-    """ RESTful CRUD controller """
-    resource = request.function
-    tablename = module + "_" + resource
-    table = db[tablename]
-
-    # Model options
-    table.description.label = T("Description")
-    table.person_id.label = T("Contact")
-    table.source.label = T("Source")
-    table.sensitivity.label = T("Sensitivity")
-    table.event_time.label = T("Event Time")
-    table.expiry_time.label = T("Expiry Time")
-    table.url.label = "URL"
-
-    # CRUD Strings
-    LIST_METADATA = T("List Metadata")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_METADATA,
-        title_display = T("Metadata Details"),
-        title_list = LIST_METADATA,
-        title_update = T("Edit Metadata"),
-        title_search = T("Search Metadata"),
-        subtitle_create = T("Add New Metadata"),
-        subtitle_list = T("Metadata"),
-        label_list_button = LIST_METADATA,
-        label_create_button = ADD_METADATA,
-        label_delete_button = T("Delete Metadata"),
-        msg_record_created = T("Metadata added"),
-        msg_record_modified = T("Metadata updated"),
-        msg_record_deleted = T("Metadata deleted"),
-        msg_list_empty = T("No Metadata currently defined"))
-
-    return s3_rest_controller(module, resource)
-#==============================================================================
 def bulk_upload():
     """
-    Custom view to allow bulk uploading of photos which are made into GIS Features.
-    Lat/Lon can be pulled from an associated GPX track with timestamp correlation.
+        Custom view to allow bulk uploading of Photos
+
+        @ToDo: Allow creation of a GIS Feature Layer to view on the map
+        @ToDo: Allow uploading of associated GPX track for timestamp correlation.
+        See r1595 for the previous draft of this work
     """
 
-    crud.messages.submit_button = T("Upload")
-
-    #form = crud.create(db.doc_metadata)
-
-    gpx_tracks = OptionsWidget()
-    #gpx_widget = gpx_tracks.widget(db.gis_track.id, "", _id="gis_layer_gpx_track_id")
-    gpx_widget = ""
-    gpx_label = track_id.attr.label
-    gpx_comment = track_id.attr.comment
-
-    # feature_group has been replaced by layer_feature
-    #feature_group = OptionsWidget()
-    #fg_widget = feature_group.widget(feature_group_id.feature_group_id, feature_group_id.feature_group_id.default, _id="gis_location_to_feature_group_feature_group_id")
-    #fg_label = feature_group_id.feature_group_id.label
-    #fg_comment = feature_group_id.feature_group_id.comment
-
-    response.title = T("Bulk Uploader")
-
-    #return dict(form=form, gpx_widget=gpx_widget, gpx_label=gpx_label, gpx_comment=gpx_comment, fg_widget=fg_widget, fg_label=fg_label, fg_comment=fg_comment, IMAGE_EXTENSIONS=IMAGE_EXTENSIONS)
-    return dict(gpx_widget=gpx_widget, gpx_label=gpx_label, gpx_comment=gpx_comment, IMAGE_EXTENSIONS=IMAGE_EXTENSIONS)
+    response.extra_styles = ["S3/fileuploader.css"]
+    return dict()
 
 def upload_bulk():
-    "Receive the Uploaded data from bulk_upload()"
-    # Is there a GPX track to correlate timestamps with?
-    #track_id = form.vars.track_id
-    # Is there a Feature Group to add Features to?
-    #feature_group_id = form.vars.feature_group_id
-    # Collect default metadata
-    #description = form.vars.description
-    #person_id = form.vars.person_id
-    #source = form.vars.source
-    #sensitivity = form.vars.sensitivity
-    #event_time = form.vars.event_time
-    #expiry_time = form.vars.expiry_time
-    #url = form.vars.url
+    """
+        Receive the Uploaded data from bulk_upload()
 
-    # Insert initial metadata
-    #metadata_id = db.media_metadata.insert(description=description, person_id=person_id, source=source, sensitivity=sensitivity, event_time=event_time, expiry_time=expiry_time)
+        https://github.com/valums/file-uploader/blob/master/server/readme.txt
 
-    # Extract timestamps from GPX file
-    # ToDo: Parse using lxml?
+        @ToDo: Read EXIF headers to locate the Photos
+    """
 
-    # Receive file
-    #location_id
-    #image
+    import cgi
 
-    #image_filename = db.insert()
+    source = request.post_vars.get("qqfile", None)
+    if isinstance(source, cgi.FieldStorage) and source.filename:
+        # For IE6-8, Opera, older versions of other browsers you get the file as you normally do with regular form-base uploads.
+        name = source.filename
+        image = source.file
 
-    # Read EXIF Info from file
-    #exec("import applications.%s.modules.EXIF as EXIF" % request.application)
-    # Faster for Production (where app-name won't change):
-    #import applications.sahana.modules.EXIF as EXIF
+    else:
+        # For browsers which upload file with progress bar, you will need to get the raw post data and write it to the file.
+        if "name" in request.vars:
+            name = request.vars.name
+        else:
+            HTTP(400, "Invalid Request: Need a Name!")
 
-    #f = open(file_image, "rb")
-    #tags = EXIF.process_file(f, details=False)
-    #for key in tags.keys():
-        # Timestamp
-    #    if key[tag] == "":
-    #        timestamp = key[tag]
-        # ToDo: LatLon
-        # ToDo: Metadata
+        image = request.body.read()
+        # Convert to StringIO for onvalidation/import
+        import StringIO
+        image = StringIO.StringIO(image)
 
-    # Add image to database
-    image_id = db.media_image.insert()
+    form = Storage()
+    form.vars = Storage()
+    form.vars.name = name
+    form.vars.image = image
 
-    return s3xrc.xml.json_message(True, "200", "Files Processed.")
+    # onvalidation callback
+    # @ToDo: Generalise by reading s3xrc.model
+    image_onvalidation(form)
+        
+    # Add the file to the database
+    # @ToDo handle theimage: currently it's a str
+    #success = db.doc_image.insert(name=name, image=image)
+    if form.accepts():
+        success = True
+    else:
+        success = False
 
+    # onaccept callback
+    # @ToDo: Generalise in case available
+
+    if success:
+        msg = "{'success':true}"
+    else:
+        msg = "{'error':'sorry, no dice'}"
+
+    response.headers["Content-Type"] = "text/html"  # This is what the file-uploader widget expects
+    return msg
+
+#==============================================================================
+# END - Following code is not utilised
+#==============================================================================
 def upload(module, resource, table, tablename, onvalidation=None, onaccept=None):
     # Receive file ( from import_url() )
     record = Storage()

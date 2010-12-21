@@ -554,7 +554,7 @@ class AuthS3(Auth):
         db = self.db
 
         table_user = self.settings.table_user
-        table_membership = self.settings.table_membership_name
+        table_membership = self.settings.table_membership
 
 
         if self.settings.login_userfield:
@@ -565,9 +565,9 @@ class AuthS3(Auth):
             userfield = 'email'
         passfield = self.settings.password_field
         user = db(table_user[userfield] == username).select().first()
-        user_id = user.id
         password = table_user[passfield].validate(password)[0]
         if user:
+            user_id = user.id
             if not user.registration_key and user[passfield] == password:
                 user = Storage(table_user._filter_fields(user, id=True))
                 session.auth = Storage(user=user, last_visit=request.now,
@@ -576,7 +576,7 @@ class AuthS3(Auth):
 
                 # Add the Roles to session.s3
                 roles = []
-                set = db(db[table_membership].user_id == user_id).select(db[table_membership].group_id)
+                set = db(table_membership.user_id == user_id).select(table_membership.group_id)
                 session.s3.roles = [s.group_id for s in set]
 
                 return user

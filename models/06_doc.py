@@ -101,7 +101,7 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T("No Documents found"))
 
 document_id = S3ReusableField("document_id",
-                              db.doc_document,
+                              table,
                               requires = IS_NULL_OR(IS_ONE_OF(db, "doc_document.id", document_represent, orderby="doc_document.name")),
                               represent = document_represent,
                               label = DOCUMENT,
@@ -109,6 +109,28 @@ document_id = S3ReusableField("document_id",
                               ondelete = "RESTRICT",
                               widget = S3AutocompleteWidget(request, module, resourcename)
                              )
+
+def document_onvalidation(form):
+    s3deduplicator = local_import("s3deduplicator")
+    import cgi
+
+    try:
+        p = form.vars.file
+    except:
+        return
+    if isinstance(p, cgi.FieldStorage) and p.filename:
+        f = p.file
+        form.vars.checksum = s3deduplicator.docChecksum(f.read())
+    results = db(db.doc_document.id > 0).select(db.doc_document.checksum, db.doc_document.name)
+    for result in results:
+        if form.vars.checksum == result.checksum:
+            doc_name = result.name
+            form.errors["file"] = T("This file already exists on the server as") + " %s" % (doc_name)
+    return
+
+s3xrc.model.configure(table,
+                      create_onvalidation=document_onvalidation,
+                      update_onvalidation=document_onvalidation)
 #==============================================================================
 resourcename = "image"
 tablename = "%s_%s" % (module, resourcename)
@@ -162,4 +184,25 @@ s3.crud_strings[tablename] = Storage(
     msg_record_deleted = T("Photo deleted"),
     msg_list_empty = T("No Photos found"))
 
+def image_onvalidation(form):
+    s3deduplicator = local_import("s3deduplicator")
+    import cgi
+
+    try:
+        p = form.vars.image
+    except:
+        return
+    if isinstance(p, cgi.FieldStorage) and p.filename:
+        f = p.file
+        form.vars.checksum = s3deduplicator.docChecksum(f.read())
+    results = db(db.doc_image.id > 0).select(db.doc_image.checksum, db.doc_image.name)
+    for result in results:
+        if form.vars.checksum == result.checksum:
+            image_name = result.name
+            form.errors["image"] = T("This file already exists on the server as") + " %s" % (image_name)
+    return
+
+s3xrc.model.configure(table,
+                      create_onvalidation=image_onvalidation,
+                      update_onvalidation=image_onvalidation)
 #==============================================================================

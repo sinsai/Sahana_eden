@@ -44,72 +44,34 @@ _table_user.language.represent = lambda opt: s3_languages.get(opt, UNKNOWN_OPT)
 def index():
     """ Main Home Page """
 
-    def menu_box( title, margin_top=11):
-          box = (IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l", _style="margin-top:%spx;" % margin_top),
-          IMG(_src = "/%s/static/img/menu_box-r.png" % request.application, _class="menu_box-r", _style="margin-top:%spx;" % margin_top),
-          A(DIV(title, _class = "menu_box"), _href = URL( r=request, c="irs", f="ireport") ) )
-          return box#IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l"), A(DIV(T("Incidents"), _class = "menu_box"), _href = URL( r=request, c="irs", f="ireport") )
-    
-    div_sit = DIV(H3(T("SITUATION")),
-                  # Begin menu_box deep magic.
-                  # Basically, menu_box returns a tuple of 3 elements, and the *() 
-                  # concatenates them all together into a string of arguments to the DIV.
-                  *(menu_box(T("Incidents"), 1)+
-                    menu_box(T("Assessments"), 11)+
-                    menu_box(T("Warehouses"), 11)),
-                  _class = "menu_div"
-                  )
+    def menu_box( title, ci, fi ):
+          """ Returns a menu_box linking to URL(ci, fi) """
+          return A( DIV(title, _class = "menu-box-r"), _class = "menu-box-l", _href = URL( r=request, c=ci, f=fi) )
+
+    div_sit = DIV( H3(T("SITUATION")),
+                   menu_box(T("Incidents"),   "irs",      "ireport"),
+                   menu_box(T("Assessments"), "assess",   "assess"),
+                   menu_box(T("Warehouses"),  "inventory","store"),
+                  _class = "menu_div")
+
     div_arrow_1 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % request.application),
                           _class = "div_arrow")
-    div_dec = DIV(H3(T("DECISION")),
-                  IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l", _style="margin-top:1px;"),
-                  IMG(_src = "/%s/static/img/menu_box-r.png" % request.application, _class="menu_box-r", _style="margin-top:1px;"),
-                  A(DIV(T("Gap Report"),
-                        _class = "menu_box"
-                        ),
-                    _href = URL( r=request, c="project", f="gap_report")
-                    ),
-                  IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l"),
-                  IMG(_src = "/%s/static/img/menu_box-r.png" % request.application, _class="menu_box-r"),
-                  A(DIV(T("Gap Map"),
-                        _class = "menu_box"
-                        ),
-                    _href = URL( r=request, c="project", f="gap_map")
-                    ),
-                  IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l"),
-                  IMG(_src = "/%s/static/img/menu_box-r.png" % request.application, _class="menu_box-r"),
-                  A(DIV(T("Map"),
-                        _class = "menu_box"
-                        ),
-                    _href = URL( r=request, c="gis", f= "index")
-                    ),
-                  _class = "menu_div"
-                  )
+
+    div_dec = DIV( H3(T("DECISION")),
+                   menu_box(T("Gap Report"), "project", "gap_report"),
+                   menu_box(T("Gap Map"),    "project", "gap_map"),
+                   menu_box(T("Map"), "gis", "index"),
+                  _class = "menu_div")
+
     div_arrow_2 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % request.application),
                           _class = "div_arrow")
+
     div_res = DIV(H3(T("RESPONSE")),
-                  IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l", _style="margin-top:1px;"),
-                  IMG(_src = "/%s/static/img/menu_box-r.png" % request.application, _class="menu_box-r", _style="margin-top:1px;"),
-                  A(DIV(T("Activities"),
-                        _class = "menu_box"
-                        ),
-                    _href = URL( r=request, c="project", f= "activity")
-                    ),
-                  IMG(_src = "/%s/static/img/menu_box-l.png" % request.application, _class="menu_box-l"),
-                  IMG(_src = "/%s/static/img/menu_box-r.png" % request.application, _class="menu_box-r"),
-                  A(DIV(T("Requests"),
-                        _class = "menu_box"
-                        ),
-                    _href = URL( r=request, c="rms", f= "req")
-                    ),                    
-                  #A(DIV(T("Distribution"),
-                  #      _class = "menu_box"
-                  #      ),
-                  #  _href = URL( r=request, c="logs", f= "distrib")
-                  #  ),
+                  menu_box(T("Activities"), "project", "activity"),
+                  menu_box(T("Requests"),   "rms",     "req"),
+                  #+menu_box(T("Distribution"), "logs", "distrib") 
                   _class = "menu_div",
-                  _id = "menu_div_response"
-                  )
+                  _id = "menu_div_response")
     
     #div_additional = DIV(A(DIV(T("Mobile Assess."),
     #                       _class = "menu_box"

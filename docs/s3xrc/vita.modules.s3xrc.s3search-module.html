@@ -3,7 +3,7 @@
           "DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-  <title>vita.modules.s3xrc.s3rc</title>
+  <title>vita.modules.s3xrc.s3search</title>
   <link rel="stylesheet" href="epydoc.css" type="text/css" />
   <script type="text/javascript" src="epydoc.js"></script>
 </head>
@@ -45,7 +45,7 @@
         Package&nbsp;vita ::
         Package&nbsp;modules ::
         <a href="vita.modules.s3xrc-module.html">Package&nbsp;s3xrc</a> ::
-        Module&nbsp;s3rc
+        Module&nbsp;s3search
       </span>
     </td>
     <td>
@@ -55,15 +55,15 @@
     onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
         <tr><td align="right"><span class="options"
             >[<a href="frames.html" target="_top">frames</a
-            >]&nbsp;|&nbsp;<a href="vita.modules.s3xrc.s3rc-module.html"
+            >]&nbsp;|&nbsp;<a href="vita.modules.s3xrc.s3search-module.html"
             target="_top">no&nbsp;frames</a>]</span></td></tr>
       </table>
     </td>
   </tr>
 </table>
 <!-- ==================== MODULE DESCRIPTION ==================== -->
-<h1 class="epydoc">Module s3rc</h1><p class="nomargin-top"><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html">source&nbsp;code</a></span></p>
-<p>S3XRC Resource Framework - Data Store Manager</p>
+<h1 class="epydoc">Module s3search</h1><p class="nomargin-top"><span class="codelink"><a href="vita.modules.s3xrc.s3search-pysrc.html">source&nbsp;code</a></span></p>
+<p>S3XRC Resource Framework - Search Extensions</p>
 
 <hr />
 <div class="fields">      <p><strong>Version:</strong>
@@ -73,13 +73,31 @@
         <a href="http://eden.sahanafoundation.org/wiki/S3XRC" 
         target="_top"><b><i>S3XRC</i></b></a>
       </p>
-      <p><strong>Requires:</strong>
+      <strong>Requires:</strong>
+      <ul class="nomargin-top">
+        <li>
         <a href="http://codespeak.net/lxml" 
         target="_top"><b><i>lxml</i></b></a>
-      </p>
-      <p><strong>Author:</strong>
-        nursix
-      </p>
+        </li>
+        <li>
+        <a href="http://www.reportlab.com/software/opensource" 
+        target="_top"><b><i>ReportLab</i></b></a>
+        </li>
+        <li>
+        <a href="http://www.geraldoreports.org" 
+        target="_top"><b><i>Geraldo</i></b></a>
+        </li>
+        <li>
+        <a href="http://pypi.python.org/pypi/xlwt" 
+        target="_top"><b><i>Xlwt</i></b></a>
+        </li>
+      </ul>
+      <dl><dt>Authors:</dt>
+        <dd>
+          Fran Boon,
+          nursix
+        </dd>
+      </dl>
       <p><strong>Contact:</strong>
         dominic AT nursix DOT org
       </p>
@@ -127,24 +145,32 @@
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a href="vita.modules.s3xrc.s3rc.S3DataStore-class.html" class="summary-name">S3DataStore</a><br />
-      Data Store Manager
+        <a href="vita.modules.s3xrc.s3search.S3Search-class.html" class="summary-name">S3Search</a><br />
+      Search method for S3Resources
     </td>
   </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a href="vita.modules.s3xrc.s3rc.S3ImportJob-class.html" class="summary-name">S3ImportJob</a><br />
-      Helper class for data imports
+        <a href="vita.modules.s3xrc.s3search.S3LocationSearch-class.html" class="summary-name">S3LocationSearch</a><br />
+      Location-specific search method for S3Resources
     </td>
   </tr>
-<tr class="private">
+<tr>
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a href="vita.modules.s3xrc.s3rc.S3QueryBuilder-class.html" class="summary-name" onclick="show_private();">S3QueryBuilder</a><br />
-      Query Builder
+        <a href="vita.modules.s3xrc.s3search.S3PersonSearch-class.html" class="summary-name">S3PersonSearch</a><br />
+      Person-specific search method for S3Resources:
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="vita.modules.s3xrc.s3search.S3SearchSimple-class.html" class="summary-name">S3SearchSimple</a><br />
+      Simple fulltext search method for S3Resources
     </td>
   </tr>
 </table>

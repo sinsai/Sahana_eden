@@ -292,7 +292,7 @@ deployment_settings.modules = OrderedDict(
         ),
     logs = Storage(
             name_nice = T("Logistics Management"),
-            description = T("Managing, Storing and Distributing Relief Items"),
+            description = T("Managing, Storing and Distributing Items"),
             module_type = 10
         ),
     # NB RMS module depends on HMS, CR & Project

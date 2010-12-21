@@ -140,7 +140,7 @@ gis_config_layout_opts = {
     1:T("window"),
     2:T("embedded")
     }
-opt_gis_layout = db.Table(None, "opt_gis_layout",
+opt_gis_layout = db.Table(db, "opt_gis_layout",
                           Field("opt_gis_layout", "integer",
                                 requires = IS_IN_SET(gis_config_layout_opts, zero=None),
                                 default = 1,
@@ -620,7 +620,7 @@ def gis_location_onvalidation(form):
                                                           db.gis_location.lon_max,
                                                           limitby=(0, 1),
                                                           cache=(cache.ram, 3600)).first()
-    
+
     # Check Parents are in sane order
     if level and parent and _parent:
         # Check that parent is of a higher level (http://eden.sahanafoundation.org/ticket/450)
@@ -655,7 +655,7 @@ def gis_location_onvalidation(form):
                 response.error = T("Locations of this level need to have a parent of level") + ": %s" % gis_location_hierarchy["L%i" % (int(level[1:]) - 1)]
                 form.errors["parent"] = T("Parent needs to be of the correct level")
                 return
-        
+
     # Check within permitted bounds
     # (avoid incorrect data entry)
     # Points only for now

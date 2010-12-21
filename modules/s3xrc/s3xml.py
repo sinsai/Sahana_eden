@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-""" S3XRC Resource Framework - XML/JSON Toolkit
+""" S3XRC Resource Framework - XML Toolkit
 
-    @version: 2.2.9
+    @version: 2.2.10
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -54,7 +54,10 @@ from lxml import etree
 # *****************************************************************************
 class S3XML(object):
 
-    """ XML+JSON toolkit for S3XRC """
+    """
+    XML toolkit for S3XRC
+
+    """
 
     namespace = "sahana"
 
@@ -153,21 +156,21 @@ class S3XML(object):
     ISOFORMAT = "%Y-%m-%dT%H:%M:%SZ" #: universal timestamp
 
     # -------------------------------------------------------------------------
-    def __init__(self, manager):
+    def __init__(self, datastore):
+        """
+        Constructor
 
-        """ Constructor
-
-            @param manager: the resource controller
+        @param datastore: the resource controller
 
         """
 
-        self.manager = manager
+        self.datastore = datastore
 
-        self.db = manager.db
-        self.domain = manager.domain
-        self.s3 = manager.s3
-        self.gis = manager.gis
-        self.cache = manager.cache
+        self.db = datastore.db
+        self.domain = datastore.domain
+        self.s3 = datastore.s3
+        self.gis = datastore.gis
+        self.cache = datastore.cache
 
         self.error = None
 
@@ -177,11 +180,11 @@ class S3XML(object):
     # XML+XSLT tools ==========================================================
 
     def parse(self, source):
+        """
+        Parse an XML source into an element tree
 
-        """ Parse an XML source into an element tree
-
-            @param source: the XML source,
-                can be a file-like object, a filename or a URL
+        @param source: the XML source,
+            can be a file-like object, a filename or a URL
 
         """
 
@@ -199,12 +202,12 @@ class S3XML(object):
 
     # -------------------------------------------------------------------------
     def transform(self, tree, template_path, **args):
+        """
+        Transform an element tree with XSLT
 
-        """ Transform an element tree with XSLT
-
-            @param tree: the element tree
-            @param template_path: pathname of the XSLT stylesheet
-            @param args: dict of arguments to pass to the stylesheet
+        @param tree: the element tree
+        @param template_path: pathname of the XSLT stylesheet
+        @param args: dict of arguments to pass to the stylesheet
 
         """
 
@@ -238,11 +241,11 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     @staticmethod
     def tostring(tree, pretty_print=False):
+        """
+        Convert an element tree into XML as string
 
-        """ Convert an element tree into XML as string
-
-            @param tree: the element tree
-            @param pretty_print: provide pretty formatted output
+        @param tree: the element tree
+        @param pretty_print: provide pretty formatted output
 
         """
 
@@ -259,15 +262,15 @@ class S3XML(object):
              start=None,
              limit=None,
              results=None):
+        """
+        Builds a S3XML tree from a list of elements
 
-        """ Builds a tree from a list of elements
-
-            @param resources: list of <resource> elements
-            @param domain: name of the current domain
-            @param url: url of the request
-            @param start: the start record (in server-side pagination)
-            @param limit: the page size (in server-side pagination)
-            @param results: number of total available results
+        @param resources: list of <resource> elements
+        @param domain: name of the current domain
+        @param url: url of the request
+        @param start: the start record (in server-side pagination)
+        @param limit: the page size (in server-side pagination)
+        @param results: number of total available results
 
         """
 
@@ -305,10 +308,10 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     @classmethod
     def xml_encode(cls, obj):
+        """
+        Encodes a Python string into an XML text node
 
-        """ Encodes a Python string into an XML text node
-
-            @param obj: string to encode
+        @param obj: string to encode
 
         """
 
@@ -321,10 +324,10 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     @classmethod
     def xml_decode(cls, obj):
+        """
+        Decodes an XML text node into a Python string
 
-        """ Decodes an XML text node into a Python string
-
-            @param obj: string to decode
+        @param obj: string to decode
 
         """
 
@@ -336,10 +339,10 @@ class S3XML(object):
 
     # -------------------------------------------------------------------------
     def export_uid(self, uid):
+        """
+        Exports UIDs with domain prefix
 
-        """ Exports UIDs with domain prefix
-
-            @param uid: the UID
+        @param uid: the UID
 
         """
 
@@ -357,10 +360,10 @@ class S3XML(object):
 
     # -------------------------------------------------------------------------
     def import_uid(self, uid):
+        """
+        Imports UIDs with domain prefixes
 
-        """ Imports UIDs with domain prefixes
-
-            @param uid: the UID
+        @param uid: the UID
 
         """
 
@@ -383,16 +386,16 @@ class S3XML(object):
     # Data export =============================================================
 
     def represent(self, table, f, v):
+        """
+        Get the representation of a field value
 
-        """ Get the representation of a field value
-
-            @param table: the database table
-            @param f: the field name
-            @param v: the value
+        @param table: the database table
+        @param f: the field name
+        @param v: the value
 
         """
 
-        return self.manager.represent(table[f],
+        return self.datastore.represent(table[f],
                                       value=v,
                                       strip_markup=True,
                                       xml_escape=True)
@@ -400,12 +403,12 @@ class S3XML(object):
 
     # -------------------------------------------------------------------------
     def rmap(self, table, record, fields):
+        """
+        Generates a reference map for a record
 
-        """ Generates a reference map for a record
-
-            @param table: the database table
-            @param record: the record
-            @param fields: list of reference field names in this table
+        @param table: the database table
+        @param record: the record
+        @param fields: list of reference field names in this table
 
         """
 
@@ -472,12 +475,12 @@ class S3XML(object):
 
     # -------------------------------------------------------------------------
     def add_references(self, element, rmap, show_ids=False):
+        """
+        Adds <reference> elements to a <resource>
 
-        """ Adds <reference> elements to a <resource>
-
-            @param element: the <resource> element
-            @param rmap: the reference map for the corresponding record
-            @param show_ids: insert the record ID as attribute in references
+        @param element: the <resource> element
+        @param rmap: the reference map for the corresponding record
+        @param show_ids: insert the record ID as attribute in references
 
         """
 
@@ -507,14 +510,14 @@ class S3XML(object):
 
     # -------------------------------------------------------------------------
     def gis_encode(self, resource, record, rmap, download_url="", marker=None):
+        """
+        GIS-encodes location references
 
-        """ GIS-encodes location references
-
-            @param resource: the referencing resource
-            @param record: the particular record
-            @param rmap: list of references to encode
-            @param download_url: download URL of this instance
-            @param marker: filename to override filenames in marker URLs
+        @param resource: the referencing resource
+        @param record: the particular record
+        @param rmap: list of references to encode
+        @param download_url: download URL of this instance
+        @param marker: filename to override filenames in marker URLs
 
         """
 
@@ -557,18 +560,6 @@ class S3XML(object):
                         marker_url = "%s/%s" % (download_url, marker.image)
                     r.element.set(self.ATTRIBUTE.marker,
                                   self.xml_encode(marker_url))
-                    # Lookup GPS Marker
-                    # @ToDo Fix for new FeatureClass
-                    #symbol = None
-                    #if LatLon[self.FeatureClass]:
-                    #    fctbl = db.gis_feature_class
-                    #    query = (fctbl.id == str(LatLon[self.FeatureClass]))
-                    #    try:
-                    #        symbol = db(query).select(fctbl.gps_marker,
-                    #                    limitby=(0, 1)).first().gps_marker
-                    #    except:
-                    #        pass
-                    #if not symbol:
                     symbol = "White Dot"
                     r.element.set(self.ATTRIBUTE.sym,
                                   self.xml_encode(symbol))
@@ -576,13 +567,13 @@ class S3XML(object):
 
     # -------------------------------------------------------------------------
     def element(self, table, record, fields=[], url=None):
+        """
+        Creates an element from a Storage() record
 
-        """ Creates an element from a Storage() record
-
-            @param table: the database table
-            @param record: the record
-            @param fields: list of field names to include
-            @param url: URL of the record
+        @param table: the database table
+        @param record: the record
+        @param fields: list of field names to include
+        @param url: URL of the record
 
         """
 
@@ -664,11 +655,11 @@ class S3XML(object):
 
     @classmethod
     def select_resources(cls, tree, tablename):
+        """
+        Selects resources from an element tree
 
-        """ Selects resources from an element tree
-
-            @param tree: the element tree
-            @param tablename: table name to search for
+        @param tree: the element tree
+        @param tablename: table name to search for
 
         """
 
@@ -691,14 +682,14 @@ class S3XML(object):
 
     # -------------------------------------------------------------------------
     def lookahead(self, table, element, fields, tree=None, directory=None):
+        """
+        Resolves references in XML resources
 
-        """ Resolves references in XML resources
-
-            @param table: the database table
-            @param element: the element to resolve
-            @param fields: fields to check for references
-            @param tree: the element tree of the input source
-            @param directory: the resource directory of the input tree
+        @param table: the database table
+        @param element: the element to resolve
+        @param fields: fields to check for references
+        @param tree: the element tree of the input source
+        @param directory: the resource directory of the input tree
 
         """
 
@@ -798,15 +789,15 @@ class S3XML(object):
                files=[],
                validate=None,
                skip=[]):
+        """
+        Creates a Storage() record from an element and validates it
 
-        """ Creates a Storage() record from an element and validates it
-
-            @param table: the database table
-            @param element: the element
-            @param original: the original record
-            @param files: list of attached upload files
-            @param validate: validate hook (function to validate fields)
-            @param skip: fields to skip
+        @param table: the database table
+        @param element: the element
+        @param original: the original record
+        @param files: list of attached upload files
+        @param validate: validate hook (function to validate fields)
+        @param skip: fields to skip
 
         """
 
@@ -903,11 +894,11 @@ class S3XML(object):
 
     @classmethod
     def get_field_options(cls, table, fieldname):
+        """
+        Get options of a field as <select>
 
-        """ Get options of a field as <select>
-
-            @param table: the table
-            @param fieldname: the fieldname
+        @param table: the table
+        @param fieldname: the fieldname
 
         """
 
@@ -945,12 +936,12 @@ class S3XML(object):
 
     # -------------------------------------------------------------------------
     def get_options(self, prefix, name, fields=None):
+        """
+        Get options of option fields in a table as <select>s
 
-        """ Get options of option fields in a table as <select>s
-
-            @param prefix: the application prefix
-            @param name: the resource name (without prefix)
-            @param fields: optional list of fieldnames
+        @param prefix: the application prefix
+        @param name: the resource name (without prefix)
+        @param fields: optional list of fieldnames
 
         """
 
@@ -980,11 +971,11 @@ class S3XML(object):
 
     # -------------------------------------------------------------------------
     def get_fields(self, prefix, name):
+        """
+        Get fields in a table as <fields> element
 
-        """ Get fields in a table as <fields> element
-
-            @param prefix: the application prefix
-            @param name: the resource name (without prefix)
+        @param prefix: the application prefix
+        @param name: the resource name (without prefix)
 
         """
 
@@ -1015,13 +1006,13 @@ class S3XML(object):
 
     @classmethod
     def __json2element(cls, key, value, native=False):
+        """
+        Converts a data field from JSON into an element
 
-        """ Converts a data field from JSON into an element
-
-            @param key: key (field name)
-            @param value: value for the field
-            @param native: use native mode
-            @type native: bool
+        @param key: key (field name)
+        @param value: value for the field
+        @param native: use native mode
+        @type native: bool
 
         """
 
@@ -1054,12 +1045,12 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     @classmethod
     def __obj2element(cls, tag, obj, native=False):
+        """
+        Converts a JSON object into an element
 
-        """ Converts a JSON object into an element
-
-            @param tag: tag name for the element
-            @param obj: the JSON object
-            @param native: use native mode for attributes
+        @param tag: tag name for the element
+        @param obj: the JSON object
+        @param native: use native mode for attributes
 
         """
 
@@ -1119,11 +1110,11 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     @classmethod
     def json2tree(cls, source, format=None):
+        """
+        Converts JSON into an element tree
 
-        """ Converts JSON into an element tree
-
-            @param source: the JSON source
-            @param format: name of the XML root element
+        @param source: the JSON source
+        @param format: name of the XML root element
 
         """
 
@@ -1150,15 +1141,19 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     @classmethod
     def __element2json(cls, element, native=False):
+        """
+        Converts an element into JSON
 
-        """ Converts an element into JSON
-
-            @param element: the element
-            @param native: use native mode for attributes
+        @param element: the element
+        @param native: use native mode for attributes
 
         """
 
-        if element.tag == cls.TAG.list:
+        TAG = cls.TAG
+        ATTRIBUTE = cls.ATTRIBUTE
+        PREFIX = cls.PREFIX
+
+        if element.tag == TAG.list:
             obj = []
             for child in element:
                 tag = child.tag
@@ -1176,18 +1171,18 @@ class S3XML(object):
                     tag = tag.rsplit("}",1)[1]
                 collapse = True
                 if native:
-                    if tag == cls.TAG.resource:
-                        resource = child.get(cls.ATTRIBUTE.name)
-                        tag = "%s_%s" % (cls.PREFIX.resource, resource)
+                    if tag == TAG.resource:
+                        resource = child.get(ATTRIBUTE.name)
+                        tag = "%s_%s" % (PREFIX.resource, resource)
                         collapse = False
-                    elif tag == cls.TAG.options:
-                        resource = child.get(cls.ATTRIBUTE.resource)
-                        tag = "%s_%s" % (cls.PREFIX.options, resource)
-                    elif tag == cls.TAG.reference:
-                        tag = "%s_%s" % (cls.PREFIX.reference,
-                                         child.get(cls.ATTRIBUTE.field))
-                    elif tag == cls.TAG.data:
-                        tag = child.get(cls.ATTRIBUTE.field)
+                    elif tag == TAG.options:
+                        resource = child.get(ATTRIBUTE.resource)
+                        tag = "%s_%s" % (PREFIX.options, resource)
+                    elif tag == TAG.reference:
+                        tag = "%s_%s" % (PREFIX.reference,
+                                         child.get(ATTRIBUTE.field))
+                    elif tag == TAG.data:
+                        tag = child.get(ATTRIBUTE.field)
                 child_obj = cls.__element2json(child, native=native)
                 if child_obj:
                     if not tag in obj:
@@ -1203,23 +1198,23 @@ class S3XML(object):
             attributes = element.attrib
             for a in attributes:
                 if native:
-                    if a == cls.ATTRIBUTE.name and \
-                       element.tag == cls.TAG.resource:
+                    if a == ATTRIBUTE.name and \
+                       element.tag == TAG.resource:
                         continue
-                    if a == cls.ATTRIBUTE.resource and \
-                       element.tag == cls.TAG.options:
+                    if a == ATTRIBUTE.resource and \
+                       element.tag == TAG.options:
                         continue
-                    if a == cls.ATTRIBUTE.field and \
-                    element.tag in (cls.TAG.data, cls.TAG.reference):
+                    if a == ATTRIBUTE.field and \
+                    element.tag in (TAG.data, TAG.reference):
                         continue
-                obj[cls.PREFIX.attribute + a] = \
+                obj[PREFIX.attribute + a] = \
                     cls.xml_decode(attributes[a])
 
             if element.text:
-                obj[cls.PREFIX.text] = cls.xml_decode(element.text)
+                obj[PREFIX.text] = cls.xml_decode(element.text)
 
             if len(obj) == 1 and obj.keys()[0] in \
-               (cls.PREFIX.text, cls.TAG.item, cls.TAG.list):
+               (PREFIX.text, TAG.item, TAG.list):
                 obj = obj[obj.keys()[0]]
 
             return obj
@@ -1228,11 +1223,11 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     @classmethod
     def tree2json(cls, tree, pretty_print=False):
+        """
+        Converts an element tree into JSON
 
-        """ Converts an element tree into JSON
-
-            @param tree: the element tree
-            @param pretty_print: provide pretty formatted output
+        @param tree: the element tree
+        @param pretty_print: provide pretty formatted output
 
         """
 
@@ -1258,15 +1253,15 @@ class S3XML(object):
                      status_code="200",
                      message=None,
                      tree=None):
+        """
+        Provide a nicely-formatted JSON Message
 
-        """ Provide a nicely-formatted JSON Message
+        @param success: action succeeded or failed
+        @param status_code: the HTTP status code
+        @param message: the message text
+        @param tree: result tree to enclose
 
-            @param success: action succeeded or failed
-            @param status_code: the HTTP status code
-            @param message: the message text
-            @param tree: result tree to enclose
-
-            @todo 2.3: extend to report number of results/successful imports
+        @todo 2.3: extend to report number of results/successful imports
 
         """
 
@@ -1283,7 +1278,7 @@ class S3XML(object):
             output = '%s, "message": "%s"' % (output, message)
 
         if not success and tree:
-            output = '%s, "tree": "%s"' % (output, tree)
+            output = '%s, "tree": %s' % (output, tree)
 
         return "%s}" % output
 

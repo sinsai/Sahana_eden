@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework
 
-    @version: 2.2.9
+    @version: 2.2.10
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -39,7 +39,7 @@
 
 """
 
-from s3rc import S3ResourceController
-from s3rest import S3Resource
-from s3crud import S3Audit, S3MethodHandler, S3CRUDHandler, S3SearchSimple
-from s3search import S3Search, S3LocationSearch, S3PersonSearch
+from s3rc import S3DataStore
+from s3rest import S3Resource, S3Method
+from s3crud import S3CRUD
+from s3search import S3Search, S3LocationSearch, S3PersonSearch, S3SearchSimple

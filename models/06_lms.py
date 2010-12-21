@@ -512,7 +512,7 @@ if deployment_settings.has_module(module):
     table.designated.label = T("Designated for")
     table.specifications.label = T("Volume/Dimensions")
     table.designated.comment = DIV( _class="tooltip", _title=T("Designated for") + "|" + T("The item is designated to be sent for specific project, population, village or other earmarking of the donation such as a Grant Code."))
-    table.specifications.comment = DIV( _class="tooltip", _title=T("Volume/Dimensions") + "|" + T("Additional quantity quantifier – i.e. “4x5”."))
+    table.specifications.comment = DIV( _class="tooltip", _title=T("Volume/Dimensions") + "|" + T("Additional quantity quantifier – e.g. '4x5'."))
     table.date_time.comment = DIV( _class="tooltip", _title=T("Date/Time") + "|" + T("Date and Time of Goods receipt. By default shows the current time but can be modified by editing in the drop down list."))
     table.unit_cost.label = T("Unit Cost")
     ADD_ITEM = T("Add Item")

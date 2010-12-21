@@ -8,10 +8,10 @@ class CreateTestAccount(SahanaTest):
         sel = self.selenium
         
         # *** NOTE this script needs to be run by a user with Administrator privileges. END NOTE ***
-        self.action.login(self, self._user, self._password, False)
-        self.action.addUser(self,"Admin", "User", "admin@example.com", "testing")
-        self.action.addRole(self, "admin@example.com", '1')
-        self.action.addUser(self,"Normal", "User", "user@example.com", "testing")
+        self.action.login(self._user, self._password, False)
+        self.action.addUser("Admin", "User", "admin@example.com", "testing")
+        self.action.addRole("admin@example.com", '1')
+        self.action.addUser("Normal", "User", "user@example.com", "testing")
 
 if __name__ == "__main__":
     SahanaTest.setUpHierarchy()

@@ -33,7 +33,7 @@ class SahanaTest(unittest.TestCase):
                 browser += " " + path
             print "selenium %s %s %s %s" % (ipaddr, ipport, browser, webURL)
             SahanaTest.selenium = selenium(ipaddr, ipport, browser, webURL)
-            SahanaTest.action = actions.Action()
+            SahanaTest.action = actions.Action(SahanaTest.selenium)
             SahanaTest._seleniumCreated = True
         if SahanaTest.selenium.sessionId == None:
             SahanaTest.selenium.start()
@@ -91,4 +91,4 @@ class SahanaTest(unittest.TestCase):
         if self.finish():
             if self.lastRunExists:
                 self.lastRun()
-            self.action.logout(self)
+            self.action.logout()

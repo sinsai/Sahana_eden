@@ -297,17 +297,19 @@ def submission():
     template = os.path.join(request.folder, "static", "formats", "odk", "import.xsl")
 
     try:
-        success = res.import_xml(source=tree, template=template)
+        result = res.import_xml(source=tree, template=template)
     except IOError, SyntaxError:
         raise HTTP(500, "Internal server error")
 
-    # ToDo: Not sure if this is handled correctly.  Which response code to use?
-    if success:
+    # Parse response
+    status = json.loads(result)["statuscode"]
+    
+    if status == 200:
         r = HTTP(201, "Saved") # ODK Collect only accepts 201
         r.headers["Location"] = request.env.http_host
         raise r
     else:
-        raise HTTP(500, "Internal server error")
+        raise HTTP(status, result)
 
 def formList():
     """

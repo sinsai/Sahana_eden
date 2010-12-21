@@ -114,6 +114,7 @@ def outbox():
 
     # Subject works for Email but not SMS
     table.message_id.represent = lambda id: db(db.msg_log.id == id).select(db.msg_log.message, limitby=(0, 1)).first().message
+    table.pe_id.represent = lambda id: shn_pentity_represent(id, default_label = "")
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(
@@ -283,7 +284,8 @@ def parserdooth(message):
 #   -------------Hospital Search [example: get name hospital facility status ] --------------
     if "hospital" in query:
         table = db.hms_hospital
-        result = s3xrc._search_simple(table,fields=["name"],label = str(name))
+        resource = s3xrc._resource("hms", "hospital")
+        result = resource.search_simple(fields=["name"],label = str(name))
         if len(result) > 1:
             return "Multiple Matches"
 
@@ -307,7 +309,8 @@ def parserdooth(message):
 #   -----------------Organisation search [example: get name organisation phone]------------------------------
     if "organisation" in query:
         table = db.org_organisation
-        result = s3xrc._search_simple(table, fields=["name"], label = str(name))
+        resource = s3xrc._resource("org", "organisation")
+        result = resource.search_simple(fields=["name"], label = str(name))
         if len(result) > 1:
             return "Multiple Matches"
 

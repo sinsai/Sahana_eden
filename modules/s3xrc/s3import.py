@@ -243,6 +243,15 @@ class S3Importer(object):
         success = self.datastore.import_tree(resource, id, tree,
                                              ignore_errors=ignore_errors)
 
+        if success:
+            return xml.json_message()
+        else:
+            tree = xml.tree2json(tree)
+            msg = xml.json_message(False, 400,
+                                   message=self.datastore.error,
+                                   tree=tree)
+            return msg
+
         # Remove the attached files
         resource.files = Storage()
 

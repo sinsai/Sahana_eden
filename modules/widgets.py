@@ -493,7 +493,7 @@ class S3LocationSelectorWidget:
                     )
         attr = StringWidget._attributes(field, default, **attributes)
         # Hide the real field
-        attr["_class"] = attr["_class"] + " hidden"
+        attr["_class"] = "hidden"
 
         map_popup = ""
 
@@ -713,6 +713,7 @@ class S3LocationSelectorWidget:
             opts = [OPTION(v, _value=k) for (k, v) in options]
 
             attr_dropdown["_id"] = "gis_location_%s" % level
+            # Need to blank the name to prevent it from appearing in form.vars & requiring validation
             attr_dropdown["_name"] = ""
             if visible:
                 if level:

@@ -112,6 +112,10 @@ _s3xrc = local_import("s3xrc")
 s3.crud = Storage()
 s3xrc = _s3xrc.S3DataStore(globals(), db)
 
+# MSG
+s3msg = local_import("s3msg")
+msg = s3msg.S3Msg(globals(), deployment_settings, db, T, mail)
+
 # Logout session clearing
 # shn_on_login ----------------------------------------------------------------
 # added 2009-08-27 by nursix

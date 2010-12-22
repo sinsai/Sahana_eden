@@ -86,8 +86,9 @@ deployment_settings.twitter.oauth_consumer_secret = ""
 
 # L10n settings
 # Uncomment this if the deployment is just in a few countries
-# (used in the GIS Location Selector & maybe in future: Messaging)
+# (used in the GIS Location Selector)
 #deployment_settings.L10n.countries = ["PK"]
+#deployment_settings.L10n.default_country_code = 1
 # Languages used in the deployment (used for Language Toolbar & GIS Locations)
 # http://www.loc.gov/standards/iso639-2/php/code_list.php
 deployment_settings.L10n.languages = {

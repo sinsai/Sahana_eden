@@ -16,7 +16,7 @@ class LocationSelector(SahanaTest):
     def login(self):
         """ Login """
         # Login
-        self.action.login(self, "user@example.com", "testing" )
+        self.action.login("user@example.com", "testing" )
         self.assertTrue(self.selenium.is_element_present("link=user@example.com"))
     
     def create_header(self):
@@ -33,16 +33,7 @@ class LocationSelector(SahanaTest):
         # Load the Shelter List page
         sel.open("/eden/cr/shelter")
         # Search for the Record
-        # - see createTestAccount for an explanation
-        sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( '' );")
-        sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( '%s' );" % name)
-        for i in range(60):
-            try:
-                if re.search(r"^[\s\S]*1 entries[\s\S]*$", sel.get_text("//div[@class='dataTables_info']")): break
-            except:
-                pass
-            time.sleep(1)
-        else: self.fail("time out")
+        self.action.searchUnique(name)
         # Open it
         sel.click("link=Open")
         sel.wait_for_page_to_load("30000")
@@ -96,7 +87,7 @@ class CreateLocationEmpty(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter added", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter added")
 
 class UpdateLocationEmptyL0(LocationSelector):
     def test_updateLocationEmptyL0(self):
@@ -113,7 +104,7 @@ class UpdateLocationEmptyL0(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter updated", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter updated")
         # Shelter has correct location
         self.assertEqual("-", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
@@ -130,7 +121,7 @@ class UpdateLocationEmptyL0(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter updated", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter updated")
         # Shelter has correct location
         self.assertEqual("Haiti", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
@@ -222,7 +213,7 @@ class UpdateLocationL0Empty(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter updated", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter updated")
         # Shelter has correct location
         self.assertEqual("-", sel.get_table("//div[@id='rheader']/div/table.1.1"))
         
@@ -242,7 +233,7 @@ class CreateLocationNoParent(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter added", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter added")
         # Shelter has correct location
         self.assertEqual("Location with no Parent", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
@@ -296,7 +287,7 @@ class UpdateLocationNoParentEmpty(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter updated", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter updated")
         # Shelter has correct location
         self.assertEqual("-", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
@@ -366,7 +357,7 @@ class UpdateLocationEmptyNewNoParent(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter updated", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter updated")
         # Shelter has correct location
         self.assertEqual("New parentless Location (N 51.0 E 1.0)", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
@@ -483,7 +474,7 @@ class UpdateLocationNoParentL0(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter updated", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter updated")
         # Shelter has correct location
         self.assertEqual("Haiti", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
@@ -505,7 +496,7 @@ class CreateLocationL0(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter added", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter added")
         # Shelter has correct location
         self.assertEqual("Haiti", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
@@ -533,7 +524,7 @@ class CreateLocationInL0(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter added", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter added")
         # Shelter has correct location
         self.assertEqual("Specific Location in L0", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
@@ -560,7 +551,7 @@ class CreateLocationL1(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter added", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter added")
         # Shelter has correct location
         self.assertEqual("Ouest (Haiti)", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
@@ -590,7 +581,7 @@ class CreateLocationInL1(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter added", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter added")
         # Shelter has correct location
         self.assertEqual("Specific Location in L1", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
@@ -622,7 +613,7 @@ class CreateLocationL2(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter added", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter added")
         # Shelter has correct location
         self.assertEqual("Port-Au-Prince (Ouest)", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
@@ -657,7 +648,7 @@ class CreateLocationInL2(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter added", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter added")
         # Shelter has correct location
         self.assertEqual("Specific Location in L2", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
@@ -693,7 +684,7 @@ class CreateLocationL3(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter added", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter added")
         # Shelter has correct location
         self.assertEqual("Martissant (Port-Au-Prince)", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
@@ -733,7 +724,7 @@ class CreateLocationInL3(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter added", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter added")
         # Shelter has correct location
         self.assertEqual("Specific Location in L3", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
@@ -775,7 +766,7 @@ class CreateLocationL4(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter added", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter added")
         # Shelter has correct location
         self.assertEqual("Carrefour Feuilles", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
@@ -820,7 +811,7 @@ class CreateLocationInL4(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter added", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter added")
         # Shelter has correct location
         self.assertEqual("Specific Location in L4", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
@@ -904,7 +895,7 @@ class UpdateLocationInL4NewInL3(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter updated", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter updated")
         # Shelter has correct location
         self.assertEqual("New in L3 (N 18.53171116 W -72.33020758)", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 
@@ -1010,7 +1001,7 @@ class CreateLocationSelectSpecific(LocationSelector):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Shelter saved
-        self.assertEqual("Shelter added", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Shelter added")
         # Shelter has correct location
         self.assertEqual("Clinique Communautaire de Martissant (N 18.528000849 W -72.3489983828)", sel.get_table("//div[@id='rheader']/div/table.1.1"))
 

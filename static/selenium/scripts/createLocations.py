@@ -4,7 +4,7 @@ class CreateLocations(SahanaTest):
 
     def header(self):
         # Login
-        self.action.login(self, "admin@example.com", "testing" )
+        self.action.login("admin@example.com", "testing" )
         self.assertTrue(self.selenium.is_element_present("link=admin@example.com"))
 
     def test_createLocations(self):
@@ -52,7 +52,7 @@ class CreateLocations(SahanaTest):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         # Location saved
-        self.assertEqual("Location added", sel.get_text("//div[@class=\"confirmation\"]"))
+        self.action.successMsg("Location added")
 
 if __name__ == "__main__":
     SahanaTest.setUpHierarchy()

@@ -489,7 +489,7 @@ def view_map():
         return dict(map=html)
 
     # Redirect to person details if no location is available
-    session.error = T("No location found")
+    session.warning = T("No location known for this person")
     redirect(URL(r=request, c="vol", f="person", args=[person_id, "presence"]))
 
 def popup(): 
@@ -642,7 +642,8 @@ def view_team_map():
         return dict(map=html)
 
     # Redirect to team details if no location is available
-    session.error=T("Add Location")
+    # Present warning if no location is available
+    session.warning = T("No location known for this team")
     redirect(URL(r=request, c="vol", f="group", args=[group_id, "address"]))
 
 # -----------------------------------------------------------------------------
@@ -764,7 +765,7 @@ def view_project_map():
         return dict(map=html)
 
     # Redirect to tasks if no task location is available
-    session.error=T("No Tasks with Location Data!")
+    session.warning = T("No Tasks with Location Data")
     redirect(URL(r=request, c="vol", f="project", args=[project_id, "task"]))
 
 # -----------------------------------------------------------------------------
@@ -919,7 +920,7 @@ def view_offices_map():
     
     else:
         # Redirect to offices if none found
-        session.error=T("No Offices found!")
+        session.error = T("No Offices found!")
         redirect(URL(r=request, c="org", f="office"))
 
 # -----------------------------------------------------------------------------

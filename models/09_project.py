@@ -45,7 +45,7 @@ if deployment_settings.has_module("project"):
         if auth.has_membership(auth.id_group("'Administrator'")):
             return DIV(A(ADD_BASELINE_TYPE,
                          _class="colorbox",
-                         _href=URL(r=request, c="assess", f="need_type", args="create", vars=dict(format="popup")),
+                         _href=URL(r=request, c="project", f="need_type", args="create", vars=dict(format="popup")),
                          _target="top",
                          _title=ADD_BASELINE_TYPE
                          )

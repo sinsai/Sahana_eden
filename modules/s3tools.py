@@ -35,9 +35,10 @@
 
 __name__ = "S3TOOLS"
 
-__all__ = ["AuthS3", "CrudS3", "FieldS3", "S3ReusableField"]
+__all__ = ["AuthS3", "CrudS3", "FieldS3", "S3ReusableField", "S3Audit"]
 
-#import datetime
+import sys
+import datetime
 import re
 import urllib
 import uuid
@@ -58,17 +59,247 @@ DEFAULT = lambda: None
 table_field = re.compile("[\w_]+\.[\w_]+")
 
 # =============================================================================
-class S3Authorization(object):
+class S3Audit(object):
 
-    """ Class to handle permissions
+    """ Audit Trail Writer Class
 
-        @param environment: the global environment dict
+        @param db: the database
+        @param session: the current session
+        @param tablename: the name of the audit table
+        @param migrate: migration setting
 
     """
 
-    def __init__(self, environment):
+    def __init__(self, db, session,
+                 tablename="s3_audit",
+                 migrate=True):
 
+        self.db = db
+        self.table = db.get(tablename, None)
+        if not self.table:
+            self.table = db.define_table(tablename,
+                            Field("timestmp", "datetime"),
+                            Field("person", "integer"),
+                            Field("operation"),
+                            Field("tablename"),
+                            Field("record", "integer"),
+                            Field("representation"),
+                            Field("old_value", "text"),
+                            Field("new_value", "text"),
+                            migrate=migrate)
+
+        self.session = session
+        if session.auth and session.auth.user:
+            self.user = session.auth.user.id
+        else:
+            self.user = None
+
+
+    # -------------------------------------------------------------------------
+    def __call__(self, operation, prefix, name,
+                 form=None,
+                 record=None,
+                 representation="unknown"):
+
+        """ Caller
+
+            @param operation: Operation to log, one of
+                "create", "update", "read", "list" or "delete"
+            @param prefix: the module prefix of the resource
+            @param name: the name of the resource (without prefix)
+            @param form: the form
+            @param record: the record ID
+            @param representation: the representation format
+
+        """
+
+        settings = self.session.s3
+
+        #print >>sys.stderr, "Audit %s: %s_%s record=%s representation=%s" % (operation, prefix, name, record, representation)
+
+        now = datetime.datetime.utcnow()
+        db = self.db
+        table = self.table
+        tablename = "%s_%s" % (prefix, name)
+
+        if record:
+            if isinstance(record, Row):
+                record = record.get("id", None)
+                if not record:
+                    return True
+            try:
+                record = int(record)
+            except ValueError:
+                record = None
+        else:
+            record = None
+
+        if operation in ("list", "read"):
+            if settings.audit_read:
+                table.insert(timestmp = now,
+                             person = self.user,
+                             operation = operation,
+                             tablename = tablename,
+                             record = record,
+                             representation = representation)
+
+        elif operation in ("create", "update"):
+            if settings.audit_write:
+                if form:
+                    record =  form.vars.id
+                    new_value = ["%s:%s" % (var, str(form.vars[var]))
+                                 for var in form.vars]
+                else:
+                    new_value = []
+                table.insert(timestmp = now,
+                             person = self.user,
+                             operation = operation,
+                             tablename = tablename,
+                             record = record,
+                             representation = representation,
+                             new_value = new_value)
+
+        elif operation == "delete":
+            if settings.audit_write:
+
+                row = db(db[tablename].id == record).select(limitby=(0, 1)).first()
+                old_value = []
+                if row:
+                    old_value = ["%s:%s" % (field, row[field]) for field in row]
+                table.insert(timestmp = now,
+                             person = self.user,
+                             operation = operation,
+                             tablename = tablename,
+                             record = record,
+                             representation = representation,
+                             old_value = old_value)
+
+        return True
+
+
+# =============================================================================
+class S3Permission(object):
+
+    """ Class to handle permissions
+
+        @param auth: the authorization manager
+        @param environment: the global environment
+        @param tablename: the name for the permissions table
+
+    """
+
+    TABLENAME = "s3_permission"
+
+    READ   = 0x0001
+    UPDATE = 0x0002
+    CREATE = 0x0004
+    DELETE = 0x0008
+
+    ALL = READ | UPDATE | CREATE | DELETE
+    NONE = 0x0000 # must be 0!
+
+    PERMISSION_OPTS = {
+        NONE  : "NONE",
+        READ  : "READ",
+        UPDATE: "UPDATE",
+        CREATE: "CREATE",
+        DELETE: "DELETE",
+    }
+
+
+    def __init__(self, auth, environment, tablename=None):
+
+        # Instantiated once per request, but before Auth tables
+        # are defined and authentication is checked, thus no use
+        # to check permissions in the constructor
+
+        # Environment
+        environment = Storage(environment)
+        self.auth = auth
         self.db = environment.db
+        self.tablename = tablename or self.TABLENAME
+        self.table = self.db.get(self.tablename, None)
+        self.migrate = environment.migrate
+        self.session = environment.session
+
+        # Request information
+        request = environment.request
+        self.controller = request.controller
+        self.function = request.function
+
+        # Pages which never require permission
+        self.permitted_pages = (
+            "default/index",
+            "default/user",
+            "default/contact",
+            "default/about")
+
+        # Default landing pages
+        self.homepage = URL(r=request, c="default", f="index")
+        self.loginpage = URL(r=request, c="default", f="user/login") # @todo: next!
+
+
+    def define_table(self):
+
+        """ Define permissions table """
+
+        table_group = self.auth.settings.table_group
+        if table_group is None:
+            table_group = "integer"
+
+        if not self.table:
+            self.table = self.db.define_table(self.tablename,
+                            Field("group_id", table_group),
+                            Field("prefix", length=64),
+                            Field("tablename", length=512),
+                            Field("opermissions", "integer", default=self.ALL),
+                            Field("spermissions", "integer", default=self.READ),
+                            migrate=self.migrate)
+
+
+    def __call__(self, table=None, record_id=None):
+
+        """ Get the permissions for a path """
+
+        return self.ALL # not used yet
+
+        if self.has_role(1):
+            return self.ALL
+
+        page = "%s/%s" % (self.controller, self.function)
+
+        if page in self.permitted_pages and table is None:
+            return self.ALL
+        else:
+            # Check controller permission
+            pass
+
+        if table is not None:
+            # Check table+record permission
+            pass
+
+        return self.NONE
+
+
+    def has_role(self, role):
+
+        # @todo: re-implement
+
+        return self.auth.shn_has_role(role)
+
+
+    def fail(self):
+
+        """ Action upon insufficient permissions """
+
+        # @todo: check for non-interactive formats
+
+        if self.auth.shn_logged_in():
+            self.session.error = "Insufficient privileges" # @todo: internationalization!
+            redirect(self.homepage)
+        else:
+            self.session.error = "Authentication required" # @todo: internationalization!
+            redirect(self.loginpage)
 
 
 # =============================================================================
@@ -77,11 +308,12 @@ class AuthS3(Auth):
     """ S3 extended version of Auth from gluon/tools.py
 
         - override:
+            define_tables()
             login()
             register()
             requires_membership()
 
-        - add
+        - add:
             shn_has_role()
             shn_has_permission()
             shn_logged_in()
@@ -113,6 +345,9 @@ class AuthS3(Auth):
         self.messages.registration_disabled = "Registration Disabled!'"
         self.messages.lock_keys = True
 
+        self.permission = S3Permission(self, environment)
+
+
     def __get_migrate(self, tablename, migrate=True):
 
         if type(migrate).__name__ == "str":
@@ -122,30 +357,34 @@ class AuthS3(Auth):
         else:
             return True
 
+
     def define_tables(self, migrate=True):
-        """
-        to be called unless tables are defined manually
 
-        usages::
+        """ to be called unless tables are defined manually
 
-            # defines all needed tables and table files
-            # UUID + "_auth_user.table", ...
-            auth.define_tables()
+            usages::
 
-            # defines all needed tables and table files
-            # "myprefix_auth_user.table", ...
-            auth.define_tables(migrate="myprefix_")
+                # defines all needed tables and table files
+                # UUID + "_auth_user.table", ...
+                auth.define_tables()
 
-            # defines all needed tables without migration/table files
-            auth.define_tables(migrate=False)
+                # defines all needed tables and table files
+                # "myprefix_auth_user.table", ...
+                auth.define_tables(migrate="myprefix_")
+
+                # defines all needed tables without migration/table files
+                auth.define_tables(migrate=False)
 
         """
 
         db = self.db
         request = self.environment.request
+
+        # User table
         if not self.settings.table_user:
             passfield = self.settings.password_field
             if self.settings.username_field:
+                # with username
                 self.settings.table_user = db.define_table(
                     self.settings.table_user_name,
                     Field("first_name", length=128, default="",
@@ -154,14 +393,6 @@ class AuthS3(Auth):
                             label=self.messages.label_last_name),
                     Field("person_uuid", length=64, default="",
                              readable=False, writable=False),
-                    # TODO:
-                    #   - Needs Validation if possible
-                    #Field("mobile_phone", length=32, default=""),
-                    # add UTC Offset (+/-HHMM) to specify the user's timezone
-                    # TODO:
-                    #   - this could need a nice label and context help
-                    #   - entering timezone from a drop-down would be more comfortable
-                    #   - automatic DST adjustment could be nice
                     Field("utc_offset", length=16, readable=False, writable=False),
                     Field("username", length=128, default=""),
                     Field("language", length=16),
@@ -180,6 +411,7 @@ class AuthS3(Auth):
                     migrate=\
                         self.__get_migrate(self.settings.table_user_name, migrate))
             else:
+                # with email-address
                 self.settings.table_user = db.define_table(
                     self.settings.table_user_name,
                     Field("first_name", length=128, default="",
@@ -188,14 +420,7 @@ class AuthS3(Auth):
                             label=self.messages.label_last_name),
                     Field("person_uuid", length=64, default="",
                              readable=False, writable=False),
-                    #Field("mobile_phone", length=32, default=""),
-                    # add UTC Offset (+/-HHMM) to specify the user's timezone
-                    # TODO:
-                    #   - this could need a nice label and context help
-                    #   - entering timezone from a drop-down would be more comfortable
-                    #   - automatic DST adjustment could be nice
                     Field("utc_offset", length=16, readable=False, writable=False),
-                    #Field("username", length=128, default=""),
                     Field("language", length=16),
                     Field("email", length=512, default="",
                             label=self.messages.label_email),
@@ -233,6 +458,8 @@ class AuthS3(Auth):
                  IS_NOT_IN_DB(db, "%s.email"
                      % self.settings.table_user._tablename)]
             table.registration_key.default = ""
+
+        # Group table (roles)
         if not self.settings.table_group:
             self.settings.table_group = db.define_table(
                 self.settings.table_group_name,
@@ -245,6 +472,8 @@ class AuthS3(Auth):
             table = self.settings.table_group
             table.role.requires = IS_NOT_IN_DB(db, "%s.role"
                  % self.settings.table_group._tablename)
+
+        # Group membership table (user<->role)
         if not self.settings.table_membership:
             self.settings.table_membership = db.define_table(
                 self.settings.table_membership_name,
@@ -261,6 +490,9 @@ class AuthS3(Auth):
             table.group_id.requires = IS_IN_DB(db, "%s.id" %
                     self.settings.table_group._tablename,
                     "%(id)s: %(role)s")
+
+        # Permissions table (group<->permission)
+        # @todo: deprecate / replace by S3Permission
         if not self.settings.table_permission:
             self.settings.table_permission = db.define_table(
                 self.settings.table_permission_name,
@@ -281,6 +513,8 @@ class AuthS3(Auth):
             table.name.requires = IS_NOT_EMPTY()
             table.table_name.requires = IS_IN_SET(self.db.tables)
             table.record_id.requires = IS_INT_IN_RANGE(0, 10 ** 9)
+
+        # Event table (auth log)
         if not self.settings.table_event:
             self.settings.table_event = db.define_table(
                 self.settings.table_event_name,
@@ -304,6 +538,50 @@ class AuthS3(Auth):
                     "%(id)s: %(first_name)s %(last_name)s")
             table.origin.requires = IS_NOT_EMPTY()
             table.description.requires = IS_NOT_EMPTY()
+
+        # Define permission table
+        self.permission.define_table()
+
+
+    def login_bare(self, username, password):
+        """
+        logins user
+        - extended to understand session.s3.roles
+        """
+
+        request = self.environment.request
+        session = self.environment.session
+        db = self.db
+
+        table_user = self.settings.table_user
+        table_membership = self.settings.table_membership
+
+
+        if self.settings.login_userfield:
+            userfield = self.settings.login_userfield
+        elif 'username' in table_user.fields:
+            userfield = 'username'
+        else:
+            userfield = 'email'
+        passfield = self.settings.password_field
+        user = db(table_user[userfield] == username).select().first()
+        password = table_user[passfield].validate(password)[0]
+        if user:
+            user_id = user.id
+            if not user.registration_key and user[passfield] == password:
+                user = Storage(table_user._filter_fields(user, id=True))
+                session.auth = Storage(user=user, last_visit=request.now,
+                                       expiration=self.settings.expiration)
+                self.user = user
+
+                # Add the Roles to session.s3
+                roles = []
+                set = db(table_membership.user_id == user_id).select(table_membership.group_id)
+                session.s3.roles = [s.group_id for s in set]
+
+                return user
+
+        return False
 
     def login(
         self,
@@ -364,7 +642,7 @@ class AuthS3(Auth):
                     # user in db, check if registration pending or disabled
                     temp_user = users[0]
                     if temp_user.registration_key == "pending":
-                        response.warning = self.messages.registration_pending                     
+                        response.warning = self.messages.registration_pending
                         return form
                     elif temp_user.registration_key == "disabled":
                         response.error = self.messages.login_disabled
@@ -547,11 +825,11 @@ class AuthS3(Auth):
                 if not self.settings.mailer or \
                    not self.settings.verify_email_onaccept(form.vars):
                     # We don't wish to prevent registration if the approver mail fails to send
-                    #self.db.rollback() 
+                    #self.db.rollback()
                     session.error = self.messages.email_approver_failed
-                    #return form 
+                    #return form
                 user[form.vars.id] = dict(registration_key="pending")
-                session.warning = self.messages.registration_pending_approval 
+                session.warning = self.messages.registration_pending_approval
             else:
                 user[form.vars.id] = dict(registration_key="")
                 session.confirmation = self.messages.registration_successful
@@ -603,17 +881,13 @@ class AuthS3(Auth):
     def shn_logged_in(self):
         """
             Check whether the user is currently logged-in
+            - tries Basic if not
         """
 
         session = self.session
         if not self.is_logged_in():
             if not self.basic():
                 return False
-            else:
-                roles = []
-                table = self.db.auth_membership
-                set = self.db(table.user_id == self.user.id).select(table.group_id)
-                session.s3.roles = [s.group_id for s in set]
 
         return True
 
@@ -698,7 +972,7 @@ class AuthS3(Auth):
 
         else:
             # Full policy
-            if shn_logged_in():
+            if self.shn_logged_in():
                 # Administrators are always authorised
                 if self.shn_has_role(1):
                     authorised = True
@@ -1115,9 +1389,9 @@ class SQLTABLES3(SQLTABLE):
 
 # =============================================================================
 class MENUS3(DIV):
-    
+
     """ S3 extensions of the MENU class
-    
+
         Used to build modules menu
         Each list has 3 options: Name, Right & Link
         (NB In Web2Py's MENU, the 2nd option is 'Active')
@@ -1185,12 +1459,12 @@ class MENUS3(DIV):
 class QueryS3(Query):
 
     """ S3 extensions of the Query class
-    
+
         If Server Side Pagination is on, the proper CAST is needed to match
         the string-typed id to lookup table id
 
         @author: sunneach
-        
+
     """
 
     def __init__(self,
@@ -1209,7 +1483,7 @@ class QueryS3(Query):
 class FieldS3(Field):
 
     """ S3 extensions of the Field clas
-    
+
         If Server Side Pagination is on, the proper CAST is needed to
         match the lookup table id
 

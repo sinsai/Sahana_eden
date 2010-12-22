@@ -92,6 +92,7 @@ deployment_settings.twitter.oauth_consumer_secret = ""
 # http://www.loc.gov/standards/iso639-2/php/code_list.php
 deployment_settings.L10n.languages = {
     "en":T("English"),
+    "el":T("Greek"),
     "es":T("Spanish"),
     #"fr":T("French"),
     #"pa":T("Punjabi"),
@@ -139,9 +140,11 @@ deployment_settings.gis.locations_hierarchy = {
     "L2":T("District"),
     "L3":T("Town"),
     "L4":T("Village"),
-    #"L5":T("Neighbourhood"),
-    "XX":T("Imported")
+    #"L5":T("Neighbourhood"),   # Currently not supported by testSuite
+    "XX":T("Imported")          # Filtered from view as no detailed information & many duplicates (e.g. coming from Ushahidi)
 }
+# Should we require locations to follow strict hierarchy?
+deployment_settings.gis.strict_hierarchy = False
 # Maximum Marker Size
 # (takes effect only on display)
 deployment_settings.gis.marker_max_height = 35
@@ -289,7 +292,7 @@ deployment_settings.modules = OrderedDict(
         ),
     logs = Storage(
             name_nice = T("Logistics Management"),
-            description = T("Managing, Storing and Distributing Relief Items"),
+            description = T("Managing, Storing and Distributing Items"),
             module_type = 10
         ),
     # NB RMS module depends on HMS, CR & Project

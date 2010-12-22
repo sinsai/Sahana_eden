@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="selenium.base" href="http://127.0.0.1:8000/" />
+<title>organzationTest</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">organzationTest</td></tr>
+</thead><tbody>
+<tr>
+	<td>open</td>
+	<td>/eden/default/index</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Organisation Registry</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Add</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertText</td>
+	<td>//div[@class=&quot;error&quot;]</td>
+	<td>Not Authorised</td>
+</tr>
+<tr>
+	<td>assertText</td>
+	<td>//h2</td>
+	<td>Login</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>auth_user_email</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>auth_user_email</td>
+	<td>graeme@acm.org</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>auth_user_password</td>
+	<td>h0w-zat</td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>//input[@value='Submit']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertText</td>
+	<td>//div[@class=&quot;confirmation&quot;]</td>
+	<td>Logged in</td>
+</tr>
+<tr>
+	<td>assertText</td>
+	<td>//h2</td>
+	<td>Add Organization</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>org_organisation_name</td>
+	<td>Example.com</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>org_organisation_acronym</td>
+	<td>eCom</td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>org_organisation_type</td>
+	<td>label=Private</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//option[@value='10']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>org_organisation_cluster_id</td>
+	<td>label=Logistics</td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>org_organisation_country</td>
+	<td>label=United Kingdom</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>org_organisation_website</td>
+	<td>www.example.com</td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>//input[@value='Save']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertText</td>
+	<td>//div[@class=&quot;confirmation&quot;]</td>
+	<td>Organization added</td>
+</tr>
+<tr>
+	<td>assertText</td>
+	<td>//h2</td>
+	<td>List Organizations</td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>org_organisation_type</td>
+	<td>label=Government</td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>org_organisation_type</td>
+	<td>label=International NGO</td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>org_organisation_cluster_id</td>
+	<td>label=Camp</td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>org_organisation_cluster_id</td>
+	<td>label=Recovery</td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>org_organisation_country</td>
+	<td>label=United States</td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>list-btn</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Delete</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertConfirmation</td>
+	<td>Sure you want to delete this object?</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=List</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//table[@id='list']/tbody/tr[2]/td[1]/a[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertConfirmation</td>
+	<td>Sure you want to delete this object?</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Delete</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertConfirmation</td>
+	<td>Sure you want to delete this object?</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Delete</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertConfirmation</td>
+	<td>Sure you want to delete this object?</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=List</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//table[@id='list']/tbody/tr[2]/td[1]/a[2]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertConfirmation</td>
+	<td>Sure you want to delete this object?</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Delete</td>
+	<td></td>
+</tr>
+<tr>
+	<td>assertConfirmation</td>
+	<td>Sure you want to delete this object?</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Detail</td>
+	<td></td>
+</tr>
+</tbody></table>
+</body>
+</html>

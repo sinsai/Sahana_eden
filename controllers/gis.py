@@ -26,7 +26,7 @@ response.menu_options = [
 if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
     response.menu_options.append([T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")])
     response.menu_options.append([T("De-duplicator"), False, URL(r=request, f="location_duplicates")])
-    
+
 
 # -----------------------------------------------------------------------------
 # Web2Py Tools functions
@@ -81,11 +81,13 @@ def define_map(window=False, toolbar=False, config=None):
         print_tool = {url: print_service}
     else:
         print_tool = {}
-    
+
     # Custom Feature Layers
     feature_queries = []
     feature_layers = db(db.gis_layer_feature.enabled == True).select()
     for layer in feature_layers:
+        if layer.role_required and not auth.shn_has_role(layer.role_required):
+            continue
         _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons)
         if _layer:
             feature_queries.append(_layer)
@@ -117,6 +119,9 @@ def location():
 
     # Pre-processor
     def prep(r, vars):
+
+        # Override the default Search Method
+        r.resource.set_handler("search", _s3xrc.S3LocationSearch())
 
         # Restrict access to Polygons to just MapAdmins
         if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
@@ -389,7 +394,7 @@ def location_resolve():
     # Shortcut
     locations = db.gis_location
 
-    # Remove the comment and replace it with buttons for each of the fields 
+    # Remove the comment and replace it with buttons for each of the fields
     count = 0
     for field in locations:
         id1 = str(count) + "Right"      # Gives a unique number to each of the arrow keys
@@ -402,7 +407,7 @@ def location_resolve():
         record = locations[locID1]
     myUrl = URL(r=request, c="gis", f="location")
     form1 = SQLFORM(locations, record, _id="form1", _action=("%s/%s" % (myUrl, locID1)))
-    
+
     # For the second location remove all the comments to save space.
     for field in locations:
         field.comment = None
@@ -414,7 +419,7 @@ def location_links():
     """
         @arg id - the location record id
         Returns a JSON array of records which link to the specified location
-        
+
         @ToDo: Deprecated with new de-duplicator?
     """
 
@@ -820,11 +825,11 @@ def feature_layer_query(form):
         resource = form.vars.resource
         # Remove the module from name
         form.vars.resource = resource[len(form.vars.module) + 1:]
-    
+
     if "advanced" in form.vars:
         # We should use the query field as-is
         pass
-    
+
     if resource:
         # We build query from helpers
         if "filter_field" in form.vars and "filter_value" in form.vars:
@@ -1647,7 +1652,7 @@ def geoexplorer():
     """
 
     google_key = db(db.gis_apikey.name == "google").select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
-    
+
     # http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting
     print_service = deployment_settings.get_gis_print_service()
 
@@ -1700,7 +1705,7 @@ def maps():
                 map["layers"].append(dict(source=layer.source, title=layer.title, name=layer.name, group=layer.group_, type=layer.type_, format=layer.format, visibility=layer.visibility, transparent=layer.transparent, opacity=layer.opacity, fixed=layer.fixed, args=[ "None", {"visibility":False} ]))
             else:
                 map["layers"].append(dict(source=layer.source, title=layer.title, name=layer.name, group=layer.group_, type=layer.type_, format=layer.format, visibility=layer.visibility, transparent=layer.transparent, opacity=layer.opacity, fixed=layer.fixed))
-        
+
         # @ToDo: Read Metadata (no way of editing this yet)
 
         # Encode as JSON
@@ -1770,7 +1775,7 @@ def maps():
                 # Add a new record to the gis_wmc_layer table
                 _layer = db.gis_wmc_layer.insert(source=layer["source"], name=name, visibility=layer["visibility"], opacity=opacity, type_=type_, title=layer["title"], group_=group_, fixed=fixed, transparent=transparent, format=format)
                 layers.append(_layer)
-            
+
         # @ToDo: Metadata (no way of editing this yet)
 
         # Save a record in the WMC table
@@ -1845,7 +1850,7 @@ def maps():
                 # Add a new record to the gis_wmc_layer table
                 _layer = db.gis_wmc_layer.insert(source=layer["source"], name=name, visibility=layer["visibility"], opacity=opacity, type_=type_, title=layer["title"], group_=group_, fixed=fixed, transparent=transparent, format=format)
                 layers.append(_layer)
-        
+
         # @ToDo: Metadata (no way of editing this yet)
 
         # Update the record in the WMC table
@@ -1876,7 +1881,7 @@ def potlatch2():
                 settings = gis.get_config()
                 lat = settings.lat
                 lon = settings.lon
-            
+
             if "zoom" in request.vars:
                 zoom = request.vars.zoom
             else:
@@ -1922,7 +1927,7 @@ def proxy():
 
     allowed_content_types = (
         "application/xml", "text/xml",
-        "application/vnd.ogc.se_xml",           # OGC Service Exception 
+        "application/vnd.ogc.se_xml",           # OGC Service Exception
         "application/vnd.ogc.se+xml",           # OGC Service Exception
         "application/vnd.ogc.success+xml",      # OGC Success (SLD Put)
         "application/vnd.ogc.wms_xml",          # WMS Capabilities

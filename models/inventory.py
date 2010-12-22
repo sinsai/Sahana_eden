@@ -68,7 +68,7 @@ if deployment_settings.has_module("logs"):
                 represent = lambda id: shn_gis_location_represent(shn_get_db_field_value(db=db, table="inventory_store", field="location_id", look_up=id)),
                 label = T("Warehouse"),
                 comment = DIV(A(ADD_INVENTORY_STORE, _class="colorbox", _href=URL(r=request, c="inventory", f="store", args="create", vars=dict(format="popup")), _target="top", _title=ADD_INVENTORY_STORE),
-                          DIV( _class="tooltip", _title=T("Warehouse") + "|" + T("A Warehouse is a physical place which contains Relief Items available to be Distributed."))),
+                          DIV( _class="tooltip", _title=T("Warehouse") + "|" + T("A Warehouse is a physical place to store items."))),
                 ondelete = "RESTRICT"
                 )
 

@@ -114,6 +114,7 @@ def outbox():
 
     # Subject works for Email but not SMS
     table.message_id.represent = lambda id: db(db.msg_log.id == id).select(db.msg_log.message, limitby=(0, 1)).first().message
+    table.pe_id.represent = lambda id: shn_pentity_represent(id, default_label = "")
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(
@@ -127,10 +128,10 @@ def outbox():
         msg_list_empty = T("No Messages currently in Outbox")
     )
 
-    add_btn = A(T("Compose"), 
-                _class="action-btn", 
+    add_btn = A(T("Compose"),
+                _class="action-btn",
                 _href=URL(r=request, f="compose")
-                ) 
+                )
 
     s3xrc.model.configure(table, listadd=False)
     return s3_rest_controller(prefix, resourcename, add_btn = add_btn)
@@ -283,7 +284,8 @@ def parserdooth(message):
 #   -------------Hospital Search [example: get name hospital facility status ] --------------
     if "hospital" in query:
         table = db.hms_hospital
-        result = s3xrc.search_simple(table,fields=["name"],label = str(name))
+        resource = s3xrc._resource("hms", "hospital")
+        result = resource.search_simple(fields=["name"],label = str(name))
         if len(result) > 1:
             return "Multiple Matches"
 
@@ -307,7 +309,8 @@ def parserdooth(message):
 #   -----------------Organisation search [example: get name organisation phone]------------------------------
     if "organisation" in query:
         table = db.org_organisation
-        result = s3xrc.search_simple(table, fields=["name"], label = str(name))
+        resource = s3xrc._resource("org", "organisation")
+        result = resource.search_simple(fields=["name"], label = str(name))
         if len(result) > 1:
             return "Multiple Matches"
 
@@ -321,7 +324,7 @@ def parserdooth(message):
                                                                      table = "org_office",
                                                                      field = "address",
                                                                      look_up = organisation.id
-                                                                     )            
+                                                                     )
         if len(reply) == 0:
             return "No Match"
 
@@ -329,16 +332,16 @@ def parserdooth(message):
 
     return "Please provide one of the keywords - person, hospital, organisation"
 
-#----------------------------------------------------------------------------------------    
+#----------------------------------------------------------------------------------------
 def twitter_search():
     """ Controller to modify Twitter search queries """
-    
+
     return s3_rest_controller(prefix, resourcename)
-       
+
 #-------------------------------------------------------------------------------------------------
 def twitter_search_results():
     """ Controller to retrieve tweets for user saved search queries - to be called via cron. Currently in real time also. """
-    
+
     # Update results
     result = msg.receive_subscribed_tweets()
 
@@ -346,7 +349,7 @@ def twitter_search_results():
         session.error = T("Need to configure Twitter Authentication")
         redirect(URL(r=request, f="twitter_settings", args=[1, "update"]))
 
-    return s3_rest_controller(prefix, resourcename)    
+    return s3_rest_controller(prefix, resourcename)
 
 #------------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
@@ -790,7 +793,7 @@ def person_search(value):
 
     # Check Persons
     deleted = (persons.deleted == False)
-    
+
     # First name
     query = (persons["first_name"].lower().like("%" + value + "%")) & deleted
     rows = db(query).select(persons.pe_id, cache=(cache.ram, 60))

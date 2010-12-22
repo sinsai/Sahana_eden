@@ -4,9 +4,6 @@
     XForms - Controllers
 """
 
-import StringIO
-import xml.dom.minidom
-from lxml import etree
 module = request.controller
 
 def create():
@@ -234,10 +231,14 @@ def importxml(db, xmlinput):
     ToDo: rewrite this to go via S3XRC for proper Authz checking, Audit, Create/Update checking.
     """
 
+    import StringIO
+    import xml.dom.minidom
+
     try:
         doc = xml.dom.minidom.parseString(xmlinput)
     except:
         raise Exception("XML parse error")
+
     parent = doc.childNodes[0].tagName
     csvout = csvheader(parent, doc.childNodes[0].childNodes)
     for subnode in doc.childNodes:
@@ -272,34 +273,45 @@ def submission():
     """
     Allows for submission of Xforms by ODK Collect
     using the S3XRC framework.
-    ToDo: Convert ODK Collect's Xforms to the format needed for S3XRC
-    using an appropriate XSLT
     """
 
-    xmlinput = str(request.post_vars.xml_submission_file.value)
+    import StringIO
+    import cgi
 
-    io = StringIO.StringIO()
-    io.write(xmlinput)
-    io.seek(0, 0)
+    source = request.post_vars.get("xml_submission_file", None)
+    if isinstance(source, cgi.FieldStorage):
+        if source.filename:
+            xmlinput = source.file
+        else:
+            xmlinput = source.value
 
-    tree = etree.parse(io)
+        if isinstance(xmlinput, basestring):
+            xmlinput = StringIO.StringIO(xmlinput)
+    else:
+        raise HTTP(400, "Invalid Request: Expected an XForm")
+
+    tree = etree.parse(xmlinput)
     resource = tree.getroot().tag
 
     prefix, name = resource.split("_")
     res = s3xrc._resource(prefix, name)
 
-    try:
-        success = res.import_xml(source=tree, template=os.path.join(request.folder, "static", "xslt", "import", "odk.xsl"))
-    except IOError, SyntaxError:
-        raise HTTP(500, "Internal server error.")
+    template = os.path.join(request.folder, "static", "formats", "odk", "import.xsl")
 
-    # ToDo: Not sure if I'm handling this correctly.  Which response code to use?
-    if success:
-        r = HTTP(201, "Saved.") # ODK Collect only accepts 201
+    try:
+        result = res.import_xml(source=tree, template=template)
+    except IOError, SyntaxError:
+        raise HTTP(500, "Internal server error")
+
+    # Parse response
+    status = json.loads(result)["statuscode"]
+    
+    if status == 200:
+        r = HTTP(201, "Saved") # ODK Collect only accepts 201
         r.headers["Location"] = request.env.http_host
         raise r
     else:
-        raise HTTP(500, "Internal server error?")
+        raise HTTP(status, result)
 
 def formList():
     """

@@ -5,7 +5,7 @@
 """
 
 # -----------------------------------------------------------------------------
-# Reusable Author fields to include in other table definitions
+# Representations for Auth Users & Groups
 def shn_user_represent(id):
     table = db.auth_user
     user = db(table.id == id).select(table.email, limitby=(0, 1), cache=(cache.ram, 10)).first()
@@ -71,6 +71,7 @@ meta_modified_on = S3ReusableField("modified_on", "datetime",
 def s3_timestamp():
     return (meta_created_on(), meta_modified_on())
 
+# Reusable Author fields to include in other table definitions
 meta_created_by = S3ReusableField("created_by", db.auth_user,
                                   readable=False, # Enable when needed, not by default
                                   writable=False,
@@ -113,12 +114,37 @@ def s3_meta_fields():
     return fields
 
 # -----------------------------------------------------------------------------
+# Reusable Roles fields to include in other table definitions
+role_required = S3ReusableField("role_required", db.auth_group, sortby="role",
+                                requires = IS_NULL_OR(IS_ONE_OF(db, "auth_group.id", "%(role)s", zero=T("Public"))),
+                                widget = S3AutocompleteWidget(request, "auth", "group", fieldname="role"),
+                                represent = lambda id: shn_role_represent(id),
+                                label = T("Role Required"),
+                                comment = DIV(_class="tooltip",
+                                              _title=T("Role Required") + "|" + T("If this record should be restricted then select which role is required to access the record here.")),
+                                ondelete = "RESTRICT")
+
+roles_permitted = S3ReusableField("roles_permitted", db.auth_group, sortby="role",
+                                  requires = IS_NULL_OR(IS_ONE_OF(db, "auth_group.id", "%(role)s", multiple=True)),
+                                  # @ToDo
+                                  #widget = S3CheckboxesWidget(db,
+                                  #                            lookup_table_name = "auth_group",
+                                  #                            lookup_field_name = "role",
+                                  #                            multiple = True),
+                                  represent = lambda id: shn_role_represent(id),
+                                  label = T("Roles Permitted"),
+                                  comment = DIV(_class="tooltip",
+                                                _title=T("Roles Permitted") + "|" + T("If this record should be restricted then select which role(s) are permitted to access the record here.")),
+                                  ondelete = "RESTRICT")
+
+# -----------------------------------------------------------------------------
 # Reusable comments field to include in other table definitions
 comments = S3ReusableField("comments", "text",
                            label = T("Comments"),
                            comment = DIV(_class="tooltip",
                                          _title=T("Comments") + "|" + T("Please use this field to record any additional information, including a history of the record if it is updated.")))
 
+# -----------------------------------------------------------------------------
 # Reusable currency field to include in other table definitions
 currency_type_opts = {
     1:T("Dollars"),

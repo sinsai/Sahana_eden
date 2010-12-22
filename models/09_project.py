@@ -20,8 +20,8 @@ if deployment_settings.has_module("project"):
                             Field("name", length=128, notnull=True, unique=True),
                             cluster_id(),
                             migrate=migrate, *s3_meta_fields()
-                            )        
-    
+                            )
+
     # CRUD strings
     ADD_BASELINE_TYPE = T("Add Need Type")
     LIST_BASELINE_TYPE = T("List Need Types")
@@ -39,19 +39,19 @@ if deployment_settings.has_module("project"):
         msg_record_created = T("Need Type added"),
         msg_record_modified = T("Need Type updated"),
         msg_record_deleted = T("Need Type deleted"),
-        msg_list_empty = T("No Need Types currently registered"))  
-    
+        msg_list_empty = T("No Need Types currently registered"))
+
     def need_type_comment():
         if auth.has_membership(auth.id_group("'Administrator'")):
             return DIV(A(ADD_BASELINE_TYPE,
                          _class="colorbox",
-                         _href=URL(r=request, c="assess", f="need_type", args="create", vars=dict(format="popup")),
+                         _href=URL(r=request, c="project", f="need_type", args="create", vars=dict(format="popup")),
                          _target="top",
                          _title=ADD_BASELINE_TYPE
                          )
                        )
         else:
-            return None    
+            return None
 
     need_type_id = S3ReusableField("need_type_id", db.project_need_type, sortby="name",
                                        requires = IS_NULL_OR(IS_ONE_OF(db, "project_need_type.id","%(name)s", sort=True)),
@@ -62,13 +62,13 @@ if deployment_settings.has_module("project"):
                                        label = T("Need Type"),
                                        comment = need_type_comment(),
                                        ondelete = "RESTRICT"
-                                       ) 
-    
+                                       )
+
     def shn_need_type_represent(id):
         return shn_get_db_field_value(db = db,
                                       table = "project_need_type",
                                       field = "name",
-                                      look_up = id)   
+                                      look_up = id)
 
     #==============================================================================
     # Need
@@ -80,14 +80,14 @@ if deployment_settings.has_module("project"):
                             Field("value", "double"),
                             comments(),
                             migrate=migrate, *s3_meta_fields()
-                            )        
-    
+                            )
+
     # Hide FK fields in forms
-    table.assess_id.readable = table.assess_id.writable = False    
-    
+    table.assess_id.readable = table.assess_id.writable = False
+
     table.value.label = "#"
     table.value.represent = lambda value: "%d" % value
-    
+
     # CRUD strings
     ADD_BASELINE = T("Add Need")
     LIST_BASELINE = T("List Needs")
@@ -105,13 +105,13 @@ if deployment_settings.has_module("project"):
         msg_record_created = T("Need added"),
         msg_record_modified = T("Need updated"),
         msg_record_deleted = T("Need deleted"),
-        msg_list_empty = T("No Needs currently registered"))     
-    
+        msg_list_empty = T("No Needs currently registered"))
+
     # Need as component of assessments
     s3xrc.model.add_component(application, resourcename,
                               multiple=True,
                               joinby=dict(assess_assess="assess_id"))
-        
+
     #==============================================================================
     # Projects:
     #   the projects which each organization is engaged in
@@ -142,17 +142,17 @@ if deployment_settings.has_module("project"):
                             donor_id(),
                             Field("budgeted_cost", "double"),
                             migrate=migrate, *s3_meta_fields())
-    
+
     #@todo: Fix the widget for this before displaying - should donor  be component?
     table.donor_id.readable = table.donor_id.writable = False
-    
+
     # Field settings
     table.code.requires = [IS_NOT_EMPTY(error_message=T("Please fill this!")),
                              IS_NOT_ONE_OF(db, "project_project.code")]
     table.start_date.requires = IS_NULL_OR(IS_DATE())
     table.end_date.requires = IS_NULL_OR(IS_DATE())
     table.budgeted_cost.requires = IS_NULL_OR(IS_FLOAT_IN_RANGE(0, 999999999))
-    
+
     # Project Resource called from multiple controllers
     # - so we define strings in the model
     table.code.label = T("Code")
@@ -161,9 +161,9 @@ if deployment_settings.has_module("project"):
     table.end_date.label = T("End date")
     table.description.label = T("Description")
     table.beneficiaries.label = T("Total Beneficiaries")
-    
+
     table.status.label = T("Status")
-    
+
     ADD_PROJECT = T("Add Project")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_PROJECT,
@@ -180,7 +180,7 @@ if deployment_settings.has_module("project"):
         msg_record_modified = T("Project updated"),
         msg_record_deleted = T("Project deleted"),
         msg_list_empty = T("No Projects currently registered"))
-    
+
     # Reusable field
     project_id = S3ReusableField("project_id", db.project_project, sortby="name",
                             requires = IS_NULL_OR(IS_ONE_OF(db, "project_project.id", "%(code)s")),
@@ -190,13 +190,13 @@ if deployment_settings.has_module("project"):
                             label = "Project",
                             ondelete = "RESTRICT"
                             )
-    
+
     # Projects as component of Orgs & Locations
     s3xrc.model.add_component(application, resourcename,
                               multiple=True,
                               #joinby=dict(project_organisation="organisation_id", gis_location="location_id"),
                               joinby=dict(org_organisation="organisation_id"))
-    
+
     s3xrc.model.configure(table,
                           #listadd=False,
                           main="code",
@@ -209,35 +209,35 @@ if deployment_settings.has_module("project"):
                                        "status",
                                        "start_date",
                                        "end_date",
-                                       "budgeted_cost"])  
-    
+                                       "budgeted_cost"])
+
     # -----------------------------------------------------------------------------
     # shn_project_search_location:
     #   form function to search projects by location
     #
     def shn_project_search_location(xrequest, **attr):
-    
+
         if attr is None:
             attr = {}
-    
+
         if not shn_has_permission("read", db.project_project):
             session.error = UNAUTHORISED
             redirect(URL(r=request, c="default", f="user", args="login", vars={"_next":URL(r=request, args="search_location", vars=request.vars)}))
-    
+
         if xrequest.representation == "html":
             # Check for redirection
             if request.vars._next:
                 next = str.lower(request.vars._next)
             else:
                 next = URL(r=request, c="org", f="project", args="[id]")
-    
+
             # Custom view
             response.view = "%s/project_search.html" % xrequest.prefix
-    
+
             # Title and subtitle
             title = T("Search for a Project")
             subtitle = T("Matching Records")
-    
+
             # Select form:
             l_opts = [OPTION(_value="")]
             l_opts += [OPTION(location.name, _value=location.id)
@@ -247,22 +247,22 @@ if deployment_settings.has_module("project"):
                     SELECT(_name="location", *l_opts, **dict(name="location", requires=IS_NULL_OR(IS_IN_DB(db, "gis_location.id"))))),
                     TR("", INPUT(_type="submit", _value=T("Search")))
                     ))
-    
+
             output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
-    
+
             # Accept action
             items = None
             if form.accepts(request.vars, session):
-    
+
                 table = db.project_project
                 query = (table.deleted == False)
-    
+
                 if form.vars.location is None:
                     results = db(query).select(table.ALL)
                 else:
                     query = query & (table.location_id == form.vars.location)
                     results = db(query).select(table.ALL)
-    
+
                 if results and len(results):
                     records = []
                     for result in results:
@@ -288,38 +288,38 @@ if deployment_settings.has_module("project"):
                         TBODY(records), _id="list", _class="display"))
                 else:
                         items = T(NONE)
-    
+
             try:
                 label_create_button = s3.crud_strings["project_project"].label_create_button
             except:
                 label_create_button = s3.crud_strings.label_create_button
-    
+
             add_btn = A(label_create_button, _href=URL(r=request, f="project", args="create"), _class="action-btn")
-    
+
             output.update(dict(items=items, add_btn=add_btn))
-    
+
             return output
-    
+
         else:
             session.error = BADFORMAT
             redirect(URL(r=request))
-    
+
     # Plug into REST controller
     s3xrc.model.set_method(application, "project", method="search_location", action=shn_project_search_location )
-    
+
     # -----------------------------------------------------------------------------
     def shn_project_rheader(r, tabs=[]):
-    
+
         if r.representation == "html":
-    
+
             rheader_tabs = shn_rheader_tabs(r, tabs)
-    
+
             if r.name == "project":
-    
+
                 table = db.project_project
                 _next = r.here()
                 _same = r.same()
-    
+
                 project = r.record
 
                 if project:
@@ -329,13 +329,12 @@ if deployment_settings.has_module("project"):
                         _sectors = re.split("\|", project.cluster_id)[1:-1]
                         for sector in _sectors:
                             sectors.append(TR(db(db.org_cluster.id == sector).select(db.org_cluster.name, limitby=(0, 1)).first().name))
-        
+
                     rheader = DIV(TABLE(
                         TR(
                             TH(T("Code") + ": "),
                             project.code,
-                            TH(A(T("Clear Selection"),
-                                _href=URL(r=request, f="project", args="clear", vars={"_next": _same})))
+                            TH(""),
                             ),
                         TR(
                             TH(T("Name") + ": "),
@@ -353,9 +352,9 @@ if deployment_settings.has_module("project"):
                             )
                     ), rheader_tabs)
                     return rheader
-    
-        return None      
-    
+
+        return None
+
     #==============================================================================
     # Activity Type
     # Redundant???
@@ -367,7 +366,7 @@ if deployment_settings.has_module("project"):
 
 
     ADD_ACTIVITY_TYPE = T("Add Activity Type")
-    
+
     def activity_type_comment():
         if auth.has_membership(auth.id_group(1)):
             return DIV(A(ADD_ACTIVITY_TYPE,
@@ -378,7 +377,7 @@ if deployment_settings.has_module("project"):
                          )
                        )
         else:
-            return None    
+            return None
 
     activity_type_id = S3ReusableField("activity_type_id", db.project_activity_type, sortby="name",
                                        requires = IS_NULL_OR(IS_ONE_OF(db, "project_activity_type.id","%(name)s", sort=True)),
@@ -494,13 +493,13 @@ if deployment_settings.has_module("project"):
                                                    )
                                                  ),
                                    ondelete = "RESTRICT"
-                                   )    
-    
+                                   )
+
     # Activities as component of Orgs
     s3xrc.model.add_component(application, resourcename,
                               multiple=True,
                               joinby=dict(org_organisation="organisation_id"))
-    
+
     #==============================================================================
     # project_task:
     #   a task within a project/activity
@@ -514,13 +513,13 @@ if deployment_settings.has_module("project"):
         6: T("cancelled"),
         99: T("unspecified")
     }
-    
+
     project_task_priority_opts = {
         1: T("normal"),
         2: T("high"),
         3: T("low")
     }
-    
+
     resourcename = "task"
     tablename = application + "_" + resourcename
     table = db.define_table(tablename,
@@ -542,23 +541,23 @@ if deployment_settings.has_module("project"):
                                   label = T("Status"),
                                   represent = lambda opt: project_task_status_opts.get(opt, UNKNOWN_OPT)),
                             migrate=migrate, *s3_meta_fields())
-    
-    
+
+
     # Task Resource called from multiple controllers
     # - so we define strings in the model
     table.subject.requires = IS_NOT_EMPTY()
     table.subject.label = T("Subject")
 
     def shn_project_task_onvalidation(form):
-    
+
         """ Task form validation """
-    
+
         if str(form.vars.status) == "2" and not form.vars.person_id:
             form.errors.person_id = T("Select a person in charge for status 'assigned'")
-    
+
         return False
-    
-    
+
+
     # CRUD Strings
     ADD_TASK = T("Add Task")
     LIST_TASKS = T("List Tasks")
@@ -576,13 +575,13 @@ if deployment_settings.has_module("project"):
         msg_record_modified = T("Task updated"),
         msg_record_deleted = T("Task deleted"),
         msg_list_empty = T("No tasks currently registered"))
-    
+
     # Task as Component of Project, Office, (Organisation to come? via Project? Can't rely on that as multi-Org projects)
     s3xrc.model.add_component(application, resourcename,
                               multiple=True,
                               joinby=dict(project_project="project_id",
                                           org_office="office_id"))
-    
+
     s3xrc.model.configure(table,
                           onvalidation = lambda form: shn_project_task_onvalidation(form),
                           list_fields=["id",
@@ -592,5 +591,5 @@ if deployment_settings.has_module("project"):
                                        "office_id",
                                        "person_id",
                                        "status"],
-                          main="subject", extra="description")    
+                          main="subject", extra="description")
 

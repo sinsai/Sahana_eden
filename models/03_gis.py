@@ -8,19 +8,23 @@ module = "gis"
 
 MARKER = T("Marker")
 
-# Expose settings to views
+gis_location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
+# Expose settings to views/modules
 _gis = response.s3.gis
+# @ToDo: These 3 are deprecated by the new Location Selector
+_gis.location_hierarchy = gis_location_hierarchy
 _gis.location_id = False    # Don't display the Location Selector in Views unless the location_id field is present
 _gis.map_selector = deployment_settings.get_gis_map_selector()
-gis_location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
-_gis.location_hierarchy = gis_location_hierarchy
+
+# This is needed for Location represents & Location Selector
+_gis.countries = Storage()
+#_gis.provinces = Storage()
+# Definition needs to be below the gis_location table definition
+
+# This is needed for onvalidation
+# @ToDo: & Location Selector (old currently, new in future?)
 if shn_has_role("MapAdmin"):
-    _gis.edit_L0 = True
-    _gis.edit_L1 = True
-    _gis.edit_L2 = True
-    _gis.edit_L3 = True
-    _gis.edit_L4 = True
-    _gis.edit_L5 = True
+    _gis.edit_L0 = _gis.edit_L1 = _gis.edit_L2 = _gis.edit_L3 = _gis.edit_L4 = _gis.edit_L5 = True
 else:
     _gis.edit_L0 = deployment_settings.get_gis_edit_l0()
     _gis.edit_L1 = deployment_settings.get_gis_edit_l1()
@@ -136,7 +140,7 @@ gis_config_layout_opts = {
     1:T("window"),
     2:T("embedded")
     }
-opt_gis_layout = db.Table(None, "opt_gis_layout",
+opt_gis_layout = db.Table(db, "opt_gis_layout",
                           Field("opt_gis_layout", "integer",
                                 requires = IS_IN_SET(gis_config_layout_opts, zero=None),
                                 default = 1,
@@ -417,16 +421,12 @@ table = db.define_table(tablename,
                         Field("name", notnull=True),    # Primary name
                         Field("name_dummy"),            # Dummy field to provide Widget (real data is stored in the separate table which links back to this one)
                         Field("code"),
-                        #feature_class_id(),    # Being removed
-                        #marker_id(),           # Being removed
                         Field("level", length=2),
                         Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
-                        Field("path", "string", length=500),
-                        #Field("lft", "integer", readable=False, writable=False), # Left will be for MPTT: http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
-                        #Field("rght", "integer", readable=False, writable=False),# Right currently unused
+                        Field("path", length=500, readable=False, writable=False),  # Materialised Path
                         # Street Address (other address fields come from hierarchy)
                         Field("addr_street"),
-                        #Field("addr_postcode"),
+                        #Field("addr_postcode"),    # Do we want this as a separate field?
                         Field("gis_feature_type", "integer", default=1, notnull=True),
                         Field("lat", "double"), # Points or Centroid for Polygons
                         Field("lon", "double"), # Points or Centroid for Polygons
@@ -445,6 +445,7 @@ table = db.define_table(tablename,
                         comments(),
                         migrate=migrate,
                         *(s3_timestamp() + s3_uid() + s3_deletion_status()))
+
 table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
 
@@ -499,24 +500,17 @@ location_id = S3ReusableField("location_id", db.gis_location,
                     requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True)),
                     represent = lambda id: shn_gis_location_represent(id),
                     label = T("Location"),
-                    # Not yet ready
-                    #widget = S3LocationSelectorWidget(gis, request, response, T),
-                    # If enabling widget, then disable comment (widget incorporates it)
-                    comment = DIV(A(ADD_LOCATION, _class="colorbox", _target="top", _title=ADD_LOCATION,
-                                    _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup"))),
-                                  DIV(_class="tooltip",
-                                      _title=T("Location") + "|" + T("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
+                    widget = S3LocationSelectorWidget(db, gis, deployment_settings, request, response, T),
+                    # Alternate simple Autocomplete (e.g. used by pr_person_presence)
+                    #widget = S3LocationAutocompleteWidget(request, deployment_settings),
                     ondelete = "RESTRICT")
 
-_gis.countries = Storage()
-_countries = []
-#_gis.provinces = Storage()
+# This is needed for Location represents & Location Selector
+# Definition needs to be below the gis_location table definition
 if response.s3.countries:
     countries = db(table.code.belongs(response.s3.countries)).select(table.id, table.code, table.name, limitby=(0, len(response.s3.countries)))
     for country in countries:
-        _id = country.id
-        _gis.countries[country.code] = Storage(name=country.name, id=_id)
-        _countries.append(_id)
+        _gis.countries[country.code] = Storage(name=country.name, id=country.id)
 
 # -----------------------------------------------------------------------------
 # Locations as component of Locations ('Parent')
@@ -571,12 +565,8 @@ def gis_location_onaccept(form):
             name_dummy = "|".join(ids) # That's not how it should be
             table = db.gis_location
             db(table.id == location_id).update(name_dummy=name_dummy)
-    # Update the parent Hierarchy
-    # Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
-    # Associating path for the new node once it is inserted
-    parent = form.vars.parent
-    level = form.vars.level
-    gis.update_location_tree(parent, level, form.vars.id)
+    # Update the Path
+    gis.update_location_tree(form.vars.id, form.vars.parent)
     return
 
 def gis_location_onvalidation(form):
@@ -588,55 +578,139 @@ def gis_location_onvalidation(form):
     record_error = T("Sorry, only users with the MapAdmin role are allowed to edit these locations")
     field_error = T("Please select another level")
 
+    # Shortcuts
+    level = form.vars.level
+    parent = form.vars.parent
+    lat = form.vars.lat
+    lon = form.vars.lon
+
     # Check Permissions
-    # 'MapAdmin' should have all these perms set, no matter what 000_config has
-    if form.vars.level == "L0" and not _gis.edit_L0:
+    # 'MapAdmin' has all these perms set, no matter what 000_config has
+    if level == "L0" and not _gis.edit_L0:
         response.error = record_error
         form.errors["level"] = field_error
         return
-    elif form.vars.level == "L1" and not _gis.edit_L1:
+    elif level == "L1" and not _gis.edit_L1:
         response.error = record_error
         form.errors["level"] = field_error
         return
-    elif form.vars.level == "L2" and not _gis.edit_L2:
+    elif level == "L2" and not _gis.edit_L2:
         response.error = record_error
         form.errors["level"] = field_error
         return
-    elif form.vars.level == "L3" and not _gis.edit_L3:
+    elif level == "L3" and not _gis.edit_L3:
         response.error = record_error
         form.errors["level"] = field_error
         return
-    elif form.vars.level == "L4" and not _gis.edit_L4:
+    elif level == "L4" and not _gis.edit_L4:
         response.error = record_error
         form.errors["level"] = field_error
         return
-    elif form.vars.level == "L5" and not _gis.edit_L5:
+    elif level == "L5" and not _gis.edit_L5:
         response.error = record_error
         form.errors["level"] = field_error
         return
-    # Check within permitted bounds for the Instance
+
+    if parent:
+        _parent = db(db.gis_location.id == parent).select(db.gis_location.level,
+                                                          db.gis_location.gis_feature_type,
+                                                          db.gis_location.lat_min,
+                                                          db.gis_location.lon_min,
+                                                          db.gis_location.lat_max,
+                                                          db.gis_location.lon_max,
+                                                          limitby=(0, 1),
+                                                          cache=(cache.ram, 3600)).first()
+
+    # Check Parents are in sane order
+    if level and parent and _parent:
+        # Check that parent is of a higher level (http://eden.sahanafoundation.org/ticket/450)
+        if level[1:] < _parent.level[1:]:
+            response.error = T("Parent level should be higher than this record's level. Parent level is") + ": %s" % gis_location_hierarchy[_parent.level]
+            form.errors["level"] = T("Level is higher than parent's")
+            return
+    strict = deployment_settings.get_gis_strict_hierarchy()
+    if strict:
+        # Check Parents are in exact order
+        if level == "L1" and len(_gis.countries) == 1:
+            # Hardcode the Parent
+            parent = _gis.countries.popitem()[1].id
+        elif level == "L0":
+            # Parent is impossible
+            parent = ""
+        elif not parent:
+            # Parent is mandatory
+            response.error = T("Parent needs to be set for locations of level") + ": %s" % gis_location_hierarchy[level]
+            form.errors["parent"] = T("Parent needs to be set")
+            return
+        elif not level:
+            # Parents needs to be of level max_hierarchy
+            max_hierarchy = deployment_settings.get_gis_max_hierarchy()
+            if _parent.level != max_hierarchy:
+                response.error = T("Specific locations need to have a parent of level") + ": %s" % gis_location_hierarchy[max_hierarchy]
+                form.errors["parent"] = T("Parent needs to be of the correct level")
+                return
+        else:
+            # Check that parent is of exactly next higher order
+            if (int(level[1:]) - 1) != int(_parent.level[1:]):
+                response.error = T("Locations of this level need to have a parent of level") + ": %s" % gis_location_hierarchy["L%i" % (int(level[1:]) - 1)]
+                form.errors["parent"] = T("Parent needs to be of the correct level")
+                return
+
+    # Check within permitted bounds
     # (avoid incorrect data entry)
     # Points only for now
     if not "gis_feature_type" in form.vars or (form.vars.gis_feature_type == "1"):
         # Skip if no Lat/Lon provided
-        if (form.vars.lat != None) and (form.vars.lon != None):
-            config = gis.get_config()
-            base_error = T("Sorry that location appears to be outside the area supported by this deployment.")
-            lat_error =  T("Latitude should be between") + ": " + str(config.min_lat) + " & " + str(config.max_lat)
-            lon_error = T("Longitude should be between") + ": " + str(config.min_lon) + " & " + str(config.max_lon)
-            if (form.vars.lat > config.max_lat) or (form.vars.lat < config.min_lat):
-                response.error = base_error
-                form.errors["lat"] = lat_error
-                return
-            elif (form.vars.lon > config.max_lon) or (form.vars.lon < config.min_lon):
-                response.error = base_error
-                form.errors["lon"] = lon_error
-                return
+        if (lat != None) and (lon != None):
+            if parent and _parent.gis_feature_type == 3:
+                # Check within Bounds of the Parent
+                # Rough (Bounding Box)
+                min_lat = _parent.lat_min
+                min_lon = _parent.lon_min
+                max_lat = _parent.lat_max
+                max_lon = _parent.lon_max
+                base_error = T("Sorry that location appears to be outside the area of the Parent.")
+                lat_error =  T("Latitude should be between") + ": " + str(min_lat) + " & " + str(max_lat)
+                lon_error = T("Longitude should be between") + ": " + str(min_lon) + " & " + str(max_lon)
+                if (lat > max_lat) or (lat < min_lat):
+                    response.error = base_error
+                    form.errors["lat"] = lat_error
+                    return
+                elif (lon > max_lon) or (lon < min_lon):
+                    response.error = base_error
+                    form.errors["lon"] = lon_error
+                    return
+
+                # @ToDo: Precise (GIS function)
+                # (if using PostGIS then don't do a separate BBOX check as this is done within the query)
+
+            else:
+                # Check bounds for the Instance
+                config = gis.get_config()
+                min_lat = config.min_lat
+                min_lon = config.min_lon
+                max_lat = config.max_lat
+                max_lon = config.max_lon
+                base_error = T("Sorry that location appears to be outside the area supported by this deployment.")
+                lat_error =  T("Latitude should be between") + ": " + str(min_lat) + " & " + str(max_lat)
+                lon_error = T("Longitude should be between") + ": " + str(min_lon) + " & " + str(max_lon)
+                if (lat > max_lat) or (lat < min_lat):
+                    response.error = base_error
+                    form.errors["lat"] = lat_error
+                    return
+                elif (lon > max_lon) or (lon < min_lon):
+                    response.error = base_error
+                    form.errors["lon"] = lon_error
+                    return
 
     # ToDo: Check for probable duplicates
-    #
-    # ToDo: Check within Bounds of the Parent
-    #
+    # http://eden.sahanafoundation.org/ticket/481
+    # name soundex
+    # parent
+    # radius
+    # response.warning = T("This appears to be a duplicate of ") + xxx (with appropriate representation including hyperlink to view full details - launch de-duplication UI?)
+    # form.errors["name"] = T("Duplicate?")
+    # Set flag to say that this has been confirmed as not a duplicate
 
     # Add the bounds (& Centroid for Polygons)
     gis.wkt_centroid(form)
@@ -816,8 +890,11 @@ table = db.define_table(tablename,
                         #Field("filter_field"),     # Used to build a simple query
                         #Field("filter_value"),     # Used to build a simple query
                         #Field("query", notnull=True),
+                        role_required(),       # Single Role
+                        #roles_permitted(),    # Multiple Roles (needs implementing in modules/s3gis.py)
                         comments(),
-                        migrate=migrate, )
+                        migrate=migrate,
+                        *s3_timestamp())
 
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 table.name.label = T("Name")
@@ -938,7 +1015,9 @@ gis_layer = db.Table(db, "gis_layer",
                      # System default priority is set in s3gis. User priorities will be set in WMC.
                      #Field("priority", "integer", label=T("Priority")),
                      Field("enabled", "boolean", default=True, label=T("Available in Viewer?")),
-                     *s3_timestamp(), migrate=migrate)
+                     role_required(),       # Single Role
+                     #roles_permitted(),    # Multiple Roles (needs implementing in modules/s3gis.py)
+                     migrate=migrate, *s3_timestamp())
 for layertype in gis_layer_types:
     resourcename = "layer_" + layertype
     tablename = "%s_%s" % (module, resourcename)

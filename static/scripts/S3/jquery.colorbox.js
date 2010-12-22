@@ -1,4 +1,4 @@
-// ColorBox v1.3.13 - a full featured, light-weight, customizable lightbox based on jQuery 1.3+
+// ColorBox v1.3.15 - a full featured, light-weight, customizable lightbox based on jQuery 1.3+
 // Copyright (c) 2010 Jack Moore - jack@colorpowered.com
 // Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 (function ($, window) {
@@ -528,7 +528,7 @@
 				function defilter() {
 					if (isIE) {
 						//IE adds a filter when ColorBox fades in and out that can cause problems if the loaded content contains transparent pngs.
-						$box[0].style.filter = false;
+						$box[0].style.removeAttribute("filter"); 
 					}
 				}
 				
@@ -661,10 +661,20 @@
 			// IFrame element won't be added to the DOM until it is ready to be displayed,
 			// to avoid problems with DOM-ready JS that might be trying to run in that iframe.
 			$box.one(event_loaded, function () {
-				var $iframe = $("<iframe name='" + new Date().getTime() + "' frameborder=0" + (settings.scrolling ? "" : " scrolling='no'") + (isIE ? " allowtransparency='true'" : '') + " style='width:100%; height:100%; border:0; display:block;'/>");
-				$iframe[0].src = settings.href;
-				$iframe.appendTo($loaded).one(event_purge, function () {
-					$iframe[0].src = 'about:blank';
+				var iframe = $("<iframe frameborder='0' style='width:100%; height:100%; border:0; display:block'/>")[0];
+				iframe.name = prefix + (+new Date());
+				iframe.src = settings.href;
+				
+				if (!settings.scrolling) {
+					iframe.scrolling = "no";
+				}
+				
+				if (isIE) {
+					iframe.allowtransparency = "true";
+				}
+				
+				$(iframe).appendTo($loaded).one(event_purge, function () {
+					iframe.src = "//about:blank";
 				});
 			});
 			

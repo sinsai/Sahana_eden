@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Export Toolkit
 
-    @version: 2.2.9
+    @version: 2.2.10
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -53,24 +53,27 @@ from lxml import etree
 # *****************************************************************************
 class S3Exporter(object):
 
-    """ Exporter toolkit """
+    """
+    Exporter toolkit
 
-    def __init__(self, manager):
+    """
 
-        """ Constructor
+    def __init__(self, datastore):
+        """
+        Constructor
 
-            @param manager: the resource controller
+        @param datastore: the resource controller
 
-            @todo 2.3: error message completion
+        @todo 2.3: error message completion
 
         """
 
-        self.manager = manager
+        self.datastore = datastore
 
-        T = manager.T
+        T = datastore.T
 
-        self.db = self.manager.db
-        self.s3 = self.manager.s3
+        self.db = self.datastore.db
+        self.s3 = self.datastore.s3
 
         self.ERROR = Storage(
             REPORTLAB_ERROR = T("ReportLab not installed"),
@@ -88,122 +91,81 @@ class S3Exporter(object):
             show_urls=True,
             dereference=True,
             template=None,
+            as_json=False,
             pretty_print=False, **args):
+        """
+        Export a resource as S3XML
 
-        """ Export a resource as XML
-
-            @param resource: the resource
-            @param start: index of the first record to export (slicing)
-            @param limit: maximum number of records to export (slicing)
-            @param marker: URL of the default map marker
-            @param msince: export only records which have been modified
-                           after this datetime
-            @param show_urls: add the resource URLs as attribute to
-                              <resource> elements
-            @param dereference: include referenced resources
-            @param template: path to the XSLT stylesheet (if required)
-            @param pretty_print: insert newlines/indentation in the output
-            @param args: dict of arguments to pass to the XSLT stylesheet
+        @param resource: the resource
+        @param start: index of the first record to export (slicing)
+        @param limit: maximum number of records to export (slicing)
+        @param marker: URL of the default map marker
+        @param msince: export only records which have been modified
+                        after this datetime
+        @param show_urls: add the resource URLs as attribute to
+                            <resource> elements
+        @param dereference: include referenced resources
+        @param template: path to the XSLT stylesheet (if required)
+        @param as_json: represent the XML tree as JSON
+        @param pretty_print: insert newlines/indentation in the output
+        @param args: dict of arguments to pass to the XSLT stylesheet
 
         """
 
+        output = None
+
         args = Storage(args)
+        xml = self.datastore.xml
 
-        tree = self.manager.export_tree(resource,
-                                        audit=self.manager.audit,
-                                        start=start,
-                                        limit=limit,
-                                        marker=marker,
-                                        msince=msince,
-                                        show_urls=show_urls,
-                                        dereference=dereference)
+        # Export as element tree
+        tree = self.datastore.export_tree(resource,
+                                          audit=self.datastore.audit,
+                                          start=start,
+                                          limit=limit,
+                                          marker=marker,
+                                          msince=msince,
+                                          show_urls=show_urls,
+                                          dereference=dereference)
 
+        # XSLT transformation
         if tree and template is not None:
-            tfmt = self.manager.xml.ISOFORMAT
-            args.update(domain=self.manager.domain,
-                        base_url=self.manager.s3.base_url,
+            tfmt = xml.ISOFORMAT
+            args.update(domain=self.datastore.domain,
+                        base_url=self.datastore.s3.base_url,
                         prefix=resource.prefix,
                         name=resource.name,
                         utcnow=datetime.datetime.utcnow().strftime(tfmt))
 
-            tree = self.manager.xml.transform(tree, template, **args)
+            # @todo 2.3: catch transformation errors!
+            tree = xml.transform(tree, template, **args)
 
+        # Convert into string
         if tree:
-            return self.manager.xml.tostring(tree, pretty_print=pretty_print)
-        else:
-            return None
+            if as_json:
+                output = xml.tree2json(tree, pretty_print=pretty_print)
+            else:
+                output = xml.tostring(tree, pretty_print=pretty_print)
 
-
-    # -------------------------------------------------------------------------
-    def json(self, resource,
-             start=None,
-             limit=None,
-             marker=None,
-             msince=None,
-             show_urls=True,
-             dereference=True,
-             template=None,
-             pretty_print=False, **args):
-
-        """ Export a resource as JSON
-
-            @param resource: the resource
-            @param start: index of the first record to export (slicing)
-            @param limit: maximum number of records to export (slicing)
-            @param marker: URL of the default map marker
-            @param msince: export only records which have been modified
-                           after this datetime
-            @param show_urls: add the resource URLs as attribute to
-                              <resource> elements
-            @param dereference: include referenced resources
-            @param template: path to the XSLT stylesheet (if required)
-            @param pretty_print: insert newlines/indentation in the output
-            @param args: dict of arguments to pass to the XSLT stylesheet
-
-        """
-
-        args = Storage(args)
-
-        tree = self.manager.export_tree(resource,
-                                        audit=self.manager.audit,
-                                        start=start,
-                                        limit=limit,
-                                        marker=marker,
-                                        msince=msince,
-                                        show_urls=show_urls,
-                                        dereference=dereference)
-
-        if tree and template is not None:
-            tfmt = self.manager.xml.ISOFORMAT
-            args.update(domain=self.manager.domain,
-                        base_url=self.manager.s3.base_url,
-                        prefix=resource.prefix,
-                        name=resource.name,
-                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
-
-            tree = self.manager.xml.transform(tree, template, **args)
-
-        if tree:
-            return self.manager.xml.tree2json(tree, pretty_print=pretty_print)
-        else:
-            return None
+        return output
 
 
     # -------------------------------------------------------------------------
     def csv(self, resource):
+        """
+        Export resource as CSV (does not include components)
 
-        """ Export resource as CSV (does not include components)
+        @param resource: the resource to export
 
-            @param resource: the resource to export
+        @note: export does not include components!
 
-            @todo: implement audit
+        @todo: implement audit
 
         """
 
         db = self.db
 
-        request = self.manager.request
-        response = self.manager.response
+        request = self.datastore.request
+        response = self.datastore.response
 
         tablename = resource.tablename
         query = resource.get_query()
@@ -219,29 +181,31 @@ class S3Exporter(object):
 
     # -------------------------------------------------------------------------
     def pdf(self, resource, list_fields=None):
+        """
+        Export a resource as Adobe PDF (does not include components!)
 
-        """ Export resource as Adobe PDF (does not include components)
+        @param resource: the resource
+        @param list_fields: fields to include in list views
 
-            @param resource: the resource
-            @param list_fields: fields to include in list views
+        @note: export does not include components!
 
-            @todo 2.3: fix error messages
-            @todo 2.3: do not redirect
-            @todo 2.3: PEP-8
-            @todo 2.3: test this!
+        @todo 2.3: fix error messages
+        @todo 2.3: do not redirect
+        @todo 2.3: PEP-8
+        @todo 2.3: test this!
 
-            @todo: implement audit
+        @todo: implement audit
 
         """
 
         db = self.db
         table = resource.table
 
-        session = self.manager.session
-        request = self.manager.request
-        response = self.manager.response
+        session = self.datastore.session
+        request = self.datastore.request
+        response = self.datastore.response
 
-        xml = self.manager.xml
+        xml = self.datastore.xml
 
         # Import ReportLab
         try:
@@ -296,7 +260,7 @@ class S3Exporter(object):
         COLWIDTH = 2.5
         LEFTMARGIN = 0.2
 
-        represent = self.manager.represent
+        represent = self.datastore.represent
 
         _represent = lambda field, value, table=table: \
                      represent(table[field],
@@ -366,24 +330,26 @@ class S3Exporter(object):
 
     # -------------------------------------------------------------------------
     def xls(self, resource, list_fields=None):
+        """
+        Export a resource as Microsoft Excel spreadsheet
 
-        """ Export record(s) as Microsoft Excel spreadsheet
+        @param resource: the resource
+        @param list_fields: fields to include in list views
 
-            @param resource: the resource
-            @param list_fields: fields to include in list views
+        @note: export does not include components!
 
-            @todo 2.3: PEP-8
-            @todo 2.3: implement audit
-            @todo 2.3: use S3Resource.readable_fields
-            @todo 2.3: use separate export_fields instead of list_fields
+        @todo 2.3: PEP-8
+        @todo 2.3: implement audit
+        @todo 2.3: use S3Resource.readable_fields
+        @todo 2.3: use separate export_fields instead of list_fields
 
         """
 
         db = self.db
 
-        session = self.manager.session
-        request = self.manager.request
-        response = self.manager.response
+        session = self.datastore.session
+        request = self.datastore.request
+        response = self.datastore.response
 
         table = resource.table
         query = resource.get_query()
@@ -432,7 +398,7 @@ class S3Exporter(object):
                     style.num_format_str = "M/D/YY h:mm"
                 elif coltype == "time":
                     style.num_format_str = "h:mm:ss"
-                represent = self.manager.represent(field,
+                represent = self.datastore.represent(field,
                                                    record=item,
                                                    strip_markup=True,
                                                    xml_escape=True)
@@ -444,6 +410,47 @@ class S3Exporter(object):
         filename = "%s_%s.xls" % (request.env.server_name, str(table))
         response.headers["Content-disposition"] = "attachment; filename=\"%s\"" % filename
         return output.read()
+
+
+    # -------------------------------------------------------------------------
+    def json(self, resource,
+             start=None,
+             limit=None,
+             fields=None,
+             orderby=None):
+        """
+        Export a resource as JSON
+
+        @note: export does not include components!
+
+        @param resource: the resource to export
+        @param start: index of the first record to export (for slicing)
+        @param limit: maximum number of records to export (for slicing)
+        @param list_fields: names of fields to include in the export
+                            (None for all fields)
+        @param
+
+        """
+
+        attributes = dict()
+
+        if orderby is not None:
+            attributes.update(orderby=orderby)
+
+        # Slicing
+        if start is not None:
+            if not limit:
+                limit = self.datastore.ROWSPERPAGE
+            if limit <= 0:
+                limit = 1
+            if start < 0:
+                start = 0
+            limitby = (start, start + limit)
+            attributes.update(limitby=limitby)
+
+        # Get the rows and return as json
+        rows = resource.select(*fields, **attributes)
+        return rows.json()
 
 
 # *****************************************************************************

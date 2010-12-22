@@ -123,6 +123,10 @@ def person():
     """ RESTful CRUD controller """
 
     def prep(r):
+
+        # Override the default Search MethodHandler
+        r.resource.set_handler("search", _s3xrc.S3PersonSearch())
+
         if r.component_name == "config":
             _config = db.gis_config
             defaults = db(_config.id == 1).select(limitby=(0, 1)).first()

@@ -384,6 +384,7 @@ class GIS(object):
         """
         db = self.db
         cache = self.cache
+        auth = self.auth
         deployment_settings = self.deployment_settings
         request = self.request
 
@@ -860,21 +861,6 @@ class GIS(object):
 
         csv.field_size_limit(2**20 * 10)  # 10 megs
 
-        # from http://docs.python.org/library/csv.html#csv-examples
-        #def latin_csv_reader(unicode_csv_data, dialect=csv.excel, **kwargs):
-        #    for row in csv.reader(unicode_csv_data):
-        #        yield [unicode(cell, "latin-1") for cell in row]
-
-        #def latin_dict_reader(data, dialect=csv.excel, **kwargs):
-        #    reader = latin_csv_reader(data, dialect=dialect, **kwargs)
-        #    headers = reader.next()
-        #    for r in reader:
-        #        yield dict(zip(headers, r))
-
-        #def utf8_encoder(unicode_csv_data):
-        #    for line in unicode_csv_data:
-        #        yield line.encode("utf-8")
-
         def utf8_csv_reader(unicode_csv_data, dialect=csv.excel, **kwargs):
             for row in csv.reader(unicode_csv_data):
                 yield [unicode(cell, "utf-8") for cell in row]
@@ -1258,7 +1244,7 @@ class GIS(object):
         return res
 
     # -----------------------------------------------------------------------------
-    def update_location_tree(self, parent, level, location_id):
+    def update_location_tree(self, location_id, parent=None):
         """
             Update the Tree for GIS Locations:
             @author: Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
@@ -1268,16 +1254,17 @@ class GIS(object):
 
         db = self.db
         table = db.gis_location
-        if (level == "L0"):
-            node_path = str(location_id)
-            db(table.id == location_id).update(path=node_path)
-        else:
+
+        if parent:
             path = db(table.id == parent).select(table.path).first()
-            if path:
-                if (path.path == None):
-                    path.path = parent
-                node_path = str(path.path) + "/" + str(location_id)
-                db(table.id == location_id).update(path=node_path)
+            if path and path.path:
+                node_path = "%s/%s" % (str(path.path), str(location_id))
+            else:
+                node_path = "%s/%s" % (str(parent), str(location_id))
+        else:
+            node_path = str(location_id)
+
+        db(table.id == location_id).update(path=node_path)
 
         return
 
@@ -2157,7 +2144,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             search = """
         var mapSearch = new GeoExt.ux.GeoNamesSearchCombo({
             map: map,
-            zoom: 8
+            zoom: 12
          });
 
         var searchCombo = new Ext.Panel({
@@ -2441,6 +2428,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         if window and window_hide:
             layout = """
         mapWin = new Ext.Window({
+            id: 'gis-map-window',
             collapsible: true,
             constrain: true,
             closeAction: 'hide',
@@ -2450,6 +2438,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         elif window:
             layout = """
         mapWin = new Ext.Window({
+            id: 'gis-map-window',
             collapsible: true,
             constrain: true,
             """
@@ -2461,7 +2450,8 @@ OpenLayers.Util.extend( selectPdfControl, {
             # Embedded
             layout = """
         var panel = new Ext.Panel({
-            renderTo: "map_panel",
+            id: 'gis-map-panel',
+            renderTo: 'map_panel',
             """
             layout2 = ""
 
@@ -2601,6 +2591,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
         """
             for layer in openstreetmap_enabled:
+                if layer.role_required and not auth.shn_has_role(layer.role_required):
+                    continue
                 name = layer.name
                 name_safe = re.sub('\W', '_', name)
                 url1 = layer.url1
@@ -2642,6 +2634,8 @@ OpenLayers.Util.extend( selectPdfControl, {
             if google_enabled:
                 google.key = self.get_api_key("google")
                 for layer in google_enabled:
+                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                        continue
                     for subtype in gis_layer_google_subtypes:
                         if layer.subtype == subtype:
                             google["%s" % subtype] = layer.name
@@ -2719,6 +2713,8 @@ OpenLayers.Util.extend( selectPdfControl, {
             if yahoo_enabled:
                 yahoo.key = self.get_api_key("yahoo")
                 for layer in yahoo_enabled:
+                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                        continue
                     for subtype in gis_layer_yahoo_subtypes:
                         if layer.subtype == subtype:
                             yahoo["%s" % subtype] = layer.name
@@ -2746,6 +2742,8 @@ OpenLayers.Util.extend( selectPdfControl, {
             #bing = Storage()
             #bing_enabled = db(db.gis_layer_bing.enabled == True).select()
             #for layer in bing_enabled:
+            #        if layer.role_required and not auth.shn_has_role(layer.role_required):
+            #            continue
             #    for subtype in gis_layer_bing_subtypes:
             #        if layer.subtype == subtype:
             #            bing["%s" % subtype] = layer.name
@@ -2778,6 +2776,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         if wfs_enabled:
             layers_wfs = cluster_style_options
         for layer in wfs_enabled:
+            if layer.role_required and not auth.shn_has_role(layer.role_required):
+                continue
             name = layer.name
             name_safe = re.sub('\W', '_', name)
             url = layer.url
@@ -2841,6 +2841,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_wms = ""
         wms_enabled = db(db.gis_layer_wms.enabled == True).select()
         for layer in wms_enabled:
+            if layer.role_required and not auth.shn_has_role(layer.role_required):
+                continue
             name = layer.name
             name_safe = re.sub('\W', '_', name)
             url = layer.url
@@ -2895,6 +2897,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_tms = ""
         tms_enabled = db(db.gis_layer_tms.enabled == True).select()
         for layer in tms_enabled:
+            if layer.role_required and not auth.shn_has_role(layer.role_required):
+                continue
             name = layer.name
             name_safe = re.sub('\W', '_', name)
             url = layer.url
@@ -2916,6 +2920,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_xyz = ""
         xyz_enabled = db(db.gis_layer_tms.enabled == True).select()
         for layer in xyz_enabled:
+            if layer.role_required and not auth.shn_has_role(layer.role_required):
+                continue
             name = layer.name
             name_safe = re.sub('\W', '_', name)
             url = layer.url
@@ -2957,6 +2963,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_js = ""
         js_enabled = db(db.gis_layer_js.enabled == True).select()
         for layer in js_enabled:
+            if layer.role_required and not auth.shn_has_role(layer.role_required):
+                continue
             layers_js  += layer.code
 
         #
@@ -3141,6 +3149,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 
             # Feature Queries
             for layer in feature_queries:
+                # NB Security for these layers has to come at an earlier stage (e.g. define_map())
                 # Features passed as Query
                 if "name" in layer:
                     name = str(layer["name"])
@@ -3246,7 +3255,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                             wkt = self.latlon_to_wkt(lat, lon)
                     else:
                         # Just display Point data, even if we have Polygons
-                        # ToDo: DRY with Polygon
+                        # @ToDo: DRY with Polygon
                         try:
                             lat = feature.lat
                             lon = feature.lon
@@ -3389,7 +3398,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         if catalogue_overlays:
             # GeoRSS
             query = (db.gis_layer_georss.enabled == True) # No deletable field
-            georss_enabled = db(query).select(db.gis_layer_georss.name, db.gis_layer_georss.url, db.gis_layer_georss.visible, db.gis_layer_georss.projection_id, db.gis_layer_georss.marker_id)
+            georss_enabled = db(query).select()
             if georss_enabled:
                 layers_georss += """
         var georssLayers = new Array();
@@ -3419,6 +3428,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
         """
                 for layer in georss_enabled:
+                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                        continue
                     name = layer["name"]
                     url = layer["url"]
                     visible = layer["visible"]
@@ -3533,6 +3544,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
         """
                 for layer in gpx_enabled:
+                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                        continue
                     name = layer["name"]
                     track = db(db.gis_track.id == layer.track_id).select(db.gis_track.track, limitby=(0, 1)).first()
                     if track:
@@ -3668,6 +3681,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
         """
                 for layer in kml_enabled:
+                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                        continue
                     name = layer["name"]
                     url = layer["url"]
                     visible = layer["visible"]
@@ -3776,17 +3791,20 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
 
             # Coordinate Grid
-            coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select(db.gis_layer_coordinate.name, db.gis_layer_coordinate.visible)
+            coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select(db.gis_layer_coordinate.name, db.gis_layer_coordinate.visible, db.gis_layer_coordinate.role_required)
             if coordinate_enabled:
-                layer = coordinate_enabled.first()
-                name = layer["name"]
-                # Generate HTML snippet
-                name_safe = re.sub("\W", "_", name)
-                if "visible" in layer and layer["visible"]:
-                    visibility = ""
+                if layer.role_required and not auth.shn_has_role(layer.role_required):
+                    pass
                 else:
-                    visibility = ", visibility: false"
-                layer_coordinategrid = """
+                    layer = coordinate_enabled.first()
+                    name = layer["name"]
+                    # Generate HTML snippet
+                    name_safe = re.sub("\W", "_", name)
+                    if "visible" in layer and layer["visible"]:
+                        visibility = ""
+                    else:
+                        visibility = ", visibility: false"
+                    layer_coordinategrid = """
         map.addLayer(new OpenLayers.Layer.cdauth.CoordinateGrid(null, { name: '""" + name_safe + """', shortName: 'grid' """ + visibility + """ }));
         """
 
@@ -4170,74 +4188,6 @@ OpenLayers.Util.extend( selectPdfControl, {
     """))
 
         return html
-
-    # -----------------------------------------------------------------------------
-    def form_map(self, r, method="create", tablename=None, prefix=None, name=None):
-        """ Prepare a Map to include in forms. Called by CRUD """
-
-        db = self.db
-        T = self.T
-
-        if method == "create":
-            _map = self.show_map(add_feature = True,
-                                 add_feature_active = True,
-                                 toolbar = True,
-                                 collapsed = True,
-                                 window = True,
-                                 window_hide = True)
-            return _map
-
-        elif method == "update" and tablename and prefix and name:
-            config = self.get_config()
-            zoom = config.zoom
-            _locations = db.gis_location
-            fields = [_locations.id, _locations.uuid, _locations.name, _locations.lat, _locations.lon, _locations.level, _locations.parent, _locations.addr_street]
-            if tablename == "gis_location":
-                location = db(db[tablename].id == r.id).select(limitby=(0, 1), *fields).first()
-            else:
-                location = db((db[tablename].id == r.id) & (_locations.id == db[tablename].location_id)).select(limitby=(0, 1), *fields).first()
-            if location and location.lat is not None and location.lon is not None:
-                lat = location.lat
-                lon = location.lon
-            else:
-                lat = config.lat
-                lon = config.lon
-            layername = T("Location")
-            popup_label = ""
-            filter = Storage(tablename = tablename,
-                             id = r.id
-                            )
-            layer = self.get_feature_layer(prefix, name, layername, popup_label, filter=filter)
-            if layer:
-                feature_queries = [layer]
-            else:
-                feature_queries = []
-            _map = self.show_map(lat = lat,
-                                 lon = lon,
-                                 # Same as a single zoom on a cluster
-                                 zoom = zoom + 2,
-                                 feature_queries = feature_queries,
-                                 add_feature = True,
-                                 add_feature_active = False,
-                                 toolbar = True,
-                                 collapsed = True,
-                                 window = True,
-                                 window_hide = True)
-            if location and location.id:
-                _location = Storage(id = location.id,
-                                    uuid = location.uuid,
-                                    name = location.name,
-                                    lat = location.lat,
-                                    lon = location.lon,
-                                    level = location.level,
-                                    parent = location.parent,
-                                    addr_street = location.addr_street
-                                    )
-            else:
-                _location = None
-            return dict(_map=_map, oldlocation=_location)
-
-        return dict(None, None)
 
 # -----------------------------------------------------------------------------
 class Geocoder(object):

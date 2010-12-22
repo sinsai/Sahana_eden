@@ -220,6 +220,10 @@ table.website.requires = IS_NULL_OR(IS_URL())
 table.donation_phone.requires = shn_phone_requires
 table.name.label = T("Name")
 table.acronym.label = T("Acronym")
+table.acronym.comment = DIV( _class = "tooltip", 
+                             _title = T("Acronym") + "|" +
+                                      T("Acronym of the organization's name, eg. IFRC.")
+                            ) 
 table.type.label = T("Type")
 table.donation_phone.label = T("Donation Phone #")
 table.donation_phone.comment = DIV( _class="tooltip", _title=T("Donation Phone #") + "|" + T("Phone number to donate to this organization's relief efforts."))

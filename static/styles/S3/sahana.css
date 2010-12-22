@@ -170,7 +170,8 @@ table { border-collapse: collapse }
                 min-width: 800px; }
 
 #modulenav { position: relative;
-             margin: 0px; }
+             margin: 0px; 
+             padding-right: 0.7%; }
 #modulenav,
 #modulenav li,
 #modulenav ul { list-style: none; }
@@ -321,8 +322,8 @@ table { border-collapse: collapse }
     padding-top: 1px;
 }
 .fullpage .col1 {
-    width: 98%;         /* page width minus left and right padding */
-    left: 1%;           /* page left padding */
+    width: 99%;         /* page width minus left and right padding */
+    left: 0.5%;         /* page left padding */
 }
 
 /* common styles */
@@ -735,22 +736,39 @@ div#rheader_tabs span.rheader_tab_here a { color: #006699;
 /* Demo Page Specific */
 .menu_div, .div_arrow { margin-top: 10px;
 					   float: left;
-					   width: 150px; }
+					   width: auto;
+					    }
 
-.div_arrow	{ padding: 50px 0 0 35px;}
+.div_arrow	{ padding: 50px 0 0 35px;
+              text-align:left; 
+              width: 150px;
+              }
 
 #content .menu_div h3  {border-bottom: 0px;
 			   font-size: 2.0em;
 			   padding-bottom: 10px;
+               text-align: justify;
 			   }
 
-
-.menu_box { height: 50px;
-		    width: 140px;
-		    background: url(../../img/menu_box.png) no-repeat;
-		    font-size: 1.4em;
-		    padding: 12px;
-		    }
+.menu-box-r {
+    margin: 0px;
+    padding: 15px 20px 15px 20px;
+    overflow: hidden;
+    background: url(../../img/menu_box-r.png) no-repeat scroll top right;
+    display: block;
+    white-space:nowrap;
+    text-align: center;
+    font-size: 1.4em;
+}
+.menu-box-l {
+    margin-top:11px; 
+    overflow: hidden;
+    background: url(../../img/menu_box-lstretch.png) no-repeat;
+    display: block;
+    /*float: left;*/
+    height: 50px;
+    text-decoration: none;
+}
 
 #login_form, #register_form, .menu_text { clear: both;}
 

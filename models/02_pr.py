@@ -338,7 +338,7 @@ def pr_person_onvalidation(form):
     if age and age != 1 and dob:
         now = request.utcnow
         dy = int((now.date() - dob).days / 365.25)
-        if dy < 1:
+        if dy < 0:
             ag = 1
         elif dy < 2:
             ag = 2

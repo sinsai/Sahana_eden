@@ -93,7 +93,7 @@ admin_menu_options = [
             [T("Schedule"), False, URL(r=request, c="sync", f="job")],
             #[T("Sync Pools"), False, URL(r=request, c="sync", f="pool")],
             [T("Peer Registration"), False, URL(r=request, c="sync", f="registration")],
-            [T("Conflict Resolution"), False, URL(r=request, c="sync", f="conflict")],
+            #[T("Conflict Resolution"), False, URL(r=request, c="sync", f="conflict")],
             [T("History"), False, URL(r=request, c="sync", f="log")]
     ]],
     [T("Messaging"), False, "#", admin_menu_messaging],

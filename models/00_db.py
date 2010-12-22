@@ -78,14 +78,14 @@ s3 = Storage()
 
 # Custom classes which extend default T2
 # (to deprecate)
-exec("from applications.%s.modules.sahana import *" % request.application)
+#exec("from applications.%s.modules.sahana import *" % request.application)
 # Faster for Production (where app-name won't change):
 #from applications.eden.modules.sahana import *
 # We should change this to use:
 # sahana = local_import("sahana")
 # t2 = sahana.S3(request, response, session, cache, T, db)
 # etc
-t2 = S3(request, response, session, cache, T, db)
+#t2 = S3(request, response, session, cache, T, db)
 
 # Custom validators
 exec("from applications.%s.modules.validators import *" % request.application)

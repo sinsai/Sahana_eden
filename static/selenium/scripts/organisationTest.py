@@ -1,18 +1,15 @@
-from selenium import selenium
-
 from sahanaTest import SahanaTest
-import unittest, time, re
-import actions
-import inspect
+import unittest, re
 
 class OrganisationTest(SahanaTest):
     """ Test the Organisation registry """
     orgs = []
                 
     def firstRun(self):
+        sel = OrganisationTest.selenium
         self.action.logout()
         # Log in as admin an then move to the add organisation page 
-        OrganisationTest.selenium.open("/eden/org/organisation/create")
+        sel.open("/eden/org/organisation/create")
         self.action.errorMsg("Not Authorised")
         self.assertEqual("Login", self.selenium.get_text("//h2"))
         self.useSahanaAdminAccount()

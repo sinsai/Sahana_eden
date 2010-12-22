@@ -2,10 +2,11 @@ from sahanaTest import SahanaTest
 import actions
 
 class CreateTestAccount(SahanaTest):
+    """ Set up common accounts to be used by the suite of test classes """
       
     def test_create_test_accounts(self):
         """ Create the standard testing accounts admin@example.com and user@example.com """
-        sel = self.selenium
+#        sel = self.selenium
         
         # *** NOTE this script needs to be run by a user with Administrator privileges. END NOTE ***
         self.action.login(self._user, self._password, False)

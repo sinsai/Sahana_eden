@@ -1,4 +1,5 @@
 import unittest, time, re
+from selenium import selenium
 
 class Action(unittest.TestCase):
     def __init__ (self, selenium):
@@ -22,7 +23,6 @@ class Action(unittest.TestCase):
         msg = "Unable to log in as " + username
         if reveal:
             msg += " with password " + password
-        sel.wait_for_page_to_load("30000")
         self.assertTrue(self.successMsg("Logged in"),msg)
 
     def logout(self):
@@ -33,6 +33,7 @@ class Action(unittest.TestCase):
 
     def search(self, searchString, expected):
         sel = self.sel
+        result = ""
         # The search filter is part of the http://datatables.net/ JavaScript getting it to work with Selenium needs a bit of care.
         # Entering text in the filter textbox doesn't always trigger off the filtering and it is not possible with this method to clear the filter.
         # The solution is to put in a call to the DataTables API, namely the fnFilter function
@@ -41,31 +42,21 @@ class Action(unittest.TestCase):
         time.sleep(1)
         sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( '"+searchString+"' );")
         time.sleep(1)
-        for i in range(12):
+        for i in range(10):
             try:
                 result = sel.get_text("//div[@id='table-container']")
                 if  expected in result: break
             except: pass
-            time.sleep(5)
+            time.sleep(3)
         else: self.fail("time out: Looking for %s within %s" % (expected, result ))
         
     def searchUnique(self, uniqueName):
         self.search(uniqueName, r"1 entries")
         
-    def searchUser(self, searchString, expected):
-        sel = self.sel
-        result = ""
-        # TODO only open this page if on another page
-        sel.open("/eden/admin/user")
-        self.search(searchString, expected)
-
-    def searchUniqueUser(self, userName):
-        self.searchUser(userName, r"1 entries")
-        
     def clearSearch(self):
         sel = self.sel
         sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( 'Clearing...' );")
-        self.searchUser('', r"entries")
+        self.search('', r"entries")
         
     def addUser(self, first_name, last_name, email, password):
         first_name = first_name.strip()
@@ -87,7 +78,7 @@ class Action(unittest.TestCase):
         sel.wait_for_page_to_load("30000")
         msg = "Unable to create user " + first_name + " " + last_name + " with email " + email
         self.assertTrue(self.successMsg("User added"),msg)
-        self.searchUniqueUser(email)
+        self.searchUnique(email)
         self.assertTrue(re.search(r"Showing 1 to 1 of 1 entries", sel.get_text("//div[@class='dataTables_info']")))
         print "User %s created" % (email)
 
@@ -97,7 +88,7 @@ class Action(unittest.TestCase):
         roleList = roles.split(' ')
         
         sel = self.sel
-        self.searchUniqueUser(email)
+        self.searchUnique(email)
         sel.click("link=Open")
         sel.wait_for_page_to_load("30000")
         sel.click("//div[@id='content']/a[2]")
@@ -114,6 +105,7 @@ class Action(unittest.TestCase):
 
     def delUser(self, email):
         email = email.strip()
+        print "Deletign user %s" % email
         sel = self.sel
         sel.open("/eden/admin/user")
         self.searchUnique(email)
@@ -121,13 +113,13 @@ class Action(unittest.TestCase):
         sel.click("link=Delete")
         self.assertTrue(re.search(r"^Sure you want to delete this object[\s\S]$", sel.get_confirmation()))
         self.assertTrue(self.successMsg("User deleted"))
-        self.searchUser(email, r"No matching records found")
+        self.search(email, r"No matching records found")
         print "User %s deleted" % (email)
 
     # Method to locate a message in a div with a class given by type
     def findMsg(self, message, type):
         sel = self.sel
-        for cnt in range (60):
+        for cnt in range (10):
             i = 1
             while sel.is_element_present('//div[@class="%s"][%s]' % (type, i)):
                 if re.search(message, sel.get_text('//div[@class="%s"][%s]' % (type, i))): return True

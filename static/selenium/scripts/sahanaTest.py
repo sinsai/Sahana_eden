@@ -83,6 +83,7 @@ class SahanaTest(unittest.TestCase):
     def setUp(self):
         print self.shortDescription()
         self.start()
+#        print "count %s started %s firstRunExists %s" % (self.testcaseCount, self.testcaseStartedCount, self.firstRunExists)
         if self.testcaseStartedCount == 1:
             if self.firstRunExists:
                 self.firstRun()

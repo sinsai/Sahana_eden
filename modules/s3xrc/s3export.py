@@ -428,7 +428,6 @@ class S3Exporter(object):
         @param limit: maximum number of records to export (for slicing)
         @param list_fields: names of fields to include in the export
                             (None for all fields)
-        @param
 
         """
 

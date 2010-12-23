@@ -1165,7 +1165,7 @@ class S3CRUD(S3Method):
         if as_page:
             # ...JSON page (for pagination)
             represent = self.datastore.represent
-            items = [[represent(f, record=row, linkto=linkto, strip_markup=True)
+            items = [[represent(f, record=row, linkto=linkto)
                       for f in fields]
                      for row in rows]
         elif as_list:

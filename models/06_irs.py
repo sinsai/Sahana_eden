@@ -182,6 +182,7 @@ if deployment_settings.has_module(module):
     resourcename = "ireport"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
+                            super_link(db.sit_situation),
                             Field("name"),
                             Field("message", "text"),
                             Field("category"),

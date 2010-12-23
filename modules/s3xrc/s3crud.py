@@ -449,6 +449,17 @@ class S3CRUD(S3Method):
 
         editable = self._config("editable", True)
         deletable = self._config("deletable", True)
+        list_fields = self._config("list_fields")
+
+        # List fields
+        if not list_fields:
+            fields = self.resource.readable_fields()
+        else:
+            fields = [table[f] for f in list_fields if f in table.fields]
+        if not fields:
+            fields = []
+        if fields[0].name != table.fields[0]:
+            fields.insert(0, table[table.fields[0]])
 
         # Get the target record ID
         record_id = self._record_id(r)
@@ -522,6 +533,10 @@ class S3CRUD(S3Method):
             list_fields = self._config("list_fields")
             exporter = self.resource.exporter.xls
             return exporter(self.resource, list_fields=list_fields)
+
+        elif representation == "json":
+            exporter = S3Exporter(self.datastore)
+            return exporter.json(self.resource, fields=fields)
 
         else:
             r.error(501, self.datastore.ERROR.BAD_FORMAT)

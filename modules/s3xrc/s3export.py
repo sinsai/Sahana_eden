@@ -432,6 +432,8 @@ class S3Exporter(object):
 
         """
 
+        response = self.datastore.response
+
         attributes = dict()
 
         if orderby is not None:
@@ -450,6 +452,10 @@ class S3Exporter(object):
 
         # Get the rows and return as json
         rows = resource.select(*fields, **attributes)
+
+        if response:
+            response.headers["Content-Type"] = "text/x-json"
+
         return rows.json()
 
 

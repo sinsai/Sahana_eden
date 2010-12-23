@@ -266,6 +266,8 @@ def user():
 
     # In Controller to allow registration to work with UUIDs - only manual edits need this setting
     db.auth_user.registration_key.requires = IS_NULL_OR(IS_IN_SET(["disabled", "pending"]))
+    
+    db.auth_user.language.default = "en"
 
     # Pre-processor
     def user_prep(jr):
@@ -288,10 +290,15 @@ def user():
     s3xrc.model.configure(table,
         main="first_name",
         # Add users to Person Registry & 'Authenticated' role:
-        create_onaccept = lambda form: auth.shn_register(form))
-
+        create_onaccept = lambda form: auth.shn_register(form),
+        create_onvalidation = lambda form: user_create_onvalidation(form))
     return s3_rest_controller(module, resource)
 
+def user_create_onvalidation (form):
+    if (form.request_vars.has_key("password_two") and \
+        form.request_vars.password != form.request_vars.password_two):
+        form.errors.password = T("Password fields don't match")
+    return True
 
 def user_approve(form):
     "Send an email to user if their account is approved (moved from 'pending' to 'blank'(i.e. enabled))"

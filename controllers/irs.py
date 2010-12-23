@@ -22,14 +22,6 @@ response.menu_options = [
     #[T("Map"), False, URL(r=request, f="maps")],
 ]
 
-if shn_has_role("Editor"):
-    response.menu_options.append(
-        [T("Confirmed Incidents"), False, URL(r=request, f="incident"),[
-            [T("List"), False, URL(r=request, f="incident")],
-            [T("Add"), False, URL(r=request, f="incident", args="create")],
-            #[T("Search"), False, URL(r=request, f="incident", args="search")]
-        ]]
-    )
 if shn_has_role(1):
     response.menu_options.append(
         [T("Incident Categories"), False, URL(r=request, f="icategory"),[

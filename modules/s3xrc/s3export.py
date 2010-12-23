@@ -439,15 +439,8 @@ class S3Exporter(object):
         if orderby is not None:
             attributes.update(orderby=orderby)
 
-        # Slicing
-        if start is not None:
-            if not limit:
-                limit = self.datastore.ROWSPERPAGE
-            if limit <= 0:
-                limit = 1
-            if start < 0:
-                start = 0
-            limitby = (start, start + limit)
+        limitby = resource.limitby(start=start, limit=limit)
+        if limitby is not None:
             attributes.update(limitby=limitby)
 
         # Get the rows and return as json

@@ -1170,20 +1170,16 @@ class S3CRUD(S3Method):
 
         attributes = dict()
 
+        # Orderby
         if orderby is not None:
             attributes.update(orderby=orderby)
 
-        # Slicing
-        if start is not None:
-            if not limit:
-                limit = self.datastore.ROWSPERPAGE
-            if limit <= 0:
-                limit = 1
-            if start < 0:
-                start = 0
-            limitby = (start, start + limit)
+        # Slice
+        limitby = self.resource.limitby(start=start, limit=limit)
+        if limitby is not None:
             attributes.update(limitby=limitby)
 
+        # Left outer joins
         if left is not None:
             attributes.update(left=left)
 

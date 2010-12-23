@@ -318,18 +318,7 @@ class S3Resource(object):
         if not self._multiple:
             limitby = (0, 1)
         else:
-            # Slicing
-            if start is not None:
-                self._slice = True
-                if not limit:
-                    limit = self.datastore.ROWSPERPAGE
-                if limit <= 0:
-                    limit = 1
-                if start < 0:
-                    start = 0
-                limitby = (start, start + limit)
-            else:
-                limitby = None
+            limitby = self.limitby(start=start, limit=limit)
 
         if limitby:
             rows = self.select(self.table.ALL, limitby=limitby)
@@ -1624,6 +1613,30 @@ class S3Resource(object):
         else:
             return [table[f] for f in table.fields
                     if table[f].readable]
+
+
+    # -------------------------------------------------------------------------
+    def limitby(self, start=None, limit=None):
+        """
+        Convert start+limit parameters into a limitby tuple
+
+        @param start: index of the first record to select
+        @param limit: maximum number of records to select
+
+        """
+
+        if start is None and not limit:
+            return None
+        else:
+            start = 0
+
+        if not limit:
+            limit = self.datastore.ROWSPERPAGE
+        if limit <= 0:
+            limit = 1
+        if start < 0:
+            start = 0
+        return (start, start + limit)
 
 
     # -------------------------------------------------------------------------

@@ -384,6 +384,7 @@ class GIS(object):
         """
         db = self.db
         cache = self.cache
+        auth = self.auth
         deployment_settings = self.deployment_settings
         request = self.request
 
@@ -2590,6 +2591,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
         """
             for layer in openstreetmap_enabled:
+                if layer.role_required and not auth.shn_has_role(layer.role_required):
+                    continue
                 name = layer.name
                 name_safe = re.sub('\W', '_', name)
                 url1 = layer.url1
@@ -2631,6 +2634,8 @@ OpenLayers.Util.extend( selectPdfControl, {
             if google_enabled:
                 google.key = self.get_api_key("google")
                 for layer in google_enabled:
+                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                        continue
                     for subtype in gis_layer_google_subtypes:
                         if layer.subtype == subtype:
                             google["%s" % subtype] = layer.name
@@ -2708,6 +2713,8 @@ OpenLayers.Util.extend( selectPdfControl, {
             if yahoo_enabled:
                 yahoo.key = self.get_api_key("yahoo")
                 for layer in yahoo_enabled:
+                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                        continue
                     for subtype in gis_layer_yahoo_subtypes:
                         if layer.subtype == subtype:
                             yahoo["%s" % subtype] = layer.name
@@ -2735,6 +2742,8 @@ OpenLayers.Util.extend( selectPdfControl, {
             #bing = Storage()
             #bing_enabled = db(db.gis_layer_bing.enabled == True).select()
             #for layer in bing_enabled:
+            #        if layer.role_required and not auth.shn_has_role(layer.role_required):
+            #            continue
             #    for subtype in gis_layer_bing_subtypes:
             #        if layer.subtype == subtype:
             #            bing["%s" % subtype] = layer.name
@@ -2767,6 +2776,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         if wfs_enabled:
             layers_wfs = cluster_style_options
         for layer in wfs_enabled:
+            if layer.role_required and not auth.shn_has_role(layer.role_required):
+                continue
             name = layer.name
             name_safe = re.sub('\W', '_', name)
             url = layer.url
@@ -2830,6 +2841,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_wms = ""
         wms_enabled = db(db.gis_layer_wms.enabled == True).select()
         for layer in wms_enabled:
+            if layer.role_required and not auth.shn_has_role(layer.role_required):
+                continue
             name = layer.name
             name_safe = re.sub('\W', '_', name)
             url = layer.url
@@ -2884,6 +2897,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_tms = ""
         tms_enabled = db(db.gis_layer_tms.enabled == True).select()
         for layer in tms_enabled:
+            if layer.role_required and not auth.shn_has_role(layer.role_required):
+                continue
             name = layer.name
             name_safe = re.sub('\W', '_', name)
             url = layer.url
@@ -2905,6 +2920,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_xyz = ""
         xyz_enabled = db(db.gis_layer_tms.enabled == True).select()
         for layer in xyz_enabled:
+            if layer.role_required and not auth.shn_has_role(layer.role_required):
+                continue
             name = layer.name
             name_safe = re.sub('\W', '_', name)
             url = layer.url
@@ -2946,6 +2963,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_js = ""
         js_enabled = db(db.gis_layer_js.enabled == True).select()
         for layer in js_enabled:
+            if layer.role_required and not auth.shn_has_role(layer.role_required):
+                continue
             layers_js  += layer.code
 
         #
@@ -3130,6 +3149,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 
             # Feature Queries
             for layer in feature_queries:
+                # NB Security for these layers has to come at an earlier stage (e.g. define_map())
                 # Features passed as Query
                 if "name" in layer:
                     name = str(layer["name"])
@@ -3235,7 +3255,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                             wkt = self.latlon_to_wkt(lat, lon)
                     else:
                         # Just display Point data, even if we have Polygons
-                        # ToDo: DRY with Polygon
+                        # @ToDo: DRY with Polygon
                         try:
                             lat = feature.lat
                             lon = feature.lon
@@ -3378,7 +3398,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         if catalogue_overlays:
             # GeoRSS
             query = (db.gis_layer_georss.enabled == True) # No deletable field
-            georss_enabled = db(query).select(db.gis_layer_georss.name, db.gis_layer_georss.url, db.gis_layer_georss.visible, db.gis_layer_georss.projection_id, db.gis_layer_georss.marker_id)
+            georss_enabled = db(query).select()
             if georss_enabled:
                 layers_georss += """
         var georssLayers = new Array();
@@ -3408,6 +3428,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
         """
                 for layer in georss_enabled:
+                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                        continue
                     name = layer["name"]
                     url = layer["url"]
                     visible = layer["visible"]
@@ -3522,6 +3544,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
         """
                 for layer in gpx_enabled:
+                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                        continue
                     name = layer["name"]
                     track = db(db.gis_track.id == layer.track_id).select(db.gis_track.track, limitby=(0, 1)).first()
                     if track:
@@ -3657,6 +3681,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
         """
                 for layer in kml_enabled:
+                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                        continue
                     name = layer["name"]
                     url = layer["url"]
                     visible = layer["visible"]
@@ -3765,17 +3791,20 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
 
             # Coordinate Grid
-            coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select(db.gis_layer_coordinate.name, db.gis_layer_coordinate.visible)
+            coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select(db.gis_layer_coordinate.name, db.gis_layer_coordinate.visible, db.gis_layer_coordinate.role_required)
             if coordinate_enabled:
-                layer = coordinate_enabled.first()
-                name = layer["name"]
-                # Generate HTML snippet
-                name_safe = re.sub("\W", "_", name)
-                if "visible" in layer and layer["visible"]:
-                    visibility = ""
+                if layer.role_required and not auth.shn_has_role(layer.role_required):
+                    pass
                 else:
-                    visibility = ", visibility: false"
-                layer_coordinategrid = """
+                    layer = coordinate_enabled.first()
+                    name = layer["name"]
+                    # Generate HTML snippet
+                    name_safe = re.sub("\W", "_", name)
+                    if "visible" in layer and layer["visible"]:
+                        visibility = ""
+                    else:
+                        visibility = ", visibility: false"
+                    layer_coordinategrid = """
         map.addLayer(new OpenLayers.Layer.cdauth.CoordinateGrid(null, { name: '""" + name_safe + """', shortName: 'grid' """ + visibility + """ }));
         """
 

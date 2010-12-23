@@ -49,8 +49,8 @@ def river():
     resource = request.function
 
     # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
+    def user_postp(r, output):
+        shn_action_buttons(r, deletable=False)
         return output
     response.s3.postp = user_postp
 
@@ -67,17 +67,13 @@ def freport():
 
     resource = request.function
 
-    # Don't send the locations list to client (pulled by AJAX instead)
-    # Make the Location field mandatory
-    table.location_id.requires = IS_ONE_OF_EMPTY(db, "gis_location.id")
-
     # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
     #if "update" not in request.args:
     #    table.document.readable = table.document.writable = False
 
     # Post-processor
-    def postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
+    def postp(r, output):
+        shn_action_buttons(r, deletable=False)
         return output
     response.s3.postp = postp
 

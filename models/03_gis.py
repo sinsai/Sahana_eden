@@ -890,8 +890,11 @@ table = db.define_table(tablename,
                         #Field("filter_field"),     # Used to build a simple query
                         #Field("filter_value"),     # Used to build a simple query
                         #Field("query", notnull=True),
+                        role_required(),       # Single Role
+                        #roles_permitted(),    # Multiple Roles (needs implementing in modules/s3gis.py)
                         comments(),
-                        migrate=migrate, )
+                        migrate=migrate,
+                        *s3_timestamp())
 
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 table.name.label = T("Name")
@@ -1012,6 +1015,8 @@ gis_layer = db.Table(db, "gis_layer",
                      # System default priority is set in s3gis. User priorities will be set in WMC.
                      #Field("priority", "integer", label=T("Priority")),
                      Field("enabled", "boolean", default=True, label=T("Available in Viewer?")),
+                     role_required(),       # Single Role
+                     #roles_permitted(),    # Multiple Roles (needs implementing in modules/s3gis.py)
                      migrate=migrate, *s3_timestamp())
 for layertype in gis_layer_types:
     resourcename = "layer_" + layertype

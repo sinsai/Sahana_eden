@@ -1,5 +1,5 @@
 CreateTestAccount, createTestAccount.CreateTestAccount
-UserManagementCreate, userManagement.UserManagementCreate
+UserManagement, userManagement.UserManagement
 Organisation, organisationTest
 CreateLocations, createLocations.CreateLocations
 CreateLocationEmpty, locationSelector.CreateLocationEmpty
@@ -22,5 +22,4 @@ UpdateLocationInL4NewInL3, locationSelector.UpdateLocationInL4NewInL3
 UpdateLocationEmptyNewNoParent, locationSelector.UpdateLocationEmptyNewNoParent
 UpdateLocationNoParentL0, locationSelector.UpdateLocationNoParentL0
 SearchLocations, locationSelector.SearchLocations
-UserManagementFinal, userManagement.UserManagementFinal
 DeleteTestAccount, deleteTestAccount.DeleteTestAccount

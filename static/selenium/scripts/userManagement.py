@@ -1,56 +1,59 @@
-import testSuite
-import unittest, time, re
-import actions
+from sahanaTest import SahanaTest
+import unittest
 
-from utilities import Utilities
 
-class UserManagement(unittest.TestCase):
-
-    def setUp(self):
-        self.action = actions.Action()
-        self.selenium = testSuite.SahanaTestSuite.selenium
-        self.newUsers = Utilities().getUserDetails()
+class UserManagement(SahanaTest):
+    """ Test the creation of creating user accounts """
     
-    def header(self):
-        # *** NOTE this script needs to be run by the user admin@example.com END NOTE ***
-        self.action.login(self, "admin@example.com", "testing" )
-        # This script will run various test cases against the User Management module found within the Administrator menu
-        # All users created by this test case will 'belong' to the example.com domain
-        self.assertTrue(self.selenium.is_element_present("link=admin@example.com"))
-
-      
-class UserManagementCreate(UserManagement):
-
-    def test_add_user(self):
+    
+    def firstRun(self):
+        self.useSahanaAdminAccount()
+        self.action.login(self._user, self._password )
+        self.users = []
         sel = self.selenium
-        self.header()
         print "Test script to Add test users"
+        self.newUsers = self.getUserDetails()
         self.userRole = {}
         for user in self.newUsers:
             details = user.split(',')
             self.assertTrue(len(details)>=4,user)
             # Add the new user
-            self.action.addUser(self, details[0], details[1], details[2], details[3])
+            self.action.addUser(details[0], details[1], details[2], details[3])
             if len(details) == 5:
-                self.action.addRole(self, details[2], details[4].strip())
-        self.action.clearSearch(self)
+                self.action.addRole(details[2], details[4].strip())
+            self.users.append(details[2])
+        self.action.clearSearch()
         sel.click("link=Logout")
         sel.wait_for_page_to_load("30000")
 
-class UserManagementFinal(UserManagement):
+      
+    # a file with one user on each line
+    # The user details are first_name, last_name, email, password [, roles] 
+    def getUserDetails(self):
+        source = open("../data/user.txt", "r")
+        values = source.readlines()
+        source.close()
+        return values
+#class UserManagementCreate(UserManagement):
+
+    def test_checkUser(self):
+        pass
+
+#class UserManagementFinal(UserManagement):
     
-    def test_del_users(self):
+#    def test_del_users(self):
+    def lastRun(self):
         sel = self.selenium
-        self.header()
+        self.useSahanaAdminAccount()
+        self.action.login(self._user, self._password )
         print "Test script to Delete test users"
-        for user in self.newUsers:
-            details = user.split(',')
-            self.assertTrue(len(details)>=4,user)
-            # Delete the user
-            self.action.delUser(self, details[2])
-        self.action.clearSearch(self)
+        for user in self.users:
+            self.action.delUser(user)
+        self.action.clearSearch()
         sel.click("link=Logout")
         sel.wait_for_page_to_load("30000")
 
 if __name__ == "__main__":
+    SahanaTest.setUpHierarchy()
     unittest.main()
+    OrganisationTest.selenium.stop()

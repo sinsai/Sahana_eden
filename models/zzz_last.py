@@ -15,7 +15,3 @@ for table in db.tables:
     if "location_id" in db[table]:
         tables.append(table)
 db.gis_layer_feature.resource.requires = IS_NULL_OR(IS_IN_SET(tables))
-
-# MSG
-s3msg = local_import("s3msg")
-msg = s3msg.S3Msg(globals(), deployment_settings, db, T, mail)

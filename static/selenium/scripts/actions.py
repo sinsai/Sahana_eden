@@ -1,8 +1,12 @@
 import unittest, time, re
+from selenium import selenium
 
-class Action:
-    def login(self, test, username, password, reveal=True):
-        sel = test.selenium
+class Action(unittest.TestCase):
+    def __init__ (self, selenium):
+        self.sel = selenium
+        
+    def login(self, username, password, reveal=True):
+        sel = self.sel
         if sel.is_element_present("link=Logout"):
             # Already logged in check the account
             if sel.is_element_present("link=%s" % username):
@@ -10,7 +14,7 @@ class Action:
                 return
             else:
                 # logged in but as a different user
-                self.logout(test)
+                self.logout()
         sel.open("/eden/default/user/login")
         sel.click("auth_user_email")
         sel.type("auth_user_email", username)
@@ -19,17 +23,17 @@ class Action:
         msg = "Unable to log in as " + username
         if reveal:
             msg += " with password " + password
-        sel.wait_for_page_to_load("30000")
-        test.assertTrue(self.successMsg(test, "Logged in"),msg)
+        self.assertTrue(self.successMsg("Logged in"),msg)
 
-    def logout(self, test):
-        sel = test.selenium
+    def logout(self):
+        sel = self.sel
         if sel.is_element_present("link=Logout"):
             sel.click("link=Logout")
             sel.wait_for_page_to_load("30000")
 
-    def search(self, test, searchString, expected):
-        sel = test.selenium
+    def search(self, searchString, expected):
+        sel = self.sel
+        result = ""
         # The search filter is part of the http://datatables.net/ JavaScript getting it to work with Selenium needs a bit of care.
         # Entering text in the filter textbox doesn't always trigger off the filtering and it is not possible with this method to clear the filter.
         # The solution is to put in a call to the DataTables API, namely the fnFilter function
@@ -38,42 +42,32 @@ class Action:
         time.sleep(1)
         sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( '"+searchString+"' );")
         time.sleep(1)
-        for i in range(12):
+        for i in range(10):
             try:
                 result = sel.get_text("//div[@id='table-container']")
                 if  expected in result: break
             except: pass
-            time.sleep(5)
-        else: test.fail("time out: Looking for %s within %s" % (expected, result ))
+            time.sleep(3)
+        else: self.fail("time out: Looking for %s within %s" % (expected, result ))
         
-    def searchUnique(self, test, uniqueName):
-        self.search(test, uniqueName, r"1 entries")
+    def searchUnique(self, uniqueName):
+        self.search(uniqueName, r"1 entries")
         
-    def searchUser(self, test, searchString, expected):
-        sel = test.selenium
-        result = ""
-        # TODO only open this page if on another page
-        sel.open("/eden/admin/user")
-        self.search(test, searchString, expected)
-
-    def searchUniqueUser(self, test, userName):
-        self.searchUser(test, userName, r"1 entries")
-        
-    def clearSearch(self, test):
-        sel = test.selenium
+    def clearSearch(self):
+        sel = self.sel
         sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( 'Clearing...' );")
-        self.searchUser(test, '', r"entries")
+        self.search('', r"entries")
         
-    def addUser(self, test, first_name, last_name, email, password):
+    def addUser(self, first_name, last_name, email, password):
         first_name = first_name.strip()
         last_name = last_name.strip()
         email = email.strip()
         password = password.strip()
         
-        sel = test.selenium
+        sel = self.sel
         # TODO only open this page if on another page
         sel.open("/eden/admin/user")
-        test.assertTrue(sel.is_element_present("show-add-btn"))
+        self.assertTrue(sel.is_element_present("show-add-btn"))
         sel.click("show-add-btn")
         sel.type("auth_user_first_name", first_name)
         sel.type("auth_user_last_name", last_name)
@@ -83,17 +77,18 @@ class Action:
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         msg = "Unable to create user " + first_name + " " + last_name + " with email " + email
-        test.assertTrue(self.successMsg(test, "User added"),msg)
-        self.searchUniqueUser(test, email)
-        test.assertTrue(re.search(r"Showing 1 to 1 of 1 entries", sel.get_text("//div[@class='dataTables_info']")))
+        self.assertTrue(self.successMsg("User added"),msg)
+        self.searchUnique(email)
+        self.assertTrue(re.search(r"Showing 1 to 1 of 1 entries", sel.get_text("//div[@class='dataTables_info']")))
         print "User %s created" % (email)
 
-    def addRole(self, test, email, roles):
+    def addRole(self, email, roles):
         email = email.strip()
         roles = roles.strip()
         roleList = roles.split(' ')
-        sel = test.selenium
-        self.searchUniqueUser(test, email)
+        
+        sel = self.sel
+        self.searchUnique(email)
         sel.click("link=Open")
         sel.wait_for_page_to_load("30000")
         sel.click("//div[@id='content']/a[2]")
@@ -104,26 +99,27 @@ class Action:
             sel.click("//input[@value='Add']")
             sel.wait_for_page_to_load("30000")
             msg = "Failed to add role %s to user %s" % (role.strip() , email)
-            test.assertTrue(self.successMsg(test, "User Updated"),msg)
+            self.assertTrue(self.successMsg("User Updated"),msg)
             print "User %s added to group %s" % (email, role.strip())
         sel.open("/eden/admin/user")
 
-    def delUser(self, test, email):
+    def delUser(self, email):
         email = email.strip()
-        sel = test.selenium
+        print "Deletign user %s" % email
+        sel = self.sel
         sel.open("/eden/admin/user")
-        self.searchUnique(test, email)
+        self.searchUnique(email)
 
         sel.click("link=Delete")
-        test.assertTrue(re.search(r"^Sure you want to delete this object[\s\S]$", sel.get_confirmation()))
-        test.assertTrue(self.successMsg(test,"User deleted"))
-        self.searchUser(test, email, r"No matching records found")
+        self.assertTrue(re.search(r"^Sure you want to delete this object[\s\S]$", sel.get_confirmation()))
+        self.assertTrue(self.successMsg("User deleted"))
+        self.search(email, r"No matching records found")
         print "User %s deleted" % (email)
 
     # Method to locate a message in a div with a class given by type
-    def findMsg(self, test, message, type):
-        sel = test.selenium
-        for cnt in range (60):
+    def findMsg(self, message, type):
+        sel = self.sel
+        for cnt in range (10):
             i = 1
             while sel.is_element_present('//div[@class="%s"][%s]' % (type, i)):
                 if re.search(message, sel.get_text('//div[@class="%s"][%s]' % (type, i))): return True
@@ -132,58 +128,67 @@ class Action:
         return False
     
     # Method used to check for confirmation messages
-    def successMsg(self, test, message):
-        return self.findMsg(test, message, "confirmation")
+    def successMsg(self, message):
+        return self.findMsg(message, "confirmation")
 
     # Method used to check for error messages
-    def errorMsg(self, test, message):
-        return self.findMsg(test, message, "error")
+    def errorMsg(self, message):
+        return self.findMsg(message, "error")
 
     # Method to check that form element is present
-    def element(self, test, type, id):
-        sel = test.selenium
+    def element(self, type, id):
+        sel = self.sel
         element = '//%s[@id="%s"]' % (type, id)
-        test.assertTrue(sel.is_element_present(element), "%s element %s is missing" % (type, id))
+        self.assertTrue(sel.is_element_present(element), "%s element %s is missing" % (type, id))
         print "Form %s element %s is present" % (type, id)
         
     # Method to click on a tab
-    def clickTab(self, test, name):
-        sel = test.selenium
+    def clickTab(self, name):
+        sel = self.sel
         element = "//div[@id='rheader_tabs']/span/a[text()='%s']" % (name)
         sel.click(element)
         sel.wait_for_page_to_load("30000")
         
     # Method to check button link
-    def btnLink(self, test, id, name):
-        sel = test.selenium
+    def btnLink(self, id, name):
+        sel = self.sel
         element = '//a[@id="%s"]' % (id)
         errMsg = "%s button is missing" % (name)
-        test.assertTrue(sel.is_element_present(element), errMsg)
-        test.assertTrue(sel.get_text(element),errMsg)
+        self.assertTrue(sel.is_element_present(element), errMsg)
+        self.assertTrue(sel.get_text(element),errMsg)
         print "%s button is present" % (name)
         
+    # Method to check button link is not present
+    def noBtnLink(self, id, name):
+        sel = self.sel
+        element = '//a[@id="%s"]' % (id)
+        errMsg = "Unexpected presence of %s button" % (name)
+        if sel.is_element_present(element):
+            self.assertFalse(sel.get_text(element),errMsg)
+        print "%s button is not present" % (name)
+
     # Method to check that form button is present
-    def button(self, test, name):
-        sel = test.selenium
+    def button(self, name):
+        sel = self.sel
         element = '//input[@value="%s"]' % (name)
         errmsg = "%s button is missing" % (name)
-        test.assertTrue(sel.is_element_present(element), errmsg)
+        self.assertTrue(sel.is_element_present(element), errmsg)
         print "%s button is present" % (name)
         
     # Method to check that the help message is displayed
-    def helpBallon(self, test, helpTitle):
-        sel = test.selenium
+    def helpBallon(self, helpTitle):
+        sel = self.sel
         element = "//div[contains(@title,'%s')]" % (helpTitle)
-        test.assertTrue(sel.is_element_present(element))
+        self.assertTrue(sel.is_element_present(element))
         sel.mouse_over(element)
-        test.assertFalse(sel.is_element_present(element), "Help %s is missing" % (helpTitle))
+        self.assertFalse(sel.is_element_present(element), "Help %s is missing" % (helpTitle))
         print "Help %s is present" % (helpTitle)
 
     # Method to check that the layout of a form
-    def checkForm (self, test, elementList, buttonList, helpList):
+    def checkForm (self, elementList, buttonList, helpList):
         for (type, id) in elementList:
-            self.element(test, type, id)
+            self.element(type, id)
         for name in buttonList:
-            self.button(test, name)
+            self.button(name)
         for title in helpList:
-            self.helpBallon(test, title)
+            self.helpBallon(title)

@@ -579,6 +579,24 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
 
     return rheader_tabs
 
+def s3_sortOrderedDict(adict):
+        """
+            Sort an OrderedDict by Value
+            - assumes unique values
+        """
+        values = adict.values()
+        values.sort()
+        result = OrderedDict()
+        keys = adict.keys()
+        for value in values:
+            for key in keys:
+                if adict[key] == value:
+                    result[key] = value
+                    break
+        return result
+
+# -----------------------------------------------------------------------------
+# CRUD functions
 # -----------------------------------------------------------------------------
 def shn_import_csv(file, table=None):
 

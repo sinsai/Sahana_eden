@@ -100,6 +100,8 @@ class S3DataStore(object):
         INTEGRITY_ERROR = "Integrity error" #T("Cannot delete whilst there are linked records. Please delete linked records first.")
     )
 
+
+    # -------------------------------------------------------------------------
     def __init__(self, environment, db):
         """
         Constructor
@@ -556,6 +558,10 @@ class S3DataStore(object):
         else:
             text = val = value
 
+        if not xml_escape and \
+           str(field.type) in ("string", "list:string", "text"):
+            val =text = self.xml.xml_encode(str(val))
+
         # Get text representation
         if field.represent:
             text = str(cache.ram("%s_repr_%s" % (field, val),
@@ -581,7 +587,7 @@ class S3DataStore(object):
                 else:
                     text = ""
             except etree.XMLSyntaxError:
-                pass
+                text = text.replace("<", "<!-- <").replace(">", "> -->")
 
         # Link ID field
         if fname == "id" and linkto:

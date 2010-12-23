@@ -100,6 +100,8 @@ class S3DataStore(object):
         INTEGRITY_ERROR = "Integrity error" #T("Cannot delete whilst there are linked records. Please delete linked records first.")
     )
 
+
+    # -------------------------------------------------------------------------
     def __init__(self, environment, db):
         """
         Constructor

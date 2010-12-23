@@ -42,6 +42,7 @@ response.s3.mobile = ifmobile(request)
 
 # Interactive view formats
 shn_interactive_view_formats = ("html", "popup", "iframe")
+s3.interactive_view_formats = shn_interactive_view_formats
 
 # Error messages
 UNAUTHORISED = T("Not authorised!")

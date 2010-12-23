@@ -272,7 +272,7 @@ class S3Resource(object):
         """
 
         table = self.table
-        if not self._query:
+        if self._query is None:
             self.build_query()
 
         # Get the rows

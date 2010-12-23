@@ -970,7 +970,9 @@ class S3CRUD(S3Method):
                 limit = int(limit)
             except ValueError:
                 start = 0
-                limit = None
+                limit = None # use default
+        else:
+            start = None # use default
 
         # Linkto
         if not linkto:

@@ -255,6 +255,8 @@ s3xrc.content_type = Storage(
 # JSON Formats
 s3xrc.json_formats = ["geojson"]
 
+s3xrc.ROWSPERPAGE = 20
+
 ##########
 # Messages
 ##########

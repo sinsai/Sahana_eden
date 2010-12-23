@@ -1167,13 +1167,27 @@ class S3CRUD(S3Method):
         # Check for slicing
         if not fields:
             fields = [table.id]
-        if limit is not None:
+
+        attributes = dict()
+
+        if orderby is not None:
+            attributes.update(orderby=orderby)
+
+        # Slicing
+        if start is not None:
+            if not limit:
+                limit = self.datastore.ROWSPERPAGE
+            if limit <= 0:
+                limit = 1
+            if start < 0:
+                start = 0
             limitby = (start, start + limit)
-        else:
-            limitby = None
+            attributes.update(limitby=limitby)
+
+        if left is not None:
+            attributes.update(left=left)
 
         # Retrieve the rows
-        attributes = dict(left=left, orderby=orderby, limitby=limitby)
         rows = self.resource.select(*fields, **attributes)
         if not rows:
             return None

@@ -155,7 +155,7 @@ if deployment_settings.has_module(module):
     table.code.label = T("Category")
     table.code.requires = IS_IN_SET(irs_incident_type_opts)
     table.code.represent = lambda opt: irs_incident_type_opts.get(opt, opt)
-    
+
     def irs_icategory_onvalidation(form):
         """
             Incident Category Validation:
@@ -166,12 +166,12 @@ if deployment_settings.has_module(module):
 
         table = db.irs_icategory
         category, error = IS_NOT_ONE_OF(db, "irs_icategory.code")(form.vars.code)
-        if error:          
+        if error:
             form.errors.code = error
 
         return False
     s3xrc.model.configure(table,
-                          onvalidation=irs_icategory_onvalidation, 
+                          onvalidation=irs_icategory_onvalidation,
                           list_fields=[ "code" ])
 
     # -----------------------------------------------------------------------------
@@ -251,7 +251,16 @@ if deployment_settings.has_module(module):
     table.verified.writable = table.verified.readable = False
 
     s3xrc.model.configure(table,
-                          list_fields = ["id", "category", "location_id", "organisation_id", "verified", "name", "message"]
+                          super_entity = db.sit_situation,
+                          list_fields = [
+                            "id",
+                            "category",
+                            "location_id",
+                            "organisation_id",
+                            "verified",
+                            "name",
+                            "message",
+                            ]
                           )
 
     # irs_ireport as component of doc_documents

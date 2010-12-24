@@ -428,28 +428,26 @@ class S3Exporter(object):
         @param limit: maximum number of records to export (for slicing)
         @param list_fields: names of fields to include in the export
                             (None for all fields)
-        @param
 
         """
+
+        response = self.datastore.response
 
         attributes = dict()
 
         if orderby is not None:
             attributes.update(orderby=orderby)
 
-        # Slicing
-        if start is not None:
-            if not limit:
-                limit = self.datastore.ROWSPERPAGE
-            if limit <= 0:
-                limit = 1
-            if start < 0:
-                start = 0
-            limitby = (start, start + limit)
+        limitby = resource.limitby(start=start, limit=limit)
+        if limitby is not None:
             attributes.update(limitby=limitby)
 
         # Get the rows and return as json
         rows = resource.select(*fields, **attributes)
+
+        if response:
+            response.headers["Content-Type"] = "text/x-json"
+
         return rows.json()
 
 

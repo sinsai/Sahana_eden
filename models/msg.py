@@ -11,7 +11,8 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("outgoing_sms_handler"),
-                            Field("default_country_code", "integer", default=44),
+                            # Moved to deployment_settings
+                            #Field("default_country_code", "integer", default=44),
                             migrate=migrate)
 
     table.outgoing_sms_handler.requires = IS_IN_SET(["Modem","Gateway","Tropo"], zero=None)

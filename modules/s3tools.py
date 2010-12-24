@@ -207,25 +207,50 @@ class S3Permission(object):
     }
 
 
+    # -------------------------------------------------------------------------
     def __init__(self, auth, environment, tablename=None):
 
         # Instantiated once per request, but before Auth tables
         # are defined and authentication is checked, thus no use
         # to check permissions in the constructor
 
-        # Environment
-        environment = Storage(environment)
+        # Auth
         self.auth = auth
-        self.db = environment.db
+
+        # Environment
+        env = Storage(environment)
+        self.session = env.session
+        self.db = env.db
+
+        # Permissions table
         self.tablename = tablename or self.TABLENAME
         self.table = self.db.get(self.tablename, None)
-        self.migrate = environment.migrate
-        self.session = environment.session
+
+        # Error messages
+        T = env.T
+        self.INSUFFICIENT_PRIVILEGES = T("Insufficient Privileges")
+        self.AUTHENTICATION_REQUIRED = T("Authentication Required")
+
+        # Settings
+        self.migrate = env.migrate
+        self.modules = env.deployment_settings.modules
 
         # Request information
-        request = environment.request
+        request = env.request
         self.controller = request.controller
         self.function = request.function
+
+        # Request format
+        self.format = request.extension
+        if "format" in request.get_vars:
+            ext = request.get_vars.format
+            if isinstance(ext, list):
+                ext = ext[-1]
+            self.format = ext.lower() or self.format
+        else:
+            ext = [a for a in request.args if "." in a]
+            if ext:
+                self.format = ext[-1].rsplit(".", 1)[1].lower()
 
         # Pages which never require permission
         self.permitted_pages = (
@@ -239,13 +264,14 @@ class S3Permission(object):
         self.loginpage = URL(r=request, c="default", f="user/login") # @todo: next!
 
 
+    # -------------------------------------------------------------------------
     def define_table(self):
 
         """ Define permissions table """
 
         table_group = self.auth.settings.table_group
         if table_group is None:
-            table_group = "integer"
+            table_group = "integer" # fallback
 
         if not self.table:
             self.table = self.db.define_table(self.tablename,
@@ -257,6 +283,7 @@ class S3Permission(object):
                             migrate=self.migrate)
 
 
+    # -------------------------------------------------------------------------
     def __call__(self, table=None, record_id=None):
 
         """ Get the permissions for a path """
@@ -264,42 +291,79 @@ class S3Permission(object):
         return self.ALL # not used yet
 
         if self.has_role(1):
+            # User is admin => no further permission checking
             return self.ALL
 
+        # Target page
         page = "%s/%s" % (self.controller, self.function)
 
         if page in self.permitted_pages and table is None:
+            # Page is never restricted
             return self.ALL
         else:
             # Check controller permission
-            pass
+            if self.controller in self.modules:
+                module = self.modules[self.controller]
+                if not module.access: #module.restricted:
+                    # Controller is not restricted in deployment settings
+                    pass
+                else:
+                    # Controller is restricted to module.access
+                    return self.NONE
+            else:
+                # not restricted by default
+                pass
+
+        return self.ALL
 
         if table is not None:
             # Check table+record permission
             pass
 
+        # Default policy
         return self.NONE
 
 
+    # -------------------------------------------------------------------------
+    def require(self):
+
+        """ Permission check including action upon failure
+
+            @example:
+                auth.permission.require(my_table, auth.permission.ALL)
+
+        """
+
+        raise NotImplementedError
+
+
+    # -------------------------------------------------------------------------
     def has_role(self, role):
 
-        # @todo: re-implement
+        # @todo: re-implement?
 
         return self.auth.shn_has_role(role)
 
 
+    # -------------------------------------------------------------------------
     def fail(self):
 
         """ Action upon insufficient permissions """
 
-        # @todo: check for non-interactive formats
-
-        if self.auth.shn_logged_in():
-            self.session.error = "Insufficient privileges" # @todo: internationalization!
-            redirect(self.homepage)
+        if self.format == "html":
+            # HTML interactive request => flash message + redirect
+            if self.auth.shn_logged_in():
+                self.session.error = self.INSUFFICIENT_PRIVILEGES
+                redirect(self.homepage)
+            else:
+                self.session.error = self.AUTHENTICATION_REQUIRED
+                redirect(self.loginpage)
         else:
-            self.session.error = "Authentication required" # @todo: internationalization!
-            redirect(self.loginpage)
+            # non-HTML request => raise proper HTTP error
+            if self.auth.shn_logged_in():
+                raise HTTP(403)
+            else:
+                raise HTTP(401)
 
 
 # =============================================================================

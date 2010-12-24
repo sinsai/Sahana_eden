@@ -249,8 +249,9 @@ table.date_of_birth.requires = IS_NULL_OR(IS_DATE_IN_RANGE(
                                error_message="%s %%(max)s!" %
                                              T("Enter a date before")))
 
-table.first_name.requires = IS_NOT_EMPTY()
-table.first_name.requires.error_message = T("Please enter a First Name")
+table.first_name.requires = IS_NOT_EMPTY(error_message = T("Please enter a First Name"))
+# NB Not possible to have an IS_NAME() validator here
+# http://eden.sahanafoundation.org/ticket/834
 
 table.pe_label.comment = DIV(DIV(_class="tooltip",
     _title=T("ID Label") + "|" + T("Number or Label on the identification tag this person is wearing (if any).")))

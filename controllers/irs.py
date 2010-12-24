@@ -19,22 +19,9 @@ response.menu_options = [
         [T("Add"), False, URL(r=request, f="ireport", args="create")],
         #[T("Search"), False, URL(r=request, f="ireport", args="search")]
     ]],
-    #[T("Assessments"), False, URL(r=request, f="iassessment"),[
-    #    [T("List"), False, URL(r=request, f="iassessment")],
-    #    [T("Add"), False, URL(r=request, f="iassessment", args="create")],
-        #[T("Search"), False, URL(r=request, f="iassessment", args="search")]
-    #]],
     #[T("Map"), False, URL(r=request, f="maps")],
 ]
 
-if shn_has_role("Editor"):
-    response.menu_options.append(
-        [T("Confirmed Incidents"), False, URL(r=request, f="incident"),[
-            [T("List"), False, URL(r=request, f="incident")],
-            [T("Add"), False, URL(r=request, f="incident", args="create")],
-            #[T("Search"), False, URL(r=request, f="incident", args="search")]
-        ]]
-    )
 if shn_has_role(1):
     response.menu_options.append(
         [T("Incident Categories"), False, URL(r=request, f="icategory"),[
@@ -88,41 +75,6 @@ def icategory():
     return output
 
 # -----------------------------------------------------------------------------
-def incident():
-
-    """
-        Incidents, RESTful controller
-
-        These are the 'master' Incidents, for each of which there may be many Reports
-        @ToDo: Replace with 'Lead' Incident?
-    """
-
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
-    table = db[tablename]
-
-    # @ToDo: Replace with doc_image
-    db.irs_iimage.assessment_id.readable = \
-    db.irs_iimage.assessment_id.writable = False
-
-    db.irs_iimage.incident_id.readable = \
-    db.irs_iimage.incident_id.writable = False
-
-    db.irs_iimage.report_id.readable = \
-    db.irs_iimage.report_id.writable = False
-
-    rheader = lambda r: shn_irs_rheader(r, tabs = [(T("Incident Details"), None),
-                                                   (T("Reports"), "ireport"),
-                                                   (T("Images"), "iimage"),
-                                                   #(T("Assessments"), "iassessment"),
-                                                   (T("Response"), "iresponse")
-                                                  ])
-
-    s3xrc.model.configure(table, listadd=False)
-    output = s3_rest_controller(module, resource, rheader=rheader)
-    return output
-
-# -----------------------------------------------------------------------------
 def ireport():
 
     """ Incident Reports, RESTful controller """
@@ -137,6 +89,7 @@ def ireport():
     # Non-Editors should only see a limited set of options
     if not shn_has_role("Editor"):
         allowed_opts = [irs_incident_type_opts.get(opt.code, opt.code) for opt in db().select(db.irs_icategory.code)]
+        allowed_opts.sort()
         table.category.requires = IS_NULL_OR(IS_IN_SET(allowed_opts))
 
     # Pre-processor
@@ -155,61 +108,23 @@ def ireport():
     if not shn_has_role("Editor"):
         table.incident_id.readable = table.incident_id.writable = False
 
-    # @ToDo: Replace with doc_image
-    db.irs_iimage.assessment_id.readable = \
-    db.irs_iimage.assessment_id.writable = False
-
-    db.irs_iimage.report_id.readable = \
-    db.irs_iimage.report_id.writable = False
-
     # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False, copyable=True)
+    def user_postp(r, output):
+        shn_action_buttons(r, deletable=False, copyable=True)
         return output
     response.s3.postp = user_postp
 
     rheader = lambda r: shn_irs_rheader(r, tabs = [(T("Report Details"), None),
-                                                   (T("Images"), "iimage")
+                                                   (T("Images"), "image")
                                                   ])
 
-    #s3xrc.model.configure(table, listadd=False)
     output = s3_rest_controller(module, resource, rheader=rheader)
     if response.s3.actions:
         response.s3.actions.append({"url" : str(URL(r=request, c="assess", f="basic_assess", vars = {"ireport_id":"[id]"})),
                                     "_class" : "action-btn",
-                                    "label" : "Assess"
-                                    }
-                                   )
+                                    "label" : "Assess"})
 
     return output
-
-# -----------------------------------------------------------------------------
-# Currently unused - Assessment module (in 'sitrep' currently) is used instead
-def iassessment():
-
-    """ Incident Assessment, RESTful controller """
-
-    resource = request.function
-
-    db.irs_iimage.assessment_id.readable = \
-    db.irs_iimage.assessment_id.writable = False
-
-    db.irs_iimage.report_id.readable = \
-    db.irs_iimage.report_id.writable = False
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
-        return output
-    response.s3.postp = user_postp
-
-    rheader = lambda r: shn_irs_rheader(r, tabs = [(T("Assessment Details"), None),
-                                                   (T("Images"), "iimage")
-                                                  ])
-
-    output = s3_rest_controller(module, resource, rheader=rheader)
-    return output
-
 
 # -----------------------------------------------------------------------------
 def shn_irs_rheader(r, tabs=[]):
@@ -242,37 +157,6 @@ def shn_irs_rheader(r, tabs=[]):
                             ),
                           create_request,
                           rheader_tabs)
-
-        elif r.name == "incident":
-            incident = r.record
-            location = incident.location_id
-            if location:
-                location = shn_gis_location_represent(location)
-            category = irs_incident_type_opts.get(incident.category, incident.category)
-            rheader = DIV(TABLE(
-                            TR(
-                                TH(T("Short Description") + ": "), incident.name,
-                                TH(T("Category") + ": "), category),
-                            TR(
-                                TH(T("Contacts") + ": "), incident.contact,
-                                TH(T("Location") + ": "), location)
-                            ),
-                      rheader_tabs)
-
-        elif r.name == "iassessment":
-            assessment = r.record
-            author = shn_pr_person_represent(assessment.created_by)
-            itype = irs_assessment_type_opts.get(assessment.itype, UNKNOWN_OPT)
-            etype = irs_event_type_opts.get(assessment.event_type, UNKNOWN_OPT)
-            rheader = DIV(TABLE(
-                            TR(
-                                TH(T("Assessment Type") + ": "), itype,
-                                TH(T("Author") + ": "), author),
-                            TR(
-                                TH(T("Event Type") + ": "), etype,
-                                TH(T("Date") + ": "), assessment.datetime)
-                            ),
-                      rheader_tabs)
 
         return rheader
 

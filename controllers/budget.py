@@ -1102,19 +1102,19 @@ def project():
     """ RESTful CRUD controller """
 
     resource = request.function
-    tablename = "org_%s" % (resource)
+    tablename = "project_%s" % (resource)
     table = db[tablename]
 
-    output = s3_rest_controller("org", resource,
-                                 rheader=lambda jr: shn_project_rheader(jr,
-                                            tabs = [(T("Basic Details"), None),
-                                                    (T("Staff"), "staff"),
-                                                    (T("Tasks"), "task"),
-                                                    #(T("Donors"), "organisation"),
-                                                    #(T("Sites"), "site"),          # Ticket 195
-                                                   ]
-                                            )
-                                )
+    tabs = [(T("Basic Details"), None),
+            (T("Staff"), "staff"),
+            (T("Tasks"), "task"),
+           #(T("Donors"), "organisation"),
+           #(T("Sites"), "site"),   # Ticket 195
+           ]
+    rheader = lambda r: shn_project_rheader(r, tabs=tabs)
+
+    output = s3_rest_controller("project", resource,
+                                rheader=rheader)
 
     return output
 

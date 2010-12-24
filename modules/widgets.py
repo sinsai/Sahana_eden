@@ -493,7 +493,7 @@ class S3LocationSelectorWidget:
                     )
         attr = StringWidget._attributes(field, default, **attributes)
         # Hide the real field
-        attr["_class"] = attr["_class"] + " hidden"
+        attr["_class"] = "hidden"
 
         map_popup = ""
 
@@ -713,7 +713,8 @@ class S3LocationSelectorWidget:
             opts = [OPTION(v, _value=k) for (k, v) in options]
 
             attr_dropdown["_id"] = "gis_location_%s" % level
-            attr_dropdown["_name"] = "gis_location_%s" % level
+            # Need to blank the name to prevent it from appearing in form.vars & requiring validation
+            attr_dropdown["_name"] = ""
             if visible:
                 if level:
                     label = LABEL(location_hierarchy[level], ":", _id="gis_location_label_%s" % level)
@@ -721,7 +722,7 @@ class S3LocationSelectorWidget:
                     label = LABEL(T("Specific Location"), ":", _id="gis_location_label_%s" % level)
             else:
                 # Hide the Dropdown & the Label
-                attr_dropdown["_class"] = attr_dropdown["_class"] + " hidden"
+                attr_dropdown["_class"] = "hidden"
                 if level:
                     label = LABEL(location_hierarchy[level], ":", _id="gis_location_label_%s" % level, _class="hidden")
                 else:
@@ -729,9 +730,9 @@ class S3LocationSelectorWidget:
 
             widget = SELECT(*opts, **attr_dropdown)
             if button:
-                row = DIV(TR(label), TR(TD(widget), TD(button)))
+                row = DIV(TR(label, _id="gis_location_%s_label__row" % level), TR(TD(widget, _id="gis_location_%s__row" % level), TD(button)))
             else:
-                row = DIV(TR(label), TR(widget))
+                row = DIV(TR(label, _id="gis_location_%s_label__row" % level), TR(widget, _id="gis_location_%s__row" % level))
             return row
 
         dropdowns = DIV()
@@ -976,8 +977,8 @@ class S3LocationSelectorWidget:
 
         # The overall layout of the components
         return TAG[""](
-                        #divider,       # This is in the widget, so underneath the label :/ Add in JS? 'Sections'?
-                        INPUT(**attr),  # Real input, which is hidden
+                        #divider,           # This is in the widget, so underneath the label :/ Add in JS? 'Sections'?
+                        TR(INPUT(**attr)),  # Real input, which is hidden
                         dropdowns,
                         TR(TD(search_button, autocomplete)),
                         TR(TD(add_button, cancel_button)),

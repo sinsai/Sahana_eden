@@ -1,0 +1,62 @@
+{{form.attributes["_id"] = "regform"}}
+{{form[0].insert(-8, TR(
+	TD(
+		LABEL(T("Mobile Phone") + ":")
+	, _class="w2p_fl"), 
+	TD()
+))}}
+{{form[0].insert(-8, TR(
+	TD(
+	 	INPUT(_name="mobile", _id="mobile", _class="string")
+	, _class="w2p_fw"),
+	TD(_class="w2p_fc")
+))}}
+{{form[0].insert(-4, TR(
+	TD(
+		LABEL(T("Verify password") + ":")
+	, _class="w2p_fl"), 
+	TD()
+))}}
+{{form[0].insert(-4, TR(
+	TD(
+	 	INPUT(_name="password_two", _id="password_two", _type="password")
+	, _class="w2p_fw"),
+	TD(_class="w2p_fc")
+))}}
+
+{{if session.s3.debug:}}
+  {{if session.s3.cdn:}}
+<script src="http://ajax.microsoft.com/ajax/jquery.validate/1.7/jquery.validate.js" type="text/javascript"></script>
+  {{else:}}
+<script src="/{{=request.application}}/static/scripts/S3/jquery.validate.js" type="text/javascript"></script>
+  {{pass}}
+ {{else:}}
+  {{if session.s3.cdn:}}
+<script src="http://ajax.microsoft.com/ajax/jquery.validate/1.7/jquery.validate.pack.js" type="text/javascript"></script>
+  {{else:}}
+<script src="/{{=request.application}}/static/scripts/S3/jquery.validate.pack.js" type="text/javascript"></script>
+  {{pass}}
+ {{pass}}
+
+<script src="/{{=request.application}}/static/scripts/S3/jquery.pstrength-min.1.2.js" type="text/javascript"></script>
+<script type="text/javascript">
+{{include "auth/validation.js"}}
+    $(function() {
+        $('.password:last').pstrength();
+        if ($('#auth_user_password').val()) {
+            // Update form: don't want password_two validation
+            $("#password_two").rules("remove");
+            $('#auth_user_password').change( function() {
+                // unless the password is being changed
+                $("#password_two").rules("add", {
+                    required: true,
+                    equalTo: '.password:last',
+                    messages: {
+                        required: '  {{=T("Repeat your password")}}',
+                        equalTo: '  {{=T("Enter the same password as above")}}'
+                    },
+                });
+            });
+        }
+    });
+</script>

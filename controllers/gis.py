@@ -86,6 +86,8 @@ def define_map(window=False, toolbar=False, config=None):
     feature_queries = []
     feature_layers = db(db.gis_layer_feature.enabled == True).select()
     for layer in feature_layers:
+        if layer.role_required and not auth.shn_has_role(layer.role_required):
+            continue
         _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons)
         if _layer:
             feature_queries.append(_layer)

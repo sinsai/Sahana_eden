@@ -52,7 +52,7 @@ if deployment_settings.has_module(module):
     resourcename = "freport"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            location_id(),
+                            location_id(empty=False),
                             Field("datetime", "datetime"),
                             document_id(),
                             comments(),

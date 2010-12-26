@@ -449,6 +449,17 @@ class S3CRUD(S3Method):
 
         editable = self._config("editable", True)
         deletable = self._config("deletable", True)
+        list_fields = self._config("list_fields")
+
+        # List fields
+        if not list_fields:
+            fields = self.resource.readable_fields()
+        else:
+            fields = [table[f] for f in list_fields if f in table.fields]
+        if not fields:
+            fields = []
+        if fields[0].name != table.fields[0]:
+            fields.insert(0, table[table.fields[0]])
 
         # Get the target record ID
         record_id = self._record_id(r)
@@ -522,6 +533,10 @@ class S3CRUD(S3Method):
             list_fields = self._config("list_fields")
             exporter = self.resource.exporter.xls
             return exporter(self.resource, list_fields=list_fields)
+
+        elif representation == "json":
+            exporter = S3Exporter(self.datastore)
+            return exporter.json(self.resource, fields=fields)
 
         else:
             r.error(501, self.datastore.ERROR.BAD_FORMAT)
@@ -955,7 +970,9 @@ class S3CRUD(S3Method):
                 limit = int(limit)
             except ValueError:
                 start = 0
-                limit = None
+                limit = None # use default
+        else:
+            start = None # use default
 
         # Linkto
         if not linkto:
@@ -1150,13 +1167,23 @@ class S3CRUD(S3Method):
         # Check for slicing
         if not fields:
             fields = [table.id]
-        if limit is not None:
-            limitby = (start, start + limit)
-        else:
-            limitby = None
+
+        attributes = dict()
+
+        # Orderby
+        if orderby is not None:
+            attributes.update(orderby=orderby)
+
+        # Slice
+        limitby = self.resource.limitby(start=start, limit=limit)
+        if limitby is not None:
+            attributes.update(limitby=limitby)
+
+        # Left outer joins
+        if left is not None:
+            attributes.update(left=left)
 
         # Retrieve the rows
-        attributes = dict(left=left, orderby=orderby, limitby=limitby)
         rows = self.resource.select(*fields, **attributes)
         if not rows:
             return None

@@ -272,7 +272,7 @@ class S3Resource(object):
         """
 
         table = self.table
-        if not self._query:
+        if self._query is None:
             self.build_query()
 
         # Get the rows
@@ -318,18 +318,7 @@ class S3Resource(object):
         if not self._multiple:
             limitby = (0, 1)
         else:
-            # Slicing
-            if start is not None:
-                self._slice = True
-                if not limit:
-                    limit = self.datastore.ROWSPERPAGE
-                if limit <= 0:
-                    limit = 1
-                if start < 0:
-                    start = 0
-                limitby = (start, start + limit)
-            else:
-                limitby = None
+            limitby = self.limitby(start=start, limit=limit)
 
         if limitby:
             rows = self.select(self.table.ALL, limitby=limitby)
@@ -1627,6 +1616,36 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
+    def limitby(self, start=None, limit=None):
+        """
+        Convert start+limit parameters into a limitby tuple
+
+        @param start: index of the first record to select
+        @param limit: maximum number of records to select
+
+
+        If limit is specified without start, then start is assumed 0
+        If start is without limit, then limit defaults to ROWSPERPAGE
+        If limit is 0 (or less), then it is assumed 1
+        If start is less than 0, then it is assumed 0
+
+        """
+
+        if start is None and not limit:
+            return None
+        else:
+            start = 0
+
+        if not limit:
+            limit = self.datastore.ROWSPERPAGE
+        if limit <= 0:
+            limit = 1
+        if start < 0:
+            start = 0
+        return (start, start + limit)
+
+
+    # -------------------------------------------------------------------------
     def url(self,
             id=None,
             uid=None,
@@ -1947,16 +1966,15 @@ class S3Request(object):
         components = [c[0].name
                      for c in model.get_components(self.prefix, self.name)]
 
-        if len(self.request.args) > 0:
-            for i in xrange(len(self.request.args)):
-                arg = self.request.args[i]
+        if len(self.request.args):
+            for arg in self.request.args:
                 if "." in arg:
                     arg, ext = arg.rsplit(".", 1)
-                    if ext and len(ext) > 0:
-                        self.representation = str.lower(ext)
+                    if ext:
+                        self.representation = ext.lower()
                         self.extension = True
                 if arg:
-                    self.args.append(str.lower(arg))
+                    self.args.append(arg.lower())
 
             args = self.args
             if args[0].isdigit():
@@ -1994,7 +2012,10 @@ class S3Request(object):
                         self.id = args[1]
 
         if "format" in self.request.get_vars:
-            self.representation = str.lower(self.request.get_vars.format)
+            ext = self.request.get_vars.format
+            if isinstance(ext, list):
+                ext = ext[-1]
+            self.representation = ext.lower() or self.representation
 
         if not self.representation:
             self.representation = self.DEFAULT_REPRESENTATION

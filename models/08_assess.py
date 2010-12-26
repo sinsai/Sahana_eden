@@ -28,7 +28,7 @@ if deployment_settings.has_module(module):
                             organisation_id(), 
                             person_id("assessor_person_id"),
                             comments(),
-                            ireport_id(),   # Assessment can be linked to an Incident Report
+                            incident_id(),      # Assessment can be linked to an Incident Report
                             migrate=migrate, *s3_meta_fields()
                             )
     

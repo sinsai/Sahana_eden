@@ -149,6 +149,8 @@ class S3Config(Storage):
     # L10N Settings
     def get_L10n_countries(self):
         return self.L10n.get("countries", "")
+    def get_L10n_default_country_code(self):
+        return self.L10n.get("default_country_code", 1)
     def get_L10n_default_language(self):
         return self.L10n.get("default_language", "en")
     def get_L10n_display_toolbar(self):

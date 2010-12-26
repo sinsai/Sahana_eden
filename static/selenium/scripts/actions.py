@@ -105,7 +105,7 @@ class Action(unittest.TestCase):
 
     def delUser(self, email):
         email = email.strip()
-        print "Deletign user %s" % email
+        print "Deleting user %s" % email
         sel = self.sel
         sel.open("/eden/admin/user")
         self.searchUnique(email)
@@ -115,6 +115,52 @@ class Action(unittest.TestCase):
         self.assertTrue(self.successMsg("User deleted"))
         self.search(email, r"No matching records found")
         print "User %s deleted" % (email)
+
+    def addLocation(self, holder, name, level, parent=None, lat=None, lon=None):
+        sel = self.sel
+        name = holder+name+holder
+        if parent == None: parentHolder = None
+        else: parentHolder = holder+parent+holder
+        # Load the Create Location page
+        sel.open("/eden/gis/location/create")
+#        sel.wait_for_page_to_load("30000")
+        # Create the Location
+        sel.type("gis_location_name", name)
+        if level:
+            sel.select("gis_location_level", "value=%s" % level)
+        if parent:
+            try:
+                sel.select("gis_location_parent", "label=%s" % parentHolder)
+            except:
+                parentHolder = parent
+                sel.select("gis_location_parent", "label=%s" % parentHolder)
+        if lat:
+            sel.type("gis_location_lat", lat)
+        if lon:
+            sel.type("gis_location_lon", lon)
+        # Save the form
+        sel.click("//input[@value='Save']")
+        sel.wait_for_page_to_load("30000")
+        # Location saved
+        msg = "Failed to add location %s level %s with parent %s" % (name , level, parentHolder)
+        self.assertTrue(self.successMsg("Location added"),msg)
+        print "Location %s level %s with parent %s added" % (name , level, parentHolder)
+
+    def deleteObject(self,page,objName, type="Object"):
+        sel = self.sel
+        # need the following line which reloads the page otherwise the search gets stuck  
+        sel.open(page)
+        try:
+            self.searchUnique(objName)
+            sel.click("link=Delete")
+            self.assertTrue(re.search(r"^Sure you want to delete this object[\s\S]$", sel.get_confirmation()))
+            self.successMsg("Location deleted")
+            print "%s %s deleted" % (type, objName)
+        except:
+            print "Failed to delete %s %s from page %s" % (type, objName, page)
+
+    def deleteLocation(self, name):
+        self.deleteObject("/eden/gis/location", name, "Location")
 
     # Method to locate a message in a div with a class given by type
     def findMsg(self, message, type):
@@ -136,12 +182,20 @@ class Action(unittest.TestCase):
         return self.findMsg(message, "error")
 
     # Method to check that form element is present
-    def element(self, type, id):
+    def element(self, element):
         sel = self.sel
+        type = element[0]
+        id = element[1]
+        if (len(element) >= 3) : visible = element[2] 
+        else: visible = True
+        if (len(element) >= 4) : value = element[3] 
+        else: value = None
         element = '//%s[@id="%s"]' % (type, id)
         self.assertTrue(sel.is_element_present(element), "%s element %s is missing" % (type, id))
-        print "Form %s element %s is present" % (type, id)
-        
+        if visible: self.assertTrue(sel.is_visible(element), "%s element %s is not visible" % (type, id))
+        else: self.assertFalse(sel.is_visible(element), "%s element %s is not hidden" % (type, id))
+        if value!= None : self.assertEqual(value, sel.get_value(element), "%s text doesn't equal the expected value of %s" % (id,sel.get_text(element)))
+                
     # Method to click on a tab
     def clickTab(self, name):
         sel = self.sel
@@ -185,10 +239,14 @@ class Action(unittest.TestCase):
         print "Help %s is present" % (helpTitle)
 
     # Method to check that the layout of a form
+#    def checkForm (self, elementList, buttonList, helpList):
     def checkForm (self, elementList, buttonList, helpList):
-        for (type, id) in elementList:
-            self.element(type, id)
+        elements = []
+        for element in elementList:
+            self.element(element)
+            elements.append(element[1])
         for name in buttonList:
             self.button(name)
         for title in helpList:
             self.helpBallon(title)
+        if len(elements) > 0 : print "Verified the following form elements %s" % elements

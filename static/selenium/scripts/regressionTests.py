@@ -13,13 +13,13 @@ import os
 import time
 import sys
 import StringIO
-
+import traceback
 
 class TestWindow(Frame):
 
     def runTestSuite(self):
         # call static method of the base class for all Sahana test case classes
-        # this method will ensure that one Selenium instance exists and can be shared 
+        # this method will ensure that one Selenium instance exists and can be shared
         SahanaTest.setUpHierarchy(self.radioB.get(),
                                   self.browserPath.get(),
                                   self.ipAddr.get(),
@@ -38,8 +38,21 @@ class TestWindow(Frame):
     def test_main(self, testList):
         testLoader = unittest.defaultTestLoader
         self.suite = unittest.TestSuite()
-        for testName in testList: #dotted notation module[.class[.method]]
-            self.suite.addTests(testLoader.loadTestsFromName(testName))
+        for testName in testList: #dotted notation module.class
+            tempTests = unittest.TestSuite
+            try:
+                tempTests = testLoader.loadTestsFromName(testName)
+                for test in tempTests:
+                    newTests = test.__class__.sortTests(tempTests)
+                    if newTests == None:
+                        self.suite.addTests(tempTests)
+                    else:
+                        self.suite.addTests(newTests)
+                    break
+            
+            except:
+                print "Unable to run test %s, check the test exists." % testName
+                traceback.print_exc()
         # Invoke TestRunner
         buf = StringIO.StringIO()
         runner = HTMLTestRunner.HTMLTestRunner(

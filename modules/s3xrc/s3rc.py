@@ -558,9 +558,9 @@ class S3DataStore(object):
         else:
             text = val = value
 
-        if not xml_escape and \
+        if not xml_escape and val is not None and \
            str(field.type) in ("string", "list:string", "text"):
-            val =text = self.xml.xml_encode(str(val))
+            val = text = self.xml.xml_encode(str(val))
 
         # Get text representation
         if field.represent:

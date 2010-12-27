@@ -558,6 +558,7 @@ class S3DataStore(object):
         else:
             text = val = value
 
+        # Always XML-escape content markup
         if not xml_escape and val is not None and \
            str(field.type) in ("string", "list:string", "text"):
             val = text = self.xml.xml_encode(str(val))

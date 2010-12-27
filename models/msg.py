@@ -456,6 +456,7 @@ def shn_msg_compose( redirect_module = "msg",
 
     table2.pe_id.writable = table2.pe_id.readable = True
     table2.pe_id.label = T("Recipients")
+    table2.pe_id.comment = DIV(_class="tooltip",_title=T("Recipients")+"|"+ T("Please enter the first few letters of the Person/Group for the autocomplete."))
 
     def compose_onvalidation(form):
         """ Set the sender and use msg.send_by_pe_id to route the message """

@@ -121,6 +121,9 @@ mail.settings.sender = deployment_settings.get_mail_sender()
 auth.settings.hmac_key = deployment_settings.get_auth_hmac_key()
 auth.define_tables()
 
+# Default Language for authenticated users
+db.auth_user.language.default = deployment_settings.get_L10n_default_language()
+
 if deployment_settings.get_auth_openid():
     # Requires http://pypi.python.org/pypi/python-openid/
     try:

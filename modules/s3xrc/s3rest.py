@@ -1619,15 +1619,13 @@ class S3Resource(object):
     def limitby(self, start=None, limit=None):
         """
         Convert start+limit parameters into a limitby tuple
+            - limit without start => start = 0
+            - start without limit => limit = ROWSPERPAGE
+            - limit 0 (or less)   => limit = 1
+            - start less than 0   => start = 0
 
         @param start: index of the first record to select
         @param limit: maximum number of records to select
-
-
-        If limit is specified without start, then start is assumed 0
-        If start is without limit, then limit defaults to ROWSPERPAGE
-        If limit is 0 (or less), then it is assumed 1
-        If start is less than 0, then it is assumed 0
 
         """
 
@@ -1638,6 +1636,8 @@ class S3Resource(object):
 
         if not limit:
             limit = self.datastore.ROWSPERPAGE
+            if limit is None:
+                return None
         if limit <= 0:
             limit = 1
         if start < 0:

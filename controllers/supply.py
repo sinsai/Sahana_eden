@@ -26,6 +26,16 @@ def item_category():
     s3xrc.model.configure(table, listadd=False)
     return s3_rest_controller(prefix, resourcename)
 
+def item_packet():
+
+    """ RESTful CRUD controller """
+
+    tablename = "%s_%s" % (prefix, resourcename)
+    table = db[tablename]
+
+    s3xrc.model.configure(table, listadd=False)
+    return s3_rest_controller(prefix, resourcename)
+
 
 #==============================================================================
 def shn_item_rheader(r, tabs=[]):

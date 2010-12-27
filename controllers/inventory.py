@@ -31,11 +31,17 @@ def index():
     #return dict(module_name=module_name)
 
 #==============================================================================
-def shn_store_rheader(r, tabs=[]):
+def shn_store_rheader(r):
     if r.representation == "html":
         inventory_store = r.record
         if inventory_store:
-            rheader_tabs = shn_rheader_tabs(r, tabs)
+            rheader_tabs = shn_rheader_tabs(r, tabs = [ (T("Details"), None),
+                                                        (T("Items"), "store_item"),
+                                                        (T("Request"), "req"),
+                                                        (T("Received" ), "recv"),
+                                                        (T("Sent"), "send"),
+                                                       ])
+            
             rheader = DIV(TABLE(TR(
                                    TH(T("Location") + ": "), shn_gis_location_represent(inventory_store.location_id),
                                    TH(T("Description") + ": "), inventory_store.comments,
@@ -59,29 +65,16 @@ def store():
 
     # Post-processor
     def postp(r, output):
-        if r.representation in shn_interactive_view_formats:
-            #if r.method == "create" and not r.component:
-            # listadd arrives here as method=None
-            if r.method != "delete" and not r.component:
+        if r.representation in shn_interactive_view_formats \
+            and r.method != "delete" and not r.component:
                 # Redirect to the Items tabs after creation
-                r.next = r.other(method="store_item", record_id=s3xrc.get_session(module, resource))
-
-            # Normal Action Buttons
-            shn_action_buttons(r)
-
+                r.next = r.other(method="store_item", record_id=s3xrc.get_session(module, resource))                
         return output
     response.s3.postp = postp
 
-    tabs = [
-            (T("Details"), None),
-            (T("Items"), "store_item"),
-            (T("Requests From"), "req"),
-           ]
-    rheader = lambda r: shn_store_rheader(r, tabs)
-
     output = s3_rest_controller(module, 
                                 resource, 
-                                rheader=rheader)
+                                rheader=shn_store_rheader)
     return output
 
 #==============================================================================

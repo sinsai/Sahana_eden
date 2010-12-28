@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource API
 
-    @version: 2.2.10
+    @version: 2.3.0
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -69,7 +69,7 @@ class S3Resource(object):
         """
         Constructor
 
-        @param datastore: the data store manager
+        @param datastore: the S3DataStore
         @param prefix: prefix of the resource name (=module name)
         @param name: name of the resource (without prefix)
         @param id: record ID (or list of record IDs)
@@ -1384,6 +1384,7 @@ class S3Resource(object):
         if template and xsltmode:
             args.update(mode=xsltmode)
 
+        # Use the exporter to produce the XML
         exporter = self.exporter.xml
         data = exporter(start=start,
                         limit=limit,
@@ -1393,22 +1394,31 @@ class S3Resource(object):
                         dereference=dereference,
                         template=template,
                         as_json=as_json,
-                        pretty_print=False, **args)
+                        pretty_print=False,
+                        **args)
 
         if data:
+            # Find the protocol
             url_split = url.split("://", 1)
             if len(url_split) == 2:
                 protocol, path = url_split
             else:
-                protocol, path = http, None
+                protocol, path = "http", None
+
+            # Generate the request
             import urllib2
             req = urllib2.Request(url=url, data=data)
             if content_type:
                 req.add_header('Content-Type', content_type)
+
             handlers = []
+
+            # Proxy handling
             if proxy:
                 proxy_handler = urllib2.ProxyHandler({protocol:proxy})
                 handlers.append(proxy_handler)
+
+            # Authentication handling
             if username and password:
                 # Send auth data unsolicitedly (the only way with Eden instances):
                 import base64
@@ -1422,26 +1432,34 @@ class S3Resource(object):
                                             passwd=password)
                 auth_handler = urllib2.HTTPBasicAuthHandler(passwd_manager)
                 handlers.append(auth_handler)
+
+            # Install all handlers
             if handlers:
                 opener = urllib2.build_opener(*handlers)
                 urllib2.install_opener(opener)
+
+            # Execute the request
             try:
                 f = urllib2.urlopen(req)
             except urllib2.HTTPError, e:
+                # Peer error => encode as JSON message
                 code = e.code
                 message = e.read()
                 try:
+                    # Sahana-Eden would send a JSON message,
+                    # try to extract the actual error message:
                     message_json = json.loads(message)
                     message = message_json.get("message", message)
                 except:
                     pass
+                # @todo: prefix message as peer error?
                 return xml.json_message(False, code, message)
             else:
+                # Success => return what the peer returns
                 response = f.read()
-
             return response
-
         else:
+            # No data to send
             return None
 
 
@@ -1473,13 +1491,19 @@ class S3Resource(object):
         if len(url_split) == 2:
             protocol, path = url_split
         else:
-            protocol, path = http, None
+            protocol, path = "http", None
+
+        # Prepare the request
         import urllib2
         req = urllib2.Request(url=url)
         handlers = []
+
+        # Proxy handling
         if proxy:
             proxy_handler = urllib2.ProxyHandler({protocol:proxy})
             handlers.append(proxy_handler)
+
+        # Authentication handling
         if username and password:
             # Send auth data unsolicitedly (the only way with Eden instances):
             import base64
@@ -1493,19 +1517,29 @@ class S3Resource(object):
                                         passwd=password)
             auth_handler = urllib2.HTTPBasicAuthHandler(passwd_manager)
             handlers.append(auth_handler)
+
+        # Install all handlers
         if handlers:
             opener = urllib2.build_opener(*handlers)
             urllib2.install_opener(opener)
+
+        # Execute the request
         try:
             f = urllib2.urlopen(req)
         except urllib2.HTTPError, e:
+            # Peer error
             code = e.code
             message = e.read()
             try:
+                # Sahana-Eden would send a JSON message,
+                # try to extract the actual error message:
                 message_json = json.loads(message)
                 message = message_json.get("message", message)
             except:
                 pass
+
+            # Prefix as peer error and strip XML markup from the message
+            # @todo: better method to do this?
             message = "<message>PEER ERROR: %s</message>" % message
             try:
                 markup = etree.XML(message)
@@ -1516,10 +1550,14 @@ class S3Resource(object):
                     message = ""
             except etree.XMLSyntaxError:
                 pass
+
+            # Encode as JSON message
             return xml.json_message(False, code, message, tree=None)
         else:
+            # Successfully downloaded
             response = f
 
+        # Try to import the response
         try:
             success = self.import_xml(response,
                                       template=template,
@@ -1528,12 +1566,11 @@ class S3Resource(object):
                                       args=args)
         except IOError, e:
             return xml.json_message(False, 400, "LOCAL ERROR: %s" % e)
-
         if not success:
             error = self.datastore.error
             return xml.json_message(False, 400, "LOCAL ERROR: %s" % error)
         else:
-            return xml.json_message()
+            return xml.json_message() # success
 
 
     # -------------------------------------------------------------------------
@@ -1785,19 +1822,22 @@ class S3Request(object):
 
     """
     Class to handle HTTP requests
+
+    @todo: integrate into S3Resource
+
     """
 
-    UNAUTHORISED = "Not Authorised"
+    UNAUTHORISED = "Not Authorised" # @todo: internationalization
 
     DEFAULT_REPRESENTATION = "html"
-    INTERACTIVE_FORMATS = ("html", "popup", "iframe")
+    INTERACTIVE_FORMATS = ("html", "popup", "iframe") # @todo: read from settings
 
     # -------------------------------------------------------------------------
     def __init__(self, datastore, prefix, name):
         """
         Constructor
 
-        @param datastore: the resource controller
+        @param datastore: the S3DataStore
         @param prefix: prefix of the resource name (=module name)
         @param name: name of the resource (=without prefix)
 
@@ -1845,12 +1885,12 @@ class S3Request(object):
             else:
                 self.request.vars[varname] = self.component_id
 
-        # Create the resource
-        self.resource = datastore._resource(self.prefix, self.name,
-                                          id=self.id,
-                                          filter=self.response[datastore.HOOKS].filter,
-                                          vars=self.request.vars,
-                                          components=self.component_name)
+        # Define the target resource
+        self.resource = datastore.define_resource(self.prefix, self.name,
+                                                  id=self.id,
+                                                  filter=self.response[datastore.HOOKS].filter,
+                                                  vars=self.request.vars,
+                                                  components=self.component_name)
 
         self.tablename = self.resource.tablename
         self.table = self.resource.table

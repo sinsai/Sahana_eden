@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - XML Toolkit
 
-    @version: 2.2.10
+    @version: 2.3.0
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -49,7 +49,7 @@ except ImportError:
     from xml.etree.ElementTree import ElementTree
 
 from lxml import etree
-
+from xml.sax.saxutils import escape, unescape
 
 # *****************************************************************************
 class S3XML(object):
@@ -147,12 +147,6 @@ class S3XML(object):
         text="$"
     )
 
-    PY2XML = [("&", "&amp;"), ("<", "&lt;"), (">", "&gt;"),
-              ('"', "&quot;"), ("'", "&apos;")]
-
-    XML2PY = [("<", "&lt;"), (">", "&gt;"), ('"', "&quot;"),
-              ("'", "&apos;"), ("&", "&amp;")]
-
     ISOFORMAT = "%Y-%m-%dT%H:%M:%SZ" #: universal timestamp
 
     # -------------------------------------------------------------------------
@@ -160,7 +154,7 @@ class S3XML(object):
         """
         Constructor
 
-        @param datastore: the resource controller
+        @param datastore: the S3DataStore
 
         """
 
@@ -306,8 +300,8 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
-    @classmethod
-    def xml_encode(cls, obj):
+    @staticmethod
+    def xml_encode(obj):
         """
         Encodes a Python string into an XML text node
 
@@ -316,14 +310,13 @@ class S3XML(object):
         """
 
         if obj:
-            for (x,y) in cls.PY2XML:
-                obj = obj.replace(x, y)
+            obj = escape(obj, {"'":"&apos;", '"':"&quot;"})
         return obj
 
 
     # -------------------------------------------------------------------------
-    @classmethod
-    def xml_decode(cls, obj):
+    @staticmethod
+    def xml_decode(obj):
         """
         Decodes an XML text node into a Python string
 
@@ -332,8 +325,7 @@ class S3XML(object):
         """
 
         if obj:
-            for (x,y) in cls.XML2PY:
-                obj = obj.replace(y, x)
+            obj = unescape(obj, {"&apos;":"'", "&quot;":'"'})
         return obj
 
 

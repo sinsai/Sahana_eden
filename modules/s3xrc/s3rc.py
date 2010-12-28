@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Data Store Manager
 
-    @version: 2.2.10
+    @version: 2.3.0
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -156,6 +156,66 @@ class S3DataStore(object):
         # JSON formats and content-type headers
         self.json_formats = []
         self.content_type = Storage()
+
+
+    # REST interface wrappers =================================================
+
+    def define_resource(self, prefix, name,
+                        id=None,
+                        uid=None,
+                        filter=None,
+                        vars=None,
+                        parent=None,
+                        components=None):
+        """
+        Defines a resource
+
+        @param prefix: the application prefix of the resource
+        @param name: the resource name (without prefix)
+        @param id: record ID or list of record IDs
+        @param uid: record UID or list of record UIDs
+        @param filter: web2py query to filter the resource query
+        @param vars: dict of URL query parameters
+        @param parent: the parent resource (if this is a component)
+        @param components: list of component (names)
+
+        """
+
+        resource = S3Resource(self, prefix, name,
+                              id=id,
+                              uid=uid,
+                              filter=filter,
+                              vars=vars,
+                              parent=parent,
+                              components=components)
+
+        return resource
+
+
+    # -------------------------------------------------------------------------
+    def parse_request(self, prefix, name):
+        """
+        Parse an HTTP request and generate the corresponding S3Request and
+        S3Resource objects.
+
+        @param prefix: the module prefix of the resource
+        @param name: the resource name (without prefix)
+
+        @todo 2.3: move into S3Resource
+
+        """
+
+        self.error = None
+        try:
+            req = S3Request(self, prefix, name)
+        except SyntaxError:
+            raise HTTP(400, body=self.xml.json_message(False, 400, message=self.error))
+        except KeyError:
+            raise HTTP(404, body=self.xml.json_message(False, 404, message=self.error))
+        except:
+            raise
+        res = req.resource
+        return (res, req)
 
 
     # Utilities ===============================================================
@@ -421,80 +481,6 @@ class S3DataStore(object):
                 del session[self.RCVARS]
 
         return True # always return True to make this chainable
-
-
-    # -------------------------------------------------------------------------
-    def _resource(self, prefix, name,
-                  id=None,
-                  uid=None,
-                  filter=None,
-                  vars=None,
-                  parent=None,
-                  components=None):
-        """
-        Wrapper function for S3Resource, creates a resource
-
-        @param prefix: the application prefix of the resource
-        @param name: the resource name (without prefix)
-        @param id: record ID or list of record IDs
-        @param uid: record UID or list of record UIDs
-        @param filter: web2py query to filter the resource query
-        @param vars: dict of URL query parameters
-        @param parent: the parent resource (if this is a component)
-        @param components: list of component (names)
-
-        """
-
-        resource = S3Resource(self, prefix, name,
-                              id=id,
-                              uid=uid,
-                              filter=filter,
-                              vars=vars,
-                              parent=parent,
-                              components=components)
-
-        return resource
-
-
-    # -------------------------------------------------------------------------
-    def _request(self, prefix, name):
-        """
-        Wrapper function for S3Request
-
-        @param prefix: the module prefix of the resource
-        @param name: the resource name (without prefix)
-
-        @todo 2.3: deprecate
-
-        """
-
-        return S3Request(self, prefix, name)
-
-
-    # -------------------------------------------------------------------------
-    def parse_request(self, prefix, name):
-        """
-        Parse an HTTP request and generate the corresponding S3Request and
-        S3Resource objects.
-
-        @param prefix: the module prefix of the resource
-        @param name: the resource name (without prefix)
-
-        @todo 2.3: move into S3Resource
-
-        """
-
-        self.error = None
-        try:
-            req = self._request(prefix, name)
-        except SyntaxError:
-            raise HTTP(400, body=self.xml.json_message(False, 400, message=self.error))
-        except KeyError:
-            raise HTTP(404, body=self.xml.json_message(False, 404, message=self.error))
-        except:
-            raise
-        res = req.resource
-        return (res, req)
 
 
     # Resource functions ======================================================
@@ -865,7 +851,7 @@ class S3DataStore(object):
 
                 load_list = load_map[tablename]
                 prefix, name = tablename.split("_", 1)
-                rresource = self._resource(prefix, name, id=load_list, components=[])
+                rresource = self.define_resource(prefix, name, id=load_list, components=[])
                 table = rresource.table
                 rresource.load()
 
@@ -1110,7 +1096,7 @@ class S3ImportJob(object):
 
     """ Helper class for data imports
 
-        @param datastore: the resource controller
+        @param datastore: the S3DataStore
         @param prefix: prefix of the resource name (=module name)
         @param name: the resource name (=without prefix)
         @param id: the target record ID
@@ -1457,7 +1443,7 @@ class S3QueryBuilder(object):
 
     """ Query Builder
 
-        @param datastore: the resource controller
+        @param datastore: the S3DataStore
 
     """
 

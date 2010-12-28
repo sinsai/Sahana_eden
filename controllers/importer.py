@@ -136,7 +136,7 @@ def import_spreadsheet():
     send = StringIO(new_word)
     tree = s3xrc.xml.json2tree(send)
     prefix, name = resource.split("_")
-    res = s3xrc._resource(prefix, name)
+    res = s3xrc.define_resource(prefix, name)
     res.import_xml(source = tree, ignore_errors = True)
     returned_json = s3xrc.xml.tree2json(tree)
     if "@error" not in repr(returned_json):

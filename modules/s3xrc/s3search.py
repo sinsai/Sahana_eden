@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Search Extensions
 
-    @version: 2.2.10
+    @version: 2.3.0
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 

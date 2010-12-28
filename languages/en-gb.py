@@ -467,6 +467,7 @@
 'No Activities Found': 'No Activities Found',
 'No Assessments currently registered': 'No Assessments currently registered',
 'No Offices currently registered': 'No Offices currently registered',
+'No Organizations currently registered': 'No Organizations currently registered',
 'No Projects currently registered': 'No Projects currently registered',
 'No Staff currently registered': 'No Staff currently registered',
 'No Warehouses currently registered': 'No Warehouses currently registered',

@@ -294,7 +294,7 @@ def submission():
     resource = tree.getroot().tag
 
     prefix, name = resource.split("_")
-    res = s3xrc._resource(prefix, name)
+    res = s3xrc.define_resource(prefix, name)
 
     template = os.path.join(request.folder, "static", "formats", "odk", "import.xsl")
 
@@ -305,7 +305,7 @@ def submission():
 
     # Parse response
     status = json.loads(result)["statuscode"]
-    
+
     if status == 200:
         r = HTTP(201, "Saved") # ODK Collect only accepts 201
         r.headers["Location"] = request.env.http_host

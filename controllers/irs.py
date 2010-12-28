@@ -105,9 +105,6 @@ def ireport():
         return True
     response.s3.prep = prep
 
-    if not shn_has_role("Editor"):
-        table.incident_id.readable = table.incident_id.writable = False
-
     # Post-processor
     def user_postp(r, output):
         shn_action_buttons(r, deletable=False, copyable=True)

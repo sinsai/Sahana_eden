@@ -6,6 +6,8 @@
 
 """
 
+from gluon.contrib.simplejson.ordered_dict import OrderedDict
+
 module = "irs"
 if deployment_settings.has_module(module):
 

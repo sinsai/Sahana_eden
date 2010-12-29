@@ -169,6 +169,10 @@ table.person_id.label = T("Person")
 table.image.uploadfolder = os.path.join(request.folder, "uploads/images")
 IMAGE_EXTENSIONS = ["png", "PNG", "jpg", "JPG", "jpeg", "JPEG", "gif", "GIF", "tif", "TIF", "tiff", "TIFF", "bmp", "BMP", "raw", "RAW"]
 table.image.requires = IS_EMPTY_OR(IS_IMAGE(extensions=(IMAGE_EXTENSIONS)))
+table.image.represent = lambda image: image and \
+        DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=image),_height=60, _alt=T("View Image")),
+              _href=URL(r=request, c="default", f="download", args=image))) or \
+        T("No Image")
 
 ADD_IMAGE = T("Add Photo")
 image_id = S3ReusableField("image_id", db.doc_image,

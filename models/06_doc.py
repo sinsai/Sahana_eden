@@ -133,6 +133,7 @@ def document_onvalidation(form):
     if isinstance(doc, cgi.FieldStorage) and doc.filename:
         f = doc.file
         form.vars.checksum = s3deduplicator.docChecksum(f.read())
+        f.seek(0)
     if form.vars.checksum is not None:
         result = db(table.checksum == form.vars.checksum).select(table.name, limitby=(0, 1)).first()
         if result:
@@ -220,6 +221,7 @@ def image_onvalidation(form):
     if isinstance(img, cgi.FieldStorage) and img.filename:
         f = img.file
         form.vars.checksum = s3deduplicator.docChecksum(f.read())
+        f.seek(0)
     if form.vars.checksum is not None:
         result = db(db.doc_image.checksum == form.vars.checksum).select(db.doc_image.name, limitby=(0, 1)).first()
         if result:

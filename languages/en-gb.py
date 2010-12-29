@@ -85,6 +85,7 @@
 'Assigned to': 'Assigned to',
 'Assistance for immediate repair/reconstruction of houses': 'Assistance for immediate repair/reconstruction of houses',
 'Attribution': 'Attribution',
+'Authentication Required': 'Authentication Required',
 'Author': 'Author',
 'Available Beds': 'Available Beds',
 'Available in Viewer?': 'Available in Viewer?',

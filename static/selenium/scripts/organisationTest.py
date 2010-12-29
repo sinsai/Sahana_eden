@@ -3,7 +3,6 @@ import unittest, re
 
 class OrganisationTest(SahanaTest):
     """ Test the Organisation registry """
-    orgs = []
     _sortList = ("test_CreateOrgUI", "test_OpenOrgUIAdmin", "test_OpenOrgUIUser")
     
     def firstRun(self):
@@ -16,6 +15,7 @@ class OrganisationTest(SahanaTest):
         self.useSahanaAdminAccount()
         self.action.login(self._user, self._password )
         # Add the test organisations
+        OrganisationTest.orgs = []
         self.addOrg()
 
     

@@ -31,7 +31,7 @@ class Action(unittest.TestCase):
             sel.click("link=Logout")
             sel.wait_for_page_to_load("30000")
 
-    def search(self, searchString, expected):
+    def search(self, searchString, expected, abort=None):
         sel = self.sel
         result = ""
         # The search filter is part of the http://datatables.net/ JavaScript getting it to work with Selenium needs a bit of care.
@@ -45,9 +45,13 @@ class Action(unittest.TestCase):
         for i in range(10):
             try:
                 result = sel.get_text("//div[@id='table-container']")
-                if  expected in result: break
-            except: pass
-            time.sleep(3)
+            except:
+                time.sleep(3)
+                continue
+            if  expected in result: return True
+            if abort != None:
+                if abort in result: return False
+        if abort != None: self.fail("time out: Looking for %s or %s within %s" % (expected, abort, result ))
         else: self.fail("time out: Looking for %s within %s" % (expected, result ))
         
     def searchUnique(self, uniqueName):
@@ -74,6 +78,7 @@ class Action(unittest.TestCase):
         sel.select("auth_user_language", "label=English")
         sel.type("auth_user_email", email)
         sel.type("auth_user_password", password)
+        sel.type("password_two", password)
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         msg = "Unable to create user " + first_name + " " + last_name + " with email " + email
@@ -161,6 +166,24 @@ class Action(unittest.TestCase):
 
     def deleteLocation(self, name):
         self.deleteObject("/eden/gis/location", name, "Location")
+
+    # Method to check the details that are displayed in the heading
+    def checkHeading(self, detailMap):
+        sel = self.sel
+        heading = sel.get_text("//div[@id='rheader']/div/table/tbody")
+        searchString = ""
+        for key, value in detailMap.items():
+            searchString = key+'\s*'+value
+            msg = "Unable to find details of %s %s in the header of %s", key, value, heading
+            self.assertTrue(re.search(searchString,heading), msg)
+
+    # Method to save the details
+    def saveForm(self, message=None):
+        sel = self.sel
+        sel.click("//input[@value='Save']")
+        sel.wait_for_page_to_load("30000")
+        if message != None:
+            self.successMsg(message)
 
     # Method to locate a message in a div with a class given by type
     def findMsg(self, message, type):

@@ -52,13 +52,16 @@ class Locations(SahanaTest):
                                ["a", "gis_location_map-btn", False],              #26
                                ["div", "gis_location_advanced_div", False],       #27
                            )
-
+        Locations.formHeading = {"Name:"     : "-",
+                                 "Location:" : "-"
+                                }
 
     def makeNameUnique(self, name):
         return self.holder+name+self.holder
     
     def loadLocations(self):
         """ Create locations for testing the Locations Selector """
+        sel = self.selenium
         Locations.line = []
         source = open("../data/location.txt", "r")
         values = source.readlines()
@@ -73,7 +76,10 @@ class Locations(SahanaTest):
             if len(details) >= 3: parent = details[2].strip()
             if len(details) >= 4: lat = details[3].strip()
             if len(details) >= 5: long = details[4].strip()
-            self.action.addLocation(self.holder, name, level, parent, lat, long)
+            # Load the Create Location page
+            sel.open("/eden/gis/location")
+            if self.action.search(self.makeNameUnique(name),"Showing 0 to 0 of 0 entries", "Showing 1 to 1 of 1 entries"):
+                self.action.addLocation(self.holder, name, level, parent, lat, long)
             Locations.line.append(self.makeNameUnique(name))
             
     def openRecord(self, name):
@@ -97,7 +103,15 @@ class Locations(SahanaTest):
     
     def test_removeTestData(self):
         """ Remove all the data added by this test case """
-        pass
+        sel = self.selenium
+        self.useSahanaAdminAccount()
+        self.action.login(self._user, self._password )
+        for shelter in Locations.shelter:
+            self.action.deleteObject("eden/cr/shelter",shelter,"Shelter")
+        #return # remove comment to keep the locations for testing purposes
+        for location in Locations.line:
+            self.action.deleteLocation(location)
+
     
     def test_locationEmpty(self):
         """ Create a new Shelter without any Location specified """
@@ -112,10 +126,8 @@ class Locations(SahanaTest):
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with no Location")
         # Save the form
+        self.action.saveForm("Shelter added")
         Locations.shelter.append("Shelter with no Location")
-        sel.click("//input[@value='Save']")
-        sel.wait_for_page_to_load("30000")
-        self.action.successMsg("Shelter added")
         print "New shelter created"
         # Load the Shelter
         self.openRecord("Shelter with no Location")
@@ -126,12 +138,10 @@ class Locations(SahanaTest):
                              )
 
         # Save the form (without changes)
-        sel.click("//input[@value='Save']")
-        sel.wait_for_page_to_load("30000")
-        self.assertTrue(self.action.successMsg("Shelter updated"))
+        self.action.saveForm("Shelter updated")
         # Shelter has correct location
-        heading = sel.get_text("//div[@id='rheader']/div/table/tbody")
-        self.assertTrue(re.search(r"Name:\s*Shelter with no Location\s*Location:\s*-",heading))
+        Locations.formHeading["Name:"] = "Shelter with no Location"
+        self.action.checkHeading(Locations.formHeading)
 
     def test_addL0Location(self):
         """ Update an existing Shelter without any Location specified to an L0 """
@@ -147,22 +157,16 @@ class Locations(SahanaTest):
                              )
         # Select the L0
         sel.select("gis_location_L0", "label=Haiti")
-        # Check that L1 dropdown appears correctly
-        time.sleep(4)
-        self.assertTrue(re.search("Select a location..."
-                                  , sel.get_table("//div[@id='content']/div[2]/form/table.11.0")
-                                  ))
         # Save the form (with changes)
-        sel.click("//input[@value='Save']")
-        sel.wait_for_page_to_load("30000")
-        self.assertTrue(self.action.successMsg("Shelter updated"))
-        # Shelter has correct location
+        self.action.saveForm("Shelter updated")
         print "Level 0 Location added "
         # Load again
         self.openRecord("Shelter with no Location")
         # Check that the location is set
-        heading = sel.get_text("//div[@id='rheader']/div/table/tbody")
-        self.assertTrue(re.search(r"Name:\s*Shelter with no Location\s*Location:\s*Haiti",heading))
+        self.action.checkHeading({"Name:":"Shelter with no Location",
+                                  "Location:":"Haiti",
+                                 })
+
         location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
         location_id = location.split("(")[1].split(")")[0]
         
@@ -181,8 +185,9 @@ class Locations(SahanaTest):
         self.action.login(self._user, self._password )
         self.openRecord("Shelter with no Location")
         # Check that the details are correct
-        heading = sel.get_text("//div[@id='rheader']/div/table/tbody")
-        self.assertTrue(re.search(r"Name:\s*Shelter with no Location\s*Location:\s*Haiti",heading))
+        self.action.checkHeading({"Name:":"Shelter with no Location",
+                                  "Location:":"Haiti",
+                                 })
         # Check that the location is currently set
         location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
         location_id = location.split("(")[1].split(")")[0]
@@ -200,23 +205,13 @@ class Locations(SahanaTest):
         sel.select("gis_location_L0", "label=Select a location...")
         # Check that the real location has been set to blank
         self.assertEqual("", sel.get_value("cr_shelter_location_id"))
-        # Check that L1 dropdown disappears correctly
-        time.sleep(1)
-        Locations.formDetails[0][3]=""
-        Locations.formDetails[5][2]=False
-        Locations.formDetails[6][2]=False
-        self.action.checkForm(Locations.formDetails,
-                              (),
-                              ()
-                             )
         # Save the form (with changes)
-        sel.click("//input[@value='Save']")
-        sel.wait_for_page_to_load("30000")
-        self.assertTrue(self.action.successMsg("Shelter updated"))
+        self.action.saveForm("Shelter updated")
         # Load again
         self.openRecord("Shelter with no Location")
-        heading = sel.get_text("//div[@id='rheader']/div/table/tbody")
-        self.assertTrue(re.search(r"Name:\s*Shelter with no Location\s*Location:\s*-",heading))
+        self.action.checkHeading({"Name:":"Shelter with no Location",
+                                  "Location:":"-",
+                                 })
         Locations.formDetails[0][3]=""
         Locations.formDetails[5][2]=False
         Locations.formDetails[6][2]=False
@@ -243,14 +238,13 @@ class Locations(SahanaTest):
         sel.type("gis_location_name", "Location with no Parent")
         # Save the form
         Locations.shelter.append("Shelter with no Parent")
-        sel.click("//input[@value='Save']")
-        sel.wait_for_page_to_load("30000")
-        self.action.successMsg("Shelter added")
+        self.action.saveForm("Shelter added")
         # Load again
         self.openRecord("Shelter with no Parent")
         # Shelter has correct location
-        heading = sel.get_text("//div[@id='rheader']/div/table/tbody")
-        self.assertTrue(re.search(r"Name:\s*Shelter with no Parent\s*Location:\s*Location with no Parent",heading))
+        self.action.checkHeading({"Name:":"Shelter with no Parent",
+                                  "Location:":"Location with no Parent",
+                                 })
         location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
         location_id = location.split("(")[1].split(")")[0]
         
@@ -263,17 +257,6 @@ class Locations(SahanaTest):
                               ()
                              )
         
-    def lastRun(self):
-        # Delete the test organisations
-        sel = self.selenium
-        self.useSahanaAdminAccount()
-        self.action.login(self._user, self._password )
-        for location in Locations.line:
-            self.action.deleteLocation(location)
-        for shelter in Locations.shelter:
-            self.action.deleteObject("eden/cr/shelter",shelter,"Shelter")
-
-
 if __name__ == "__main__":
     SahanaTest.setUpHierarchy()
     unittest.main()

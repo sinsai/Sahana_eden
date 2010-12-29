@@ -164,6 +164,8 @@ class S3CRUD(S3Method):
                 table[r.fkey].comment = None
                 table[r.fkey].default = r.record[r.pkey]
                 table[r.fkey].update = r.record[r.pkey]
+                if r.http=="POST":
+                    r.request.post_vars.update({r.fkey:r.record[r.pkey]})
                 table[r.fkey].readable = False
                 table[r.fkey].writable = False
 
@@ -656,6 +658,8 @@ class S3CRUD(S3Method):
                 table[r.fkey].comment = None
                 table[r.fkey].default = r.record[r.pkey]
                 table[r.fkey].update = r.record[r.pkey]
+                if r.http=="POST":
+                    r.request.post_vars.update({r.fkey:r.record[r.pkey]})
                 table[r.fkey].readable = False
                 table[r.fkey].writable = False
 

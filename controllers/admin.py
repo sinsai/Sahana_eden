@@ -605,9 +605,10 @@ def user_remove_groups():
     user = request.args(0)
     table = db.auth_membership
     for var in request.vars:
-        group = var
-        query = (table.group_id == group) & (table.user_id == user)
-        db(query).delete()
+        if str(var).isdigit():
+            group = var
+            query = (table.group_id == group) & (table.user_id == user)
+            db(query).delete()
     # Audit
     #crud.settings.update_onaccept = lambda form: shn_audit_update(form, "membership", "html")
     session.flash = T("Groups removed")

@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Data Model Extensions
 
-    @version: 2.2.10
+    @version: 2.3.0
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -498,7 +498,7 @@ class S3ResourceLinker(object):
         """
         Constructor
 
-        @param datastore: the resource controller
+        @param datastore: the S3DataStore
 
         """
 

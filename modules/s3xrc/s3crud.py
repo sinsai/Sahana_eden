@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - CRUD Method Handlers
 
-    @version: 2.2.10
+    @version: 2.3.0
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -362,6 +362,8 @@ class S3CRUD(S3Method):
         @param map_fields: field mapping for copying of records
         @param format: the representation format of the request
 
+        @todo: rename this function?
+
         """
 
         # Get the table
@@ -553,6 +555,8 @@ class S3CRUD(S3Method):
         @param download_url: download URL for uploaded files in this resource
         @param format: the representation format
 
+        @todo: rename this function?
+
         """
 
         # Get the table
@@ -733,6 +737,8 @@ class S3CRUD(S3Method):
         @param message: success message
         @param download_url: Download URL for uploaded files in this resource
         @param format: the representation format
+
+        @todo: rename this function?
 
         """
 
@@ -1158,6 +1164,8 @@ class S3CRUD(S3Method):
         @param as_page: return the list as JSON page
         @param as_list: return the list as Python list
         @param format: the representation format
+
+        @todo: rename this function?
 
         """
 

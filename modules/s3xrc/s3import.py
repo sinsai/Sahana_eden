@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Import Toolkit
 
-    @version: 2.2.10
+    @version: 2.3.0
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -49,6 +49,8 @@ class S3Importer(object):
     """
     Data Import functions
 
+    @todo 2.3: implement json
+
     """
 
     # -------------------------------------------------------------------------
@@ -56,7 +58,7 @@ class S3Importer(object):
         """
         Constructor
 
-        @param datastore: the resource controller
+        @param datastore: the S3DataStore
 
         """
 

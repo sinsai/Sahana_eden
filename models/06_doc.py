@@ -114,21 +114,34 @@ def document_onvalidation(form):
     s3deduplicator = local_import("s3deduplicator")
     import cgi
 
-    try:
-        p = form.vars.file
-    except:
-        return
-    if isinstance(p, cgi.FieldStorage) and p.filename:
-        f = p.file
+    table = db.doc_document
+
+    doc = form.vars.file
+    url = form.vars.url
+
+    if not hasattr(doc, "file"):
+        id = request.post_vars.id
+        if id:
+            record = db(table.id == id).select(table.file, limitby=(0, 1)).first()
+            if record:
+                doc = record.file
+
+    if not hasattr(doc, "file") and not doc and not url:
+        form.errors.file = \
+        form.errors.url = T("Either file upload or document URL required.")
+
+    if isinstance(doc, cgi.FieldStorage) and doc.filename:
+        f = doc.file
         form.vars.checksum = s3deduplicator.docChecksum(f.read())
-    results = db(db.doc_document.id > 0).select(db.doc_document.checksum, db.doc_document.name)
-    for result in results:
-        if form.vars.checksum == result.checksum:
+    if form.vars.checksum is not None:
+        result = db(table.checksum == form.vars.checksum).select(table.name, limitby=(0, 1)).first()
+        if result:
             doc_name = result.name
             form.errors["file"] = T("This file already exists on the server as") + " %s" % (doc_name)
     return
 
 s3xrc.model.configure(table,
+                      mark_required=["file", "url"],
                       create_onvalidation=document_onvalidation,
                       update_onvalidation=document_onvalidation)
 #==============================================================================
@@ -188,21 +201,29 @@ def image_onvalidation(form):
     s3deduplicator = local_import("s3deduplicator")
     import cgi
 
-    try:
-        p = form.vars.image
-    except:
-        return
-    if isinstance(p, cgi.FieldStorage) and p.filename:
-        f = p.file
+    table = db.doc_document
+
+    img = form.vars.image
+
+    if not hasattr(img, "file"):
+        id = request.post_vars.id
+        if id:
+            record = db(table.id == id).select(table.image, limitby=(0, 1)).first()
+            if record:
+                img = record.image
+
+    if isinstance(img, cgi.FieldStorage) and img.filename:
+        f = img.file
         form.vars.checksum = s3deduplicator.docChecksum(f.read())
-    results = db(db.doc_image.id > 0).select(db.doc_image.checksum, db.doc_image.name)
-    for result in results:
-        if form.vars.checksum == result.checksum:
+    if form.vars.checksum is not None:
+        result = db(db.doc_image.checksum == form.vars.checksum).select(db.doc_image.name, limitby=(0, 1)).first()
+        if result:
             image_name = result.name
             form.errors["image"] = T("This file already exists on the server as") + " %s" % (image_name)
     return
 
 s3xrc.model.configure(table,
+                      mark_required=["image", "url"],
                       create_onvalidation=image_onvalidation,
                       update_onvalidation=image_onvalidation)
 #==============================================================================

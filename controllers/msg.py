@@ -284,7 +284,7 @@ def parserdooth(message):
 #   -------------Hospital Search [example: get name hospital facility status ] --------------
     if "hospital" in query:
         table = db.hms_hospital
-        resource = s3xrc._resource("hms", "hospital")
+        resource = s3xrc.define_resource("hms", "hospital")
         result = resource.search_simple(fields=["name"],label = str(name))
         if len(result) > 1:
             return "Multiple Matches"
@@ -309,7 +309,7 @@ def parserdooth(message):
 #   -----------------Organisation search [example: get name organisation phone]------------------------------
     if "organisation" in query:
         table = db.org_organisation
-        resource = s3xrc._resource("org", "organisation")
+        resource = s3xrc.define_resource("org", "organisation")
         result = resource.search_simple(fields=["name"], label = str(name))
         if len(result) > 1:
             return "Multiple Matches"

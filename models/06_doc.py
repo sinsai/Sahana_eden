@@ -133,6 +133,7 @@ def document_onvalidation(form):
     if isinstance(doc, cgi.FieldStorage) and doc.filename:
         f = doc.file
         form.vars.checksum = s3deduplicator.docChecksum(f.read())
+        f.seek(0)
     if form.vars.checksum is not None:
         result = db(table.checksum == form.vars.checksum).select(table.name, limitby=(0, 1)).first()
         if result:
@@ -168,6 +169,10 @@ table.person_id.label = T("Person")
 table.image.uploadfolder = os.path.join(request.folder, "uploads/images")
 IMAGE_EXTENSIONS = ["png", "PNG", "jpg", "JPG", "jpeg", "JPEG", "gif", "GIF", "tif", "TIF", "tiff", "TIFF", "bmp", "BMP", "raw", "RAW"]
 table.image.requires = IS_IMAGE(extensions=(IMAGE_EXTENSIONS))
+table.image.represent = lambda image: image and \
+        DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=image),_height=60, _alt=T("View Image")),
+              _href=URL(r=request, c="default", f="download", args=image))) or \
+        T("No Image")
 
 ADD_IMAGE = T("Add Photo")
 image_id = S3ReusableField("image_id", db.doc_image,
@@ -215,6 +220,7 @@ def image_onvalidation(form):
     if isinstance(img, cgi.FieldStorage) and img.filename:
         f = img.file
         form.vars.checksum = s3deduplicator.docChecksum(f.read())
+        f.seek(0)
     if form.vars.checksum is not None:
         result = db(db.doc_image.checksum == form.vars.checksum).select(db.doc_image.name, limitby=(0, 1)).first()
         if result:

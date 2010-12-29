@@ -544,9 +544,7 @@ def group_remove_users():
     group = request.args(0)
     table = db.auth_membership
     for var in request.vars:
-        if var == "_utc_offset":
-            continue
-        else:
+        if str(var).isdigit():
             user = var
             query = (table.group_id == group) & (table.user_id == user)
             db(query).delete()
@@ -621,9 +619,7 @@ def user_remove_groups():
     user = request.args(0)
     table = db.auth_membership
     for var in request.vars:
-        if var == "_utc_offset":
-            continue
-        else:
+        if str(var).isdigit():
             group = var
             query = (table.group_id == group) & (table.user_id == user)
             db(query).delete()

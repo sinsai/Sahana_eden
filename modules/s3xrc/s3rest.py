@@ -1950,22 +1950,12 @@ class S3Request(object):
         """
         Action upon unauthorised request
 
+        @deprecated: should use auth.permission.fail() instead
+
         """
 
-        if self.representation == "html":
-            self.session.error = self.UNAUTHORISED
-            self.session.warning = None
-            if not self.session.auth:
-                login = URL(r=self.request,
-                            c="default",
-                            f="user",
-                            args="login",
-                            vars={"_next": self.here()})
-                redirect(login)
-            else:
-                redirect(URL(r=self.request, f="index"))
-        else:
-            raise HTTP(401, body=self.UNAUTHORISED)
+        auth = self.datastore.auth
+        auth.permission.fail()
 
 
     # -------------------------------------------------------------------------

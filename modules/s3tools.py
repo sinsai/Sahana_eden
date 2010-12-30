@@ -5,7 +5,7 @@
     @requires: U{B{I{gluon}} <http://web2py.com>}
 
     @author: Fran Boon <francisboon@gmail.com>
-    @author: nursix <dominic@aidiq.com>
+    @author: Dominic König <dominic@aidiq.com>
     @author: sunneach
     @copyright: (c) 2010 Sahana Software Foundation
     @license: MIT
@@ -42,6 +42,7 @@ import datetime
 import re
 import urllib
 import uuid
+import warnings
 
 from gluon.html import *
 from gluon.http import HTTP, redirect
@@ -61,18 +62,27 @@ table_field = re.compile("[\w_]+\.[\w_]+")
 # =============================================================================
 class S3Audit(object):
 
-    """ Audit Trail Writer Class
+    """
+    Audit Trail Writer Class
 
-        @param db: the database
-        @param session: the current session
-        @param tablename: the name of the audit table
-        @param migrate: migration setting
+    @author: Dominic König <dominic@aidiq.com>
 
     """
 
     def __init__(self, db, session,
                  tablename="s3_audit",
                  migrate=True):
+        """
+        Constructor
+
+        @param db: the database
+        @param session: the current session
+        @param tablename: the name of the audit table
+        @param migrate: migration setting
+
+        @note: this defines the audit table
+
+        """
 
         self.db = db
         self.table = db.get(tablename, None)
@@ -100,16 +110,16 @@ class S3Audit(object):
                  form=None,
                  record=None,
                  representation="unknown"):
+        """
+        Audit
 
-        """ Caller
-
-            @param operation: Operation to log, one of
-                "create", "update", "read", "list" or "delete"
-            @param prefix: the module prefix of the resource
-            @param name: the name of the resource (without prefix)
-            @param form: the form
-            @param record: the record ID
-            @param representation: the representation format
+        @param operation: Operation to log, one of
+            "create", "update", "read", "list" or "delete"
+        @param prefix: the module prefix of the resource
+        @param name: the name of the resource (without prefix)
+        @param form: the form
+        @param record: the record ID
+        @param representation: the representation format
 
         """
 
@@ -180,11 +190,11 @@ class S3Audit(object):
 # =============================================================================
 class S3Permission(object):
 
-    """ Class to handle permissions
+    """
+    Class to handle permissions
 
-        @param auth: the authorization manager
-        @param environment: the global environment
-        @param tablename: the name for the permissions table
+    @author: Dominic König <dominic@aidiq.com>
+    @status: uncompleted, currently unused
 
     """
 
@@ -209,6 +219,14 @@ class S3Permission(object):
 
     # -------------------------------------------------------------------------
     def __init__(self, auth, environment, tablename=None):
+        """
+        Constructor, invoked by AuthS3.__init__
+
+        @param auth: the authorization manager
+        @param environment: the global environment
+        @param tablename: the name for the permissions table
+
+        """
 
         # Instantiated once per request, but before Auth tables
         # are defined and authentication is checked, thus no use
@@ -216,6 +234,10 @@ class S3Permission(object):
 
         # Auth
         self.auth = auth
+
+        # Configuration
+        # @todo: read from deployment settings
+        self.skip_table_acls = False
 
         # Environment
         env = Storage(environment)
@@ -252,22 +274,30 @@ class S3Permission(object):
             if ext:
                 self.format = ext[-1].rsplit(".", 1)[1].lower()
 
+        # Page permission cache
+        self.page_acls = Storage()
+        self.table_acls = Storage()
+
         # Pages which never require permission
-        self.permitted_pages = (
+        self.unrestricted_pages = (
             "default/index",
             "default/user",
             "default/contact",
             "default/about")
 
         # Default landing pages
+        _next = URL(r=request, args=request.args, vars=request.vars)
         self.homepage = URL(r=request, c="default", f="index")
-        self.loginpage = URL(r=request, c="default", f="user/login") # @todo: next!
+        self.loginpage = URL(r=request, c="default", f="user/login",
+                             vars=dict(_next=_next))
 
 
     # -------------------------------------------------------------------------
     def define_table(self):
+        """
+        Define permissions table, invoked by AuthS3.define_tables
 
-        """ Define permissions table """
+        """
 
         table_group = self.auth.settings.table_group
         if table_group is None:
@@ -276,7 +306,8 @@ class S3Permission(object):
         if not self.table:
             self.table = self.db.define_table(self.tablename,
                             Field("group_id", table_group),
-                            Field("prefix", length=64),
+                            Field("controller", length=64),
+                            Field("function", length=512),
                             Field("tablename", length=512),
                             Field("opermissions", "integer", default=self.ALL),
                             Field("spermissions", "integer", default=self.READ),
@@ -284,53 +315,221 @@ class S3Permission(object):
 
 
     # -------------------------------------------------------------------------
-    def __call__(self, table=None, record_id=None):
+    def __call__(self,
+                 c=None,
+                 f=None,
+                 table=None,
+                 record=None):
+        """
+        Get the permissions of the current user for a path
 
-        """ Get the permissions for a path """
+        @param c: the controller name (falls back request.controller)
+        @param f: the function name (falls back to request.function)
+        @param table: the table
+        @param record: the record ID (or the Row if already loaded)
+
+        @note: if passing a Row, it must contain all available ownership
+               fields (id, created_by, owned_by), otherwise the record
+               will be re-loaded by this function
+
+        """
 
         return self.ALL # not used yet
 
-        if self.has_role(1):
-            # User is admin => no further permission checking
+        ADMIN = 1
+        EDITOR = 4
+
+        t = self.table # Permissions table
+
+        # Get user roles
+        roles = []
+        if self.session.s3 is not None:
+            roles = self.session.s3.roles or []
+        if ADMIN in roles:
+            # User is admin
             return self.ALL
 
-        # Target page
-        page = "%s/%s" % (self.controller, self.function)
+        # Fall back to current request
+        _c = c or self.controller
+        _f = f or self.function
 
-        if page in self.permitted_pages and table is None:
-            # Page is never restricted
+        # Target page unrestricted by default?
+        page = "%s/%s" % (_c, _f)
+        if page in self.unrestricted_pages and table is None:
             return self.ALL
-        else:
-            # Check controller permission
-            if self.controller in self.modules:
-                module = self.modules[self.controller]
-                if not module.access: #module.restricted:
-                    # Controller is not restricted in deployment settings
-                    pass
+
+        # Check controller permission in deployment settings
+        # @todo: deprecate!
+        if _c in self.modules:
+            module = self.modules[_c]
+            if module.access:
+                # Module is restricted by deployment settings
+                groups = re.split("\|", module.access)[1:-1]
+                proles = [r for r in groups if int(r) in roles]
+                if proles or self.format in ("json", "popup"):
+                    return self.ALL
                 else:
-                    # Controller is restricted to module.access
                     return self.NONE
+
+        # Policy helpers
+        most_permissive = lambda acl: \
+                                 reduce(lambda x, y: (x[0]|y[0], x[1]|y[1]),
+                                 acl, (self.NONE, self.NONE))
+        most_restrictive = lambda acl: \
+                                  reduce(lambda x, y: (x[0]&y[0], x[1]&y[1]),
+                                  acl, (self.ALL, self.ALL))
+
+        # Get the page ACL
+        page_acl = self.page_acls.get(page, None)
+        if page_acl is None:
+            q = ((t.controller == _c) &
+                ((t.function == None) | (t.function == "") | (t.function == _f)))
+            if roles:
+                query = (t.group_id.belongs(roles)) & q
             else:
-                # not restricted by default
-                pass
+                query = (t.group_id == None) & q
+            rows = self.db(query).select()
+            if rows:
+                # ACLs found, apply most permissive role
+                function_acl = []
+                controller_acl = []
+                for row in rows:
+                    if row.function == _f:
+                        function_acl += (row.opermissions, row.spermissions)
+                    else:
+                        controller_acl += (row.opermissions, row.spermissions)
+                function_acl = most_permissive(function_acl)
+                controller_acl = most_permissive(controller_acl)
+                page_acl = most_permissive((function_acl, controller_acl))
+            else:
+                restricted = self.db(q).select(t.id, limitby=(0, 1)).first()
+                if restricted:
+                    # Page is restricted, but no ACL for current user
+                    page_acl = (self.NONE, self.NONE)
+                elif roles:
+                    # Authenticated user, default permissions
+                    page_acl = (self.ALL, self.ALL)
+                else:
+                    # Anonymous user, default permissions
+                    page_acl = (self.READ, self.READ)
+            self.page_acls.update({page:page_acl})
 
-        return self.ALL
+        # Done?
+        if table is None or self.skip_table_acls:
+            acl = page_acl[0] | page_acl[1]
+            return acl
 
-        if table is not None:
-            # Check table+record permission
-            pass
+        # Get the table ACL
+        tablename = table._tablename
+        if EDITOR in roles:
+            table_acl = (self.ALL, self.ALL)
+        else:
+            table_acl = self.table_acls.get(tablename, None)
+        if table_acl is None:
+            q = ((t.tablename == tablename) &
+                (t.controller == _c) | (t.controller == None) | (t.controller == ""))
+            if roles:
+                query = (t.group_id.belongs(roles)) & q
+            else:
+                query = (t.group_id == None) & q
+            rows = self.db(query).select()
+            table_acl = [(r.opermissions, r.spermissions) for r in rows]
+            if table_acl:
+                # ACL found, apply most permissive role
+                table_acl = most_permissive(table_acl)
+            else:
+                restricted = self.db(q).select(t.id, limitby=(0, 1)).first()
+                if restricted:
+                    # Table is restricted, but no ACL for current user
+                    table_acl = (self.NONE, self.NONE)
+                elif roles:
+                    # Authenticated user, default permissions
+                    table_acl = (self.ALL, self.ALL)
+                else:
+                    # Anonymous user, default permissions
+                    table_acl = (self.READ, self.READ)
+            self.table_acls.update({tablename:table_acl})
 
-        # Default policy
-        return self.NONE
+        # Overall policy
+        acl = most_restrictive((page_acl, table_acl))
+
+        if acl[0] == self.NONE and acl[1] == self.NONE:
+            # No table access
+            acl = self.NONE
+        elif record is None:
+            # No record specified
+            acl = acl[1]
+        else:
+            # Check record ownership
+            acl = self.is_owner(table, record) and acl[0] or acl[1]
+
+        return acl
+
+
+    # -------------------------------------------------------------------------
+    def is_owner(self, table, record):
+        """
+        Establish the ownership of a record
+
+        @param table: the table
+        @param record: the record ID (or the Row if already loaded)
+
+        @note: if passing a Row, it must contain all available ownership
+               fields (id, created_by, owned_by), otherwise the record
+               will be re-loaded by this function
+
+        """
+
+        user_id = None
+        roles = []
+
+        if self.auth.user is not None:
+            user_id = self.auth.user.id
+        if self.session.s3 is not None:
+            roles = self.session.s3.roles or []
+
+        if not user_id and not roles:
+            return False
+        elif 1 in roles:
+            return True
+        else:
+            record_id = None
+            ownership_fields = ("created_by", "owned_by")
+            fields = [f for f in ownership_fields if f in table.fields]
+            if not fields:
+                return True # Ownership is undefined
+            if isinstance(record, Row):
+                missing = [f for f in fields if f not in record]
+                if missing:
+                    if "id" in record:
+                        record_id = record.id
+                    record = None
+            else:
+                record_id = record
+                record = None
+            if not record and fields:
+                fs = [table[f] for f in fields] + [table.id]
+                record = self.db(table.id == record_id).select(limitby=(0,1), *fs).first()
+            if not record:
+                return False # Record does not exist
+
+            creator = owner = None
+            if "created_by" in table.fields:
+                creator = record.created_by
+            if "owned_by" in table.fields:
+                owner = record.owned_by
+
+            return not creator and not owner or \
+                   creator == user_id or owner in roles
 
 
     # -------------------------------------------------------------------------
     def require(self):
+        """
+        Permission check including action upon failure
 
-        """ Permission check including action upon failure
-
-            @example:
-                auth.permission.require(my_table, auth.permission.ALL)
+            - example:
+              auth.permission.require(my_table, auth.permission.ALL)
 
         """
 
@@ -338,17 +537,11 @@ class S3Permission(object):
 
 
     # -------------------------------------------------------------------------
-    def has_role(self, role):
-
-        # @todo: re-implement?
-
-        return self.auth.shn_has_role(role)
-
-
-    # -------------------------------------------------------------------------
     def fail(self):
+        """
+        Action upon insufficient permissions
 
-        """ Action upon insufficient permissions """
+        """
 
         if self.format == "html":
             # HTML interactive request => flash message + redirect
@@ -1622,7 +1815,7 @@ class S3ReusableField(object):
         an argument store. The field is created with the __call__
         method, which is faster than copying an existing field.
 
-        @author: nursix
+        @author: Dominic König <dominic@aidiq.com>
 
     """
 

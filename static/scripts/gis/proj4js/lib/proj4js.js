@@ -2,35 +2,48 @@
 Author:       Mike Adair madairATdmsolutions.ca
               Richard Greenwood rich@greenwoodmap.com
 License:      LGPL as per: http://www.gnu.org/copyleft/lesser.html
-              Note: This program is an almost direct port of the C library Proj4.
+
 $Id: Proj.js 2956 2007-07-09 12:17:52Z steven $
 */
 
 /**
- * Provides methods for coordinate transformations between map projections and 
- * longitude/latitude, including datum transformations.
+ * Namespace: Proj4js
+ *
+ * Proj4js is a JavaScript library to transform point coordinates from one 
+ * coordinate system to another, including datum transformations.
+ *
+ * This library is a port of both the Proj.4 and GCTCP C libraries to JavaScript. 
+ * Enabling these transformations in the browser allows geographic data stored 
+ * in different projections to be combined in browser-based web mapping 
+ * applications.
  * 
- * Initialization of Proj objects is with a projection code, usually EPSG codes.
- * The code passed in will be stripped of colons (':') and converted to uppercase
- * for internal use.
- * If you know what map projections your application will be dealing with, the
- * definition for the projections can be included with the script tag when the 
- * application is being coded.  Otherwise, practically any projection definition
- * can be loaded dynamically at run-time with an AJAX request to a lookup service
- * such as spatialreference.org.
- * The actual code supporting the forward and inverse tansformations for each
- * projection class is loaded dynamically at run-time.  These may also be 
- * specified when the application is coded if the projections to be used are known
- * beforehand.
- * A projection object has properties for units and title strings.
- * All coordinates are handled as points which is a 2 element array where x is
- * the first element and y is the second.
- * For the transform() method pass in mapXY and a destination projection object
- * and it returns a map XY coordinate in the other projection
- */
+ * Proj4js must have access to coordinate system initialization strings (which
+ * are the same as for PROJ.4 command line).  Thes can be included in your 
+ * application using a <script> tag or Proj4js can load CS initialization 
+ * strings from a local directory or a web service such as spatialreference.org.
+ *
+ * Similarly, Proj4js must have access to projection transform code.  These can
+ * be included individually using a <script> tag in your page, built into a 
+ * custom build of Proj4js or loaded dynamically at run-time.  Using the
+ * -combined and -compressed versions of Proj4js includes all projection class
+ * code by default.
+ *
+ * Note that dynamic loading of defs and code happens ascynchrously, check the
+ * Proj.readyToUse flag before using the Proj object.  If the defs and code
+ * required by your application are loaded through script tags, dynamic loading
+ * is not required and the Proj object will be readyToUse on return from the 
+ * constructor.
+ * 
+ * All coordinates are handled as points which have a .x and a .y property
+ * which will be modified in place.
+ *
+ * Override Proj4js.reportError for output of alerts and warnings.
+ *
+ * See http://trac.osgeo.org/proj4js/wiki/UserGuide for full details.
+*/
 
 /**
- * Global namespace object for Proj4js library to use
+ * Global namespace object for Proj4js library
  */
 Proj4js = {
 
@@ -40,28 +53,10 @@ Proj4js = {
      */
     defaultDatum: 'WGS84',                  //default datum
 
-    /**
-     * Property: proxyScript
-     * A proxy script to execute AJAX requests in other domains. 
-     */
-    proxyScript: null,  //TBD: customize this for spatialreference.org output
-
-    /**
-     * Property: defsLookupService
-     * AJAX service to retreive projection definition parameters from
-     */
-    defsLookupService: 'http://spatialreference.org/ref',
-
-    /**
-     * Property: libPath
-     * internal: http server path to library code.
-     * TBD figure this out automatically
-     */
-    libPath: 'proj4js/lib/',
-
     /** 
     * Method: transform(source, dest, point)
-    * Transform a point coordinate from one map projection to another.
+    * Transform a point coordinate from one map projection to another.  This is
+    * really the only public method you should need to use.
     *
     * Parameters:
     * source - {Proj4js.Proj} source map projection for the transformation
@@ -69,15 +64,10 @@ Proj4js = {
     * point - {Object} point to transform, may be geodetic (long, lat) or
     *     projected Cartesian (x,y), but should always have x,y properties.
     */
-    transform : function(source, dest, point) {
+    transform: function(source, dest, point) {
         if (!source.readyToUse || !dest.readyToUse) {
             this.reportError("Proj4js initialization for "+source.srsCode+" not yet complete");
-            return;
-        }
-        
-        if (point.transformed) {
-          this.log("point already transformed");
-          return;
+            return point;
         }
         
         // Workaround for Spherical Mercator
@@ -85,7 +75,6 @@ Proj4js = {
             (dest.srsProjNumber == "900913" && source.datumCode != "WGS84")) {
             var wgs84 = Proj4js.WGS84;
             this.transform(source, wgs84, point);
-            point.transformed = false;
             source = wgs84;
         }
 
@@ -110,8 +99,8 @@ Proj4js = {
         point = this.datum_transform( source.datum, dest.datum, point );
 
         // Adjust for the prime meridian if necessary
-        if (dest.from_greenwich) { 
-            point.x -= dest.from_greenwich; 
+        if (dest.from_greenwich) {
+            point.x -= dest.from_greenwich;
         }
 
         if( dest.projName=="longlat" ) {             
@@ -125,7 +114,6 @@ Proj4js = {
                 point.y /= dest.to_meter;
             }
         }
-        point.transformed = true;
         return point;
     }, // transform()
 
@@ -142,63 +130,63 @@ Proj4js = {
                     // whereas cs_compare_datums returns 1 to indicate TRUE
                     // confusing, should fix this
       }
-      
+
       // Explicitly skip datum transform by setting 'datum=none' as parameter for either source or dest
-      if( source.datum_type == Proj4js.common.PJD_NODATUM  
+      if( source.datum_type == Proj4js.common.PJD_NODATUM
           || dest.datum_type == Proj4js.common.PJD_NODATUM) {
-          return point; 
+          return point;
       }
-      
-        // If this datum requires grid shifts, then apply it to geodetic coordinates.
-        if( source.datum_type == Proj4js.common.PJD_GRIDSHIFT )
-        {
-          alert("ERROR: Grid shift transformations are not implemented yet.");
-          /*
-            pj_apply_gridshift( pj_param(source.params,"snadgrids").s, 0,
-                                point_count, point_offset, x, y, z );
-            CHECK_RETURN;
 
-            src_a = SRS_WGS84_SEMIMAJOR;
-            src_es = 0.006694379990;
-          */
-        }
+      // If this datum requires grid shifts, then apply it to geodetic coordinates.
+      if( source.datum_type == Proj4js.common.PJD_GRIDSHIFT )
+      {
+        alert("ERROR: Grid shift transformations are not implemented yet.");
+        /*
+          pj_apply_gridshift( pj_param(source.params,"snadgrids").s, 0,
+                              point_count, point_offset, x, y, z );
+          CHECK_RETURN;
 
-        if( dest.datum_type == Proj4js.common.PJD_GRIDSHIFT )
-        {
-          alert("ERROR: Grid shift transformations are not implemented yet.");
-          /*
-            dst_a = ;
-            dst_es = 0.006694379990;
-          */
-        }
+          src_a = SRS_WGS84_SEMIMAJOR;
+          src_es = 0.006694379990;
+        */
+      }
 
-        // Do we need to go through geocentric coordinates?
-        if( source.es != dest.es || source.a != dest.a 
-            || source.datum_type == Proj4js.common.PJD_3PARAM 
-            || source.datum_type == Proj4js.common.PJD_7PARAM
-            || dest.datum_type == Proj4js.common.PJD_3PARAM
-            || dest.datum_type == Proj4js.common.PJD_7PARAM)
-        {
+      if( dest.datum_type == Proj4js.common.PJD_GRIDSHIFT )
+      {
+        alert("ERROR: Grid shift transformations are not implemented yet.");
+        /*
+          dst_a = ;
+          dst_es = 0.006694379990;
+        */
+      }
 
-          // Convert to geocentric coordinates.
-          source.geodetic_to_geocentric( point );
+      // Do we need to go through geocentric coordinates?
+      if( source.es != dest.es || source.a != dest.a
+          || source.datum_type == Proj4js.common.PJD_3PARAM
+          || source.datum_type == Proj4js.common.PJD_7PARAM
+          || dest.datum_type == Proj4js.common.PJD_3PARAM
+          || dest.datum_type == Proj4js.common.PJD_7PARAM)
+      {
+
+        // Convert to geocentric coordinates.
+        source.geodetic_to_geocentric( point );
+        // CHECK_RETURN;
+
+        // Convert between datums
+        if( source.datum_type == Proj4js.common.PJD_3PARAM || source.datum_type == Proj4js.common.PJD_7PARAM ) {
+          source.geocentric_to_wgs84(point);
           // CHECK_RETURN;
-
-          // Convert between datums
-          if( source.datum_type == Proj4js.common.PJD_3PARAM || source.datum_type == Proj4js.common.PJD_7PARAM ) {
-            source.geocentric_to_wgs84(point);
-            // CHECK_RETURN;
-          }
-
-          if( dest.datum_type == Proj4js.common.PJD_3PARAM || dest.datum_type == Proj4js.common.PJD_7PARAM ) {
-            dest.geocentric_from_wgs84(point);
-            // CHECK_RETURN;
-          }
-
-          // Convert back to geodetic coordinates
-          dest.geocentric_to_geodetic( point );
-            // CHECK_RETURN;
         }
+
+        if( dest.datum_type == Proj4js.common.PJD_3PARAM || dest.datum_type == Proj4js.common.PJD_7PARAM ) {
+          dest.geocentric_from_wgs84(point);
+          // CHECK_RETURN;
+        }
+
+        // Convert back to geodetic coordinates
+        dest.geocentric_to_geodetic( point );
+          // CHECK_RETURN;
+      }
 
       // Apply grid shift to destination if required
       if( dest.datum_type == Proj4js.common.PJD_GRIDSHIFT )
@@ -212,105 +200,216 @@ Proj4js = {
 
     /**
      * Function: reportError
-     * An internal method to report errors back to user. Should be overridden
-     * by applications to deliver error messages.
+     * An internal method to report errors back to user. 
+     * Override this in applications to report error messages or throw exceptions.
      */
     reportError: function(msg) {
+      //console.log(msg);
+    },
+
+/**
+ *
+ * Title: Private Methods
+ * The following properties and methods are intended for internal use only.
+ *
+ * This is a minimal implementation of JavaScript inheritance methods so that 
+ * Proj4js can be used as a stand-alone library.
+ * These are copies of the equivalent OpenLayers methods at v2.7
+ */
+ 
+/**
+ * Function: extend
+ * Copy all properties of a source object to a destination object.  Modifies
+ *     the passed in destination object.  Any properties on the source object
+ *     that are set to undefined will not be (re)set on the destination object.
+ *
+ * Parameters:
+ * destination - {Object} The object that will be modified
+ * source - {Object} The object with properties to be set on the destination
+ *
+ * Returns:
+ * {Object} The destination object.
+ */
+    extend: function(destination, source) {
+      destination = destination || {};
+      if(source) {
+          for(var property in source) {
+              var value = source[property];
+              if(value !== undefined) {
+                  destination[property] = value;
+              }
+          }
+      }
+      return destination;
+    },
+
+/**
+ * Constructor: Class
+ * Base class used to construct all other classes. Includes support for 
+ *     multiple inheritance. 
+ *  
+ */
+    Class: function() {
+      var Class = function() {
+          this.initialize.apply(this, arguments);
+      };
+  
+      var extended = {};
+      var parent;
+      for(var i=0; i<arguments.length; ++i) {
+          if(typeof arguments[i] == "function") {
+              // get the prototype of the superclass
+              parent = arguments[i].prototype;
+          } else {
+              // in this case we're extending with the prototype
+              parent = arguments[i];
+          }
+          Proj4js.extend(extended, parent);
+      }
+      Class.prototype = extended;
+      
+      return Class;
     },
 
     /**
-     * Function: log
-     * An internal method to log events. 
+     * Function: bind
+     * Bind a function to an object.  Method to easily create closures with
+     *     'this' altered.
+     * 
+     * Parameters:
+     * func - {Function} Input function.
+     * object - {Object} The object to bind to the input function (as this).
+     * 
+     * Returns:
+     * {Function} A closure with 'this' set to the passed in object.
      */
-    log: function(msg) {
+    bind: function(func, object) {
+        // create a reference to all arguments past the second one
+        var args = Array.prototype.slice.apply(arguments, [2]);
+        return function() {
+            // Push on any additional arguments from the actual function call.
+            // These will come after those sent to the bind call.
+            var newArgs = args.concat(
+                Array.prototype.slice.apply(arguments, [0])
+            );
+            return func.apply(object, newArgs);
+        };
+    },
+    
+/**
+ * The following properties and methods handle dynamic loading of JSON objects.
+ *
+    /**
+     * Property: scriptName
+     * {String} The filename of this script without any path.
+     */
+    scriptName: "proj4js.js",
+
+    /**
+     * Property: defsLookupService
+     * AJAX service to retreive projection definition parameters from
+     */
+    defsLookupService: 'http://spatialreference.org/ref',
+
+    /**
+     * Property: libPath
+     * internal: http server path to library code.
+     */
+    libPath: null,
+
+    /**
+     * Function: getScriptLocation
+     * Return the path to this script.
+     *
+     * Returns:
+     * Path to this script
+     */
+    getScriptLocation: function () {
+        if (this.libPath) return this.libPath;
+        var scriptName = this.scriptName;
+        var scriptNameLen = scriptName.length;
+
+        var scripts = document.getElementsByTagName('script');
+        for (var i = 0; i < scripts.length; i++) {
+            var src = scripts[i].getAttribute('src');
+            if (src) {
+                var index = src.lastIndexOf(scriptName);
+                // is it found, at the end of the URL?
+                if ((index > -1) && (index + scriptNameLen == src.length)) {
+                    this.libPath = src.slice(0, -scriptNameLen);
+                    break;
+                }
+            }
+        }
+        return this.libPath||"";
     },
 
-    loadProjDefinition : function(proj) {
-
-      //check in memory
-      if (this.defs[proj.srsCode]) return this.defs[proj.srsCode];
-
-      //set AJAX options
-      var options = {
-        method: 'get',
-        asynchronous: false,          //need to wait until defs are loaded before proceeding
-        onSuccess: this.defsLoadedFromDisk.bind(this,proj.srsCode)
+    /**
+     * Function: loadScript
+     * Load a JS file from a URL into a <script> tag in the page.
+     * 
+     * Parameters:
+     * url - {String} The URL containing the script to load
+     * onload - {Function} A method to be executed when the script loads successfully
+     * onfail - {Function} A method to be executed when there is an error loading the script
+     * loadCheck - {Function} A boolean method that checks to see if the script 
+     *            has loaded.  Typically this just checks for the existance of
+     *            an object in the file just loaded.
+     */
+    loadScript: function(url, onload, onfail, loadCheck) {
+      var script = document.createElement('script');
+      script.defer = false;
+      script.type = "text/javascript";
+      script.id = url;
+      script.src = url;
+      script.onload = onload;
+      script.onerror = onfail;
+      script.loadCheck = loadCheck;
+      if (/MSIE/.test(navigator.userAgent)) {
+        script.onreadystatechange = this.checkReadyState;
       }
-      
-      //else check for def on the server
-      var url = this.libPath + 'defs/' + proj.srsAuth.toUpperCase() + proj.srsProjNumber + '.js';
-      new OpenLayers.Ajax.Request(url, options);
-      if ( this.defs[proj.srsCode] ) return this.defs[proj.srsCode];
-
-      //else load from web service via AJAX request
-      if (this.proxyScript) {
-        var url = this.proxyScript + this.defsLookupService +'/' + proj.srsAuth +'/'+ proj.srsProjNumber + '/proj4';
-        options.onSuccess = this.defsLoadedFromService.bind(this,proj.srsCode)
-        options.onFailure = this.defsFailed.bind(this,proj.srsCode);
-        new OpenLayers.Ajax.Request(url, options);
+      document.getElementsByTagName('head')[0].appendChild(script);
+    },
+    
+    /**
+     * Function: checkReadyState
+     * IE workaround since there is no onerror handler.  Calls the user defined 
+     * loadCheck method to determine if the script is loaded.
+     * 
+     */
+    checkReadyState: function() {
+      if (this.readyState == 'loaded') {
+        if (!this.loadCheck()) {
+          this.onerror();
+        } else {
+          this.onload();
+        }
       }
-      
-      //may return null here if the defs are not found
-      return this.defs[proj.srsCode];
-    },
-
-    defsLoadedFromDisk: function(srsCode, transport) {
-      eval(transport.responseText);
-    },
-
-    defsLoadedFromService: function(srsCode, transport) {
-      this.defs[srsCode] = transport.responseText;
-      // save this also in the prototype, so we don't need to fetch it again
-      Proj4js.defs[srsCode] = transport.responseText;
-    },
-
-    defsFailed: function(srsCode) {
-      this.reportError('failed to load projection definition for: '+srsCode);
-      OpenLayers.Util.extend(this.defs[srsCode], this.defs['WGS84']);  //set it to something so it can at least continue
-    },
-
-    loadProjCode : function(projName) {
-      if (this.Proj[projName]) return;
-
-      //set AJAX options
-      var options = {
-        method: 'get',
-        asynchronous: false,          //need to wait until defs are loaded before proceeding
-        onSuccess: this.loadProjCodeSuccess.bind(this, projName),
-        onFailure: this.loadProjCodeFailure.bind(this, projName)
-      };
-      
-      //load the projection class 
-      var url = this.libPath + 'projCode/' + projName + '.js';
-      new OpenLayers.Ajax.Request(url, options);
-    },
-
-    loadProjCodeSuccess : function(projName, transport) {
-      eval(transport.responseText);
-      if (this.Proj[projName].dependsOn){
-        this.loadProjCode(this.Proj[projName].dependsOn);
-      }
-    },
-
-    loadProjCodeFailure : function(projName) {
-      Proj4js.reportError("failed to find projection file for: " + projName);
-      //TBD initialize with identity transforms so proj will still work
     }
-
 };
 
 /**
  * Class: Proj4js.Proj
- * Projection objects provide coordinate transformation methods for point coordinates
+ *
+ * Proj objects provide transformation methods for point coordinates
+ * between geodetic latitude/longitude and a projected coordinate system. 
  * once they have been initialized with a projection code.
+ *
+ * Initialization of Proj objects is with a projection code, usually EPSG codes,
+ * which is the key that will be used with the Proj4js.defs array.
+ * 
+ * The code passed in will be stripped of colons and converted to uppercase
+ * to locate projection definition files.
+ *
+ * A projection object has properties for units and title strings.
  */
-Proj4js.Proj = OpenLayers.Class({
+Proj4js.Proj = Proj4js.Class({
 
   /**
    * Property: readyToUse
    * Flag to indicate if initialization is complete for this Proj object
    */
-  readyToUse : false,   
+  readyToUse: false,   
   
   /**
    * Property: title
@@ -321,7 +420,7 @@ Proj4js.Proj = OpenLayers.Class({
   /**
    * Property: projName
    * The projection class for this projection, e.g. lcc (lambert conformal conic,
-   * or merc for mercator.  These are exactly equicvalent to their Proj4 
+   * or merc for mercator).  These are exactly equivalent to their Proj4 
    * counterparts.
    */
   projName: null,
@@ -335,6 +434,16 @@ Proj4js.Proj = OpenLayers.Class({
    * The datum specified for the projection
    */
   datum: null,
+  /**
+   * Property: x0
+   * The x coordinate origin
+   */
+  x0: 0,
+  /**
+   * Property: y0
+   * The y coordinate origin
+   */
+  y0: 0,
 
   /**
    * Constructor: initialize
@@ -344,38 +453,204 @@ Proj4js.Proj = OpenLayers.Class({
   * srsCode - a code for map projection definition parameters.  These are usually
   * (but not always) EPSG codes.
   */
-  initialize : function(srsCode) {
+  initialize: function(srsCode) {
+      this.srsCodeInput = srsCode;
+      // DGR 2008-08-03 : support urn and url
+      if (srsCode.indexOf('urn:') == 0) {
+          //urn:ORIGINATOR:def:crs:CODESPACE:VERSION:ID
+          var urn = srsCode.split(':');
+          if ((urn[1] == 'ogc' || urn[1] =='x-ogc') &&
+              (urn[2] =='def') &&
+              (urn[3] =='crs')) {
+              srsCode = urn[4]+':'+urn[urn.length-1];
+          }
+      } else if (srsCode.indexOf('http://') == 0) {
+          //url#ID
+          var url = srsCode.split('#');
+          if (url[0].match(/epsg.org/)) {
+            // http://www.epsg.org/#
+            srsCode = 'EPSG:'+url[1];
+          } else if (url[0].match(/RIG.xml/)) {
+            //http://librairies.ign.fr/geoportail/resources/RIG.xml#
+            //http://interop.ign.fr/registers/ign/RIG.xml#
+            srsCode = 'IGNF:'+url[1];
+          }
+      }
       this.srsCode = srsCode.toUpperCase();
       if (this.srsCode.indexOf("EPSG") == 0) {
           this.srsCode = this.srsCode;
           this.srsAuth = 'epsg';
           this.srsProjNumber = this.srsCode.substring(5);
+      // DGR 2007-11-20 : authority IGNF
+      } else if (this.srsCode.indexOf("IGNF") == 0) {
+          this.srsCode = this.srsCode;
+          this.srsAuth = 'IGNF';
+          this.srsProjNumber = this.srsCode.substring(5);
+      // DGR 2008-06-19 : pseudo-authority CRS for WMS
+      } else if (this.srsCode.indexOf("CRS") == 0) {
+          this.srsCode = this.srsCode;
+          this.srsAuth = 'CRS';
+          this.srsProjNumber = this.srsCode.substring(4);
       } else {
           this.srsAuth = '';
           this.srsProjNumber = this.srsCode;
       }
-
-      var defs = Proj4js.loadProjDefinition(this);
-      if (defs) {
-          this.parseDefs(defs);
-          Proj4js.loadProjCode(this.projName);
-          this.callInit();
+      this.loadProjDefinition();
+  },
+  
+/**
+ * Function: loadProjDefinition
+ *    Loads the coordinate system initialization string if required.
+ *    Note that dynamic loading happens asynchronously so an application must 
+ *    wait for the readyToUse property is set to true.
+ *    To prevent dynamic loading, include the defs through a script tag in
+ *    your application.
+ *
+ */
+    loadProjDefinition: function() {
+      //check in memory
+      if (Proj4js.defs[this.srsCode]) {
+        this.defsLoaded();
+        return;
       }
 
-  },
+      //else check for def on the server
+      var url = Proj4js.getScriptLocation() + 'defs/' + this.srsAuth.toUpperCase() + this.srsProjNumber + '.js';
+      Proj4js.loadScript(url, 
+                Proj4js.bind(this.defsLoaded, this),
+                Proj4js.bind(this.loadFromService, this),
+                Proj4js.bind(this.checkDefsLoaded, this) );
+    },
 
-  callInit : function() {
-      Proj4js.log('projection script loaded for:' + this.projName);
-      OpenLayers.Util.extend(this, Proj4js.Proj[this.projName]);
+/**
+ * Function: loadFromService
+ *    Creates the REST URL for loading the definition from a web service and 
+ *    loads it.
+ *
+ */
+    loadFromService: function() {
+      //else load from web service
+      var url = Proj4js.defsLookupService +'/' + this.srsAuth +'/'+ this.srsProjNumber + '/proj4js/';
+      Proj4js.loadScript(url, 
+            Proj4js.bind(this.defsLoaded, this),
+            Proj4js.bind(this.defsFailed, this),
+            Proj4js.bind(this.checkDefsLoaded, this) );
+    },
+
+/**
+ * Function: defsLoaded
+ * Continues the Proj object initilization once the def file is loaded
+ *
+ */
+    defsLoaded: function() {
+      this.parseDefs();
+      this.loadProjCode(this.projName);
+    },
+    
+/**
+ * Function: checkDefsLoaded
+ *    This is the loadCheck method to see if the def object exists
+ *
+ */
+    checkDefsLoaded: function() {
+      if (Proj4js.defs[this.srsCode]) {
+        return true;
+      } else {
+        return false;
+      }
+    },
+
+ /**
+ * Function: defsFailed
+ *    Report an error in loading the defs file, but continue on using WGS84
+ *
+ */
+   defsFailed: function() {
+      Proj4js.reportError('failed to load projection definition for: '+this.srsCode);
+      Proj4js.defs[this.srsCode] = Proj4js.defs['WGS84'];  //set it to something so it can at least continue
+      this.defsLoaded();
+    },
+
+/**
+ * Function: loadProjCode
+ *    Loads projection class code dynamically if required.
+ *     Projection code may be included either through a script tag or in
+ *     a built version of proj4js
+ *
+ */
+    loadProjCode: function(projName) {
+      if (Proj4js.Proj[projName]) {
+        this.initTransforms();
+        return;
+      }
+
+      //the URL for the projection code
+      var url = Proj4js.getScriptLocation() + 'projCode/' + projName + '.js';
+      Proj4js.loadScript(url, 
+              Proj4js.bind(this.loadProjCodeSuccess, this, projName),
+              Proj4js.bind(this.loadProjCodeFailure, this, projName), 
+              Proj4js.bind(this.checkCodeLoaded, this, projName) );
+    },
+
+ /**
+ * Function: loadProjCodeSuccess
+ *    Loads any proj dependencies or continue on to final initialization.
+ *
+ */
+    loadProjCodeSuccess: function(projName) {
+      if (Proj4js.Proj[projName].dependsOn){
+        this.loadProjCode(Proj4js.Proj[projName].dependsOn);
+      } else {
+        this.initTransforms();
+      }
+    },
+
+ /**
+ * Function: defsFailed
+ *    Report an error in loading the proj file.  Initialization of the Proj
+ *    object has failed and the readyToUse flag will never be set.
+ *
+ */
+    loadProjCodeFailure: function(projName) {
+      Proj4js.reportError("failed to find projection file for: " + projName);
+      //TBD initialize with identity transforms so proj will still work?
+    },
+    
+/**
+ * Function: checkCodeLoaded
+ *    This is the loadCheck method to see if the projection code is loaded
+ *
+ */
+    checkCodeLoaded: function(projName) {
+      if (Proj4js.Proj[projName]) {
+        return true;
+      } else {
+        return false;
+      }
+    },
+
+/**
+ * Function: initTransforms
+ *    Finalize the initialization of the Proj object
+ *
+ */
+    initTransforms: function() {
+      Proj4js.extend(this, Proj4js.Proj[this.projName]);
       this.init();
-      this.mapXYToLonLat = this.inverse;
-      this.lonLatToMapXY = this.forward;
       this.readyToUse = true;
   },
 
-  parseDefs : function(proj4opts) {
-      this.defData = proj4opts;
+/**
+ * Function: parseDefs
+ * Parses the PROJ.4 initialization string and sets the associated properties.
+ *
+ */
+  parseDefs: function() {
+      this.defData = Proj4js.defs[this.srsCode];
       var paramName, paramVal;
+      if (!this.defData) {
+        return;
+      }
       var paramArray=this.defData.split("+");
 
       for (var prop=0; prop<paramArray.length; prop++) {
@@ -393,52 +668,74 @@ Proj4js.Proj = OpenLayers.Class({
               case "ellps":  this.ellps = paramVal.replace(/\s/gi,""); break;
               case "a":      this.a =  parseFloat(paramVal); break;  // semi-major radius
               case "b":      this.b =  parseFloat(paramVal); break;  // semi-minor radius
+              // DGR 2007-11-20
+              case "rf":     this.rf = parseFloat(paramVal); break; // inverse flattening rf= a/(a-b)
               case "lat_0":  this.lat0 = paramVal*Proj4js.common.D2R; break;        // phi0, central latitude
               case "lat_1":  this.lat1 = paramVal*Proj4js.common.D2R; break;        //standard parallel 1
               case "lat_2":  this.lat2 = paramVal*Proj4js.common.D2R; break;        //standard parallel 2
-              case "lat_ts": this.lat_ts = paramVal*Proj4js.common.D2R; break;      //used in merc 
+              case "lat_ts": this.lat_ts = paramVal*Proj4js.common.D2R; break;      // used in merc and eqc
               case "lon_0":  this.long0 = paramVal*Proj4js.common.D2R; break;       // lam0, central longitude
+              case "alpha":  this.alpha =  parseFloat(paramVal)*Proj4js.common.D2R; break;  //for somerc projection
+              case "lonc":   this.longc = paramVal*Proj4js.common.D2R; break;       //for somerc projection
               case "x_0":    this.x0 = parseFloat(paramVal); break;  // false easting
               case "y_0":    this.y0 = parseFloat(paramVal); break;  // false northing
               case "k_0":    this.k0 = parseFloat(paramVal); break;  // projection scale factor
               case "k":      this.k0 = parseFloat(paramVal); break;  // both forms returned
-              case "R_A":    this.R = parseFloat(paramVal); break;   //Spheroid radius 
+              case "r_a":    this.R_A = true; break;                 // sphere--area of ellipsoid
               case "zone":   this.zone = parseInt(paramVal); break;  // UTM Zone
               case "south":   this.utmSouth = true; break;  // UTM north/south
               case "towgs84":this.datum_params = paramVal.split(","); break;
               case "to_meter": this.to_meter = parseFloat(paramVal); break; // cartesian scaling
               case "from_greenwich": this.from_greenwich = paramVal*Proj4js.common.D2R; break;
+              // DGR 2008-07-09 : if pm is not a well-known prime meridian take
+              // the value instead of 0.0, then convert to radians
               case "pm":     paramVal = paramVal.replace(/\s/gi,"");
                              this.from_greenwich = Proj4js.PrimeMeridian[paramVal] ?
-                                Proj4js.PrimeMeridian[paramVal]*Proj4js.common.D2R : 0.0; break;
+                                Proj4js.PrimeMeridian[paramVal] : parseFloat(paramVal);
+                             this.from_greenwich *= Proj4js.common.D2R; 
+                             break;
               case "no_defs": break; 
-              default: Proj4js.log("Unrecognized parameter: " + paramName);
+              default: //alert("Unrecognized parameter: " + paramName);
           } // switch()
       } // for paramArray
       this.deriveConstants();
   },
 
-  deriveConstants : function() {
+/**
+ * Function: deriveConstants
+ * Sets several derived constant values and initialization of datum and ellipse
+ *     parameters.
+ *
+ */
+  deriveConstants: function() {
       if (this.nagrids == '@null') this.datumCode = 'none';
       if (this.datumCode && this.datumCode != 'none') {
         var datumDef = Proj4js.Datum[this.datumCode];
         if (datumDef) {
-          this.datum_params = datumDef.towgs84.split(',');
+          this.datum_params = datumDef.towgs84 ? datumDef.towgs84.split(',') : null;
           this.ellps = datumDef.ellipse;
-          this.datumName = datumDef.datumName;
+          this.datumName = datumDef.datumName ? datumDef.datumName : this.datumCode;
         }
       }
       if (!this.a) {    // do we have an ellipsoid?
           var ellipse = Proj4js.Ellipsoid[this.ellps] ? Proj4js.Ellipsoid[this.ellps] : Proj4js.Ellipsoid['WGS84'];
-          OpenLayers.Util.extend(this, ellipse);
+          Proj4js.extend(this, ellipse);
       }
       if (this.rf && !this.b) this.b = (1.0 - 1.0/this.rf) * this.a;
-      if (Math.abs(this.a - this.b)<Proj4js.common.EPSLN) this.sphere = true;
+      if (Math.abs(this.a - this.b)<Proj4js.common.EPSLN) {
+        this.sphere = true;
+        this.b= this.a;
+      }
       this.a2 = this.a * this.a;          // used in geocentric
       this.b2 = this.b * this.b;          // used in geocentric
       this.es = (this.a2-this.b2)/this.a2;  // e ^ 2
-      //this.es=1-(Math.pow(this.b,2)/Math.pow(this.a,2));
       this.e = Math.sqrt(this.es);        // eccentricity
+      if (this.R_A) {
+        this.a *= 1. - this.es * (Proj4js.common.SIXTH + this.es * (Proj4js.common.RA4 + this.es * Proj4js.common.RA6));
+        this.a2 = this.a * this.a;
+        this.b2 = this.b * this.b;
+        this.es = 0.;
+      }
       this.ep2=(this.a2-this.b2)/this.b2; // used in geocentric
       if (!this.k0) this.k0 = 1.0;    //default value
 
@@ -447,14 +744,14 @@ Proj4js.Proj = OpenLayers.Class({
 });
 
 Proj4js.Proj.longlat = {
-  init : function() {
+  init: function() {
     //no-op for longlat
   },
-  forward : function(pt) {
+  forward: function(pt) {
     //identity transform
     return pt;
   },
-  inverse : function(pt) {
+  inverse: function(pt) {
     //identity transform
     return pt;
   }
@@ -462,7 +759,7 @@ Proj4js.Proj.longlat = {
 
 /**
   Proj4js.defs is a collection of coordinate system definition objects in the 
-  Proj4 command line format.
+  PROJ.4 command line format.
   Generally a def is added by means of a separate .js file for example:
 
     <SCRIPT type="text/javascript" src="defs/EPSG26912.js"></SCRIPT>
@@ -479,16 +776,20 @@ Proj4js.defs = {
   // without requiring a separate .js file
   'WGS84': "+title=long/lat:WGS84 +proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees",
   'EPSG:4326': "+title=long/lat:WGS84 +proj=longlat +a=6378137.0 +b=6356752.31424518 +ellps=WGS84 +datum=WGS84 +units=degrees",
-  'EPSG:4269': "+title=long/lat:NAD83 +proj=longlat +a=6378137.0 +b=6356752.31414036 +ellps=GRS80 +datum=NAD83 +units=degrees" 
+  'EPSG:4269': "+title=long/lat:NAD83 +proj=longlat +a=6378137.0 +b=6356752.31414036 +ellps=GRS80 +datum=NAD83 +units=degrees",
+  'EPSG:3785': "+title= Google Mercator +proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs"
 };
-//+a=6378137.0 +b=6356752.31424518 +ellps=WGS84 +datum=WGS84",
+Proj4js.defs['GOOGLE'] = Proj4js.defs['EPSG:3785'];
+Proj4js.defs['EPSG:900913'] = Proj4js.defs['EPSG:3785'];
+Proj4js.defs['EPSG:102113'] = Proj4js.defs['EPSG:3785'];
+
 Proj4js.common = {
-  PI : Math.PI,
-  HALF_PI : Math.PI*0.5,
-  TWO_PI : Math.PI*2,
+  PI : 3.141592653589793238, //Math.PI,
+  HALF_PI : 1.570796326794896619, //Math.PI*0.5,
+  TWO_PI : 6.283185307179586477, //Math.PI*2,
   FORTPI : 0.78539816339744833,
-  R2D : 57.2957795131,
-  D2R : 0.0174532925199,
+  R2D : 57.29577951308232088,
+  D2R : 0.01745329251994329577,
   SEC_TO_RAD : 4.84813681109535993589914102357e-6, /* SEC_TO_RAD = Pi/180/3600 */
   EPSLN : 1.0e-10,
   MAX_ITER : 20,
@@ -504,6 +805,13 @@ Proj4js.common = {
   PJD_WGS84    : 4,   // WGS84 or equivalent
   PJD_NODATUM  : 5,   // WGS84 or equivalent
   SRS_WGS84_SEMIMAJOR : 6378137.0,  // only used in grid shift transforms
+
+  // ellipoid pj_set_ell.c
+  SIXTH : .1666666666666666667, /* 1/6 */
+  RA4   : .04722222222222222222, /* 17/360 */
+  RA6   : .02215608465608465608, /* 67/3024 */
+  RV4   : .06944444444444444444, /* 5/72 */
+  RV6   : .04243827160493827160, /* 55/1296 */
 
 // Function to compute the constant small m which is the radius of
 //   a parallel of latitude, phi, divided by the semimajor axis.
@@ -544,7 +852,7 @@ Proj4js.common = {
 /* Function to compute constant small q which is the radius of a 
    parallel of latitude, phi, divided by the semimajor axis. 
 ------------------------------------------------------------*/
-  qsfnz : function(eccent,sinphi,cosphi) {
+  qsfnz : function(eccent,sinphi) {
     var con;
     if (eccent > 1.0e-7) {
       con = eccent * sinphi;
@@ -581,13 +889,95 @@ Proj4js.common = {
   adjust_lon : function(x) {
     x = (Math.abs(x) < this.PI) ? x: (x - (this.sign(x)*this.TWO_PI) );
     return x;
+  },
+
+// IGNF - DGR : algorithms used by IGN France
+
+// Function to adjust latitude to -90 to 90; input in radians
+  adjust_lat : function(x) {
+    x= (Math.abs(x) < this.HALF_PI) ? x: (x - (this.sign(x)*this.PI) );
+    return x;
+  },
+
+// Latitude Isometrique - close to tsfnz ...
+  latiso : function(eccent, phi, sinphi) {
+    if (Math.abs(phi) > this.HALF_PI) return +Number.NaN;
+    if (phi==this.HALF_PI) return Number.POSITIVE_INFINITY;
+    if (phi==-1.0*this.HALF_PI) return -1.0*Number.POSITIVE_INFINITY;
+
+    var con= eccent*sinphi;
+    return Math.log(Math.tan((this.HALF_PI+phi)/2.0))+eccent*Math.log((1.0-con)/(1.0+con))/2.0;
+  },
+
+  fL : function(x,L) {
+    return 2.0*Math.atan(x*Math.exp(L)) - this.HALF_PI;
+  },
+
+// Inverse Latitude Isometrique - close to ph2z
+  invlatiso : function(eccent, ts) {
+    var phi= this.fL(1.0,ts);
+    var Iphi= 0.0;
+    var con= 0.0;
+    do {
+      Iphi= phi;
+      con= eccent*Math.sin(Iphi);
+      phi= this.fL(Math.exp(eccent*Math.log((1.0+con)/(1.0-con))/2.0),ts)
+    } while (Math.abs(phi-Iphi)>1.0e-12);
+    return phi;
+  },
+
+// Needed for Gauss Schreiber
+// Original:  Denis Makarov (info@binarythings.com)
+// Web Site:  http://www.binarythings.com
+  sinh : function(x)
+  {
+    var r= Math.exp(x);
+    r= (r-1.0/r)/2.0;
+    return r;
+  },
+
+  cosh : function(x)
+  {
+    var r= Math.exp(x);
+    r= (r+1.0/r)/2.0;
+    return r;
+  },
+
+  tanh : function(x)
+  {
+    var r= Math.exp(x);
+    r= (r-1.0/r)/(r+1.0/r);
+    return r;
+  },
+
+  asinh : function(x)
+  {
+    var s= (x>= 0? 1.0:-1.0);
+    return s*(Math.log( Math.abs(x) + Math.sqrt(x*x+1.0) ));
+  },
+
+  acosh : function(x)
+  {
+    return 2.0*Math.log(Math.sqrt((x+1.0)/2.0) + Math.sqrt((x-1.0)/2.0));
+  },
+
+  atanh : function(x)
+  {
+    return Math.log((x-1.0)/(x+1.0))/2.0;
+  },
+
+// Grande Normale
+  gN : function(a,e,sinphi)
+  {
+    var temp= e*sinphi;
+    return a/Math.sqrt(1.0 - temp*temp);
   }
 
 };
 
 /** datum object
 */
-Proj4js.datum = OpenLayers.Class({
+Proj4js.datum = Proj4js.Class({
 
   initialize : function(proj) {
     this.datum_type = Proj4js.common.PJD_WGS84;   //default setting
@@ -627,7 +1017,7 @@ Proj4js.datum = OpenLayers.Class({
   compare_datums : function( dest ) {
     if( this.datum_type != dest.datum_type ) {
       return false; // false, datums are not equal
-    } else if (this.a != dest.a || Math.abs(this.es-dest.es) > 0.000000000050) {
+    } else if( this.a != dest.a || Math.abs(this.es-dest.es) > 0.000000000050 ) {
       // the tolerence for es is to ensure that GRS80 and WGS84
       // are considered identical
       return false;
@@ -683,9 +1073,9 @@ Proj4js.datum = OpenLayers.Class({
     ** range as it may just be a rounding issue.  Also removed longitude
     ** test, it should be wrapped by Math.cos() and Math.sin().  NFW for PROJ.4, Sep/2001.
     */
-    if (Latitude < -Proj4js.common.HALF_PI && Latitude > -1.001 * Proj4js.common.HALF_PI ) {
+    if( Latitude < -Proj4js.common.HALF_PI && Latitude > -1.001 * Proj4js.common.HALF_PI ) {
         Latitude = -Proj4js.common.HALF_PI;
-    } else if (Latitude > Proj4js.common.HALF_PI && Latitude < 1.001 * Proj4js.common.HALF_PI ) {
+    } else if( Latitude > Proj4js.common.HALF_PI && Latitude < 1.001 * Proj4js.common.HALF_PI ) {
         Latitude = Proj4js.common.HALF_PI;
     } else if ((Latitude < -Proj4js.common.HALF_PI) || (Latitude > Proj4js.common.HALF_PI)) {
       /* Latitude out of range */
@@ -707,6 +1097,7 @@ Proj4js.datum = OpenLayers.Class({
     p.z = Z;
     return Error_Code;
   }, // cs_geodetic_to_geocentric()
+
 
   geocentric_to_geodetic : function (p) {
 /* local defintions and variables */
@@ -730,18 +1121,18 @@ var maxiter = 30;
     var At_Pole;     /* indicates location is in polar region */
     var iter;        /* # of continous iteration, max. 30 is always enough (s.a.) */
 
-    var X =p.x;
+    var X = p.x;
     var Y = p.y;
     var Z = p.z ? p.z : 0.0;   //Z value not always supplied
     var Longitude;
     var Latitude;
     var Height;
-    
+
     At_Pole = false;
     P = Math.sqrt(X*X+Y*Y);
     RR = Math.sqrt(X*X+Y*Y+Z*Z);
 
-/*	special cases for latitude and longitude */
+/*      special cases for latitude and longitude */
     if (P/this.a < genau) {
 
 /*  special case, if P=0. (X=0., Y=0.) */
@@ -797,21 +1188,21 @@ var maxiter = 30;
     }
     while (SDPHI*SDPHI > genau2 && iter < maxiter);
 
-/*	ellipsoidal (geodetic) latitude */
+/*      ellipsoidal (geodetic) latitude */
     Latitude=Math.atan(SPHI/Math.abs(CPHI));
 
     p.x = Longitude;
-    p.y =Latitude;
+    p.y = Latitude;
     p.z = Height;
     return p;
-  },
+  }, // cs_geocentric_to_geodetic()
 
   /** Convert_Geocentric_To_Geodetic
    * The method used here is derived from 'An Improved Algorithm for
    * Geocentric to Geodetic Coordinate Conversion', by Ralph Toms, Feb 1996
    */
   geocentric_to_geodetic_noniter : function (p) {
-    var X =p.x;
+    var X = p.x;
     var Y = p.y;
     var Z = p.z ? p.z : 0;   //Z value not always supplied
     var Longitude;
@@ -903,10 +1294,10 @@ var maxiter = 30;
     }
 
     p.x = Longitude;
-    p.y =Latitude;
+    p.y = Latitude;
     p.z = Height;
     return p;
-  }, // cs_geocentric_to_geodetic()
+  }, // geocentric_to_geodetic_noniter()
 
   /****************************************************************/
   // pj_geocentic_to_wgs84( p )
@@ -984,13 +1375,27 @@ var maxiter = 30;
     Other point classes may be used as long as they have
     x and y properties, which will get modified in the transform method.
 */
-Proj4js.Point = OpenLayers.Class({
+Proj4js.Point = Proj4js.Class({
 
+    /**
+     * Constructor: Proj4js.Point
+     *
+     * Parameters:
+     * - x {float} or {Array} either the first coordinates component or
+     *     the full coordinates
+     * - y {float} the second component
+     * - z {float} the third component, optional.
+     */
     initialize : function(x,y,z) {
       if (typeof x == 'object') {
         this.x = x[0];
         this.y = x[1];
         this.z = x[2] || 0.0;
+      } else if (typeof x == 'string') {
+        var coords = x.split(',');
+        this.x = parseFloat(coords[0]);
+        this.y = parseFloat(coords[1]);
+        this.z = parseFloat(coords[2]) || 0.0;
       } else {
         this.x = x;
         this.y = y;
@@ -998,30 +1403,38 @@ Proj4js.Point = OpenLayers.Class({
       }
     },
 
+    /**
+     * APIMethod: clone
+     * Build a copy of a Proj4js.Point object.
+     *
+     * Return:
+     * {Proj4js}.Point the cloned point.
+     */
     clone : function() {
       return new Proj4js.Point(this.x, this.y, this.z);
     },
 
     /**
-     * Method: toString
-     * Return a readable string version of the lonlat
+     * APIMethod: toString
+     * Return a readable string version of the point
      *
      * Return:
      * {String} String representation of Proj4js.Point object. 
      *           (ex. <i>"x=5,y=42"</i>)
      */
-    toString:function() {
+    toString : function() {
         return ("x=" + this.x + ",y=" + this.y);
     },
 
     /** 
      * APIMethod: toShortString
-     * 
+     * Return a short string version of the point.
+     *
      * Return:
      * {String} Shortened String representation of Proj4js.Point object. 
      *         (ex. <i>"5, 42"</i>)
      */
-    toShortString:function() {
+    toShortString : function() {
         return (this.x + ", " + this.y);
     }
 });
@@ -1088,7 +1501,7 @@ Proj4js.Ellipsoid = {
 };
 
 Proj4js.Datum = {
-  "WGS84": {towgs84: "0,0,0", ellipse: "WGS84", datumName: ""},
+  "WGS84": {towgs84: "0,0,0", ellipse: "WGS84", datumName: "WGS84"},
   "GGRS87": {towgs84: "-199.87,74.79,246.62", ellipse: "GRS80", datumName: "Greek_Geodetic_Reference_System_1987"},
   "NAD83": {towgs84: "0,0,0", ellipse: "GRS80", datumName: "North_American_Datum_1983"},
   "NAD27": {nadgrids: "@conus,@alaska,@ntv2_0.gsb,@ntv1_can.dat", ellipse: "clrk66", datumName: "North_American_Datum_1927"},

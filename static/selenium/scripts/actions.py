@@ -40,19 +40,23 @@ class Action(unittest.TestCase):
         # However, the first time that the fnFilter() is called in the testing suite it doesn't complete the processing, hence it is called twice.
         sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( '' );")
         time.sleep(1)
-        sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( '"+searchString+"' );")
-        time.sleep(1)
+        sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( '%s' );" % searchString)
+        time.sleep(5)
         for i in range(10):
             try:
                 result = sel.get_text("//div[@id='table-container']")
             except:
                 time.sleep(3)
                 continue
-            if  expected in result: return True
+            if  expected in result:
+                return True
             if abort != None:
-                if abort in result: return False
-        if abort != None: self.fail("time out: Looking for %s or %s within %s" % (expected, abort, result ))
-        else: self.fail("time out: Looking for %s within %s" % (expected, result ))
+                if abort in result:
+                    return False
+        if abort != None:
+            self.fail("time out: Looking for %s or %s within %s" % (expected, abort, result))
+        else:
+            self.fail("time out: Looking for %s within %s" % (expected, result))
         
     def searchUnique(self, uniqueName):
         self.search(uniqueName, r"1 entries")
@@ -60,7 +64,7 @@ class Action(unittest.TestCase):
     def clearSearch(self):
         sel = self.sel
         sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( 'Clearing...' );")
-        self.search('', r"entries")
+        self.search("", r"entries")
         
     def addUser(self, first_name, last_name, email, password):
         first_name = first_name.strip()
@@ -81,8 +85,8 @@ class Action(unittest.TestCase):
         sel.type("password_two", password)
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
-        msg = "Unable to create user " + first_name + " " + last_name + " with email " + email
-        self.assertTrue(self.successMsg("User added"),msg)
+        msg = "Unable to create user %s %s with email %s" % (first_name, last_name, email)
+        self.assertTrue(self.successMsg("User added"), msg)
         self.searchUnique(email)
         self.assertTrue(re.search(r"Showing 1 to 1 of 1 entries", sel.get_text("//div[@class='dataTables_info']")))
         print "User %s created" % (email)
@@ -90,7 +94,7 @@ class Action(unittest.TestCase):
     def addRole(self, email, roles):
         email = email.strip()
         roles = roles.strip()
-        roleList = roles.split(' ')
+        roleList = roles.split(" ")
         
         sel = self.sel
         self.searchUnique(email)
@@ -100,11 +104,11 @@ class Action(unittest.TestCase):
         sel.wait_for_page_to_load("30000")
         sel.click("auth_membership_group_id")
         for role in roleList:
-            sel.select("auth_membership_group_id", "value="+str(role.strip()))
+            sel.select("auth_membership_group_id", "value=" + str(role.strip()))
             sel.click("//input[@value='Add']")
             sel.wait_for_page_to_load("30000")
             msg = "Failed to add role %s to user %s" % (role.strip() , email)
-            self.assertTrue(self.successMsg("User Updated"),msg)
+            self.assertTrue(self.successMsg("User Updated"), msg)
             print "User %s added to group %s" % (email, role.strip())
         sel.open("/eden/admin/user")
 
@@ -123,12 +127,13 @@ class Action(unittest.TestCase):
 
     def addLocation(self, holder, name, level, parent=None, lat=None, lon=None):
         sel = self.sel
-        name = holder+name+holder
-        if parent == None: parentHolder = None
-        else: parentHolder = holder+parent+holder
+        name = holder + name + holder
+        if parent == None:
+            parentHolder = None
+        else:
+            parentHolder = holder + parent + holder
         # Load the Create Location page
         sel.open("/eden/gis/location/create")
-#        sel.wait_for_page_to_load("30000")
         # Create the Location
         sel.type("gis_location_name", name)
         if level:
@@ -148,10 +153,10 @@ class Action(unittest.TestCase):
         sel.wait_for_page_to_load("30000")
         # Location saved
         msg = "Failed to add location %s level %s with parent %s" % (name , level, parentHolder)
-        self.assertTrue(self.successMsg("Location added"),msg)
+        self.assertTrue(self.successMsg("Location added"), msg)
         print "Location %s level %s with parent %s added" % (name , level, parentHolder)
 
-    def deleteObject(self,page,objName, type="Object"):
+    def deleteObject(self, page, objName, type="Object"):
         sel = self.sel
         # need the following line which reloads the page otherwise the search gets stuck  
         sel.open(page)
@@ -191,7 +196,8 @@ class Action(unittest.TestCase):
         for cnt in range (10):
             i = 1
             while sel.is_element_present('//div[@class="%s"][%s]' % (type, i)):
-                if re.search(message, sel.get_text('//div[@class="%s"][%s]' % (type, i))): return True
+                if re.search(message, sel.get_text('//div[@class="%s"][%s]' % (type, i))):
+                    return True
                 i += 1
             time.sleep(1)
         return False
@@ -209,15 +215,22 @@ class Action(unittest.TestCase):
         sel = self.sel
         type = element[0]
         id = element[1]
-        if (len(element) >= 3) : visible = element[2] 
-        else: visible = True
-        if (len(element) >= 4) : value = element[3] 
-        else: value = None
+        if (len(element) >= 3):
+            visible = element[2] 
+        else:
+            visible = True
+        if (len(element) >= 4):
+            value = element[3] 
+        else:
+            value = None
         element = '//%s[@id="%s"]' % (type, id)
         self.assertTrue(sel.is_element_present(element), "%s element %s is missing" % (type, id))
-        if visible: self.assertTrue(sel.is_visible(element), "%s element %s is not visible" % (type, id))
-        else: self.assertFalse(sel.is_visible(element), "%s element %s is not hidden" % (type, id))
-        if value!= None : self.assertEqual(value, sel.get_value(element), "%s text doesn't equal the expected value of %s" % (id,sel.get_text(element)))
+        if visible:
+            self.assertTrue(sel.is_visible(element), "%s element %s is not visible" % (type, id))
+        else:
+            self.assertFalse(sel.is_visible(element), "%s element %s is not hidden" % (type, id))
+        if value!= None:
+            self.assertEqual(value, sel.get_value(element), "%s text doesn't equal the expected value of %s" % (id, sel.get_text(element)))
                 
     # Method to click on a tab
     def clickTab(self, name):
@@ -241,7 +254,7 @@ class Action(unittest.TestCase):
         element = '//a[@id="%s"]' % (id)
         errMsg = "Unexpected presence of %s button" % (name)
         if sel.is_element_present(element):
-            self.assertFalse(sel.get_text(element),errMsg)
+            self.assertFalse(sel.get_text(element), errMsg)
         print "%s button is not present" % (name)
 
     # Method to check that form button is present
@@ -262,7 +275,6 @@ class Action(unittest.TestCase):
         print "Help %s is present" % (helpTitle)
 
     # Method to check that the layout of a form
-#    def checkForm (self, elementList, buttonList, helpList):
     def checkForm (self, elementList, buttonList, helpList):
         elements = []
         for element in elementList:
@@ -272,4 +284,5 @@ class Action(unittest.TestCase):
             self.button(name)
         for title in helpList:
             self.helpBallon(title)
-        if len(elements) > 0 : print "Verified the following form elements %s" % elements
+        if len(elements) > 0:
+            print "Verified the following form elements %s" % elements

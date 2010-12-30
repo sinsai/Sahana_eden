@@ -67,7 +67,7 @@
 <a name="L2"></a><tt class="py-lineno">  2</tt>  <tt class="py-line"> </tt>
 <a name="L3"></a><tt class="py-lineno">  3</tt>  <tt class="py-line"><tt class="py-docstring">""" S3XRC Resource Framework - Resource Export Toolkit</tt> </tt>
 <a name="L4"></a><tt class="py-lineno">  4</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
-<a name="L5"></a><tt class="py-lineno">  5</tt>  <tt class="py-line"><tt class="py-docstring">    @version: 2.2.10</tt> </tt>
+<a name="L5"></a><tt class="py-lineno">  5</tt>  <tt class="py-line"><tt class="py-docstring">    @version: 2.3.0</tt> </tt>
 <a name="L6"></a><tt class="py-lineno">  6</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
 <a name="L7"></a><tt class="py-lineno">  7</tt>  <tt class="py-line"><tt class="py-docstring">    @see: U{B{I{S3XRC}} &lt;http://eden.sahanafoundation.org/wiki/S3XRC&gt;}</tt> </tt>
 <a name="L8"></a><tt class="py-lineno">  8</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
@@ -127,7 +127,7 @@
 </div><div id="S3Exporter.__init__-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="S3Exporter.__init__-expanded"><a name="L62"></a><tt class="py-lineno"> 62</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
 <a name="L63"></a><tt class="py-lineno"> 63</tt>  <tt class="py-line"><tt class="py-docstring">        Constructor</tt> </tt>
 <a name="L64"></a><tt class="py-lineno"> 64</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
-<a name="L65"></a><tt class="py-lineno"> 65</tt>  <tt class="py-line"><tt class="py-docstring">        @param datastore: the resource controller</tt> </tt>
+<a name="L65"></a><tt class="py-lineno"> 65</tt>  <tt class="py-line"><tt class="py-docstring">        @param datastore: the S3DataStore</tt> </tt>
 <a name="L66"></a><tt class="py-lineno"> 66</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
 <a name="L67"></a><tt class="py-lineno"> 67</tt>  <tt class="py-line"><tt class="py-docstring">        @todo 2.3: error message completion</tt> </tt>
 <a name="L68"></a><tt class="py-lineno"> 68</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
@@ -350,7 +350,7 @@ vita.modules.s3xrc.s3xml.S3XML.represent" class="py-name" href="#" onclick="retu
 <a name="L271"></a><tt class="py-lineno">271</tt>  <tt class="py-line">        <tt class="py-keyword">for</tt> <tt class="py-name">field</tt> <tt class="py-keyword">in</tt> <tt id="link-47" class="py-name"><a title="vita.modules.s3xrc.s3rest.S3Resource.fields" class="py-name" href="#" onclick="return doclink('link-47', 'fields', 'link-37');">fields</a></tt><tt class="py-op">:</tt> </tt>
 <a name="L272"></a><tt class="py-lineno">272</tt>  <tt class="py-line">            <tt class="py-comment"># Append label</tt> </tt>
 <a name="L273"></a><tt class="py-lineno">273</tt>  <tt class="py-line">            <tt class="py-name">label</tt> <tt class="py-op">=</tt> <tt class="py-name">Label</tt><tt class="py-op">(</tt><tt class="py-name">text</tt><tt class="py-op">=</tt><tt id="link-48" class="py-name"><a title="vita.modules.s3xrc.s3export.S3Exporter.xml
-vita.modules.s3xrc.s3import.S3Importer.xml" class="py-name" href="#" onclick="return doclink('link-48', 'xml', 'link-1');">xml</a></tt><tt class="py-op">.</tt><tt id="link-49" class="py-name" targets="Class Method vita.modules.s3xrc.s3xml.S3XML.xml_encode()=vita.modules.s3xrc.s3xml.S3XML-class.html#xml_encode"><a title="vita.modules.s3xrc.s3xml.S3XML.xml_encode" class="py-name" href="#" onclick="return doclink('link-49', 'xml_encode', 'link-49');">xml_encode</a></tt><tt class="py-op">(</tt><tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">field</tt><tt class="py-op">.</tt><tt class="py-name">label</tt><tt class="py-op">)</tt><tt class="py-op">)</tt><tt class="py-op">[</tt><tt class="py-op">:</tt><tt class="py-number">16</tt><tt class="py-op">]</tt><tt class="py-op">.</tt><tt class="py-name">decode</tt><tt class="py-op">(</tt><tt class="py-string">"utf-8"</tt><tt class="py-op">)</tt><tt class="py-op">,</tt> </tt>
+vita.modules.s3xrc.s3import.S3Importer.xml" class="py-name" href="#" onclick="return doclink('link-48', 'xml', 'link-1');">xml</a></tt><tt class="py-op">.</tt><tt id="link-49" class="py-name" targets="Static Method vita.modules.s3xrc.s3xml.S3XML.xml_encode()=vita.modules.s3xrc.s3xml.S3XML-class.html#xml_encode"><a title="vita.modules.s3xrc.s3xml.S3XML.xml_encode" class="py-name" href="#" onclick="return doclink('link-49', 'xml_encode', 'link-49');">xml_encode</a></tt><tt class="py-op">(</tt><tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">field</tt><tt class="py-op">.</tt><tt class="py-name">label</tt><tt class="py-op">)</tt><tt class="py-op">)</tt><tt class="py-op">[</tt><tt class="py-op">:</tt><tt class="py-number">16</tt><tt class="py-op">]</tt><tt class="py-op">.</tt><tt class="py-name">decode</tt><tt class="py-op">(</tt><tt class="py-string">"utf-8"</tt><tt class="py-op">)</tt><tt class="py-op">,</tt> </tt>
 <a name="L274"></a><tt class="py-lineno">274</tt>  <tt class="py-line">                          <tt class="py-name">top</tt><tt class="py-op">=</tt><tt class="py-number">0.8</tt><tt class="py-op">*</tt><tt class="py-name">cm</tt><tt class="py-op">,</tt> <tt class="py-name">left</tt><tt class="py-op">=</tt><tt class="py-name">LEFTMARGIN</tt><tt class="py-op">*</tt><tt class="py-name">cm</tt><tt class="py-op">)</tt> </tt>
 <a name="L275"></a><tt class="py-lineno">275</tt>  <tt class="py-line">            <tt class="py-name">_elements</tt><tt class="py-op">.</tt><tt class="py-name">append</tt><tt class="py-op">(</tt><tt class="py-name">label</tt><tt class="py-op">)</tt> </tt>
 <a name="L276"></a><tt class="py-lineno">276</tt>  <tt class="py-line"> </tt>
@@ -497,30 +497,49 @@ vita.modules.s3xrc.s3xml.S3XML.represent" class="py-name" href="#" onclick="retu
 </div><a name="L413"></a><tt class="py-lineno">413</tt>  <tt class="py-line"> </tt>
 <a name="L414"></a><tt class="py-lineno">414</tt>  <tt class="py-line"> </tt>
 <a name="L415"></a><tt class="py-lineno">415</tt>  <tt class="py-line">    <tt class="py-comment"># -------------------------------------------------------------------------</tt> </tt>
-<a name="S3Exporter.json"></a><div id="S3Exporter.json-def"><a name="L416"></a><tt class="py-lineno">416</tt> <a class="py-toggle" href="#" id="S3Exporter.json-toggle" onclick="return toggle('S3Exporter.json');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="vita.modules.s3xrc.s3export.S3Exporter-class.html#json">json</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">resource</tt><tt class="py-op">,</tt> <tt class="py-param">start</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">,</tt> <tt class="py-param">limit</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">,</tt> <tt class="py-param">list_fields</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
-</div><div id="S3Exporter.json-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="S3Exporter.json-expanded"><a name="L417"></a><tt class="py-lineno">417</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
-<a name="L418"></a><tt class="py-lineno">418</tt>  <tt class="py-line"><tt class="py-docstring">        Export a resource as JSON</tt> </tt>
-<a name="L419"></a><tt class="py-lineno">419</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
-<a name="L420"></a><tt class="py-lineno">420</tt>  <tt class="py-line"><tt class="py-docstring">        @note: export does not include components!</tt> </tt>
-<a name="L421"></a><tt class="py-lineno">421</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
-<a name="L422"></a><tt class="py-lineno">422</tt>  <tt class="py-line"><tt class="py-docstring">        @param resource: the resource to export</tt> </tt>
-<a name="L423"></a><tt class="py-lineno">423</tt>  <tt class="py-line"><tt class="py-docstring">        @param start: index of the first record to export (for slicing)</tt> </tt>
-<a name="L424"></a><tt class="py-lineno">424</tt>  <tt class="py-line"><tt class="py-docstring">        @param limit: maximum number of records to export (for slicing)</tt> </tt>
-<a name="L425"></a><tt class="py-lineno">425</tt>  <tt class="py-line"><tt class="py-docstring">        @param list_fields: names of fields to include in the export</tt> </tt>
-<a name="L426"></a><tt class="py-lineno">426</tt>  <tt class="py-line"><tt class="py-docstring">                            (None for all fields)</tt> </tt>
-<a name="L427"></a><tt class="py-lineno">427</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
-<a name="L428"></a><tt class="py-lineno">428</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
-<a name="L429"></a><tt class="py-lineno">429</tt>  <tt class="py-line"> </tt>
-<a name="L430"></a><tt class="py-lineno">430</tt>  <tt class="py-line">        <tt class="py-comment"># load the slice</tt> </tt>
-<a name="L431"></a><tt class="py-lineno">431</tt>  <tt class="py-line">        <tt class="py-name">resource</tt><tt class="py-op">.</tt><tt id="link-73" class="py-name" targets="Method vita.modules.s3xrc.s3rest.S3Resource.load()=vita.modules.s3xrc.s3rest.S3Resource-class.html#load"><a title="vita.modules.s3xrc.s3rest.S3Resource.load" class="py-name" href="#" onclick="return doclink('link-73', 'load', 'link-73');">load</a></tt><tt class="py-op">(</tt><tt class="py-name">start</tt><tt class="py-op">=</tt><tt class="py-name">start</tt><tt class="py-op">,</tt> <tt class="py-name">limit</tt><tt class="py-op">=</tt><tt class="py-name">limit</tt><tt class="py-op">)</tt> </tt>
-<a name="L432"></a><tt class="py-lineno">432</tt>  <tt class="py-line"> </tt>
-<a name="L433"></a><tt class="py-lineno">433</tt>  <tt class="py-line">        <tt class="py-comment"># Get the rows and return as json</tt> </tt>
-<a name="L434"></a><tt class="py-lineno">434</tt>  <tt class="py-line">        <tt class="py-name">rows</tt> <tt class="py-op">=</tt> <tt class="py-name">resource</tt><tt class="py-op">.</tt><tt id="link-74" class="py-name"><a title="vita.modules.s3xrc.s3rest.S3Resource.records" class="py-name" href="#" onclick="return doclink('link-74', 'records', 'link-32');">records</a></tt><tt class="py-op">(</tt><tt id="link-75" class="py-name"><a title="vita.modules.s3xrc.s3rest.S3Resource.fields" class="py-name" href="#" onclick="return doclink('link-75', 'fields', 'link-37');">fields</a></tt><tt class="py-op">=</tt><tt class="py-name">list_fields</tt><tt class="py-op">)</tt> </tt>
-<a name="L435"></a><tt class="py-lineno">435</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">rows</tt><tt class="py-op">.</tt><tt id="link-76" class="py-name" targets="Method vita.modules.s3xrc.s3export.S3Exporter.json()=vita.modules.s3xrc.s3export.S3Exporter-class.html#json"><a title="vita.modules.s3xrc.s3export.S3Exporter.json" class="py-name" href="#" onclick="return doclink('link-76', 'json', 'link-76');">json</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
-</div></div><a name="L436"></a><tt class="py-lineno">436</tt>  <tt class="py-line"> </tt>
+<a name="S3Exporter.json"></a><div id="S3Exporter.json-def"><a name="L416"></a><tt class="py-lineno">416</tt> <a class="py-toggle" href="#" id="S3Exporter.json-toggle" onclick="return toggle('S3Exporter.json');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="vita.modules.s3xrc.s3export.S3Exporter-class.html#json">json</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">resource</tt><tt class="py-op">,</tt> </tt>
+<a name="L417"></a><tt class="py-lineno">417</tt>  <tt class="py-line">             <tt class="py-param">start</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">,</tt> </tt>
+<a name="L418"></a><tt class="py-lineno">418</tt>  <tt class="py-line">             <tt class="py-param">limit</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">,</tt> </tt>
+<a name="L419"></a><tt class="py-lineno">419</tt>  <tt class="py-line">             <tt class="py-param">fields</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">,</tt> </tt>
+<a name="L420"></a><tt class="py-lineno">420</tt>  <tt class="py-line">             <tt class="py-param">orderby</tt><tt class="py-op">=</tt><tt class="py-name">None</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="S3Exporter.json-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="S3Exporter.json-expanded"><a name="L421"></a><tt class="py-lineno">421</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L422"></a><tt class="py-lineno">422</tt>  <tt class="py-line"><tt class="py-docstring">        Export a resource as JSON</tt> </tt>
+<a name="L423"></a><tt class="py-lineno">423</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L424"></a><tt class="py-lineno">424</tt>  <tt class="py-line"><tt class="py-docstring">        @note: export does not include components!</tt> </tt>
+<a name="L425"></a><tt class="py-lineno">425</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L426"></a><tt class="py-lineno">426</tt>  <tt class="py-line"><tt class="py-docstring">        @param resource: the resource to export</tt> </tt>
+<a name="L427"></a><tt class="py-lineno">427</tt>  <tt class="py-line"><tt class="py-docstring">        @param start: index of the first record to export (for slicing)</tt> </tt>
+<a name="L428"></a><tt class="py-lineno">428</tt>  <tt class="py-line"><tt class="py-docstring">        @param limit: maximum number of records to export (for slicing)</tt> </tt>
+<a name="L429"></a><tt class="py-lineno">429</tt>  <tt class="py-line"><tt class="py-docstring">        @param list_fields: names of fields to include in the export</tt> </tt>
+<a name="L430"></a><tt class="py-lineno">430</tt>  <tt class="py-line"><tt class="py-docstring">                            (None for all fields)</tt> </tt>
+<a name="L431"></a><tt class="py-lineno">431</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L432"></a><tt class="py-lineno">432</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L433"></a><tt class="py-lineno">433</tt>  <tt class="py-line"> </tt>
+<a name="L434"></a><tt class="py-lineno">434</tt>  <tt class="py-line">        <tt class="py-name">response</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">datastore</tt><tt class="py-op">.</tt><tt class="py-name">response</tt> </tt>
+<a name="L435"></a><tt class="py-lineno">435</tt>  <tt class="py-line"> </tt>
+<a name="L436"></a><tt class="py-lineno">436</tt>  <tt class="py-line">        <tt class="py-name">attributes</tt> <tt class="py-op">=</tt> <tt class="py-name">dict</tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
 <a name="L437"></a><tt class="py-lineno">437</tt>  <tt class="py-line"> </tt>
-<a name="L438"></a><tt class="py-lineno">438</tt>  <tt class="py-line"><tt class="py-comment"># *****************************************************************************</tt> </tt>
-<a name="L439"></a><tt class="py-lineno">439</tt>  <tt class="py-line"> </tt><script type="text/javascript">
+<a name="L438"></a><tt class="py-lineno">438</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">orderby</tt> <tt class="py-keyword">is</tt> <tt class="py-keyword">not</tt> <tt class="py-name">None</tt><tt class="py-op">:</tt> </tt>
+<a name="L439"></a><tt class="py-lineno">439</tt>  <tt class="py-line">            <tt class="py-name">attributes</tt><tt class="py-op">.</tt><tt id="link-73" class="py-name"><a title="vita.modules.s3xrc.s3crud.S3CRUD.update
+vita.modules.s3xrc.s3rest.S3Resource.update" class="py-name" href="#" onclick="return doclink('link-73', 'update', 'link-8');">update</a></tt><tt class="py-op">(</tt><tt class="py-name">orderby</tt><tt class="py-op">=</tt><tt class="py-name">orderby</tt><tt class="py-op">)</tt> </tt>
+<a name="L440"></a><tt class="py-lineno">440</tt>  <tt class="py-line"> </tt>
+<a name="L441"></a><tt class="py-lineno">441</tt>  <tt class="py-line">        <tt id="link-74" class="py-name" targets="Method vita.modules.s3xrc.s3rest.S3Resource.limitby()=vita.modules.s3xrc.s3rest.S3Resource-class.html#limitby"><a title="vita.modules.s3xrc.s3rest.S3Resource.limitby" class="py-name" href="#" onclick="return doclink('link-74', 'limitby', 'link-74');">limitby</a></tt> <tt class="py-op">=</tt> <tt class="py-name">resource</tt><tt class="py-op">.</tt><tt id="link-75" class="py-name"><a title="vita.modules.s3xrc.s3rest.S3Resource.limitby" class="py-name" href="#" onclick="return doclink('link-75', 'limitby', 'link-74');">limitby</a></tt><tt class="py-op">(</tt><tt class="py-name">start</tt><tt class="py-op">=</tt><tt class="py-name">start</tt><tt class="py-op">,</tt> <tt class="py-name">limit</tt><tt class="py-op">=</tt><tt class="py-name">limit</tt><tt class="py-op">)</tt> </tt>
+<a name="L442"></a><tt class="py-lineno">442</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt id="link-76" class="py-name"><a title="vita.modules.s3xrc.s3rest.S3Resource.limitby" class="py-name" href="#" onclick="return doclink('link-76', 'limitby', 'link-74');">limitby</a></tt> <tt class="py-keyword">is</tt> <tt class="py-keyword">not</tt> <tt class="py-name">None</tt><tt class="py-op">:</tt> </tt>
+<a name="L443"></a><tt class="py-lineno">443</tt>  <tt class="py-line">            <tt class="py-name">attributes</tt><tt class="py-op">.</tt><tt id="link-77" class="py-name"><a title="vita.modules.s3xrc.s3crud.S3CRUD.update
+vita.modules.s3xrc.s3rest.S3Resource.update" class="py-name" href="#" onclick="return doclink('link-77', 'update', 'link-8');">update</a></tt><tt class="py-op">(</tt><tt id="link-78" class="py-name"><a title="vita.modules.s3xrc.s3rest.S3Resource.limitby" class="py-name" href="#" onclick="return doclink('link-78', 'limitby', 'link-74');">limitby</a></tt><tt class="py-op">=</tt><tt id="link-79" class="py-name"><a title="vita.modules.s3xrc.s3rest.S3Resource.limitby" class="py-name" href="#" onclick="return doclink('link-79', 'limitby', 'link-74');">limitby</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L444"></a><tt class="py-lineno">444</tt>  <tt class="py-line"> </tt>
+<a name="L445"></a><tt class="py-lineno">445</tt>  <tt class="py-line">        <tt class="py-comment"># Get the rows and return as json</tt> </tt>
+<a name="L446"></a><tt class="py-lineno">446</tt>  <tt class="py-line">        <tt class="py-name">rows</tt> <tt class="py-op">=</tt> <tt class="py-name">resource</tt><tt class="py-op">.</tt><tt id="link-80" class="py-name"><a title="vita.modules.s3xrc.s3crud.S3CRUD.select
+vita.modules.s3xrc.s3rest.S3Resource.select" class="py-name" href="#" onclick="return doclink('link-80', 'select', 'link-23');">select</a></tt><tt class="py-op">(</tt><tt class="py-op">*</tt><tt id="link-81" class="py-name"><a title="vita.modules.s3xrc.s3rest.S3Resource.fields" class="py-name" href="#" onclick="return doclink('link-81', 'fields', 'link-37');">fields</a></tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-name">attributes</tt><tt class="py-op">)</tt> </tt>
+<a name="L447"></a><tt class="py-lineno">447</tt>  <tt class="py-line"> </tt>
+<a name="L448"></a><tt class="py-lineno">448</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">response</tt><tt class="py-op">:</tt> </tt>
+<a name="L449"></a><tt class="py-lineno">449</tt>  <tt class="py-line">            <tt class="py-name">response</tt><tt class="py-op">.</tt><tt class="py-name">headers</tt><tt class="py-op">[</tt><tt class="py-string">"Content-Type"</tt><tt class="py-op">]</tt> <tt class="py-op">=</tt> <tt class="py-string">"text/x-json"</tt> </tt>
+<a name="L450"></a><tt class="py-lineno">450</tt>  <tt class="py-line"> </tt>
+<a name="L451"></a><tt class="py-lineno">451</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">rows</tt><tt class="py-op">.</tt><tt id="link-82" class="py-name" targets="Method vita.modules.s3xrc.s3export.S3Exporter.json()=vita.modules.s3xrc.s3export.S3Exporter-class.html#json"><a title="vita.modules.s3xrc.s3export.S3Exporter.json" class="py-name" href="#" onclick="return doclink('link-82', 'json', 'link-82');">json</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div></div><a name="L452"></a><tt class="py-lineno">452</tt>  <tt class="py-line"> </tt>
+<a name="L453"></a><tt class="py-lineno">453</tt>  <tt class="py-line"> </tt>
+<a name="L454"></a><tt class="py-lineno">454</tt>  <tt class="py-line"><tt class="py-comment"># *****************************************************************************</tt> </tt>
+<a name="L455"></a><tt class="py-lineno">455</tt>  <tt class="py-line"> </tt><script type="text/javascript">
 <!--
 expandto(location.href);
 // -->
@@ -558,7 +577,7 @@ expandto(location.href);
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Mon Dec 20 19:56:50 2010
+    Generated by Epydoc 3.0.1 on Wed Dec 29 02:27:24 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

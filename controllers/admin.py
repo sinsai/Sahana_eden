@@ -523,6 +523,16 @@ def users():
     output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form=form))
     return output
 
+def group_dupes(form):
+    """ Onvalidation check for duplicate user roles """
+    user = form.latest["user_id"]
+    group = form.latest["group_id"]   
+    query = (form.table.user_id == user) & (form.table.group_id == group)
+    items = db(query).select()
+    if items:     
+        session.error = T("User already has this role")
+        redirect(URL(r=request, f="groups", args=[user]))
+
 @auth.shn_requires_membership(1)
 def group_remove_users():
     """
@@ -534,9 +544,10 @@ def group_remove_users():
     group = request.args(0)
     table = db.auth_membership
     for var in request.vars:
-        user = var
-        query = (table.group_id == group) & (table.user_id == user)
-        db(query).delete()
+        if str(var).isdigit():
+            user = var
+            query = (table.group_id == group) & (table.user_id == user)
+            db(query).delete()
     # Audit
     #crud.settings.update_onaccept = lambda form: shn_audit_update(form, "membership", "html")
     session.flash = T("Users removed")
@@ -565,6 +576,9 @@ def groups():
     crud.settings.create_onaccept = lambda form: s3_audit("create", module, "membership",
                                                           form=form,
                                                           representation="html")
+    
+    
+    crud.settings.create_onvalidation = lambda form: group_dupes(form)
     # Many<>Many selection (Deletable, no Quantity)
     item_list = []
     sqlrows = db(query).select()
@@ -605,9 +619,10 @@ def user_remove_groups():
     user = request.args(0)
     table = db.auth_membership
     for var in request.vars:
-        group = var
-        query = (table.group_id == group) & (table.user_id == user)
-        db(query).delete()
+        if str(var).isdigit():
+            group = var
+            query = (table.group_id == group) & (table.user_id == user)
+            db(query).delete()
     # Audit
     #crud.settings.update_onaccept = lambda form: shn_audit_update(form, "membership", "html")
     session.flash = T("Groups removed")

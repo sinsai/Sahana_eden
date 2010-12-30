@@ -320,7 +320,7 @@ def location_duplicates():
                                                        locations.lat,
                                                        locations.lon)
         # Calculate the Great Circle distance
-        count = 1
+        count = 0
         for oneLocation in locations[:len(locations) / 2]:
             for anotherLocation in locations[len(locations) / 2:]:
                 if count > end and request.vars.max != "undefined":

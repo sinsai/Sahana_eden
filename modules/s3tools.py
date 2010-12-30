@@ -334,7 +334,7 @@ class S3Permission(object):
 
         """
 
-        return self.ALL # not used yet
+        #return self.ALL # not used yet
 
         ADMIN = 1
         EDITOR = 4

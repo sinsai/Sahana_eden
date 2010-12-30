@@ -53,12 +53,9 @@ class TestWindow(Frame):
                     # Add the sorted tests to the suite of test cases to be run
                     suite =  unittest.TestSuite(map(obj, obj._sortList))
                     self.suite.addTests(suite)
-#                    for testName in obj._sortList:
-#                        self.suite.addTest(getattr(obj,testName))
                 else:
                     for test in tempTests:
                         newTests = test.__class__.sortTests(tempTests)
-                        print newTests
                         if newTests == None:
                             self.suite.addTests(tempTests)
                         else:

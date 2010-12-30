@@ -164,7 +164,7 @@ class Action(unittest.TestCase):
             self.searchUnique(objName)
             sel.click("link=Delete")
             self.assertTrue(re.search(r"^Sure you want to delete this object[\s\S]$", sel.get_confirmation()))
-            self.successMsg("Location deleted")
+            self.successMsg("%s deleted" % type)
             print "%s %s deleted" % (type, objName)
         except:
             print "Failed to delete %s %s from page %s" % (type, objName, page)
@@ -178,9 +178,9 @@ class Action(unittest.TestCase):
         heading = sel.get_text("//div[@id='rheader']/div/table/tbody")
         searchString = ""
         for key, value in detailMap.items():
-            searchString = key+'\s*'+value
-            msg = "Unable to find details of %s %s in the header of %s", key, value, heading
-            self.assertTrue(re.search(searchString,heading), msg)
+            msg = "Unable to find details of %s in the header of %s"
+            self.assertTrue(key in heading, msg % (key, heading))
+            self.assertTrue(value in heading, msg % (value, heading))
 
     # Method to save the details
     def saveForm(self, message=None):
@@ -188,7 +188,7 @@ class Action(unittest.TestCase):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         if message != None:
-            self.successMsg(message)
+            return self.successMsg(message)
 
     # Method to locate a message in a div with a class given by type
     def findMsg(self, message, type):
@@ -196,7 +196,8 @@ class Action(unittest.TestCase):
         for cnt in range (10):
             i = 1
             while sel.is_element_present('//div[@class="%s"][%s]' % (type, i)):
-                if re.search(message, sel.get_text('//div[@class="%s"][%s]' % (type, i))):
+                banner = sel.get_text('//div[@class="%s"][%s]' % (type, i))
+                if message in banner:
                     return True
                 i += 1
             time.sleep(1)
@@ -230,7 +231,9 @@ class Action(unittest.TestCase):
         else:
             self.assertFalse(sel.is_visible(element), "%s element %s is not hidden" % (type, id))
         if value!= None:
-            self.assertEqual(value, sel.get_value(element), "%s text doesn't equal the expected value of %s" % (id, sel.get_text(element)))
+            actual = sel.get_value(element)
+            msg = "expected %s for element %s doesn't equal the actual value of %s" % (value, id, actual)
+            self.assertEqual(value, actual, msg)
                 
     # Method to click on a tab
     def clickTab(self, name):

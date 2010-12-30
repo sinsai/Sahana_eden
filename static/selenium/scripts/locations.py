@@ -3,12 +3,12 @@ import unittest, time, re
 
 class Locations(SahanaTest):
     holder = "__TEST__"
-    _sortList = ("test_loadTestData",
+    _sortList = ("loadTestData",
                  "test_locationEmpty",
                  "test_addL0Location",
                  "test_removeL0Location",
                  "test_locationNoParent",
-                 "test_removeTestData",
+                 "removeTestData",
                  )
     
     def firstRun(self):
@@ -46,9 +46,9 @@ class Locations(SahanaTest):
                                ["textarea", "gis_location_addr_street", False],   #20
                                ["label", "gis_location_addr_street_label", False],#21
                                ["label", "gis_location_lat_label", False],        #22
-                               ["input", "gis_location_lat", False],              #23
+                               ["input", "gis_location_lat", False, None],        #23
                                ["label", "gis_location_lon_label", False],        #24
-                               ["input", "gis_location_lon", False],              #25
+                               ["input", "gis_location_lon", False, None],        #25
                                ["a", "gis_location_map-btn", False],              #26
                                ["div", "gis_location_advanced_div", False],       #27
                            )
@@ -101,12 +101,12 @@ class Locations(SahanaTest):
         # Check that the correct record is loaded
         self.assertEqual(name, sel.get_value("cr_shelter_name"))
 
-    def test_loadTestData(self):
+    def loadTestData(self):
         """ Load all the test location """
         self.loadLocations()
 
     
-    def test_removeTestData(self):
+    def removeTestData(self):
         """ Remove all the data added by this test case """
         sel = self.selenium
         self.useSahanaAdminAccount()
@@ -259,6 +259,97 @@ class Locations(SahanaTest):
                               (),
                               ()
                              )
+        # Deselect the L0 location
+        sel.select("gis_location_", "label=Select a location...")
+        # Check that the real location has been set to blank
+        self.assertEqual("", sel.get_value("cr_shelter_location_id"))
+        # Save the form (with changes)
+        self.action.saveForm("Shelter updated")
+        # Load again
+        self.openRecord("Shelter with no Parent")
+        self.action.checkHeading({"Name:" : "Shelter with no Parent",
+                                  "Location:" : "-",
+                                 })
+        Locations.formDetails[0][3] = ""
+        Locations.formDetails[13][2] = False
+        Locations.formDetails[14][2] = False
+        Locations.formDetails[17][2] = False
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+        sel.click("gis_location_add-btn")
+        # Fill in a Name & Address
+        sel.type("gis_location_name", "New parentless Location")
+        sel.type("gis_location_addr_street", "45 Sheep Street")
+
+        # Open Map
+        sel.click("gis_location_map-btn")
+        # Check it's now visible
+        time.sleep(1)
+        self.failUnless(sel.is_visible("gis-map-window"))
+        # Close Map
+        sel.click("//div[@id='gis-map-window']/div/div/div/div/div[contains(@class, 'x-tool-close')]")
+        # Check it's not visible
+        self.failIf(sel.is_visible("gis-map-window"))
+        # Open the Advanced Tab
+        sel.click("gis_location_advanced_checkbox")
+        # Check that the components appear correctly
+        # Fill in Lat & Lon
+        Locations.formDetails[3][2] = False
+        Locations.formDetails[15][2] = True
+        Locations.formDetails[16][2] = True
+        Locations.formDetails[18][2] = True
+        Locations.formDetails[20][2] = True
+        Locations.formDetails[21][2] = True
+        Locations.formDetails[22][2] = True
+        Locations.formDetails[23][2] = True
+        Locations.formDetails[24][2] = True
+        Locations.formDetails[25][2] = True
+        Locations.formDetails[26][2] = True
+        Locations.formDetails[27][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+        sel.type("gis_location_lat", "51")
+        sel.type("gis_location_lon", "1")
+
+        # Open Converter
+        sel.click("gis_location_converter-btn")
+        # Check it's now visible
+        time.sleep(1)
+        self.failUnless(sel.is_visible("gis-convert-win"))
+        # @ToDo: Use this to do a conversion
+        # Close Converter
+        sel.click("//div[@id='gis-convert-win']/div/div/div/div/div[contains(@class, 'x-tool-close')]")
+        # Check it's not visible
+        self.failIf(sel.is_visible("gis-convert-win"))
+        # Fill in Lat & Lon
+        sel.type("gis_location_lat", "51")
+        sel.type("gis_location_lon", "1")
+
+        self.action.saveForm("Shelter updated")
+        # Load again        
+        self.openRecord("Shelter with no Parent")
+        self.action.checkHeading({"Name:" : "Shelter with no Parent",
+                                  "Location:" : "New parentless Location (N 51.0 E 1.0)",
+                                 })
+
+        self.initFormDetails()
+        location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
+        location_id = location.split("(")[1].split(")")[0]
+        Locations.formDetails[0][3] = location_id
+        Locations.formDetails[13][2] = True
+        Locations.formDetails[14][2] = True
+        Locations.formDetails[17][2] = True
+        Locations.formDetails[23][3] = '51.0'
+        Locations.formDetails[25][3] = '1.0'
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+        
         
 if __name__ == "__main__":
     SahanaTest.setUpHierarchy()

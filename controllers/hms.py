@@ -56,7 +56,7 @@ def hospital():
     tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
-     # Pre-processor
+    # Pre-processor
     def prep(r):
         if r.representation in shn_interactive_view_formats:
             # Don't send the locations list to client (pulled by AJAX instead)

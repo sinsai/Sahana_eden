@@ -223,7 +223,11 @@ class GIS(object):
 
         db = self.db
         query = db.gis_apikey.name == layer
-        return db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
+        result = db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first()
+        if result:
+            return result.apikey
+        else:
+            return None
 
     # -----------------------------------------------------------------------------
     def get_bearing(self, lat_start, lon_start, lat_end, lon_end):
@@ -1204,7 +1208,7 @@ class GIS(object):
         elif layer == "yahoo":
             return ["Satellite", "Maps", "Hybrid"]
         elif layer == "bing":
-            return ["Satellite", "Maps", "Hybrid", "Terrain"]
+            return ["Satellite", "Maps", "Hybrid"]
         else:
             return None
 
@@ -2736,39 +2740,47 @@ OpenLayers.Util.extend( selectPdfControl, {
         map.addLayer(yahoohybrid);
                     """
 
-            # Bing - Broken in GeoExt currently: http://www.geoext.org/pipermail/users/2009-December/000417.html
-            bing = False
-            #gis_layer_bing_subtypes = self.layer_subtypes("bing")
-            #bing = Storage()
-            #bing_enabled = db(db.gis_layer_bing.enabled == True).select()
-            #for layer in bing_enabled:
-            #        if layer.role_required and not auth.shn_has_role(layer.role_required):
-            #            continue
-            #    for subtype in gis_layer_bing_subtypes:
-            #        if layer.subtype == subtype:
-            #            bing["%s" % subtype] = layer.name
+            gis_layer_bing_subtypes = self.layer_subtypes("bing")
+            bing = Storage()
+            bing_enabled = db(db.gis_layer_bing.enabled == True).select()
+            if bing_enabled:
+                bing.key = self.get_api_key("bing")
+                if bing.key:
+                    for layer in bing_enabled:
+                        if layer.role_required and not auth.shn_has_role(layer.role_required):
+                            continue
+                        for subtype in gis_layer_bing_subtypes:
+                            if layer.subtype == subtype:
+                                bing["%s" % subtype] = layer.name
+                else:
+                    response.warning = T("Bing Layers Disabled as no API Key available")
+                    bing = False
             if bing:
-                html.append(SCRIPT(_type="text/javascript", _src="http://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.2&mkt=en-us"))
+                layers_bing += """
+        var bingApiKey = '""" + bing.key + """';
+                    """
+                # VirtualEarth broken in GeoExt currently: http://www.geoext.org/pipermail/users/2009-December/000417.html
+                #html.append(SCRIPT(_type="text/javascript", _src="http://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.2&mkt=en-us"))
                 if bing.Satellite:
                     layers_bing += """
-        var bingsat = new OpenLayers.Layer.VirtualEarth( '""" + bing.Satellite + """' , {type: VEMapStyle.Aerial, 'sphericalMercator': true } );
+        var bingsat = new OpenLayers.Layer.Bing( {key: bingApiKey, type: 'Aerial', name: '""" + bing.Satellite + """'} );
         map.addLayer(bingsat);
                     """
                 if bing.Maps:
                     layers_bing += """
-        var bingmaps = new OpenLayers.Layer.VirtualEarth( '""" + bing.Maps + """' , {type: VEMapStyle.Road, 'sphericalMercator': true } );
+        var bingmaps = new OpenLayers.Layer.Bing( {key: bingApiKey, type: 'Road', name: '""" + bing.Maps + """'} );
         map.addLayer(bingmaps);
                     """
                 if bing.Hybrid:
                     layers_bing += """
-        var binghybrid = new OpenLayers.Layer.VirtualEarth( '""" + bing.Hybrid + """' , {type: VEMapStyle.Hybrid, 'sphericalMercator': true } );
+        var binghybrid = new OpenLayers.Layer.Bing( {key: bingApiKey, type: 'AerialWithLabels', name: '""" + bing.Hybrid + """'} );
         map.addLayer(binghybrid);
                     """
-                if bing.Terrain:
-                    layers_bing += """
-        var bingterrain = new OpenLayers.Layer.VirtualEarth( '""" + bing.Terrain + """' , {type: VEMapStyle.Shaded, 'sphericalMercator': true } );
-        map.addLayer(bingterrain);
-                    """
+        #        if bing.Terrain:
+        #            layers_bing += """
+        #var bingterrain = new OpenLayers.Layer.VirtualEarth( '""" + bing.Terrain + """' , {type: VEMapStyle.Shaded, 'sphericalMercator': true } );
+        #map.addLayer(bingterrain);
+        #            """
 
         # WFS
         layers_wfs = ""

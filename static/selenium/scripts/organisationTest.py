@@ -3,8 +3,8 @@ import unittest, re
 
 class OrganisationTest(SahanaTest):
     """ Test the Organisation registry """
-    orgs = []
-                
+    _sortList = ("test_CreateOrgUI", "test_OpenOrgUIAdmin", "test_OpenOrgUIUser")
+    
     def firstRun(self):
         sel = OrganisationTest.selenium
         self.action.logout()
@@ -15,6 +15,7 @@ class OrganisationTest(SahanaTest):
         self.useSahanaAdminAccount()
         self.action.login(self._user, self._password )
         # Add the test organisations
+        OrganisationTest.orgs = []
         self.addOrg()
 
     
@@ -147,7 +148,7 @@ class OrganisationTest(SahanaTest):
         self.action.noBtnLink ("show-add-btn", "Add Warehouse")
 
         self.action.clickTab("Assessments")
-#        self.action.noBtnLink ("add-btn", "Add Assessment")
+        self.action.noBtnLink ("add-btn", "Add Assessment")
 
         self.action.clickTab("Projects")
         self.action.noBtnLink ("show-add-btn", "Add Project")

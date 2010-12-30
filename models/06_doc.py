@@ -150,7 +150,7 @@ resourcename = "image"
 tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
-                        Field("image", "upload"),
+                        Field("image", "upload", autodelete=True),
                         Field("url"),
                         person_id(),
                         organisation_id(),

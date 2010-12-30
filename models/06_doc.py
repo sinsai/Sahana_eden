@@ -10,7 +10,7 @@ resourcename = "document"
 tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
-                        Field("file", "upload", autodelete = True,),
+                        Field("file", "upload", autodelete=True,),
                         Field("url"),
                         person_id(),
                         organisation_id(),
@@ -168,7 +168,8 @@ table.person_id.label = T("Person")
 # upload folder needs to be visible to the download() function as well as the upload
 table.image.uploadfolder = os.path.join(request.folder, "uploads/images")
 IMAGE_EXTENSIONS = ["png", "PNG", "jpg", "JPG", "jpeg", "JPEG", "gif", "GIF", "tif", "TIF", "tiff", "TIFF", "bmp", "BMP", "raw", "RAW"]
-table.image.requires = IS_IMAGE(extensions=(IMAGE_EXTENSIONS))
+#table.image.requires = IS_IMAGE(extensions=(IMAGE_EXTENSIONS))
+table.image.requires = IS_EMPTY_OR(IS_IMAGE(extensions=(IMAGE_EXTENSIONS)))
 table.image.represent = lambda image: image and \
         DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=image),_height=60, _alt=T("View Image")),
               _href=URL(r=request, c="default", f="download", args=image))) or \
@@ -206,7 +207,7 @@ def image_onvalidation(form):
     s3deduplicator = local_import("s3deduplicator")
     import cgi
 
-    table = db.doc_document
+    table = db.doc_image
 
     img = form.vars.image
 

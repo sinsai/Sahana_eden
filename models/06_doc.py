@@ -168,7 +168,7 @@ table.person_id.label = T("Person")
 # upload folder needs to be visible to the download() function as well as the upload
 table.image.uploadfolder = os.path.join(request.folder, "uploads/images")
 IMAGE_EXTENSIONS = ["png", "PNG", "jpg", "JPG", "jpeg", "JPEG", "gif", "GIF", "tif", "TIF", "tiff", "TIFF", "bmp", "BMP", "raw", "RAW"]
-table.image.requires = IS_EMPTY_OR(IS_IMAGE(extensions=(IMAGE_EXTENSIONS)))
+table.image.requires = IS_IMAGE(extensions=(IMAGE_EXTENSIONS))
 table.image.represent = lambda image: image and \
         DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=image),_height=60, _alt=T("View Image")),
               _href=URL(r=request, c="default", f="download", args=image))) or \
@@ -209,7 +209,6 @@ def image_onvalidation(form):
     table = db.doc_document
 
     img = form.vars.image
-    url = form.vars.url
 
     if not hasattr(img, "file"):
         id = request.post_vars.id
@@ -217,10 +216,6 @@ def image_onvalidation(form):
             record = db(table.id == id).select(table.image, limitby=(0, 1)).first()
             if record:
                 img = record.image
-
-    if not hasattr(img, "file") and not img and not url:
-        form.errors.image = \
-        form.errors.url = T("Either file upload or image URL required.")
 
     if isinstance(img, cgi.FieldStorage) and img.filename:
         f = img.file

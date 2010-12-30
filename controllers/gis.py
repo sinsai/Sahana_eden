@@ -320,7 +320,7 @@ def location_duplicates():
                                                        locations.lat,
                                                        locations.lon)
         # Calculate the Great Circle distance
-        count = 1
+        count = 0
         for oneLocation in locations[:len(locations) / 2]:
             for anotherLocation in locations[len(locations) / 2:]:
                 if count > end and request.vars.max != "undefined":
@@ -677,27 +677,33 @@ def apikey():
     tablename = module + "_" + resourcename
     table = db[tablename]
 
-    # Model options
-    table.name.writable = False
+    # Pre-processor
+    def prep(r):
+        if r.representation in shn_interactive_view_formats:
+            if r.method == "update":
+                table.name.writable = False
 
-    # CRUD Strings
-    ADD_KEY = T("Add Key")
-    LIST_KEYS = T("List Keys")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_KEY,
-        title_display = T("Key Details"),
-        title_list = T("Keys"),
-        title_update = T("Edit Key"),
-        title_search = T("Search Keys"),
-        subtitle_create = T("Add New Key"),
-        subtitle_list = LIST_KEYS,
-        label_list_button = LIST_KEYS,
-        label_create_button = ADD_KEY,
-        label_delete_button = T("Delete Key"),
-        msg_record_created = T("Key added"),
-        msg_record_modified = T("Key updated"),
-        msg_record_deleted = T("Key deleted"),
-        msg_list_empty = T("No Keys currently defined"))
+            # CRUD Strings
+            ADD_KEY = T("Add Key")
+            LIST_KEYS = T("List Keys")
+            s3.crud_strings[tablename] = Storage(
+                title_create = ADD_KEY,
+                title_display = T("Key Details"),
+                title_list = T("Keys"),
+                title_update = T("Edit Key"),
+                title_search = T("Search Keys"),
+                subtitle_create = T("Add New Key"),
+                subtitle_list = LIST_KEYS,
+                label_list_button = LIST_KEYS,
+                label_create_button = ADD_KEY,
+                label_delete_button = T("Delete Key"),
+                msg_record_created = T("Key added"),
+                msg_record_modified = T("Key updated"),
+                msg_record_deleted = T("Key deleted"),
+                msg_list_empty = T("No Keys currently defined"))
+
+        return True
+    response.s3.prep = prep
 
     output = s3_rest_controller(module, resourcename)
 
@@ -986,16 +992,14 @@ def layer_openstreetmap():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    table = module + "_" + resourcename
-
-    # Model options
+    tablename = module + "_" + resourcename
 
     # CRUD Strings
     type = "OpenStreetMap"
     LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
     EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
     NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
         title_list=LAYERS,
@@ -1023,7 +1027,8 @@ def layer_google():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    table = module + "_" + resourcename
+    tablename = module + "_" + resourcename
+    table = db[tablename]
 
     # Model options
 
@@ -1032,7 +1037,7 @@ def layer_google():
     LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
     EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
     NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
         title_list=LAYERS,
@@ -1061,16 +1066,15 @@ def layer_yahoo():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    table = module + "_" + resourcename
-
-    # Model options
+    tablename = module + "_" + resourcename
+    table = db[tablename]
 
     # CRUD Strings
     type = "Yahoo"
     LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
     EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
     NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
         title_list=LAYERS,
@@ -1099,16 +1103,15 @@ def layer_mgrs():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    table = module + "_" + resourcename
-
-    # Model options
+    tablename = module + "_" + resourcename
+    table = db[tablename]
 
     # CRUD Strings
     type = "MGRS"
     LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
     EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
     NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
         title_list=LAYERS,
@@ -1137,16 +1140,15 @@ def layer_bing():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    table = module + "_" + resourcename
-
-    # Model options
+    tablename = module + "_" + resourcename
+    table = db[tablename]
 
     # CRUD Strings
     type = "Bing"
     LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
     EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
     NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
         title_list=LAYERS,
@@ -1176,7 +1178,6 @@ def layer_georss():
         unauthorised()
 
     tablename = module + "_" + resourcename
-    table = db[tablename]
 
     # CRUD Strings
     type = "GeoRSS"
@@ -1213,7 +1214,7 @@ def layer_gpx():
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
-    table = module + "_" + resourcename
+    tablename = module + "_" + resourcename
 
     # Model options
     # Needed in multiple controllers, so defined in Model
@@ -1225,7 +1226,7 @@ def layer_gpx():
     EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
     LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
     NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
         title_list=LAYERS,
@@ -1254,7 +1255,6 @@ def layer_kml():
         unauthorised()
 
     tablename = module + "_" + resourcename
-    table = db[tablename]
 
     # CRUD Strings
     type = "KML"
@@ -1298,7 +1298,6 @@ def layer_tms():
         unauthorised()
 
     tablename = module + "_" + resourcename
-    table = db[tablename]
 
     # CRUD Strings
     type = "TMS"
@@ -1336,7 +1335,6 @@ def layer_wfs():
         unauthorised()
 
     tablename = module + "_" + resourcename
-    table = db[tablename]
 
     # CRUD Strings
     type = "WFS"
@@ -1374,7 +1372,6 @@ def layer_wms():
         unauthorised()
 
     tablename = module + "_" + resourcename
-    table = db[tablename]
 
     # CRUD Strings
     type = "WMS"
@@ -1410,9 +1407,7 @@ def layer_wms():
 def layer_js():
     """ RESTful CRUD controller """
 
-    table = module + "_" + resourcename
-
-    # Model options
+    tablename = module + "_" + resourcename
 
     # CRUD Strings
     type = "JS"
@@ -1421,7 +1416,7 @@ def layer_js():
     EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
     LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
     NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
         title_list=LAYERS,
@@ -1450,7 +1445,6 @@ def layer_xyz():
         unauthorised()
 
     tablename = module + "_" + resourcename
-    table = db[tablename]
 
     # CRUD Strings
     type = "XYZ"

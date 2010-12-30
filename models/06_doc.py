@@ -10,7 +10,7 @@ resourcename = "document"
 tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
-                        Field("file", "upload", autodelete = True,),
+                        Field("file", "upload", autodelete=True,),
                         Field("url"),
                         person_id(),
                         organisation_id(),
@@ -143,14 +143,15 @@ def document_onvalidation(form):
 
 s3xrc.model.configure(table,
                       mark_required=["file", "url"],
-                      create_onvalidation=document_onvalidation,
-                      update_onvalidation=document_onvalidation)
+                      onvalidation=document_onvalidation)
 #==============================================================================
 resourcename = "image"
 tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
-                        Field("image", "upload"),
+                        Field("image", "upload", autodelete=True),
+                        # UploadWidget cannot be easily subclassed currently. Patch submitted to Web2Py.
+                        #Field("image", "upload", autodelete=True, widget=S3UploadWidget.widget),
                         Field("url"),
                         person_id(),
                         organisation_id(),
@@ -161,7 +162,8 @@ table = db.define_table(tablename,
                         migrate=migrate, *s3_meta_fields())
 
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
-#table.name.label = T("Name")
+table.name.label = T("Name")
+table.url.requires = IS_NULL_OR(IS_URL())
 table.url.label = T("URL")
 table.person_id.label = T("Person")
 
@@ -169,6 +171,7 @@ table.person_id.label = T("Person")
 table.image.uploadfolder = os.path.join(request.folder, "uploads/images")
 IMAGE_EXTENSIONS = ["png", "PNG", "jpg", "JPG", "jpeg", "JPEG", "gif", "GIF", "tif", "TIF", "tiff", "TIFF", "bmp", "BMP", "raw", "RAW"]
 table.image.requires = IS_IMAGE(extensions=(IMAGE_EXTENSIONS))
+#table.image.requires = IS_EMPTY_OR(IS_IMAGE(extensions=(IMAGE_EXTENSIONS)))
 table.image.represent = lambda image: image and \
         DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=image),_height=60, _alt=T("View Image")),
               _href=URL(r=request, c="default", f="download", args=image))) or \
@@ -206,7 +209,7 @@ def image_onvalidation(form):
     s3deduplicator = local_import("s3deduplicator")
     import cgi
 
-    table = db.doc_document
+    table = db.doc_image
 
     img = form.vars.image
 
@@ -222,14 +225,13 @@ def image_onvalidation(form):
         form.vars.checksum = s3deduplicator.docChecksum(f.read())
         f.seek(0)
     if form.vars.checksum is not None:
-        result = db(db.doc_image.checksum == form.vars.checksum).select(db.doc_image.name, limitby=(0, 1)).first()
+        result = db(table.checksum == form.vars.checksum).select(table.name, limitby=(0, 1)).first()
         if result:
             image_name = result.name
             form.errors["image"] = T("This file already exists on the server as") + " %s" % (image_name)
     return
 
 s3xrc.model.configure(table,
-                      mark_required=["image", "url"],
-                      create_onvalidation=image_onvalidation,
-                      update_onvalidation=image_onvalidation)
+                      onvalidation=image_onvalidation)
+
 #==============================================================================

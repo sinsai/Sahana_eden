@@ -244,6 +244,7 @@ class Locations(SahanaTest):
         self.action.saveForm("Shelter added")
         # Load again
         self.openRecord("Shelter with no Parent")
+        Locations.line.append("Location with no Parent")
         # Shelter has correct location
         self.action.checkHeading({"Name:" : "Shelter with no Parent",
                                   "Location:" : "Location with no Parent",
@@ -330,6 +331,7 @@ class Locations(SahanaTest):
         sel.type("gis_location_lon", "1")
 
         self.action.saveForm("Shelter updated")
+        Locations.line.append("New parentless Location")
         # Load again        
         self.openRecord("Shelter with no Parent")
         self.action.checkHeading({"Name:" : "Shelter with no Parent",

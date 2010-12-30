@@ -6,8 +6,6 @@
     @author: Fran Boon <fran@aidiq.com>
 """
 
-from operator import __and__
-
 module = request.controller
 resourcename = request.function
 
@@ -252,6 +250,7 @@ def location():
     # bbox = _vars.get("bbox", None):
 
     if filters:
+        from operator import __and__
         response.s3.filter = reduce(__and__, filters)
 
     caller = _vars.get("caller", None)
@@ -290,7 +289,7 @@ def location_duplicates():
     """
         Handle De-duplication of Locations by comparing the ones which are closest together
 
-        @ToDo: Extend to being able to check locations for which we have no Lat<>Lon info (i.e. just names & maybe parents)
+        @ToDo: Extend to being able to check locations for which we have no Lat<>Lon info (i.e. just names & parents)
     """
 
     # @ToDo: Set this via the UI & pass in as a var
@@ -1645,14 +1644,19 @@ def geoexplorer():
         Custom View for GeoExplorer: http://projects.opengeo.org/geoext/wiki/GeoExplorer
     """
 
-    google_key = db(db.gis_apikey.name == "google").select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
+    config = gis.get_config()
+
+    google_key = gis.get_api_key("google")
 
     # http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting
     print_service = deployment_settings.get_gis_print_service()
 
     geoserver_url = deployment_settings.get_gis_geoserver_url()
 
-    return dict(google_key=google_key, print_service=print_service, geoserver_url=geoserver_url)
+    return dict(config=config,
+                google_key=google_key,
+                print_service=print_service,
+                geoserver_url=geoserver_url)
 
 def about():
     """  Custom View for GeoExplorer """

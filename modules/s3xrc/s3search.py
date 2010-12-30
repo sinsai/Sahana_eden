@@ -472,11 +472,11 @@ class S3SearchSimple(S3CRUD):
                     if fields[0].name != table.fields[0]:
                         fields.insert(0, table[table.fields[0]])
                     resource.build_query(id=results)
-                    items = self._select(fields=fields,
-                                         orderby=orderby,
-                                         linkto=linkto,
-                                         download_url=self.download_url,
-                                         format=representation)
+                    items = self.sqltable(fields=fields,
+                                          orderby=orderby,
+                                          linkto=linkto,
+                                          download_url=self.download_url,
+                                          format=representation)
                     if request.post_vars.label:
                         session.s3.filter = {"%s.id" % resource.name:
                                             ",".join(map(str,results))}

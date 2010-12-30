@@ -1050,3 +1050,64 @@ def ticket():
                 code=e.code,
                 layer=e.layer)
 
+# -----------------------------------------------------------------------------
+@auth.shn_requires_membership(1)
+def acl():
+    """
+    Preliminary controller for ACLs
+    for testing purposes, not for production use!
+
+    """
+
+    prefix = "s3"
+    name = "permission"
+
+    table = auth.permission.table
+    table.group_id.requires = IS_ONE_OF(db, "auth_group.id", "%(role)s")
+    table.group_id.represent = lambda opt: opt and db.auth_group[opt].role or opt
+
+    table.controller.requires = IS_EMPTY_OR(IS_IN_SET(auth.permission.modules.keys(), zero="ANY"))
+    table.controller.represent = lambda opt: opt and "%s (%s)" % (opt, auth.permission.modules.get(opt, {}).get("name_nice", opt)) or "ANY"
+
+    table.function.represent = lambda val: val and val or T("ANY")
+
+    table.tablename.requires = IS_EMPTY_OR(IS_IN_SET([t._tablename for t in db], zero=T("ANY")))
+    table.tablename.represent = lambda val: val and val or T("ANY")
+
+    table.spermissions.label = T("All Resources")
+    table.spermissions.widget = S3ACLWidget.widget
+    table.spermissions.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
+    table.spermissions.represent = lambda val: acl_represent(val, auth.permission.PERMISSION_OPTS)
+
+    table.opermissions.label = T("Owned Resources")
+    table.opermissions.widget = S3ACLWidget.widget
+    table.opermissions.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
+    table.opermissions.represent = lambda val: acl_represent(val, auth.permission.PERMISSION_OPTS)
+
+    s3xrc.model.configure(table,
+        create_next = URL(r=request),
+        update_next = URL(r=request))
+
+    output = s3_rest_controller(prefix, name)
+    return output
+
+def acl_represent(acl, options):
+    """
+    Represent ACLs in tables
+    for testing purposes, not for production use!
+
+    """
+
+    values = []
+
+    for o in options.keys():
+        if o == 0 and acl == 0:
+            values.append("%s" % options[o][0])
+        elif acl & o == o:
+            values.append("%s" % options[o][0])
+        else:
+            values.append("_")
+
+    return " ".join(values)
+
+# -----------------------------------------------------------------------------

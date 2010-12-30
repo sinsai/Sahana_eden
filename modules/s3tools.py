@@ -200,19 +200,19 @@ class S3Permission(object):
 
     TABLENAME = "s3_permission"
 
-    READ   = 0x0001
-    UPDATE = 0x0002
-    CREATE = 0x0004
+    CREATE = 0x0001
+    READ   = 0x0002
+    UPDATE = 0x0004
     DELETE = 0x0008
 
-    ALL = READ | UPDATE | CREATE | DELETE
+    ALL = CREATE | READ | UPDATE | DELETE
     NONE = 0x0000 # must be 0!
 
     PERMISSION_OPTS = {
-        NONE  : "NONE",
+        #NONE  : "NONE",
+        CREATE: "CREATE",
         READ  : "READ",
         UPDATE: "UPDATE",
-        CREATE: "CREATE",
         DELETE: "DELETE",
     }
 

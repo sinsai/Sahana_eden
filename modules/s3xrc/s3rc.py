@@ -624,14 +624,15 @@ class S3DataStore(object):
                 if f == self.xml.UID or f in self.xml.ATTRIBUTES_TO_FIELDS:
                     v = record.get(f, None)
                 else:
-                    xexpr = "%s[@%s='%s']" % (self.xml.TAG.data, self.xml.ATTRIBUTE.field, f)
+                    xexpr = "%s[@%s='%s']" % (self.xml.TAG.data,
+                                              self.xml.ATTRIBUTE.field, f)
                     child = record.xpath(xexpr)
                     if child:
                         child = child[0]
-                        v = child.get(self.xml.ATTRIBUTE.value, child.text)
+                        v = child.get(self.xml.ATTRIBUTE.value,
+                                      self.xml.xml_decode(child.text))
                 if v:
-                    value = self.xml.xml_decode(v)
-                    pvalues[f] = value
+                    pvalues[f] = v
         elif isinstance(record, dict):
             for f in pkeys:
                 v = record.get(f, None)
@@ -1059,8 +1060,7 @@ class S3DataStore(object):
                         self.error = self.ERROR.DATA_IMPORT_ERROR
                     if job.element:
                         if not job.element.get(self.xml.ATTRIBUTE.error):
-                            job.element.set(self.xml.ATTRIBUTE.error,
-                                            self.xml.xml_encode(str(self.error).decode("utf-8")))
+                            job.element.set(self.xml.ATTRIBUTE.error, str(self.error).decode("utf-8"))
                     if ignore_errors:
                         continue
                     else:
@@ -1258,8 +1258,7 @@ class S3ImportJob(object):
                             form.errors[k] = "[%s] %s" % (k, form.errors[k])
                         else:
                             e = e[0]
-                        e.set(xml.ATTRIBUTE.error,
-                              xml.xml_encode(str(form.errors[k])))
+                        e.set(xml.ATTRIBUTE.error, str(form.errors[k]).decode("utf-8"))
                     self.datastore.error = self.datastore.ERROR.VALIDATION_ERROR
                     return False
 

@@ -143,8 +143,7 @@ def document_onvalidation(form):
 
 s3xrc.model.configure(table,
                       mark_required=["file", "url"],
-                      create_onvalidation=document_onvalidation,
-                      update_onvalidation=document_onvalidation)
+                      onvalidation=document_onvalidation)
 #==============================================================================
 resourcename = "image"
 tablename = "%s_%s" % (module, resourcename)
@@ -233,6 +232,6 @@ def image_onvalidation(form):
     return
 
 s3xrc.model.configure(table,
-                      create_onvalidation=image_onvalidation,
-                      update_onvalidation=image_onvalidation)
+                      onvalidation=image_onvalidation)
+
 #==============================================================================

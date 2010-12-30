@@ -3,7 +3,10 @@ import unittest, re
 
 class OrganisationTest(SahanaTest):
     """ Test the Organisation registry """
-    _sortList = ("test_CreateOrgUI", "test_OpenOrgUIAdmin", "test_OpenOrgUIUser")
+    _sortList = ("CreateOrg",
+                 "OpenOrgUIWithAdmin", 
+                 "OpenOrgUIWithUser",
+                )
     
     def firstRun(self):
         sel = OrganisationTest.selenium
@@ -61,7 +64,7 @@ class OrganisationTest(SahanaTest):
                                          )
                 OrganisationTest.orgs.append(details[0].strip())
 
-    def test_CreateOrgUI(self):
+    def CreateOrg(self):
         """ Test to check the elements of the create organisation form """ 
         sel = OrganisationTest.selenium
         sel.open("/eden/org/organisation/create")
@@ -80,7 +83,7 @@ class OrganisationTest(SahanaTest):
                    ("Twitter", "Donation", "Comments")
                   )
 
-    def test_OpenOrgUIAdmin(self):
+    def OpenOrgUIWithAdmin(self):
         """ Test to check the elements of the list organisation form logged in with the admin account
         
         In turn it will check each of the tabs on the list screen
@@ -125,7 +128,7 @@ class OrganisationTest(SahanaTest):
         self.action.clickTab("Activities")
         self.action.btnLink ("show-add-btn", "Add Activity")
 
-    def test_OpenOrgUIUser(self):
+    def OpenOrgUIWithUser(self):
         """ Test to check the elements of the list organisation form when not logged in 
         
         In turn it will check each of the tabs on the list screen

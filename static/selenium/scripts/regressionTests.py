@@ -41,14 +41,29 @@ class TestWindow(Frame):
         for testName in testList: #dotted notation module.class
             tempTests = unittest.TestSuite
             try:
+                # loadTestsFromName will also import the module 
                 tempTests = testLoader.loadTestsFromName(testName)
-                for test in tempTests:
-                    newTests = test.__class__.sortTests(tempTests)
-                    if newTests == None:
-                        self.suite.addTests(tempTests)
-                    else:
-                        self.suite.addTests(newTests)
-                    break
+                # loadTestsFromName only returns tests that have the test_ prefix
+                # So try and get the sorted list first
+                parts = testName.split('.')
+                if len(parts)==2:
+                    # Grab the loaded module and get a instance of the class
+                    module = sys.modules[parts[0]]
+                    obj = getattr(module, parts[1])
+                    # Add the sorted tests to the suite of test cases to be run
+                    suite =  unittest.TestSuite(map(obj, obj._sortList))
+                    self.suite.addTests(suite)
+#                    for testName in obj._sortList:
+#                        self.suite.addTest(getattr(obj,testName))
+                else:
+                    for test in tempTests:
+                        newTests = test.__class__.sortTests(tempTests)
+                        print newTests
+                        if newTests == None:
+                            self.suite.addTests(tempTests)
+                        else:
+                            self.suite.addTests(newTests)
+                        break
             
             except:
                 print "Unable to run test %s, check the test exists." % testName
@@ -60,6 +75,7 @@ class TestWindow(Frame):
                     title='<Sahana Eden Test>',
                     description='Suite of regressions tests for Sahana Eden.'
                     )
+        print self.suite
         runner.run(self.suite)
         # check out the output
         byte_output = buf.getvalue()

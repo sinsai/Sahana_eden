@@ -133,7 +133,7 @@ class S3Importer(object):
                 continue
             elif var in table.fields:
                 field = table[var]
-                value = xml.xml_encode(str(r.request.vars[var]).decode("utf-8"))
+                value = str(r.request.vars[var]).decode("utf-8")
                 if var in xml.FIELDS_TO_ATTRIBUTES:
                     element.set(var, value)
                 else:
@@ -142,7 +142,7 @@ class S3Importer(object):
                     if field.type == "upload":
                         data.set(xml.ATTRIBUTE.filename, value)
                     else:
-                        data.text = value
+                        data.text = xml.xml_encode(value)
                     element.append(data)
         tree = xml.tree([element], domain=datastore.domain)
 

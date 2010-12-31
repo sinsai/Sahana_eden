@@ -46,6 +46,7 @@ from gluon.http import HTTP, redirect
 from gluon.serializers import json
 from gluon.sql import Field, Row
 from gluon.validators import IS_EMPTY_OR
+from gluon.tools import callback
 
 from s3rest import S3Method
 from s3import import S3Importer
@@ -1132,7 +1133,7 @@ class S3CRUD(S3Method):
                     self.datastore.store_session(prefix, name, form.vars.id)
 
                 # Execute onaccept
-                self.datastore.callback(onaccept, form, name=tablename)
+                callback(onaccept, form, tablename=tablename)
 
         if not logged and not form.errors:
             audit("read", prefix, name, record=record_id, representation=format)

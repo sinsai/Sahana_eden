@@ -120,7 +120,7 @@ function s3_gis_save_location(name, lat, lon, addr_street) {
     if ('' == addr_street) {
         // pass
     } else {
-        url = url + '&addr_street=' + addr_street;
+        url = url + '&addr_street=' + addr_street.replace('\n', '%0d');
     }
     if (undefined == _parent || '' == _parent){
         // pass

@@ -1,0 +1,29 @@
+<script type="text/javascript">//<![CDATA[
+$(function() {
+    var rms_help_msg = '{{=T("Enter a summary of the request here.")}}\n\n{{=T("The next screen will allow you to enter a detailed list of items and quantities, if appropriate...")}}';
+    // Provide some default help text in the Message box if message is empty
+    if (!$('#rms_req_message').val()) {
+        $('#rms_req_message').addClass('default-text').attr({ value: rms_help_msg }).focus(function(){
+            if($(this).val() == rms_help_msg){
+                // Clear on click if still default
+                $(this).val('').removeClass('default-text');
+            }
+        });
+        $('form').submit( function() {
+            // Do the normal form-submission tasks
+            // @ToDo: Look to have this happen automatically
+            // http://forum.jquery.com/topic/multiple-event-handlers-on-form-submit
+            // http://api.jquery.com/bind/
+            S3ClearNavigateAwayConfirm();
+
+            if ($('#rms_req_message').val() == rms_help_msg) {
+                $('#rms_req_message').after('<div id="type__error" class="error" style="display: block;">Message field is required!</div>');
+                return false;
+            } else {
+                // Allow the Form's save to continue
+                return true;
+            }
+        });
+    }
+});
+//]]></script>

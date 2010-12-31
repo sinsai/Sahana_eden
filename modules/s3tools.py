@@ -200,22 +200,29 @@ class S3Permission(object):
 
     TABLENAME = "s3_permission"
 
-    READ   = 0x0001
-    UPDATE = 0x0002
-    CREATE = 0x0004
+    CREATE = 0x0001
+    READ   = 0x0002
+    UPDATE = 0x0004
     DELETE = 0x0008
 
-    ALL = READ | UPDATE | CREATE | DELETE
+    ALL = CREATE | READ | UPDATE | DELETE
     NONE = 0x0000 # must be 0!
 
     PERMISSION_OPTS = {
-        NONE  : "NONE",
+        #NONE  : "NONE",
+        CREATE: "CREATE",
         READ  : "READ",
         UPDATE: "UPDATE",
-        CREATE: "CREATE",
         DELETE: "DELETE",
     }
 
+    # Policy helpers
+    most_permissive = lambda self, acl: \
+                            reduce(lambda x, y: (x[0]|y[0], x[1]|y[1]),
+                                   acl, (self.NONE, self.NONE))
+    most_restrictive = lambda self, acl: \
+                            reduce(lambda x, y: (x[0]&y[0], x[1]&y[1]),
+                                   acl, (self.ALL, self.ALL))
 
     # -------------------------------------------------------------------------
     def __init__(self, auth, environment, tablename=None):
@@ -321,7 +328,7 @@ class S3Permission(object):
                  table=None,
                  record=None):
         """
-        Get the permissions of the current user for a path
+        Get the ACL for the current user for a path
 
         @param c: the controller name (falls back request.controller)
         @param f: the function name (falls back to request.function)
@@ -334,7 +341,7 @@ class S3Permission(object):
 
         """
 
-        #return self.ALL # not used yet
+        return self.ALL # not used yet
 
         ADMIN = 1
         EDITOR = 4
@@ -346,22 +353,16 @@ class S3Permission(object):
         if self.session.s3 is not None:
             roles = self.session.s3.roles or []
         if ADMIN in roles:
-            # User is admin
             return self.ALL
 
         # Fall back to current request
-        _c = c or self.controller
-        _f = f or self.function
-
-        # Target page unrestricted by default?
-        page = "%s/%s" % (_c, _f)
-        if page in self.unrestricted_pages and table is None:
-            return self.ALL
+        c = c or self.controller
+        f = f or self.function
 
         # Check controller permission in deployment settings
         # @todo: deprecate!
-        if _c in self.modules:
-            module = self.modules[_c]
+        if c in self.modules:
+            module = self.modules[c]
             if module.access:
                 # Module is restricted by deployment settings
                 groups = re.split("\|", module.access)[1:-1]
@@ -371,48 +372,7 @@ class S3Permission(object):
                 else:
                     return self.NONE
 
-        # Policy helpers
-        most_permissive = lambda acl: \
-                                 reduce(lambda x, y: (x[0]|y[0], x[1]|y[1]),
-                                 acl, (self.NONE, self.NONE))
-        most_restrictive = lambda acl: \
-                                  reduce(lambda x, y: (x[0]&y[0], x[1]&y[1]),
-                                  acl, (self.ALL, self.ALL))
-
-        # Get the page ACL
-        page_acl = self.page_acls.get(page, None)
-        if page_acl is None:
-            q = ((t.controller == _c) &
-                ((t.function == None) | (t.function == "") | (t.function == _f)))
-            if roles:
-                query = (t.group_id.belongs(roles)) & q
-            else:
-                query = (t.group_id == None) & q
-            rows = self.db(query).select()
-            if rows:
-                # ACLs found, apply most permissive role
-                function_acl = []
-                controller_acl = []
-                for row in rows:
-                    if row.function == _f:
-                        function_acl += (row.opermissions, row.spermissions)
-                    else:
-                        controller_acl += (row.opermissions, row.spermissions)
-                function_acl = most_permissive(function_acl)
-                controller_acl = most_permissive(controller_acl)
-                page_acl = most_permissive((function_acl, controller_acl))
-            else:
-                restricted = self.db(q).select(t.id, limitby=(0, 1)).first()
-                if restricted:
-                    # Page is restricted, but no ACL for current user
-                    page_acl = (self.NONE, self.NONE)
-                elif roles:
-                    # Authenticated user, default permissions
-                    page_acl = (self.ALL, self.ALL)
-                else:
-                    # Anonymous user, default permissions
-                    page_acl = (self.READ, self.READ)
-            self.page_acls.update({page:page_acl})
+        page_acl = self.page_acl(c=c, f=f)
 
         # Done?
         if table is None or self.skip_table_acls:
@@ -420,38 +380,13 @@ class S3Permission(object):
             return acl
 
         # Get the table ACL
-        tablename = table._tablename
         if EDITOR in roles:
             table_acl = (self.ALL, self.ALL)
         else:
-            table_acl = self.table_acls.get(tablename, None)
-        if table_acl is None:
-            q = ((t.tablename == tablename) &
-                (t.controller == _c) | (t.controller == None) | (t.controller == ""))
-            if roles:
-                query = (t.group_id.belongs(roles)) & q
-            else:
-                query = (t.group_id == None) & q
-            rows = self.db(query).select()
-            table_acl = [(r.opermissions, r.spermissions) for r in rows]
-            if table_acl:
-                # ACL found, apply most permissive role
-                table_acl = most_permissive(table_acl)
-            else:
-                restricted = self.db(q).select(t.id, limitby=(0, 1)).first()
-                if restricted:
-                    # Table is restricted, but no ACL for current user
-                    table_acl = (self.NONE, self.NONE)
-                elif roles:
-                    # Authenticated user, default permissions
-                    table_acl = (self.ALL, self.ALL)
-                else:
-                    # Anonymous user, default permissions
-                    table_acl = (self.READ, self.READ)
-            self.table_acls.update({tablename:table_acl})
+            table_acl = self.table_acl(table=table, c=c)
 
         # Overall policy
-        acl = most_restrictive((page_acl, table_acl))
+        acl = self.most_restrictive((page_acl, table_acl))
 
         if acl[0] == self.NONE and acl[1] == self.NONE:
             # No table access
@@ -464,6 +399,131 @@ class S3Permission(object):
             acl = self.is_owner(table, record) and acl[0] or acl[1]
 
         return acl
+
+
+    # -------------------------------------------------------------------------
+    def page_acl(self, c=None, f=None):
+        """
+        Get the ACL for a page
+
+        @param c: the controller (falls back to current request)
+        @param f: the function (falls back to current request)
+        @param table: the table
+
+        @returns: tuple of (ACL for owned resources, ACL for all resources)
+
+        """
+
+        t = self.table
+
+        most_permissive = self.most_permissive
+
+        roles = []
+        if self.session.s3 is not None:
+            roles = self.session.s3.roles or []
+
+        c = c or self.controller
+        f = f or self.function
+
+        page = "%s/%s" % (c, f)
+        if page in self.unrestricted_pages:
+            page_acl = (self.ALL, self.ALL)
+        else:
+            page_acl = self.page_acls.get(page, None)
+        if page_acl is None:
+            q = ((t.controller == c) &
+                ((t.function == f) | (t.function == None)))
+            if roles:
+                query = (t.group_id.belongs(roles)) & q
+            else:
+                query = (t.group_id == None) & q
+            rows = self.db(query).select()
+            if rows:
+                # ACLs found, apply most permissive role
+                controller_acl = []
+                function_acl = []
+                for row in rows:
+                    if not row.function:
+                        controller_acl += (row.opermissions, row.spermissions)
+                    else:
+                        function_acl += (row.opermissions, row.spermissions)
+                controller_acl = most_permissive(controller_acl)
+                function_acl = most_permissive(function_acl)
+                page_acl = most_permissive((controller_acl, function_acl))
+            else:
+                # No ACL found for any of the roles
+                restricted = self.db(q).select(t.id, limitby=(0, 1)).first()
+                if restricted:
+                    # Page is restricted, no access
+                    page_acl = (self.NONE, self.NONE)
+                elif roles:
+                    # Authenticated user, full access
+                    page_acl = (self.ALL, self.ALL)
+                else:
+                    # Anonymous user, read-only access
+                    page_acl = (self.READ, self.READ)
+
+            # Remember this result
+            self.page_acls.update({page:page_acl})
+
+        return page_acl
+
+
+    # -------------------------------------------------------------------------
+    def table_acl(self, table=None, c=None):
+        """
+        Get the ACL for a table
+
+        @param table: the table
+        @param c: the controller (falls back to current request)
+        @returns: tuple of (ACL for owned resources, ACL for all resources)
+
+        """
+
+        if table is None:
+            return self.page_acl(c=c)
+
+        t = self.table
+
+        roles = []
+        if self.session.s3 is not None:
+            roles = self.session.s3.roles or []
+
+        c = c or self.controller
+
+        # Already loaded?
+        tablename = table._tablename
+        table_acl = self.table_acls.get(tablename, None)
+
+        if table_acl is None:
+            q = ((t.tablename == tablename) &
+                ((t.controller == c) | (t.controller == None)))
+            if roles:
+                query = (t.group_id.belongs(roles)) & q
+            else:
+                query = (t.group_id == None) & q
+            rows = self.db(query).select()
+            table_acl = [(r.opermissions, r.spermissions) for r in rows]
+            if table_acl:
+                # ACL found, apply most permissive role
+                table_acl = self.most_permissive(table_acl)
+            else:
+                # No ACL found for any of the roles
+                restricted = self.db(q).select(t.id, limitby=(0, 1)).first()
+                if restricted:
+                    # Table is restricted, no access
+                    table_acl = (self.NONE, self.NONE)
+                elif roles:
+                    # Authenticated user, full access
+                    table_acl = (self.ALL, self.ALL)
+                else:
+                    # Anonymous user, read-only access
+                    table_acl = (self.READ, self.READ)
+
+            # Remember this result
+            self.table_acls.update({tablename:table_acl})
+
+        return table_acl
 
 
     # -------------------------------------------------------------------------

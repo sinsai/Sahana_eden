@@ -22,10 +22,9 @@ response.menu_options = [ [T("Documents"), False, URL(r=request, f="document"),[
                           [T("Photos"), False, URL(r=request, f="image"),[
                             [T("List"), False, URL(r=request, f="image")],
                             [T("Add"), False, URL(r=request, f="image", args="create")],
+                            [T("Bulk Uploader"), False, URL(r=request, f="bulk_upload")]
                             #[T("Search"), False, URL(r=request, f="ireport", args="search")]
-                        ]],
-                          #[T("Bulk Uploader"), False, URL(r=request, f="bulk_upload")]
-                        ]
+                        ]]]
 
 #==============================================================================
 # Web2Py Tools functions
@@ -165,8 +164,11 @@ def upload_bulk():
 
         https://github.com/valums/file-uploader/blob/master/server/readme.txt
 
-        @ToDo: Read EXIF headers to locate the Photos
+        @ToDo: Read EXIF headers to geolocate the Photos
     """
+
+    tablename = "doc_image"
+    table = db[tablename]
 
     import cgi
 
@@ -187,130 +189,53 @@ def upload_bulk():
         # Convert to StringIO for onvalidation/import
         import StringIO
         image = StringIO.StringIO(image)
+        source = Storage()
+        source.filename = name
+        source.file = image
 
-    form = Storage()
-    form.vars = Storage()
-    form.vars.name = name
-    form.vars.image = image
+    form = SQLFORM(table)
+    vars = Storage()
+    vars.name = name
+    vars.image = source
+    vars._formname = "%s_create" % tablename
 
     # onvalidation callback
-    # @ToDo: Generalise by reading s3xrc.model
-    image_onvalidation(form)
-        
-    # Add the file to the database
-    # @ToDo handle theimage: currently it's a str
-    #success = db.doc_image.insert(name=name, image=image)
-    if form.accepts():
-        success = True
-    else:
-        success = False
+    # Do not access s3xrc.model config array directly (avoids regression problems) => use wrapper
+    #try:
+        #onvalidation = s3xrc.model.config[tablename].create_onvalidation or s3xrc.model.config[tablename].onvalidation
+    #except:
+        #onvalidation = None
+    onvalidation = s3xrc.model.get_config(table, "create_onvalidation",
+                   s3xrc.model.get_config(table, "onvalidation"))
+    if onvalidation:
+        form.vars = Storage()
+        form.vars.name = name
+        form.vars.image = source
+        # onvalidation can be multiple => use s3xrc.callback function
+        #onvalidation(form)
+        s3xrc.callback(onvalidation, form, name=tablename)
 
-    # onaccept callback
-    # @ToDo: Generalise in case available
-
-    if success:
-        msg = "{'success':true}"
+    if form.accepts(vars):
+        msg = Storage(success = True)
+        # onaccept callback
+        # Do not access s3xrc.model config array directly (avoids regression problems) => use wrapper
+        #try:
+            #onaccept = s3xrc.model.config[tablename].create_onaccept or s3xrc.model.config[tablename].onaccept
+        #except:
+            #onaccept = None
+        onaccept = s3xrc.model.get_config(table, "create_onaccept",
+                   s3xrc.model.get_config(table, "onaccept"))
+        if onaccept:
+            # onaccept can be multiple => use s3xrc.callback function
+            s3xrc.callback(onaccept, form, name=tablename)
+            #onaccept(form)
     else:
-        msg = "{'error':'sorry, no dice'}"
+        error_msg = ""
+        for error in form.errors:
+            error_msg += "%s:%s\n" % (error, form.errors[error])
+        msg = Storage(error = error_msg)
 
     response.headers["Content-Type"] = "text/html"  # This is what the file-uploader widget expects
-    return msg
+    return json.dumps(msg)
 
 #==============================================================================
-# END - Following code is not utilised
-#==============================================================================
-def upload(module, resource, table, tablename, onvalidation=None, onaccept=None):
-    # Receive file ( from import_url() )
-    record = Storage()
-
-    for var in request.vars:
-
-        # Skip the Representation
-        if var == "format":
-            continue
-        elif var == "uuid":
-            uuid = request.vars[var]
-        elif table[var].type == "upload":
-            # Handle file uploads (copied from gluon/sqlhtml.py)
-            field = table[var]
-            fieldname = var
-            f = request.vars[fieldname]
-            fd = fieldname + "__delete"
-            if f == "" or f is None:
-                #if request.vars.get(fd, False) or not self.record:
-                if request.vars.get(fd, False):
-                    record[fieldname] = ""
-                else:
-                    #record[fieldname] = self.record[fieldname]
-                    pass
-            elif hasattr(f, "file"):
-                (source_file, original_filename) = (f.file, f.filename)
-            elif isinstance(f, (str, unicode)):
-                ### do not know why this happens, it should not
-                (source_file, original_filename) = \
-                    (cStringIO.StringIO(f), "file.txt")
-            newfilename = field.store(source_file, original_filename)
-            request.vars["%s_newfilename" % fieldname] = record[fieldname] = newfilename
-            if field.uploadfield and not field.uploadfield==True:
-                record[field.uploadfield] = source_file.read()
-        else:
-            record[var] = request.vars[var]
-
-    # Validate record
-    for var in record:
-        if var in table.fields:
-            value = record[var]
-            (value, error) = s3xrc.xml.validate(table, original, var, value)
-        else:
-            # Shall we just ignore non-existent fields?
-            # del record[var]
-            error = "Invalid field name."
-        if error:
-            raise HTTP(400, body=s3xrc.xml.json_message(False, 400, var + " invalid: " + error))
-        else:
-            record[var] = value
-
-    form = Storage()
-    form.method = method
-    form.vars = record
-
-    # Onvalidation callback
-    if onvalidation:
-        onvalidation(form)
-
-    # Create/update record
-    try:
-        if jr.component:
-            record[jr.fkey]=jr.record[jr.pkey]
-        if method == "create":
-            id = table.insert(**dict(record))
-            if id:
-                error = 201
-                item = s3xrc.xml.json_message(True, error, "Created as " + str(jr.other(method=None, record_id=id)))
-                form.vars.id = id
-                if onaccept:
-                    onaccept(form)
-            else:
-                error = 403
-                item = s3xrc.xml.json_message(False, error, "Could not create record!")
-
-        elif method == "update":
-            result = db(table.uuid==uuid).update(**dict(record))
-            if result:
-                error = 200
-                item = s3xrc.xml.json_message(True, error, "Record updated.")
-                form.vars.id = original.id
-                if onaccept:
-                    onaccept(form)
-            else:
-                error = 403
-                item = s3xrc.xml.json_message(False, error, "Could not update record!")
-
-        else:
-            error = 501
-            item = s3xrc.xml.json_message(False, error, "Unsupported Method!")
-    except:
-        error = 400
-        item = s3xrc.xml.json_message(False, error, "Invalid request!")
-
-    raise HTTP(error, body=item)

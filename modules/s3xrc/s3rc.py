@@ -45,6 +45,7 @@ from gluon.storage import Storage
 from gluon.html import URL, A
 from gluon.http import HTTP, redirect
 from gluon.validators import IS_DATE, IS_TIME
+from gluon.tools import callback
 from lxml import etree
 
 from s3xml import S3XML
@@ -384,37 +385,6 @@ class S3DataStore(object):
                 else:
                     d[i[k]] = vals
         return d
-
-
-    # -------------------------------------------------------------------------
-    def callback(self, hook, *args, **vars):
-        """
-        Invoke a hook or a list of hooks
-
-        @param hook: the hook function, a list or tuple of hook
-            functions, or a tablename-keyed dict of hook functions
-        @param args: args (position arguments) to pass to the hook
-            function(s)
-        @param vars: vars (named arguments) to pass to the hook
-            function(s), may contain a name=tablename which is used
-            to select a function from the dict (the "name" argument
-            will not be passed to the functions)
-
-        """
-
-        name = vars.pop("name", None)
-
-        if name and isinstance(hook, dict):
-            hook = hook.get(name, None)
-
-        if hook:
-            if isinstance(hook, (list, tuple)):
-                result = [f(*args, **vars) for f in hook]
-            else:
-                result = hook(*args, **vars)
-            return result
-        else:
-            return None
 
 
     # REST Functions ==========================================================
@@ -926,7 +896,7 @@ class S3DataStore(object):
         if self.tree_resolve:
             if not isinstance(tree, etree._ElementTree):
                 tree = etree.ElementTree(tree)
-            self.callback(self.tree_resolve, tree)
+            callback(self.tree_resolve, tree)
 
         permit = self.auth.shn_has_permission
         audit = self.audit
@@ -1255,7 +1225,7 @@ class S3ImportJob(object):
                     form.vars.id = self.id
                 form.errors = Storage()
                 if self.onvalidation:
-                    self.datastore.callback(self.onvalidation, form, name=self.tablename)
+                    callback(self.onvalidation, form, tablename=self.tablename)
                 if form.errors:
                     for k in form.errors:
                         e = self.element.findall("data[@field='%s']" % k)
@@ -1363,7 +1333,7 @@ class S3ImportJob(object):
                                    form=form, record=self.id, representation="xml")
                     model.update_super(self.table, form.vars)
                     if self.onaccept:
-                        self.datastore.callback(self.onaccept, form, name=self.tablename)
+                        callback(self.onaccept, form, tablename=self.tablename)
 
         # Commit components
         if self.id and self.components and not skip_components:

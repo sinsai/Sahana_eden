@@ -208,7 +208,7 @@ def upload_bulk():
         # onaccept callback
         onaccept = s3xrc.model.get_config(table, "create_onaccept",
                    s3xrc.model.get_config(table, "onaccept"))
-        s3xrc.callback(onaccept, form, name=tablename)
+        callback(onaccept, form, tablename=tablename)
     else:
         error_msg = ""
         for error in form.errors:

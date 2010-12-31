@@ -47,6 +47,7 @@ from gluon.html import *
 from gluon.http import HTTP, redirect
 from gluon.sqlhtml import SQLTABLE, SQLFORM
 from gluon.validators import IS_EMPTY_OR
+from gluon.tools import callback
 
 from lxml import etree
 from ..s3tools import SQLTABLES3
@@ -393,7 +394,7 @@ class S3Resource(object):
                                record=row.id, representation=format)
                     model.delete_super(self.table, row)
                     if ondelete:
-                        ondelete(row)
+                        callback(ondelete, row)
 
                 # otherwise: delete record
                 else:
@@ -408,7 +409,7 @@ class S3Resource(object):
                                    representation=format)
                         model.delete_super(self.table, row)
                         if ondelete:
-                            ondelete(row)
+                            callback(ondelete, row)
 
         return numrows
 

@@ -36,9 +36,18 @@ import time
 import uuid
 import re
 from datetime import datetime, timedelta
-from gluon.validators import Validator, IS_MATCH, IS_NOT_IN_DB
+from gluon.validators import Validator, IS_MATCH, IS_NOT_IN_DB, IS_IN_SET
 
-__all__ = ["IS_LAT", "IS_LON", "IS_HTML_COLOUR", "THIS_NOT_IN_DB", "IS_UTC_OFFSET", "IS_UTC_DATETIME", "IS_ONE_OF", "IS_ONE_OF_EMPTY", "IS_NOT_ONE_OF"]
+__all__ = ["IS_LAT",
+           "IS_LON",
+           "IS_HTML_COLOUR",
+           "THIS_NOT_IN_DB",
+           "IS_UTC_OFFSET",
+           "IS_UTC_DATETIME",
+           "IS_ONE_OF",
+           "IS_ONE_OF_EMPTY",
+           "IS_NOT_ONE_OF",
+           "IS_ACL"]
 
 def options_sorter(x, y):
     return (str(x[1]).upper() > str(y[1]).upper() and 1) or -1
@@ -534,5 +543,40 @@ class IS_UTC_DATETIME(Validator):
     def formatter(self, value):
         # Always format with trailing UTC offset
         return value.strftime(str(self.format)) + " +0000"
+
+
+# -----------------------------------------------------------------------------
+class IS_ACL(IS_IN_SET):
+
+    """
+    Validator for ACLs
+
+    @attention: Incomplete! Does not validate yet, but just convert.
+
+    @author: Dominic König <dominic@aidiq.com>
+
+    """
+
+    def __call__(self, value):
+        """
+        Validation
+
+        @param value: the value to validate
+
+        """
+
+        if not isinstance(value, (list, tuple)):
+            value = [value]
+
+        acl = 0x0000
+        for v in value:
+            try:
+                flag = int(v)
+            except ValueError:
+                flag = 0x0000
+            else:
+                acl |= flag
+
+        return (acl, None)
 
 # -----------------------------------------------------------------------------

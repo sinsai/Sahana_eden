@@ -25,7 +25,7 @@ response.menu_options = [ [T("Documents"), False, URL(r=request, f="document"),[
                             [T("Bulk Uploader"), False, URL(r=request, f="bulk_upload")]
                             #[T("Search"), False, URL(r=request, f="ireport", args="search")]
                         ]]]
-  
+
 #==============================================================================
 # Web2Py Tools functions
 def download():
@@ -200,25 +200,15 @@ def upload_bulk():
     vars._formname = "%s_create" % tablename
 
     # onvalidation callback
-    try:
-        onvalidation = s3xrc.model.config[tablename].create_onvalidation or s3xrc.model.config[tablename].onvalidation
-    except:
-        onvalidation = None
-    if onvalidation:
-        form.vars = Storage()
-        form.vars.name = name
-        form.vars.image = source
-        onvalidation(form)
+    onvalidation = s3xrc.model.get_config(table, "create_onvalidation",
+                   s3xrc.model.get_config(table, "onvalidation"))
 
-    if form.accepts(vars):
+    if form.accepts(vars, onvalidation=onvalidation):
         msg = Storage(success = True)
         # onaccept callback
-        try:
-            onaccept = s3xrc.model.config[tablename].create_onaccept or s3xrc.model.config[tablename].onaccept
-        except:
-            onaccept = None
-        if onaccept:
-            onaccept(form)
+        onaccept = s3xrc.model.get_config(table, "create_onaccept",
+                   s3xrc.model.get_config(table, "onaccept"))
+        callback(onaccept, form, tablename=tablename)
     else:
         error_msg = ""
         for error in form.errors:

@@ -487,6 +487,7 @@ def users():
     crud.settings.create_onaccept = lambda form: s3_audit("create", module, "membership",
                                                           form=form,
                                                           representation="html")
+    crud.settings.create_onvalidation = lambda form: group_dupes(form, "users", [group])
     # Many<>Many selection (Deletable, no Quantity)
     item_list = []
     sqlrows = db(query).select()
@@ -523,7 +524,7 @@ def users():
     output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form=form))
     return output
 
-def group_dupes(form):
+def group_dupes(form, page, arg):
     """ Onvalidation check for duplicate user roles """
     user = form.latest["user_id"]
     group = form.latest["group_id"]   
@@ -531,7 +532,7 @@ def group_dupes(form):
     items = db(query).select()
     if items:     
         session.error = T("User already has this role")
-        redirect(URL(r=request, f="groups", args=[user]))
+        redirect(URL(r=request, f=page, args=arg))
 
 @auth.shn_requires_membership(1)
 def group_remove_users():
@@ -578,7 +579,7 @@ def groups():
                                                           representation="html")
     
     
-    crud.settings.create_onvalidation = lambda form: group_dupes(form)
+    crud.settings.create_onvalidation = lambda form: group_dupes(form, "groups", [user]) 
     # Many<>Many selection (Deletable, no Quantity)
     item_list = []
     sqlrows = db(query).select()

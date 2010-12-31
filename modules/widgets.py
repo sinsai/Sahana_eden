@@ -54,6 +54,57 @@ class S3DateWidget:
                       )
 
 # -----------------------------------------------------------------------------
+class S3UploadWidget(UploadWidget):
+    """
+        Subclassed to not show the delete checkbox when field is mandatory
+        - subclass doesn't currently work as download_url not passed in.
+        - Patch submitted to Web2Py.
+    """
+
+    @staticmethod
+    def widget(field, value, download_url=None, **attributes):
+        """
+        generates a INPUT file tag.
+
+        Optionally provides an A link to the file, including a checkbox so
+        the file can be deleted.
+        All is wrapped in a DIV.
+
+        see also: :meth:`FormWidget.widget`
+
+        :param download_url: Optional URL to link to the file (default = None)
+        """
+
+        default=dict(
+            _type='file',
+            )
+        attr = UploadWidget._attributes(field, default, **attributes)
+
+        inp = INPUT(**attr)
+
+        if download_url and value:
+            url = download_url + '/' + value
+            (br, image) = ('', '')
+            if UploadWidget.is_image(value):
+                br = BR()
+                image = IMG(_src = url, _width = UploadWidget.DEFAULT_WIDTH)
+            
+            requires = attr["requires"]
+            if requires == [] or isinstance(requires, IS_EMPTY_OR):
+                inp = DIV(inp, '[',
+                          A(UploadWidget.GENERIC_DESCRIPTION, _href = url),
+                          '|',
+                          INPUT(_type='checkbox',
+                                _name=field.name + UploadWidget.ID_DELETE_SUFFIX),
+                          UploadWidget.DELETE_FILE,
+                          ']', br, image)
+            else:
+                inp = DIV(inp, '[',
+                          A(UploadWidget.GENERIC_DESCRIPTION, _href = url),
+                          ']', br, image)
+        return inp
+
+# -----------------------------------------------------------------------------
 class S3AutocompleteWidget:
     """
         @author: Fran Boon (fran@aidiq.com)

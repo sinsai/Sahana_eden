@@ -149,11 +149,6 @@ class S3XML(object):
 
     ISOFORMAT = "%Y-%m-%dT%H:%M:%SZ" #: universal timestamp
 
-    xml_encode = lambda s: s and \
-                 escape(s, {"'":"&apos;", '"':"&quot;"}) or s
-    xml_decode = lambda s: s and \
-                 unescape(s, {"&apos;":"'", "&quot;":'"'}) or s
-
     # -------------------------------------------------------------------------
     def __init__(self, datastore):
         """
@@ -255,7 +250,8 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
-    def tree(self, resources,
+    def tree(self, elements,
+             root=None,
              domain=None,
              url=None,
              start=None,
@@ -264,7 +260,8 @@ class S3XML(object):
         """
         Builds a S3XML tree from a list of elements
 
-        @param resources: list of <resource> elements
+        @param elements: list of <resource> elements
+        @param root: the root element to link the tree to
         @param domain: name of the current domain
         @param url: url of the request
         @param start: the start record (in server-side pagination)
@@ -277,18 +274,22 @@ class S3XML(object):
         # matched in XSLT templates (need explicit prefix) and thus this
         # would require a rework of all existing templates (which is
         # however useful)
-        root = etree.Element(self.TAG.root)
-        root.set(self.ATTRIBUTE.success, str(False))
-        if resources is not None:
-            if resources:
-                root.set(self.ATTRIBUTE.success, str(True))
-            if start is not None:
-                root.set(self.ATTRIBUTE.start, str(start))
-            if limit is not None:
-                root.set(self.ATTRIBUTE.limit, str(limit))
-            if results is not None:
-                root.set(self.ATTRIBUTE.results, str(results))
-            root.extend(resources)
+
+        success = False
+
+        if root is None:
+            root = etree.Element(self.TAG.root)
+        if elements is not None or len(root):
+            success = True
+        root.set(self.ATTRIBUTE.success, json.dumps(success))
+        if start is not None:
+            root.set(self.ATTRIBUTE.start, str(start))
+        if limit is not None:
+            root.set(self.ATTRIBUTE.limit, str(limit))
+        if results is not None:
+            root.set(self.ATTRIBUTE.results, str(results))
+        if elements is not None:
+            root.extend(elements)
         if domain:
             root.set(self.ATTRIBUTE.domain, self.domain)
         if url:
@@ -302,6 +303,35 @@ class S3XML(object):
         root.set(self.ATTRIBUTE.lonmax,
                  str(self.gis.get_bounds()["max_lon"]))
         return etree.ElementTree(root)
+
+
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def xml_encode(s):
+        """
+        XML-escape a string
+
+        @param s: the string
+
+        """
+
+        if s:
+            s = escape(s, {"'":"&apos;", '"':"&quot;"})
+        return s
+
+
+    @staticmethod
+    def xml_decode(s):
+        """
+        XML-unescape a string
+
+        @param s: the string
+
+        """
+
+        if s:
+            s = unescape(s, {"&apos;":"'", "&quot;":'"'})
+        return s
 
 
     # -------------------------------------------------------------------------
@@ -325,7 +355,6 @@ class S3XML(object):
                 return uid
 
 
-    # -------------------------------------------------------------------------
     def import_uid(self, uid):
         """
         Imports UIDs with domain prefixes
@@ -527,10 +556,11 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
-    def element(self, table, record, fields=[], url=None):
+    def resource(self, parent, table, record, fields=[], url=None):
         """
-        Creates an element from a Storage() record
+        Creates a <resource> element from a record
 
+        @param parent: the parent element in the document tree
         @param table: the database table
         @param record: the record
         @param fields: list of field names to include
@@ -540,8 +570,13 @@ class S3XML(object):
 
         download_url = self.s3.download_url or ""
 
-        elem = etree.Element(self.TAG.resource)
-        elem.set(self.ATTRIBUTE.name, table._tablename)
+        ATTRIBUTE = self.ATTRIBUTE
+
+        if parent is not None:
+            elem = etree.SubElement(parent, self.TAG.resource)
+        else:
+            elem = etree.Element(self.TAG.resource)
+        elem.set(ATTRIBUTE.name, table._tablename)
 
         # UID
         if self.UID in table.fields and self.UID in record:
@@ -553,13 +588,12 @@ class S3XML(object):
         if table._tablename == "gis_location" and self.gis:
             marker = self.gis.get_marker(elem)
             marker_url = "%s/%s" % (download_url, marker.image)
-            elem.set(self.ATTRIBUTE.marker, marker_url)
+            elem.set(ATTRIBUTE.marker, marker_url)
             symbol = "White Dot"
-            elem.set(self.ATTRIBUTE.sym, symbol)
+            elem.set(ATTRIBUTE.sym, symbol)
 
         # Fields
-        for i in xrange(0, len(fields)):
-            f = fields[i]
+        for f in fields:
             v = record.get(f, None)
             if f == self.MCI and v is None:
                 v = 0
@@ -571,7 +605,7 @@ class S3XML(object):
                 value = v.strftime(self.ISOFORMAT).decode("utf-8")
                 text = self.xml_encode(value)
             elif fieldtype in ("date", "time"):
-                value = str(table[f].formatter(v).decode("utf-8"))
+                value = str(table[f].formatter(v)).decode("utf-8")
                 text = self.xml_encode(value)
             else:
                 value = json.dumps(v).decode("utf-8")
@@ -588,9 +622,9 @@ class S3XML(object):
                 fileurl = "%s/%s" % (download_url, value)
                 filename = value
                 data = etree.SubElement(elem, self.TAG.data)
-                data.set(self.ATTRIBUTE.field, f)
-                data.set(self.ATTRIBUTE.url, fileurl)
-                data.set(self.ATTRIBUTE.filename, filename)
+                data.set(ATTRIBUTE.field, f)
+                data.set(ATTRIBUTE.url, fileurl)
+                data.set(ATTRIBUTE.filename, filename)
             elif fieldtype == "password":
                 # Do not export password fields
                 continue
@@ -599,14 +633,14 @@ class S3XML(object):
                 continue
             else:
                 data = etree.SubElement(elem, self.TAG.data)
-                data.set(self.ATTRIBUTE.field, f)
+                data.set(ATTRIBUTE.field, f)
                 if table[f].represent or \
                    fieldtype not in ("string", "text"):
-                    data.set(self.ATTRIBUTE.value, value)
+                    data.set(ATTRIBUTE.value, value)
                 data.text = text
 
         if url:
-            elem.set(self.ATTRIBUTE.url, url)
+            elem.set(ATTRIBUTE.url, url)
 
         return elem
 
@@ -750,7 +784,7 @@ class S3XML(object):
                validate=None,
                skip=[]):
         """
-        Creates a Storage() record from an element and validates it
+        Creates a record (Storage) from a <resource> element and validates it
 
         @param table: the database table
         @param element: the element
@@ -951,14 +985,13 @@ class S3XML(object):
                 readable = table[f].readable
                 writable = table[f].writable
                 options = self.get_field_options(table, f)
-                field = etree.Element(self.TAG.field)
+                field = etree.SubElement(fields, self.TAG.field)
                 field.set(self.ATTRIBUTE.name, f)
                 field.set(self.ATTRIBUTE.type, ftype)
                 field.set(self.ATTRIBUTE.readable, str(readable))
                 field.set(self.ATTRIBUTE.writable, str(writable))
                 field.set(self.ATTRIBUTE.has_options,
                           str(len(options) and True or False))
-                fields.append(field)
         return fields
 
 

@@ -28,9 +28,6 @@ GeoExplorer.Viewer = Ext.extend(GeoExplorer, {
         this.mapPanel.add(mapOverlay);
 
         this.toolbar = new Ext.Toolbar({
-            xtype: "toolbar",
-            region: "north",
-            height: 27,
             disabled: true,
             items: this.createTools()
         });
@@ -56,10 +53,14 @@ GeoExplorer.Viewer = Ext.extend(GeoExplorer, {
             activeItem: 0
         });
 
-        this.portalItems = [
-            this.toolbar,
-            this.mapPanelContainer
-        ];
+        this.portalItems = [{
+            region: "center",
+            layout: "border",
+            tbar: this.toolbar,
+            items: [
+                this.mapPanelContainer
+            ]
+        }];
         
         GeoExplorer.superclass.initPortal.apply(this, arguments);        
 

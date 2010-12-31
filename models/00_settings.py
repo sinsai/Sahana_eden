@@ -41,7 +41,7 @@ response.s3.mobile = ifmobile(request)
 def populate_browser_compatibility():
     try:
         from pywurfl.algorithms import TwoStepAnalysis
-    except:
+    except ImportError:
         print "pywurfl python module has not been installed, browser compatibility listing will not be populated"
         print "download pywurfl from http://pypi.python.org/pypi/pywurfl/"
         return False

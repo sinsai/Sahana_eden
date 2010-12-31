@@ -42,7 +42,9 @@ def populate_browser_compatibility(request):
     try:
         from pywurfl.algorithms import TwoStepAnalysis
     except ImportError:
-        response.warning = T("pywurfl python module has not been installed, browser compatibility listing will not be populated. download pywurfl from http://pypi.python.org/pypi/pywurfl/")
+        import sys
+        # imitating the behaviour of s3_debug as it is defined in 00_utils.py which is executed after 00_settings.py it cannot be used
+        print >> sys.stderr, "S3 Debug: pywurfl python module has not been installed, browser compatibility listing will not be populated. download pywurfl from http://pypi.python.org/pypi/pywurfl/"
         return False
     wurfl = local_import('wurfl')
     device = wurfl.devices.select_ua(unicode(request.env.http_user_agent), search=TwoStepAnalysis(wurfl.devices))

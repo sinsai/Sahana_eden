@@ -38,7 +38,7 @@ response.s3.mobile = ifmobile(request)
 
 # Use WURFL for browser compatibility detection
 
-def populate_browser_compatibility():
+def populate_browser_compatibility(request):
     try:
         from pywurfl.algorithms import TwoStepAnalysis
     except ImportError:
@@ -61,7 +61,7 @@ def populate_browser_compatibility():
     
     return browser
 
-response.s3.browser = populate_browser_compatibility()
+response.s3.browser = populate_browser_compatibility(request)
 
 #
 

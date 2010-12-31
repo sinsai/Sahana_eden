@@ -425,7 +425,7 @@ table = db.define_table(tablename,
                         Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
                         Field("path", length=500, readable=False, writable=False),  # Materialised Path
                         # Street Address (other address fields come from hierarchy)
-                        Field("addr_street"),
+                        Field("addr_street", "text"),
                         #Field("addr_postcode"),    # Do we want this as a separate field?
                         Field("gis_feature_type", "integer", default=1, notnull=True),
                         Field("lat", "double"), # Points or Centroid for Polygons

@@ -200,35 +200,15 @@ def upload_bulk():
     vars._formname = "%s_create" % tablename
 
     # onvalidation callback
-    # Do not access s3xrc.model config array directly (avoids regression problems) => use wrapper
-    #try:
-        #onvalidation = s3xrc.model.config[tablename].create_onvalidation or s3xrc.model.config[tablename].onvalidation
-    #except:
-        #onvalidation = None
     onvalidation = s3xrc.model.get_config(table, "create_onvalidation",
                    s3xrc.model.get_config(table, "onvalidation"))
-    if onvalidation:
-        form.vars = Storage()
-        form.vars.name = name
-        form.vars.image = source
-        # onvalidation can be multiple => use s3xrc.callback function
-        #onvalidation(form)
-        s3xrc.callback(onvalidation, form, name=tablename)
 
-    if form.accepts(vars):
+    if form.accepts(vars, onvalidation=onvalidation):
         msg = Storage(success = True)
         # onaccept callback
-        # Do not access s3xrc.model config array directly (avoids regression problems) => use wrapper
-        #try:
-            #onaccept = s3xrc.model.config[tablename].create_onaccept or s3xrc.model.config[tablename].onaccept
-        #except:
-            #onaccept = None
         onaccept = s3xrc.model.get_config(table, "create_onaccept",
                    s3xrc.model.get_config(table, "onaccept"))
-        if onaccept:
-            # onaccept can be multiple => use s3xrc.callback function
-            s3xrc.callback(onaccept, form, name=tablename)
-            #onaccept(form)
+        s3xrc.callback(onaccept, form, name=tablename)
     else:
         error_msg = ""
         for error in form.errors:

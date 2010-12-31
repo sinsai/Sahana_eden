@@ -41,7 +41,7 @@ class Action(unittest.TestCase):
         sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( '' );")
         time.sleep(1)
         sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( '%s' );" % searchString)
-        time.sleep(5)
+        time.sleep(1)
         for i in range(10):
             try:
                 result = sel.get_text("//div[@id='table-container']")

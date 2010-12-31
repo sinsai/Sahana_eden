@@ -42,8 +42,7 @@ def populate_browser_compatibility(request):
     try:
         from pywurfl.algorithms import TwoStepAnalysis
     except ImportError:
-        print "pywurfl python module has not been installed, browser compatibility listing will not be populated"
-        print "download pywurfl from http://pypi.python.org/pypi/pywurfl/"
+        response.warning = T("pywurfl python module has not been installed, browser compatibility listing will not be populated. download pywurfl from http://pypi.python.org/pypi/pywurfl/")
         return False
     wurfl = local_import('wurfl')
     device = wurfl.devices.select_ua(unicode(request.env.http_user_agent), search=TwoStepAnalysis(wurfl.devices))

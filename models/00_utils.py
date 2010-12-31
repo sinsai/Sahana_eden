@@ -858,8 +858,8 @@ def s3_rest_controller(prefix, resourcename, **attr):
     # Parse the request
     resource, r = s3xrc.parse_request(prefix, resourcename)
 
-    #acl = auth.permission(table=r.table, record=r.id)
-    #print "ACL=0x%04X" % acl
+    acl = auth.permission(table=r.table, record=r.id)
+    print "ACL=0x%04X" % acl
 
     resource.set_handler("search", _s3xrc.S3Search())
     resource.set_handler("copy", shn_copy)

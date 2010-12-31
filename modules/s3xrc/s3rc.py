@@ -170,8 +170,8 @@ class S3DataStore(object):
         """
         Defines a resource
 
-        @param prefix: the application prefix of the resource
-        @param name: the resource name (without prefix)
+        @param prefix: the application prefix
+        @param name: the resource name (without application prefix)
         @param id: record ID or list of record IDs
         @param uid: record UID or list of record UIDs
         @param filter: web2py query to filter the resource query
@@ -200,8 +200,6 @@ class S3DataStore(object):
 
         @param prefix: the module prefix of the resource
         @param name: the resource name (without prefix)
-
-        @todo 2.3: move into S3Resource
 
         """
 
@@ -353,7 +351,8 @@ class S3DataStore(object):
 
 
     # -------------------------------------------------------------------------
-    def __directory(self, d, l, k, v, e={}):
+    @staticmethod
+    def __directory(d, l, k, v, e={}):
         """
         Converts a list of dicts into a directory
 
@@ -584,7 +583,6 @@ class S3DataStore(object):
             except TypeError:
                 href = linkto % id
             href = str(href).replace(".aadata", "")
-            #href = str(href).replace(".aaData", "")
             return A(text, _href=href).xml()
 
         # XML-escape text
@@ -624,14 +622,15 @@ class S3DataStore(object):
                 if f == self.xml.UID or f in self.xml.ATTRIBUTES_TO_FIELDS:
                     v = record.get(f, None)
                 else:
-                    xexpr = "%s[@%s='%s']" % (self.xml.TAG.data, self.xml.ATTRIBUTE.field, f)
+                    xexpr = "%s[@%s='%s']" % (self.xml.TAG.data,
+                                              self.xml.ATTRIBUTE.field, f)
                     child = record.xpath(xexpr)
                     if child:
                         child = child[0]
-                        v = child.get(self.xml.ATTRIBUTE.value, child.text)
+                        v = child.get(self.xml.ATTRIBUTE.value,
+                                      self.xml.xml_decode(child.text))
                 if v:
-                    value = self.xml.xml_decode(v)
-                    pvalues[f] = value
+                    pvalues[f] = v
         elif isinstance(record, dict):
             for f in pkeys:
                 v = record.get(f, None)
@@ -653,11 +652,14 @@ class S3DataStore(object):
                     query = query | _query
                 else:
                     query = _query
+
+        # Try to find exactly one match
         if query:
             original = self.db(query).select(table.ALL)
             if len(original) == 1:
                 return original.first()
 
+        # No match or multiple matches
         return None
 
 
@@ -712,8 +714,10 @@ class S3DataStore(object):
         tablename = resource.tablename
         table = resource.table
 
+        # Split reference/data fields
         (rfields, dfields) = self.__fields(resource.table, skip=skip)
 
+        # Filter for MCI>=0 (setting)
         if self.xml.filter_mci and "mci" in table.fields:
             mci_filter = (table.mci >= 0)
             resource.add_filter(mci_filter)
@@ -730,6 +734,7 @@ class S3DataStore(object):
         for c in resource.components.values():
             cresource = c.resource
 
+            # Add MCI filter to component as well
             if self.xml.filter_mci and "mci" in cresource.table.fields:
                 mci_filter = (cresource.table.mci >= 0)
                 cresource.add_filter(mci_filter)
@@ -750,12 +755,13 @@ class S3DataStore(object):
         export_map = Storage()
         reference_map = []
 
+        # Build the tree
+        root = etree.Element(self.xml.TAG.root)
         for record in resource:
+            # Audit read
             if audit:
                 audit(self.ACTION["read"], prefix, name,
-                      record=record.id,
-                      representation="xml")
-
+                      record=record.id, representation="xml")
             if show_urls:
                 resource_url = "%s/%s" % (url, record.id)
             else:
@@ -766,31 +772,33 @@ class S3DataStore(object):
                 if record[self.xml.MTIME] < msince:
                     msince_add = False
 
+            # Get a reference map
             rmap = self.xml.rmap(table, record, rfields)
-            element = self.xml.element(table, record,
-                                       fields=dfields,
-                                       url=resource_url)
+
+            # Create a <resource> element, add the references from
+            # the reference map, and GIS-encode the resource
+            element = self.xml.resource(root, table, record,
+                                        fields=dfields, url=resource_url)
             self.xml.add_references(element, rmap, show_ids=self.show_ids)
             self.xml.gis_encode(resource, record, rmap,
                                 download_url=self.s3.download_url,
                                 marker=marker)
-
 
             # Export components of this record
             r_url = "%s/%s" % (url, record.id)
             for c in resource.components.values():
 
                 component = c.component
-
                 cprefix = component.prefix
                 cname = component.name
+
+                # Do not export this as a component if it has components itself
                 if self.model.has_components(cprefix, cname):
                     continue
 
                 ctable = component.table
                 cresource = c.resource
                 c_url = "%s/%s" % (r_url, cname)
-
                 ctablename = component.tablename
                 _rfields = crfields[ctablename]
                 _dfields = cdfields[ctablename]
@@ -814,15 +822,14 @@ class S3DataStore(object):
                         resource_url = None
 
                     crmap = self.xml.rmap(ctable, crecord, _rfields)
-                    celement = self.xml.element(ctable, crecord,
-                                                fields=_dfields,
-                                                url=resource_url)
+                    celement = self.xml.resource(element, ctable, crecord,
+                                                 fields=_dfields,
+                                                 url=resource_url)
                     self.xml.add_references(celement, crmap, show_ids=self.show_ids)
                     self.xml.gis_encode(cresource, crecord, rmap,
                                         download_url=self.s3.download_url,
                                         marker=marker)
 
-                    element.append(celement)
                     reference_map.extend(crmap)
 
                     if export_map.get(c.tablename, None):
@@ -832,7 +839,6 @@ class S3DataStore(object):
 
             if msince_add:
                 reference_map.extend(rmap)
-                element_list.append(element)
                 if export_map.get(resource.tablename, None):
                     export_map[resource.tablename].append(record.id)
                 else:
@@ -873,17 +879,18 @@ class S3DataStore(object):
                     else:
                         resource_url = None
 
-                    element = self.xml.element(table, record,
-                                               fields=dfields,
-                                               url=resource_url)
+                    element = self.xml.resource(root, table, record,
+                                                fields=dfields,
+                                                url=resource_url)
                     self.xml.add_references(element, rmap, show_ids=self.show_ids)
                     self.xml.gis_encode(rresource, record, rmap,
                                         download_url=self.s3.download_url,
                                         marker=marker)
 
+                    # Mark as referenced element (for XSLT)
                     element.set(self.xml.ATTRIBUTE.ref, "True")
-                    element_list.append(element)
 
+                    # Extend the reference and export map
                     reference_map.extend(rmap)
                     if export_map.get(tablename, None):
                         export_map[tablename].append(record.id)
@@ -891,7 +898,8 @@ class S3DataStore(object):
                         export_map[tablename] = [record.id]
 
         # Complete the tree
-        return self.xml.tree(element_list,
+        return self.xml.tree(None,
+                             root=root,
                              domain=self.domain,
                              url= show_urls and self.s3.base_url or None,
                              results=results,
@@ -909,8 +917,6 @@ class S3DataStore(object):
         @param id: record ID or list of record IDs to update
         @param tree: the element tree
         @param ignore_errors: continue at errors (=skip invalid elements)
-
-        @todo 2.3: move into S3Resource
 
         """
 
@@ -1060,7 +1066,7 @@ class S3DataStore(object):
                     if job.element:
                         if not job.element.get(self.xml.ATTRIBUTE.error):
                             job.element.set(self.xml.ATTRIBUTE.error,
-                                            self.xml.xml_encode(str(self.error).decode("utf-8")))
+                                            str(self.error).decode("utf-8"))
                     if ignore_errors:
                         continue
                     else:
@@ -1258,8 +1264,7 @@ class S3ImportJob(object):
                             form.errors[k] = "[%s] %s" % (k, form.errors[k])
                         else:
                             e = e[0]
-                        e.set(xml.ATTRIBUTE.error,
-                              xml.xml_encode(str(form.errors[k])))
+                        e.set(xml.ATTRIBUTE.error, str(form.errors[k]).decode("utf-8"))
                     self.datastore.error = self.datastore.ERROR.VALIDATION_ERROR
                     return False
 

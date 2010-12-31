@@ -79,6 +79,9 @@ class SahanaTest(unittest.TestCase):
                     cls.firstRunExists = True
                 if name == "lastRun":
                     cls.lastRunExists = True
+            # the testcaseCount needs to be modified if _sortList exists
+            if cls._sortList != None:
+                cls.testcaseCount = len(cls._sortList)
             # This cls version will now hide the SahanaTest version
             cls._classDetailsCollected = True
             cls.timings.append(time.time())

@@ -41,7 +41,7 @@ class Action(unittest.TestCase):
         sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( '' );")
         time.sleep(1)
         sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( '%s' );" % searchString)
-        time.sleep(5)
+        time.sleep(4)
         for i in range(10):
             try:
                 result = sel.get_text("//div[@id='table-container']")
@@ -164,7 +164,7 @@ class Action(unittest.TestCase):
             self.searchUnique(objName)
             sel.click("link=Delete")
             self.assertTrue(re.search(r"^Sure you want to delete this object[\s\S]$", sel.get_confirmation()))
-            self.successMsg("Location deleted")
+            self.successMsg("%s deleted" % type)
             print "%s %s deleted" % (type, objName)
         except:
             print "Failed to delete %s %s from page %s" % (type, objName, page)
@@ -178,9 +178,9 @@ class Action(unittest.TestCase):
         heading = sel.get_text("//div[@id='rheader']/div/table/tbody")
         searchString = ""
         for key, value in detailMap.items():
-            searchString = key+'\s*'+value
-            msg = "Unable to find details of %s %s in the header of %s", key, value, heading
-            self.assertTrue(re.search(searchString,heading), msg)
+            msg = "Unable to find details of %s in the header of %s"
+            self.assertTrue(key in heading, msg % (key, heading))
+            self.assertTrue(value in heading, msg % (value, heading))
 
     # Method to save the details
     def saveForm(self, message=None):
@@ -188,7 +188,7 @@ class Action(unittest.TestCase):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         if message != None:
-            self.successMsg(message)
+            return self.successMsg(message)
 
     # Method to locate a message in a div with a class given by type
     def findMsg(self, message, type):
@@ -196,7 +196,8 @@ class Action(unittest.TestCase):
         for cnt in range (10):
             i = 1
             while sel.is_element_present('//div[@class="%s"][%s]' % (type, i)):
-                if re.search(message, sel.get_text('//div[@class="%s"][%s]' % (type, i))):
+                banner = sel.get_text('//div[@class="%s"][%s]' % (type, i))
+                if message in banner:
                     return True
                 i += 1
             time.sleep(1)
@@ -211,6 +212,11 @@ class Action(unittest.TestCase):
         return self.findMsg(message, "error")
 
     # Method to check that form element is present
+    # The element parameter is a list of up to 4 elements
+    # element[0] the type of HTML tag
+    # element[1] the id associated with the HTML tag
+    # element[2] *optional* the visibility of the HTML tag
+    # element[3] *optional* the value or text of the HTML tag
     def element(self, element):
         sel = self.sel
         type = element[0]
@@ -224,13 +230,13 @@ class Action(unittest.TestCase):
         else:
             value = None
         element = '//%s[@id="%s"]' % (type, id)
-        self.assertTrue(sel.is_element_present(element), "%s element %s is missing" % (type, id))
-        if visible:
-            self.assertTrue(sel.is_visible(element), "%s element %s is not visible" % (type, id))
-        else:
-            self.assertFalse(sel.is_visible(element), "%s element %s is not hidden" % (type, id))
+        if not sel.is_element_present(element): return "%s element %s is missing" % (type, id)
+        if sel.is_visible(element) != visible: return "%s element %s doesn't have a visibility of %s"  % (type, id, visible)
         if value!= None:
-            self.assertEqual(value, sel.get_value(element), "%s text doesn't equal the expected value of %s" % (id, sel.get_text(element)))
+            actual = sel.get_value(element)
+            msg = "expected %s for element %s doesn't equal the actual value of %s" % (value, id, actual)
+            if value != actual: return msg
+        return True
                 
     # Method to click on a tab
     def clickTab(self, name):
@@ -277,12 +283,18 @@ class Action(unittest.TestCase):
     # Method to check that the layout of a form
     def checkForm (self, elementList, buttonList, helpList):
         elements = []
+        failed = []
         for element in elementList:
-            self.element(element)
-            elements.append(element[1])
+            result = self.element(element)
+            if result == True:
+                if len(element)>2 and element[2]: elements.append(element[1])
+            else: failed.append(result)
         for name in buttonList:
             self.button(name)
         for title in helpList:
             self.helpBallon(title)
+        if len(failed) > 0:
+            msg = '/n'.join(failed)
+            self.fail(msg)
         if len(elements) > 0:
             print "Verified the following form elements %s" % elements

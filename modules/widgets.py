@@ -1657,3 +1657,46 @@ class S3MultiSelectWidget(FormWidget):
                 return_value = return_value
 
         return return_value
+
+# -----------------------------------------------------------------------------
+class S3ACLWidget(CheckboxesWidget):
+    
+    """
+    Widget class for ACLs
+    
+    @author: Dominic König <dominic@aidiq.com>
+
+    @todo: add option dependency logic (JS)
+    @todo: configurable vertical/horizontal alignment
+
+    """
+
+    @staticmethod
+    def widget(field, value, **attributes):
+
+        requires = field.requires
+        if not isinstance(requires, (list, tuple)):
+            requires = [requires]
+        if requires:
+            if hasattr(requires[0], 'options'):
+                options = requires[0].options()
+                values = []
+                for k in options:
+                    if isinstance(k, (list, tuple)):
+                        k = k[0]
+                    try:
+                        flag = int(k)
+                        if flag == 0:
+                            if value == 0:
+                                values.append(k)
+                                break
+                            else:
+                                continue
+                        elif value & flag == flag:
+                            values.append(k)
+                    except ValueError:
+                        pass
+                value = values
+
+        return CheckboxesWidget.widget(field, value, **attributes)
+        

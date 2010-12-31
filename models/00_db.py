@@ -72,6 +72,8 @@ MENUS3 = s3tools.MENUS3
 from gluon.tools import Service
 service = Service(globals())
 
+from gluon.tools import callback
+
 # Keep all S3 framework-level elements stored off here, so as to avoid polluting global namespace & to make it clear which part of the framework is being interacted with
 # Avoid using this where a method parameter could be used: http://en.wikipedia.org/wiki/Anti_pattern#Programming_anti-patterns
 s3 = Storage()

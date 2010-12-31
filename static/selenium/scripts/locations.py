@@ -43,7 +43,7 @@ class Locations(SahanaTest):
                                ["a", "gis_location_details-btn", False],          #17
                                ["a", "gis_location_cancel-btn", False],           #18
                                ["a", "gis_location_search-btn", True],            #19
-                               ["textarea", "gis_location_addr_street", False],   #20
+                               ["textarea", "gis_location_addr_street", False, None],   #20
                                ["label", "gis_location_addr_street_label", False],#21
                                ["label", "gis_location_lat_label", False],        #22
                                ["input", "gis_location_lat", False, None],        #23
@@ -332,7 +332,7 @@ class Locations(SahanaTest):
 
         self.action.saveForm("Shelter updated")
         Locations.line.append("New parentless Location")
-        # Load again        
+        # Load again
         self.openRecord("Shelter with no Parent")
         self.action.checkHeading({"Name:" : "Shelter with no Parent",
                                   "Location:" : "New parentless Location (N 51.0 E 1.0)",
@@ -351,6 +351,43 @@ class Locations(SahanaTest):
                               (),
                               ()
                              )
+        # Click on 'Details' button
+        sel.click("gis_location_details-btn")
+        Locations.formDetails[20][2] = True
+        Locations.formDetails[20][3] = "45 Sheep Street"
+        Locations.formDetails[21][2] = True
+        Locations.formDetails[26][2] = True
+        Locations.formDetails[27][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+        # Open the Advanced Tab
+        sel.click("gis_location_advanced_checkbox")
+        Locations.formDetails[22][2] = True
+        Locations.formDetails[23][2] = True
+        Locations.formDetails[24][2] = True
+        Locations.formDetails[25][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+        # Following save is required because the advanced checkbox has been pressed
+        # see ticket #885 http://eden.sahanafoundation.org/ticket/885
+        self.action.saveForm("Shelter updated")
+
+        # Now update the shelter to have a L0 location
+        self.openRecord("Shelter with no Parent")
+        # Select the L0
+        sel.select("gis_location_L0", "label=Haiti")
+        self.initFormDetails()
+        Locations.formDetails[5][2] = True
+        Locations.formDetails[6][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+        self.action.saveForm("Shelter updated")
         
         
 if __name__ == "__main__":

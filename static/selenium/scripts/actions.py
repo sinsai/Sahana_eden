@@ -212,6 +212,11 @@ class Action(unittest.TestCase):
         return self.findMsg(message, "error")
 
     # Method to check that form element is present
+    # The element parameter is a list of up to 4 elements
+    # element[0] the type of HTML tag
+    # element[1] the id associated with the HTML tag
+    # element[2] *optional* the visibility of the HTML tag
+    # element[3] *optional* the value or text of the HTML tag
     def element(self, element):
         sel = self.sel
         type = element[0]
@@ -225,15 +230,13 @@ class Action(unittest.TestCase):
         else:
             value = None
         element = '//%s[@id="%s"]' % (type, id)
-        self.assertTrue(sel.is_element_present(element), "%s element %s is missing" % (type, id))
-        if visible:
-            self.assertTrue(sel.is_visible(element), "%s element %s is not visible" % (type, id))
-        else:
-            self.assertFalse(sel.is_visible(element), "%s element %s is not hidden" % (type, id))
+        if not sel.is_element_present(element): return "%s element %s is missing" % (type, id)
+        if sel.is_visible(element) != visible: return "%s element %s doesn't have a visibility of %s"  % (type, id, visible)
         if value!= None:
             actual = sel.get_value(element)
             msg = "expected %s for element %s doesn't equal the actual value of %s" % (value, id, actual)
-            self.assertEqual(value, actual, msg)
+            if value != actual: return msg
+        return True
                 
     # Method to click on a tab
     def clickTab(self, name):
@@ -280,12 +283,18 @@ class Action(unittest.TestCase):
     # Method to check that the layout of a form
     def checkForm (self, elementList, buttonList, helpList):
         elements = []
+        failed = []
         for element in elementList:
-            self.element(element)
-            elements.append(element[1])
+            result = self.element(element)
+            if result == True:
+                if len(element)>2 and element[2]: elements.append(element[1])
+            else: failed.append(result)
         for name in buttonList:
             self.button(name)
         for title in helpList:
             self.helpBallon(title)
+        if len(failed) > 0:
+            msg = '/n'.join(failed)
+            self.fail(msg)
         if len(elements) > 0:
             print "Verified the following form elements %s" % elements

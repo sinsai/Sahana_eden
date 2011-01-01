@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource API
 
-    @version: 2.2.10
+    @version: 2.3.1
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -47,6 +47,7 @@ from gluon.html import *
 from gluon.http import HTTP, redirect
 from gluon.sqlhtml import SQLTABLE, SQLFORM
 from gluon.validators import IS_EMPTY_OR
+from gluon.tools import callback
 
 from lxml import etree
 from ..s3tools import SQLTABLES3
@@ -69,7 +70,7 @@ class S3Resource(object):
         """
         Constructor
 
-        @param datastore: the data store manager
+        @param datastore: the S3DataStore
         @param prefix: prefix of the resource name (=module name)
         @param name: name of the resource (without prefix)
         @param id: record ID (or list of record IDs)
@@ -393,7 +394,7 @@ class S3Resource(object):
                                record=row.id, representation=format)
                     model.delete_super(self.table, row)
                     if ondelete:
-                        ondelete(row)
+                        callback(ondelete, row)
 
                 # otherwise: delete record
                 else:
@@ -408,7 +409,7 @@ class S3Resource(object):
                                    representation=format)
                         model.delete_super(self.table, row)
                         if ondelete:
-                            ondelete(row)
+                            callback(ondelete, row)
 
         return numrows
 
@@ -1384,6 +1385,7 @@ class S3Resource(object):
         if template and xsltmode:
             args.update(mode=xsltmode)
 
+        # Use the exporter to produce the XML
         exporter = self.exporter.xml
         data = exporter(start=start,
                         limit=limit,
@@ -1393,22 +1395,31 @@ class S3Resource(object):
                         dereference=dereference,
                         template=template,
                         as_json=as_json,
-                        pretty_print=False, **args)
+                        pretty_print=False,
+                        **args)
 
         if data:
+            # Find the protocol
             url_split = url.split("://", 1)
             if len(url_split) == 2:
                 protocol, path = url_split
             else:
-                protocol, path = http, None
+                protocol, path = "http", None
+
+            # Generate the request
             import urllib2
             req = urllib2.Request(url=url, data=data)
             if content_type:
                 req.add_header('Content-Type', content_type)
+
             handlers = []
+
+            # Proxy handling
             if proxy:
                 proxy_handler = urllib2.ProxyHandler({protocol:proxy})
                 handlers.append(proxy_handler)
+
+            # Authentication handling
             if username and password:
                 # Send auth data unsolicitedly (the only way with Eden instances):
                 import base64
@@ -1422,26 +1433,34 @@ class S3Resource(object):
                                             passwd=password)
                 auth_handler = urllib2.HTTPBasicAuthHandler(passwd_manager)
                 handlers.append(auth_handler)
+
+            # Install all handlers
             if handlers:
                 opener = urllib2.build_opener(*handlers)
                 urllib2.install_opener(opener)
+
+            # Execute the request
             try:
                 f = urllib2.urlopen(req)
             except urllib2.HTTPError, e:
+                # Peer error => encode as JSON message
                 code = e.code
                 message = e.read()
                 try:
+                    # Sahana-Eden would send a JSON message,
+                    # try to extract the actual error message:
                     message_json = json.loads(message)
                     message = message_json.get("message", message)
                 except:
                     pass
+                # @todo: prefix message as peer error?
                 return xml.json_message(False, code, message)
             else:
+                # Success => return what the peer returns
                 response = f.read()
-
             return response
-
         else:
+            # No data to send
             return None
 
 
@@ -1473,13 +1492,19 @@ class S3Resource(object):
         if len(url_split) == 2:
             protocol, path = url_split
         else:
-            protocol, path = http, None
+            protocol, path = "http", None
+
+        # Prepare the request
         import urllib2
         req = urllib2.Request(url=url)
         handlers = []
+
+        # Proxy handling
         if proxy:
             proxy_handler = urllib2.ProxyHandler({protocol:proxy})
             handlers.append(proxy_handler)
+
+        # Authentication handling
         if username and password:
             # Send auth data unsolicitedly (the only way with Eden instances):
             import base64
@@ -1493,19 +1518,29 @@ class S3Resource(object):
                                         passwd=password)
             auth_handler = urllib2.HTTPBasicAuthHandler(passwd_manager)
             handlers.append(auth_handler)
+
+        # Install all handlers
         if handlers:
             opener = urllib2.build_opener(*handlers)
             urllib2.install_opener(opener)
+
+        # Execute the request
         try:
             f = urllib2.urlopen(req)
         except urllib2.HTTPError, e:
+            # Peer error
             code = e.code
             message = e.read()
             try:
+                # Sahana-Eden would send a JSON message,
+                # try to extract the actual error message:
                 message_json = json.loads(message)
                 message = message_json.get("message", message)
             except:
                 pass
+
+            # Prefix as peer error and strip XML markup from the message
+            # @todo: better method to do this?
             message = "<message>PEER ERROR: %s</message>" % message
             try:
                 markup = etree.XML(message)
@@ -1516,10 +1551,14 @@ class S3Resource(object):
                     message = ""
             except etree.XMLSyntaxError:
                 pass
+
+            # Encode as JSON message
             return xml.json_message(False, code, message, tree=None)
         else:
+            # Successfully downloaded
             response = f
 
+        # Try to import the response
         try:
             success = self.import_xml(response,
                                       template=template,
@@ -1528,12 +1567,11 @@ class S3Resource(object):
                                       args=args)
         except IOError, e:
             return xml.json_message(False, 400, "LOCAL ERROR: %s" % e)
-
         if not success:
             error = self.datastore.error
             return xml.json_message(False, 400, "LOCAL ERROR: %s" % error)
         else:
-            return xml.json_message()
+            return xml.json_message() # success
 
 
     # -------------------------------------------------------------------------
@@ -1619,15 +1657,13 @@ class S3Resource(object):
     def limitby(self, start=None, limit=None):
         """
         Convert start+limit parameters into a limitby tuple
+            - limit without start => start = 0
+            - start without limit => limit = ROWSPERPAGE
+            - limit 0 (or less)   => limit = 1
+            - start less than 0   => start = 0
 
         @param start: index of the first record to select
         @param limit: maximum number of records to select
-
-
-        If limit is specified without start, then start is assumed 0
-        If start is without limit, then limit defaults to ROWSPERPAGE
-        If limit is 0 (or less), then it is assumed 1
-        If start is less than 0, then it is assumed 0
 
         """
 
@@ -1638,6 +1674,8 @@ class S3Resource(object):
 
         if not limit:
             limit = self.datastore.ROWSPERPAGE
+            if limit is None:
+                return None
         if limit <= 0:
             limit = 1
         if start < 0:
@@ -1690,10 +1728,12 @@ class S3Resource(object):
                 if not isinstance(ids, (list, tuple)):
                     args.insert(0, str(ids))
         elif id:
-            if isinstance(id, (list, tuple)):
+            if not isinstance(id, (list, tuple)):
+                id = [id]
+            if len(id) > 1:
                 vars["%s.id" % x] = ",".join(map(str, id))
             else:
-                args.append(str(id))
+                args.append(str(id[0]))
         elif uid:
             if isinstance(uid, (list, tuple)):
                 uids = ",".join(map(str, uid))
@@ -1707,7 +1747,8 @@ class S3Resource(object):
                 args[-1] = "%s.%s" % (args[-1], format)
             else:
                 n = "%s.%s" % (n, format)
-        return URL(r=r, c=p, f=n, args=args, vars=vars, extension="")
+        url = URL(r=r, c=p, f=n, args=args, vars=vars, extension="")
+        return url
 
 
     # -------------------------------------------------------------------------
@@ -1785,19 +1826,22 @@ class S3Request(object):
 
     """
     Class to handle HTTP requests
+
+    @todo: integrate into S3Resource
+
     """
 
-    UNAUTHORISED = "Not Authorised"
+    UNAUTHORISED = "Not Authorised" # @todo: internationalization
 
     DEFAULT_REPRESENTATION = "html"
-    INTERACTIVE_FORMATS = ("html", "popup", "iframe")
+    INTERACTIVE_FORMATS = ("html", "popup", "iframe") # @todo: read from settings
 
     # -------------------------------------------------------------------------
     def __init__(self, datastore, prefix, name):
         """
         Constructor
 
-        @param datastore: the resource controller
+        @param datastore: the S3DataStore
         @param prefix: prefix of the resource name (=module name)
         @param name: name of the resource (=without prefix)
 
@@ -1814,43 +1858,32 @@ class S3Request(object):
         self.prefix = prefix or self.request.controller
         self.name = name or self.request.function
 
-        # Prepare parsing
-        self.representation = self.request.extension
-        self.http = self.request.env.request_method
-        self.extension = False
-
-        self.args = []
-        self.id = None
-        self.component_name = None
-        self.component_id = None
-        self.record = None
-        self.method = None
-
         # Parse the request
+        self.http = self.request.env.request_method
         self.__parse()
 
         # Interactive representation format?
-        self.representation = self.representation.lower()
         self.interactive = self.representation in self.INTERACTIVE_FORMATS
 
         # Append component ID to the URL query
+        vars = Storage(self.request.get_vars)
         if self.component_name and self.component_id:
             varname = "%s.id" % self.component_name
-            if varname in self.request.vars:
-                var = self.request.vars[varname]
+            if varname in vars:
+                var = vars[varname]
                 if not isinstance(var, (list, tuple)):
                     var = [var]
                 var.append(self.component_id)
-                self.request.vars[varname] = var
+                vars[varname] = var
             else:
-                self.request.vars[varname] = self.component_id
+                vars[varname] = self.component_id
 
-        # Create the resource
-        self.resource = datastore._resource(self.prefix, self.name,
-                                          id=self.id,
-                                          filter=self.response[datastore.HOOKS].filter,
-                                          vars=self.request.vars,
-                                          components=self.component_name)
+        # Define the target resource
+        self.resource = datastore.define_resource(self.prefix, self.name,
+                                                  id=self.id,
+                                                  filter=self.response[datastore.HOOKS].filter,
+                                                  vars=vars,
+                                                  components=self.component_name)
 
         self.tablename = self.resource.tablename
         self.table = self.resource.table
@@ -1867,8 +1900,9 @@ class S3Request(object):
                 self.pkey, self.fkey = c.pkey, c.fkey
                 self.multiple = self.component.multiple
             else:
-                datastore.error = "%s not a component of %s" % \
-                                (self.component_name, self.resource.tablename)
+                datastore.error = "%s not a component of %s" % (
+                                        self.component_name,
+                                        self.resource.tablename)
                 raise SyntaxError(datastore.error)
 
         # Find primary record
@@ -1879,6 +1913,7 @@ class S3Request(object):
             cuid = None
 
         # Try to load primary record, if expected
+        self.record = None
         if self.id or self.component_id or \
            uid and not isinstance(uid, (list, tuple)) or \
            cuid and not isinstance(cuid, (list, tuple)):
@@ -1888,8 +1923,8 @@ class S3Request(object):
                 self.record = self.resource.records().first()
                 self.id = self.record.id
                 self.datastore.store_session(self.resource.prefix,
-                                           self.resource.name,
-                                           self.id)
+                                             self.resource.name,
+                                             self.id)
             else:
                 datastore.error = self.datastore.ERROR.BAD_RECORD
                 if self.representation == "html":
@@ -1912,20 +1947,8 @@ class S3Request(object):
 
         """
 
-        if self.representation == "html":
-            self.session.error = self.UNAUTHORISED
-            self.session.warning = None
-            if not self.session.auth:
-                login = URL(r=self.request,
-                            c="default",
-                            f="user",
-                            args="login",
-                            vars={"_next": self.here()})
-                redirect(login)
-            else:
-                redirect(URL(r=self.request, f="index"))
-        else:
-            raise HTTP(401, body=self.UNAUTHORISED)
+        auth = self.datastore.auth
+        auth.permission.fail()
 
 
     # -------------------------------------------------------------------------
@@ -1960,62 +1983,67 @@ class S3Request(object):
 
         """
 
-        self.args = []
+        request = self.request
 
+        self.id = None
+        self.component_name = None
+        self.component_id = None
+        self.method = None
+
+        representation = request.extension
+
+        # Get the names of all components
         model = self.datastore.model
-        components = [c[0].name
-                     for c in model.get_components(self.prefix, self.name)]
+        components = [c[0].name for c in
+                      model.get_components(self.prefix, self.name)]
 
-        if len(self.request.args):
-            for arg in self.request.args:
-                if "." in arg:
-                    arg, ext = arg.rsplit(".", 1)
-                    if ext:
-                        self.representation = ext.lower()
-                        self.extension = True
-                if arg:
-                    self.args.append(arg.lower())
 
-            args = self.args
-            if args[0].isdigit():
-                self.id = args[0]
-                if len(args) > 1:
-                    if args[1] in components:
-                        self.component_name = args[1]
-                        if len(args) > 2:
-                            if args[2].isdigit():
-                                self.component_id = args[2]
-                                if len(args) > 3:
-                                    self.method = args[3]
-                            else:
-                                self.method = args[2]
-                                if len(args) > 3 and \
-                                   args[3].isdigit():
-                                    self.component_id = args[3]
-                    else:
-                        self.method = args[1]
+        # Map request args, catch extensions
+        f = []
+        args = request["args"]
+        if len(args) > 4:
+            args = args[:4]
+        method = self.name
+        for arg in args:
+            if "." in arg:
+                arg, representation = a.rsplit(".", 1)
+            if method is None:
+                method = arg
+            elif arg.isdigit():
+                f.append((method, arg))
+                method = None
             else:
-                if args[0] in components:
-                    self.component_name = args[0]
-                    if len(args) > 1:
-                        if args[1].isdigit():
-                            self.component_id = args[1]
-                            if len(args) > 2:
-                                self.method = args[2]
-                        else:
-                            self.method = args[1]
-                            if len(args) > 2 and args[2].isdigit():
-                                self.component_id = args[2]
-                else:
-                    self.method = args[0]
-                    if len(args) > 1 and args[1].isdigit():
-                        self.id = args[1]
+                f.append((method, None))
+                method = arg
+        if method:
+            f.append((method, None))
 
-        if "format" in self.request.get_vars:
-            ext = self.request.get_vars.format
+        self.id = f[0][1]
+
+        # Sort out component name and method
+        l = len(f)
+        if l > 1:
+            m = f[1][0].lower()
+            i = f[1][1]
+            if m in components:
+                self.component_name = m
+                self.component_id = i
+            else:
+                self.method = m
+                if not self.id:
+                    self.id = i
+        if self.component_name and l > 2:
+            self.method = f[2][0].lower()
+            if not self.component_id:
+                self.component_id = f[2][1]
+
+        # ?format= overrides extensions
+        if "format" in request.vars:
+            ext = request.vars["format"]
             if isinstance(ext, list):
                 ext = ext[-1]
-            self.representation = ext.lower() or self.representation
+            representation = ext or representation
+        self.representation = representation.lower()
 
         if not self.representation:
             self.representation = self.DEFAULT_REPRESENTATION

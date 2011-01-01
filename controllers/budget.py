@@ -7,7 +7,7 @@
 module = request.controller
 
 # Requires 'project' module too
-if module not in deployment_settings.modules and not deployment_settings.has_module("project"):
+if module not in deployment_settings.modules or not deployment_settings.has_module("project"):
     session.error = T("Module disabled!")
     redirect(URL(r=request, c="default", f="index"))
 

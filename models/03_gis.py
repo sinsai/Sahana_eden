@@ -425,7 +425,7 @@ table = db.define_table(tablename,
                         Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
                         Field("path", length=500, readable=False, writable=False),  # Materialised Path
                         # Street Address (other address fields come from hierarchy)
-                        Field("addr_street"),
+                        Field("addr_street", "text"),
                         #Field("addr_postcode"),    # Do we want this as a separate field?
                         Field("gis_feature_type", "integer", default=1, notnull=True),
                         Field("lat", "double"), # Points or Centroid for Polygons
@@ -917,7 +917,7 @@ table = db.define_table(tablename,
 
 # FIXME
 # We want a THIS_NOT_ONE_OF here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_ONE_OF#fc129fd476558944
-table.name.requires = IS_IN_SET(["google", "multimap", "yahoo"], zero=None)
+table.name.requires = IS_IN_SET(["google", "bing", "multimap", "yahoo"], zero=None)
 #table.apikey.requires = THIS_NOT_ONE_OF(db(table.name == request.vars.name), "gis_apikey.name", request.vars.name, "Service already in use")
 table.apikey.requires = IS_NOT_EMPTY()
 table.name.label = T("Service")
@@ -1001,8 +1001,8 @@ s3xrc.model.configure(table, deletable=False)
 
 # -----------------------------------------------------------------------------
 # GIS Layers
-#gis_layer_types = ["bing", "shapefile", "scan"]
-gis_layer_types = ["coordinate", "openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wfs", "wms", "xyz", "yahoo"]
+#gis_layer_types = ["shapefile", "scan"]
+gis_layer_types = ["bing", "coordinate", "openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wfs", "wms", "xyz", "yahoo"]
 gis_layer_google_subtypes = gis.layer_subtypes("google")
 gis_layer_yahoo_subtypes = gis.layer_subtypes("yahoo")
 gis_layer_bing_subtypes = gis.layer_subtypes("bing")

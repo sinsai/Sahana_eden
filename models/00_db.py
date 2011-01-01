@@ -55,22 +55,27 @@ else:
 from gluon.tools import Mail
 mail = Mail()
 
-# Custom classes which extend default Gluon
-s3tools = local_import("s3tools")
-auth = s3tools.AuthS3(globals(), deployment_settings, db)
-crud = s3tools.CrudS3(globals(), db)
-s3_audit = s3tools.S3Audit(db, session, migrate=migrate)
+# AAA
+s3aaa = local_import("s3aaa")
+auth = s3aaa.AuthS3(globals(), deployment_settings, db)
+s3_audit = s3aaa.S3Audit(db, session, migrate=migrate)
 
 # Shortcuts
 shn_has_role = auth.shn_has_role
 shn_has_permission = auth.shn_has_permission
 shn_accessible_query = auth.shn_accessible_query
+
+# Custom classes which extend default Gluon
+s3tools = local_import("s3tools")
 FieldS3 = s3tools.FieldS3
-S3ReusableField = s3tools.S3ReusableField
 MENUS3 = s3tools.MENUS3
+crud = s3tools.CrudS3(globals(), db)
+S3ReusableField = s3tools.S3ReusableField
 
 from gluon.tools import Service
 service = Service(globals())
+
+from gluon.tools import callback
 
 # Keep all S3 framework-level elements stored off here, so as to avoid polluting global namespace & to make it clear which part of the framework is being interacted with
 # Avoid using this where a method parameter could be used: http://en.wikipedia.org/wiki/Anti_pattern#Programming_anti-patterns

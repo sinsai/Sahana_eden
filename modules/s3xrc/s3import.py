@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Import Toolkit
 
-    @version: 2.2.10
+    @version: 2.3.1
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -49,6 +49,8 @@ class S3Importer(object):
     """
     Data Import functions
 
+    @todo 2.3: implement json
+
     """
 
     # -------------------------------------------------------------------------
@@ -56,7 +58,7 @@ class S3Importer(object):
         """
         Constructor
 
-        @param datastore: the resource controller
+        @param datastore: the S3DataStore
 
         """
 
@@ -131,7 +133,7 @@ class S3Importer(object):
                 continue
             elif var in table.fields:
                 field = table[var]
-                value = xml.xml_encode(str(r.request.vars[var]).decode("utf-8"))
+                value = str(r.request.vars[var]).decode("utf-8")
                 if var in xml.FIELDS_TO_ATTRIBUTES:
                     element.set(var, value)
                 else:
@@ -140,7 +142,7 @@ class S3Importer(object):
                     if field.type == "upload":
                         data.set(xml.ATTRIBUTE.filename, value)
                     else:
-                        data.text = value
+                        data.text = xml.xml_encode(value)
                     element.append(data)
         tree = xml.tree([element], domain=datastore.domain)
 

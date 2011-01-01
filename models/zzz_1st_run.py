@@ -987,16 +987,16 @@ if populate:
                     subtype = subtype,
                     enabled = False
                 )
-    #tablename = "gis_layer_bing"
-    #table = db[tablename]
-    #if not db(table.id > 0).count():
+    tablename = "gis_layer_bing"
+    table = db[tablename]
+    if not db(table.id > 0).count():
         # Populate table
-    #    for subtype in gis_layer_bing_subtypes:
-    #        table.insert(
-    #                name = "Bing " + subtype,
-    #                subtype = subtype,
-    #                enabled = False
-    #            )
+        for subtype in gis_layer_bing_subtypes:
+            table.insert(
+                    name = "Bing " + subtype,
+                    subtype = subtype,
+                    enabled = False
+                )
     tablename = "gis_layer_mgrs"
     table = db[tablename]
     if not db(table.id > 0).count():

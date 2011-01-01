@@ -7,14 +7,13 @@
 {{pass}}
 
 <!-- Google Earth resources-->
-<!--
-    Note: Replace the key below with your own key before deploying. 
-    See http://code.google.com/apis/maps/signup.html for information.
--->
+{{if google_key:}}
 <script src="http://www.google.com/jsapi?key={{=google_key}}"></script>
 <script type="text/javascript">google && google.load("earth", "1");</script>
+{{else:}}
+{{pass}}
 
-<script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-2.2.1/examples/grid/RowExpander.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/rowactions/js/RowExpander.js"></script>
 {{if session.s3.debug:}}
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/openlayers/lib/OpenLayers.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/geoext/lib/GeoExt.js"></script>
@@ -32,8 +31,21 @@
 <script type="text/javascript">//<![CDATA[
     Ext.BLANK_IMAGE_URL = '/{{=request.application}}/static/img/gis/openlayers/blank.gif';
     OpenLayers.DOTS_PER_INCH = 25.4 / 0.28; // OGC "standardized rendering pixel size"
+    var geoserver_url = '{{=geoserver_url}}';
+    var proxy_url = '/{{=request.application}}/gis/proxy?url=';
+    // See http://crschmidt.net/~crschmidt/spherical_mercator.html#reprojecting-points
+    var proj4326 = new OpenLayers.Projection('EPSG:4326');
+    var projection_current = new OpenLayers.Projection('EPSG:{{=config.epsg}}');
+    var units = '{{=config.units}}';
+    var maxResolution = {{=config.maxResolution}};
+    var maxExtent = [{{=config.maxExtent}}];
+    var lat = {{=config.lat}};
+    var lon = {{=config.lon}};
+    var center = new OpenLayers.LonLat(lon, lat);
+    center.transform(proj4326, projection_current);
+    var zoom = {{=config.zoom}};
     var app = new GeoExplorer.{{if request.args(0) == "viewer.html":}}Viewer{{else:}}Composer{{pass}}({
-        proxy: '/{{=request.application}}/gis/proxy?url=',
+        proxy: proxy_url,
       {{if print_service:}}
         printService: 'http://geo.eden.sahanafoundation.org/geoserver/pdf/',
       {{pass}}
@@ -47,7 +59,7 @@
         sources: {
           {{if geoserver_url:}}
             local: {
-                url: '{{=geoserver_url}}',
+                url: geoserver_url,
                 title: 'Local GeoServer'
             },
           {{pass}}
@@ -66,13 +78,10 @@
             }
         },
         map: {
-            projection: 'EPSG:900913',
-            units: 'm',
-            maxResolution: 156543.0339,
-            maxExtent: [
-                -20037508.34, -20037508.34,
-                20037508.34, 20037508.34
-            ],
+            projection: projection_current,
+            units: units,
+            maxResolution: maxResolution,
+            maxExtent: maxExtent,
             layers: [{
                 source: 'osm',
                 title: 'OpenStreetMap',
@@ -87,8 +96,8 @@
                     'None', {visibility: false}
                 ]
             }],
-            center: [0, 0],
-            zoom: 2
+            center: [center.lon, center.lat],
+            zoom: zoom
         }
     });
 //]]></script>

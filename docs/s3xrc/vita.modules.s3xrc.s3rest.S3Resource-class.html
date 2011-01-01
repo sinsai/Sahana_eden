@@ -251,6 +251,25 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#load" class="summary-sig-name">load</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">start</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">limit</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Simplified syntax for select():</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.load">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#insert" class="summary-sig-name">insert</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">**fields</span>)</span><br />
       Insert records into this resource</td>
@@ -269,8 +288,10 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#delete" class="summary-sig-name">delete</a>(<span class="summary-sig-arg">self</span>)</span><br />
-      Delete all records in this resource</td>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#delete" class="summary-sig-name">delete</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">ondelete</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">format</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Delete all (deletable) records in this resource</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.delete">source&nbsp;code</a></span>
             
@@ -304,11 +325,13 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#count" class="summary-sig-name">count</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">left</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Get the total number of available records in this resource</td>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#search_simple" class="summary-sig-name">search_simple</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">fields</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">label</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">filterby</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Simple fulltext search</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.count">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.search_simple">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -322,13 +345,11 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#load" class="summary-sig-name">load</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">start</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">limit</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Loads a set of records of the current resource, which can be either a
-      slice (for pagination) or all records</td>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#count" class="summary-sig-name">count</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">left</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Get the total number of available records in this resource</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.load">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.count">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -503,7 +524,7 @@ object --+
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#__len__" class="summary-sig-name">__len__</a>(<span class="summary-sig-arg">self</span>)</span><br />
-      The number of records in the current set</td>
+      The number of currently loaded rows</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.__len__">source&nbsp;code</a></span>
             
@@ -897,6 +918,25 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#limitby" class="summary-sig-name">limitby</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">start</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">limit</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Convert start+limit parameters into a limitby tuple</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.limitby">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#url" class="summary-sig-name">url</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">id</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">uid</span>=<span class="summary-sig-default">None</span>,
@@ -1042,7 +1082,7 @@ object --+
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>datastore</code></strong> - the data store manager</li>
+        <li><strong class="pname"><code>datastore</code></strong> - the S3DataStore</li>
         <li><strong class="pname"><code>prefix</code></strong> - prefix of the resource name (=module name)</li>
         <li><strong class="pname"><code>name</code></strong> - name of the resource (without prefix)</li>
         <li><strong class="pname"><code>id</code></strong> - record ID (or list of record IDs)</li>
@@ -1228,6 +1268,40 @@ object --+
   </dl>
 </td></tr></table>
 </div>
+<a name="load"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">load</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">start</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">limit</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.load">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Simplified syntax for select():</p>
+  <ul>
+    <li>
+      reads all fields
+    </li>
+    <li>
+      start+limit instead of limitby
+    </li>
+  </ul>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>start</code></strong> - the index of the first record to load</li>
+        <li><strong class="pname"><code>limit</code></strong> - the maximum number of records to load</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
 <a name="insert"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -1259,29 +1333,26 @@ object --+
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">delete</span>(<span class="sig-arg">self</span>)</span>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">delete</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">ondelete</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">format</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.delete">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>Delete all records in this resource</p>
+  <p>Delete all (deletable) records in this resource</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>ondelete</code></strong> - on-delete callback</li>
+        <li><strong class="pname"><code>format</code></strong> - the representation format of the request (optional)</li>
+    </ul></dd>
+    <dt>Returns:</dt>
+        <dd>number of records deleted</dd>
   </dl>
-<div class="fields">      <strong>To Do:</strong>
-      <ul class="nomargin-top">
-        <li>
-        permission check
-        </li>
-        <li>
-        implement audit
-        </li>
-        <li>
-        deletion status awareness
-        </li>
-      </ul>
-</div></td></tr></table>
+</td></tr></table>
 </div>
 <a name="update"></a>
 <div>
@@ -1312,6 +1383,34 @@ object --+
       </ul>
 </div></td></tr></table>
 </div>
+<a name="search_simple"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">search_simple</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">fields</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">label</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">filterby</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.search_simple">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Simple fulltext search</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>fields</code></strong> - list of fields to search for the label</li>
+        <li><strong class="pname"><code>label</code></strong> - label to be found</li>
+        <li><strong class="pname"><code>filterby</code></strong> - filter query for results</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
 <a name="count"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -1332,33 +1431,6 @@ object --+
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>left</code></strong> - left joins, if required</li>
-    </ul></dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="load"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">load</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">start</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">limit</span>=<span class="sig-default">None</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.load">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Loads a set of records of the current resource, which can be either a 
-  slice (for pagination) or all records</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>start</code></strong> - the index of the first record to load</li>
-        <li><strong class="pname"><code>limit</code></strong> - the maximum number of records to load</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -1581,7 +1653,7 @@ object --+
     </td>
   </tr></table>
   
-  <p>The number of records in the current set</p>
+  <p>The number of currently loaded rows</p>
   <dl class="fields">
   </dl>
 </td></tr></table>
@@ -2126,6 +2198,46 @@ object --+
   </dl>
 </td></tr></table>
 </div>
+<a name="limitby"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">limitby</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">start</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">limit</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.limitby">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Convert start+limit parameters into a limitby tuple</p>
+  <ul>
+    <li>
+      limit without start =&gt; start = 0
+    </li>
+    <li>
+      start without limit =&gt; limit = ROWSPERPAGE
+    </li>
+    <li>
+      limit 0 (or less)   =&gt; limit = 1
+    </li>
+    <li>
+      start less than 0   =&gt; start = 0
+    </li>
+  </ul>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>start</code></strong> - index of the first record to select</li>
+        <li><strong class="pname"><code>limit</code></strong> - maximum number of records to select</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
 <a name="url"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -2245,7 +2357,7 @@ object --+
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Mon Dec 20 19:56:50 2010
+    Generated by Epydoc 3.0.1 on Thu Dec 30 01:05:08 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

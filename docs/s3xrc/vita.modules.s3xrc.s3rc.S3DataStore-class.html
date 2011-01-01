@@ -99,9 +99,54 @@ object --+
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3DataStore-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">environment</span>,
         <span class="summary-sig-arg">db</span>)</span><br />
-      x.__init__(...) initializes x; see x.__class__.__doc__ for signature</td>
+      Constructor</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3DataStore.__init__">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3DataStore-class.html#define_resource" class="summary-sig-name">define_resource</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">prefix</span>,
+        <span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">id</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">uid</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">filter</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">vars</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">parent</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">components</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Defines a resource</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3DataStore.define_resource">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3DataStore-class.html#parse_request" class="summary-sig-name">parse_request</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">prefix</span>,
+        <span class="summary-sig-arg">name</span>)</span><br />
+      Parse an HTTP request and generate the corresponding S3Request and 
+      S3Resource objects.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3DataStore.parse_request">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -255,70 +300,6 @@ object --+
       
     </td>
   </tr>
-<tr class="private">
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3DataStore-class.html#_resource" class="summary-sig-name" onclick="show_private();">_resource</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">prefix</span>,
-        <span class="summary-sig-arg">name</span>,
-        <span class="summary-sig-arg">id</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">uid</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">filter</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">vars</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">parent</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">components</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Wrapper function for S3Resource, creates a resource</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3DataStore._resource">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr class="private">
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3DataStore-class.html#_request" class="summary-sig-name" onclick="show_private();">_request</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">prefix</span>,
-        <span class="summary-sig-arg">name</span>)</span><br />
-      Wrapper function for S3Request</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3DataStore._request">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3DataStore-class.html#parse_request" class="summary-sig-name">parse_request</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">prefix</span>,
-        <span class="summary-sig-arg">name</span>)</span><br />
-      Parse an HTTP request and generate the corresponding S3Request and 
-      S3Resource objects.</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3DataStore.parse_request">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
@@ -462,27 +443,6 @@ object --+
       Generate a search_simple method handler</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3DataStore.search_simple">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr class="private">
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3DataStore-class.html#_search_simple" class="summary-sig-name" onclick="show_private();">_search_simple</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">table</span>,
-        <span class="summary-sig-arg">fields</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">label</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">filterby</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Simple search function for resources</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3DataStore._search_simple">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -652,19 +612,86 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
     </td>
   </tr></table>
   
-  <p>x.__init__(...) initializes x; see x.__class__.__doc__ for 
-  signature</p>
+  <p>Constructor</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>environment</code></strong> - the environment of this run</li>
+        <li><strong class="pname"><code>db</code></strong> - the database</li>
     </ul></dd>
     <dt>Overrides:
         object.__init__
-        <dd><em class="note">(inherited documentation)</em></dd>
     </dt>
   </dl>
 </td></tr></table>
+</div>
+<a name="define_resource"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">define_resource</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">prefix</span>,
+        <span class="sig-arg">name</span>,
+        <span class="sig-arg">id</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">uid</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">filter</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">vars</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">parent</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">components</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3DataStore.define_resource">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Defines a resource</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>prefix</code></strong> - the application prefix of the resource</li>
+        <li><strong class="pname"><code>name</code></strong> - the resource name (without prefix)</li>
+        <li><strong class="pname"><code>id</code></strong> - record ID or list of record IDs</li>
+        <li><strong class="pname"><code>uid</code></strong> - record UID or list of record UIDs</li>
+        <li><strong class="pname"><code>filter</code></strong> - web2py query to filter the resource query</li>
+        <li><strong class="pname"><code>vars</code></strong> - dict of URL query parameters</li>
+        <li><strong class="pname"><code>parent</code></strong> - the parent resource (if this is a component)</li>
+        <li><strong class="pname"><code>components</code></strong> - list of component (names)</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="parse_request"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">parse_request</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">prefix</span>,
+        <span class="sig-arg">name</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3DataStore.parse_request">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Parse an HTTP request and generate the corresponding S3Request and 
+  S3Resource objects.</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>prefix</code></strong> - the module prefix of the resource</li>
+        <li><strong class="pname"><code>name</code></strong> - the resource name (without prefix)</li>
+    </ul></dd>
+  </dl>
+<div class="fields">      <p><strong>To Do (2.3):</strong>
+        move into S3Resource
+      </p>
+</div></td></tr></table>
 </div>
 <a name="__fields"></a>
 <div class="private">
@@ -875,103 +902,6 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
     </ul></dd>
   </dl>
 </td></tr></table>
-</div>
-<a name="_resource"></a>
-<div class="private">
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">_resource</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">prefix</span>,
-        <span class="sig-arg">name</span>,
-        <span class="sig-arg">id</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">uid</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">filter</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">vars</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">parent</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">components</span>=<span class="sig-default">None</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3DataStore._resource">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Wrapper function for S3Resource, creates a resource</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>prefix</code></strong> - the application prefix of the resource</li>
-        <li><strong class="pname"><code>name</code></strong> - the resource name (without prefix)</li>
-        <li><strong class="pname"><code>id</code></strong> - record ID or list of record IDs</li>
-        <li><strong class="pname"><code>uid</code></strong> - record UID or list of record UIDs</li>
-        <li><strong class="pname"><code>filter</code></strong> - web2py query to filter the resource query</li>
-        <li><strong class="pname"><code>vars</code></strong> - dict of URL query parameters</li>
-        <li><strong class="pname"><code>parent</code></strong> - the parent resource (if this is a component)</li>
-        <li><strong class="pname"><code>components</code></strong> - list of component (names)</li>
-    </ul></dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="_request"></a>
-<div class="private">
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">_request</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">prefix</span>,
-        <span class="sig-arg">name</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3DataStore._request">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Wrapper function for S3Request</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>prefix</code></strong> - the module prefix of the resource</li>
-        <li><strong class="pname"><code>name</code></strong> - the resource name (without prefix)</li>
-    </ul></dd>
-  </dl>
-<div class="fields">      <p><strong>To Do (2.3):</strong>
-        deprecate
-      </p>
-</div></td></tr></table>
-</div>
-<a name="parse_request"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">parse_request</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">prefix</span>,
-        <span class="sig-arg">name</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3DataStore.parse_request">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Parse an HTTP request and generate the corresponding S3Request and 
-  S3Resource objects.</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>prefix</code></strong> - the module prefix of the resource</li>
-        <li><strong class="pname"><code>name</code></strong> - the resource name (without prefix)</li>
-    </ul></dd>
-  </dl>
-<div class="fields">      <p><strong>To Do (2.3):</strong>
-        move into S3Resource
-      </p>
-</div></td></tr></table>
 </div>
 <a name="validate"></a>
 <div>
@@ -1220,39 +1150,6 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
   </dl>
 </td></tr></table>
 </div>
-<a name="_search_simple"></a>
-<div class="private">
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">_search_simple</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">table</span>,
-        <span class="sig-arg">fields</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">label</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">filterby</span>=<span class="sig-default">None</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3DataStore._search_simple">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Simple search function for resources</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>table</code></strong> - the DB table</li>
-        <li><strong class="pname"><code>fields</code></strong> - list of fields to search for the label</li>
-        <li><strong class="pname"><code>label</code></strong> - label to be found</li>
-        <li><strong class="pname"><code>filterby</code></strong> - filter query for results</li>
-    </ul></dd>
-  </dl>
-<div class="fields">      <p><strong>To Do (2.3):</strong>
-        move into S3Resource
-      </p>
-</div></td></tr></table>
-</div>
 <br />
 <!-- ==================== CLASS VARIABLE DETAILS ==================== -->
 <a name="section-ClassVariableDetails"></a>
@@ -1457,7 +1354,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Mon Dec 20 19:56:50 2010
+    Generated by Epydoc 3.0.1 on Thu Dec 30 01:05:08 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - CRUD Method Handlers
 
-    @version: 2.2.10
+    @version: 2.3.1
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
@@ -46,6 +46,7 @@ from gluon.http import HTTP, redirect
 from gluon.serializers import json
 from gluon.sql import Field, Row
 from gluon.validators import IS_EMPTY_OR
+from gluon.tools import callback
 
 from s3rest import S3Method
 from s3import import S3Importer
@@ -164,6 +165,8 @@ class S3CRUD(S3Method):
                 table[r.fkey].comment = None
                 table[r.fkey].default = r.record[r.pkey]
                 table[r.fkey].update = r.record[r.pkey]
+                if r.http=="POST":
+                    r.request.post_vars.update({r.fkey:r.record[r.pkey]})
                 table[r.fkey].readable = False
                 table[r.fkey].writable = False
 
@@ -221,10 +224,8 @@ class S3CRUD(S3Method):
             # Success message
             message = self.crud_string(self.tablename, "msg_record_created")
 
-            # Get the form
+            # Copy formkey if un-deleting a duplicate
             if "id" in request.post_vars:
-
-                # Copy formkey if un-deleting a duplicate
                 original = str(request.post_vars.id)
                 formkey = session.get("_formkey[%s/None]" % tablename)
                 formname = "%s/%s" % (tablename, original)
@@ -234,25 +235,19 @@ class S3CRUD(S3Method):
                     request.post_vars.update(deleted=False)
                 request.post_vars.update(_formname=formname, id=original)
                 request.vars.update(**request.post_vars)
-
-                form = self._update(original,
-                                    message=message,
-                                    onvalidation=onvalidation,
-                                    onaccept=onaccept,
-                                    link=link,
-                                    download_url=self.download_url,
-                                    format=representation)
-
             else:
-                form = self._create(onvalidation=onvalidation,
-                                    onaccept=onaccept,
-                                    message=message,
-                                    from_table=from_table,
-                                    from_record=from_record,
-                                    map_fields=map_fields,
-                                    link=link,
-                                    download_url=self.download_url,
-                                    format=representation)
+                original = None
+
+            # Get the form
+            form = self.sqlform(record_id=original,
+                                from_table=from_table,
+                                from_record=from_record,
+                                map_fields=map_fields,
+                                onvalidation=onvalidation,
+                                onaccept=onaccept,
+                                link=link,
+                                message=message,
+                                format=representation)
 
             # Insert subheadings
             if subheadings:
@@ -340,91 +335,6 @@ class S3CRUD(S3Method):
 
 
     # -------------------------------------------------------------------------
-    def _create(self,
-                onvalidation=None,
-                onaccept=None,
-                message="Record created",
-                download_url=None,
-                from_table=None,
-                from_record=None,
-                map_fields=None,
-                link=None,
-                format=None):
-        """
-        Provides and processes an Add-form for this resource
-
-        @param onvalidation: onvalidation callback
-        @param onaccept: onaccept callback
-        @param message: flash message after successul operation
-        @param download_url: default download URL of the application
-        @param from_table: copy a record from this table
-        @param from_record: copy from this record ID
-        @param map_fields: field mapping for copying of records
-        @param format: the representation format of the request
-
-        """
-
-        # Get the table
-        table = self.table
-
-        # Copy data from a previous record?
-        data = None
-        if from_table is not None:
-            if map_fields:
-                if isinstance(map_fields, dict):
-                    fields = [from_table[map_fields[f]]
-                              for f in map_fields
-                                  if f in table.fields and
-                                  map_fields[f] in from_table.fields and
-                                  table[f].writable]
-                elif isinstance(map_fields, (list, tuple)):
-                    fields = [from_table[f]
-                              for f in map_fields
-                                  if f in table.fields and
-                                  f in from_table.fields and
-                                  table[f].writable]
-                else:
-                    raise TypeError
-            else:
-                fields = [from_table[f]
-                          for f in table.fields
-                              if f in from_table.fields and
-                              table[f].writable]
-
-            # Audit read => this is a read method, finally
-            audit = self.datastore.audit
-            prefix, name = from_table._tablename.split("_", 1)
-            audit("read", prefix, name, record=from_record, representation=format)
-
-            row = self.db(from_table.id == from_record).select(limitby=(0,1), *fields).first()
-            if row:
-                if isinstance(map_fields, dict):
-                    data = Storage([(f, row[map_fields[f]]) for f in map_fields])
-                else:
-                    data = Storage(row)
-
-            if data:
-                missing_fields = Storage()
-                for f in table.fields:
-                    if f not in data and table[f].writable:
-                        missing_fields[f] = table[f].default
-                data.update(missing_fields)
-                data.update(id=None)
-
-        # Get the form
-        form = self._update(None,
-                            data=data,
-                            onvalidation=onvalidation,
-                            onaccept=onaccept,
-                            message=message,
-                            download_url=download_url,
-                            format=format,
-                            link=link)
-
-        return form
-
-
-    # -------------------------------------------------------------------------
     def read(self, r, **attr):
         """
         Read a single record
@@ -490,9 +400,9 @@ class S3CRUD(S3Method):
 
             # Item
             if record_id:
-                item = self._read(record_id,
-                                  download_url=self.download_url,
-                                  format=representation)
+                item = self.sqlform(record_id=record_id,
+                                    readonly=True,
+                                    format=representation)
                 if subheadings:
                     self.insert_subheadings(item, self.tablename, subheadings)
             else:
@@ -514,9 +424,9 @@ class S3CRUD(S3Method):
                 output.update(buttons)
 
         elif representation == "plain":
-            item = self._read(record_id,
-                              download_url=self.download_url,
-                              format=representation)
+            item = self.sqlform(record_id=record_id,
+                                readonly=True,
+                                format=representation)
             response.view = "plain.html"
             output.update(item=item)
 
@@ -542,35 +452,6 @@ class S3CRUD(S3Method):
             r.error(501, self.datastore.ERROR.BAD_FORMAT)
 
         return output
-
-
-    # -------------------------------------------------------------------------
-    def _read(self, id, download_url=None, format=None):
-        """
-        View a record of this resource
-
-        @param id: the ID of the record to display
-        @param download_url: download URL for uploaded files in this resource
-        @param format: the representation format
-
-        """
-
-        # Get the table
-        table = self.table
-
-        # Audit
-        audit = self.datastore.audit
-        audit("read", self.prefix, self.name, record=id, representation=format)
-
-        # Get the form
-        form = SQLFORM(table, id,
-                       readonly=True,
-                       comments=False,
-                       showid=False,
-                       upload=download_url,
-                       formstyle=self.settings.formstyle)
-
-        return form
 
 
     # -------------------------------------------------------------------------
@@ -652,6 +533,8 @@ class S3CRUD(S3Method):
                 table[r.fkey].comment = None
                 table[r.fkey].default = r.record[r.pkey]
                 table[r.fkey].update = r.record[r.pkey]
+                if r.http=="POST":
+                    r.request.post_vars.update({r.fkey:r.record[r.pkey]})
                 table[r.fkey].readable = False
                 table[r.fkey].writable = False
 
@@ -659,11 +542,10 @@ class S3CRUD(S3Method):
             message = self.crud_string(self.tablename, "msg_record_modified")
 
             # Get the form
-            form = self._update(record_id,
-                                message=message,
+            form = self.sqlform(record_id=record_id,
                                 onvalidation=onvalidation,
                                 onaccept=onaccept,
-                                download_url=self.download_url,
+                                message=message,
                                 format=representation)
 
             # Insert subheadings
@@ -712,136 +594,6 @@ class S3CRUD(S3Method):
             r.error(501, self.datastore.ERROR.BAD_FORMAT)
 
         return output
-
-
-    # -------------------------------------------------------------------------
-    def _update(self, id,
-                data=None,
-                onvalidation=None,
-                onaccept=None,
-                message="Record updated",
-                download_url=None,
-                format=None,
-                link=None):
-        """
-        Update form for this resource
-
-        @param id: the ID of the record to update (None to create a new record)
-        @param data: the data to prepopulate the form with (only with id=None)
-        @param onvalidation: onvalidation callback hook
-        @param onaccept: onaccept callback hook
-        @param message: success message
-        @param download_url: Download URL for uploaded files in this resource
-        @param format: the representation format
-
-        """
-
-        # Environment
-        session = self.datastore.session
-        request = self.datastore.request
-        response = self.datastore.response
-
-        # Get the CRUD settings
-        s3 = self.datastore.s3
-        settings = s3.crud
-
-        # Table
-        table = self.table
-        model = self.datastore.model
-
-        # Copy from another record?
-        if id is None and data:
-            record = Storage(data)
-        else:
-            record = id
-
-        # Add asterisk to labels of required fields
-        labels = Storage()
-        mark_required = self._config("mark_required")
-        for field in table:
-            if field.writable:
-                required = field.required or \
-                           field.notnull or \
-                           mark_required and field.name in mark_required
-                validators = field.requires
-                if not validators and not required:
-                    continue
-                if not required:
-                    if not isinstance(validators, (list, tuple)):
-                        validators = [validators]
-                    for v in validators:
-                        if hasattr(v, "options"):
-                            if hasattr(v, "zero") and v.zero is None:
-                                continue
-                        val, error = v("")
-                        if error:
-                            required = True
-                            break
-                if required:
-                    labels[field.name] = DIV("%s:" % field.label, SPAN(" *", _class="req"))
-
-        # Get the form
-        form = SQLFORM(table,
-                       record=record,
-                       record_id=id,
-                       labels = labels,
-                       showid=False,
-                       deletable=False,
-                       upload=download_url,
-                       submit_button=self.settings.submit_button,
-                       formstyle=self.settings.formstyle)
-
-        # Set form name
-        formname = "%s/%s" % (self.tablename, form.record_id)
-
-        # Get the proper onvalidation routine
-        if isinstance(onvalidation, dict):
-            onvalidation = onvalidation.get(self.tablename, [])
-
-        # Run the form
-        audit = self.datastore.audit
-        if form.accepts(request.post_vars,
-                        session,
-                        formname=formname,
-                        onvalidation=onvalidation,
-                        keepvalues=False,
-                        hideerror=False):
-
-            # Message
-            response.flash = message
-
-            # Audit
-            if id is None:
-                audit("create", self.prefix, self.name, form=form, representation=format)
-            else:
-                audit("update", self.prefix, self.name, form=form, representation=format)
-
-            # Update super entity links
-            model.update_super(table, form.vars)
-
-            # Link record
-            if link and form.vars.id:
-                linker = self.datastore.linker
-                if link.linkdir == "to":
-                    linker.link(table, form.vars.id, link.linktable, link.linkid,
-                                link_class=link.linkclass)
-                else:
-                    linker.link(link.linktable, link.linkid, table, form.vars.id,
-                                link_class=link.linkclass)
-
-            # Store session vars
-            if form.vars.id:
-                self.resource.lastid = str(form.vars.id)
-                self.datastore.store_session(self.prefix, self.name, form.vars.id)
-
-            # Execute onaccept
-            self.datastore.callback(onaccept, form, name=self.tablename)
-
-        elif id:
-            # Audit read (user is reading even when not updating the data)
-            audit("read", self.prefix, self.name, form=form, representation=format)
-
-        return form
 
 
     # -------------------------------------------------------------------------
@@ -1027,13 +779,13 @@ class S3CRUD(S3Method):
                 self.response.view = self._view(r, "list.html")
 
             # Get the list
-            items = self._select(fields=fields,
-                                 start=start,
-                                 limit=limit,
-                                 orderby=orderby,
-                                 linkto=linkto,
-                                 download_url=self.download_url,
-                                 format=representation)
+            items = self.sqltable(fields=fields,
+                                  start=start,
+                                  limit=limit,
+                                  orderby=orderby,
+                                  linkto=linkto,
+                                  download_url=self.download_url,
+                                  format=representation)
 
             # Empty table - or just no match?
             if not items:
@@ -1085,15 +837,15 @@ class S3CRUD(S3Method):
             sEcho = int(vars.sEcho or 0)
 
             # Get the list
-            items = self._select(fields=fields,
-                                 left=left,
-                                 start=start,
-                                 limit=limit,
-                                 orderby=orderby,
-                                 linkto=linkto,
-                                 download_url=self.download_url,
-                                 as_page=True,
-                                 format=representation) or []
+            items = self.sqltable(fields=fields,
+                                  left=left,
+                                  start=start,
+                                  limit=limit,
+                                  orderby=orderby,
+                                  linkto=linkto,
+                                  download_url=self.download_url,
+                                  as_page=True,
+                                  format=representation) or []
 
             result = dict(sEcho = sEcho,
                           iTotalRecords = totalrows,
@@ -1103,7 +855,7 @@ class S3CRUD(S3Method):
             output = json(result)
 
         elif representation == "plain":
-            items = self._select(fields, as_list=True)
+            items = self.sqltable(fields, as_list=True)
             self.response.view = "plain.html"
             return dict(item=items)
 
@@ -1133,20 +885,21 @@ class S3CRUD(S3Method):
 
         return output
 
+
     # -------------------------------------------------------------------------
-    def _select(self,
-                fields=None,
-                left=None,
-                start=0,
-                limit=None,
-                orderby=None,
-                linkto=None,
-                download_url=None,
-                as_page=False,
-                as_list=False,
-                format=None):
+    def sqltable(self,
+                 fields=None,
+                 left=None,
+                 start=0,
+                 limit=None,
+                 orderby=None,
+                 linkto=None,
+                 download_url=None,
+                 as_page=False,
+                 as_list=False,
+                 format=None):
         """
-        List of all records of this resource
+        DRY helper function for SQLTABLEs in CRUD
 
         @param fields: list of fields to display
         @param left: left outer joins
@@ -1158,6 +911,8 @@ class S3CRUD(S3Method):
         @param as_page: return the list as JSON page
         @param as_list: return the list as Python list
         @param format: the representation format
+
+        @todo: rename this function?
 
         """
 
@@ -1207,6 +962,184 @@ class S3CRUD(S3Method):
                               upload=download_url,
                               _id="list", _class="display")
         return items
+
+
+    # -------------------------------------------------------------------------
+    def sqlform(self,
+                record_id=None,
+                readonly=False,
+                from_table=None,
+                from_record=None,
+                map_fields=None,
+                link=None,
+                onvalidation=None,
+                onaccept=None,
+                message="Record created/updated",
+                format=None):
+        """
+        DRY helper function for SQLFORMs in CRUD
+
+        """
+
+        # Environment
+        session = self.datastore.session
+        request = self.datastore.request
+        response = self.datastore.response
+
+        # Get the CRUD settings
+        audit = self.datastore.audit
+        s3 = self.datastore.s3
+        settings = s3.crud
+
+        # Table and model
+        prefix = self.prefix
+        name = self.name
+        tablename = self.tablename
+        table = self.table
+        model = self.datastore.model
+
+        record = None
+        labels = None
+
+        if not readonly:
+
+            # Copy from a previous record?
+            if from_table is not None:
+                # Field mapping
+                if map_fields:
+                    if isinstance(map_fields, dict):
+                        fields = [from_table[map_fields[f]]
+                                for f in map_fields
+                                    if f in table.fields and
+                                    map_fields[f] in from_table.fields and
+                                    table[f].writable]
+                    elif isinstance(map_fields, (list, tuple)):
+                        fields = [from_table[f]
+                                for f in map_fields
+                                    if f in table.fields and
+                                    f in from_table.fields and
+                                    table[f].writable]
+                    else:
+                        raise TypeError
+                else:
+                    fields = [from_table[f]
+                            for f in table.fields
+                                if f in from_table.fields and
+                                table[f].writable]
+                # Audit read => this is a read method, finally
+                audit = self.datastore.audit
+                prefix, name = from_table._tablename.split("_", 1)
+                audit("read", prefix, name, record=from_record, representation=format)
+                # Get original record
+                row = self.db(from_table.id == from_record).select(limitby=(0,1), *fields).first()
+                if row:
+                    if isinstance(map_fields, dict):
+                        record = Storage([(f, row[map_fields[f]]) for f in map_fields])
+                    else:
+                        record = Storage(row)
+                if data:
+                    missing_fields = Storage()
+                    for f in table.fields:
+                        if f not in record and table[f].writable:
+                            missing_fields[f] = table[f].default
+                    record.update(missing_fields)
+                    record.update(id=None)
+
+            if record is None:
+                record = record_id
+
+            # Add asterisk to labels of required fields
+            labels = Storage()
+            mark_required = self._config("mark_required")
+            for field in table:
+                if field.writable:
+                    required = field.required or \
+                            field.notnull or \
+                            mark_required and field.name in mark_required
+                    validators = field.requires
+                    if not validators and not required:
+                        continue
+                    if not required:
+                        if not isinstance(validators, (list, tuple)):
+                            validators = [validators]
+                        for v in validators:
+                            if hasattr(v, "options"):
+                                if hasattr(v, "zero") and v.zero is None:
+                                    continue
+                            val, error = v("")
+                            if error:
+                                required = True
+                                break
+                    if required:
+                        labels[field.name] = DIV("%s:" % field.label, SPAN(" *", _class="req"))
+
+
+        # Get the form
+        form = SQLFORM(table,
+                       record = record,
+                       record_id = record_id,
+                       readonly = readonly,
+                       comments = not readonly,
+                       deletable = False,
+                       showid = False,
+                       upload = self.download_url,
+                       labels = labels,
+                       formstyle = self.settings.formstyle,
+                       submit_button = self.settings.submit_button)
+
+        # Process the form
+        logged = False
+        if not readonly:
+            # Set form name
+            formname = "%s/%s" % (self.tablename, form.record_id)
+
+            # Get the proper onvalidation routine
+            if isinstance(onvalidation, dict):
+                onvalidation = onvalidation.get(self.tablename, [])
+
+            if form.accepts(request.post_vars,
+                            session,
+                            formname=formname,
+                            onvalidation=onvalidation,
+                            keepvalues=False,
+                            hideerror=False):
+
+                # Message
+                response.flash = message
+
+                # Audit
+                if record_id is None:
+                    audit("create", prefix, name, form=form, representation=format)
+                else:
+                    audit("update", prefix, name, form=form, representation=format)
+                logged = True
+
+                # Update super entity links
+                model.update_super(table, form.vars)
+
+                # Link record
+                if link and form.vars.id:
+                    linker = self.datastore.linker
+                    if link.linkdir == "to":
+                        linker.link(table, form.vars.id, link.linktable, link.linkid,
+                                    link_class=link.linkclass)
+                    else:
+                        linker.link(link.linktable, link.linkid, table, form.vars.id,
+                                    link_class=link.linkclass)
+
+                # Store session vars
+                if form.vars.id:
+                    self.resource.lastid = str(form.vars.id)
+                    self.datastore.store_session(prefix, name, form.vars.id)
+
+                # Execute onaccept
+                callback(onaccept, form, tablename=tablename)
+
+        if not logged and not form.errors:
+            audit("read", prefix, name, record=record_id, representation=format)
+
+        return form
+
 
     # -------------------------------------------------------------------------
     def crud_button(self, label,

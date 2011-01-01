@@ -36,6 +36,29 @@ def ifmobile(request):
 
 response.s3.mobile = ifmobile(request)
 
+# Utility function s3_debug
+
+def s3_debug(message, value=None):
+
+    """ Debug Function (same name/parameters as JavaScript one)
+
+        Provide an easy, safe, systematic way of handling Debug output
+        (print to stdout doesn't work with WSGI deployments)
+
+    """
+
+    import sys
+    try:
+        output = "S3 Debug: " + str(message)
+        if value:
+            output += ": " + str(value)
+    except:
+        output = "S3 Debug: " + unicode(message)
+        if value:
+            output += ": " + unicode(value)
+
+    print >> sys.stderr, output
+
 # Use WURFL for browser compatibility detection
 
 def populate_browser_compatibility(request):
@@ -43,8 +66,7 @@ def populate_browser_compatibility(request):
         from pywurfl.algorithms import TwoStepAnalysis
     except ImportError:
         import sys
-        # imitating the behaviour of s3_debug as it is defined in 00_utils.py which is executed after 00_settings.py it cannot be used
-        print >> sys.stderr, "S3 Debug: pywurfl python module has not been installed, browser compatibility listing will not be populated. download pywurfl from http://pypi.python.org/pypi/pywurfl/"
+        s3_debug("pywurfl python module has not been installed, browser compatibility listing will not be populated. download pywurfl from http://pypi.python.org/pypi/pywurfl/")
         return False
     wurfl = local_import('wurfl')
     device = wurfl.devices.select_ua(unicode(request.env.http_user_agent), search=TwoStepAnalysis(wurfl.devices))

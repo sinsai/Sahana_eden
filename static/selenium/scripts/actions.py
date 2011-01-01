@@ -51,10 +51,6 @@ class Action(unittest.TestCase):
         self._diag_sleepTime += 1
         # Now trigger off the true search
         sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( '%s' );" % searchString)
-<<<<<<< TREE
-=======
-        time.sleep(4)
->>>>>>> MERGE-SOURCE
         for i in range(10):
             if not sel.is_visible('list_processing'):
                 found = True

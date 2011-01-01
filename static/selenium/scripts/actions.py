@@ -5,6 +5,14 @@ class Action(unittest.TestCase):
     def __init__ (self, selenium):
         self.sel = selenium
         
+    def openReport(self):
+        self._diag_SearchResults = open('diagTestResults.txt', 'a')
+        self._diag_SearchResults.write(time.strftime('New Search run %d %b %Y (%H:%M:%S)\n'))
+    
+    def closeReport(self, msg):
+        self._diag_SearchResults.write(msg)
+        self._diag_SearchResults.close()
+
     def login(self, username, password, reveal=True):
         sel = self.sel
         if sel.is_element_present("link=Logout"):
@@ -31,32 +39,50 @@ class Action(unittest.TestCase):
             sel.click("link=Logout")
             sel.wait_for_page_to_load("30000")
 
-    def search(self, searchString, expected, abort=None):
-        sel = self.sel
-        result = ""
+    def _performSearch(self, searchString):
         # The search filter is part of the http://datatables.net/ JavaScript getting it to work with Selenium needs a bit of care.
         # Entering text in the filter textbox doesn't always trigger off the filtering and it is not possible with this method to clear the filter.
         # The solution is to put in a call to the DataTables API, namely the fnFilter function
         # However, the first time that the fnFilter() is called in the testing suite it doesn't complete the processing, hence it is called twice.
+        sel = self.sel
+        # First clear the search field and add a short pause
         sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( '' );")
         time.sleep(1)
+        self._diag_sleepTime += 1
+        # Now trigger off the true search
         sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( '%s' );" % searchString)
-        time.sleep(1)
         for i in range(10):
-            try:
-                result = sel.get_text("//div[@id='table-container']")
-            except:
-                time.sleep(3)
-                continue
-            if  expected in result:
+            if not sel.is_visible('list_processing'):
+                found = True
                 return True
-            if abort != None:
-                if abort in result:
-                    return False
-        if abort != None:
-            self.fail("time out: Looking for %s or %s within %s" % (expected, abort, result))
+            time.sleep(1)
+            self._diag_sleepTime += 1
+        return False
+
+    def search(self, searchString, expected):
+        sel = self.sel
+        self._diag_sleepTime = 0
+        self._diag_performCalls = 0
+        found = False
+        result = ""
+        # perform the search it should work first time but, give it up to three attempts before giving up
+        for i in range (3):
+            self._diag_performCalls += 1
+            found = self._performSearch(searchString)
+            if found:
+                break
+        if not found:
+            self._diag_SearchResults.write("%s\tFAILED\t%s\t%s\n" % (searchString, self._diag_sleepTime, self._diag_performCalls))
+            self.fail("time out search didn't respond, whilst searching for %s" % searchString)
         else:
-            self.fail("time out: Looking for %s within %s" % (expected, result))
+            self._diag_SearchResults.write("%s\tSUCCEEDED\t%s\t%s\n" % (searchString, self._diag_sleepTime, self._diag_performCalls))
+        # The search has returned now read the results
+        try:
+            result = sel.get_text("//div[@id='table-container']")
+        except:
+            self.fail("No search data found, whilst searching for %s" % searchString)
+        return True
+
         
     def searchUnique(self, uniqueName):
         self.search(uniqueName, r"1 entries")
@@ -193,14 +219,18 @@ class Action(unittest.TestCase):
     # Method to locate a message in a div with a class given by type
     def findMsg(self, message, type):
         sel = self.sel
+        self._diag_sleepTime = 0
         for cnt in range (10):
             i = 1
             while sel.is_element_present('//div[@class="%s"][%s]' % (type, i)):
                 banner = sel.get_text('//div[@class="%s"][%s]' % (type, i))
                 if message in banner:
+                    self._diag_SearchResults.write("%s\tSUCCEEDED\t%s\t\n" % (message, self._diag_sleepTime))
                     return True
                 i += 1
             time.sleep(1)
+            self._diag_sleepTime += 1
+        self._diag_SearchResults.write("%s\tFAILED\t%s\t\n" % (message, self._diag_sleepTime))
         return False
     
     # Method used to check for confirmation messages

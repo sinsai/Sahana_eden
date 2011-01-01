@@ -1628,7 +1628,7 @@ def geocode():
     if "service" in request.vars:
         service = request.vars.service
     else:
-        # ToDo service=all should be default
+        # @ToDo: service=all should be default
         service = "google"
 
     if service == "google":

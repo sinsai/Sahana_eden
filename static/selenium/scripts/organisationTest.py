@@ -13,7 +13,7 @@ class OrganisationTest(SahanaTest):
         self.action.logout()
         # Log in as admin an then move to the add organisation page 
         sel.open("/eden/org/organisation/create")
-        self.action.errorMsg("Not Authorised")
+        self.action.errorMsg("Authentication Required")
         self.assertEqual("Login", self.selenium.get_text("//h2"))
         self.useSahanaAdminAccount()
         self.action.login(self._user, self._password )

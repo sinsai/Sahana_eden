@@ -855,6 +855,7 @@
 'Types of health services available': 'Types of health services available',
 'Types of water storage containers available': 'Types of water storage containers available',
 'URL': 'URL',
+'Unknown': 'Unknown',
 "Upload an image file here. If you don't upload an image file, then you must specify its location in the URL field.": "Upload an image file here. If you don't upload an image file, then you must specify its location in the URL field.",
 'Urban Fire': 'Urban Fire',
 'Urdu': 'Urdu',

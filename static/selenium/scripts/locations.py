@@ -8,6 +8,10 @@ class Locations(SahanaTest):
                  "test_addL0Location",
                  "test_removeL0Location",
                  "test_locationNoParent",
+                 "test_locationL0",
+                 "test_locationInL0",
+                 "test_locationL1",
+                 "test_locationInL1",
                  "removeTestData",
                  )
     
@@ -222,28 +226,6 @@ class Locations(SahanaTest):
                               ()
                              )
         
-    def test_locationL0(self):
-        """ Create a new Shelter with an L0 location """
-        sel = self.selenium
-        # Login
-        self.login()
-        self.create_header()
-        # Fill in the mandatory fields
-        sel.type("cr_shelter_name", "Shelter with an L0 Location")
-        # Select the L0
-        sel.select("gis_location_L0", "label=Haiti")
-        # Check that L1 dropdown appears correctly
-        time.sleep(4)
-        self.assertEqual("Select a location...Ouest", sel.get_table("//div[@id='content']/div[2]/form/table.11.0"))
-        # Save the form
-        sel.click("//input[@value='Save']")
-        sel.wait_for_page_to_load("30000")
-        # Shelter saved
-        self.action.successMsg("Shelter added")
-        # Shelter has correct location
-        self.assertEqual("Haiti", sel.get_table("//div[@id='rheader']/div/table.1.1"))
-
-
     def test_locationNoParent(self):
         """ Create a new Shelter with a parentless Location """
         sel = self.selenium
@@ -262,10 +244,10 @@ class Locations(SahanaTest):
         sel.type("gis_location_name", "Location with no Parent")
         # Save the form
         Locations.shelter.append("Shelter with no Parent")
+        Locations.line.append("Location with no Parent")
         self.action.saveForm("Shelter added")
         # Load again
         self.openRecord("Shelter with no Parent")
-        Locations.line.append("Location with no Parent")
         # Shelter has correct location
         self.action.checkHeading({"Name:" : "Shelter with no Parent",
                                   "Location:" : "Location with no Parent",
@@ -284,7 +266,7 @@ class Locations(SahanaTest):
         # Deselect the L0 location
         sel.select("gis_location_", "label=Select a location...")
         # Check that the real location has been set to blank
-        self.assertEqual("", sel.get_value("cr_shelter_location_id"))
+        self.assertEqual("", sel.get_text("cr_shelter_location_id"))
         # Save the form (with changes)
         self.action.saveForm("Shelter updated")
         # Load again
@@ -410,7 +392,168 @@ class Locations(SahanaTest):
                              )
         self.action.saveForm("Shelter updated")
         
-        
+    def test_locationL0(self):
+        """ Create a new Shelter with an L0 location """
+        sel = self.selenium
+        # Login
+        self.useSahanaUserAccount()
+        self.action.login(self._user, self._password )
+        sel.open("/eden/cr/shelter/create")
+        # Fill in the mandatory fields
+        sel.type("cr_shelter_name", "Shelter with an L0 Location")
+        # Select the L0
+        sel.select("gis_location_L0", "label=Haiti")
+        # Save the form
+        Locations.shelter.append("Shelter with an L0 Location")
+        self.action.saveForm("Shelter added")
+        # Load again
+        self.openRecord("Shelter with an L0 Location")
+
+        self.action.checkHeading({"Name:" : "Shelter with an L0 Location",
+                                  "Location:" : "Haiti",
+                                 })
+        location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
+        self.initFormDetails()
+        location_id = location.split("(")[1].split(")")[0]
+        Locations.formDetails[0][3] = location_id
+        Locations.formDetails[5][2] = True
+        Locations.formDetails[6][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+
+    def test_locationInL0(self):
+        """ Create a new Shelter inside an L0 location
+            NB This should fail if deployment_settings.gis.strict_hierarchy = True
+        """
+        sel = self.selenium
+        # Login
+        self.useSahanaUserAccount()
+        self.action.login(self._user, self._password )
+        sel.open("/eden/cr/shelter/create")
+        # Fill in the mandatory fields
+        sel.type("cr_shelter_name", "Shelter within L0 Location")
+        # Select the L0
+        sel.select("gis_location_L0", "label=Haiti")
+        # Create a new location
+        sel.click("gis_location_add-btn")
+        sel.type("gis_location_name", "Specific Location in L0")
+        # Save the form
+        Locations.shelter.append("Shelter within L0 Location")
+        Locations.line.append("Specific Location in L0")
+        self.action.saveForm("Shelter added")
+        # Load again
+        self.openRecord("Shelter within L0 Location")
+        self.action.checkHeading({"Name:" : "Shelter within L0 Location",
+                                  "Location:" : "Specific Location in L0",
+                                 })
+        location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
+        location_id = location.split("(")[1].split(")")[0]
+        Locations.formDetails[0][3] = location_id
+        Locations.formDetails[5][2] = True
+        Locations.formDetails[6][2] = True
+        Locations.formDetails[13][2] = True
+        Locations.formDetails[14][2] = True
+        Locations.formDetails[17][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+
+    def test_locationL1(self):
+        """ Create a new Shelter with an L1 location """
+        sel = self.selenium
+        # Login
+        self.useSahanaUserAccount()
+        self.action.login(self._user, self._password )
+        sel.open("/eden/cr/shelter/create")
+        # Fill in the mandatory fields
+        sel.type("cr_shelter_name", "Shelter with an L1 Location")
+        # Select the L0
+        sel.select("gis_location_L0", "label=Haiti")
+        # wait for the L1 list to be populated
+        L1 = self.makeNameUnique("Ouest")
+        for i in range(10):
+            try:
+                # Select the L1
+                sel.select("gis_location_L1", "label=%s" % L1)
+                break
+            except:
+                time.sleep(1)
+
+        # Save the form
+        Locations.shelter.append("Shelter with an L1 Location")
+        self.action.saveForm("Shelter added")
+        # Load again
+        self.openRecord("Shelter with an L1 Location")
+        self.action.checkHeading({"Name:" : "Shelter with an L1 Location",
+                                  "Location:" : "%s (Haiti)" % L1,
+                                 })
+        location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
+        location_id = location.split("(")[1].split(")")[0]
+        self.initFormDetails()
+        Locations.formDetails[0][3] = location_id
+        Locations.formDetails[5][2] = True
+        Locations.formDetails[6][2] = True
+        Locations.formDetails[7][2] = True
+        Locations.formDetails[8][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+
+
+    def test_locationInL1(self):
+        """ Create a new Shelter inside an L1 location """
+        sel = self.selenium
+        # Login
+        self.useSahanaUserAccount()
+        self.action.login(self._user, self._password )
+        sel.open("/eden/cr/shelter/create")
+
+        # Fill in the mandatory fields
+        sel.type("cr_shelter_name", "Shelter within L1 Location")
+        # Select the L0
+        sel.select("gis_location_L0", "label=Haiti")
+        # wait for the L1 list to appear
+        time.sleep(4)
+        for i in range(10):
+            if sel.is_visible("gis_location_L1"):
+                break
+            time.sleep(1)
+        self.assertTrue(sel.is_visible("gis_location_L1"))
+        # Select the L1
+        L1 = self.makeNameUnique("Ouest")
+        sel.select("gis_location_L1", "label=%s" % L1)
+        # Create a new location
+        sel.click("gis_location_add-btn")
+        sel.type("gis_location_name", "Specific Location in L1")
+        # Save the form
+        Locations.shelter.append("Shelter within L1 Location")
+        Locations.line.append("Specific Location in L1")
+        self.action.saveForm("Shelter added")
+        # Load again
+        self.openRecord("Shelter within L1 Location")
+        self.action.checkHeading({"Name:" : "Shelter within L1 Location",
+                                  "Location:" : "Specific Location in L1",
+                                 })
+        location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
+        location_id = location.split("(")[1].split(")")[0]
+        Locations.formDetails[0][3] = location_id
+        Locations.formDetails[5][2] = True
+        Locations.formDetails[6][2] = True
+        Locations.formDetails[7][2] = True
+        Locations.formDetails[8][2] = True
+        Locations.formDetails[13][2] = True
+        Locations.formDetails[14][2] = True
+        Locations.formDetails[17][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+
+
 if __name__ == "__main__":
     SahanaTest.setUpHierarchy()
     unittest.main()

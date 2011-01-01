@@ -2,13 +2,11 @@ CreateTestAccount, createTestAccount.CreateTestAccount
 UserManagement, userManagement.UserManagement
 Organisation, organisationTest.OrganisationTest
 CreateLocations, locations.Locations
-CreateLocationL0, locationSelector.CreateLocationL0
 CreateLocationL1, locationSelector.CreateLocationL1
 CreateLocationL2, locationSelector.CreateLocationL2
 CreateLocationL3, locationSelector.CreateLocationL3
 CreateLocationL4, locationSelector.CreateLocationL4
 CreateLocationSelectSpecific, locationSelector.CreateLocationSelectSpecific
-CreateLocationInL0, locationSelector.CreateLocationInL0
 CreateLocationInL1, locationSelector.CreateLocationInL1
 CreateLocationInL2, locationSelector.CreateLocationInL2
 CreateLocationInL3, locationSelector.CreateLocationInL3

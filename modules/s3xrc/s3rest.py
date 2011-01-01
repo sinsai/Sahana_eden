@@ -1990,47 +1990,54 @@ class S3Request(object):
         self.component_id = None
         self.method = None
 
+        representation = request.extension
+
+        # Get the names of all components
         model = self.datastore.model
         components = [c[0].name for c in
                       model.get_components(self.prefix, self.name)]
 
-        representation = request.extension
 
-        methods = []
+        # Map request args, catch extensions
+        f = []
         args = request["args"]
         if len(args) > 4:
             args = args[:4]
         method = self.name
-        for a in args:
-            if "." in a:
-                a, representation = a.rsplit(".", 1)
+        for arg in args:
+            if "." in arg:
+                arg, representation = arg.rsplit(".", 1)
             if method is None:
-                method = a
-            elif a.isdigit():
-                methods.append((method, a))
+                method = arg
+            elif arg.isdigit():
+                f.append((method, arg))
                 method = None
             else:
-                methods.append((method, None))
-                method = a
+                f.append((method, None))
+                method = arg
         if method:
-            methods.append((method, None))
+            f.append((method, None))
 
-        self.id = methods[0][1]
+        self.id = f[0][1]
 
-        l = len(methods)
+        # Sort out component name and method
+        l = len(f)
         if l > 1:
-            m = methods[1]
-            if m[0] in components:
-                self.component_name, self.component_id = m
+            m = f[1][0].lower()
+            i = f[1][1]
+            if m in components:
+                self.component_name = m
+                self.component_id = i
             else:
-                self.method = m[0]
+                self.method = m
                 if not self.id:
-                    self.id = m[1]
+                    self.id = i
         if self.component_name and l > 2:
-            self.method = methods[2][0]
+            self.method = f[2][0].lower()
             if not self.component_id:
-                self.component_id = methods[2][1]
+                self.component_id = f[2][1]
 
+        # ?format= overrides extensions
         if "format" in request.vars:
             ext = request.vars["format"]
             if isinstance(ext, list):

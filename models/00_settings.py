@@ -20,10 +20,14 @@ response.s3.gis = Storage()
 if not session.s3:
     session.s3 = Storage()
 
-########################
-# Is it a mobile client?
-########################
+###############
+# Client tests
+###############
 def ifmobile(request):
+    """
+    Test if client is a mobile device
+
+    """
     if request.env.http_x_wap_profile or request.env.http_profile:
         return True
     if request.env.http_accept and (request.env.http_accept.find("text/vnd.wap.wml") > 0):
@@ -34,7 +38,47 @@ def ifmobile(request):
         return True
     return False
 
-response.s3.mobile = ifmobile(request)
+# Store in session
+if session.s3.mobile is None:
+    session.s3.mobile = ifmobile(request)
+
+def populate_browser_compatibility(request):
+    """
+    Use WURFL for browser compatibility detection
+
+    @todo: define a list of features to store
+
+    """
+
+    features = Storage(
+        #category = ["list","of","features","to","store"]
+    )
+
+    try:
+        from pywurfl.algorithms import TwoStepAnalysis
+    except ImportError:
+        s3_debug("pywurfl python module has not been installed, browser compatibility listing will not be populated. Download pywurfl from http://pypi.python.org/pypi/pywurfl/")
+        return False
+    wurfl = local_import("wurfl")
+    device = wurfl.devices.select_ua(unicode(request.env.http_user_agent), search=TwoStepAnalysis(wurfl.devices))
+
+    browser = Storage()
+    #for feature in device:
+        #if feature[0] not in category_list:
+            #category_list.append(feature[0])
+    #for category in features:
+        #if category in
+        #browser[category] = Storage()
+    for feature in device:
+        if feature[0] in features and \
+           feature[1] in features[feature[0]]:
+            browser[feature[0]][feature[1]] = feature[2]
+
+    return browser
+
+# Store in session
+if session.s3.browser is None:
+    session.s3.browser = populate_browser_compatibility(request)
 
 ##################
 # Global variables

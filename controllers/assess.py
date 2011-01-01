@@ -293,7 +293,7 @@ def assess():
 
     # Pre-processor
     def shn_assess_prep(r):
-        if response.s3.mobile and r.method == "create" and r.representation in shn_interactive_view_formats:
+        if session.s3.mobile and r.method == "create" and r.representation in shn_interactive_view_formats:
             # redirect to mobile-specific form:
             redirect(URL(r=request, f="assess_short_mobile"))
         return True

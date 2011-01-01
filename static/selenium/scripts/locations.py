@@ -83,7 +83,7 @@ class Locations(SahanaTest):
                 lon = details[4].strip()
             # Load the Create Location page
             sel.open("/eden/gis/location")
-            if self.action.search(self.makeNameUnique(name), "Showing 0 to 0 of 0 entries", "Showing 1 to 1 of 1 entries"):
+            if self.action.search(self.makeNameUnique(name), "Showing 0 to 0 of 0 entries"):
                 self.action.addLocation(self.holder, name, level, parent, lat, lon)
             Locations.line.append(self.makeNameUnique(name))
             
@@ -104,7 +104,6 @@ class Locations(SahanaTest):
     def loadTestData(self):
         """ Load all the test location """
         self.loadLocations()
-
     
     def removeTestData(self):
         """ Remove all the data added by this test case """
@@ -222,6 +221,28 @@ class Locations(SahanaTest):
                               (),
                               ()
                              )
+        
+    def test_locationL0(self):
+        """ Create a new Shelter with an L0 location """
+        sel = self.selenium
+        # Login
+        self.login()
+        self.create_header()
+        # Fill in the mandatory fields
+        sel.type("cr_shelter_name", "Shelter with an L0 Location")
+        # Select the L0
+        sel.select("gis_location_L0", "label=Haiti")
+        # Check that L1 dropdown appears correctly
+        time.sleep(4)
+        self.assertEqual("Select a location...Ouest", sel.get_table("//div[@id='content']/div[2]/form/table.11.0"))
+        # Save the form
+        sel.click("//input[@value='Save']")
+        sel.wait_for_page_to_load("30000")
+        # Shelter saved
+        self.action.successMsg("Shelter added")
+        # Shelter has correct location
+        self.assertEqual("Haiti", sel.get_table("//div[@id='rheader']/div/table.1.1"))
+
 
     def test_locationNoParent(self):
         """ Create a new Shelter with a parentless Location """

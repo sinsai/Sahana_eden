@@ -53,7 +53,7 @@ from s3import import S3Importer
 from s3export import S3Exporter
 
 from gluon.sqlhtml import SQLFORM
-from ..s3tools import SQLTABLES3
+from s3tools import SQLTABLES3
 
 # *****************************************************************************
 class S3CRUD(S3Method):

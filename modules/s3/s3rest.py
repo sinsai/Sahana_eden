@@ -50,7 +50,7 @@ from gluon.validators import IS_EMPTY_OR
 from gluon.tools import callback
 
 from lxml import etree
-from ..s3tools import SQLTABLES3
+from s3tools import SQLTABLES3
 
 # *****************************************************************************
 class S3Resource(object):

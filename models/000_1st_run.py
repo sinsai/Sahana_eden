@@ -1,14 +1,19 @@
 # -*- coding: utf-8 -*-
 
-"""
-    If needed, copy deployment specific templates to the live installation.
-    Developers: note that the templates are version-controlled, while their
-                site-specific copies are not (to avoid leaking of sensitive
-                or irrelevant information into the repository).
-                If you add something new to these files, you should also
-                make the change at deployment-templates and commit it.
+""" 1st RUN:
+
+    - Import the S3 Framework Extensions
+    - If needed, copy deployment specific templates to the live installation.
+      Developers: note that the templates are version-controlled, while their
+                  site-specific copies are not (to avoid leaking of sensitive
+                  or irrelevant information into the repository).
+                  If you add something new to these files, you should also
+                  make the change at deployment-templates and commit it.
 """
 import os, shutil
+
+# Import the S3 Framework
+s3base = local_import("s3")
 
 template_src = os.path.join("applications", request.application, "deployment-templates")
 template_dst = os.path.join("applications", request.application)

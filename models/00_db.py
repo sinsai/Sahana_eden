@@ -48,17 +48,16 @@ else:
 # from google.appengine.api.memcache import Client
 # session.connect(request, response, db=MEMDB(Client())
 
-##################################
+###################################
 # Instantiate Classes from Modules
-##################################
+###################################
 
 from gluon.tools import Mail
 mail = Mail()
 
 # AAA
-s3aaa = local_import("s3aaa")
-auth = s3aaa.AuthS3(globals(), deployment_settings, db)
-s3_audit = s3aaa.S3Audit(db, session, migrate=migrate)
+auth = s3base.AuthS3(globals(), deployment_settings, db)
+s3_audit = s3base.S3Audit(db, session, migrate=migrate)
 
 # Shortcuts
 shn_has_role = auth.shn_has_role
@@ -66,11 +65,10 @@ shn_has_permission = auth.shn_has_permission
 shn_accessible_query = auth.shn_accessible_query
 
 # Custom classes which extend default Gluon
-s3tools = local_import("s3tools")
-FieldS3 = s3tools.FieldS3
-MENUS3 = s3tools.MENUS3
-crud = s3tools.CrudS3(globals(), db)
-S3ReusableField = s3tools.S3ReusableField
+FieldS3 = s3base.FieldS3
+MENUS3 = s3base.MENUS3
+crud = s3base.CrudS3(globals(), db)
+S3ReusableField = s3base.S3ReusableField
 
 from gluon.tools import Service
 service = Service(globals())
@@ -81,45 +79,34 @@ from gluon.tools import callback
 # Avoid using this where a method parameter could be used: http://en.wikipedia.org/wiki/Anti_pattern#Programming_anti-patterns
 s3 = Storage()
 
-# Custom classes which extend default T2
-# (to deprecate)
-#exec("from applications.%s.modules.sahana import *" % request.application)
+# S3 Custom Validators,
+# imported here into the global namespace in order
+# to access them without the s3base namespace prefix
+exec("from applications.%s.modules.s3.s3validators import *" % request.application)
 # Faster for Production (where app-name won't change):
-#from applications.eden.modules.sahana import *
-# We should change this to use:
-# sahana = local_import("sahana")
-# t2 = sahana.S3(request, response, session, cache, T, db)
-# etc
-#t2 = S3(request, response, session, cache, T, db)
+#from applications.eden.modules.s3.s3validators import *
 
-# Custom validators
-exec("from applications.%s.modules.validators import *" % request.application)
+# S3 Custom Utilities and Widgets
+# imported here into the global namespace in order
+# to access them without the s3base namespace prefix
+exec("from applications.%s.modules.s3.s3utils import *" % request.application)
+exec("from applications.%s.modules.s3.s3widgets import *" % request.application)
 # Faster for Production (where app-name won't change):
-#from applications.eden.modules.validators import *
-
-# Custom Utilities and Widgets
-exec("from applications.%s.modules.s3utils import *" % request.application)
-exec("from applications.%s.modules.widgets import *" % request.application)
-# Faster for Production (where app-name won't change):
-#from applications.eden.modules.s3utils import *
-#from applications.eden.modules.widgets import *
+#from applications.eden.modules.s3.s3utils import *
+#from applications.eden.modules.s3.s3widgets import *
 
 # GIS Module
-s3gis = local_import("s3gis")
-gis = s3gis.GIS(globals(), deployment_settings, db, auth, cache=cache)
+gis = s3base.GIS(globals(), deployment_settings, db, auth, cache=cache)
 
 # VITA
-s3vita = local_import("s3vita")
-vita = s3vita.S3Vita(globals(), db)
+vita = s3base.S3Vita(globals(), db)
 
 # S3XRC
-_s3xrc = local_import("s3xrc")
 s3.crud = Storage()
-s3xrc = _s3xrc.S3DataStore(globals(), db)
+s3xrc = s3base.S3DataStore(globals(), db)
 
 # MSG
-s3msg = local_import("s3msg")
-msg = s3msg.S3Msg(globals(), deployment_settings, db, T, mail)
+msg = s3base.S3Msg(globals(), deployment_settings, db, T, mail)
 
 # Logout session clearing
 # shn_on_login ----------------------------------------------------------------

@@ -199,8 +199,7 @@ class AuthS3(Auth):
             table.utc_offset.label = "UTC Offset"
             table.utc_offset.comment = A(SPAN("[Help]"), _class="tooltip", _title="UTC Offset|The time difference between UTC and your timezone, specify as +HHMM for eastern or -HHMM for western timezones.")
             try:
-                #from applications.eden.modules.validators import IS_UTC_OFFSET
-                #validators = local_import("validators")
+                from s3validators import IS_UTC_OFFSET
                 exec("from applications.%s.modules.validators import IS_UTC_OFFSET" % request.application)
                 table.utc_offset.requires = IS_EMPTY_OR(IS_UTC_OFFSET())
             except:

@@ -1,5 +1,7 @@
 ﻿# -*- coding: utf-8 -*-
 
+__all__ = ["WSGI_Test"]
+
 import wsgi_intercept.webtest_intercept
 
 class WSGI_Test(wsgi_intercept.webtest_intercept.WebCase):

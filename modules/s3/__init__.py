@@ -1,18 +1,15 @@
 # -*- coding: utf-8 -*-
 
-""" S3XRC Resource Framework
+""" S3 Framework Extensions for web2py
 
-    @version: 2.3.1
+    This package is loaded in models/000_1st_run.py as "s3base",
+    this namespace can be used to access all S3 classes, e.g.:
 
-    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
+        s3base.S3Resource()
 
-    @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
-    @requires: U{B{I{ReportLab}} <http://www.reportlab.com/software/opensource>}
-    @requires: U{B{I{Geraldo}} <http://www.geraldoreports.org>}
-    @requires: U{B{I{Xlwt}} <http://pypi.python.org/pypi/xlwt>}
+    @author: Fran Boon <francisboon@gmail.com>
+    @author: Dominic König <dominic@aidiq.com>
 
-    @author: nursix
-    @contact: dominic AT nursix DOT org
     @copyright: 2009-2010 (c) Sahana Software Foundation
     @license: MIT
 
@@ -39,7 +36,41 @@
 
 """
 
-from s3rc import S3DataStore
+# Import all names from the S3 modules that shall be accessible
+# under the s3base namespace:
+
+# Basic Tools
+from s3tools import *
+
+# Deployment Settings
+from s3cfg import *
+
+# Authentication, Authorization, Accounting
+from s3aaa import *
+
+# Utilities, Validators and Widgets
+# These names are also imported into the global namespace in
+# 00_db.py in order to access them without the s3base prefix:
+from s3utils import *
+from s3validators import *
+from s3widgets import *
+
+# Test framework (currently unused)
+#from s3test import *
+
+# REST Interface
+from s3xrc import S3DataStore
 from s3rest import S3Resource, S3Method
+
+# REST Methods
 from s3crud import S3CRUD
 from s3search import S3Search, S3LocationSearch, S3PersonSearch, S3SearchSimple
+
+# GIS Mapping
+from s3gis import *
+
+# Messaging
+from s3msg import *
+
+# VITA Person Data Toolkit
+from s3vita import *

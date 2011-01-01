@@ -32,9 +32,9 @@
 
 """
 
-from gluon.storage import Storage
+__all__ = ["S3Vita"]
 
-__all__ = ["S3Vita",]
+from gluon.storage import Storage
 
 # *****************************************************************************
 class S3Vita(object):

@@ -32,12 +32,6 @@
 
 """
 
-import time
-import uuid
-import re
-from datetime import datetime, timedelta
-from gluon.validators import Validator, IS_MATCH, IS_NOT_IN_DB, IS_IN_SET
-
 __all__ = ["IS_LAT",
            "IS_LON",
            "IS_HTML_COLOUR",
@@ -48,6 +42,12 @@ __all__ = ["IS_LAT",
            "IS_ONE_OF_EMPTY",
            "IS_NOT_ONE_OF",
            "IS_ACL"]
+
+import time
+import uuid
+import re
+from datetime import datetime, timedelta
+from gluon.validators import Validator, IS_MATCH, IS_NOT_IN_DB, IS_IN_SET
 
 def options_sorter(x, y):
     return (str(x[1]).upper() > str(y[1]).upper() and 1) or -1

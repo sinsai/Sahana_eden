@@ -119,7 +119,7 @@ def location():
     def prep(r, vars):
 
         # Override the default Search Method
-        r.resource.set_handler("search", _s3xrc.S3LocationSearch())
+        r.resource.set_handler("search", s3base.S3LocationSearch())
 
         # Restrict access to Polygons to just MapAdmins
         if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
@@ -1632,10 +1632,10 @@ def geocode():
         service = "google"
 
     if service == "google":
-        return s3gis.GoogleGeocoder(location, db).get_kml()
+        return s3base.GoogleGeocoder(location, db).get_kml()
 
     if service == "yahoo":
-        return s3gis.YahooGeocoder(location, db).get_xml()
+        return s3base.YahooGeocoder(location, db).get_xml()
 
 # -----------------------------------------------------------------------------
 def geoexplorer():

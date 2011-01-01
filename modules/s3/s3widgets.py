@@ -1,11 +1,21 @@
 # -*- coding: utf-8 -*-
-"""
-    Custom widgets to extend Web2Py
+
+""" Custom widgets to extend Web2Py
 
     @author: Michael Howden (michael@aidiq.com)
     @date-created: 2010-03-17
 
 """
+
+__all__ = ["S3DateWidget",
+           "S3UploadWidget",
+           "S3AutocompleteWidget",
+           "S3LocationAutocompleteWidget",
+           "S3PersonAutocompleteWidget",
+           "S3LocationSelectorWidget",
+           "S3CheckboxesWidget",
+           "S3MultiSelectWidget",
+           "S3ACLWidget"]
 
 import copy
 
@@ -14,7 +24,7 @@ from gluon.sqlhtml import *
 from gluon.html import B, P, URL
 from gluon.validators import *
 from s3utils import *
-from validators import *
+from s3validators import *
 
 repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
 

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+__all__ = ["S3Config"]
+
 from gluon.http import HTTP
 from gluon.storage import Storage
 

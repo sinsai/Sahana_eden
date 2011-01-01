@@ -2006,7 +2006,7 @@ class S3Request(object):
         method = self.name
         for arg in args:
             if "." in arg:
-                arg, representation = a.rsplit(".", 1)
+                arg, representation = arg.rsplit(".", 1)
             if method is None:
                 method = arg
             elif arg.isdigit():

@@ -1728,10 +1728,12 @@ class S3Resource(object):
                 if not isinstance(ids, (list, tuple)):
                     args.insert(0, str(ids))
         elif id:
-            if isinstance(id, (list, tuple)):
+            if not isinstance(id, (list, tuple)):
+                id = [id]
+            if len(id) > 1:
                 vars["%s.id" % x] = ",".join(map(str, id))
             else:
-                args.append(str(id))
+                args.append(str(id[0]))
         elif uid:
             if isinstance(uid, (list, tuple)):
                 uids = ",".join(map(str, uid))
@@ -1745,7 +1747,8 @@ class S3Resource(object):
                 args[-1] = "%s.%s" % (args[-1], format)
             else:
                 n = "%s.%s" % (n, format)
-        return URL(r=r, c=p, f=n, args=args, vars=vars, extension="")
+        url = URL(r=r, c=p, f=n, args=args, vars=vars, extension="")
+        return url
 
 
     # -------------------------------------------------------------------------
@@ -1855,42 +1858,31 @@ class S3Request(object):
         self.prefix = prefix or self.request.controller
         self.name = name or self.request.function
 
-        # Prepare parsing
-        self.representation = self.request.extension
-        self.http = self.request.env.request_method
-        self.extension = False
-
-        self.args = []
-        self.id = None
-        self.component_name = None
-        self.component_id = None
-        self.record = None
-        self.method = None
-
         # Parse the request
+        self.http = self.request.env.request_method
         self.__parse()
 
         # Interactive representation format?
-        self.representation = self.representation.lower()
         self.interactive = self.representation in self.INTERACTIVE_FORMATS
 
         # Append component ID to the URL query
+        vars = Storage(self.request.get_vars)
         if self.component_name and self.component_id:
             varname = "%s.id" % self.component_name
-            if varname in self.request.vars:
-                var = self.request.vars[varname]
+            if varname in vars:
+                var = vars[varname]
                 if not isinstance(var, (list, tuple)):
                     var = [var]
                 var.append(self.component_id)
-                self.request.vars[varname] = var
+                vars[varname] = var
             else:
-                self.request.vars[varname] = self.component_id
+                vars[varname] = self.component_id
 
         # Define the target resource
         self.resource = datastore.define_resource(self.prefix, self.name,
                                                   id=self.id,
                                                   filter=self.response[datastore.HOOKS].filter,
-                                                  vars=self.request.vars,
+                                                  vars=vars,
                                                   components=self.component_name)
 
         self.tablename = self.resource.tablename
@@ -1908,8 +1900,9 @@ class S3Request(object):
                 self.pkey, self.fkey = c.pkey, c.fkey
                 self.multiple = self.component.multiple
             else:
-                datastore.error = "%s not a component of %s" % \
-                                (self.component_name, self.resource.tablename)
+                datastore.error = "%s not a component of %s" % (
+                                        self.component_name,
+                                        self.resource.tablename)
                 raise SyntaxError(datastore.error)
 
         # Find primary record
@@ -1920,6 +1913,7 @@ class S3Request(object):
             cuid = None
 
         # Try to load primary record, if expected
+        self.record = None
         if self.id or self.component_id or \
            uid and not isinstance(uid, (list, tuple)) or \
            cuid and not isinstance(cuid, (list, tuple)):
@@ -1929,8 +1923,8 @@ class S3Request(object):
                 self.record = self.resource.records().first()
                 self.id = self.record.id
                 self.datastore.store_session(self.resource.prefix,
-                                           self.resource.name,
-                                           self.id)
+                                             self.resource.name,
+                                             self.id)
             else:
                 datastore.error = self.datastore.ERROR.BAD_RECORD
                 if self.representation == "html":
@@ -1950,8 +1944,6 @@ class S3Request(object):
     def unauthorised(self):
         """
         Action upon unauthorised request
-
-        @deprecated: should use auth.permission.fail() instead
 
         """
 
@@ -1991,62 +1983,67 @@ class S3Request(object):
 
         """
 
-        self.args = []
+        request = self.request
 
+        self.id = None
+        self.component_name = None
+        self.component_id = None
+        self.method = None
+
+        representation = request.extension
+
+        # Get the names of all components
         model = self.datastore.model
-        components = [c[0].name
-                     for c in model.get_components(self.prefix, self.name)]
+        components = [c[0].name for c in
+                      model.get_components(self.prefix, self.name)]
 
-        if len(self.request.args):
-            for arg in self.request.args:
-                if "." in arg:
-                    arg, ext = arg.rsplit(".", 1)
-                    if ext:
-                        self.representation = ext.lower()
-                        self.extension = True
-                if arg:
-                    self.args.append(arg.lower())
 
-            args = self.args
-            if args[0].isdigit():
-                self.id = args[0]
-                if len(args) > 1:
-                    if args[1] in components:
-                        self.component_name = args[1]
-                        if len(args) > 2:
-                            if args[2].isdigit():
-                                self.component_id = args[2]
-                                if len(args) > 3:
-                                    self.method = args[3]
-                            else:
-                                self.method = args[2]
-                                if len(args) > 3 and \
-                                   args[3].isdigit():
-                                    self.component_id = args[3]
-                    else:
-                        self.method = args[1]
+        # Map request args, catch extensions
+        f = []
+        args = request["args"]
+        if len(args) > 4:
+            args = args[:4]
+        method = self.name
+        for arg in args:
+            if "." in arg:
+                arg, representation = a.rsplit(".", 1)
+            if method is None:
+                method = arg
+            elif arg.isdigit():
+                f.append((method, arg))
+                method = None
             else:
-                if args[0] in components:
-                    self.component_name = args[0]
-                    if len(args) > 1:
-                        if args[1].isdigit():
-                            self.component_id = args[1]
-                            if len(args) > 2:
-                                self.method = args[2]
-                        else:
-                            self.method = args[1]
-                            if len(args) > 2 and args[2].isdigit():
-                                self.component_id = args[2]
-                else:
-                    self.method = args[0]
-                    if len(args) > 1 and args[1].isdigit():
-                        self.id = args[1]
+                f.append((method, None))
+                method = arg
+        if method:
+            f.append((method, None))
 
-        if "format" in self.request.get_vars:
-            ext = self.request.get_vars.format
+        self.id = f[0][1]
+
+        # Sort out component name and method
+        l = len(f)
+        if l > 1:
+            m = f[1][0].lower()
+            i = f[1][1]
+            if m in components:
+                self.component_name = m
+                self.component_id = i
+            else:
+                self.method = m
+                if not self.id:
+                    self.id = i
+        if self.component_name and l > 2:
+            self.method = f[2][0].lower()
+            if not self.component_id:
+                self.component_id = f[2][1]
+
+        # ?format= overrides extensions
+        if "format" in request.vars:
+            ext = request.vars["format"]
             if isinstance(ext, list):
                 ext = ext[-1]
-            self.representation = ext.lower() or self.representation
+            representation = ext or representation
+        self.representation = representation.lower()
 
         if not self.representation:
             self.representation = self.DEFAULT_REPRESENTATION

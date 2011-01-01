@@ -55,19 +55,22 @@ else:
 from gluon.tools import Mail
 mail = Mail()
 
+# AAA
+s3aaa = local_import("s3aaa")
+auth = s3aaa.AuthS3(globals(), deployment_settings, db)
+s3_audit = s3aaa.S3Audit(db, session, migrate=migrate)
+
 # Custom classes which extend default Gluon
 s3tools = local_import("s3tools")
-auth = s3tools.AuthS3(globals(), deployment_settings, db)
+FieldS3 = s3tools.FieldS3
+MENUS3 = s3tools.MENUS3
 crud = s3tools.CrudS3(globals(), db)
-s3_audit = s3tools.S3Audit(db, session, migrate=migrate)
+S3ReusableField = s3tools.S3ReusableField
 
 # Shortcuts
 shn_has_role = auth.shn_has_role
 shn_has_permission = auth.shn_has_permission
 shn_accessible_query = auth.shn_accessible_query
-FieldS3 = s3tools.FieldS3
-S3ReusableField = s3tools.S3ReusableField
-MENUS3 = s3tools.MENUS3
 
 from gluon.tools import Service
 service = Service(globals())

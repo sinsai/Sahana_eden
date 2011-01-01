@@ -36,6 +36,31 @@ def ifmobile(request):
 
 response.s3.mobile = ifmobile(request)
 
+# Use WURFL for browser compatibility detection
+def populate_browser_compatibility(request):
+    try:
+        from pywurfl.algorithms import TwoStepAnalysis
+    except ImportError:
+        s3_debug("pywurfl python module has not been installed, browser compatibility listing will not be populated. Download pywurfl from http://pypi.python.org/pypi/pywurfl/")
+        return False
+    wurfl = local_import("wurfl")
+    device = wurfl.devices.select_ua(unicode(request.env.http_user_agent), search=TwoStepAnalysis(wurfl.devices))
+
+    browser = Storage()
+    category_list = []
+    for feature in device:
+        if feature[0] not in category_list:
+            category_list.append(feature[0])
+    for category in category_list:
+        browser[category] = Storage()
+
+    for feature in device:
+        browser[feature[0]][feature[1]] = feature[2]
+    
+    return browser
+
+response.s3.browser = populate_browser_compatibility(request)
+
 ##################
 # Global variables
 ##################

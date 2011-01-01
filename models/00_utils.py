@@ -71,28 +71,6 @@ super_entity = s3xrc.model.super_entity
 super_link = s3xrc.model.super_link
 super_key = s3xrc.model.super_key
 
-def s3_debug(message, value=None):
-
-    """ Debug Function (same name/parameters as JavaScript one)
-
-        Provide an easy, safe, systematic way of handling Debug output
-        (print to stdout doesn't work with WSGI deployments)
-
-    """
-
-    import sys
-    try:
-        output = "S3 Debug: " + str(message)
-        if value:
-            output += ": " + str(value)
-    except:
-        output = "S3 Debug: " + unicode(message)
-        if value:
-            output += ": " + unicode(value)
-
-    print >> sys.stderr, output
-
-
 # -----------------------------------------------------------------------------
 def s3_get_utc_offset():
 

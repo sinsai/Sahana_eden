@@ -231,6 +231,8 @@ class Locations(SahanaTest):
         sel = self.selenium
         self.useSahanaUserAccount()
         self.action.login(self._user, self._password )
+        shelterName = "Shelter with no Parent"
+        locationName = "Location with no Parent"
         sel.open("/eden/cr/shelter/create")
         self.initFormDetails()
         self.action.checkForm(Locations.formDetails,
@@ -238,19 +240,19 @@ class Locations(SahanaTest):
                               ()
                              )
         # Fill in the mandatory fields
-        sel.type("cr_shelter_name", "Shelter with no Parent")
+        sel.type("cr_shelter_name", shelterName)
         # Create a new location
         sel.click("gis_location_add-btn")
-        sel.type("gis_location_name", "Location with no Parent")
+        sel.type("gis_location_name", locationName)
         # Save the form
-        Locations.shelter.append("Shelter with no Parent")
-        Locations.line.append("Location with no Parent")
+        Locations.shelter.append(shelterName)
+        Locations.line.append(locationName)
         self.action.saveForm("Shelter added")
         # Load again
-        self.openRecord("Shelter with no Parent")
+        self.openRecord(shelterName)
         # Shelter has correct location
-        self.action.checkHeading({"Name:" : "Shelter with no Parent",
-                                  "Location:" : "Location with no Parent",
+        self.action.checkHeading({"Name:" : shelterName,
+                                  "Location:" : locationName,
                                  })
         location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
         location_id = location.split("(")[1].split(")")[0]
@@ -270,8 +272,8 @@ class Locations(SahanaTest):
         # Save the form (with changes)
         self.action.saveForm("Shelter updated")
         # Load again
-        self.openRecord("Shelter with no Parent")
-        self.action.checkHeading({"Name:" : "Shelter with no Parent",
+        self.openRecord(shelterName)
+        self.action.checkHeading({"Name:" : shelterName,
                                   "Location:" : "-",
                                  })
         Locations.formDetails[0][3] = ""
@@ -284,7 +286,8 @@ class Locations(SahanaTest):
                              )
         sel.click("gis_location_add-btn")
         # Fill in a Name & Address
-        sel.type("gis_location_name", "New parentless Location")
+        locationName = "New parentless Location"
+        sel.type("gis_location_name", locationName)
         sel.type("gis_location_addr_street", "45 Sheep Street")
 
         # Open Map
@@ -334,10 +337,10 @@ class Locations(SahanaTest):
         sel.type("gis_location_lon", "1")
 
         self.action.saveForm("Shelter updated")
-        Locations.line.append("New parentless Location")
+        Locations.line.append(locationName)
         # Load again
-        self.openRecord("Shelter with no Parent")
-        self.action.checkHeading({"Name:" : "Shelter with no Parent",
+        self.openRecord(shelterName)
+        self.action.checkHeading({"Name:" : shelterName,
                                   "Location:" : "New parentless Location (N 51.0 E 1.0)",
                                  })
 
@@ -380,7 +383,7 @@ class Locations(SahanaTest):
         self.action.saveForm("Shelter updated")
 
         # Now update the shelter to have a L0 location
-        self.openRecord("Shelter with no Parent")
+        self.openRecord(shelterName)
         # Select the L0
         sel.select("gis_location_L0", "label=Haiti")
         self.initFormDetails()

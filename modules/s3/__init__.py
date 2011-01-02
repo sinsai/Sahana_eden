@@ -3,12 +3,14 @@
 """ S3 Framework Extensions for web2py
 
     This package is loaded in models/000_1st_run.py as "s3base",
-    this namespace can be used to access all S3 classes, e.g.:
+    this namespace can be used to access all S3 classes, e.g.::
 
         s3base.S3Resource()
 
-    @author: Fran Boon <francisboon@gmail.com>
-    @author: Dominic König <dominic@aidiq.com>
+    @requires: U{B{I{gluon}} <http://web2py.com>}
+
+    @author: Fran Boon <francisboon[at]gmail.com>
+    @author: Dominic König <dominic[at]aidiq.com>
 
     @copyright: 2009-2010 (c) Sahana Software Foundation
     @license: MIT
@@ -58,11 +60,11 @@ from s3widgets import *
 # Test framework (currently unused)
 #from s3test import *
 
-# REST Interface
-from s3xrc import S3DataStore
+# Resource API
+from s3xrc import S3ResourceController
 from s3rest import S3Resource, S3Method
 
-# REST Methods
+# RESTful Methods
 from s3crud import S3CRUD
 from s3search import S3Search, S3LocationSearch, S3PersonSearch, S3SearchSimple
 

@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 
-""" S3XRC Resource Framework - CRUD Method Handlers
+""" RESTful CRUD Methods (S3XRC)
 
-    @version: 2.3.1
-
+    @version: 2.3.2
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
+    @requires: U{B{I{gluon}} <http://web2py.com>}
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
-    @author: nursix
-    @contact: dominic AT nursix DOT org
+    @author: Dominic König <dominic[at]aidiq.com>
+    
     @copyright: 2009-2010 (c) Sahana Software Foundation
     @license: MIT
 
@@ -74,7 +74,7 @@ class S3CRUD(S3Method):
 
         """
 
-        self.settings = self.datastore.s3.crud
+        self.settings = self.manager.s3.crud
 
         if r.http == "DELETE" or self.method == "delete":
             output = self.delete(r, **attr)
@@ -87,7 +87,7 @@ class S3CRUD(S3Method):
         elif self.method == "list":
             output = self.select(r, **attr)
         else:
-            r.error(501, self.datastore.ERROR.BAD_METHOD)
+            r.error(501, self.manager.ERROR.BAD_METHOD)
 
         return output
 
@@ -104,7 +104,7 @@ class S3CRUD(S3Method):
 
         """
 
-        T = self.datastore.T
+        T = self.manager.T
 
         session = self.session
         request = self.request
@@ -329,7 +329,7 @@ class S3CRUD(S3Method):
                 session.flash = T("Data uploaded")
 
         else:
-            r.error(501, self.datastore.ERROR.BAD_FORMAT)
+            r.error(501, self.manager.ERROR.BAD_FORMAT)
 
         return output
 
@@ -445,11 +445,11 @@ class S3CRUD(S3Method):
             return exporter(self.resource, list_fields=list_fields)
 
         elif representation == "json":
-            exporter = S3Exporter(self.datastore)
+            exporter = S3Exporter(self.manager)
             return exporter.json(self.resource, fields=fields)
 
         else:
-            r.error(501, self.datastore.ERROR.BAD_FORMAT)
+            r.error(501, self.manager.ERROR.BAD_FORMAT)
 
         return output
 
@@ -473,7 +473,7 @@ class S3CRUD(S3Method):
         table = self.table
         tablename = self.tablename
 
-        T = self.datastore.T
+        T = self.manager.T
 
         representation = r.representation
 
@@ -591,7 +591,7 @@ class S3CRUD(S3Method):
             return importer(r)
 
         else:
-            r.error(501, self.datastore.ERROR.BAD_FORMAT)
+            r.error(501, self.manager.ERROR.BAD_FORMAT)
 
         return output
 
@@ -616,7 +616,7 @@ class S3CRUD(S3Method):
         table = self.table
         tablename = self.tablename
 
-        T = self.datastore.T
+        T = self.manager.T
 
         representation = r.representation
 
@@ -634,7 +634,7 @@ class S3CRUD(S3Method):
 
         # Check permission for delete
         if not deletable:
-            r.error(403, self.datastore.ERROR.NOT_PERMITTED)
+            r.error(403, self.manager.ERROR.NOT_PERMITTED)
         authorised = self.permit("delete", self.tablename, record_id)
         if not authorised:
             r.unauthorised()
@@ -669,12 +669,12 @@ class S3CRUD(S3Method):
             numrows = self.resource.delete(ondelete=ondelete,
                                            format=representation)
             message = "%s %s" % (numrows, T("records deleted"))
-            item = self.datastore.xml.json_message(message=message)
+            item = self.manager.xml.json_message(message=message)
             self.response.view = "xml.html"
             output.update(item=item)
 
         else:
-            r.error(400, self.datastore.ERROR.BAD_METHOD)
+            r.error(400, self.manager.ERROR.BAD_METHOD)
 
         return output
 
@@ -860,28 +860,28 @@ class S3CRUD(S3Method):
             return dict(item=items)
 
         elif representation == "csv":
-            exporter = S3Exporter(self.datastore)
+            exporter = S3Exporter(self.manager)
             return exporter.csv(self.resource)
 
         elif representation == "pdf":
-            exporter = S3Exporter(self.datastore)
+            exporter = S3Exporter(self.manager)
             return exporter.pdf(self.resource,
                                 list_fields=list_fields)
 
         elif representation == "xls":
-            exporter = S3Exporter(self.datastore)
+            exporter = S3Exporter(self.manager)
             return exporter.xls(self.resource,
                                 list_fields=list_fields)
 
         elif representation == "json":
-            exporter = S3Exporter(self.datastore)
+            exporter = S3Exporter(self.manager)
             return exporter.json(self.resource,
                                  start=start,
                                  limit=limit,
                                  fields=fields)
 
         else:
-            r.error(501, self.datastore.ERROR.BAD_FORMAT)
+            r.error(501, self.manager.ERROR.BAD_FORMAT)
 
         return output
 
@@ -946,7 +946,7 @@ class S3CRUD(S3Method):
         # Render as...
         if as_page:
             # ...JSON page (for pagination)
-            represent = self.datastore.represent
+            represent = self.manager.represent
             items = [[represent(f, record=row, linkto=linkto)
                       for f in fields]
                      for row in rows]
@@ -982,13 +982,13 @@ class S3CRUD(S3Method):
         """
 
         # Environment
-        session = self.datastore.session
-        request = self.datastore.request
-        response = self.datastore.response
+        session = self.manager.session
+        request = self.manager.request
+        response = self.manager.response
 
         # Get the CRUD settings
-        audit = self.datastore.audit
-        s3 = self.datastore.s3
+        audit = self.manager.audit
+        s3 = self.manager.s3
         settings = s3.crud
 
         # Table and model
@@ -996,7 +996,7 @@ class S3CRUD(S3Method):
         name = self.name
         tablename = self.tablename
         table = self.table
-        model = self.datastore.model
+        model = self.manager.model
 
         record = None
         labels = None
@@ -1027,7 +1027,7 @@ class S3CRUD(S3Method):
                                 if f in from_table.fields and
                                 table[f].writable]
                 # Audit read => this is a read method, finally
-                audit = self.datastore.audit
+                audit = self.manager.audit
                 prefix, name = from_table._tablename.split("_", 1)
                 audit("read", prefix, name, record=from_record, representation=format)
                 # Get original record
@@ -1119,7 +1119,7 @@ class S3CRUD(S3Method):
 
                 # Link record
                 if link and form.vars.id:
-                    linker = self.datastore.linker
+                    linker = self.manager.linker
                     if link.linkdir == "to":
                         linker.link(table, form.vars.id, link.linktable, link.linkid,
                                     link_class=link.linkclass)
@@ -1130,7 +1130,7 @@ class S3CRUD(S3Method):
                 # Store session vars
                 if form.vars.id:
                     self.resource.lastid = str(form.vars.id)
-                    self.datastore.store_session(prefix, name, form.vars.id)
+                    self.manager.store_session(prefix, name, form.vars.id)
 
                 # Execute onaccept
                 callback(onaccept, form, tablename=tablename)
@@ -1183,7 +1183,7 @@ class S3CRUD(S3Method):
 
         """
 
-        s3 = self.datastore.s3
+        s3 = self.manager.s3
 
         crud_strings = s3.crud_strings.get(tablename, s3.crud_strings)
         not_found = s3.crud_strings.get(name, None)
@@ -1253,7 +1253,7 @@ class S3CRUD(S3Method):
 
         output = dict()
 
-        T = self.datastore.T
+        T = self.manager.T
 
         tablename = self.tablename
         representation = r.representation
@@ -1332,8 +1332,8 @@ class S3CRUD(S3Method):
         response = r.response
 
         prefix, name, table, tablename = r.target()
-        permit = r.datastore.auth.shn_has_permission
-        model = r.datastore.model
+        permit = r.manager.auth.shn_has_permission
+        model = r.manager.model
 
         if authorised is None:
             authorised = permit("update", tablename)

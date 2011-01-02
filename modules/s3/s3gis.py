@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Sahana Eden GIS Module
+""" GIS Module
 
     @version: 0.0.9
+    
+    @requires: U{B{I{gluon}} <http://web2py.com>}
     @requires: U{B{I{shapely}} <http://trac.gispython.org/lab/wiki/Shapely>}
 
-    @author: Fran Boon <francisboon@gmail.com>
-    @author: Timothy Caro-Bruce <tcarobruce@gmail.com>
+    @author: Fran Boon <francisboon[at]gmail.com>
+    @author: Timothy Caro-Bruce <tcarobruce[at]gmail.com>
+
     @copyright: (c) 2010 Sahana Software Foundation
     @license: MIT
 
@@ -469,7 +471,7 @@ class GIS(object):
             # Use PostGIS routine
             # The ST_DWithin function call will automatically include a bounding box comparison that will make use of any indexes that are available on the geometries.
             # @ToDo: Support optional Category (make this a generic filter?)
-            
+
             import psycopg2
             import psycopg2.extras
 
@@ -528,7 +530,7 @@ class GIS(object):
         #elif deployment_settings.database.db_type == "mysql":
             # Do the calculation in MySQL to pull back only the relevant rows
             # Raw MySQL Formula from: http://blog.peoplesdns.com/archives/24
-            # PI = 3.141592653589793, mysql’s pi() function returns 3.141593
+            # PI = 3.141592653589793, mysqlÂ’s pi() function returns 3.141593
             #pi = math.pi
             #query = """SELECT name, lat, lon, acos(SIN( PI()* 40.7383040 /180 )*SIN( PI()*lat/180 ))+(cos(PI()* 40.7383040 /180)*COS( PI()*lat/180) *COS(PI()*lon/180-PI()* -73.99319 /180))* 3963.191
             #AS distance
@@ -559,7 +561,7 @@ class GIS(object):
             r = float(radius) / RADIUS_EARTH
             radLat = radians(lat)
             radLon = radians(lon)
-            
+
             # Calculate the bounding box
             minLat = radLat - r
             maxLat = radLat + r
@@ -637,7 +639,7 @@ class GIS(object):
                 else:
                     # skip
                     continue
-            
+
             return features
 
     # -----------------------------------------------------------------------------
@@ -815,7 +817,7 @@ class GIS(object):
             lon2 = radians(lon2)
             distance = acos(sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(lon2-lon1)) * RADIUS_EARTH
             return distance
-            
+
         else:
             # Haversine
             #asin = math.asin
@@ -3876,7 +3878,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         // Center and Zoom
         map.setCenter(lonlat, newZoom);
         // Remove Popups
-        for (var i=0; i < map.popups.length; ++i)	{
+        for (var i=0; i < map.popups.length; ++i)   {
             map.removePopup(map.popups[i]);
         }
     }

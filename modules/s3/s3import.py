@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 
-""" S3XRC Resource Framework - Resource Import Toolkit
+""" Resource Import Toolkit (S3XRC)
 
-    @version: 2.3.1
-
+    @version: 2.3.2
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
+    @requires: U{B{I{gluon}} <http://web2py.com>}
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
-    @author: nursix
-    @contact: dominic AT nursix DOT org
+    @author: Dominic König <dominic[at]aidiq.com>
+
     @copyright: 2009-2010 (c) Sahana Software Foundation
     @license: MIT
 
@@ -54,16 +54,16 @@ class S3Importer(object):
     """
 
     # -------------------------------------------------------------------------
-    def __init__(self, datastore):
+    def __init__(self, manager):
         """
         Constructor
 
-        @param datastore: the S3DataStore
+        @param manager: the S3ResourceController
 
         """
 
-        self.datastore = datastore
-        self.db = self.datastore.db
+        self.manager = manager
+        self.db = self.manager.db
 
 
     # -------------------------------------------------------------------------
@@ -99,8 +99,8 @@ class S3Importer(object):
 
         """
 
-        datastore = self.datastore
-        xml = datastore.xml
+        manager = self.manager
+        xml = manager.xml
 
         prefix, name, table, tablename = r.target()
 
@@ -144,11 +144,11 @@ class S3Importer(object):
                     else:
                         data.text = xml.xml_encode(value)
                     element.append(data)
-        tree = xml.tree([element], domain=datastore.domain)
+        tree = xml.tree([element], domain=manager.domain)
 
         # Import data
         result = Storage(committed=False)
-        datastore.resolve = lambda job, result=result: result.update(job=job)
+        manager.resolve = lambda job, result=result: result.update(job=job)
         try:
             success = resource.import_xml(tree)
         except SyntaxError:
@@ -171,7 +171,7 @@ class S3Importer(object):
         else:
             item = xml.json_message(False, 403,
                         "Could not create/update record: %s" %
-                            datastore.error or xml.error,
+                            manager.error or xml.error,
                         tree=xml.tree2json(tree))
 
         return dict(item=item)
@@ -201,8 +201,8 @@ class S3Importer(object):
 
         """
 
-        xml = self.datastore.xml
-        permit = self.datastore.permit
+        xml = self.manager.xml
+        permit = self.manager.permit
 
         # Check permission for the resource
         authorised = permit("create", resource.table) and \
@@ -227,9 +227,9 @@ class S3Importer(object):
 
         # XSLT transformation
         if template is not None:
-            tfmt = self.datastore.xml.ISOFORMAT
-            args.update(domain=self.datastore.domain,
-                        base_url=self.datastore.s3.base_url,
+            tfmt = self.manager.xml.ISOFORMAT
+            args.update(domain=self.manager.domain,
+                        base_url=self.manager.s3.base_url,
                         prefix=resource.prefix,
                         name=resource.name,
                         utcnow=datetime.datetime.utcnow().strftime(tfmt))
@@ -242,7 +242,7 @@ class S3Importer(object):
             resource.files = Storage(files)
 
         # Import the tree
-        success = self.datastore.import_tree(resource, id, tree,
+        success = self.manager.import_tree(resource, id, tree,
                                              ignore_errors=ignore_errors)
 
         if success:
@@ -250,7 +250,7 @@ class S3Importer(object):
         else:
             tree = xml.tree2json(tree)
             msg = xml.json_message(False, 400,
-                                   message=self.datastore.error,
+                                   message=self.manager.error,
                                    tree=tree)
             return msg
 

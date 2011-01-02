@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 
-""" S3XRC Resource Framework - Resource Export Toolkit
+""" Resource Export Toolkit (S3XRC)
 
-    @version: 2.3.1
-
+    @version: 2.3.2
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
+    @requires: U{B{I{gluon}} <http://web2py.com>}
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
     @requires: U{B{I{ReportLab}} <http://www.reportlab.com/software/opensource>}
     @requires: U{B{I{Geraldo}} <http://www.geraldoreports.org>}
     @requires: U{B{I{Xlwt}} <http://pypi.python.org/pypi/xlwt>}
 
-    @author: nursix
-    @contact: dominic AT nursix DOT org
+    @author: Dominic König <dominic[at]aidiq.com>
+
     @copyright: 2009-2010 (c) Sahana Software Foundation
     @license: MIT
 
@@ -58,22 +58,22 @@ class S3Exporter(object):
 
     """
 
-    def __init__(self, datastore):
+    def __init__(self, manager):
         """
         Constructor
 
-        @param datastore: the S3DataStore
+        @param manager: the S3ResourceController
 
         @todo 2.3: error message completion
 
         """
 
-        self.datastore = datastore
+        self.manager = manager
 
-        T = datastore.T
+        T = manager.T
 
-        self.db = self.datastore.db
-        self.s3 = self.datastore.s3
+        self.db = self.manager.db
+        self.s3 = self.manager.s3
 
         self.ERROR = Storage(
             REPORTLAB_ERROR = T("ReportLab not installed"),
@@ -115,11 +115,11 @@ class S3Exporter(object):
         output = None
 
         args = Storage(args)
-        xml = self.datastore.xml
+        xml = self.manager.xml
 
         # Export as element tree
-        tree = self.datastore.export_tree(resource,
-                                          audit=self.datastore.audit,
+        tree = self.manager.export_tree(resource,
+                                          audit=self.manager.audit,
                                           start=start,
                                           limit=limit,
                                           marker=marker,
@@ -130,8 +130,8 @@ class S3Exporter(object):
         # XSLT transformation
         if tree and template is not None:
             tfmt = xml.ISOFORMAT
-            args.update(domain=self.datastore.domain,
-                        base_url=self.datastore.s3.base_url,
+            args.update(domain=self.manager.domain,
+                        base_url=self.manager.s3.base_url,
                         prefix=resource.prefix,
                         name=resource.name,
                         utcnow=datetime.datetime.utcnow().strftime(tfmt))
@@ -164,8 +164,8 @@ class S3Exporter(object):
 
         db = self.db
 
-        request = self.datastore.request
-        response = self.datastore.response
+        request = self.manager.request
+        response = self.manager.response
 
         tablename = resource.tablename
         query = resource.get_query()
@@ -201,11 +201,11 @@ class S3Exporter(object):
         db = self.db
         table = resource.table
 
-        session = self.datastore.session
-        request = self.datastore.request
-        response = self.datastore.response
+        session = self.manager.session
+        request = self.manager.request
+        response = self.manager.response
 
-        xml = self.datastore.xml
+        xml = self.manager.xml
 
         # Import ReportLab
         try:
@@ -260,7 +260,7 @@ class S3Exporter(object):
         COLWIDTH = 2.5
         LEFTMARGIN = 0.2
 
-        represent = self.datastore.represent
+        represent = self.manager.represent
 
         _represent = lambda field, value, table=table: \
                      represent(table[field],
@@ -347,9 +347,9 @@ class S3Exporter(object):
 
         db = self.db
 
-        session = self.datastore.session
-        request = self.datastore.request
-        response = self.datastore.response
+        session = self.manager.session
+        request = self.manager.request
+        response = self.manager.response
 
         table = resource.table
         query = resource.get_query()
@@ -398,7 +398,7 @@ class S3Exporter(object):
                     style.num_format_str = "M/D/YY h:mm"
                 elif coltype == "time":
                     style.num_format_str = "h:mm:ss"
-                represent = self.datastore.represent(field,
+                represent = self.manager.represent(field,
                                                    record=item,
                                                    strip_markup=True,
                                                    xml_escape=True)
@@ -426,12 +426,11 @@ class S3Exporter(object):
         @param resource: the resource to export
         @param start: index of the first record to export (for slicing)
         @param limit: maximum number of records to export (for slicing)
-        @param list_fields: names of fields to include in the export
-                            (None for all fields)
+        @param fields: fields to include in the export (None for all fields)
 
         """
 
-        response = self.datastore.response
+        response = self.manager.response
 
         attributes = dict()
 

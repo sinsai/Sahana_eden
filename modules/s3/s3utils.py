@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
-""" Sahana Eden Utilities Module
+""" Utilities
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
 
-    @author: Fran Boon <fran@aidiq.com>
-    @author: Michael Howden (michael@aidiq.com)
+    @author: Fran Boon <fran[at]aidiq.com>
+    @author: Michael Howden <michael[at]aidiq.com>
+    @author: Pradnya Kulkarni
+    
     @copyright: (c) 2010 Sahana Software Foundation
     @license: MIT
 
@@ -190,28 +192,28 @@ def shn_get_db_field_value(db,
                            look_up_field = "id",
                            match_case = True):
     """
+    
     @author: Michael Howden (michael@aidiq.com)
 
-    @description:
-        returns the value of <field> from the first record in <table_name>
+    @summary:
+        Returns the value of <field> from the first record in <table_name>
         with <look_up_field> = <look_up>
 
-    @arguements:
-        table - string - The name of the table
-        field - string - the field to find the value from
-        look_up - string - the value to find
-        look_up_field - string - the field to find <look_up> in
-        match_case - bool
+    @param table: The name of the table
+    @param field: the field to find the value from
+    @param look_up: the value to find
+    @param look_up_field: the field to find <look_up> in
+    @type match_case: boolean
 
     @returns:
-        Field Value if there is a record
-        None - if there is no matching record
+        - Field Value if there is a record
+        - None - if there is no matching record
 
-    @example
-        shn_get_db_field_value("or_organisation",
-                               "id",
+    Example::
+        shn_get_db_field_value("or_organisation", "id",
                                look_up = "UNDP",
                                look_up_field = "name" )
+
     """
     lt = db[table]
     lf = lt[look_up_field]
@@ -227,16 +229,16 @@ def shn_get_db_field_value(db,
 
 def jaro_winkler(str1, str2):
     """
-        Return Jaro_Winkler distance of two strings (between 0.0 and 1.0)
+    Return Jaro_Winkler distance of two strings (between 0.0 and 1.0)
 
-        Used as a measure of similarity between two strings,
-        see http://en.wikipedia.org/wiki/Jaro-Winkler_distance
+    Used as a measure of similarity between two strings
+    
+    @see http://en.wikipedia.org/wiki/Jaro-Winkler_distance
 
-        ARGUMENTS:
-          str1  The first string
-          str2  The second string
+    @param str1: the first string
+    @param str2: the second string
 
-        @author: Pradnya Kulkarni
+    @author: Pradnya Kulkarni
 
     """
 

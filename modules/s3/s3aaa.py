@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
-""" Sahana Eden Authentication, Authorization, Accouting
+""" Authentication, Authorization, Accouting
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
 
-    @author: Dominic König <dominic@aidiq.com>
+    @author: Dominic König <dominic[at]aidiq.com>
+
     @copyright: (c) 2010 Sahana Software Foundation
     @license: MIT
 
@@ -30,8 +31,6 @@
     OTHER DEALINGS IN THE SOFTWARE.
 
 """
-
-__name__ = "S3AAA"
 
 __all__ = ["AuthS3", "S3Permission", "S3Audit"]
 
@@ -299,8 +298,9 @@ class AuthS3(Auth):
 
     def login_bare(self, username, password):
         """
-        logins user
-        - extended to understand session.s3.roles
+        Logins user
+            - extended to understand session.s3.roles
+
         """
 
         request = self.environment.request
@@ -342,15 +342,14 @@ class AuthS3(Auth):
         next=DEFAULT,
         onvalidation=DEFAULT,
         onaccept=DEFAULT,
-        log=DEFAULT,
-        ):
+            log=DEFAULT,
+            ):
+
         """
-            Overrides Web2Py's login() to use custom flash styles & utcnow
+        Overrides Web2Py's login() to use custom flash styles & utcnow
 
-            returns a login form
+        @returns: a login form
 
-            .. method:: Auth.login([next=DEFAULT [, onvalidation=DEFAULT
-                [, onaccept=DEFAULT [, log=DEFAULT]]]])
         """
 
         table_user = self.settings.table_user
@@ -488,16 +487,12 @@ class AuthS3(Auth):
         ):
         """
         Overrides Web2Py's register() to add new functionality:
-            * Checks whether registration is permitted
-            * Custom Flash styles
-            * utcnow
-            * Allow form to be embedded in other pages
+            - Checks whether registration is permitted
+            - Custom Flash styles
+            - utcnow
+            - Allow form to be embedded in other pages
 
-        returns a registration form
-
-        .. method:: Auth.register([next=DEFAULT [, onvalidation=DEFAULT
-            [, onaccept=DEFAULT [, log=DEFAULT]]]])
-
+        @returns: a registration form
 
         """
 
@@ -634,8 +629,10 @@ class AuthS3(Auth):
 
     def shn_logged_in(self):
         """
-            Check whether the user is currently logged-in
+        Check whether the user is currently logged-in
+
             - tries Basic if not
+
         """
 
         session = self.session
@@ -647,8 +644,10 @@ class AuthS3(Auth):
 
     def shn_has_role(self, role):
         """
-            Check whether the currently logged-in user has a role
-            @param role can be integer or a name
+        Check whether the currently logged-in user has a role
+        
+        @param role: can be integer or a name
+
         """
 
         #deployment_settings = self.deployment_settings
@@ -780,11 +779,14 @@ class AuthS3(Auth):
 
     def shn_register(self, form):
         """
-            S3 framework function
-            Designed to be used as an onaccept callback for register()
-            Whenever someone registers, it:
-                * adds them to the 'Authenticated' role
-                * adds their name to the Person Registry
+        S3 framework function
+
+        Designed to be used as an onaccept callback for register()
+
+        Whenever someone registers, it:
+            - adds them to the 'Authenticated' role
+            - adds their name to the Person Registry
+
         """
 
         # Add to 'Authenticated' role
@@ -797,11 +799,12 @@ class AuthS3(Auth):
 
     def shn_has_membership(self, group_id=None, user_id=None, role=None):
         """
-            Checks if user is member of group_id or role
+        Checks if user is member of group_id or role
 
-            Extends Web2Py's requires_membership() to add new functionality:
-                * Custom Flash style
-                * Uses shn_has_role()
+        Extends Web2Py's requires_membership() to add new functionality:
+            - Custom Flash style
+            - Uses shn_has_role()
+
         """
 
         group_id = group_id or self.id_group(role)
@@ -828,14 +831,15 @@ class AuthS3(Auth):
 
     def shn_requires_membership(self, role):
         """
-            Decorator that prevents access to action if not logged in or
-            if user logged in is not a member of group_id.
-            If role is provided instead of group_id then the group_id is calculated.
+        Decorator that prevents access to action if not logged in or
+        if user logged in is not a member of group_id.
+        If role is provided instead of group_id then the group_id is calculated.
 
-            Extends Web2Py's requires_membership() to add new functionality:
-                * Custom Flash style
-                * Uses shn_has_role()
-                * Administrators (id=1) are deemed to have all roles
+        Extends Web2Py's requires_membership() to add new functionality:
+            - Custom Flash style
+            - Uses shn_has_role()
+            - Administrators (id=1) are deemed to have all roles
+
         """
 
         def decorator(action):
@@ -865,21 +869,21 @@ class AuthS3(Auth):
     def shn_link_to_person(self, user=None):
 
         """
-            Links user accounts to person registry entries
+        Links user accounts to person registry entries
 
-            Policy for linking to pre-existing person records:
+        Policy for linking to pre-existing person records:
 
-            If and only if:
-                a person record with exactly the same first name and
-                last name exists, which has a contact information record
-                with exactly the same email address as used in the user
-                account, and which is not linked to another user account,
-                then this person record will be linked to this user account,
+        If and only if:
+            - a person record with exactly the same first name and
+              last name exists, which has a contact information record
+              with exactly the same email address as used in the user
+              account, and which is not linked to another user account,
+              then this person record will be linked to this user account,
 
-            otherwise:
-                a new person record is created, and a new email contact
-                record with the email address from the user record is
-                registered for that person
+        otherwise:
+            - a new person record is created, and a new email contact
+              record with the email address from the user record is
+              registered for that person
 
         """
 
@@ -1163,7 +1167,6 @@ class S3Permission(object):
 
         @param c: the controller (falls back to current request)
         @param f: the function (falls back to current request)
-        @param table: the table
 
         @returns: tuple of (ACL for owned resources, ACL for all resources)
 

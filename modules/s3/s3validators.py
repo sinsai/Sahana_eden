@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Sahana Eden Custom Validators
+""" Custom Validators
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
 
-    @author: Fran Boon <fran@aidiq.com>
+    @author: Fran Boon <fran[at]aidiq.com>
+    @author: Dominic König <dominic[at]aidiq.com>
+    @author: sunneach
+    
     @copyright: (c) 2010 Sahana Software Foundation
     @license: MIT
 
@@ -344,11 +346,14 @@ class IS_ONE_OF_EMPTY(Validator):
 # added 2009-08-23 by nursix
 # converted to subclass 2010-02-03 by sunneach: NO CHANGES in the method bodies
 class IS_ONE_OF(IS_ONE_OF_EMPTY):
+
     """
-        Extends IS_ONE_OF_EMPTY by restoring the 'options' method.
+    Extends IS_ONE_OF_EMPTY by restoring the 'options' method.
+
     """
 
     def options(self):
+
         self.build_set()
         items = [(k, self.labels[i]) for (i, k) in enumerate(self.theset)]
         if self.sort:
@@ -357,16 +362,18 @@ class IS_ONE_OF(IS_ONE_OF_EMPTY):
             items.insert(0,("", self.zero))
         return items
 
+
+# -----------------------------------------------------------------------------
 class IS_NOT_ONE_OF(IS_NOT_IN_DB):
+
     """
-    Filtered version of IS_NOT_IN_DB():
-        Understands the 'deleted' field.
+    Filtered version of IS_NOT_IN_DB()
+        - understands the 'deleted' field.
+        - makes the field unique (amongst non-deleted field)
 
-    example::
+    Example:
+        - INPUT(_type="text", _name="name", requires=IS_NOT_ONE_OF(db, db.table))
 
-        INPUT(_type="text", _name="name", requires=IS_NOT_ONE_OF(db, db.table))
-
-    makes the field unique (amongst non-deleted field)
     """
 
     def __call__(self, value):
@@ -385,7 +392,6 @@ class IS_NOT_ONE_OF(IS_NOT_IN_DB):
 
 
 # -----------------------------------------------------------------------------
-#
 class IS_UTC_OFFSET(Validator):
     """
     Validates a given string value as UTC offset in the format +/-HHMM
@@ -439,6 +445,9 @@ class IS_UTC_DATETIME(Validator):
     Validates a given value as datetime string and returns the corresponding
     UTC datetime.
 
+    Example:
+        - INPUT(_type="text", _name="name", requires=IS_UTC_DATETIME())
+
     @author: nursix
 
     @param format:          strptime/strftime format template string, for
@@ -452,9 +461,6 @@ class IS_UTC_DATETIME(Validator):
     @type allow_future:     boolean
     @param max_future:      the maximum acceptable future time interval in
                             seconds from now for unsynchronized local clocks
-
-    @example:
-        INPUT(_type="text", _name="name", requires=IS_UTC_DATETIME())
 
     @note:
         datetime has to be in the ISO8960 format YYYY-MM-DD hh:mm:ss, with an

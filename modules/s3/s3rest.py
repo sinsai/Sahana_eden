@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 
-""" S3XRC Resource Framework - Resource API
+""" RESTful API (S3XRC)
 
-    @version: 2.3.1
-
+    @version: 2.3.2
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
+    @requires: U{B{I{gluon}} <http://web2py.com>}
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
-    @author: nursix
-    @contact: dominic AT nursix DOT org
+    @author: Dominic König <dominic[at]aidiq.com>
+
     @copyright: 2009-2010 (c) Sahana Software Foundation
     @license: MIT
 
@@ -60,7 +60,7 @@ class S3Resource(object):
 
     """
 
-    def __init__(self, datastore, prefix, name,
+    def __init__(self, manager, prefix, name,
                  id=None,
                  uid=None,
                  filter=None,
@@ -70,7 +70,7 @@ class S3Resource(object):
         """
         Constructor
 
-        @param datastore: the S3DataStore
+        @param manager: the S3ResourceController
         @param prefix: prefix of the resource name (=module name)
         @param name: name of the resource (without prefix)
         @param id: record ID (or list of record IDs)
@@ -82,43 +82,43 @@ class S3Resource(object):
 
         """
 
-        self.datastore = datastore
-        self.db = datastore.db
+        self.manager = manager
+        self.db = manager.db
 
-        self.HOOKS = datastore.HOOKS
-        self.ERROR = datastore.ERROR
+        self.HOOKS = manager.HOOKS
+        self.ERROR = manager.ERROR
 
         # Export/Import hooks
-        self.exporter = datastore.exporter
-        self.importer = datastore.importer
+        self.exporter = manager.exporter
+        self.importer = manager.importer
 
-        self.xml = datastore.xml
+        self.xml = manager.xml
 
         # XSLT Paths
         self.XSLT_PATH = "static/formats"
         self.XSLT_EXTENSION = "xsl"
 
         # Authorization hooks
-        self.permit = datastore.permit
-        self.accessible_query = datastore.auth.shn_accessible_query
+        self.permit = manager.permit
+        self.accessible_query = manager.auth.shn_accessible_query
 
         # Audit hook
-        self.audit = datastore.audit
+        self.audit = manager.audit
 
         # Basic properties
         self.prefix = prefix
         self.name = name
         self.vars = None # set during build_query
 
-        # Model and Data Store
+        # Model and Resource Manager
         self.tablename = "%s_%s" % (self.prefix, self.name)
         self.table = self.db.get(self.tablename, None)
         if not self.table:
             raise KeyError("Undefined table: %s" % self.tablename)
-        model = self.datastore.model
+        model = self.manager.model
 
         # The Query
-        self.query_builder = datastore.query_builder
+        self.query_builder = manager.query_builder
         self._query = None
         self._multiple = True # multiple results expected by default
 
@@ -148,7 +148,7 @@ class S3Resource(object):
                 c, pkey, fkey = clist[i]
                 if components and c.name not in components:
                     continue
-                resource = S3Resource(self.datastore, c.prefix, c.name,
+                resource = S3Resource(self.manager, c.prefix, c.name,
                                       parent=self)
                 self.components[c.name] = Storage(component=c,
                                                   pkey=pkey,
@@ -159,7 +159,7 @@ class S3Resource(object):
             self.build_query(id=id, uid=uid, filter=filter, vars=vars)
 
         # Store CRUD and other method handlers
-        self.crud = self.datastore.crud
+        self.crud = self.manager.crud
         self._handler = Storage(options=self.__get_options,
                                 fields=self.__get_fields,
                                 export_tree=self.__get_tree,
@@ -280,7 +280,7 @@ class S3Resource(object):
         rows = self.db(self._query).select(*fields, **attributes)
 
         # Audit
-        audit = self.datastore.audit
+        audit = self.manager.audit
         try:
             # Audit "read" record by record
             if self.tablename in rows:
@@ -327,7 +327,7 @@ class S3Resource(object):
             rows = self.select(self.table.ALL)
 
         self._ids = [row.id for row in rows]
-        uid = self.datastore.UID
+        uid = self.manager.UID
         if uid in self.table.fields:
             self._uids = [row[uid] for row in rows]
 
@@ -371,9 +371,9 @@ class S3Resource(object):
 
         """
 
-        model = self.datastore.model
+        model = self.manager.model
 
-        settings = self.datastore.s3.crud
+        settings = self.manager.s3.crud
         archive_not_delete = settings.archive_not_delete
 
         records = self.select(self.table.id)
@@ -383,8 +383,8 @@ class S3Resource(object):
             if self.permit("delete", self.tablename, row.id):
 
                 # Clear session
-                if self.datastore.get_session(prefix=self.prefix, name=self.name) == row.id:
-                    self.datastore.clear_session(prefix=self.prefix, name=self.name)
+                if self.manager.get_session(prefix=self.prefix, name=self.name) == row.id:
+                    self.manager.clear_session(prefix=self.prefix, name=self.name)
 
                 # Archive record?
                 if archive_not_delete and "deleted" in self.table:
@@ -401,7 +401,7 @@ class S3Resource(object):
                     try:
                         del self.table[row.id]
                     except: # Integrity Error
-                        self.datastore.session.error = self.ERROR.INTEGRITY_ERROR
+                        self.manager.session.error = self.ERROR.INTEGRITY_ERROR
                     else:
                         numrows += 1
                         self.audit("delete", self.prefix, self.name,
@@ -446,7 +446,7 @@ class S3Resource(object):
         prefix = self.prefix
         name = self.name
 
-        model = self.datastore.model
+        model = self.manager.model
 
         mq = Storage()
         search_fields = Storage()
@@ -680,7 +680,7 @@ class S3Resource(object):
 
         """
 
-        if self.datastore.UID not in self.table.fields:
+        if self.manager.UID not in self.table.fields:
             return None
 
         if not self._uids:
@@ -701,7 +701,7 @@ class S3Resource(object):
 
         """
 
-        uid = self.datastore.UID
+        uid = self.manager.UID
 
         if self._query is None:
             self.build_query()
@@ -764,7 +764,7 @@ class S3Resource(object):
         """
 
         id = item.get("id", None)
-        uid = item.get(self.datastore.UID, None)
+        uid = item.get(self.manager.UID, None)
 
         if (id or uid) and not self._ids:
             self.__load_ids()
@@ -804,7 +804,7 @@ class S3Resource(object):
                     self.load()
                     r.record = self._rows.first()
                 else:
-                    model = self.datastore.model
+                    model = self.manager.model
                     search_simple = model.get_method(self.prefix, self.name,
                                                     method="search_simple")
                     if search_simple:
@@ -899,7 +899,7 @@ class S3Resource(object):
         method = r.method
         permit = self.permit
 
-        model = self.datastore.model
+        model = self.manager.model
 
         tablename = r.component and r.component.tablename or r.tablename
 
@@ -943,7 +943,7 @@ class S3Resource(object):
             authorised = permit("read", tablename)
 
         elif method == "clear" and not r.component:
-            self.datastore.clear_session(self.prefix, self.name)
+            self.manager.clear_session(self.prefix, self.name)
             if "_next" in r.request.vars:
                 request_vars = dict(_next=r.request.vars._next)
             else:
@@ -1011,7 +1011,7 @@ class S3Resource(object):
                 table = r.target()[2]
                 if "deleted" in table and \
                 "id" not in post_vars and "uuid" not in post_vars:
-                    original = self.datastore.original(table, post_vars)
+                    original = self.manager.original(table, post_vars)
                     if original and original.deleted:
                         r.request.post_vars.update(id=original.id)
                         r.request.vars.update(id=original.id)
@@ -1048,8 +1048,8 @@ class S3Resource(object):
 
         """
 
-        json_formats = self.datastore.json_formats
-        content_type = self.datastore.content_type
+        json_formats = self.manager.json_formats
+        content_type = self.manager.content_type
 
         # Find XSLT stylesheet
         template = self.stylesheet(r, method="export")
@@ -1220,7 +1220,7 @@ class S3Resource(object):
         xml = self.xml
         vars = r.request.vars
 
-        json_formats = self.datastore.json_formats
+        json_formats = self.manager.json_formats
 
         # Get the source
         if r.representation in json_formats:
@@ -1252,8 +1252,8 @@ class S3Resource(object):
         # Transform source
         if template:
             tfmt = "%Y-%m-%d %H:%M:%S"
-            args = dict(domain=self.datastore.domain,
-                        base_url=self.datastore.s3.base_url,
+            args = dict(domain=self.manager.domain,
+                        base_url=self.manager.s3.base_url,
                         prefix=self.prefix,
                         name=self.name,
                         utcnow=datetime.datetime.utcnow().strftime(tfmt))
@@ -1270,14 +1270,14 @@ class S3Resource(object):
         else:
             ignore_errors = False
 
-        success = self.datastore.import_tree(self, id, tree,
+        success = self.manager.import_tree(self, id, tree,
                                              ignore_errors=ignore_errors)
 
         if success:
             item = xml.json_message()
         else:
             tree = xml.tree2json(tree)
-            r.error(400, self.datastore.error, tree=tree)
+            r.error(400, self.manager.error, tree=tree)
         return item
 
 
@@ -1361,7 +1361,7 @@ class S3Resource(object):
         """
         Push (=POST) the current resource to a target URL
 
-        @param exporter: the exporter function
+        @param url: the URL to push to
         @param template: path to the XSLT stylesheet to be used by the exporter
         @param as_json: convert the output into JSON before push
         @param xsltmode: "mode" parameter for the XSLT stylesheet
@@ -1568,7 +1568,7 @@ class S3Resource(object):
         except IOError, e:
             return xml.json_message(False, 400, "LOCAL ERROR: %s" % e)
         if not success:
-            error = self.datastore.error
+            error = self.manager.error
             return xml.json_message(False, 400, "LOCAL ERROR: %s" % error)
         else:
             return xml.json_message() # success
@@ -1673,7 +1673,7 @@ class S3Resource(object):
             start = 0
 
         if not limit:
-            limit = self.datastore.ROWSPERPAGE
+            limit = self.manager.ROWSPERPAGE
             if limit is None:
                 return None
         if limit <= 0:
@@ -1703,7 +1703,7 @@ class S3Resource(object):
 
         """
 
-        r = self.datastore.request
+        r = self.manager.request
         v = r.get_vars
         p = prefix or r.controller
         n = self.name
@@ -1837,22 +1837,22 @@ class S3Request(object):
     INTERACTIVE_FORMATS = ("html", "popup", "iframe") # @todo: read from settings
 
     # -------------------------------------------------------------------------
-    def __init__(self, datastore, prefix, name):
+    def __init__(self, manager, prefix, name):
         """
         Constructor
 
-        @param datastore: the S3DataStore
+        @param manager: the S3ResourceController
         @param prefix: prefix of the resource name (=module name)
         @param name: name of the resource (=without prefix)
 
         """
 
-        self.datastore = datastore
+        self.manager = manager
 
         # Get the environment
-        self.session = datastore.session or Storage()
-        self.request = datastore.request
-        self.response = datastore.response
+        self.session = manager.session or Storage()
+        self.request = manager.request
+        self.response = manager.response
 
         # Main resource parameters
         self.prefix = prefix or self.request.controller
@@ -1879,9 +1879,9 @@ class S3Request(object):
                 vars[varname] = self.component_id
 
         # Define the target resource
-        self.resource = datastore.define_resource(self.prefix, self.name,
+        self.resource = manager.define_resource(self.prefix, self.name,
                                                   id=self.id,
-                                                  filter=self.response[datastore.HOOKS].filter,
+                                                  filter=self.response[manager.HOOKS].filter,
                                                   vars=vars,
                                                   components=self.component_name)
 
@@ -1900,10 +1900,10 @@ class S3Request(object):
                 self.pkey, self.fkey = c.pkey, c.fkey
                 self.multiple = self.component.multiple
             else:
-                datastore.error = "%s not a component of %s" % (
+                manager.error = "%s not a component of %s" % (
                                         self.component_name,
                                         self.resource.tablename)
-                raise SyntaxError(datastore.error)
+                raise SyntaxError(manager.error)
 
         # Find primary record
         uid = self.request.vars.get("%s.uid" % self.name, None)
@@ -1922,19 +1922,19 @@ class S3Request(object):
             if len(self.resource) == 1:
                 self.record = self.resource.records().first()
                 self.id = self.record.id
-                self.datastore.store_session(self.resource.prefix,
+                self.manager.store_session(self.resource.prefix,
                                              self.resource.name,
                                              self.id)
             else:
-                datastore.error = self.datastore.ERROR.BAD_RECORD
+                manager.error = self.manager.ERROR.BAD_RECORD
                 if self.representation == "html":
-                    self.session.error = datastore.error
+                    self.session.error = manager.error
                     redirect(self.there())
                 else:
-                    raise KeyError(datastore.error)
+                    raise KeyError(manager.error)
 
         # Check for custom action
-        model = datastore.model
+        model = manager.model
         self.custom_action = model.get_method(self.prefix, self.name,
                                               component_name=self.component_name,
                                               method=self.method)
@@ -1947,7 +1947,7 @@ class S3Request(object):
 
         """
 
-        auth = self.datastore.auth
+        auth = self.manager.auth
         auth.permission.fail()
 
 
@@ -1962,7 +1962,7 @@ class S3Request(object):
 
         """
 
-        xml = self.datastore.xml
+        xml = self.manager.xml
 
         if self.representation == "html":
             self.session.error = message
@@ -1993,7 +1993,7 @@ class S3Request(object):
         representation = request.extension
 
         # Get the names of all components
-        model = self.datastore.model
+        model = self.manager.model
         components = [c[0].name for c in
                       model.get_components(self.prefix, self.name)]
 
@@ -2225,17 +2225,17 @@ class S3Method(object):
         """
 
         # Environment of the request
-        self.datastore = r.datastore
+        self.manager = r.manager
         self.session = r.session
         self.request = r.request
         self.response = r.response
 
-        self.T = self.datastore.T
-        self.db = self.datastore.db
+        self.T = self.manager.T
+        self.db = self.manager.db
 
         # Settings
-        self.permit = self.datastore.auth.shn_has_permission
-        self.download_url = self.datastore.s3.download_url
+        self.permit = self.manager.auth.shn_has_permission
+        self.download_url = self.manager.s3.download_url
 
         # Init
         self.next = None
@@ -2334,7 +2334,7 @@ class S3Method(object):
 
         """
 
-        return self.datastore.model.get_config(self.table, key, default)
+        return self.manager.model.get_config(self.table, key, default)
 
 
     # -------------------------------------------------------------------------

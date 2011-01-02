@@ -1,19 +1,12 @@
 # -*- coding: utf-8 -*-
 
-""" S3XRC Resource Framework - Search Extensions
+""" RESTful Search Methods
 
-    @version: 2.3.1
+    @author: Fran Boon <fran[at]aidiq.com>
+    @author: Dominic König <dominic[at]aidiq.com>
+    
+    @requires: U{B{I{gluon}} <http://web2py.com>}
 
-    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
-
-    @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
-    @requires: U{B{I{ReportLab}} <http://www.reportlab.com/software/opensource>}
-    @requires: U{B{I{Geraldo}} <http://www.geraldoreports.org>}
-    @requires: U{B{I{Xlwt}} <http://pypi.python.org/pypi/xlwt>}
-
-    @author: Fran Boon
-    @author: nursix
-    @contact: dominic AT nursix DOT org
     @copyright: 2009-2010 (c) Sahana Software Foundation
     @license: MIT
 
@@ -77,7 +70,7 @@ class S3Search(S3Method):
         request = self.request
         response = self.response
 
-        s3xrc = self.datastore
+        s3xrc = self.manager
         resource = self.resource
         table = self.table
         representation = r.representation
@@ -175,7 +168,7 @@ class S3LocationSearch(S3Search):
         request = self.request
         response = self.response
 
-        s3xrc = self.datastore
+        s3xrc = self.manager
         gis = s3xrc.gis
         resource = self.resource
         table = self.table
@@ -320,7 +313,7 @@ class S3PersonSearch(S3Search):
         request = self.request
         response = self.response
 
-        s3xrc = self.datastore
+        s3xrc = self.manager
         resource = self.resource
         table = self.table
         representation = r.representation
@@ -429,7 +422,7 @@ class S3SearchSimple(S3CRUD):
         resource = self.resource
         table = self.table
         tablename = self.tablename
-        T = self.datastore.T
+        T = self.manager.T
 
         # Get representation
         representation = r.representation

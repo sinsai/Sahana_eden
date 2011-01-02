@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 
-""" VITA Person Finder Toolkit
+""" Person Finder Toolkit (VITA)
 
     @version: 1.0.0
     @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
 
-    @author: nursix
+    @requires: U{B{I{gluon}} <http://web2py.com>}
+
+    @author: Dominic König <dominic[at]aidiq.com>
+    
     @copyright: 2010 (c) Sahana Software Foundation
     @license: MIT
 
@@ -110,8 +113,8 @@ class S3Vita(object):
 
         """ Update the presence log of a person entity
 
-            - mandatory to be called as onaccept routine at any creation, update
-              or deletion of pr_presence records
+                - mandatory to be called as onaccept routine at any creation,
+                  update or deletion of pr_presence records
 
         """
 

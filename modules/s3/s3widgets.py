@@ -1,9 +1,35 @@
 # -*- coding: utf-8 -*-
 
-""" Custom widgets to extend Web2Py
+""" Custom UI Widgets
 
-    @author: Michael Howden (michael@aidiq.com)
-    @date-created: 2010-03-17
+    @author: Michael Howden <michael[at]aidiq.com>
+    @date: 2010-03-17
+
+    @requires: U{B{I{gluon}} <http://web2py.com>}
+
+    @copyright: 2009-2010 (c) Sahana Software Foundation
+    @license: MIT
+
+    Permission is hereby granted, free of charge, to any person
+    obtaining a copy of this software and associated documentation
+    files (the "Software"), to deal in the Software without
+    restriction, including without limitation the rights to use,
+    copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the
+    Software is furnished to do so, subject to the following
+    conditions:
+
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+    OTHER DEALINGS IN THE SOFTWARE.
 
 """
 
@@ -29,21 +55,26 @@ from s3validators import *
 repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
 
 # -----------------------------------------------------------------------------
-class S3DateWidget:
-    """
-        @author: Fran Boon (fran@aidiq.com)
+class S3DateWidget(FormWidget):
 
-        Standard Date widget, but with a modified yearRange to support Birth dates
+    """
+    Standard Date widget, but with a modified yearRange to support Birth dates
+    
+    @author: Fran Boon (fran@aidiq.com)
+
     """
 
     def __init__(self,
                  before=10,  # How many years to show before the current one
                  after=10    # How many years to show after the current one
                 ):
+
         self.min = before
         self.max = after
 
+
     def __call__(self ,field, value, **attributes):
+
         default = dict(
             _type = "text",
             value = (value!=None and str(value)) or "",
@@ -63,12 +94,15 @@ class S3DateWidget:
                         SCRIPT(date_options)
                       )
 
+
 # -----------------------------------------------------------------------------
 class S3UploadWidget(UploadWidget):
+
     """
-        Subclassed to not show the delete checkbox when field is mandatory
+    Subclassed to not show the delete checkbox when field is mandatory
         - subclass doesn't currently work as download_url not passed in.
         - Patch submitted to Web2Py.
+
     """
 
     @staticmethod
@@ -80,9 +114,9 @@ class S3UploadWidget(UploadWidget):
         the file can be deleted.
         All is wrapped in a DIV.
 
-        see also: :meth:`FormWidget.widget`
+        @see: :meth:`FormWidget.widget`
+        @param download_url: Optional URL to link to the file (default = None)
 
-        :param download_url: Optional URL to link to the file (default = None)
         """
 
         default=dict(
@@ -115,12 +149,15 @@ class S3UploadWidget(UploadWidget):
         return inp
 
 # -----------------------------------------------------------------------------
-class S3AutocompleteWidget:
-    """
-        @author: Fran Boon (fran@aidiq.com)
+class S3AutocompleteWidget(FormWidget):
 
-        Renders a SELECT as an INPUT field with AJAX Autocomplete
     """
+    Renders a SELECT as an INPUT field with AJAX Autocomplete
+
+    @author: Fran Boon (fran@aidiq.com)
+
+    """
+
     def __init__(self,
                  request,
                  prefix,
@@ -136,7 +173,9 @@ class S3AutocompleteWidget:
         self.post_process = post_process
         self.min_length = min_length
 
+
     def __call__(self ,field, value, **attributes):
+
         default = dict(
             _type = "text",
             value = (value != None and str(value)) or "",
@@ -217,21 +256,26 @@ class S3AutocompleteWidget:
                         SCRIPT(js_autocomplete)
                       )
 
+
 # -----------------------------------------------------------------------------
-class S3LocationAutocompleteWidget:
+class S3LocationAutocompleteWidget(FormWidget):
+
     """
-        @author: Fran Boon (fran@aidiq.com)
+    Renders a gis_location SELECT as an INPUT field with AJAX Autocomplete
 
-        Renders a gis_location SELECT as an INPUT field with AJAX Autocomplete
-
-        Differs from the S3AutocompleteWidget:
+    @note: differs from the S3AutocompleteWidget:
         - needs to have deployment_settings passed-in
         - excludes unreliable imported records (Level 'XX')
-        - @ToDo: .represent for the returned data
-        - @ToDo: Refreshes any dropdowns as-necessary (post_process)
 
-        NB Currently not used. The LocationSelector widget include this functionality & more.
+    NB Currently not used. The LocationSelector widget include
+    this functionality & more.
+
+    @author: Fran Boon (fran@aidiq.com)
+    @todo: .represent for the returned data
+    @todo: Refreshes any dropdowns as-necessary (post_process)
+
     """
+
     def __init__(self,
                  request,
                  deployment_settings,
@@ -250,6 +294,7 @@ class S3LocationAutocompleteWidget:
         self.min_length = min_length
 
     def __call__(self ,field, value, **attributes):
+
         default = dict(
             _type = "text",
             value = (value != None and str(value)) or "",
@@ -350,14 +395,16 @@ class S3LocationAutocompleteWidget:
                       )
 
 # -----------------------------------------------------------------------------
-class S3PersonAutocompleteWidget:
-    """
-        @author: Fran Boon (fran@aidiq.com)
+class S3PersonAutocompleteWidget(FormWidget):
 
-        Renders a pr_person SELECT as an INPUT field with AJAX Autocomplete
-
-        Differs from the S3AutocompleteWidget in that it uses 3 name fields
     """
+    Renders a pr_person SELECT as an INPUT field with AJAX Autocomplete.
+    Differs from the S3AutocompleteWidget in that it uses 3 name fields
+
+    @author: Fran Boon (fran@aidiq.com)
+
+    """
+
     def __init__(self,
                  request,
                  post_process = "",
@@ -367,7 +414,9 @@ class S3PersonAutocompleteWidget:
         self.post_process = post_process
         self.min_length = min_length
 
+
     def __call__(self ,field, value, **attributes):
+
         default = dict(
             _type = "text",
             value = (value != None and str(value)) or "",
@@ -478,21 +527,25 @@ class S3PersonAutocompleteWidget:
                         SCRIPT(js_autocomplete)
                       )
 
+
 # -----------------------------------------------------------------------------
-class S3LocationSelectorWidget:
+class S3LocationSelectorWidget(FormWidget):
+
     """
-        @author: Fran Boon (fran@aidiq.com)
-
-        @ToDo: This is a work-in-progress
-        http://eden.sahanafoundation.org/wiki/BluePrintGISLocationSelector
-
-        Renders a gis_location SELECT as a hierarchical dropdown with the ability to add a new location from within the main form
+    Renders a gis_location SELECT as a hierarchical dropdown with the ability to add a new location from within the main form
         - new location can be specified as:
-            * a simple name (hopefully within hierarchy)
-            * manual Lat/Lon entry (with optional GPS Coordinate Converter)
-            * Geocoder lookup
-            * Select location from Map
+            - a simple name (hopefully within hierarchy)
+            - manual Lat/Lon entry (with optional GPS Coordinate Converter)
+            - Geocoder lookup
+            - Select location from Map
+
+    @author: Fran Boon (fran@aidiq.com)
+
+    @todo: This is a work-in-progress
+    @see: http://eden.sahanafoundation.org/wiki/BluePrintGISLocationSelector
+
     """
+
     def __init__(self,
                  db,
                  gis,
@@ -510,6 +563,7 @@ class S3LocationSelectorWidget:
         self.request = request
         self.response = response
         self.T = T
+
 
     def __call__(self, field, value, **attributes):
 
@@ -1057,12 +1111,15 @@ class S3LocationSelectorWidget:
                         SCRIPT(js_location_selector)
                       )
 
+
 # -----------------------------------------------------------------------------
 class S3CheckboxesWidget(OptionsWidget):
-    """
-    @author: Michael Howden (michael@aidiq.com)
 
-    generates a TABLE tag with <num_column> columns of INPUT checkboxes (multiple allowed)
+    """
+    Generates a TABLE tag with <num_column> columns of INPUT
+    checkboxes (multiple allowed)
+
+    @author: Michael Howden (michael@aidiq.com)
 
     help_lookup_table_name_field will display tooltip help
 
@@ -1182,6 +1239,7 @@ class S3CheckboxesWidget(OptionsWidget):
             table.append(TR(I("(Multiple selections allowed)")))
         return table
 
+
     def represent(self,
                   value):
         list = [shn_get_db_field_value(db = self.db,
@@ -1195,12 +1253,13 @@ class S3CheckboxesWidget(OptionsWidget):
         else:
             return None
 
+
 # -----------------------------------------------------------------------------
 class JSON(INPUT):
     """
-    @author: Michael Howden (michael@aidiq.com)
-
     Extends INPUT() from gluon/html.py
+
+    @author: Michael Howden (michael@aidiq.com)
 
     :param json_table: Table - The table where the data in the JSON will be saved to
 
@@ -1211,14 +1270,14 @@ class JSON(INPUT):
 
     _name - If JSON inside S3MultiSelectWidget _name = None
 
-    TODO:
-    * Better error handling
-    * Make this compatible with the Multi Rows widget -> this would include a command to delete AND have to set the record of the field at the end
-    * Save multiple ids as X|X|X|X
-    * have postprocessing to convert 'id' -> '{"id":X}'
-    * Why are JSON attributes being saved?
-    * Use S3XRC
+    @todo: Better error handling
+    @todo: Make this compatible with the Multi Rows widget -> this would include a command to delete AND have to set the record of the field at the end
+    @todo: Save multiple ids as X|X|X|X
+    @todo: have postprocessing to convert 'id' -> '{"id":X}'
+    @todo: Why are JSON attributes being saved?
+
     """
+
     def _validate(self):
         # must be post-processing - because it needs the id of the added record
         name = self["_name"]
@@ -1295,7 +1354,7 @@ class JSON(INPUT):
         try:
             json_data = eval(json_str)
         except:
-            # TODO: This should record the error, but not hang
+            # @todo: This should record the error, but not hang
             raise SyntaxError, "JSON String %s is invalid" % json_str
             return None
 
@@ -1329,7 +1388,7 @@ class JSON(INPUT):
             for field, value in json_record.iteritems():
                 if type(value).__name__ == "dict":
                     # recurse through this JSON data
-                    # TODO - This doesn't work with nested multiselect, unless we access it's existing value.
+                    # @todo - This doesn't work with nested multiselect, unless we access it's existing value.
                     # This could be done by doing the recurse AFTER the add... but then we would still need to get the variables out...
                     recurse_table_name = json_table[field].type[10:]
                     value = JSON(json_table = db[recurse_table_name])._process_json(str(value))
@@ -1357,13 +1416,13 @@ class JSON(INPUT):
             if "id" not in json_record:
                 # ADD
                 # Search for the value existing in the table already
-                # TODO - why is query becoming a bool?
+                # @todo - why is query becoming a bool?
                 #if query:
                 matching_row = db(query).select()
                 #else:
                 #    matching_row = []
                 if len(matching_row) == 0:
-                    # TODO - This should be done in S3XRC, or add some sort of validation
+                    # @todo - This should be done in S3XRC, or add some sort of validation
                     id  = json_table.insert(**json_record)
                 else:
                     id = matching_row[0].id
@@ -1387,20 +1446,20 @@ class JSON(INPUT):
 
         return values
 
+
 # -----------------------------------------------------------------------------
 class S3MultiSelectWidget(FormWidget):
+    
     """
+    This widget will return a table which can have rows added or
+    deleted (not currently edited). This widget can be added to a
+    table using a XXXX_dummy field. This field will only store the
+    ID of the record and serve as a placeholder.
+
     @author: Michael Howden (michael@aidiq.com)
 
-    This widget will return a table which can have rows added or deleted (not currently edited).
-    This widget can be added to a table using a XXXX_dummy field. This field will only store the ID of the record and serve as a placeholder.
-
-    :param link_table_name: - string -
-    :param link_field_name: - Field -
-    :param column_fields:  - list of strings - optional. The fields from the link_table which will be displayed as columns.
-    Default = All fields.
-
     """
+
     def __init__ (self,
                   db,
                   link_table_name,
@@ -1411,8 +1470,15 @@ class S3MultiSelectWidget(FormWidget):
                   represent_record_delim = ", "
                   ):
         """
+        Constructor
+
+        @param link_table_name: name of the link table
+        @param link_field_name: the link field
+        @param column_fields: the fields from the link table which will
+                be displayed as columns (optional, default = all fields)
 
         """
+
         self.db = db
         self.link_table_name = link_table_name
         self.link_field_name = link_field_name
@@ -1436,12 +1502,10 @@ class S3MultiSelectWidget(FormWidget):
             column_fields_represent[field] = db[link_table_name][field].represent
         self.column_fields_represent = column_fields_represent
 
+
     def widget(self,
                field,
                value):
-        """
-
-        """
 
         db = self.db
         link_table_name = self.link_table_name
@@ -1582,12 +1646,16 @@ class S3MultiSelectWidget(FormWidget):
                       column_fields_represent = None,
                       row = None,
                       is_dummy_row = False):
-        """
-            This widget is not yet complete!
 
-            id - int - for the row
-            fields - list of string - provides the order
-            field_represents -  dict - the functions to find the values of the fields in the row
+        """
+        This widget is not yet complete!
+
+        @param id: for the row
+        @param column_fields: provides the order
+        @param column_field_represents: functions to find the values
+            of the fields in the row
+        @type column_field_represents: dict of {fieldname: function} 
+
         """
 
         row_field_cells = []
@@ -1621,8 +1689,8 @@ class S3MultiSelectWidget(FormWidget):
 
         return TR(*row_field_cells)
 
-    def represent(self,
-                  value):
+
+    def represent(self, value):
 
         db = self.db
         link_field_name = self.link_field_name
@@ -1668,6 +1736,7 @@ class S3MultiSelectWidget(FormWidget):
 
         return return_value
 
+
 # -----------------------------------------------------------------------------
 class S3ACLWidget(CheckboxesWidget):
     
@@ -1709,4 +1778,6 @@ class S3ACLWidget(CheckboxesWidget):
                 value = values
 
         return CheckboxesWidget.widget(field, value, **attributes)
-        
+
+
+# -----------------------------------------------------------------------------

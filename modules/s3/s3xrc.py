@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 
-""" S3XRC Resource Framework - Data Store Manager
+""" Extensible Resource Controller (S3XRC)
 
-    @version: 2.3.1
-
+    @version: 2.3.2
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
+    @requires: U{B{I{gluon}} <http://web2py.com>}
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
-    @author: nursix
-    @contact: dominic AT nursix DOT org
+    @author: Dominic König <dominic[at]aidiq.com>
+
     @copyright: 2009-2010 (c) Sahana Software Foundation
     @license: MIT
 
@@ -36,7 +36,7 @@
 
 """
 
-__all__ = ["S3DataStore", "S3ImportJob"]
+__all__ = ["S3ResourceController", "S3ImportJob"]
 
 import sys, datetime, time
 
@@ -57,10 +57,10 @@ from s3export import S3Exporter
 from s3import import S3Importer
 
 # *****************************************************************************
-class S3DataStore(object):
+class S3ResourceController(object):
 
     """
-    Data Store Manager
+    Resource Controller
 
     """
 
@@ -1072,7 +1072,7 @@ class S3ImportJob(object):
 
     """ Helper class for data imports
 
-        @param datastore: the S3DataStore
+        @param manager: the S3ResourceController
         @param prefix: prefix of the resource name (=module name)
         @param name: the resource name (=without prefix)
         @param id: the target record ID
@@ -1104,7 +1104,7 @@ class S3ImportJob(object):
 
 
     # -------------------------------------------------------------------------
-    def __init__(self, datastore, prefix, name, id,
+    def __init__(self, manager, prefix, name, id,
                  record=None,
                  element=None,
                  mtime=None,
@@ -1113,13 +1113,13 @@ class S3ImportJob(object):
                  onvalidation=None,
                  onaccept=None):
 
-        self.datastore = datastore
-        self.db = datastore.db
+        self.manager = manager
+        self.db = manager.db
 
-        self.permit = datastore.permit
-        self.audit = datastore.audit
-        self.resolve = datastore.resolve
-        self.log = datastore.log
+        self.permit = manager.permit
+        self.audit = manager.audit
+        self.resolve = manager.resolve
+        self.log = manager.log
 
         self.prefix = prefix
         self.name = name
@@ -1158,7 +1158,7 @@ class S3ImportJob(object):
         if not self.id:
             self.id = 0
             self.method = permission = self.METHOD.CREATE
-            orig = self.datastore.original(self.table, self.record)
+            orig = self.manager.original(self.table, self.record)
             if orig:
                 self.id = orig.id
                 self.uid = orig.get(self.UID, None)
@@ -1169,7 +1169,7 @@ class S3ImportJob(object):
                 self.id = 0
                 self.method = permission = self.METHOD.CREATE
 
-        if self.prefix in self.datastore.PROTECTED:
+        if self.prefix in self.manager.PROTECTED:
             self.permitted = False
         elif self.permit and not \
            self.permit(permission, self.tablename, record_id=self.id):
@@ -1208,8 +1208,8 @@ class S3ImportJob(object):
 
         self.resolve_references()
 
-        xml = self.datastore.xml
-        model = self.datastore.model
+        xml = self.manager.xml
+        model = self.manager.model
 
         skip_components = False
 
@@ -1235,7 +1235,7 @@ class S3ImportJob(object):
                         else:
                             e = e[0]
                         e.set(xml.ATTRIBUTE.error, str(form.errors[k]).decode("utf-8"))
-                    self.datastore.error = self.datastore.ERROR.VALIDATION_ERROR
+                    self.manager.error = self.manager.ERROR.VALIDATION_ERROR
                     return False
 
                 # Resolve+Log
@@ -1292,7 +1292,7 @@ class S3ImportJob(object):
                         try:
                             success = self.db(self.table.id == self.id).update(**dict(self.record))
                         except:
-                            self.datastore.error = sys.exc_info()[1]
+                            self.manager.error = sys.exc_info()[1]
                             return False
                         if success:
                             self.committed = True
@@ -1319,7 +1319,7 @@ class S3ImportJob(object):
                         try:
                             success = self.table.insert(**dict(self.record))
                         except:
-                            self.datastore.error = sys.exc_info()[1]
+                            self.manager.error = sys.exc_info()[1]
                             return False
                         if success:
                             self.id = success
@@ -1418,13 +1418,13 @@ class S3QueryBuilder(object):
 
     """ Query Builder
 
-        @param datastore: the S3DataStore
+        @param manager: the S3ResourceController
 
     """
 
-    def __init__(self, datastore):
+    def __init__(self, manager):
 
-        self.datastore = datastore
+        self.manager = manager
 
 
     # -------------------------------------------------------------------------
@@ -1438,7 +1438,7 @@ class S3QueryBuilder(object):
 
         """
 
-        linker = self.datastore.linker
+        linker = self.manager.linker
         q = None
 
         for k in vars:
@@ -1449,8 +1449,8 @@ class S3QueryBuilder(object):
                 else:
                     link = link[1:]
                 o_tn = link.pop()
-                if o_tn in self.datastore.db:
-                    link_table = self.datastore.db[o_tn]
+                if o_tn in self.manager.db:
+                    link_table = self.manager.db[o_tn]
                 else:
                     continue
                 operator = link.pop()
@@ -1579,7 +1579,7 @@ class S3QueryBuilder(object):
                 else:
                     op = "eq"
                 if field == "uid":
-                    field = self.datastore.UID
+                    field = self.manager.UID
                 if field not in table.fields:
                     continue
                 else:
@@ -1695,8 +1695,8 @@ class S3QueryBuilder(object):
         resource.clear()
         resource.clear_query()
 
-        xml = self.datastore.xml
-        deletion_status = self.datastore.DELETED
+        xml = self.manager.xml
+        deletion_status = self.manager.DELETED
 
         if vars:
             url_query = self.parse_url_query(resource, vars)
@@ -1771,7 +1771,7 @@ class S3QueryBuilder(object):
                 if not isinstance(uid, (list, tuple)):
                     resource._multiple = False # single result expected
                     uid = [uid]
-                uid_queries = url_query[name].get(self.datastore.UID, Storage())
+                uid_queries = url_query[name].get(self.manager.UID, Storage())
 
                 ne = uid_queries.get("ne", [])
                 eq = uid_queries.get("eq", [])
@@ -1782,8 +1782,8 @@ class S3QueryBuilder(object):
                 if eq and "eq" not in uid_queries:
                     uid_queries.eq = eq
 
-                if self.datastore.UID not in url_query[name]:
-                    url_query[name][self.datastore.__UID] = uid_queries
+                if self.manager.UID not in url_query[name]:
+                    url_query[name][self.manager.__UID] = uid_queries
 
             # URL Queries
             contexts = url_query.context

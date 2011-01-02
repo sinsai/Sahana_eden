@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 
-""" S3XRC Resource Framework - XML Toolkit
+""" XML Toolkit (S3XML)
 
-    @version: 2.3.1
-
+    @version: 2.3.2
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
+    @requires: U{B{I{gluon}} <http://web2py.com>}
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
-    @author: nursix
-    @contact: dominic AT nursix DOT org
+    @author: Dominic König <dominic[at]aidiq.com>
+
     @copyright: 2009-2010 (c) Sahana Software Foundation
     @license: MIT
 
@@ -150,21 +150,21 @@ class S3XML(object):
     ISOFORMAT = "%Y-%m-%dT%H:%M:%SZ" #: universal timestamp
 
     # -------------------------------------------------------------------------
-    def __init__(self, datastore):
+    def __init__(self, manager):
         """
         Constructor
 
-        @param datastore: the S3DataStore
+        @param manager: the S3ResourceController
 
         """
 
-        self.datastore = datastore
+        self.manager = manager
 
-        self.db = datastore.db
-        self.domain = datastore.domain
-        self.s3 = datastore.s3
-        self.gis = datastore.gis
-        self.cache = datastore.cache
+        self.db = manager.db
+        self.domain = manager.domain
+        self.s3 = manager.s3
+        self.gis = manager.gis
+        self.cache = manager.cache
 
         self.error = None
 
@@ -391,7 +391,7 @@ class S3XML(object):
 
         """
 
-        return self.datastore.represent(table[f],
+        return self.manager.represent(table[f],
                                         value=v,
                                         strip_markup=True,
                                         xml_escape=True)

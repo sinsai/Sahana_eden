@@ -103,7 +103,7 @@ vita = s3base.S3Vita(globals(), db)
 
 # S3XRC
 s3.crud = Storage()
-s3xrc = s3base.S3DataStore(globals(), db)
+s3xrc = s3base.S3ResourceController(globals(), db)
 
 # MSG
 msg = s3base.S3Msg(globals(), deployment_settings, db, T, mail)

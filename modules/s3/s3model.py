@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 
-""" S3XRC Resource Framework - Data Model Extensions
+""" Data Model Extensions (S3XRC)
 
-    @version: 2.3.1
-
+    @version: 2.3.2
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
-    @author: nursix
-    @contact: dominic AT nursix DOT org
+    @requires: U{B{I{gluon}} <http://web2py.com>}
+
+    @author: Dominic König <dominic[at]aidiq.com>
+
     @copyright: 2009-2010 (c) Sahana Software Foundation
     @license: MIT
 
@@ -494,17 +495,17 @@ class S3ResourceLinker(object):
 
     """
 
-    def __init__(self, datastore):
+    def __init__(self, manager):
         """
         Constructor
 
-        @param datastore: the S3DataStore
+        @param manager: the S3ResourceController
 
         """
 
-        self.db = datastore.db
-        self.tablename = datastore.rlink_tablename
-        migrate = datastore.migrate
+        self.db = manager.db
+        self.tablename = manager.rlink_tablename
+        migrate = manager.migrate
 
         self.table = self.db.get(self.tablename, None)
         if not self.table:

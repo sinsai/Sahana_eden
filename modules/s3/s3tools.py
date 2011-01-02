@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
-""" Sahana Eden Tools Module
+""" Tools
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
 
-    @author: Fran Boon <francisboon@gmail.com>
-    @author: Dominic König <dominic@aidiq.com>
+    @author: Fran Boon <francisboon[at]gmail.com>
+    @author: Dominic König <dominic[at]aidiq.com>
     @author: sunneach
+
     @copyright: (c) 2010 Sahana Software Foundation
     @license: MIT
 
@@ -70,22 +71,23 @@ class SQLTABLES3(SQLTABLE):
     """
     S3 custom version of gluon.sqlhtml.SQLTABLE
 
-    given a SQLRows object, as returned by a db().select(), generates
+    Given a SQLRows object, as returned by a db().select(), generates
     an html table with the rows.
-    - we need a different linkto construction for our CRUD controller
-    - we need to specify a different ID field to direct to for the M2M controller
-    - used by S3XRC
 
-    optional arguments:
+        - we need a different linkto construction for our CRUD controller
+        - we need to specify a different ID field to direct to for the M2M controller
+        - used by S3XRC
 
-    @param linkto: URL (or lambda to generate a URL) to edit individual records
-    @param upload: URL to download uploaded files
-    @param orderby: Add an orderby link to column headers.
-    @param headers: dictionary of headers to headers redefinions
-    @param truncate: length at which to truncate text in table cells.
+    Optional arguments:
+
+    @keyword linkto: URL (or lambda to generate a URL) to edit individual records
+    @keyword upload: URL to download uploaded files
+    @keyword orderby: Add an orderby link to column headers.
+    @keyword headers: dictionary of headers to headers redefinions
+    @keyword truncate: length at which to truncate text in table cells.
         Defaults to 16 characters.
 
-    optional names attributes for passed to the <table> tag
+    Optional names attributes for passed to the <table> tag
 
     Simple linkto example::
 
@@ -102,7 +104,8 @@ class SQLTABLES3(SQLTABLE):
         rows = db.select(db.sometable.ALL)
         table = SQLTABLES3(rows, linkto=mylink)
 
-    This will link rows[id] to
+    This will link rows[id] to::
+
         current_app/current_controller/current_function/value_of_id
 
     """
@@ -385,7 +388,7 @@ class CrudS3(Crud):
     """
     S3 extension of the gluon.tools.Crud class
 
-    - select() uses SQLTABLES3 (to allow different linkto construction)
+        - select() uses SQLTABLES3 (to allow different linkto construction)
 
     """
 

@@ -839,7 +839,7 @@ def s3_rest_controller(prefix, resourcename, **attr):
     #acl = auth.permission(table=r.table, record=r.id)
     #print "ACL=0x%04X" % acl
 
-    resource.set_handler("search", _s3xrc.S3Search())
+    resource.set_handler("search", s3base.S3Search())
     resource.set_handler("copy", shn_copy)
     resource.set_handler("barchart", shn_barchart)
 

@@ -100,9 +100,8 @@ class S3UploadWidget(UploadWidget):
 
     """
     Subclassed to not show the delete checkbox when field is mandatory
-        - subclass doesn't currently work as download_url not passed in.
-        - Patch submitted to Web2Py.
-
+        - This now been included as standard within Web2Py from r2867
+        - Leaving this unused example in the codebase so that we can easily amend this if we wish to later
     """
 
     @staticmethod
@@ -620,6 +619,7 @@ class S3LocationSelectorWidget(FormWidget):
                                                              locations.lat,
                                                              locations.lon,
                                                              locations.addr_street,
+                                                             locations.addr_postcode,
                                                              locations.parent,
                                                              locations.path,
                                                              limitby=(0, 1)).first()
@@ -629,6 +629,9 @@ class S3LocationSelectorWidget(FormWidget):
             lat = this_location.lat
             lon = this_location.lon
             addr_street = this_location.addr_street
+            if addr_street:
+                addr_street_encoded = addr_street.replace("\r\n", "%0d").replace("\r", "%0d").replace("\n", "%0d")
+            postcode = this_location.addr_postcode
             parent = this_location.parent
             path = this_location.path
             if path:
@@ -690,8 +693,11 @@ class S3LocationSelectorWidget(FormWidget):
                 config = gis.get_config()
                 zoom = config.zoom
                 if lat is None or lon is None:
-                    lat = config.lat
-                    lon = config.lon
+                    map_lat = config.lat
+                    map_lon = config.lon
+                else:
+                    map_lat = lat
+                    map_lon = lon
 
                 layername = T("Location")
                 popup_label = ""
@@ -701,8 +707,8 @@ class S3LocationSelectorWidget(FormWidget):
                     feature_queries = [layer]
                 else:
                     feature_queries = []
-                map_popup = gis.show_map(lat = lat,
-                                         lon = lon,
+                map_popup = gis.show_map(lat = map_lat,
+                                         lon = map_lon,
                                          # Same as a single zoom on a cluster
                                          zoom = zoom + 2,
                                          feature_queries = feature_queries,
@@ -722,6 +728,8 @@ class S3LocationSelectorWidget(FormWidget):
             lat = ""
             lon = ""
             addr_street = ""
+            addr_street_encoded = ""
+            postcode = ""
             if map_selector:
                 map_popup = gis.show_map(add_feature = True,
                                          add_feature_active = True,
@@ -945,6 +953,10 @@ class S3LocationSelectorWidget(FormWidget):
     var s3_gis_select_location = '<option value="" selected>%s...</option>';
     var s3_gis_url = '%s';
     S3.gis.uuid = '%s';
+    S3.gis.addr_street = '%s';
+    S3.gis.postcode = '%s';
+    S3.gis.lat = '%s';
+    S3.gis.lon = '%s';
     var s3_gis_degrees_validation_error = '%s';
     var s3_gis_minutes_validation_error = '%s';
     var s3_gis_seconds_validation_error = '%s';
@@ -958,6 +970,10 @@ class S3LocationSelectorWidget(FormWidget):
            select_location,
            url,
            uuid,
+           addr_street_encoded,
+           postcode,
+           lat or "",
+           lon or "",
            degrees_validation_error,
            minutes_validation_error,
            seconds_validation_error,
@@ -969,11 +985,13 @@ class S3LocationSelectorWidget(FormWidget):
         # Labels
         name_label = DIV(LABEL(T("Name") + ":"), SPAN("*", _class="req"), _id="gis_location_name_label", _class="hidden")
         street_label = LABEL(T("Street Address") + ":", _id="gis_location_addr_street_label", _class="hidden")
+        postcode_label = LABEL(T("Postcode") + ":", _id="gis_location_postcode_label", _class="hidden")
         lat_label = LABEL(T("Latitude") + ":", _id="gis_location_lat_label", _class="hidden")
         lon_label = LABEL(T("Longitude") + ":", _id="gis_location_lon_label", _class="hidden")
 
         # Form Fields
         street_widget = TEXTAREA(addr_street, _id="gis_location_addr_street")
+        postcode_widget = INPUT(_id="gis_location_postcode", _value=postcode)
         lat_widget = INPUT(_id="gis_location_lat", _value=lat)
         lon_widget = INPUT(_id="gis_location_lon", _value=lon)
 
@@ -1084,6 +1102,8 @@ class S3LocationSelectorWidget(FormWidget):
                           # @ToDo: Enable Geocoder here when ready
                           #TR(street_widget, geocoder_button, _id="gis_location_addr_street_row", _class="hidden"))
                           TR(street_widget, _id="gis_location_addr_street_row", _class="hidden"))
+        postcode_rows = DIV(TR(postcode_label),
+                        TR(postcode_widget, _id="gis_location_postcode_row", _class="hidden"))
         lat_rows = DIV(TR(lat_label),
                        TR(lat_widget, latlon_help, _id="gis_location_lat_row", _class="hidden"))
         lon_rows = DIV(TR(lon_label),
@@ -1101,6 +1121,7 @@ class S3LocationSelectorWidget(FormWidget):
                         TR(map_popup),
                         name_rows,
                         street_rows,
+                        postcode_rows,
                         # @ToDo: Enable GeoLocate here when ready
                         #TR(geolocate_button),
                         TR(map_button),

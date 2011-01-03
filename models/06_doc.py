@@ -150,7 +150,7 @@ tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("image", "upload", autodelete=True),
-                        # UploadWidget cannot be easily subclassed currently. Patch submitted to Web2Py.
+                        # Web2Py r2867+ includes this functionality by default
                         #Field("image", "upload", autodelete=True, widget=S3UploadWidget.widget),
                         Field("url"),
                         person_id(),

@@ -1071,8 +1071,8 @@ def role():
 
     def prep(r):
 
-        # Only HTML representation allowed
-        if r.representation not in ("html", "aadata"):
+        # Restrict formats
+        if r.representation not in ("html",):
             return False
 
         # Set REST method handler

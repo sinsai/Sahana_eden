@@ -32,7 +32,7 @@
 
 """
 
-__all__ = ["AuthS3", "S3Permission", "S3Audit"]
+__all__ = ["AuthS3", "S3Permission", "S3Audit", "S3RoleManager"]
 
 import sys
 import datetime
@@ -51,6 +51,8 @@ from gluon.validators import *
 from gluon.sql import Field, Row, Query
 from gluon.sqlhtml import SQLFORM, SQLTABLE
 from gluon.tools import Auth
+
+from s3rest import S3Method
 
 DEFAULT = lambda: None
 table_field = re.compile("[\w_]+\.[\w_]+")
@@ -645,7 +647,7 @@ class AuthS3(Auth):
     def shn_has_role(self, role):
         """
         Check whether the currently logged-in user has a role
-        
+
         @param role: can be integer or a name
 
         """
@@ -1504,5 +1506,65 @@ class S3Audit(object):
 
         return True
 
+
+# =============================================================================
+class S3RoleManager(S3Method):
+
+    """ REST Method to manage ACLs """
+
+    controllers = Storage()
+
+    def apply_method(self, r, **attr):
+
+        # Remove this:
+        self.response.error = self.T("Not Implemented")
+        self.response.view = "display.html"
+        return dict()
+
+        if self.method == "list":
+            output = self.select(r, **attr)
+        else:
+            r.error(501, self.manager.ERROR.BAD_METHOD)
+
+        return output
+
+
+    def select(self, r, **attr):
+
+        output = dict(
+                    title = self.T("List of Roles"),
+                    subtitle = self.T("Roles")
+                 )
+
+        resource = self.resource
+
+        resource.load()
+        headers = [TH("Id"), TH("Role")]
+        for c in self.controllers.keys():
+            headers.append(TH(self.controllers[c].name_nice))
+        thead = THEAD(TR(headers))
+        trows = []
+        i = 1
+        for row in resource:
+
+            role_id = row.id
+            role_name = row.role
+
+            tdata = [TD(A(role_id)), TD(role_name)]
+            for c in self.controllers.keys():
+                tdata.append(TD("CRUD (CRUD)", _nowrap="nowrap"))
+
+            c = i % 2 and "even" or "odd"
+            trows.append(TR(tdata, _class=c))
+        tbody = TBODY(trows)
+
+        role_list = TABLE(thead, tbody, _id="list", _class="display")
+        output.update(items=role_list, sortby=None)
+
+        self.response.view = self._view(r, "list.html")
+        self.response.s3.actions = []
+        self.response.s3.no_sspag = True
+
+        return output
 
 # =============================================================================

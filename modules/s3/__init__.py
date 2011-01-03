@@ -7,6 +7,8 @@
 
         s3base.S3Resource()
 
+    @see: U{B{I{S3 Developer Guidelines}} <http://eden.sahanafoundation.org/wiki/DeveloperGuidelinesS3>}
+
     @requires: U{B{I{gluon}} <http://web2py.com>}
 
     @author: Fran Boon <francisboon[at]gmail.com>

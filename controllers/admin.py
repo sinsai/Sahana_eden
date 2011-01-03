@@ -1053,6 +1053,20 @@ def ticket():
 
 # -----------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
+def role():
+    """
+    Role Editor
+
+    """
+
+    output = dict()
+
+    response.view = "list.html"
+    return output
+
+
+# -----------------------------------------------------------------------------
+@auth.shn_requires_membership(1)
 def acl():
     """
     Preliminary controller for ACLs

@@ -111,7 +111,7 @@ document_id = S3ReusableField("document_id",
                              )
 
 def document_onvalidation(form):
-    s3deduplicator = local_import("s3deduplicator")
+
     import cgi
 
     table = db.doc_document
@@ -132,7 +132,7 @@ def document_onvalidation(form):
 
     if isinstance(doc, cgi.FieldStorage) and doc.filename:
         f = doc.file
-        form.vars.checksum = s3deduplicator.docChecksum(f.read())
+        form.vars.checksum = docChecksum(f.read())
         f.seek(0)
     if form.vars.checksum is not None:
         result = db(table.checksum == form.vars.checksum).select(table.name, limitby=(0, 1)).first()
@@ -206,7 +206,7 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T("No Photos found"))
 
 def image_onvalidation(form):
-    s3deduplicator = local_import("s3deduplicator")
+
     import cgi
 
     table = db.doc_image
@@ -222,7 +222,7 @@ def image_onvalidation(form):
 
     if isinstance(img, cgi.FieldStorage) and img.filename:
         f = img.file
-        form.vars.checksum = s3deduplicator.docChecksum(f.read())
+        form.vars.checksum = docChecksum(f.read())
         f.seek(0)
     if form.vars.checksum is not None:
         result = db(table.checksum == form.vars.checksum).select(table.name, limitby=(0, 1)).first()

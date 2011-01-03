@@ -9,7 +9,7 @@
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: Dominic König <dominic[at]aidiq.com>
-    
+
     @copyright: 2009-2010 (c) Sahana Software Foundation
     @license: MIT
 

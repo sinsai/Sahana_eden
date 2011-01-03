@@ -1143,7 +1143,7 @@ class S3Resource(object):
         if r.representation == "xml":
             return self.options(component=r.component_name,
                                 fields=fields)
-        elif r.representation == "json":
+        elif r.representation == "s3json":
             return self.options(component=r.component_name,
                                 fields=fields,
                                 as_json=True)
@@ -1163,7 +1163,7 @@ class S3Resource(object):
 
         if r.representation == "xml":
             return self.fields(component=r.component_name)
-        elif r.representation == "json":
+        elif r.representation == "s3json":
             return self.fields(component=r.component_name, as_json=True)
         else:
             r.error(501, self.ERROR.BAD_FORMAT)

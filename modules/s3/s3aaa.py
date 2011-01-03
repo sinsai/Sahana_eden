@@ -32,7 +32,7 @@
 
 """
 
-__all__ = ["AuthS3", "S3Permission", "S3Audit"]
+__all__ = ["AuthS3", "S3Permission", "S3Audit", "S3RoleManager"]
 
 import sys
 import datetime
@@ -51,6 +51,8 @@ from gluon.validators import *
 from gluon.sql import Field, Row, Query
 from gluon.sqlhtml import SQLFORM, SQLTABLE
 from gluon.tools import Auth
+
+from s3rest import S3Method
 
 DEFAULT = lambda: None
 table_field = re.compile("[\w_]+\.[\w_]+")
@@ -645,7 +647,7 @@ class AuthS3(Auth):
     def shn_has_role(self, role):
         """
         Check whether the currently logged-in user has a role
-        
+
         @param role: can be integer or a name
 
         """
@@ -1504,5 +1506,19 @@ class S3Audit(object):
 
         return True
 
+
+# =============================================================================
+class S3RoleManager(S3Method):
+
+    """ REST Method to manage ACLs """
+
+    controllers = Storage()
+
+    def apply_method(self, r, **attr):
+
+        self.response.error = self.T("Not Implemented")
+        self.response.view = "display.html"
+
+        return dict()
 
 # =============================================================================

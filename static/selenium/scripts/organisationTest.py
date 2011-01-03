@@ -12,7 +12,7 @@ class OrganisationTest(SahanaTest):
         sel = OrganisationTest.selenium
         self.action.logout()
         # Log in as admin an then move to the add organisation page 
-        sel.open("/eden/org/organisation/create")
+        sel.open("org/organisation/create")
         self.action.errorMsg("Authentication Required")
         self.assertEqual("Login", self.selenium.get_text("//h2"))
         self.useSahanaAdminAccount()
@@ -32,7 +32,7 @@ class OrganisationTest(SahanaTest):
         country = country.strip()
         website = website.strip()
         
-        sel.open("eden/org/organisation/create")
+        sel.open("org/organisation/create")
         self.assertEqual("Add Organization", sel.get_text("//h2"))
         sel.type("org_organisation_name", name)
         sel.type("org_organisation_acronym", acronym)
@@ -67,7 +67,7 @@ class OrganisationTest(SahanaTest):
     def CreateOrg(self):
         """ Test to check the elements of the create organisation form """ 
         sel = OrganisationTest.selenium
-        sel.open("/eden/org/organisation/create")
+        sel.open("org/organisation/create")
         # check that the UI controls are present
         self.action.checkForm ((("input", "org_organisation_name"),
                     ("input", "org_organisation_acronym"),
@@ -92,7 +92,7 @@ class OrganisationTest(SahanaTest):
         sel = OrganisationTest.selenium
         self.useSahanaAdminAccount()
         self.action.login(self._user, self._password )
-        sel.open("/eden/org/organisation")
+        sel.open("org/organisation")
         self.action.searchUnique(self.orgs[0])
         sel.click("link=Open")
         sel.wait_for_page_to_load("30000")
@@ -136,7 +136,7 @@ class OrganisationTest(SahanaTest):
         """ 
         sel = OrganisationTest.selenium
         self.action.logout()
-        sel.open("/eden/org/organisation")
+        sel.open("org/organisation")
         self.action.searchUnique(self.orgs[0])
         sel.click("link=Open")
         sel.wait_for_page_to_load("30000")
@@ -164,7 +164,7 @@ class OrganisationTest(SahanaTest):
         sel = OrganisationTest.selenium
         self.useSahanaAdminAccount()
         self.action.login(self._user, self._password )
-        sel.open("/eden/org/organisation")
+        sel.open("org/organisation")
         for org in OrganisationTest.orgs:
             self.action.searchUnique(org)
             sel.click("link=Delete")

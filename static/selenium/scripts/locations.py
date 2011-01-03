@@ -49,12 +49,14 @@ class Locations(SahanaTest):
                                ["a", "gis_location_search-btn", True],            #19
                                ["textarea", "gis_location_addr_street", False, None],   #20
                                ["label", "gis_location_addr_street_label", False],#21
-                               ["label", "gis_location_lat_label", False],        #22
-                               ["input", "gis_location_lat", False, None],        #23
-                               ["label", "gis_location_lon_label", False],        #24
-                               ["input", "gis_location_lon", False, None],        #25
-                               ["a", "gis_location_map-btn", False],              #26
-                               ["div", "gis_location_advanced_div", False],       #27
+                               ["input", "gis_location_postcode", False, None],   #22
+                               ["label", "gis_location_postcode_label", False],   #23
+                               ["label", "gis_location_lat_label", False],        #24
+                               ["input", "gis_location_lat", False, None],        #25
+                               ["label", "gis_location_lon_label", False],        #26
+                               ["input", "gis_location_lon", False, None],        #27
+                               ["a", "gis_location_map-btn", False],              #28
+                               ["div", "gis_location_advanced_div", False],       #29
                            )
         Locations.formHeading = {"Name:"     : "-",
                                  "Location:" : "-"
@@ -86,7 +88,7 @@ class Locations(SahanaTest):
             if len(details) >= 5:
                 lon = details[4].strip()
             # Load the Create Location page
-            sel.open("/eden/gis/location")
+            sel.open("gis/location")
             if self.action.search(self.makeNameUnique(name), "Showing 0 to 0 of 0 entries"):
                 self.action.addLocation(self.holder, name, level, parent, lat, lon)
             Locations.line.append(self.makeNameUnique(name))
@@ -95,7 +97,7 @@ class Locations(SahanaTest):
         """ Open an existing record """
         sel = self.selenium
         # Load the Shelter List page
-        sel.open("/eden/cr/shelter")
+        sel.open("cr/shelter")
         # Search for the Record
         self.action.searchUnique(name)
 
@@ -115,7 +117,7 @@ class Locations(SahanaTest):
         self.useSahanaAdminAccount()
         self.action.login(self._user, self._password )
         for shelter in Locations.shelter:
-            self.action.deleteObject("eden/cr/shelter", shelter, "Shelter")
+            self.action.deleteObject("cr/shelter", shelter, "Shelter")
         #return # remove comment to keep the locations for testing purposes
         for location in Locations.line:
             self.action.deleteLocation(location)
@@ -126,7 +128,7 @@ class Locations(SahanaTest):
         sel = self.selenium
         self.useSahanaUserAccount()
         self.action.login(self._user, self._password )
-        sel.open("/eden/cr/shelter/create")
+        sel.open("cr/shelter/create")
         self.action.checkForm(Locations.formDetails,
                               (),
                               ()
@@ -233,7 +235,7 @@ class Locations(SahanaTest):
         self.action.login(self._user, self._password )
         shelterName = "Shelter with no Parent"
         locationName = "Location with no Parent"
-        sel.open("/eden/cr/shelter/create")
+        sel.open("cr/shelter/create")
         self.initFormDetails()
         self.action.checkForm(Locations.formDetails,
                               (),
@@ -315,6 +317,8 @@ class Locations(SahanaTest):
         Locations.formDetails[25][2] = True
         Locations.formDetails[26][2] = True
         Locations.formDetails[27][2] = True
+        Locations.formDetails[28][2] = True
+        Locations.formDetails[29][2] = True
         self.action.checkForm(Locations.formDetails,
                               (),
                               ()
@@ -351,8 +355,8 @@ class Locations(SahanaTest):
         Locations.formDetails[13][2] = True
         Locations.formDetails[14][2] = True
         Locations.formDetails[17][2] = True
-        Locations.formDetails[23][3] = '51.0'
-        Locations.formDetails[25][3] = '1.0'
+        Locations.formDetails[25][3] = '51.0'
+        Locations.formDetails[27][3] = '1.0'
         self.action.checkForm(Locations.formDetails,
                               (),
                               ()
@@ -362,8 +366,8 @@ class Locations(SahanaTest):
         Locations.formDetails[20][2] = True
         Locations.formDetails[20][3] = "45 Sheep Street"
         Locations.formDetails[21][2] = True
-        Locations.formDetails[26][2] = True
-        Locations.formDetails[27][2] = True
+        Locations.formDetails[28][2] = True
+        Locations.formDetails[29][2] = True
         self.action.checkForm(Locations.formDetails,
                               (),
                               ()
@@ -374,6 +378,8 @@ class Locations(SahanaTest):
         Locations.formDetails[23][2] = True
         Locations.formDetails[24][2] = True
         Locations.formDetails[25][2] = True
+        Locations.formDetails[26][2] = True
+        Locations.formDetails[27][2] = True
         self.action.checkForm(Locations.formDetails,
                               (),
                               ()
@@ -401,7 +407,7 @@ class Locations(SahanaTest):
         # Login
         self.useSahanaUserAccount()
         self.action.login(self._user, self._password )
-        sel.open("/eden/cr/shelter/create")
+        sel.open("cr/shelter/create")
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with an L0 Location")
         # Select the L0
@@ -434,7 +440,7 @@ class Locations(SahanaTest):
         # Login
         self.useSahanaUserAccount()
         self.action.login(self._user, self._password )
-        sel.open("/eden/cr/shelter/create")
+        sel.open("cr/shelter/create")
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter within L0 Location")
         # Select the L0
@@ -470,7 +476,7 @@ class Locations(SahanaTest):
         # Login
         self.useSahanaUserAccount()
         self.action.login(self._user, self._password )
-        sel.open("/eden/cr/shelter/create")
+        sel.open("cr/shelter/create")
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with an L1 Location")
         # Select the L0
@@ -513,7 +519,7 @@ class Locations(SahanaTest):
         # Login
         self.useSahanaUserAccount()
         self.action.login(self._user, self._password )
-        sel.open("/eden/cr/shelter/create")
+        sel.open("cr/shelter/create")
 
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter within L1 Location")

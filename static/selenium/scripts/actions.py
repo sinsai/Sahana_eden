@@ -4,14 +4,17 @@ from selenium import selenium
 class Action(unittest.TestCase):
     def __init__ (self, selenium):
         self.sel = selenium
+        self._diag = False # make True for profiling diagnostics
         
     def openReport(self):
-        self._diag_SearchResults = open('diagTestResults.txt', 'a')
-        self._diag_SearchResults.write(time.strftime('New Search run %d %b %Y (%H:%M:%S)\n'))
+        if self._diag:
+            self._diag_SearchResults = open('diagTestResults.txt', 'a')
+            self._diag_SearchResults.write(time.strftime('New Search run %d %b %Y (%H:%M:%S)\n'))
     
     def closeReport(self, msg):
-        self._diag_SearchResults.write(msg)
-        self._diag_SearchResults.close()
+        if self._diag:
+            self._diag_SearchResults.write(msg)
+            self._diag_SearchResults.close()
 
     def login(self, username, password, reveal=True):
         sel = self.sel
@@ -45,8 +48,10 @@ class Action(unittest.TestCase):
         # The solution is to put in a call to the DataTables API, namely the fnFilter function
         # However, the first time that the fnFilter() is called in the testing suite it doesn't complete the processing, hence it is called twice.
         sel = self.sel
+        clearString = ""
+        if searchString == '': clearString = "Clearing..."
         # First clear the search field and add a short pause
-        sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( '' );")
+        sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( '%s' );" % clearString)
         time.sleep(1)
         self._diag_sleepTime += 1
         # Now trigger off the true search
@@ -72,10 +77,12 @@ class Action(unittest.TestCase):
             if found:
                 break
         if not found:
-            self._diag_SearchResults.write("%s\tFAILED\t%s\t%s\n" % (searchString, self._diag_sleepTime, self._diag_performCalls))
+            if self._diag:
+                self._diag_SearchResults.write("%s\tFAILED\t%s\t%s\n" % (searchString, self._diag_sleepTime, self._diag_performCalls))
             self.fail("time out search didn't respond, whilst searching for %s" % searchString)
         else:
-            self._diag_SearchResults.write("%s\tSUCCEEDED\t%s\t%s\n" % (searchString, self._diag_sleepTime, self._diag_performCalls))
+            if self._diag:
+                self._diag_SearchResults.write("%s\tSUCCEEDED\t%s\t%s\n" % (searchString, self._diag_sleepTime, self._diag_performCalls))
         # The search has returned now read the results
         try:
             result = sel.get_text("//div[@id='table-container']")
@@ -88,8 +95,6 @@ class Action(unittest.TestCase):
         self.search(uniqueName, r"1 entries")
         
     def clearSearch(self):
-        sel = self.sel
-        sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( 'Clearing...' );")
         self.search("", r"entries")
         
     def addUser(self, first_name, last_name, email, password):
@@ -225,12 +230,14 @@ class Action(unittest.TestCase):
             while sel.is_element_present('//div[@class="%s"][%s]' % (type, i)):
                 banner = sel.get_text('//div[@class="%s"][%s]' % (type, i))
                 if message in banner:
-                    self._diag_SearchResults.write("%s\tSUCCEEDED\t%s\t\n" % (message, self._diag_sleepTime))
+                    if self._diag:
+                        self._diag_SearchResults.write("%s\tSUCCEEDED\t%s\t\n" % (message, self._diag_sleepTime))
                     return True
                 i += 1
             time.sleep(1)
             self._diag_sleepTime += 1
-        self._diag_SearchResults.write("%s\tFAILED\t%s\t\n" % (message, self._diag_sleepTime))
+        if self._diag:
+            self._diag_SearchResults.write("%s\tFAILED\t%s\t\n" % (message, self._diag_sleepTime))
         return False
     
     # Method used to check for confirmation messages

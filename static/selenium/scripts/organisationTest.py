@@ -32,7 +32,7 @@ class OrganisationTest(SahanaTest):
         country = country.strip()
         website = website.strip()
         
-        sel.open("eden/org/organisation/create")
+        sel.open("org/organisation/create")
         self.assertEqual("Add Organization", sel.get_text("//h2"))
         sel.type("org_organisation_name", name)
         sel.type("org_organisation_acronym", acronym)

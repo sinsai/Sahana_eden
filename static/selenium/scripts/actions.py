@@ -26,7 +26,7 @@ class Action(unittest.TestCase):
             else:
                 # logged in but as a different user
                 self.logout()
-        sel.open("/eden/default/user/login")
+        sel.open("default/user/login")
         sel.click("auth_user_email")
         sel.type("auth_user_email", username)
         sel.type("auth_user_password", password)
@@ -105,7 +105,7 @@ class Action(unittest.TestCase):
         
         sel = self.sel
         # TODO only open this page if on another page
-        sel.open("/eden/admin/user")
+        sel.open("admin/user")
         self.assertTrue(sel.is_element_present("show-add-btn"))
         sel.click("show-add-btn")
         sel.type("auth_user_first_name", first_name)
@@ -141,13 +141,13 @@ class Action(unittest.TestCase):
             msg = "Failed to add role %s to user %s" % (role.strip() , email)
             self.assertTrue(self.successMsg("User Updated"), msg)
             print "User %s added to group %s" % (email, role.strip())
-        sel.open("/eden/admin/user")
+        sel.open("admin/user")
 
     def delUser(self, email):
         email = email.strip()
         print "Deleting user %s" % email
         sel = self.sel
-        sel.open("/eden/admin/user")
+        sel.open("admin/user")
         self.searchUnique(email)
 
         sel.click("link=Delete")
@@ -164,7 +164,7 @@ class Action(unittest.TestCase):
         else:
             parentHolder = holder + parent + holder
         # Load the Create Location page
-        sel.open("/eden/gis/location/create")
+        sel.open("gis/location/create")
         # Create the Location
         sel.type("gis_location_name", name)
         if level:
@@ -201,7 +201,7 @@ class Action(unittest.TestCase):
             print "Failed to delete %s %s from page %s" % (type, objName, page)
 
     def deleteLocation(self, name):
-        self.deleteObject("/eden/gis/location", name, "Location")
+        self.deleteObject("gis/location", name, "Location")
 
     # Method to check the details that are displayed in the heading
     def checkHeading(self, detailMap):

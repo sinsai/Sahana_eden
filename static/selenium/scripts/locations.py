@@ -86,7 +86,7 @@ class Locations(SahanaTest):
             if len(details) >= 5:
                 lon = details[4].strip()
             # Load the Create Location page
-            sel.open("/eden/gis/location")
+            sel.open("gis/location")
             if self.action.search(self.makeNameUnique(name), "Showing 0 to 0 of 0 entries"):
                 self.action.addLocation(self.holder, name, level, parent, lat, lon)
             Locations.line.append(self.makeNameUnique(name))
@@ -95,7 +95,7 @@ class Locations(SahanaTest):
         """ Open an existing record """
         sel = self.selenium
         # Load the Shelter List page
-        sel.open("/eden/cr/shelter")
+        sel.open("cr/shelter")
         # Search for the Record
         self.action.searchUnique(name)
 
@@ -115,7 +115,7 @@ class Locations(SahanaTest):
         self.useSahanaAdminAccount()
         self.action.login(self._user, self._password )
         for shelter in Locations.shelter:
-            self.action.deleteObject("eden/cr/shelter", shelter, "Shelter")
+            self.action.deleteObject("cr/shelter", shelter, "Shelter")
         #return # remove comment to keep the locations for testing purposes
         for location in Locations.line:
             self.action.deleteLocation(location)
@@ -126,7 +126,7 @@ class Locations(SahanaTest):
         sel = self.selenium
         self.useSahanaUserAccount()
         self.action.login(self._user, self._password )
-        sel.open("/eden/cr/shelter/create")
+        sel.open("cr/shelter/create")
         self.action.checkForm(Locations.formDetails,
                               (),
                               ()
@@ -233,7 +233,7 @@ class Locations(SahanaTest):
         self.action.login(self._user, self._password )
         shelterName = "Shelter with no Parent"
         locationName = "Location with no Parent"
-        sel.open("/eden/cr/shelter/create")
+        sel.open("cr/shelter/create")
         self.initFormDetails()
         self.action.checkForm(Locations.formDetails,
                               (),
@@ -401,7 +401,7 @@ class Locations(SahanaTest):
         # Login
         self.useSahanaUserAccount()
         self.action.login(self._user, self._password )
-        sel.open("/eden/cr/shelter/create")
+        sel.open("cr/shelter/create")
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with an L0 Location")
         # Select the L0
@@ -434,7 +434,7 @@ class Locations(SahanaTest):
         # Login
         self.useSahanaUserAccount()
         self.action.login(self._user, self._password )
-        sel.open("/eden/cr/shelter/create")
+        sel.open("cr/shelter/create")
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter within L0 Location")
         # Select the L0
@@ -470,7 +470,7 @@ class Locations(SahanaTest):
         # Login
         self.useSahanaUserAccount()
         self.action.login(self._user, self._password )
-        sel.open("/eden/cr/shelter/create")
+        sel.open("cr/shelter/create")
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter with an L1 Location")
         # Select the L0
@@ -513,7 +513,7 @@ class Locations(SahanaTest):
         # Login
         self.useSahanaUserAccount()
         self.action.login(self._user, self._password )
-        sel.open("/eden/cr/shelter/create")
+        sel.open("cr/shelter/create")
 
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", "Shelter within L1 Location")

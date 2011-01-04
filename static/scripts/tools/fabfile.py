@@ -286,7 +286,7 @@ def migrate():
     child.expect(":~#")
     child.sendline("cd /home/web2py")
     child.expect("/home/web2py#")
-    child.sendline("sudo -H -u web2py python web2py.py -N -S eden -M -R applications/eden/static/scritps/tools/noop.py")
+    child.sendline("sudo -H -u web2py python web2py.py -N -S eden -M -R applications/eden/static/scripts/tools/noop.py")
     # @ToDo check if we need to interact otherwise automate
     # - not working :/
     # special characters in regexes matching?

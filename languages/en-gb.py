@@ -272,6 +272,7 @@
 'Edit Application': 'Edit Application',
 'Edit Themes': 'Edit Themes',
 'Edit the Application': 'Edit the Application',
+'Edit the OpenStreetMap data for this area': 'Edit the OpenStreetMap data for this area',
 'Education': 'Education',
 'Email': 'Email',
 'Email Settings': 'Email Settings',

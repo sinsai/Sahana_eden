@@ -629,6 +629,7 @@ class S3LocationSelectorWidget(FormWidget):
             lat = this_location.lat
             lon = this_location.lon
             addr_street = this_location.addr_street
+            addr_street_encoded = ""
             if addr_street:
                 addr_street_encoded = addr_street.replace("\r\n", "%0d").replace("\r", "%0d").replace("\n", "%0d")
             postcode = this_location.addr_postcode

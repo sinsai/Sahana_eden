@@ -3,7 +3,8 @@ import unittest, time, re
 
 class Locations(SahanaTest):
     holder = "__TEST__"
-    _sortList = ("loadTestData",
+    _sortList = (
+                 "loadTestData",
                  "test_locationEmpty",
                  "test_addL0Location",
                  "test_removeL0Location",
@@ -204,6 +205,9 @@ class Locations(SahanaTest):
         self.assertEqual(location_id, sel.get_value("cr_shelter_location_id"))
         # Check that the dropdown is set
         self.assertEqual(location_id, sel.get_value("gis_location_L0"))
+        Locations.formDetails[0][3] = location_id
+        Locations.formDetails[5][2] = True
+        Locations.formDetails[6][2] = True
         self.action.checkForm(Locations.formDetails,
                               (),
                               ()
@@ -366,6 +370,8 @@ class Locations(SahanaTest):
         Locations.formDetails[20][2] = True
         Locations.formDetails[20][3] = "45 Sheep Street"
         Locations.formDetails[21][2] = True
+        Locations.formDetails[22][2] = True
+        Locations.formDetails[23][2] = True
         Locations.formDetails[28][2] = True
         Locations.formDetails[29][2] = True
         self.action.checkForm(Locations.formDetails,

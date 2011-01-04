@@ -812,7 +812,7 @@ $(function(){
                     
                     // Should we update the existing location?
                     name = $('#gis_location_ :selected').text();
-                    if ('' == name) {
+                    if ('Loading Locations...' == name) {
                         // Need to distinguish between details from hierarchy & real details
                         // @ToDo: Prompt the user for a name? Autopopulate the name?
                         // Allow the Form's save to continue

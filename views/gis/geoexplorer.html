@@ -17,20 +17,22 @@
 {{if session.s3.debug:}}
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/openlayers/lib/OpenLayers.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/geoext/lib/GeoExt.js"></script>
-<!--
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/gxp/loader.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer.js"></script>
--->
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer/Composer.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer/NewSourceWindow.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer/Viewer.js"></script>
 {{else:}}
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/OpenLayers.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExt_.js"></script>
-{{pass}}
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/gxp.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer.js"></script>
+{{pass}}
 
 <script type="text/javascript">//<![CDATA[
     Ext.BLANK_IMAGE_URL = '/{{=request.application}}/static/img/gis/openlayers/blank.gif';
     OpenLayers.DOTS_PER_INCH = 25.4 / 0.28; // OGC "standardized rendering pixel size"
+    OpenLayers.ImgPath = '/{{=request.application}}/static/img/gis/openlayers/';
     var geoserver_url = '{{=geoserver_url}}';
     var proxy_url = '/{{=request.application}}/gis/proxy?url=';
     // See http://crschmidt.net/~crschmidt/spherical_mercator.html#reprojecting-points
@@ -72,6 +74,9 @@
             },
             google: {
                 ptype: 'gx_googlesource'
+            },
+            bing: {
+                        ptype: "gx_bingsource"
             },
             ol: {
                 ptype: 'gx_olsource'

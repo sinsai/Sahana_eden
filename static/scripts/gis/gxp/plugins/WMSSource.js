@@ -1,38 +1,105 @@
 /**
- * @require plugins/LayerSource.js
+ * Copyright (c) 2008-2010 The Open Planning Project
+ * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
  */
 
 /**
- * The WMSCapabilities format parses the document and passes the raw data to
- * the WMSCapabilitiesReader.  There, records are created from layer data.
- * The rest of the data is lossed.  It makes sense to store this raw data
- * somewhere - either on the OpenLayers format or the GeoExt reader.  Until
- * there is a better solution, we'll override the reader's readRecords method
- * here so that we can have access to the raw data later.
+ * @requires plugins/LayerSource.js
+ */
+
+/**
+ * The WMSCapabilities and WFSDescribeFEature formats parse the document and
+ * pass the raw data to the WMSCapabilitiesReader/AttributeReader.  There,
+ * records are created from layer data.  The rest of the data is lossed.  It
+ * makes sense to store this raw data somewhere - either on the OpenLayers
+ * format or the GeoExt reader.  Until there is a better solution, we'll
+ * override the reader's readRecords method  here so that we can have access to
+ * the raw data later.
  * 
- * The purpose of all of this is to get the service title later.
+ * The purpose of all of this is to get the service title, feature type and
+ * namespace later.
  * TODO: push this to OpenLayers or GeoExt
  */
 (function() {
-    var proto = GeoExt.data.WMSCapabilitiesReader.prototype;
-    var original = proto.readRecords;
-    proto.readRecords = function(data) {
+    function keepRaw(data) {
         if (typeof data === "string" || data.nodeType) {
             data = this.meta.format.read(data);
         }
         // here is the new part
         this.raw = data;
-        // continue with the original
-        return original.call(this, data);
     };
+    Ext.intercept(GeoExt.data.WMSCapabilitiesReader.prototype, "readRecords", keepRaw);
+    GeoExt.data.AttributeReader &&
+        Ext.intercept(GeoExt.data.AttributeReader.prototype, "readRecords", keepRaw);
 })();
 
+/** api: (define)
+ *  module = gxp.plugins
+ *  class = WMSSource
+ */
+
+/** api: (extends)
+ *  plugins/LayerSource.js
+ */
 Ext.namespace("gxp.plugins");
 
+/** api: constructor
+ *  .. class:: WMSSource(config)
+ *
+ *    Plugin for using WMS layers with :class:`gxp.Viewer` instances. The
+ *    plugin issues a GetCapabilities request to create a store of the WMS's
+ *    layers.
+ */   
+/** api: example
+ *  Configuration in the  :class:`gxp.Viewer`:
+ *
+ *  .. code-block:: javascript
+ *
+ *    defaultSourceType: "gx_wmssource",
+ *    sources: {
+ *        "opengeo": {
+ *            url: "http://suite.opengeo.org/geoserver/wms"
+ *        }
+ *    }
+ *
+ *  A typical configuration for a layer from this source (in the ``layers``
+ *  array of the viewer's ``map`` config option would look like this:
+ *
+ *  .. code-block:: javascript
+ *
+ *    {
+ *        source: "opengeo",
+ *        name: "world",
+ *        group: "background"
+ *    }
+ *
+ */
 gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
     
     /** api: ptype = gx_wmssource */
     ptype: "gx_wmssource",
+    
+    /** api: config[url]
+     *  ``String`` WMS service URL for this source
+     */
+    
+    /** private: property[describeLayerStore]
+     *  ``GeoExt.data.WMSDescribeLayerStore`` additional store of layer
+     *  descriptions. Will only be available when the source is configured
+     *  with ``describeLayers`` set to true.
+     */
+    describeLayerStore: null,
+    
+    /** private: property[describedLayers]
+     */
+    describedLayers: null,
+    
+    /** private: property[schemaCache]
+     */
+    schemaCache: null,
     
     /** api: method[createStore]
      *
@@ -74,7 +141,7 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
                 },
                 scope: this
             }
-        });
+        });        
     },
     
     /** api: method[createLayerRecord]
@@ -95,12 +162,14 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
              * TODO: The WMSCapabilitiesReader should allow for creation
              * of layers in different SRS.
              */
-            var projConfig = this.target.mapPanel.map.projection;
-            var projection = this.target.mapPanel.map.getProjectionObject() ||
-                (projConfig && new OpenLayers.Projection(projConfig)) ||
-                new OpenLayers.Projection("EPSG:4326");
+            var projection = this.getMapProjection();
+            
+            // If the layer is not available in the map projection, find a
+            // compatible projection that equals the map projection. This helps
+            // us in dealing with the different EPSG codes for web mercator.
+            var layerProjection = this.getProjection(original);
 
-            var nativeExtent = original.get("bbox")[projection.getCode()]
+            var nativeExtent = original.get("bbox")[projection.getCode()];
             var maxExtent = 
                 (nativeExtent && OpenLayers.Bounds.fromArray(nativeExtent.bbox)) || 
                 OpenLayers.Bounds.fromArray(original.get("llbbox")).transform(new OpenLayers.Projection("EPSG:4326"), projection);
@@ -130,7 +199,8 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
                     ratio: config.ratio || 1,
                     visibility: ("visibility" in config) ? config.visibility : true,
                     opacity: ("opacity" in config) ? config.opacity : 1,
-                    buffer: ("buffer" in config) ? config.buffer : 1
+                    buffer: ("buffer" in config) ? config.buffer : 1,
+                    projection: layerProjection
                 }
             );
 
@@ -141,6 +211,7 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
                 source: config.source,
                 properties: "gx_wmslayerpanel",
                 fixed: config.fixed,
+                selected: "selected" in config ? config.selected : false,
                 layer: layer
             }, original.data);
             
@@ -149,7 +220,8 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
                 {name: "source", type: "string"}, 
                 {name: "group", type: "string"},
                 {name: "properties", type: "string"},
-                {name: "fixed", type: "boolean"}
+                {name: "fixed", type: "boolean"},
+                {name: "selected", type: "boolean"}
             ];
             original.fields.each(function(field) {
                 fields.push(field);
@@ -159,8 +231,161 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
             record = new Record(data, layer.id);
 
         }
+        
         return record;
     },
+    
+    /** api: method[getProjection]
+     *  :arg layerRecord: ``GeoExt.data.LayerRecord`` a record from this
+     *      source's store
+     *  :returns: ``OpenLayers.Projection`` A suitable projection for the
+     *      ``layerRecord``. If the layer is available in the map projection,
+     *      the map projection will be returned. Otherwise an equal projection,
+     *      or null if none is available.
+     *
+     *  Get the projection that the source will use for the layer created in
+     *  ``createLayerRecord``. If the layer is not available in a projection
+     *  that fits the map projection, null will be returned.
+     */
+    getProjection: function(layerRecord) {
+        var projection = this.getMapProjection();
+        var compatibleProjection = projection;
+        var availableSRS = layerRecord.get("srs");
+        if (!availableSRS[projection.getCode()]) {
+            compatibleProjection = null;
+            var p, srs;
+            for (srs in availableSRS) {
+                if ((p=new OpenLayers.Projection(srs)).equals(projection)) {
+                    compatibleProjection = p;
+                    break;
+                }
+            }
+        }
+        return compatibleProjection;
+    },
+    
+    /** private: method[initDescribeLayerStore]
+     *  creates a WMSDescribeLayer store for layer descriptions of all layers
+     *  created from this source.
+     */
+    initDescribeLayerStore: function() {
+        var req = this.store.reader.raw.capability.request.describelayer;
+        if (req) {
+            this.describeLayerStore = new GeoExt.data.WMSDescribeLayerStore({
+                url: req.href,
+                baseParams: {
+                    // TODO: version negotiation?
+                    VERSION: "1.1.1",
+                    REQUEST: "DescribeLayer"
+                }
+            });
+        }
+    },
+    
+    /** api: method[describeLayer]
+     *  :arg rec: ``GeoExt.data.LayerRecord`` the layer to issue a WMS
+     *      DescribeLayer request for
+     *  :arg callback: ``Function`` Callback function. Will be called with
+     *      an ``Ext.data.Record`` from a ``GeoExt.data.DescribeLayerStore``
+     *      as first argument, or false if the WMS does not support
+     *      DescribeLayer.
+     *  :arg scope: ``Object`` Optional scope for the callback.
+     *
+     *  Get a DescribeLayer response from this source's WMS.
+     */
+    describeLayer: function(rec, callback, scope) {
+        !this.describeLayerStore && this.initDescribeLayerStore();
+        if (!this.describeLayerStore) {
+            callback.call(scope, false);
+            return;
+        }
+        if (!this.describedLayers) {
+            this.describedLayers = {};
+        }
+        var layerName = rec.getLayer().params.LAYERS;
+        var cb = function() {
+            var recs = Ext.isArray(arguments[1]) ? arguments[1] : arguments[0];
+            var rec;
+            for (var i=recs.length-1; i>=0; i--) {
+                rec = recs[i];
+                if (rec.get("layerName") == layerName) {
+                    callback.call(scope, rec);
+                    return;
+                }
+            }
+            // something went wrong (e.g. GeoServer does not return a valid
+            // DescribeFeatureType document for group layers)
+            delete describedLayers[layerName];
+            callback.call(scope, false);
+        };
+        var describedLayers = this.describedLayers;
+        var index;
+        if (!describedLayers[layerName]) {
+            describedLayers[layerName] = true;
+            this.describeLayerStore.load({
+                params: {LAYERS: layerName},
+                add: true,
+                callback: cb
+            });
+        } else if ((index = this.describeLayerStore.findExact("layerName", layerName)) == -1) {
+            this.describeLayerStore.on("load", cb, this, {single: true});
+        } else {
+            callback.call(scope, this.describeLayerStore.getAt(index));
+        }
+    },
+    
+    /** api: method[getSchema]
+     *  :arg rec: ``GeoExt.data.LayerRecord`` the WMS layer to issue a WFS
+     *      DescribeFeatureType request for
+     *  :arg callback: ``Function`` Callback function. Will be called with
+     *      a ``GeoExt.data.AttributeStore`` containing the schema as first
+     *      argument, or false if the WMS does not support DescribeLayer or the
+     *      layer is not associated with a WFS feature type.
+     *  :arg scope: ``Object`` Optional scope for the callback.
+     *
+     *  Gets the schema for a layer of this source, if the layer is a feature
+     *  layer.
+     */
+    getSchema: function(rec, callback, scope) {
+        if (!this.schemaCache) {
+            this.schemaCache = {};
+        }
+        this.describeLayer(rec, function(r) {
+            if (r && r.get("owsType") == "WFS") {
+                var typeName = r.get("typeName");
+                var schema = this.schemaCache[typeName];
+                if (schema) {
+                    if (schema.getCount() == 0) {
+                        schema.on("load", function() {
+                            callback.call(scope, schema);
+                        }, this, {single: true});
+                    } else {
+                        callback.call(scope, schema);
+                    }
+                } else {
+                    schema = new GeoExt.data.AttributeStore({
+                        url: r.get("owsURL"),
+                        baseParams: {
+                            SERVICE: "WFS",
+                            VERSION: "1.1.1",
+                            REQUEST: "DescribeFeatureType",
+                            TYPENAME: typeName
+                        },
+                        autoLoad: true,
+                        listeners: {
+                            "load": function() {
+                                callback.call(scope, schema);
+                            },
+                            scope: this
+                        }
+                    });
+                    this.schemaCache[typeName] = schema;
+                }
+            } else {
+                callback.call(scope, false);
+            }
+        }, this);
+   },
     
     /** api: method[getConfigForRecord]
      *  :arg record: :class:`GeoExt.data.LayerRecord`

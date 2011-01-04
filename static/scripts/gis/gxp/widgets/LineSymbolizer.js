@@ -1,6 +1,12 @@
 /**
- * Copyright (c) 2008 The Open Planning Project
+ * Copyright (c) 2008-2010 The Open Planning Project
  * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
+ */
+
+/*
  * @include widgets/StrokeSymbolizer.js
  */
 

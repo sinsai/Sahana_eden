@@ -1,12 +1,17 @@
 /**
- * Copyright (c) 2009 The Open Planning Project
+ * Copyright (c) 2008-2010 The Open Planning Project
+ * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
  */
 
 /** api: (define)
  *  module = gxp.grid
  *  class = FeatureGrid
- *  extends = Ext.grid.GridPanel
+ *  base_link = `Ext.grid.GridPanel <http://extjs.com/deploy/dev/docs/?class=Ext.grid.GridPanel>`_
  */
+Ext.namespace("gxp.grid");
 
 /** api: constructor
  *  .. class:: FeatureGrid(config)
@@ -14,7 +19,6 @@
  *      Create a new grid displaying the contents of a 
  *      ``GeoExt.data.FeatureStore`` .
  */
-Ext.namespace("gxp.grid");
 gxp.grid.FeatureGrid = Ext.extend(Ext.grid.GridPanel, {
 
     /** api: config[map]
@@ -87,23 +91,30 @@ gxp.grid.FeatureGrid = Ext.extend(Ext.grid.GridPanel, {
     },
     
     /** api: method[setStore]
-     *  :param store: ``GeoExt.data.FeatureStore``
+     *  :arg store: ``GeoExt.data.FeatureStore``
      *  
      *  Sets the store for this grid, reconfiguring the column model
      */
     setStore: function(store) {
-        if(this.store instanceof GeoExt.data.FeatureStore) {
-            this.store.unbind();
+        if (store) {
+            if(this.store instanceof GeoExt.data.FeatureStore) {
+                this.store.unbind();
+            }
+            if(this.layer) {
+                this.layer.destroyFeatures();
+                store.bind(this.layer);
+            }
+            this.reconfigure(store, this.createColumnModel(store));
+        } else {
+            this.reconfigure(
+                new Ext.data.Store(),
+                new Ext.grid.ColumnModel({columns: []})
+            );
         }
-        if(this.layer) {
-            this.layer.destroyFeatures();
-            store.bind(this.layer);
-        }
-        this.reconfigure(store, this.createColumnModel(store));
     },
     
     /** private: method[createColumnModel]
-     *  :param store: ``GeoExt.data.FeatureStore``
+     *  :arg store: ``GeoExt.data.FeatureStore``
      *  :return: ``Ext.grid.ColumnModel``
      */
     createColumnModel: function(store) {

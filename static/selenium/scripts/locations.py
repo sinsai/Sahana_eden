@@ -3,7 +3,8 @@ import unittest, time, re
 
 class Locations(SahanaTest):
     holder = "__TEST__"
-    _sortList = ("loadTestData",
+    _sortList = (
+                 "loadTestData",
                  "test_locationEmpty",
                  "test_addL0Location",
                  "test_removeL0Location",
@@ -49,12 +50,14 @@ class Locations(SahanaTest):
                                ["a", "gis_location_search-btn", True],            #19
                                ["textarea", "gis_location_addr_street", False, None],   #20
                                ["label", "gis_location_addr_street_label", False],#21
-                               ["label", "gis_location_lat_label", False],        #22
-                               ["input", "gis_location_lat", False, None],        #23
-                               ["label", "gis_location_lon_label", False],        #24
-                               ["input", "gis_location_lon", False, None],        #25
-                               ["a", "gis_location_map-btn", False],              #26
-                               ["div", "gis_location_advanced_div", False],       #27
+                               ["input", "gis_location_postcode", False, None],   #22
+                               ["label", "gis_location_postcode_label", False],   #23
+                               ["label", "gis_location_lat_label", False],        #24
+                               ["input", "gis_location_lat", False, None],        #25
+                               ["label", "gis_location_lon_label", False],        #26
+                               ["input", "gis_location_lon", False, None],        #27
+                               ["a", "gis_location_map-btn", False],              #28
+                               ["div", "gis_location_advanced_div", False],       #29
                            )
         Locations.formHeading = {"Name:"     : "-",
                                  "Location:" : "-"
@@ -202,6 +205,9 @@ class Locations(SahanaTest):
         self.assertEqual(location_id, sel.get_value("cr_shelter_location_id"))
         # Check that the dropdown is set
         self.assertEqual(location_id, sel.get_value("gis_location_L0"))
+        Locations.formDetails[0][3] = location_id
+        Locations.formDetails[5][2] = True
+        Locations.formDetails[6][2] = True
         self.action.checkForm(Locations.formDetails,
                               (),
                               ()
@@ -315,6 +321,8 @@ class Locations(SahanaTest):
         Locations.formDetails[25][2] = True
         Locations.formDetails[26][2] = True
         Locations.formDetails[27][2] = True
+        Locations.formDetails[28][2] = True
+        Locations.formDetails[29][2] = True
         self.action.checkForm(Locations.formDetails,
                               (),
                               ()
@@ -351,8 +359,8 @@ class Locations(SahanaTest):
         Locations.formDetails[13][2] = True
         Locations.formDetails[14][2] = True
         Locations.formDetails[17][2] = True
-        Locations.formDetails[23][3] = '51.0'
-        Locations.formDetails[25][3] = '1.0'
+        Locations.formDetails[25][3] = '51.0'
+        Locations.formDetails[27][3] = '1.0'
         self.action.checkForm(Locations.formDetails,
                               (),
                               ()
@@ -362,8 +370,10 @@ class Locations(SahanaTest):
         Locations.formDetails[20][2] = True
         Locations.formDetails[20][3] = "45 Sheep Street"
         Locations.formDetails[21][2] = True
-        Locations.formDetails[26][2] = True
-        Locations.formDetails[27][2] = True
+        Locations.formDetails[22][2] = True
+        Locations.formDetails[23][2] = True
+        Locations.formDetails[28][2] = True
+        Locations.formDetails[29][2] = True
         self.action.checkForm(Locations.formDetails,
                               (),
                               ()
@@ -374,6 +384,8 @@ class Locations(SahanaTest):
         Locations.formDetails[23][2] = True
         Locations.formDetails[24][2] = True
         Locations.formDetails[25][2] = True
+        Locations.formDetails[26][2] = True
+        Locations.formDetails[27][2] = True
         self.action.checkForm(Locations.formDetails,
                               (),
                               ()

@@ -527,10 +527,10 @@ def users():
 def group_dupes(form, page, arg):
     """ Onvalidation check for duplicate user roles """
     user = form.latest["user_id"]
-    group = form.latest["group_id"]   
+    group = form.latest["group_id"]
     query = (form.table.user_id == user) & (form.table.group_id == group)
     items = db(query).select()
-    if items:     
+    if items:
         session.error = T("User already has this role")
         redirect(URL(r=request, f=page, args=arg))
 
@@ -577,9 +577,9 @@ def groups():
     crud.settings.create_onaccept = lambda form: s3_audit("create", module, "membership",
                                                           form=form,
                                                           representation="html")
-    
-    
-    crud.settings.create_onvalidation = lambda form: group_dupes(form, "groups", [user]) 
+
+
+    crud.settings.create_onvalidation = lambda form: group_dupes(form, "groups", [user])
     # Many<>Many selection (Deletable, no Quantity)
     item_list = []
     sqlrows = db(query).select()
@@ -1057,11 +1057,41 @@ def role():
     """
     Role Editor
 
+    @author: Dominic König <dominic@aidiq.com>
+
     """
 
-    output = dict()
+    prefix = "auth"
+    name = "group"
 
-    response.view = "list.html"
+    # ACLs as component of roles
+    s3xrc.model.add_component("s3", "permission",
+        joinby = dict(auth_group="group_id"),
+        multiple=True)
+
+    def prep(r):
+
+        # Restrict formats
+        if r.representation not in ("html",):
+            return False
+
+        # Set REST method handler
+        resource = r.resource
+        handler = s3base.S3RoleManager()
+
+        handler.controllers = deployment_settings.modules
+
+        resource.set_handler("read", handler)
+        resource.set_handler("list", handler)
+        resource.set_handler("copy", handler)
+        resource.set_handler("create", handler)
+        resource.set_handler("update", handler)
+        resource.set_handler("delete", handler)
+
+        return True
+    response.s3.prep = prep
+
+    output = s3_rest_controller(prefix, name)
     return output
 
 

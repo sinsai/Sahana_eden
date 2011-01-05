@@ -1,13 +1,27 @@
 /**
  * Copyright (c) 2008-2010 The Open Planning Project
+ * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
  */
 
 /**
  * @include widgets/tips/SliderTip.js
  */
 
+/** api: (define)
+ *  module = gxp
+ *  class = ScaleLimitPanel
+ *  base_link = `Ext.Panel <http://extjs.com/deploy/dev/docs/?class=Ext.Panel>`_
+ */
 Ext.namespace("gxp");
 
+/** api: constructor
+ *  .. class:: ScaleLimitPanel(config)
+ *   
+ *      A panel for assembling scale constraints in SLD styles.
+ */
 gxp.ScaleLimitPanel = Ext.extend(Ext.Panel, {
     
     /** api: config[maxScaleDenominatorLimit]
@@ -19,7 +33,7 @@ gxp.ScaleLimitPanel = Ext.extend(Ext.Panel, {
     maxScaleDenominatorLimit: 40075016.68 * 39.3701 * OpenLayers.DOTS_PER_INCH / 256,
     
     /** api: config[limitMaxScaleDenominator]
-     *  ``Boolean` Limit the maximum scale denominator.  If false, no upper
+     *  ``Boolean`` Limit the maximum scale denominator.  If false, no upper
      *     limit will be imposed.
      */
     limitMaxScaleDenominator: true,
@@ -63,12 +77,13 @@ gxp.ScaleLimitPanel = Ext.extend(Ext.Panel, {
      *  ``String`` Template for the tip displayed by the scale threshold slider.
      *
      *  Can be customized using the following keywords in curly braces:
+     *
      *  * zoom - the zoom level
      *  * scale - the scale denominator
      *  * type - "Max" or "Min" denominator
      *  * scaleType - "Min" or "Max" scale (sense is opposite of type)
      *
-     * Default is "{scaleType} Scale 1:{scale}".
+     *  Default is "{scaleType} Scale 1:{scale}".
      */
     scaleSliderTemplate: "{scaleType} Scale 1:{scale}",
     
@@ -93,6 +108,10 @@ gxp.ScaleLimitPanel = Ext.extend(Ext.Panel, {
     changing: false,
     
     border: false,
+    
+    /** i18n */
+    maxScaleLimitText: "Max scale limit",
+    minScaleLimitText: "Min scale limit",
     
     /** private: method[initComponent]
      */
@@ -152,11 +171,15 @@ gxp.ScaleLimitPanel = Ext.extend(Ext.Panel, {
             })]
         });
         
-        this.maxScaleDenominatorInput = new Ext.form.TextField({
+        this.maxScaleDenominatorInput = new Ext.form.NumberField({
+            allowNegative: false,
             width: 100,
             fieldLabel: "1",
             value: Math.round(this.maxScaleDenominator),
             disabled: !this.limitMaxScaleDenominator,
+            validator: (function(value) {
+                return !this.limitMinScaleDenominator || (value > this.minScaleDenominator);
+            }).createDelegate(this),
             listeners: {
                 valid: function(field) {
                     var value = Number(field.getValue());
@@ -182,11 +205,15 @@ gxp.ScaleLimitPanel = Ext.extend(Ext.Panel, {
             }
         });
 
-        this.minScaleDenominatorInput = new Ext.form.TextField({
+        this.minScaleDenominatorInput = new Ext.form.NumberField({
+            allowNegative: false,
             width: 100,
             fieldLabel: "1",
             value: Math.round(this.minScaleDenominator),
             disabled: !this.limitMinScaleDenominator,
+            validator: (function(value) {
+                return !this.limitMaxScaleDenominator || (value < this.maxScaleDenominator);
+            }).createDelegate(this),
             listeners: {
                 valid: function(field) {
                     var value = Number(field.getValue());
@@ -223,7 +250,7 @@ gxp.ScaleLimitPanel = Ext.extend(Ext.Panel, {
                 items: [{
                     xtype: "checkbox",
                     checked: !!this.limitMinScaleDenominator,
-                    fieldLabel: "Max scale limit",
+                    fieldLabel: this.maxScaleLimitText,
                     listeners: {
                         check: function(box, checked) {
                             this.limitMinScaleDenominator = checked;
@@ -247,7 +274,7 @@ gxp.ScaleLimitPanel = Ext.extend(Ext.Panel, {
                 items: [{
                     xtype: "checkbox",
                     checked: !!this.limitMaxScaleDenominator,
-                    fieldLabel: "Min scale limit",
+                    fieldLabel: this.minScaleLimitText,
                     listeners: {
                         check: function(box, checked) {
                             this.limitMaxScaleDenominator = checked;
@@ -342,7 +369,7 @@ gxp.ScaleLimitPanel = Ext.extend(Ext.Panel, {
     },
 
     /** private: method[sliderValuesToScale]
-     *  :param values: ``Array`` Values from the scale slider.
+     *  :arg values: ``Array`` Values from the scale slider.
      *  :return: ``Array`` A two item array of min and max scale denominators.
      *  
      *  Given two values between 0 and 100, generate the min and max scale

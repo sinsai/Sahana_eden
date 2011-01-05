@@ -1,9 +1,58 @@
 /**
- * @require plugins/LayerSource.js
+ * Copyright (c) 2008-2010 The Open Planning Project
+ * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
  */
 
+/**
+ * @requires plugins/LayerSource.js
+ */
+
+/** api: (define)
+ *  module = gxp.plugins
+ *  class = OLSource
+ */
+
+/** api: (extends)
+ *  plugins/LayerSource.js
+ */
 Ext.namespace("gxp.plugins");
 
+/** api: constructor
+ *  .. class:: OLSource(config)
+ *
+ *    Plugin for using any ``OpenLayers.Layer`` layers with :class:`gxp.Viewer`
+ *    instances.
+ *
+ *    Configuration for layers from a :class:`gxp.OLSource`:
+ *
+ *    * type: ``String`` - the CLASS_NAME of an ``OpenLayers.Layer``
+ *    * args: ``Array`` - the arguments passed to the layer's constructor
+ */
+/** api: example
+ *  The configuration in the ``sources`` property of the :class:`gxp.Viewer` is
+ *  straightforward:
+ *
+ *  .. code-block:: javascript
+ *
+ *    "ol": {
+ *        ptype: "gx_olsource"
+ *    }
+ *
+ *  A typical configuration for a layer from this source (in the ``layers``
+ *  array of the viewer's ``map`` config option would look like this:
+ *
+ *  .. code-block:: javascript
+ *
+ *    {
+ *        source: "ol",
+ *        type: "OpenLayers.Layer.OSM"
+ *        args: ["Mapnik"]
+ *    }
+ *
+ */
 gxp.plugins.OLSource = Ext.extend(gxp.plugins.LayerSource, {
     
     /** api: ptype = gx_olsource */
@@ -52,6 +101,7 @@ gxp.plugins.OLSource = Ext.extend(gxp.plugins.LayerSource, {
                 {name: "source", type: "string"}, 
                 {name: "group", type: "string"},
                 {name: "fixed", type: "boolean"},
+                {name: "selected", type: "boolean"},
                 {name: "type", type: "string"},
                 {name: "args"}
             ]);
@@ -61,6 +111,7 @@ gxp.plugins.OLSource = Ext.extend(gxp.plugins.LayerSource, {
                 source: config.source,
                 group: config.group,
                 fixed: ("fixed" in config) ? config.fixed : false,
+                selected: ("selected" in config) ? config.selected : false,
                 type: config.type,
                 args: config.args
             };
@@ -88,7 +139,6 @@ gxp.plugins.OLSource = Ext.extend(gxp.plugins.LayerSource, {
             args: record.get("args")
         });
     }
-
 
 });
 

@@ -59,7 +59,7 @@ class S3DateWidget(FormWidget):
 
     """
     Standard Date widget, but with a modified yearRange to support Birth dates
-    
+
     @author: Fran Boon (fran@aidiq.com)
 
     """
@@ -132,7 +132,7 @@ class S3UploadWidget(UploadWidget):
             if UploadWidget.is_image(value):
                 br = BR()
                 image = IMG(_src = url, _width = UploadWidget.DEFAULT_WIDTH)
-            
+
             requires = attr["requires"]
             if requires == [] or isinstance(requires, IS_EMPTY_OR):
                 inp = DIV(inp, '[',
@@ -1449,7 +1449,7 @@ class JSON(INPUT):
 
 # -----------------------------------------------------------------------------
 class S3MultiSelectWidget(FormWidget):
-    
+
     """
     This widget will return a table which can have rows added or
     deleted (not currently edited). This widget can be added to a
@@ -1654,7 +1654,7 @@ class S3MultiSelectWidget(FormWidget):
         @param column_fields: provides the order
         @param column_field_represents: functions to find the values
             of the fields in the row
-        @type column_field_represents: dict of {fieldname: function} 
+        @type column_field_represents: dict of {fieldname: function}
 
         """
 
@@ -1739,10 +1739,10 @@ class S3MultiSelectWidget(FormWidget):
 
 # -----------------------------------------------------------------------------
 class S3ACLWidget(CheckboxesWidget):
-    
+
     """
     Widget class for ACLs
-    
+
     @author: Dominic König <dominic@aidiq.com>
 
     @todo: add option dependency logic (JS)
@@ -1771,7 +1771,7 @@ class S3ACLWidget(CheckboxesWidget):
                                 break
                             else:
                                 continue
-                        elif value & flag == flag:
+                        elif value and value & flag == flag:
                             values.append(k)
                     except ValueError:
                         pass

@@ -1631,15 +1631,22 @@ class S3QueryBuilder(object):
                     else:
                         continue
                     vlist = []
+                    print values
+                    print ftype
                     for v in values:
                         if ftype == "boolean":
                             if v in ("true", "True"):
                                 value = True
                             else:
                                 value = False
-                        elif ftype == "integer":
+                        elif ftype in ("integer"):
                             try:
-                                value = float(v)
+                                value = int(v)
+                            except ValueError:
+                                continue
+                        elif ftype.startswith("reference") or ftype == "id":
+                            try:
+                                value = long(v)
                             except ValueError:
                                 continue
                         elif ftype == "double":

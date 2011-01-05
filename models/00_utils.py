@@ -843,6 +843,9 @@ def s3_rest_controller(prefix, resourcename, **attr):
     resource.set_handler("copy", shn_copy)
     resource.set_handler("barchart", shn_barchart)
 
+    print auth.permission.accessible_query(resource.table, "read", "delete")
+    print auth.permission.has_permission(resource.table, method="delete")
+
     # Execute the request
     output = resource.execute_request(r, **attr)
 

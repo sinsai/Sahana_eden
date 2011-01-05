@@ -186,6 +186,8 @@ def group():
                                        "group_head",
                                        "description"])
 
+    response.s3.no_sspag = True
+
     output = s3_rest_controller(prefix, resourcename,
                 rheader=lambda r: shn_pr_rheader(r,
                     tabs = [(T("Group Details"), None),

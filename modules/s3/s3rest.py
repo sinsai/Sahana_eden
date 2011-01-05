@@ -193,6 +193,27 @@ class S3Resource(object):
         return self._handler.get(method, None)
 
 
+    # -------------------------------------------------------------------------
+    def add_method(self, method, handler):
+        """
+        Add a REST method for this resource
+
+        @param method: the method name
+        @param handler: the handler function
+        @type handler: handler(S3Request, **attr)
+
+        """
+
+        model = self.manager.model
+
+        if self.parent:
+            model.set_method(self.parent.prefix, self.parent.name,
+                             component=self.name, method=method, action=handler)
+        else:
+            model.set_method(self.prefix,self.name,
+                             method=method, action=handler)
+
+
     # Query handling ==========================================================
 
     def build_query(self, id=None, uid=None, filter=None, vars=None):
@@ -797,7 +818,7 @@ class S3Resource(object):
         postprocess = None
 
         # Enforce primary record ID
-        if not r.id and not r.custom_action and r.representation == "html":
+        if not r.id and r.representation == "html":
             if r.component or r.method in ("read", "update"):
                 count = self.count()
                 if self.vars is not None and count == 1:
@@ -837,8 +858,15 @@ class S3Resource(object):
                 r.error(400, self.ERROR.BAD_REQUEST)
 
         # Default view
-        if r.representation <> "html":
+        if r.representation != "html":
             r.response.view = "xml.html"
+
+        # Custom action?
+        if not r.custom_action:
+            model = self.manager.model
+            r.custom_action = model.get_method(r.prefix, r.name,
+                                               component_name=r.component_name,
+                                               method=r.method)
 
         # Method handling
         handler = None
@@ -1862,6 +1890,8 @@ class S3Request(object):
         self.http = self.request.env.request_method
         self.__parse()
 
+        self.custom_action = None
+
         # Interactive representation format?
         self.interactive = self.representation in self.INTERACTIVE_FORMATS
 
@@ -1932,12 +1962,6 @@ class S3Request(object):
                     redirect(self.there())
                 else:
                     raise KeyError(manager.error)
-
-        # Check for custom action
-        model = manager.model
-        self.custom_action = model.get_method(self.prefix, self.name,
-                                              component_name=self.component_name,
-                                              method=self.method)
 
 
     # -------------------------------------------------------------------------

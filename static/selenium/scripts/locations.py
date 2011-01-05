@@ -899,6 +899,10 @@ class Locations(SahanaTest):
         Locations.formDetails[10][2] = True
         Locations.formDetails[11][2] = True
         Locations.formDetails[12][2] = True
+        Locations.formDetails[13][2] = True
+        Locations.formDetails[14][2] = True
+        Locations.formDetails[17][2] = True
+
         self.action.checkForm(Locations.formDetails,
                               (),
                               ()

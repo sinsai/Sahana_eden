@@ -153,6 +153,18 @@ class TestWindow(Frame):
             i += 1
         return tuple(testModuleList)
         
+    def selectTests(self):
+        SelectTestWindow(self)
+    
+    def toggleButton(self):
+        i = 0
+        for module in self.checkboxModules:
+            if module.get() == 1:
+                self.buttonList[i].grid()
+            else:
+                self.buttonList[i].grid_remove()
+            i += 1
+        
     def testModulepanel(self, panel):
         self.moduleList = self.getTestModuleDetails()
         Label(panel, text="Test Modules").pack(side=TOP)
@@ -160,17 +172,18 @@ class TestWindow(Frame):
         detailPanel = Frame(panel)
         detailPanel.pack(side=TOP, anchor=W, fill=X)
         self.checkboxModules = []
+        self.buttonList=[]
         i = 0
         for module in self.moduleList:
             var = IntVar()
-            chk = Checkbutton(detailPanel, text=module[0], variable=var)
+            chk = Checkbutton(detailPanel, text=module[0], variable=var, command=self.toggleButton)
             self.checkboxModules.append(var)
-            if i % 2:
-                # Even
-                chk.grid(row=i - 1, column=1, sticky=NW)
-            else:
-                # Odd
-                chk.grid(row=i, column=0, sticky=NW)
+            btnFrame = Frame(detailPanel)
+            chk.grid(row=i//2, column=i%2*2, sticky=NW)
+            Button(btnFrame, text="Select tests", command=self.selectTests).grid()
+            btnFrame.grid(row=i//2, column=i%2*2+1, sticky=NW)
+            btnFrame.grid_remove()
+            self.buttonList.append(btnFrame)
             i += 1
         
     def serverStatus(self, event):
@@ -359,5 +372,12 @@ class TestWindow(Frame):
         detail.columnconfigure(0, weight=1)
         detail.columnconfigure(1, weight=1)
 
+import tkSimpleDialog
+
+class SelectTestWindow(tkSimpleDialog.Dialog):
+    def body(self, parent):
+        self.winfo_toplevel().title("List of test cases")
+        Label(parent, text="Watch this space...").grid(row =0)
+        
 if __name__ == "__main__":
     TestWindow().mainloop()

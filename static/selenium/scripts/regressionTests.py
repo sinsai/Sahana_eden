@@ -2,7 +2,7 @@ from Tkinter import *
 
 from subprocess import call
 from subprocess import Popen
-import thread
+#import thread
 
 import unittest
 from sahanaTest import SahanaTest
@@ -24,7 +24,7 @@ class TestWindow(Frame):
                                   self.browserPath.get(),
                                   self.ipAddr.get(),
                                   self.ipPort.get(),
-                                  self.URL.get()
+                                  self.URL.get()+self.app.get()
                                  )
         SahanaTest.useSahanaAccount(self.adminUser.get(),
                                     self.adminPassword.get(),
@@ -32,14 +32,14 @@ class TestWindow(Frame):
         self.clean = False
         self.test_main(self.getTestModules())
         call(["firefox", os.path.join("..", "results", "regressionTest.html")])
-        SahanaTest.selenium.stop() # Debug comment out to keep the Selenium window open
+        SahanaTest.selenium.stop() # Debug comment out to keep the Selenium window open 
         self.clean = True
-
+    
     def extractTests(self, moduleName):
         testLoader = unittest.defaultTestLoader
         tempTests = unittest.TestSuite
         try:
-            # loadTestsFromName will also import the module
+            # loadTestsFromName will also import the module 
             tempTests = testLoader.loadTestsFromName(moduleName)
         except:
             print "Unable to run test %s, check the test exists." % moduleName
@@ -58,7 +58,7 @@ class TestWindow(Frame):
                 suite =  unittest.TestSuite(map(obj, obj._sortList))
                 self.suite.addTests(suite)
                 return
-        # No sorted list or the moduleName doesn't specify the class
+        # No sorted list or the moduleName doesn't specify the class     
         for tests in tempTests:
             newTests = tests.__class__.sortTests(tempTests)
             if newTests == None:
@@ -88,14 +88,14 @@ class TestWindow(Frame):
         output = byte_output.decode('utf-8')
         file = open('../results/regressionTest.html','w')
         file.write(output)
-
+        
     def __del__(self):
         if (not self.clean):
             SahanaTestSuite.stopSelenium()
 
     def isSeleniumRunning(self):
         if sys.platform[:5] == "linux":
-            # Need to find if a service is running on the Selenium port
+            # Need to find if a service is running on the Selenium port 
             sockets = os.popen("netstat -lnt").read()
             # look for match on IPAddr and port
             service = ":%s" % (self.ipPort.get())
@@ -105,7 +105,7 @@ class TestWindow(Frame):
                 return False
         if self.seleniumServer != 0:
             return True
-
+    
     def sahanaPanel(self, panel):
         Label(panel, text="Sahana options").pack(side=TOP)
         Label(panel, text="To run the tests a user with admin rights needs to be provided.").pack(side=TOP, anchor=W)
@@ -122,7 +122,11 @@ class TestWindow(Frame):
         self.URL = Entry(detailPanel, width=40)
         self.URL.grid(row=2, column=1, sticky=NW)
         self.URL.insert(0, "http://127.0.0.1:8000/")
-
+        Label(detailPanel, text="Sahana Application:").grid(row=3, column=0, sticky=NW)
+        self.app = Entry(detailPanel, width=40)
+        self.app.grid(row=3, column=1, sticky=NW)
+        self.app.insert(0, "eden/")
+        
     # a file with test details listed per line, with the format being:
     # <display name>, <dotted notation of the test>
     # any line not meeting this criteria will be ignored.
@@ -148,7 +152,7 @@ class TestWindow(Frame):
                 testModuleList.append(self.moduleList[i][1].strip())
             i += 1
         return tuple(testModuleList)
-
+        
     def testModulepanel(self, panel):
         self.moduleList = self.getTestModuleDetails()
         Label(panel, text="Test Modules").pack(side=TOP)
@@ -168,7 +172,7 @@ class TestWindow(Frame):
                 # Odd
                 chk.grid(row=i, column=0, sticky=NW)
             i += 1
-
+        
     def serverStatus(self, event):
         if (self.ipAddr.get() != "127.0.0.1"):
             self.statusLbl.config(text="Unknown")
@@ -183,7 +187,7 @@ class TestWindow(Frame):
             self.stopSelenium.config(state="disabled")
             self.startSelenium.config(state="active")
         self.updateServerCommand()
-
+            
     def serverPanel(self, panel):
         Label(panel, text="Selenium server options").pack(side=TOP)
         detailPanel = Frame(panel)
@@ -232,7 +236,7 @@ class TestWindow(Frame):
         self.serverCommand.delete(0, len(self.serverCommand.get()))
         self.serverCommand.insert(0, args)
         self.serverCommand.config(state="readonly")
-
+        
     def buildServerStartCommand(self):
         if os.environ.has_key("JAVA_HOME"):
             java = os.path.join(os.environ["JAVA_HOME"], "bin", "java")
@@ -243,7 +247,7 @@ class TestWindow(Frame):
             args.append("-log")
             args.append(self.logFilename.get())
         return tuple(args)
-
+        
     def startSelenium(self):
         # start the Selenium server
         os.chdir(r"../server/")
@@ -254,7 +258,7 @@ class TestWindow(Frame):
         os.chdir(r"../scripts/")
         time.sleep(5)
         self.serverStatus(Event())
-
+        
     def stopSelenium(self):
         # stop the Selenium server
         if self.seleniumServer != 0:
@@ -271,16 +275,16 @@ class TestWindow(Frame):
                     print "Stopping process %s started with command %s" % (pid, line)
             self.serverStatus(Event())
             return
-
+    
     def onPressServerLog(self):
         if self.radioLog.get() == "None":
             self.logFilename.config(state="readonly")
         else:
             self.logFilename.config(state="normal")
         self.updateServerCommand()
-
+    
     # a file with one browser detail on each line
-    # The browser name is first followed by the command to pass to selenium to start the browser
+    # The browser name is first followed by the command to pass to selenium to start the browser 
     def getBrowserDetails(self):
         source = open("../data/browser.txt", "r")
         values = source.readlines()
@@ -317,23 +321,23 @@ class TestWindow(Frame):
             self.browserPath.config(state="normal")
         else:
             self.browserPath.config(state="readonly")
-
+    
     def run(self):
-        #thread.start_new(self.runTestSuite, ())
         self.runTestSuite()
+        ##thread.start_new(self.runTestSuite, ())
 
     def __init__(self, parent=None):
         self.seleniumServer = 0
         Frame.__init__(self, parent=parent)
         self.winfo_toplevel().title("Sahana Eden regression testing helper program")
-
+        
         self.pack(fill=BOTH)
         title = Frame(self)
         title.pack(side=TOP)
         detail = Frame(self)
         detail.pack(side=TOP, fill=BOTH)
         Label(title, text="Sahana Eden Regression Tests - Control Panel").pack(side=LEFT)
-
+        
         sahanaPanel = Frame(detail, borderwidth=2, relief=SUNKEN)
         sahanaPanel.grid(row=0, column=0, sticky=NSEW)
         self.sahanaPanel(sahanaPanel)
@@ -345,7 +349,7 @@ class TestWindow(Frame):
         testModulesPanel = Frame(detail, borderwidth=2, relief=SUNKEN)
         testModulesPanel.grid(row=1, column=0, sticky=NSEW)
         self.testModulepanel(testModulesPanel)
-
+        
         browserPanel = Frame(detail, borderwidth=2, relief=SUNKEN)
         browserPanel.grid(row=1, column=1, sticky=NSEW)
         self.browser(browserPanel)

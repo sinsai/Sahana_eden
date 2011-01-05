@@ -1695,19 +1695,22 @@ class S3Resource(object):
 
         """
 
-        if start is None and not limit:
-            return None
-        else:
-            start = 0
+        if start is None:
+            if not limit:
+                return None
+            else:
+                start = 0
 
         if not limit:
             limit = self.manager.ROWSPERPAGE
             if limit is None:
                 return None
+
         if limit <= 0:
             limit = 1
         if start < 0:
             start = 0
+
         return (start, start + limit)
 
 

@@ -1,5 +1,27 @@
+/**
+ * Copyright (c) 2008-2010 The Open Planning Project
+ * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
+ */
+
+/** api: (define)
+ *  module = gxp.plugins
+ *  class = LayerSource
+ *  base_link = `Ext.util.Observable <http://extjs.com/deploy/dev/docs/?class=Ext.util.Observable>`_
+ */
 Ext.namespace("gxp.plugins");
 
+/** api: constructor
+ *  .. class:: LayerSource(config)
+ *
+ *    Base class for layer sources to plug into a :class:`gxp.Viewer`. A source
+ *    is created by adding it to the ``sources`` object of the viewer. Once
+ *    there, the viewer will create layers from it by looking at objects in
+ *    the ``layers`` array of its ``map`` config option, calling the source's
+ *    ``createLayerRecord`` method.
+ */   
 gxp.plugins.LayerSource = Ext.extend(Ext.util.Observable, {
     
     /** api: property[store]
@@ -50,6 +72,40 @@ gxp.plugins.LayerSource = Ext.extend(Ext.util.Observable, {
         this.createStore();
     },
     
+    /** private: method[getMapProjection]
+     *  :returns: ``OpenLayers.Projection``
+     */
+    getMapProjection: function() {
+        var projConfig = this.target.mapPanel.map.projection;
+        return this.target.mapPanel.map.getProjectionObject() ||
+            (projConfig && new OpenLayers.Projection(projConfig)) ||
+            new OpenLayers.Projection("EPSG:4326");
+    },
+    
+    /** api: method[getProjection]
+     *  :arg layerRecord: ``GeoExt.data.LayerRecord`` a record from this
+     *      source's store
+     *  :returns: ``OpenLayers.Projection`` A suitable projection for the
+     *      ``layerRecord``. If the layer is available in the map projection,
+     *      the map projection will be returned. Otherwise an equal projection,
+     *      or null if none is available.
+     *
+     *  Get the projection that the source will use for the layer created in
+     *  ``createLayerRecord``. If the layer is not available in a projection
+     *  that fits the map projection, null will be returned.
+     */
+    getProjection: function(layerRecord) {
+        // to be overridden by subclasses
+        var layer = layerRecord.getLayer();
+        var mapProj = this.getMapProjection();
+        var proj = layer.projection ?
+            layer.projection instanceof OpenLayers.Projection ?
+                layer.projection :
+                new OpenLayers.Projection(layer.projection) :
+            mapProj;
+        return proj.equals(mapProj) ? mapProj : null;
+    },
+    
     /** api: method[createStore]
      *
      *  Creates a store of layer records.  Fires "ready" when store is loaded.
@@ -82,10 +138,9 @@ gxp.plugins.LayerSource = Ext.extend(Ext.util.Observable, {
             visibility: layer.getVisibility(),
             opacity: layer.opacity || undefined,
             group: record.get("group"),
-            fixed: record.get("fixed")
+            fixed: record.get("fixed"),
+            selected: record.get("selected")
         };
     }
-    
-
     
 });

@@ -133,6 +133,7 @@
             "OpenLayers/Layer/XYZ.js",
             "OpenLayers/Layer/TMS.js",
             "OpenLayers/Layer/TileCache.js",
+            "OpenLayers/Layer/Bing.js",
             "OpenLayers/Layer/Zoomify.js",
             "OpenLayers/Popup/Anchored.js",
             "OpenLayers/Popup/AnchoredBubble.js",

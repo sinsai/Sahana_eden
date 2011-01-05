@@ -142,7 +142,10 @@ def dojs(dogis = False):
             "ux":                       "../gis/GeoExt"
         }
         configDictGxp = {
-            "gxp":                      "../gis"
+            "gxp":                      "../gis",
+            "menu":                     "../gis/gxp",
+            "plugins":                  "../gis/gxp",
+            "widgets":                  "../gis/gxp"
         }
         configDictGeoExplorer = {
             "GeoExplorer.js":           "../gis/GeoExplorer",

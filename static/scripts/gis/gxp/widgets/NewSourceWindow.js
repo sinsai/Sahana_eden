@@ -1,9 +1,17 @@
-Ext.namespace("gxp");
+/**
+ * Copyright (c) 2008-2010 The Open Planning Project
+ * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
+ */
+
 /** api: (define)
  *  module = gxp
  *  class = NewSourceWindow
  *  extends = Ext.Window
  */
+Ext.namespace("gxp");
 
 /** api: constructor
  * .. class:: gxp.NewSourceWindow(config)
@@ -148,7 +156,7 @@ gxp.NewSourceWindow = Ext.extend(Ext.Window, {
      * A callback function to be called when the user submits the form in the 
      * NewSourceWindow.
      *
-     * .. todo:: this can probably be extracted to an event handler
+     * TODO this can probably be extracted to an event handler
      */
     addSource: function(url, success, failure, scope) {
     }

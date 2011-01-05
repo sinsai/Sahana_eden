@@ -3,49 +3,59 @@
 <link href="/{{=request.application}}/static/styles/gis/geoexplorer.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
 <link href="/{{=request.application}}/static/styles/gis/ie.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
 <link href="/{{=request.application}}/static/styles/gis/printpreview.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
-{{else:}}
 {{pass}}
 
-<!-- Google Earth resources-->
 {{if google_key:}}
+<!-- Google Earth resources-->
 <script src="http://www.google.com/jsapi?key={{=google_key}}"></script>
 <script type="text/javascript">google && google.load("earth", "1");</script>
-{{else:}}
+{{pass}}
+
+{{if yahoo_key:}}
+<!-- Yahoo resources-->
+<script src="http://api.maps.yahoo.com/ajaxymap?v=3.8&appid={{=yahoo_key}}"></script>
+<!--
+<script src="http://yui.yahooapis.com/2.8.2r1/build/yahoo/yahoo-min.js"></script>
+<script src="http://yui.yahooapis.com/2.8.2r1/build/get/get-min.js"></script>
+<script src="http://yui.yahooapis.com/3.2.0/build/yui/yui-min.js"></script>;
+-->
 {{pass}}
 
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/rowactions/js/RowExpander.js"></script>
 {{if session.s3.debug:}}
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/openlayers/lib/OpenLayers.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/geoext/lib/GeoExt.js"></script>
-<!--
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/gxp/loader.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer.js"></script>
--->
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer/Composer.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer/NewSourceWindow.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer/Viewer.js"></script>
 {{else:}}
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/OpenLayers.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExt_.js"></script>
-{{pass}}
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/gxp.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer.js"></script>
+{{pass}}
 
 <script type="text/javascript">//<![CDATA[
     Ext.BLANK_IMAGE_URL = '/{{=request.application}}/static/img/gis/openlayers/blank.gif';
     OpenLayers.DOTS_PER_INCH = 25.4 / 0.28; // OGC "standardized rendering pixel size"
-    var geoserver_url = '{{=geoserver_url}}';
-    var proxy_url = '/{{=request.application}}/gis/proxy?url=';
+    OpenLayers.ImgPath = '/{{=request.application}}/static/img/gis/openlayers/';
+    var s3_gis_geoserver_url = '{{=geoserver_url}}';
+    var s3_gis_proxy_url = '/{{=request.application}}/gis/proxy?url=';
     // See http://crschmidt.net/~crschmidt/spherical_mercator.html#reprojecting-points
-    var proj4326 = new OpenLayers.Projection('EPSG:4326');
-    var projection_current = new OpenLayers.Projection('EPSG:{{=config.epsg}}');
-    var units = '{{=config.units}}';
-    var maxResolution = {{=config.maxResolution}};
-    var maxExtent = [{{=config.maxExtent}}];
-    var lat = {{=config.lat}};
-    var lon = {{=config.lon}};
-    var center = new OpenLayers.LonLat(lon, lat);
-    center.transform(proj4326, projection_current);
-    var zoom = {{=config.zoom}};
-    var app = new GeoExplorer.{{if request.args(0) == "viewer.html":}}Viewer{{else:}}Composer{{pass}}({
-        proxy: proxy_url,
+    var s3_gis_proj4326 = new OpenLayers.Projection('EPSG:4326');
+    var s3_gis_projection_current = new OpenLayers.Projection('EPSG:{{=config.epsg}}');
+    var s3_gis_units = '{{=config.units}}';
+    var s3_gis_maxResolution = {{=config.maxResolution}};
+    var s3_gis_maxExtent = [{{=config.maxExtent}}];
+    var s3_gis_lat = {{=config.lat}};
+    var s3_gis_lon = {{=config.lon}};
+    var s3_gis_center = new OpenLayers.LonLat(s3_gis_lon, s3_gis_lat);
+    s3_gis_center.transform(s3_gis_proj4326, s3_gis_projection_current);
+    var s3_gis_zoom = {{=config.zoom}};
+    var s3_gis_app = new GeoExplorer.{{if request.args(0) == "viewer.html":}}Viewer{{else:}}Composer{{pass}}({
+        proxy: s3_gis_proxy_url,
       {{if print_service:}}
         printService: 'http://geo.eden.sahanafoundation.org/geoserver/pdf/',
       {{pass}}
@@ -59,7 +69,7 @@
         sources: {
           {{if geoserver_url:}}
             local: {
-                url: geoserver_url,
+                url: s3_gis_geoserver_url,
                 title: 'Local GeoServer'
             },
           {{pass}}
@@ -73,15 +83,27 @@
             google: {
                 ptype: 'gx_googlesource'
             },
+          {{if bing_key:}}
+            bing: {
+                ptype: 'gx_bingsource',
+                apiKey: '{{=bing_key}}'
+            },
+          {{pass}}
+          {{if yahoo_key:}}
+            yahoo: {
+                ptype: 'gx_yahoosource',
+                apiKey: '{{=yahoo_key}}'
+            },
+          {{pass}}
             ol: {
                 ptype: 'gx_olsource'
             }
         },
         map: {
-            projection: projection_current,
-            units: units,
-            maxResolution: maxResolution,
-            maxExtent: maxExtent,
+            projection: s3_gis_projection_current,
+            units: s3_gis_units,
+            maxResolution: s3_gis_maxResolution,
+            maxExtent: s3_gis_maxExtent,
             layers: [{
                 source: 'osm',
                 title: 'OpenStreetMap',
@@ -96,8 +118,8 @@
                     'None', {visibility: false}
                 ]
             }],
-            center: [center.lon, center.lat],
-            zoom: zoom
+            center: [s3_gis_center.lon, s3_gis_center.lat],
+            zoom: s3_gis_zoom
         }
     });
 //]]></script>

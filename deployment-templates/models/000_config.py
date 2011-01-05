@@ -16,8 +16,7 @@ FINISHED_EDITING_CONFIG_FILE = False # change to True after you finish editing t
 if not FINISHED_EDITING_CONFIG_FILE:
     raise HTTP(501, body="Please edit models/000_config.py first")
 
-s3cfg = local_import("s3cfg")
-deployment_settings = s3cfg.S3Config(T)
+deployment_settings = s3base.S3Config(T)
 
 # Database settings
 deployment_settings.database.db_type = "sqlite"

@@ -111,7 +111,7 @@ document_id = S3ReusableField("document_id",
                              )
 
 def document_onvalidation(form):
-    s3deduplicator = local_import("s3deduplicator")
+
     import cgi
 
     table = db.doc_document
@@ -132,7 +132,7 @@ def document_onvalidation(form):
 
     if isinstance(doc, cgi.FieldStorage) and doc.filename:
         f = doc.file
-        form.vars.checksum = s3deduplicator.docChecksum(f.read())
+        form.vars.checksum = docChecksum(f.read())
         f.seek(0)
     if form.vars.checksum is not None:
         result = db(table.checksum == form.vars.checksum).select(table.name, limitby=(0, 1)).first()
@@ -150,7 +150,7 @@ tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("image", "upload", autodelete=True),
-                        # UploadWidget cannot be easily subclassed currently. Patch submitted to Web2Py.
+                        # Web2Py r2867+ includes this functionality by default
                         #Field("image", "upload", autodelete=True, widget=S3UploadWidget.widget),
                         Field("url"),
                         person_id(),
@@ -206,7 +206,7 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T("No Photos found"))
 
 def image_onvalidation(form):
-    s3deduplicator = local_import("s3deduplicator")
+
     import cgi
 
     table = db.doc_image
@@ -222,7 +222,7 @@ def image_onvalidation(form):
 
     if isinstance(img, cgi.FieldStorage) and img.filename:
         f = img.file
-        form.vars.checksum = s3deduplicator.docChecksum(f.read())
+        form.vars.checksum = docChecksum(f.read())
         f.seek(0)
     if form.vars.checksum is not None:
         result = db(table.checksum == form.vars.checksum).select(table.name, limitby=(0, 1)).first()

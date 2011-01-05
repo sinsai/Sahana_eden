@@ -2,7 +2,7 @@ from Tkinter import *
 
 from subprocess import call
 from subprocess import Popen
-import thread
+#import thread
 
 import unittest
 from sahanaTest import SahanaTest
@@ -24,7 +24,7 @@ class TestWindow(Frame):
                                   self.browserPath.get(),
                                   self.ipAddr.get(),
                                   self.ipPort.get(),
-                                  self.URL.get()
+                                  self.URL.get()+self.app.get()
                                  )
         SahanaTest.useSahanaAccount(self.adminUser.get(),
                                     self.adminPassword.get(),
@@ -122,6 +122,10 @@ class TestWindow(Frame):
         self.URL = Entry(detailPanel, width=40)
         self.URL.grid(row=2, column=1, sticky=NW)
         self.URL.insert(0, "http://127.0.0.1:8000/")
+        Label(detailPanel, text="Sahana Application:").grid(row=3, column=0, sticky=NW)
+        self.app = Entry(detailPanel, width=40)
+        self.app.grid(row=3, column=1, sticky=NW)
+        self.app.insert(0, "eden/")
         
     # a file with test details listed per line, with the format being:
     # <display name>, <dotted notation of the test>
@@ -319,7 +323,8 @@ class TestWindow(Frame):
             self.browserPath.config(state="readonly")
     
     def run(self):
-        thread.start_new(self.runTestSuite, ())
+        self.runTestSuite()
+        ##thread.start_new(self.runTestSuite, ())
 
     def __init__(self, parent=None):
         self.seleniumServer = 0

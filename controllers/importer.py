@@ -11,8 +11,6 @@ if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
     redirect(URL(r=request, c="default", f="index"))
 
-importer = local_import("importer")
-
 response.menu_options = [
     [
 	    T("Upload Spreadsheet"), False, URL(r=request, f="spreadsheet", args=["create"])
@@ -41,13 +39,16 @@ def spreadsheet():
 
 def spreadsheetview():
     # Get the most recently-uploaded spreadsheet
+
+    pathfind = lambda f: os.path.join("uploads", f)
+
     k = db(db.importer_spreadsheet.id > 0).select(limitby=(0, 1)).last()
     k = k.path;
-    str = importer.pathfind(k)
+    str = pathfind(k)
     str = request.folder + str
-    temp = importer.removerowcol(str)
+    temp = removerowcol(str)
     #appname = request.application
-    v = importer.json(str, request.folder)
+    v = json(str, request.folder)
     #fields = shn_get_writecolumns(
     return dict(ss=v)
 
@@ -69,7 +70,7 @@ def import_spreadsheet():
     if not j.has_key("re_import"):# and j["re_import"] is not True:
     	for x in range(0, len(j["spreadsheet"])):
 	    for y in range(x + 1, len(j["spreadsheet"])):
- 	        k = importer.jaro_winkler_distance_row(j["spreadsheet"][x], j["spreadsheet"][y])
+ 	        k = jaro_winkler_distance_row(j["spreadsheet"][x], j["spreadsheet"][y])
 	        if k is True:
 	           similar_rows.append(j["spreadsheet"][x])
 	           similar_rows.append(j["spreadsheet"][y])
@@ -241,3 +242,91 @@ def re_import():
 def similar_rows():
     """ Custom View """
     return dict()
+
+def removerowcol(path_to_file):
+    """
+    Utility
+
+    @note: moved here from importer module
+    @todo: fix docstring
+
+    """
+
+    spreadsheet = list()
+    wb = open_workbook(path_to_file)
+    s = wb.sheet_by_index(0)
+    for r in range(0, s.nrows):
+        l = list()
+        for c in range(0, s.ncols):
+            l.append(s.cell(r, c).value)
+        check = 0
+        for k in range(0, len(l)):
+            if l[k] is not "":
+                check += 1
+        if check is not 0:
+            spreadsheet.append(l)
+        l = list()
+    new_col = len(spreadsheet[0])
+    new_row = len(spreadsheet)
+    empty_column = list()
+    for x in range(0, new_col):
+        l = list()
+        for y in range(0, new_row):
+            l.append(spreadsheet[y][x])
+        ck = 0
+        for k in l:
+            if k is not "":
+                ck += 1
+        if ck is 0:
+            empty_column.append(x)
+    #removing empty columns
+    new_spreadsheet = list()
+    for x in range(0, new_row):
+        l = list()
+        for y in range(0,new_col):
+            if y not in empty_column:
+                l.append(spreadsheet[x][y])
+        new_spreadsheet.append(l)
+    return new_spreadsheet
+
+
+def sheet2json(path_to_file, appname):
+    """
+    Utility to convert a sheet into JSON
+
+    @note: moved here from importer module
+    @todo: fix docstring
+
+    """
+
+    spreadsheet = removerowcol(path_to_file)
+    nrow = len(spreadsheet)
+    ncol = len(spreadsheet[0])
+    json = "{"
+    json += "\"rows\": %i,\n" % nrow
+    json += "\"columns\": %i,\n" %ncol
+    json += "\"data\": [\n"
+    for x in range(0, nrow):
+        json += "{\n"
+        json += "\t\"id\":%i," % (x)
+        for y in range(0, ncol):
+            temp = "\n\t\"column%i\":" % y
+            try:
+                cell = str(spreadsheet[x][y])
+                cell = cell.replace("\n", "")
+                temp += "\"" + cell + "\""
+            except:
+                temp += "\"\""
+            if(y is not ncol - 1):
+                temp += ","
+            json += temp
+        json += "\n\t}"
+        if x is not nrow - 1:
+            json += "\n\t,"
+
+    json += "\n]}"
+    '''jsonfile = open("/%s/static/test1.json" % appname, "wb")
+    jsonfile.write(json)
+    jsonfile.close()
+    '''
+    return json

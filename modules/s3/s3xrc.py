@@ -1631,8 +1631,6 @@ class S3QueryBuilder(object):
                     else:
                         continue
                     vlist = []
-                    print values
-                    print ftype
                     for v in values:
                         if ftype == "boolean":
                             if v in ("true", "True"):

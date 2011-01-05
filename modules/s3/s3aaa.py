@@ -1390,9 +1390,7 @@ class S3Permission(object):
 
         # Available ACLs
         pacl = self.page_acl()
-        print "page ACL %s" % list(pacl)
         tacl = self.table_acl(table)
-        print "table ACL %s" % list(tacl)
         acl = (tacl[0] & pacl[0], tacl[1] & pacl[1])
 
         # Ownership required?
@@ -1438,18 +1436,12 @@ class S3Permission(object):
         if not isinstance(method, (list, tuple)):
             method = [method]
 
-        print method
-
         # Required ACL
         racl = reduce(lambda a, b: a | b,
                      [required[m] for m in method if m in required], self.NONE)
 
-        print racl
-
         # Available ACL
         aacl = self(table=table, record=record)
-
-        print aacl
 
         permitted = racl & aacl == racl
         return permitted

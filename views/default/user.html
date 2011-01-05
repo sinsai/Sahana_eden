@@ -25,6 +25,12 @@
 {{elif request.args(0) == "change_password":}}
  {{=H2(T("Change Password"))}}
  {{=form}}
+<script src="/{{=request.application}}/static/scripts/S3/jquery.pstrength-min.1.2.js" type="text/javascript"></script>
+<script type="text/javascript">
+$(function() {
+    $('.password:eq(1)').pstrength();
+});
+</script>
 {{elif request.args(0) == "reset_password":}}
  {{=H2(T("Reset Password"))}}
  {{=form}}

@@ -4,7 +4,7 @@ Martissant, L3, Port-Au-Prince
 Carrefour Feuilles, L4, Martissant
 Turgeau, L3, Port-Au-Prince
 Babiole, L4, Turgeau
-Clinique Communautaire de Martissant
+Clinique Communautaire de Martissant, , Carrefour Feuilles, 18.528000848953, -72.348998382827
 L2inL0, L2, Haiti
 L1withNoParent, L1
 L2inL1withNoParent, L2, L1withNoParent

@@ -714,6 +714,7 @@
 'Road Hijacking': 'Road Hijacking',
 'Road Usage Condition': 'Road Usage Condition',
 'Role': 'Role',
+'Role Manager': 'Role Manager',
 'Role Required': 'Role Required',
 'Roles': 'Roles',
 'Roles Permitted': 'Roles Permitted',

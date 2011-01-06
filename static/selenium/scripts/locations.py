@@ -30,6 +30,7 @@ class Locations(SahanaTest):
                  "test_locationSearch",
                  "removeShelterTestData",
                  "removeLocationTestData",
+                 "removeTestData",
                  )
     
     def firstRun(self):
@@ -81,7 +82,6 @@ class Locations(SahanaTest):
         Locations.formHeading = {"Name:"     : "-",
                                  "Location:" : "-"
                                 }
-       
     def makeNameUnique(self, name):
         return self.holder + name + self.holder
     
@@ -430,8 +430,7 @@ class Locations(SahanaTest):
         """ Create a new Shelter with an L0 location """
         # Create the name variables
         shelterName = "Shelter with an L0 Location"
-        L0 = "Haiti"
-        
+        L0 = "Haiti" 
         sel = self.selenium
         sel.open("cr/shelter/create")
         # Fill in the mandatory fields
@@ -446,7 +445,7 @@ class Locations(SahanaTest):
 
         self.action.checkHeading({"Name:" : shelterName,
                                   "Location:" : L0,
-                                 })
+                                })
         location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
         self.initFormDetails()
         location_id = location.split("(")[1].split(")")[0]
@@ -911,7 +910,6 @@ class Locations(SahanaTest):
         Locations.formDetails[13][2] = True
         Locations.formDetails[14][2] = True
         Locations.formDetails[17][2] = True
-
         self.action.checkForm(Locations.formDetails,
                               (),
                               ()
@@ -1040,6 +1038,7 @@ class Locations(SahanaTest):
         # Check that the components appear correctly
 #        location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
 #        location_id = location.split("(")[1].split(")")[0]
+
         location_id = sel.get_selected_value("gis_location_L3")
         Locations.formDetails[0][3] = location_id
         Locations.formDetails[3][2] = False
@@ -1190,13 +1189,6 @@ class Locations(SahanaTest):
                 break
             except:
                 time.sleep(1)
-        # wait for the L4 list to be populated
-        for i in range(10):
-            try:
-                sel.select("gis_location_L4", "label=%s" % L4)
-                break
-            except:
-                time.sleep(1)
         # wait for the specific location list to be populated
         for i in range(10):
             try:
@@ -1212,6 +1204,7 @@ class Locations(SahanaTest):
         self.action.checkHeading({"Name:" : shelterName,
                                   "Location:" : "%s (N %s W %s)" %(location, lat, lon)
                                  })
+
 
     def test_locationSearch(self):
         """ Search for Locations using the Autocomplete """

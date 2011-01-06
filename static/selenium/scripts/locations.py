@@ -30,7 +30,6 @@ class Locations(SahanaTest):
                  "test_locationSearch",
                  "removeShelterTestData",
                  "removeLocationTestData",
-                 "removeTestData",
                  )
     
     def firstRun(self):

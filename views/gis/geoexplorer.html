@@ -32,6 +32,7 @@
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer/Composer.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer/NewSourceWindow.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer/Sahana.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer/Viewer.js"></script>
 {{else:}}
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/OpenLayers.js"></script>
@@ -58,7 +59,7 @@
     var s3_gis_center = new OpenLayers.LonLat(s3_gis_lon, s3_gis_lat);
     s3_gis_center.transform(s3_gis_proj4326, s3_gis_projection_current);
     var s3_gis_zoom = {{=config.zoom}};
-    var s3_gis_app = new GeoExplorer.{{if request.args(0) == "viewer.html":}}Viewer{{else:}}Composer{{pass}}({
+    var s3_gis_app = new GeoExplorer.{{if request.args(0) == "viewer.html":}}Viewer{{else:}}SahanaComposer{{pass}}({
         proxy: s3_gis_proxy_url,
       {{if print_service:}}
         printService: '{{=print_service}}',

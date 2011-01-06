@@ -267,7 +267,8 @@ class Action(unittest.TestCase):
         else:
             value = None
         element = '//%s[@id="%s"]' % (type, id)
-        if not sel.is_element_present(element): return "%s element %s is missing" % (type, id)
+        if visible:
+            if not sel.is_element_present(element): return "%s element %s is missing" % (type, id)
         if sel.is_visible(element) != visible: return "%s element %s doesn't have a visibility of %s"  % (type, id, visible)
         if value!= None:
             actual = sel.get_value(element)

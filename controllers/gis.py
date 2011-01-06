@@ -76,7 +76,7 @@ def define_map(window=False, toolbar=False, config=None):
     # http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting
     print_service = deployment_settings.get_gis_print_service()
     if print_service:
-        print_tool = {url: print_service}
+        print_tool = {"url": print_service}
     else:
         print_tool = {}
 

@@ -1,9 +1,13 @@
 /**
- * Copyright (c) 2008-2010 The Open Source Geospatial Foundation
+ * Copyright (c) 2008-2011 The Open Source Geospatial Foundation
  * 
  * Published under the BSD license.
  * See http://svn.geoext.org/core/trunk/geoext/license.txt for the full text
  * of the license.
+ */
+
+/**
+ * @include GeoExt/widgets/LayerLegend.js
  */
 
 /** api: (define)
@@ -19,6 +23,12 @@ Ext.namespace('GeoExt');
  *
  *  A panel showing legends of all layers in a layer store.
  *  Depending on the layer type, a legend renderer will be chosen.
+ *
+ *  The LegendPanel will include legends for all the layers in the
+ *  ``layerStore`` it is configured with, unless the layer is configured with
+ *  ``displayInLayerSwitcher: false``, or a layer record has a
+ *  ``hideInLegend`` field with a value of ``true``. Additional filtering can
+ *  be done by configuring a ``filter`` on the LegendPanel.
  */
 GeoExt.LegendPanel = Ext.extend(Ext.Panel, {
 

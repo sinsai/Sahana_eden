@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008-2010 The Open Source Geospatial Foundation
+ * Copyright (c) 2008-2011 The Open Source Geospatial Foundation
  * 
  * Published under the BSD license.
  * See http://svn.geoext.org/core/trunk/geoext/license.txt for the full text
@@ -25,7 +25,9 @@ Ext.namespace("GeoExt.tree");
  * 
  *     A layer container that will collect all base layers of an OpenLayers
  *     map. Only layers that have displayInLayerSwitcher set to true will be
- *     included. The childrens' iconCls defaults to "gx-tree-baselayer-icon".
+ *     included. The childrens' iconCls defaults to
+ *     "gx-tree-baselayer-icon" and this node' text defaults to
+ *     "Base Layer".
  *     
  *     Children will be rendered with a radio button instead of a checkbox,
  *     showing the user that only one base layer can be active at a time.
@@ -35,12 +37,17 @@ Ext.namespace("GeoExt.tree");
  */
 GeoExt.tree.BaseLayerContainer = Ext.extend(GeoExt.tree.LayerContainer, {
 
+    /** private: property[text]
+     *  ``String`` The text for this node.
+     */
+    text: 'Base Layer',
+
     /** private: method[constructor]
      *  Private constructor override.
      */
     constructor: function(config) {
         config = Ext.applyIf(config || {}, {
-            text: "Base Layer",
+            text: this.text,
             loader: {}
         });
         config.loader = Ext.applyIf(config.loader, {

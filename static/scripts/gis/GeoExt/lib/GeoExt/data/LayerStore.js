@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008-2010 The Open Source Geospatial Foundation
+ * Copyright (c) 2008-2011 The Open Source Geospatial Foundation
  * 
  * Published under the BSD license.
  * See http://svn.geoext.org/core/trunk/geoext/license.txt for the full text
@@ -106,6 +106,18 @@ GeoExt.data.LayerStoreMixin = function() {
             var options = {initDir: config.initDir};
             delete config.initDir;
             arguments.callee.superclass.constructor.call(this, config);
+            
+            this.addEvents(
+                /** api:event[bind]
+                 *  Fires when the store is bound to a map.
+                 *
+                 *  Listener arguments:
+                 *  * :class:`GeoExt.data.LayerStore`
+                 *  * ``OpenLayers.Map``
+                 */
+                "bind"
+            );
+            
             if(map) {
                 this.bind(map, options);
             }
@@ -162,6 +174,7 @@ GeoExt.data.LayerStoreMixin = function() {
                 "replace" : this.onReplace,
                 scope: this
             });
+            this.fireEvent("bind", this, map);
         },
 
         /** private: method[unbind]
@@ -380,7 +393,7 @@ GeoExt.data.LayerStoreMixin = function() {
             this.removeMapLayer(oldRecord);
         },
         
-        /** public: method[getByLayer]
+        /** api: method[getByLayer]
          *  :param layer: ``OpenLayers.Layer``
          *  :return: :class:`GeoExt.data.LayerRecord` or undefined if not found
          *  

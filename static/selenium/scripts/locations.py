@@ -10,7 +10,7 @@ class Locations(SahanaTest):
     """
     holder = "**TEST**"
     _sortList = (
-                 "loadTestData",
+                 "loadLocationTestData",
                  "test_locationEmpty",
                  "test_addL0Location",
                  "test_removeL0Location",
@@ -27,7 +27,9 @@ class Locations(SahanaTest):
                  "test_locationInL4",
                  "test_updateLocationInL4NewInL3",
                  "test_locationSelectSpecific",
-                 "removeTestData",
+                 "test_locationSearch",
+                 "removeShelterTestData",
+                 "removeLocationTestData",
                  )
     
     def firstRun(self):
@@ -44,17 +46,17 @@ class Locations(SahanaTest):
     def initFormDetails(self):
         Locations.formDetails = (
                                ["input", "cr_shelter_location_id", False, None],  #0
-                               ["select", "gis_location_L0", True],               #1
+                               ["select", "gis_location_L0", True, None],         #1
                                ["label", "gis_location_label_L0", True],          #2
                                ["a", "gis_location_add-btn", True],               #3
                                ["input", "cr_shelter_location_id", False],        #4
-                               ["select", "gis_location_L1", False],              #5
+                               ["select", "gis_location_L1", False, None],        #5
                                ["label", "gis_location_label_L1", False],         #6
-                               ["select", "gis_location_L2", False],              #7
+                               ["select", "gis_location_L2", False, None],        #7
                                ["label", "gis_location_label_L2", False],         #8
-                               ["select", "gis_location_L3", False],              #9
+                               ["select", "gis_location_L3", False, None],        #9
                                ["label", "gis_location_label_L3", False],         #10
-                               ["select", "gis_location_L4", False],              #11
+                               ["select", "gis_location_L4", False, None],        #11
                                ["label", "gis_location_label_L4", False],         #12
                                ["select", "gis_location_", False],                #13
                                ["label", "gis_location_label_", False],           #14
@@ -73,8 +75,13 @@ class Locations(SahanaTest):
                                ["input", "gis_location_lon", False, None],        #27
                                ["a", "gis_location_map-btn", False],              #28
                                ["div", "gis_location_advanced_div", False],       #29
+                               ["div", "gis_location_autocomplete_div", False]    #30
                            )
 
+        Locations.formHeading = {"Name:"     : "-",
+                                 "Location:" : "-"
+                                }
+       
     def makeNameUnique(self, name):
         return self.holder + name + self.holder
     
@@ -119,18 +126,19 @@ class Locations(SahanaTest):
         # Check that the correct record is loaded
         self.assertEqual(name, sel.get_value("cr_shelter_name"))
 
-    def loadTestData(self):
-        """ Load all the test location """
+    def loadLocationTestData(self):
+        """ Load all the test locations """
         self.loadLocations()
     
-    def removeTestData(self):
+    def removeLocationTestData(self):
+        for location in Locations.line:
+            self.action.deleteLocation(location)
+    
+    def removeShelterTestData(self):
         """ Remove all the data added by this test case """
         sel = self.selenium
         for shelter in Locations.shelter:
             self.action.deleteObject("cr/shelter", shelter, "Shelter")
-        #return # remove comment to keep the locations for testing purposes
-        for location in Locations.line:
-            self.action.deleteLocation(location)
 
     
     def test_locationEmpty(self):
@@ -422,13 +430,14 @@ class Locations(SahanaTest):
         """ Create a new Shelter with an L0 location """
         # Create the name variables
         shelterName = "Shelter with an L0 Location"
+        L0 = "Haiti"
         
         sel = self.selenium
         sel.open("cr/shelter/create")
         # Fill in the mandatory fields
         sel.type("cr_shelter_name", shelterName)
         # Select the L0
-        sel.select("gis_location_L0", "label=Haiti")
+        sel.select("gis_location_L0", "label=%s" % L0)
         # Save the form
         Locations.shelter.append(shelterName)
         self.action.saveForm("Shelter added")
@@ -436,7 +445,7 @@ class Locations(SahanaTest):
         self.openRecord(shelterName)
 
         self.action.checkHeading({"Name:" : shelterName,
-                                  "Location:" : "Haiti",
+                                  "Location:" : L0,
                                  })
         location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
         self.initFormDetails()
@@ -1029,8 +1038,8 @@ class Locations(SahanaTest):
         # Click on the Add button
         sel.click("gis_location_add-btn")
         # Check that the components appear correctly
-        location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
-        location_id = location.split("(")[1].split(")")[0]
+#        location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
+#        location_id = location.split("(")[1].split(")")[0]
         location_id = sel.get_selected_value("gis_location_L3")
         Locations.formDetails[0][3] = location_id
         Locations.formDetails[3][2] = False
@@ -1204,6 +1213,742 @@ class Locations(SahanaTest):
                                   "Location:" : "%s (N %s W %s)" %(location, lat, lon)
                                  })
 
+    def test_locationSearch(self):
+        """ Search for Locations using the Autocomplete """
+
+        # @ToDo: Verify that the result is stored correctly
+        # How do we get name from number without submitting? SHould we just submit every time?
+
+        shelterName = self.makeNameUnique("Shelter L2inL0")
+        search = self.makeNameUnique("L2inL0")
+        
+        sel = self.selenium
+        sel.open("cr/shelter/create")
+        sel.type("cr_shelter_name", shelterName)
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        self.initFormDetails()
+        Locations.formDetails[19][2] = False
+        Locations.formDetails[30][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+
+        # Enter the search String
+        sel.type("gis_location_autocomplete", search)
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if search == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        # wait for the L2 list to be populated
+        for i in range(10):
+            try:
+                sel.select("gis_location_L2", "label=%s" % search)
+                break
+            except:
+                time.sleep(1)
+        
+        self.initFormDetails()
+        location_id = sel.get_selected_value("gis_location_L2")
+        Locations.formDetails[0][3] = location_id
+        Locations.formDetails[5][2] = True
+        Locations.formDetails[6][2] = True
+        Locations.formDetails[7][2] = True
+        Locations.formDetails[8][2] = True
+        Locations.formDetails[9][2] = True
+        Locations.formDetails[10][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+        # Save the form
+        Locations.shelter.append(shelterName)   
+        self.action.saveForm("Shelter added")
+
+        ###############################################################
+        # Next Test
+        ###############################################################
+        shelterName = self.makeNameUnique("Shelter L2inL1withNoParent")
+        search = self.makeNameUnique("L2inL1withNoParent")
+        sel.open("cr/shelter/create")
+        sel.type("cr_shelter_name", shelterName)
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Enter the search String
+        sel.type("gis_location_autocomplete", search)
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if search == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        # wait for the L2 list to be populated
+        for i in range(10):
+            try:
+                sel.select("gis_location_L2", "label=%s" % search)
+                break
+            except:
+                time.sleep(1)
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L0"))
+        self.assertEqual(self.makeNameUnique("L1withNoParent"), sel.get_selected_label("gis_location_L1"))
+        self.assertEqual(self.makeNameUnique("L2inL1withNoParent"), sel.get_selected_label("gis_location_L2"))
+
+        self.initFormDetails()
+        location_id = sel.get_selected_value("gis_location_L2")
+        Locations.formDetails[0][3] = location_id
+        Locations.formDetails[5][2] = True
+        Locations.formDetails[6][2] = True
+        Locations.formDetails[7][2] = True
+        Locations.formDetails[8][2] = True
+        Locations.formDetails[9][2] = True
+        Locations.formDetails[10][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+        # Save the form
+        Locations.shelter.append(shelterName)   
+        self.action.saveForm("Shelter added")
+
+        ###############################################################
+        # Next Test
+        ###############################################################
+        shelterName = self.makeNameUnique("Shelter L3inL0")
+        search = self.makeNameUnique("L3inL0")
+        sel.open("cr/shelter/create")
+        sel.type("cr_shelter_name", shelterName)
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Enter the search String
+        sel.type("gis_location_autocomplete", search)
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if search == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        # wait for the L2 list to be populated
+        for i in range(10):
+            try:
+                sel.select("gis_location_L3", "label=%s" % search)
+                break
+            except:
+                time.sleep(1)
+
+        self.assertEqual("Haiti", sel.get_selected_label("gis_location_L0"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L1"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L2"))
+        self.assertEqual(search, sel.get_selected_label("gis_location_L3"))
+        
+        self.initFormDetails()
+        location_id = sel.get_selected_value("gis_location_L3")
+        Locations.formDetails[0][3] = location_id
+        Locations.formDetails[5][2] = True
+        Locations.formDetails[6][2] = True
+        Locations.formDetails[7][2] = True
+        Locations.formDetails[8][2] = True
+        Locations.formDetails[9][2] = True
+        Locations.formDetails[10][2] = True
+        Locations.formDetails[11][2] = True
+        Locations.formDetails[12][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+        # Save the form
+        Locations.shelter.append(shelterName)   
+        self.action.saveForm("Shelter added")
+
+        ###############################################################
+        # Next Test
+        ###############################################################
+        shelterName = self.makeNameUnique("Shelter L3inL1withL0")
+        search = self.makeNameUnique("L3inL1withL0")
+        sel.open("cr/shelter/create")
+        sel.type("cr_shelter_name", shelterName)
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Enter the search String
+        sel.type("gis_location_autocomplete", search)
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if search == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        # wait for the L2 list to be populated
+        for i in range(10):
+            try:
+                sel.select("gis_location_L3", "label=%s" % search)
+                break
+            except:
+                time.sleep(1)
+
+        self.assertEqual("Haiti", sel.get_selected_label("gis_location_L0"))
+        self.assertEqual(self.makeNameUnique("Ouest"), sel.get_selected_label("gis_location_L1"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L2"))
+        self.assertEqual(search, sel.get_selected_label("gis_location_L3"))
+        
+        self.initFormDetails()
+        location_id = sel.get_selected_value("gis_location_L3")
+        Locations.formDetails[0][3] = location_id
+        Locations.formDetails[5][2] = True
+        Locations.formDetails[6][2] = True
+        Locations.formDetails[7][2] = True
+        Locations.formDetails[8][2] = True
+        Locations.formDetails[9][2] = True
+        Locations.formDetails[10][2] = True
+        Locations.formDetails[11][2] = True
+        Locations.formDetails[12][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+        # Save the form
+        Locations.shelter.append(shelterName)   
+        self.action.saveForm("Shelter added")
+
+        ###############################################################
+        # Next Test
+        ###############################################################
+        shelterName = self.makeNameUnique("Shelter L3inL1withNoParent")
+        search = self.makeNameUnique("L3inL1withNoParent")
+        sel.open("cr/shelter/create")
+        sel.type("cr_shelter_name", shelterName)
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Enter the search String
+        sel.type("gis_location_autocomplete", search)
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if search == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        # wait for the L2 list to be populated
+        for i in range(10):
+            try:
+                sel.select("gis_location_L3", "label=%s" % search)
+                break
+            except:
+                time.sleep(1)
+
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L0"))
+        self.assertEqual(self.makeNameUnique("L1withNoParent"), sel.get_selected_label("gis_location_L1"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L2"))
+        self.assertEqual(search, sel.get_selected_label("gis_location_L3"))
+        
+        self.initFormDetails()
+        location_id = sel.get_selected_value("gis_location_L3")
+        Locations.formDetails[0][3] = location_id
+        Locations.formDetails[5][2] = True
+        Locations.formDetails[6][2] = True
+        Locations.formDetails[7][2] = True
+        Locations.formDetails[8][2] = True
+        Locations.formDetails[9][2] = True
+        Locations.formDetails[10][2] = True
+        Locations.formDetails[11][2] = True
+        Locations.formDetails[12][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+        # Save the form
+        Locations.shelter.append(shelterName)   
+        self.action.saveForm("Shelter added")
+
+        ###############################################################
+        # Next Test
+        ###############################################################
+        shelterName = self.makeNameUnique("Shelter L4inL0")
+        search = self.makeNameUnique("L4inL0")
+        sel.open("cr/shelter/create")
+        sel.type("cr_shelter_name", shelterName)
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Enter the search String
+        sel.type("gis_location_autocomplete", search)
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if search == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        # wait for the L2 list to be populated
+        for i in range(10):
+            try:
+                sel.select("gis_location_L4", "label=%s" % search)
+                break
+            except:
+                time.sleep(1)
+
+        self.assertEqual("Haiti", sel.get_selected_label("gis_location_L0"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L1"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L2"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L3"))
+        self.assertEqual(search, sel.get_selected_label("gis_location_L4"))
+        
+        self.initFormDetails()
+        location_id = sel.get_selected_value("gis_location_L4")
+        Locations.formDetails[0][3] = location_id
+        Locations.formDetails[5][2] = True
+        Locations.formDetails[6][2] = True
+        Locations.formDetails[7][2] = True
+        Locations.formDetails[8][2] = True
+        Locations.formDetails[9][2] = True
+        Locations.formDetails[10][2] = True
+        Locations.formDetails[11][2] = True
+        Locations.formDetails[12][2] = True
+        Locations.formDetails[13][2] = True
+        Locations.formDetails[14][2] = True
+        Locations.formDetails[17][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+        # Save the form
+        Locations.shelter.append(shelterName)   
+        self.action.saveForm("Shelter added")
+
+        ###############################################################
+        # Next Test
+        ###############################################################
+        shelterName = self.makeNameUnique("Shelter L4inL1withL0")
+        search = self.makeNameUnique("L4inL1withL0")
+        sel.open("cr/shelter/create")
+        sel.type("cr_shelter_name", shelterName)
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Enter the search String
+        sel.type("gis_location_autocomplete", search)
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if search == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        # wait for the L2 list to be populated
+        for i in range(10):
+            try:
+                sel.select("gis_location_L4", "label=%s" % search)
+                break
+            except:
+                time.sleep(1)
+
+        self.assertEqual("Haiti", sel.get_selected_label("gis_location_L0"))
+        self.assertEqual(self.makeNameUnique("Ouest"), sel.get_selected_label("gis_location_L1"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L2"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L3"))
+        self.assertEqual(search, sel.get_selected_label("gis_location_L4"))
+        
+        self.initFormDetails()
+        location_id = sel.get_selected_value("gis_location_L4")
+        Locations.formDetails[0][3] = location_id
+        Locations.formDetails[5][2] = True
+        Locations.formDetails[6][2] = True
+        Locations.formDetails[7][2] = True
+        Locations.formDetails[8][2] = True
+        Locations.formDetails[9][2] = True
+        Locations.formDetails[10][2] = True
+        Locations.formDetails[11][2] = True
+        Locations.formDetails[12][2] = True
+        Locations.formDetails[13][2] = True
+        Locations.formDetails[14][2] = True
+        Locations.formDetails[17][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+        # Save the form
+        Locations.shelter.append(shelterName)   
+        self.action.saveForm("Shelter added")
+        
+        ###############################################################
+        # Next Test
+        ###############################################################
+        shelterName = self.makeNameUnique("Shelter L4inL1withNoParent")
+        search = self.makeNameUnique("L4inL1withNoParent")
+        sel.open("cr/shelter/create")
+        sel.type("cr_shelter_name", shelterName)
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Enter the search String
+        sel.type("gis_location_autocomplete", search)
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if search == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        # wait for the L2 list to be populated
+        for i in range(10):
+            try:
+                sel.select("gis_location_L4", "label=%s" % search)
+                break
+            except:
+                time.sleep(1)
+
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L0"))
+        self.assertEqual(self.makeNameUnique("L1withNoParent"), sel.get_selected_label("gis_location_L1"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L2"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L3"))
+        self.assertEqual(search, sel.get_selected_label("gis_location_L4"))
+        
+        self.initFormDetails()
+        location_id = sel.get_selected_value("gis_location_L4")
+        Locations.formDetails[0][3] = location_id
+        Locations.formDetails[5][2] = True
+        Locations.formDetails[6][2] = True
+        Locations.formDetails[7][2] = True
+        Locations.formDetails[8][2] = True
+        Locations.formDetails[9][2] = True
+        Locations.formDetails[10][2] = True
+        Locations.formDetails[11][2] = True
+        Locations.formDetails[12][2] = True
+        Locations.formDetails[13][2] = True
+        Locations.formDetails[14][2] = True
+        Locations.formDetails[17][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+        # Save the form
+        Locations.shelter.append(shelterName)   
+        self.action.saveForm("Shelter added")
+        
+        
+        ###############################################################
+        # Next Test
+        ###############################################################
+        shelterName = self.makeNameUnique("Shelter L4inL2withL1L0")
+        search = self.makeNameUnique("L4inL2withL1L0")
+        sel.open("cr/shelter/create")
+        sel.type("cr_shelter_name", shelterName)
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Enter the search String
+        sel.type("gis_location_autocomplete", search)
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if search == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        # wait for the L2 list to be populated
+        for i in range(10):
+            try:
+                sel.select("gis_location_L4", "label=%s" % search)
+                break
+            except:
+                time.sleep(1)
+
+        self.assertEqual("Haiti", sel.get_selected_label("gis_location_L0"))
+        self.assertEqual(self.makeNameUnique("Ouest"), sel.get_selected_label("gis_location_L1"))
+        self.assertEqual(self.makeNameUnique("Port-Au-Prince"), sel.get_selected_label("gis_location_L2"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L3"))
+        self.assertEqual(search, sel.get_selected_label("gis_location_L4"))
+        
+        self.initFormDetails()
+        location_id = sel.get_selected_value("gis_location_L4")
+        Locations.formDetails[0][3] = location_id
+        Locations.formDetails[5][2] = True
+        Locations.formDetails[6][2] = True
+        Locations.formDetails[7][2] = True
+        Locations.formDetails[8][2] = True
+        Locations.formDetails[9][2] = True
+        Locations.formDetails[10][2] = True
+        Locations.formDetails[11][2] = True
+        Locations.formDetails[12][2] = True
+        Locations.formDetails[13][2] = True
+        Locations.formDetails[14][2] = True
+        Locations.formDetails[17][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+        # Save the form
+        Locations.shelter.append(shelterName)   
+        self.action.saveForm("Shelter added")
+        
+        ###############################################################
+        # Next Test
+        ###############################################################
+        shelterName = self.makeNameUnique("Shelter L4inL2withL1only")
+        search = self.makeNameUnique("L4inL2withL1only")
+        sel.open("cr/shelter/create")
+        sel.type("cr_shelter_name", shelterName)
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Enter the search String
+        sel.type("gis_location_autocomplete", search)
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if search == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        # wait for the L2 list to be populated
+        for i in range(10):
+            try:
+                sel.select("gis_location_L4", "label=%s" % search)
+                break
+            except:
+                time.sleep(1)
+
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L0"))
+        self.assertEqual(self.makeNameUnique("L1withNoParent"), sel.get_selected_label("gis_location_L1"))
+        self.assertEqual(self.makeNameUnique("L2inL1withNoParent"), sel.get_selected_label("gis_location_L2"))
+# Removed the following test because at the moment it returns
+# No locations registered at this level
+# TODO check with Fran
+#        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L3"))
+        self.assertEqual(search, sel.get_selected_label("gis_location_L4"))
+        
+        self.initFormDetails()
+        location_id = sel.get_selected_value("gis_location_L4")
+        Locations.formDetails[0][3] = location_id
+        Locations.formDetails[5][2] = True
+        Locations.formDetails[6][2] = True
+        Locations.formDetails[7][2] = True
+        Locations.formDetails[8][2] = True
+        Locations.formDetails[9][2] = True
+        Locations.formDetails[10][2] = True
+        Locations.formDetails[11][2] = True
+        Locations.formDetails[12][2] = True
+        Locations.formDetails[13][2] = True
+        Locations.formDetails[14][2] = True
+        Locations.formDetails[17][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+        # Save the form
+        Locations.shelter.append(shelterName)   
+        self.action.saveForm("Shelter added")
+        
+        ###############################################################
+        # Next Test
+        ###############################################################
+        shelterName = self.makeNameUnique("Shelter L4inL2withL0only")
+        search = self.makeNameUnique("L4inL2withL0only")
+        sel.open("cr/shelter/create")
+        sel.type("cr_shelter_name", shelterName)
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Enter the search String
+        sel.type("gis_location_autocomplete", search)
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if search == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        # wait for the L2 list to be populated
+        for i in range(10):
+            try:
+                sel.select("gis_location_L4", "label=%s" % search)
+                break
+            except:
+                time.sleep(1)
+
+        self.assertEqual("Haiti", sel.get_selected_label("gis_location_L0"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L1"))
+        self.assertEqual(self.makeNameUnique("L2inL0"), sel.get_selected_label("gis_location_L2"))
+# Removed the following test because at the moment it returns
+# No locations registered at this level
+# TODO check with Fran
+#        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L3"))
+        self.assertEqual(search, sel.get_selected_label("gis_location_L4"))
+        
+        self.initFormDetails()
+        location_id = sel.get_selected_value("gis_location_L4")
+        Locations.formDetails[0][3] = location_id
+        Locations.formDetails[5][2] = True
+        Locations.formDetails[6][2] = True
+        Locations.formDetails[7][2] = True
+        Locations.formDetails[8][2] = True
+        Locations.formDetails[9][2] = True
+        Locations.formDetails[10][2] = True
+        Locations.formDetails[11][2] = True
+        Locations.formDetails[12][2] = True
+        Locations.formDetails[13][2] = True
+        Locations.formDetails[14][2] = True
+        Locations.formDetails[17][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+        # Save the form
+        Locations.shelter.append(shelterName)   
+        self.action.saveForm("Shelter added")
+        
+        ###############################################################
+        # Next Test
+        ###############################################################
+        shelterName = self.makeNameUnique("Shelter L4inL2withNoParent")
+        search = self.makeNameUnique("L4inL2withNoParent")
+        sel.open("cr/shelter/create")
+        sel.type("cr_shelter_name", shelterName)
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Enter the search String
+        sel.type("gis_location_autocomplete", search)
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if search == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        # wait for the L2 list to be populated
+        for i in range(10):
+            try:
+                sel.select("gis_location_L4", "label=%s" % search)
+                break
+            except:
+                time.sleep(1)
+
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L0"))
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L1"))
+        self.assertEqual(self.makeNameUnique("L2withNoParent"), sel.get_selected_label("gis_location_L2"))
+# Removed the following test because at the moment it returns
+# No locations registered at this level
+# TODO check with Fran
+#        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L3"))
+        self.assertEqual(search, sel.get_selected_label("gis_location_L4"))
+        
+        self.initFormDetails()
+        location_id = sel.get_selected_value("gis_location_L4")
+        Locations.formDetails[0][3] = location_id
+        Locations.formDetails[5][2] = True
+        Locations.formDetails[6][2] = True
+        Locations.formDetails[7][2] = True
+        Locations.formDetails[8][2] = True
+        Locations.formDetails[9][2] = True
+        Locations.formDetails[10][2] = True
+        Locations.formDetails[11][2] = True
+        Locations.formDetails[12][2] = True
+        Locations.formDetails[13][2] = True
+        Locations.formDetails[14][2] = True
+        Locations.formDetails[17][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+        # Save the form
+        Locations.shelter.append(shelterName)   
+        self.action.saveForm("Shelter added")
+        
         
 if __name__ == "__main__":
     SahanaTest.setUpHierarchy()

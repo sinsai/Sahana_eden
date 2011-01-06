@@ -1,9 +1,13 @@
 /**
- * Copyright (c) 2009 OpenGeo
+ * Copyright (c) 2008-2010 The Open Planning Project
+ * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
  */
 
 /** api: (define)
- *  module = gxp // to be ported to gxp
+ *  module = gxp
  *  class = GoogleEarthPanel
  *  base_link = `Ext.Panel <http://extjs.com/deploy/dev/docs/?class=Ext.Panel>`_
  */

@@ -32,3 +32,5 @@ tests/.cherrypy/*
 .DS_Store
 languages/*.po
 __init__.pyc
+*.log
+

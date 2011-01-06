@@ -286,7 +286,7 @@ def migrate():
     child.expect(":~#")
     child.sendline("cd /home/web2py")
     child.expect("/home/web2py#")
-    child.sendline("sudo -H -u web2py python web2py.py -N -S eden -M")
+    child.sendline("sudo -H -u web2py python web2py.py -N -S eden -M -R applications/eden/static/scripts/tools/noop.py")
     # @ToDo check if we need to interact otherwise automate
     # - not working :/
     # special characters in regexes matching?
@@ -296,10 +296,11 @@ def migrate():
     #child.sendline("y")
     #child.expect("/home/web2py#")
     #child.sendline("exit")
-    print child.before
-    print (green("Need to exit() w2p shell & also exit the SSH session once you have fixed anything which needs fixing"))
+
+    #print child.before
+    #print (green("Need to exit() w2p shell & also exit the SSH session once you have fixed anything which needs fixing"))
     # Give control of the child to the user.
-    child.interact()
+    #child.interact()
 
 def migrate_off():
     """ Disabling migrations """

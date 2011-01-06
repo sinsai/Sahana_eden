@@ -76,7 +76,7 @@ def define_map(window=False, toolbar=False, config=None):
     # http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting
     print_service = deployment_settings.get_gis_print_service()
     if print_service:
-        print_tool = {url: print_service}
+        print_tool = {"url": print_service}
     else:
         print_tool = {}
 
@@ -1646,7 +1646,10 @@ def geoexplorer():
 
     config = gis.get_config()
 
+    # @ToDo: Optimise to a single query of table
+    bing_key = gis.get_api_key("bing")
     google_key = gis.get_api_key("google")
+    yahoo_key = gis.get_api_key("yahoo")
 
     # http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting
     print_service = deployment_settings.get_gis_print_service()
@@ -1654,7 +1657,9 @@ def geoexplorer():
     geoserver_url = deployment_settings.get_gis_geoserver_url()
 
     return dict(config=config,
+                bing_key=bing_key,
                 google_key=google_key,
+                yahoo_key=yahoo_key,
                 print_service=print_service,
                 geoserver_url=geoserver_url)
 

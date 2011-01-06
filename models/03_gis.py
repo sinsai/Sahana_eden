@@ -426,7 +426,7 @@ table = db.define_table(tablename,
                         Field("path", length=500, readable=False, writable=False),  # Materialised Path
                         # Street Address (other address fields come from hierarchy)
                         Field("addr_street", "text"),
-                        #Field("addr_postcode"),    # Do we want this as a separate field?
+                        Field("addr_postcode"),
                         Field("gis_feature_type", "integer", default=1, notnull=True),
                         Field("lat", "double"), # Points or Centroid for Polygons
                         Field("lon", "double"), # Points or Centroid for Polygons
@@ -472,6 +472,7 @@ table.level.label = T("Level")
 table.code.label = T("Code")
 table.parent.label = T("Parent")
 table.addr_street.label = T("Street Address")
+table.addr_postcode.label = T("Postcode")
 table.gis_feature_type.label = T("Feature Type")
 table.lat.label = T("Latitude")
 table.lon.label = T("Longitude")
@@ -859,7 +860,9 @@ def shn_gis_location_represent(id):
         # Hyperlink
         #represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[id]))
         # Map
-        represent = A(text, _href="#", _onclick="s3_viewMap(" + str(id) +");return false")
+        #represent = A(text, _href="#", _onclick="s3_viewMap(" + str(id) +");return false")
+        # Do not open in a browser tab (fix by jgeralnik):
+        represent = A(text, _style="cursor:pointer; cursor:hand", _onclick="s3_viewMap(" + str(id) +");return false")
         # ToDo: Convert to popup? (HTML again!)
     except:
         try:

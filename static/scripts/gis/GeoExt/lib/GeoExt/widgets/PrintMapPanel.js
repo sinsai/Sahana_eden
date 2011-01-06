@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008-2010 The Open Source Geospatial Foundation
+ * Copyright (c) 2008-2011 The Open Source Geospatial Foundation
  * 
  * Published under the BSD license.
  * See http://svn.geoext.org/core/trunk/geoext/license.txt for the full text
@@ -200,10 +200,21 @@ GeoExt.PrintMapPanel = Ext.extend(GeoExt.MapPanel, {
         this.extent = this.sourceMap.getExtent();
         
         GeoExt.PrintMapPanel.superclass.initComponent.call(this);
-
-        this.printProvider.on("layoutchange", this.syncSize, this);
+    },
+    
+    /** private: method[bind]
+     */
+    bind: function() {
         this.printPage.on("change", this.fitZoom, this);
+        this.printProvider.on("layoutchange", this.syncSize, this);
         this.map.events.register("moveend", this, this.updatePage);
+
+        this.printPage.fit(this.sourceMap);
+
+        if (this.initialConfig.limitScales === true) {
+            this.on("resize", this.calculatePreviewScales, this);
+            this.calculatePreviewScales();
+        }
     },
     
     /** private: method[afterRender]
@@ -212,19 +223,16 @@ GeoExt.PrintMapPanel = Ext.extend(GeoExt.MapPanel, {
     afterRender: function() {
         GeoExt.PrintMapPanel.superclass.afterRender.apply(this, arguments);
         this.syncSize();
-        if (this.initialConfig.limitScales === true) {
-            if (!this.ownerCt) {
-                this.calculatePreviewScales();
-            } else {
-                this.ownerCt.on({
-                    "afterlayout": {
-                        fn: this.calculatePreviewScales,
-                        scope: this,
-                        single: true
-                    }
-                });
-            }
-            this.on("resize", this.calculatePreviewScales, this);
+        if (!this.ownerCt) {
+            this.bind();
+        } else {
+            this.ownerCt.on({
+                "afterlayout": {
+                    fn: this.bind,
+                    scope: this,
+                    single: true
+                }
+            });
         }
     },
     

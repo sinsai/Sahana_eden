@@ -33,8 +33,9 @@ def s3_sessions():
                         _memberships.group_id)
         roles = [m.group_id for m in memberships]
     session.s3.roles = roles
-    if not auth.permission():
-        auth.permission.fail()
+    # not used yet:
+    #if not auth.permission():
+        #auth.permission.fail()
 
     # Are we running in debug mode?
     session.s3.debug = request.vars.get("debug", None) or \
@@ -835,9 +836,6 @@ def s3_rest_controller(prefix, resourcename, **attr):
 
     # Parse the request
     resource, r = s3xrc.parse_request(prefix, resourcename)
-
-    #acl = auth.permission(table=r.table, record=r.id)
-    #print "ACL=0x%04X" % acl
 
     resource.set_handler("search", s3base.S3Search())
     resource.set_handler("copy", shn_copy)

@@ -239,6 +239,9 @@ def user():
     table = db[tablename]
 
     # Model options
+    s3xrc.model.add_component(module, "membership",
+                              joinby=dict(auth_user="user_id"),
+                              multiple=True)
 
     # CRUD Strings
     ADD_USER = T("Add User")
@@ -527,10 +530,10 @@ def users():
 def group_dupes(form, page, arg):
     """ Onvalidation check for duplicate user roles """
     user = form.latest["user_id"]
-    group = form.latest["group_id"]   
+    group = form.latest["group_id"]
     query = (form.table.user_id == user) & (form.table.group_id == group)
     items = db(query).select()
-    if items:     
+    if items:
         session.error = T("User already has this role")
         redirect(URL(r=request, f=page, args=arg))
 
@@ -577,9 +580,9 @@ def groups():
     crud.settings.create_onaccept = lambda form: s3_audit("create", module, "membership",
                                                           form=form,
                                                           representation="html")
-    
-    
-    crud.settings.create_onvalidation = lambda form: group_dupes(form, "groups", [user]) 
+
+
+    crud.settings.create_onvalidation = lambda form: group_dupes(form, "groups", [user])
     # Many<>Many selection (Deletable, no Quantity)
     item_list = []
     sqlrows = db(query).select()
@@ -1057,11 +1060,38 @@ def role():
     """
     Role Editor
 
+    @author: Dominic König <dominic@aidiq.com>
+
     """
 
-    output = dict()
+    prefix = "auth"
+    name = "group"
 
-    response.view = "list.html"
+    # ACLs as component of roles
+    s3xrc.model.add_component("s3", "permission",
+        joinby = dict(auth_group="group_id"),
+        multiple=True)
+
+    def prep(r):
+        if r.representation not in ("html",):
+            return False
+
+        handler = s3base.S3RoleManager()
+        handler.controllers = deployment_settings.modules
+
+        # Configure REST methods
+        resource = r.resource
+        resource.add_method("users", handler)
+        resource.set_handler("read", handler)
+        resource.set_handler("list", handler)
+        resource.set_handler("copy", handler)
+        resource.set_handler("create", handler)
+        resource.set_handler("update", handler)
+        resource.set_handler("delete", handler)
+        return True
+    response.s3.prep = prep
+
+    output = s3_rest_controller(prefix, name)
     return output
 
 
@@ -1089,15 +1119,15 @@ def acl():
     table.tablename.requires = IS_EMPTY_OR(IS_IN_SET([t._tablename for t in db], zero=T("ANY")))
     table.tablename.represent = lambda val: val and val or T("ANY")
 
-    table.spermissions.label = T("All Resources")
-    table.spermissions.widget = S3ACLWidget.widget
-    table.spermissions.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
-    table.spermissions.represent = lambda val: acl_represent(val, auth.permission.PERMISSION_OPTS)
+    table.uacl.label = T("All Resources")
+    table.uacl.widget = S3ACLWidget.widget
+    table.uacl.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
+    table.uacl.represent = lambda val: acl_represent(val, auth.permission.PERMISSION_OPTS)
 
-    table.opermissions.label = T("Owned Resources")
-    table.opermissions.widget = S3ACLWidget.widget
-    table.opermissions.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
-    table.opermissions.represent = lambda val: acl_represent(val, auth.permission.PERMISSION_OPTS)
+    table.oacl.label = T("Owned Resources")
+    table.oacl.widget = S3ACLWidget.widget
+    table.oacl.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
+    table.oacl.represent = lambda val: acl_represent(val, auth.permission.PERMISSION_OPTS)
 
     s3xrc.model.configure(table,
         create_next = URL(r=request),
@@ -1118,7 +1148,7 @@ def acl_represent(acl, options):
     for o in options.keys():
         if o == 0 and acl == 0:
             values.append("%s" % options[o][0])
-        elif acl & o == o:
+        elif acl and acl & o == o:
             values.append("%s" % options[o][0])
         else:
             values.append("_")

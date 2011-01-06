@@ -4,14 +4,17 @@ from selenium import selenium
 class Action(unittest.TestCase):
     def __init__ (self, selenium):
         self.sel = selenium
+        self._diag = False # make True for profiling diagnostics
         
     def openReport(self):
-        self._diag_SearchResults = open('diagTestResults.txt', 'a')
-        self._diag_SearchResults.write(time.strftime('New Search run %d %b %Y (%H:%M:%S)\n'))
+        if self._diag:
+            self._diag_SearchResults = open('diagTestResults.txt', 'a')
+            self._diag_SearchResults.write(time.strftime('New Search run %d %b %Y (%H:%M:%S)\n'))
     
     def closeReport(self, msg):
-        self._diag_SearchResults.write(msg)
-        self._diag_SearchResults.close()
+        if self._diag:
+            self._diag_SearchResults.write(msg)
+            self._diag_SearchResults.close()
 
     def login(self, username, password, reveal=True):
         sel = self.sel
@@ -23,7 +26,7 @@ class Action(unittest.TestCase):
             else:
                 # logged in but as a different user
                 self.logout()
-        sel.open("/eden/default/user/login")
+        sel.open("default/user/login")
         sel.click("auth_user_email")
         sel.type("auth_user_email", username)
         sel.type("auth_user_password", password)
@@ -45,8 +48,10 @@ class Action(unittest.TestCase):
         # The solution is to put in a call to the DataTables API, namely the fnFilter function
         # However, the first time that the fnFilter() is called in the testing suite it doesn't complete the processing, hence it is called twice.
         sel = self.sel
+        clearString = ""
+        if searchString == '': clearString = "Clearing..."
         # First clear the search field and add a short pause
-        sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( '' );")
+        sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( '%s' );" % clearString)
         time.sleep(1)
         self._diag_sleepTime += 1
         # Now trigger off the true search
@@ -72,10 +77,12 @@ class Action(unittest.TestCase):
             if found:
                 break
         if not found:
-            self._diag_SearchResults.write("%s\tFAILED\t%s\t%s\n" % (searchString, self._diag_sleepTime, self._diag_performCalls))
+            if self._diag:
+                self._diag_SearchResults.write("%s\tFAILED\t%s\t%s\n" % (searchString, self._diag_sleepTime, self._diag_performCalls))
             self.fail("time out search didn't respond, whilst searching for %s" % searchString)
         else:
-            self._diag_SearchResults.write("%s\tSUCCEEDED\t%s\t%s\n" % (searchString, self._diag_sleepTime, self._diag_performCalls))
+            if self._diag:
+                self._diag_SearchResults.write("%s\tSUCCEEDED\t%s\t%s\n" % (searchString, self._diag_sleepTime, self._diag_performCalls))
         # The search has returned now read the results
         try:
             result = sel.get_text("//div[@id='table-container']")
@@ -88,8 +95,6 @@ class Action(unittest.TestCase):
         self.search(uniqueName, r"1 entries")
         
     def clearSearch(self):
-        sel = self.sel
-        sel.run_script("oTable = $('#list').dataTable();  oTable.fnFilter( 'Clearing...' );")
         self.search("", r"entries")
         
     def addUser(self, first_name, last_name, email, password):
@@ -100,7 +105,7 @@ class Action(unittest.TestCase):
         
         sel = self.sel
         # TODO only open this page if on another page
-        sel.open("/eden/admin/user")
+        sel.open("admin/user")
         self.assertTrue(sel.is_element_present("show-add-btn"))
         sel.click("show-add-btn")
         sel.type("auth_user_first_name", first_name)
@@ -136,13 +141,13 @@ class Action(unittest.TestCase):
             msg = "Failed to add role %s to user %s" % (role.strip() , email)
             self.assertTrue(self.successMsg("User Updated"), msg)
             print "User %s added to group %s" % (email, role.strip())
-        sel.open("/eden/admin/user")
+        sel.open("admin/user")
 
     def delUser(self, email):
         email = email.strip()
         print "Deleting user %s" % email
         sel = self.sel
-        sel.open("/eden/admin/user")
+        sel.open("admin/user")
         self.searchUnique(email)
 
         sel.click("link=Delete")
@@ -159,7 +164,7 @@ class Action(unittest.TestCase):
         else:
             parentHolder = holder + parent + holder
         # Load the Create Location page
-        sel.open("/eden/gis/location/create")
+        sel.open("gis/location/create")
         # Create the Location
         sel.type("gis_location_name", name)
         if level:
@@ -196,7 +201,7 @@ class Action(unittest.TestCase):
             print "Failed to delete %s %s from page %s" % (type, objName, page)
 
     def deleteLocation(self, name):
-        self.deleteObject("/eden/gis/location", name, "Location")
+        self.deleteObject("gis/location", name, "Location")
 
     # Method to check the details that are displayed in the heading
     def checkHeading(self, detailMap):
@@ -225,12 +230,14 @@ class Action(unittest.TestCase):
             while sel.is_element_present('//div[@class="%s"][%s]' % (type, i)):
                 banner = sel.get_text('//div[@class="%s"][%s]' % (type, i))
                 if message in banner:
-                    self._diag_SearchResults.write("%s\tSUCCEEDED\t%s\t\n" % (message, self._diag_sleepTime))
+                    if self._diag:
+                        self._diag_SearchResults.write("%s\tSUCCEEDED\t%s\t\n" % (message, self._diag_sleepTime))
                     return True
                 i += 1
             time.sleep(1)
             self._diag_sleepTime += 1
-        self._diag_SearchResults.write("%s\tFAILED\t%s\t\n" % (message, self._diag_sleepTime))
+        if self._diag:
+            self._diag_SearchResults.write("%s\tFAILED\t%s\t\n" % (message, self._diag_sleepTime))
         return False
     
     # Method used to check for confirmation messages
@@ -260,7 +267,8 @@ class Action(unittest.TestCase):
         else:
             value = None
         element = '//%s[@id="%s"]' % (type, id)
-        if not sel.is_element_present(element): return "%s element %s is missing" % (type, id)
+        if visible:
+            if not sel.is_element_present(element): return "%s element %s is missing" % (type, id)
         if sel.is_visible(element) != visible: return "%s element %s doesn't have a visibility of %s"  % (type, id, visible)
         if value!= None:
             actual = sel.get_value(element)

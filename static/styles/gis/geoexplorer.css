@@ -1,77 +1,12 @@
-/* don't wrap lines on any tooltips */
-.x-tip {
-    white-space: nowrap;
-}
-
-/* get images on buttons with text to line up with those with no text */
-.x-btn-text-icon .x-btn-center .x-btn-text {
-    background-position: 0 3px;
-}
-
-/* apply some margin when using the row expander */
-.x-grid3-row-body p {
-    margin: 5px !important;
+/* fixes textarea scrollbar issue in FF on OSX */
+.ext-gecko.ext-mac textarea.x-form-field {
+    padding: 1px 2px;
 }
 
 /* workaround for semi-alpha pixels in IE7: background needs to be the same
  * as the toolbar's background color */
 .ext-ie .x-item-disabled .x-btn-text {
     background-color: #EAEAEA;
-}
-
-.x-tree-node-ct {
-    margin: 0;
-}
-
-.x-tree-node img.gx-folder, .x-tree-node-collapsed img.gx-folder{
-    background: url(../../scripts/ext/resources/images/default/tree/folder.gif);
-}
- 
-.x-tree-node-expanded img.gx-folder {
-    background: url(../../scripts/ext/resources/images/default/tree/folder-open.gif);
-}
-
-.x-btn .icon-geoexplorer {
-    background-image: url(../../favicon.ico);
-    /*
-    background-image: url(../../img/geoexplorer.png);
-    */
-}
-
-.x-btn .icon-about {
-    background-image: url(../../img/silk/help.png);
-}
-
-.x-btn .icon-addlayers {
-    background-image: url(../../img/silk/add.png);
-}
-
-.x-btn .icon-addserver {
-    background-image: url(../../img/silk/map_add.png);
-}
-
-.x-btn .icon-removelayers, .x-menu-item .icon-removelayers {
-    background-image: url(../../img/silk/delete.png);
-}
-
-.x-btn .icon-properties, .x-menu-item .icon-properties {
-    background-image: url(../../img/silk/wrench.png);
-}
-
-.x-btn .icon-getfeatureinfo {
-    background-image: url(../../img/silk/information.png);
-}
-
-.x-btn .icon-save {
-    background-image: url(../../img/gis/geosilk/map_save.png);
-}
-
-.x-btn .icon-export {
-    background-image: url(../../img/silk/map_go.png);
-}
-
-.x-btn .icon-measure {
-    background-image: url(../../img/gis/geosilk/measure.png);
 }
 
 .icon-measure-length {
@@ -90,56 +25,6 @@
     width: 16px !important;
     height: 16px !important;
 */
-}
-
-.x-btn .icon-layer-switcher {
-   background-image: url(../../img/silk/layers.png);
-}
-
-.x-btn .icon-zoom-in { 
-    background-image: url(../../img/silk/magnifier_zoom_in.png);
-}
-
-.x-btn .icon-zoom-out { 
-    background-image: url(../../img/silk/magnifier_zoom_out.png);
-}
-
-.x-btn .icon-zoom-previous { 
-    background-image: url(../../img/silk/arrow_left.png);
-}
-
-.x-btn .icon-zoom-next { 
-    background-image: url(../../img/silk/arrow_right.png);
-}
-
-.x-btn .icon-zoom-visible { 
-    background-image: url(../../img/silk/arrow_out.png);
-}
-
-.x-btn .icon-zoom-to, .x-menu-item .icon-zoom-to { 
-    background-image: url(../../img/silk/magnifier.png);
-}
-
-.x-btn .icon-pan { 
-    background-image: url(../../img/gis/geosilk/pan.png);
-}
-
-.x-btn .icon-3D {
-    background-image: url(../../img/gis/geosilk/google_earth.png);
-}
-
-.x-menu-group-item .x-menu-item-icon {
-    background: transparent url(../../scripts/ext/resources/images/default/form/radio.gif) no-repeat 0 0;
-    height: 13px;
-    width: 13px;
-    margin: 2px;
-}
-
-.x-menu-item-checked .x-menu-group-item .x-menu-item-icon {
-    background: transparent url(../../scripts/ext/resources/images/default/form/radio.gif) no-repeat -13px -13px;
-    height: 13px;
-    width: 13px;
-    margin: 2px;
 }
 
 .legend-item {
@@ -163,6 +48,192 @@ div.map-overlay div.overlay-element {
     bottom: 0px;
     left: 0px;
     margin-top: 0px;
+}
+
+.x-btn .add {
+    background-image: url(../../img/gis/gxp/add.png);
+}
+
+.x-btn .cancel {
+    background-image: url(../../img/gis/gxp/decline.png);
+}
+
+.x-btn .delete {
+    background-image: url(../../img/silk/delete.png);
+}
+
+.x-btn .duplicate {
+    background-image: url(../../img/silk/arrow_divide.png);
+}
+
+.x-btn .edit {
+    background-image: url(../../img/gis/gxp/pencil.png);
+}
+
+.x-btn .save {
+    background-image: url(../../img/gis/gxp/accept.png);
+}
+
+/* gx_featureeditor */
+.x-btn .gx-icon-addfeature, .x-menu-item .gx-icon-addfeature {
+    background-image: url(../../img/silk/pencil_add.png);
+}
+
+/* gx_wmsgetfeatureinfo */
+.x-btn .gx-icon-getfeatureinfo, .x-menu-item .gx-icon-getfeatureinfo {
+    background-image: url(../../img/silk/information.png);
+}
+
+.x-btn .gx-icon-editfeature, .x-menu-item .gx-icon-editfeature {
+    background-image: url(../../img/silk/map_edit.png);
+}
+
+/* gx_queryform */
+.x-btn .gx-icon-find, .x-menu-item .gx-icon-find { 
+    background-image: url(../../img/silk/find.png);
+}
+
+/* gx_removelayer */
+.x-btn .gx-icon-removelayers, .x-menu-item .gx-icon-removelayers {
+    background-image: url(../../img/silk/delete.png);
+}
+
+/* gx_selectfeature */
+.x-btn .gx-icon-selectfeature, .x-menu-item .gx-icon-selectfeature { 
+    background-image: url(../../img/silk/cursor.png);
+}
+
+/* gx_featuregrid */
+.x-btn .gx-icon-zoom-to, .x-menu-item .gx-icon-zoom-to { 
+    background-image: url(../../img/silk/magnifier.png);
+}
+
+.x-btn .icon-3D {
+    background-image: url(../../img/gis/geosilk/google_earth.png);
+}
+
+.x-btn .icon-about {
+    background-image: url(../../img/silk/help.png);
+}
+
+.x-btn .icon-addlayers {
+    background-image: url(../../img/silk/add.png);
+}
+
+.x-btn .icon-addserver {
+    background-image: url(../../img/silk/map_add.png);
+}
+
+.x-btn .icon-export {
+    background-image: url(../../img/silk/map_go.png);
+}
+
+.x-btn .icon-geoexplorer {
+    background-image: url(../../favicon.ico);
+    /*
+    background-image: url(../../img/geoexplorer.png);
+    */
+}
+
+.x-btn .icon-getfeatureinfo {
+    background-image: url(../../img/silk/information.png);
+}
+
+.x-btn .icon-layer-switcher {
+   background-image: url(../../img/silk/layers.png);
+}
+
+.x-btn .icon-measure {
+    background-image: url(../../img/gis/geosilk/measure.png);
+}
+
+.x-btn .icon-pan { 
+    background-image: url(../../img/gis/geosilk/pan.png);
+}
+
+.x-btn .icon-properties, .x-menu-item .icon-properties {
+    background-image: url(../../img/silk/wrench.png);
+}
+
+.x-btn .icon-removelayers, .x-menu-item .icon-removelayers {
+    background-image: url(../../img/silk/delete.png);
+}
+
+.x-btn .icon-save {
+    background-image: url(../../img/gis/geosilk/map_save.png);
+}
+
+.x-btn .icon-zoom-in { 
+    background-image: url(../../img/silk/magnifier_zoom_in.png);
+}
+
+.x-btn .icon-zoom-next { 
+    background-image: url(../../img/silk/arrow_right.png);
+}
+
+.x-btn .icon-zoom-out { 
+    background-image: url(../../img/silk/magnifier_zoom_out.png);
+}
+
+.x-btn .icon-zoom-previous { 
+    background-image: url(../../img/silk/arrow_left.png);
+}
+
+.x-btn .icon-zoom-to, .x-menu-item .icon-zoom-to { 
+    background-image: url(../../img/silk/magnifier.png);
+}
+
+.x-btn .icon-zoom-visible { 
+    background-image: url(../../img/silk/arrow_out.png);
+}
+
+/* get images on buttons with text to line up with those with no text */
+.x-btn-text-icon .x-btn-center .x-btn-text {
+    background-position: 0 3px;
+}
+
+/* apply some margin when using the row expander */
+.x-grid3-row-body p {
+    margin: 5px !important;
+}
+
+/* don't wrap lines on any tooltips */
+.x-tip {
+    white-space: nowrap;
+}
+
+.x-tree-node-ct {
+    margin: 0;
+}
+
+.x-tree-node img.gx-folder, .x-tree-node-collapsed img.gx-folder{
+    background: url(../../scripts/ext/resources/images/default/tree/folder.gif);
+}
+ 
+.x-tree-node-expanded img.gx-folder {
+    background: url(../../scripts/ext/resources/images/default/tree/folder-open.gif);
+}
+
+.x-tree-node-leaf  .gx-tree-layer-icon {
+    background-image: url(../../img/gis/geosilk/vector.png);
+}
+
+.x-tree-node-leaf  .gx-tree-rasterlayer-icon {
+    background-image: url(../../img/gis/geosilk/raster.png);
+}
+
+.x-menu-group-item .x-menu-item-icon {
+    background: transparent url(../../scripts/ext/resources/images/default/form/radio.gif) no-repeat 0 0;
+    height: 13px;
+    width: 13px;
+    margin: 2px;
+}
+
+.x-menu-item-checked .x-menu-group-item .x-menu-item-icon {
+    background: transparent url(../../scripts/ext/resources/images/default/form/radio.gif) no-repeat -13px -13px;
+    height: 13px;
+    width: 13px;
+    margin: 2px;
 }
 
 /* Pan- and Zoom- Panel Styles*/
@@ -253,33 +324,22 @@ div.map-overlay div.overlay-element {
     text-align: center;
 }
 
-/* position the zoom slider within map panel */
-.gx-zoomslider {
-    top: 90px;
-    left: 17px
+.gx-export-section {
+    padding: 10px 10px 5px 10px;
+    /* New Below */
+    margin-bottom: 0;
 }
 
-.gx-layer-visibility {
-    background-image: url(../../img/silk/eye.png);
-/*
-    width: 16px;
-    height: 16px;
-    display: block;
-*/
-}
-/*
-.gx-layer-menu {
-    background: #F0F0F0;
-}
-*/
+/* gx_embedmapdialog */
 .gx-field-label {
     font-weight: bold;
     margin: 4px;
     vertical-align: baseline;
 }
 
-.gx-export-section {
-    padding: 10px 10px 5px 10px;
+.gx-filterbuilder .x-toolbar {
+    background: transparent;
+    border: none !important;
 }
 
 .gx-info-panel {
@@ -290,12 +350,23 @@ div.map-overlay div.overlay-element {
     margin-top: 1em;
 }
 
-.x-tree-node-leaf  .gx-tree-layer-icon {
-    background-image: url(../../img/gis/geosilk/vector.png);
+/*
+.gx-layer-menu {
+    background: #F0F0F0;
 }
-
-.x-tree-node-leaf  .gx-tree-rasterlayer-icon {
-    background-image: url(../../img/gis/geosilk/raster.png);
+*/
+.gx-layer-visibility {
+    background-image: url(../../img/silk/eye.png);
+/*
+    width: 16px;
+    height: 16px;
+    display: block;
+*/
+}
+/* position the zoom slider within map panel */
+.gx-zoomslider {
+    top: 90px;
+    left: 17px
 }
 
 /* TODO: Remove this if GetFeatureInfo is changed from text/html */

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008-2010 The Open Source Geospatial Foundation
+ * Copyright (c) 2008-2011 The Open Source Geospatial Foundation
  * 
  * Published under the BSD license.
  * See http://svn.geoext.org/core/trunk/geoext/license.txt for the full text
@@ -23,7 +23,7 @@ Ext.namespace("GeoExt.tree");
  *      A subclass of ``Ext.tree.AsyncTreeNode`` that will collect all layers of an
  *      OpenLayers map. Only layers that have displayInLayerSwitcher set to true
  *      will be included. The childrens' iconCls defaults to
- *      "gx-tree-layer-icon".
+ *      "gx-tree-layer-icon" and this node' text defaults to "Layers".
  *      
  *      Note: if this container is loaded by an ``Ext.tree.TreeLoader``, the
  *      ``applyLoader`` config option of that loader needs to be set to
@@ -49,13 +49,18 @@ GeoExt.tree.LayerContainer = Ext.extend(Ext.tree.AsyncTreeNode, {
      *  ``Object``, this property will be set as the store option of the
      *  loader. Otherwise it will be ignored.
      */
+
+    /** private: property[text]
+     *  ``String`` The text for this node.
+     */
+    text: 'Layers',
     
     /** private: method[constructor]
      *  Private constructor override.
      */
     constructor: function(config) {
         config = Ext.applyIf(config || {}, {
-            text: "Layers"
+            text: this.text
         });
         this.loader = config.loader instanceof GeoExt.tree.LayerLoader ?
             config.loader :

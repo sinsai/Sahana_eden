@@ -325,8 +325,8 @@ table = db.define_table(tablename,
                         Field("type", "integer"),
                         location_id(),
                         Field("parent", "reference org_office"),   # This form of hierarchy may not work on all Databases
-                        Field("address", "text"),
-                        Field("postcode"),
+                        #Field("address", "text"), # deprecated by location_id()
+                        #Field("postcode"),
                         Field("phone1"),
                         Field("phone2"),
                         Field("email"),
@@ -359,8 +359,8 @@ table.number_of_vehicles.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
 table.name.label = T("Name")
 table.parent.label = T("Parent Office")
 table.type.label = T("Type")
-table.address.label = T("Address")
-table.postcode.label = T("Postcode")
+#table.address.label = T("Address")
+#table.postcode.label = T("Postcode")
 table.phone1.label = T("Phone 1")
 table.phone2.label = T("Phone 2")
 table.email.label = T("Email")

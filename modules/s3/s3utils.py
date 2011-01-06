@@ -7,7 +7,7 @@
     @author: Fran Boon <fran[at]aidiq.com>
     @author: Michael Howden <michael[at]aidiq.com>
     @author: Pradnya Kulkarni
-    
+
     @copyright: (c) 2010 Sahana Software Foundation
     @license: MIT
 
@@ -166,6 +166,7 @@ def shn_split_multi_value(value):
     Converts a series of numbers delimited by |, or already in a string into a list
 
     If value = None, returns []
+
     """
 
     if not value:
@@ -192,7 +193,7 @@ def shn_get_db_field_value(db,
                            look_up_field = "id",
                            match_case = True):
     """
-    
+
     @author: Michael Howden (michael@aidiq.com)
 
     @summary:
@@ -232,7 +233,7 @@ def jaro_winkler(str1, str2):
     Return Jaro_Winkler distance of two strings (between 0.0 and 1.0)
 
     Used as a measure of similarity between two strings
-    
+
     @see http://en.wikipedia.org/wiki/Jaro-Winkler_distance
 
     @param str1: the first string

@@ -1279,8 +1279,8 @@ def layer_kml():
         msg_list_empty=NO_LAYERS)
 
     # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, copyable=True)
+    def user_postp(r, output):
+        shn_action_buttons(r, copyable=True)
         return output
     response.s3.postp = user_postp
 

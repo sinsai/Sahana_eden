@@ -58,7 +58,8 @@ GeoExplorer.Composer = Ext.extend(GeoExplorer, {
     showEmbedWindow: function() {
 
         // TODO: Get rid of viewer.html
-        var obj = OpenLayers.Util.createUrlObject("viewer.html");
+        // Need to edit here rather than redirect as we can't pick up the # in web2py
+        var obj = OpenLayers.Util.createUrlObject("geoexplorer/viewer.html");
         var port = (obj.port === "80") ? "" : ":" + obj.port;
         var url = obj.protocol + "//" + obj.host + port + obj.pathname + "#maps/" + this.id;
 

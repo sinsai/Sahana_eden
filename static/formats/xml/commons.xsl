@@ -4,7 +4,7 @@
     <!-- Common templates
 
          include into other stylesheets with:
-             <xsl:include href="../xml/commons.xsl/>"
+             <xsl:include href="../xml/commons.xsl"/>
 
          Copyright (c) 2010 Sahana Software Foundation
 

@@ -62,10 +62,16 @@ if deployment_settings.has_module("logs"):
         #msg_no_match = T("No Warehouses match this criteria")
         )
 
+    def shn_inventory_store_represent (id):
+        return shn_gis_location_represent(shn_get_db_field_value(db=db, 
+                                                                 table="inventory_store", 
+                                                                 field="location_id", 
+                                                                 look_up=id))
+        
     # Reusable Field
     inventory_store_id = S3ReusableField("inventory_store_id", db.inventory_store,
                 requires = IS_NULL_OR(IS_ONE_OF(db, "inventory_store.id", inventory_store_represent, orderby="inventory_store.id", sort=True)),
-                represent = lambda id: shn_gis_location_represent(shn_get_db_field_value(db=db, table="inventory_store", field="location_id", look_up=id)),
+                represent = shn_inventory_store_represent,
                 label = T("Warehouse"),
                 comment = DIV(A(ADD_INVENTORY_STORE, _class="colorbox", _href=URL(r=request, c="inventory", f="store", args="create", vars=dict(format="popup")), _target="top", _title=ADD_INVENTORY_STORE),
                           DIV( _class="tooltip", _title=T("Warehouse") + "|" + T("A Warehouse is a physical place to store items."))),
@@ -91,9 +97,14 @@ if deployment_settings.has_module("logs"):
     table = db.define_table(tablename,
                             inventory_store_id(),
                             item_id(),
-                            Field("quantity", "double"),
+                            item_packet_id(),
+                            Field("quantity", 
+                                  "double",
+                                  notnull = True),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
+    
+    
 
 
     # CRUD strings
@@ -120,30 +131,3 @@ if deployment_settings.has_module("logs"):
                               multiple=True,
                               joinby=dict(inventory_store="inventory_store_id",
                                           supply_item="item_id"))
-
-
-    logs_menu = [
-                [T("Home"), False, URL(r=request, c="logs", f="index")],
-                [T("Warehouses"), False, URL(r=request, c="inventory", f="store"),
-                [
-                    [T("List"), False, URL(r=request, c="inventory", f="store")],
-                    [T("Add"), False, URL(r=request, c="inventory", f="store", args="create")],
-                ]],
-                [T("Distributions"), False, URL(r=request, c="logs", f="distrib"),
-                [
-                    [T("List"), False, URL(r=request, c="logs", f="distrib")],
-                    [T("Add"), False, URL(r=request, c="logs", f="distrib", args="create")],
-                ]],
-                [T("Catalog Items"), False, URL(r=request, c="supply", f="item"),
-                [
-                    [T("List"), False, URL(r=request, c="supply", f="item")],
-                    [T("Add"), False, URL(r=request, c="supply", f="item", args="create")],
-                ]],
-                ]
-    if shn_has_role(1):
-        logs_menu.append(
-            [T("Item Categories"), False, URL(r=request, c="supply", f="item_category"),[
-                [T("List"), False, URL(r=request, c="supply", f="item_category")],
-                [T("Add"), False, URL(r=request, c="supply", f="item_category", args="create")]
-            ]]
-        )

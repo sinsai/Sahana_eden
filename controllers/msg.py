@@ -644,6 +644,12 @@ def twitter_settings():
         return True
     response.s3.prep = prep
 
+    # Post-processor
+    def user_postp(r, output):
+        output["list_btn"] = ""
+        return output
+    response.s3.postp = user_postp
+
     response.menu_options = admin_menu_options
     s3xrc.model.configure(table, listadd=False, deletable=False)
     return s3_rest_controller(prefix, "twitter_settings")

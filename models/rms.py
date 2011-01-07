@@ -186,7 +186,7 @@ if deployment_settings.has_module(module):
                                           cr_shelter="shelter_id",
                                           hms_hospital="hospital_id",
                                           project_activity = "activity_id",
-                                          inventory_store = "from_inventory_store_id",
+                                          #inventory_store = "from_inventory_store_id",
                                           )
                               )
 

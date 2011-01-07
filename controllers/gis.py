@@ -1279,8 +1279,8 @@ def layer_kml():
         msg_list_empty=NO_LAYERS)
 
     # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, copyable=True)
+    def user_postp(r, output):
+        shn_action_buttons(r, copyable=True)
         return output
     response.s3.postp = user_postp
 
@@ -1656,12 +1656,14 @@ def geoexplorer():
 
     geoserver_url = deployment_settings.get_gis_geoserver_url()
 
-    return dict(config=config,
+    return dict(
+                config=config,
                 bing_key=bing_key,
                 google_key=google_key,
                 yahoo_key=yahoo_key,
                 print_service=print_service,
-                geoserver_url=geoserver_url)
+                geoserver_url=geoserver_url
+               )
 
 def about():
     """  Custom View for GeoExplorer """

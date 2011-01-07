@@ -2,8 +2,8 @@
 
 """ Custom UI Widgets
 
-    @author: Michael Howden <michael[at]aidiq.com>
-    @date: 2010-03-17
+    @author: Michael Howden <michael@aidiq.com>
+    @author: Fran Boon <fran@aidiq.com>
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
 
@@ -102,6 +102,9 @@ class S3UploadWidget(UploadWidget):
     Subclassed to not show the delete checkbox when field is mandatory
         - This now been included as standard within Web2Py from r2867
         - Leaving this unused example in the codebase so that we can easily amend this if we wish to later
+        
+    @author: Fran Boon (fran@aidiq.com)
+
     """
 
     @staticmethod
@@ -660,7 +663,7 @@ class S3LocationSelectorWidget(FormWidget):
                 if _parent.parent:
                     _grandparent = db(locations.id == _parent.parent).select(locations.level, locations.parent, limitby=(0, 1)).first()
                     if _grandparent.level:
-                        default[_grandparentparent.level] = _parent.parent
+                        default[_grandparent.level] = _parent.parent
                     if _grandparent.parent:
                         _greatgrandparent = db(locations.id == _grandparent.parent).select(locations.level, locations.parent, limitby=(0, 1)).first()
                         if _greatgrandparent.level:

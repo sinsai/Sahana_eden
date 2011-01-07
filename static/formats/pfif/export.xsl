@@ -35,6 +35,7 @@
     *********************************************************************** -->
     <xsl:output method="xml"/>
     <xsl:include href="../xml/commons.xsl"/>
+    <xsl:include href="../xml/countries.xsl"/>
 
     <!-- ****************************************************************** -->
     <xsl:param name="domain"/>
@@ -169,7 +170,7 @@
     <!-- ****************************************************************** -->
     <xsl:template match="resource[@name='pr_person']/resource[@name='pr_address']">
         <pfif:home_street>
-            <xsl:value-of select="./data[@field='street1']/text()"/>
+            <xsl:value-of select="./data[@field='address']/text()"/>
         </pfif:home_street>
 
         <!-- Neighborhood not supported
@@ -178,10 +179,10 @@
         -->
 
         <pfif:home_city>
-            <xsl:value-of select="./data[@field='city']/text()"/>
+            <xsl:value-of select="./data[@field='L3']/text()"/>
         </pfif:home_city>
         <pfif:home_state>
-            <xsl:value-of select="./data[@field='state']/text()"/>
+            <xsl:value-of select="./data[@field='L1']/text()"/>
         </pfif:home_state>
         <pfif:home_postal_code>
             <xsl:value-of select="./data[@field='postcode']/text()"/>
@@ -189,7 +190,9 @@
 
         <!-- ISO 3166-1 Country Codes -->
         <pfif:home_country>
-            <xsl:value-of select="./data[@field='country']/@value"/>
+            <xsl:call-template name="countryname2iso">
+                <xsl:with-param name="country" select="./data[@field='L0']/text()"/>
+            </xsl:call-template>
         </pfif:home_country>
     </xsl:template>
 

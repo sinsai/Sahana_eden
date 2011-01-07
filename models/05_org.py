@@ -323,8 +323,8 @@ table = db.define_table(tablename,
                         Field("name", notnull=True),
                         organisation_id(),
                         Field("type", "integer"),
-                        location_id(),
                         Field("parent", "reference org_office"),   # This form of hierarchy may not work on all Databases
+                        location_id(),
                         Field("address", "text", label=T("Address"), writable=False), # Populated from location_id
                         Field("L4", label=deployment_settings.get_gis_locations_hierarchy("L4"), writable=False), # Populated from location_id
                         Field("L3", label=deployment_settings.get_gis_locations_hierarchy("L3"), writable=False), # Populated from location_id
@@ -402,80 +402,6 @@ office_id = S3ReusableField("office_id", db.org_office, sortby="default/indexnam
                 ondelete = "RESTRICT"
                 )
 
-def office_onvalidation(form):
-    """ Write the Postcode & Street Address fields from the Location """
-
-    if "location_id" in form.vars:
-        locations = db.gis_location
-        # Read Postcode & Street Address
-        location = db(locations.id == form.vars.location_id).select(locations.addr_street,
-                                                                    locations.addr_postcode,
-                                                                    locations.name,
-                                                                    locations.level,
-                                                                    locations.parent,
-                                                                    locations.path,
-                                                                    limitby=(0, 1)).first()
-        if location:
-            strict = deployment_settings.get_gis_strict_hierarchy()
-            form.vars.address = location.addr_street
-            form.vars.postcode = location.addr_postcode
-            if location.level == "L0":
-                form.vars.L0 = location.name
-            elif location.level == "L1":
-                form.vars.L1 = location.name
-                if location.parent:
-                    country = db(locations.id == location.parent).select(locations.name, limitby=(0, 1)).first()
-                    if country:
-                        form.vars.L0 = country.name
-            else:
-                if location.path:
-                    # Lookup Ancestors
-                    ancestors = location.path.split("/")
-                    numberAncestors = len(ancestors)
-                    if numberAncestors > 1:
-                        del ancestors[numberAncestors - 1]  # Remove self
-                        if strict:
-                            # No need to do a DAL query
-                            for i in range(numberAncestors - 1):
-                                default["L%i" % i] = ancestors[i]
-                        else:
-                            # Do a single SQL query for all ancestors to look up their levels
-                            _ancestors = db(locations.id.belongs(ancestors)).select(locations.name,
-                                                                                    locations.level,
-                                                                                    limitby=(0, numberAncestors - 1))
-                            for ancestor in _ancestors:
-                                form.vars[ancestor.level] = ancestor.name
-                elif location.parent:
-                    # Path not populated, so need to do lookups manually :/
-                    form.vars[location.level] = location.name
-                    _parent = db(locations.id == location.parent).select(locations.name,
-                                                                         locations.level,
-                                                                         locations.parent,
-                                                                         limitby=(0, 1)).first()
-                    if _parent.level:
-                        form.vars[_parent.level] = _parent.name
-                    if _parent.parent:
-                        _grandparent = db(locations.id == _parent.parent).select(locations.name,
-                                                                                 locations.level,
-                                                                                 locations.parent,
-                                                                                 limitby=(0, 1)).first()
-                        if _grandparent.level:
-                            form.vars[_grandparent.level] = _grandparent.name
-                        if _grandparent.parent:
-                            _greatgrandparent = db(locations.id == _grandparent.parent).select(locations.name,
-                                                                                               locations.level,
-                                                                                               locations.parent,
-                                                                                               limitby=(0, 1)).first()
-                            if _greatgrandparent.level:
-                                form.vars[_greatgrandparent.level] = _greatgrandparent.name
-                            if _greatgrandparent.parent:
-                                _greatgreatgrandparent = db(locations.id == _greatgrandparent.parent).select(locations.name,
-                                                                                                             locations.level,
-                                                                                                             locations.parent,
-                                                                                                             limitby=(0, 1)).first()
-                                if _greatgreatgrandparent.level:
-                                    form.vars[_greatgreatgrandparent.level] = _greatgreatgrandparent.name
-
 # Offices as component of Orgs & Locations
 s3xrc.model.add_component(module, resourcename,
                           multiple=True,
@@ -484,17 +410,19 @@ s3xrc.model.add_component(module, resourcename,
 
 s3xrc.model.configure(table,
                       super_entity=(db.pr_pentity, db.org_site),
-                      onvalidation=lambda form: office_onvalidation(form),
-                      list_fields=["id",
-                                   "name",
-                                   "organisation_id",   # Filtered in Component views
-                                   #"L4",
-                                   "L3",
-                                   "L2",
-                                   "L1",
-                                   "L0",
-                                   "phone1",
-                                   "email"])
+                      onvalidation=lambda form: address_onvalidation(form),
+                      list_fields=[
+                        "id",
+                        "name",
+                        "organisation_id",   # Filtered in Component views
+                        #"L4",
+                        "L3",
+                        "L2",
+                        "L1",
+                        "L0",
+                        "phone1",
+                        "email"
+                    ])
 
 # Donors are a type of Organisation
 def shn_donor_represent(donor_ids):

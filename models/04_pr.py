@@ -62,7 +62,7 @@ table.postcode.readable = table.postcode.writable = False
 table.city.label = T("City")
 table.city.readable = table.city.writable = False
 #table.city.requires = IS_NOT_EMPTY()
-table.state.label = T("State")
+table.state.label = deployment_settings.gis.locations_hierarchy["L1"]
 table.state.readable = table.state.writable = False
 table.country.label = T("Country")
 table.country.readable = table.country.writable = False
@@ -93,7 +93,7 @@ s3xrc.model.configure(table,
     list_fields = [
         "id",
         "type",
-        "co_name",
+        #"co_name",
         "street1",
         "postcode",
         "city",

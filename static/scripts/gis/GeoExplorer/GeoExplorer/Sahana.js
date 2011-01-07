@@ -17,6 +17,7 @@
  *      Create a GeoExplorer application intended for full-screen display.
  */
 GeoExplorer.SahanaComposer = Ext.extend(GeoExplorer.Composer, {
+
     /**
      * api: method[createTools]
      * Create the toolbar configuration for the main view.

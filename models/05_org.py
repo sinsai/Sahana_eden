@@ -326,11 +326,11 @@ table = db.define_table(tablename,
                         location_id(),
                         Field("parent", "reference org_office"),   # This form of hierarchy may not work on all Databases
                         Field("address", "text", label=T("Address"), writable=False), # Populated from location_id
-                        Field("L4", label=deployment_settings.gis.locations_hierarchy["L4"], writable=False), # Populated from location_id
-                        Field("L3", label=deployment_settings.gis.locations_hierarchy["L3"], writable=False), # Populated from location_id
-                        Field("L2", label=deployment_settings.gis.locations_hierarchy["L2"], writable=False), # Populated from location_id
-                        Field("L1", label=deployment_settings.gis.locations_hierarchy["L1"], writable=False), # Populated from location_id
-                        Field("L0", label=deployment_settings.gis.locations_hierarchy["L0"], writable=False), # Populated from location_id
+                        Field("L4", label=deployment_settings.get_gis_locations_hierarchy("L4"), writable=False), # Populated from location_id
+                        Field("L3", label=deployment_settings.get_gis_locations_hierarchy("L3"), writable=False), # Populated from location_id
+                        Field("L2", label=deployment_settings.get_gis_locations_hierarchy("L2"), writable=False), # Populated from location_id
+                        Field("L1", label=deployment_settings.get_gis_locations_hierarchy("L1"), writable=False), # Populated from location_id
+                        Field("L0", label=deployment_settings.get_gis_locations_hierarchy("L0"), writable=False), # Populated from location_id
                         Field("postcode", label=T("Postcode"), writable=False), # Populated from location_id
                         Field("phone1"),
                         Field("phone2"),

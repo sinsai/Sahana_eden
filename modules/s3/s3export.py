@@ -214,7 +214,7 @@ class S3Exporter(object):
             from reportlab.lib.enums import TA_CENTER, TA_RIGHT
         except ImportError:
             session.error = self.ERROR.REPORTLAB_ERROR
-            redirect(URL(r=request, f="index", extension=""))
+            redirect(URL(r=request, extension=""))
 
         # Import Geraldo
         try:
@@ -229,7 +229,7 @@ class S3Exporter(object):
         records = db(query).select(table.ALL)
         if not records:
             session.warning = self.ERROR.NO_RECORDS
-            redirect(URL(r=request, f="index", extension=""))
+            redirect(URL(r=request, extension=""))
 
         # Create output stream
         output = StringIO.StringIO()
@@ -358,6 +358,7 @@ class S3Exporter(object):
             import xlwt
         except ImportError:
             session.error = self.ERROR.XLWT_ERROR
+            #redirect(r.there(representation="html"))
             redirect(URL(r=request, extension=""))
 
         output = StringIO.StringIO()

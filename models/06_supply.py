@@ -53,22 +53,6 @@ if deployment_settings.has_module("logs"):
                 )
 
     #==============================================================================
-    # Units
-    #
-    logs_unit_opts = {
-        "piece" : T("piece"),
-        "kit" : T("kit"),
-        "sack50kg" : T("sack 50kg"),
-        "sack20kg" : T("sack 20kg"),
-        "pack10" : T("pack of 10"),
-        "m" : T("meter"),
-        "m3" : T("meter cubed"),
-        "l" : T("liter"),
-        "kg" : T("kilogram"),
-        "ton" : T("ton"),
-    }
-    
-    #==============================================================================
     # Item
     #
     resourcename = "item"
@@ -76,10 +60,7 @@ if deployment_settings.has_module("logs"):
     table = db.define_table(tablename,
                             item_category_id(),
                             Field("name", length=128, notnull=True, unique=True),
-                            Field("unit", notnull=True, default="piece",
-                                  requires = IS_IN_SET(logs_unit_opts, zero=None),
-                                  represent = lambda opt: logs_unit_opts.get(opt, T("not specified"))
-                                 ),
+                            Field("base_unit", length=128),
                             comments(), # These comments do *not* pull through to an Inventory's Items or a Request's Items
                             migrate=migrate, *s3_meta_fields())
 
@@ -105,23 +86,91 @@ if deployment_settings.has_module("logs"):
     
     def shn_item_represent(id):
         record = db(db.supply_item.id == id).select(db.supply_item.name,
-                                                    db.supply_item.unit,
+                                                    db.supply_item.base_unit,
                                                     limitby=(0, 1)).first()    
         if not record:
             return NONE
-        elif not record.unit:
+        elif not record.base_unit:
             return record.name
         else:
-            item_represent = "%s (%s)" % (record.name, record.unit)
+            item_represent = "%s (%s)" % (record.name, record.base_unit)
             return item_represent
 
 
     # Reusable Field
     item_id = S3ReusableField("item_id", db.supply_item, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item.id", "%(name)s (%(unit)s)", sort=True)),
+                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item.id", "%(name)s", sort=True)),
                 represent = shn_item_represent,
                 label = T("Item"),
                 comment = DIV(A(ADD_ITEM, _class="colorbox", _href=URL(r=request, c="supply", f="item", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ITEM),
                           DIV( _class="tooltip", _title=T("Catalog Item") + "|" + ADD_ITEM)),
                 ondelete = "RESTRICT"
                 )
+    
+    #==============================================================================
+    # Item Packet
+    #
+    resourcename = "item_packet"
+    tablename = "%s_%s" % (module, resourcename)
+    table = db.define_table(tablename,
+                            item_id(),
+                            Field("name", length=128, notnull=True), #Ideally this would reference another table for normalising Packet names
+                            Field("quantity", "double"),
+                            comments(),
+                            migrate=migrate, *s3_meta_fields())
+    # CRUD strings
+    ADD_ITEM_PACKET = T("Add Item Packet")
+    LIST_ITEM_PACKET = T("List Item Packets")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_ITEM_CATEGORY,
+        title_display = T("Item Packet Details"),
+        title_list = LIST_ITEM_CATEGORIES,
+        title_update = T("Edit Item Packet"),
+        title_search = T("Search Item Packets"),
+        subtitle_create = T("Add New Item Packet"),
+        subtitle_list = T("Item Packets"),
+        label_list_button = LIST_ITEM_CATEGORIES,
+        label_create_button = ADD_ITEM_CATEGORY,
+        label_delete_button = T("Delete Item Packet"),
+        msg_record_created = T("Item Packet added"),
+        msg_record_modified = T("Item Packet updated"),
+        msg_record_deleted = T("Item Packet deleted"),
+        msg_list_empty = T("No Item Packets currently registered"))
+
+    # Reusable Field
+    item_packet_id = S3ReusableField("item_packet_id", db.supply_item_packet, sortby="name",
+                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item_packet.id", "%(name)s", sort=True)),
+                represent = lambda id: shn_get_db_field_value(db=db, table="supply_item_packet", field="name", look_up=id),
+                label = T("Packet"),    
+                comment = DIV(A( ADD_ITEM_PACKET, 
+                                 _class="colorbox", 
+                                 _href=URL(r=request, 
+                                           c="supply", 
+                                           f="item_packet", 
+                                           args="create", 
+                                           vars=dict(format="popup")
+                                           ), 
+                                 _target="top", 
+                                 ),
+                              DIV( _class="tooltip", _title=T("Item Packets") + "|" + T("The category of the Item."))
+                          ),
+                ondelete = "RESTRICT"
+                )    
+    #Packets as component of Items
+    s3xrc.model.add_component(module, resourcename,
+                              multiple=True,
+                              joinby=dict(supply_item="item_id"))        
+    
+    logs_unit_opts = {
+        "piece" : T("piece"),
+        "kit" : T("kit"),
+        "sack50kg" : T("sack 50kg"),
+        "sack20kg" : T("sack 20kg"),
+        "pack10" : T("pack of 10"),
+        "m" : T("meter"),
+        "m3" : T("meter cubed"),
+        "l" : T("liter"),
+        "kg" : T("kilogram"),
+        "ton" : T("ton"),
+    }
+        

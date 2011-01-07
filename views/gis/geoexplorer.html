@@ -83,7 +83,7 @@
                 title: "Remote Sahana GeoServer"
             },
             osm: {
-                ptype: 'gx_osmsource'
+                ptype: 'gx_tmssource'
             },
             google: {
                 ptype: 'gx_googlesource'
@@ -111,7 +111,10 @@
             maxExtent: s3_gis_maxExtent,
             layers: [{
                 source: 'osm',
-                title: 'OpenStreetMap',
+                name: 'cyclemap',
+                group: 'background'
+            }, {
+                source: 'osm',
                 name: 'mapnik',
                 group: 'background'
             }, {

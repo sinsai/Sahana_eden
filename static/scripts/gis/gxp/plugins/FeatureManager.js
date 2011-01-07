@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008-2010 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
  * 
  * Published under the BSD license.
  * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
@@ -50,6 +50,13 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
      *  automatically set the layer? Default is true.
      */
     autoSetLayer: true,
+    
+    /** api: config[layer]
+     *  ``Object`` with source and name properties. A layer to use if
+     *  ``autoSetLayer`` is false or before a layerselectionchange event is
+     *  fired. The layer referenced here will be set as soon as it is added to
+     *  the target's map.
+     */
 
     /** api: config[autoLoadFeatures]
      *  ``Boolean`` Automatically load features after a new layer has been set?
@@ -129,11 +136,9 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
      */
     page: null,
     
-    /** private: method[init]
+    /** private: method[constructor]
      */
-    init: function(target) {
-        gxp.plugins.FeatureEditor.superclass.init.apply(this, arguments);
-        
+    constructor: function() {
         this.addEvents(
             /** api: event[beforequery]
              *  Fired before a WFS GetFeature request is issued. This event
@@ -179,7 +184,7 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
             
             /** api: event[layerchange]
              *  Fired after a layer change, as soon as the layer's schema is
-             *  available.
+             *  available and a ``featureStore`` has been created.
              *
              *  Listener arguments:
              *
@@ -224,7 +229,13 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
              */
             "setpage"
         );
-        
+        gxp.plugins.FeatureManager.superclass.constructor.apply(this, arguments);        
+    },
+    
+    /** private: method[init]
+     */
+    init: function(target) {
+        gxp.plugins.FeatureManager.superclass.init.apply(this, arguments);
         this.toolsShowingLayer = {};
         
         this.style = {
@@ -272,6 +283,9 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
         if (this.autoSetLayer) {
             this.target.on("beforelayerselectionchange", this.setLayer, this);
         }
+        if (this.layer) {
+            this.target.getLayerRecord(this.layer, this.setLayer, this);
+        }
         this.on("layerchange", function(mgr, layer, schema) {
             this.schema = schema;
         }, this);
@@ -308,8 +322,7 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
      *      "all"
      */
     showLayer: function(id, display) {
-        style = display || "all";
-        this.toolsShowingLayer[id] = style;
+        this.toolsShowingLayer[id] = display || "all";
         this.setLayerDisplay();
     },
     
@@ -377,12 +390,15 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
                 this.paging && this.on("layerchange", function() {
                     this.setPage();
                 }, this, {single: true});
-                this.setFeatureStore(filter);
+                this.setFeatureStore(filter, !this.paging);
             } else {
                 this.featureStore.setOgcFilter(filter);
-                this.paging && this.setPage();
+                if (this.paging) {
+                    this.setPage();
+                } else {
+                    this.featureStore.load();
+                }
             };
-            this.paging || this.featureStore.load();
         }
     },
     

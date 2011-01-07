@@ -358,7 +358,7 @@ class S3Exporter(object):
             import xlwt
         except ImportError:
             session.error = self.ERROR.XLWT_ERROR
-            redirect(URL(r=request))
+            redirect(r.there(representation="html"))
 
         output = StringIO.StringIO()
 

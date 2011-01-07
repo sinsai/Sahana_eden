@@ -407,23 +407,29 @@ class S3Resource(object):
                 if self.manager.get_session(prefix=self.prefix, name=self.name) == row.id:
                     self.manager.clear_session(prefix=self.prefix, name=self.name)
 
-                # Archive record?
-                if archive_not_delete and "deleted" in self.table:
-                    self.db(self.table.id == row.id).update(deleted=True)
-                    numrows += 1
-                    self.audit("delete", self.prefix, self.name,
-                               record=row.id, representation=format)
-                    model.delete_super(self.table, row)
-                    if ondelete:
-                        callback(ondelete, row)
+                # Test row for deletability
+                try:
+                    del self.table[row.id]
+                except:
+                    self.manager.session.error = self.ERROR.INTEGRITY_ERROR
+                finally:
+                    # We don't want to delete yet, so let's rollback
+                    self.db.rollback()
 
-                # otherwise: delete record
-                else:
-                    try:
-                        del self.table[row.id]
-                    except: # Integrity Error
-                        self.manager.session.error = self.ERROR.INTEGRITY_ERROR
+                if self.manager.session.error != self.ERROR.INTEGRITY_ERROR:
+                    # Archive record?
+                    if archive_not_delete and "deleted" in self.table:
+                        self.db(self.table.id == row.id).update(deleted=True)
+                        numrows += 1
+                        self.audit("delete", self.prefix, self.name,
+                                  record=row.id, representation=format)
+                        model.delete_super(self.table, row)
+                        if ondelete:
+                            callback(ondelete, row)
+
+                    # otherwise: delete record
                     else:
+                        del self.table[row.id]
                         numrows += 1
                         self.audit("delete", self.prefix, self.name,
                                    record=row.id,

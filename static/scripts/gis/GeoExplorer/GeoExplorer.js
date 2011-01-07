@@ -3,22 +3,6 @@
  */
 
 /**
- * Patch the SphericalMercator layer to respect projection from configuration.
- * TODO: remove this when http://trac.openlayers.org/ticket/2665 is closed
- */
-(function() {
-    var proto = OpenLayers.Layer.SphericalMercator;
-    var original = proto.initMercatorParameters;
-    proto.initMercatorParameters = function() {
-        original.apply(this, arguments);
-        // respect configured projection code
-        if (this.options && this.options.projection) {
-            this.projection = this.options.projection;
-        }
-    };
-})();
- 
-/**
  * Add transforms for EPSG:102113.  This is web mercator to ArcGIS 9.3.
  */
 OpenLayers.Projection.addTransform(
@@ -431,10 +415,11 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
             map: this.mapPanel.map,
             defaults: {cls: 'legend-item'}
             // TODO: remove when http://trac.geoext.org/ticket/305 is fixed
-            ,items: []
+            //,items: []
         });        
 
         var westPanel = new Ext.Panel({
+            header: false,
             border: true,
             layout: "border",
             region: "west",

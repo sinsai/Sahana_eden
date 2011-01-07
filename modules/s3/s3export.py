@@ -222,7 +222,7 @@ class S3Exporter(object):
             from geraldo.generators import PDFGenerator
         except ImportError:
             session.error = self. ERROR.GERALDO_ERROR
-            redirect(URL(r=request, f="index", extension=""))
+            redirect(URL(r=request, extension=""))
 
         # Get records
         query = resource.get_query()

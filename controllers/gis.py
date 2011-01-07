@@ -1656,12 +1656,14 @@ def geoexplorer():
 
     geoserver_url = deployment_settings.get_gis_geoserver_url()
 
-    return dict(config=config,
+    return dict(
+                config=config,
                 bing_key=bing_key,
                 google_key=google_key,
                 yahoo_key=yahoo_key,
                 print_service=print_service,
-                geoserver_url=geoserver_url)
+                geoserver_url=geoserver_url
+               )
 
 def about():
     """  Custom View for GeoExplorer """

@@ -1650,11 +1650,11 @@ class S3RoleManager(S3Method):
         method = self.method
 
         if method == "list":
-            output = self.matrix(r, **attr)
+            output = self._list(r, **attr)
         elif method in ("read", "create", "update"):
             output = self._edit(r, **attr)
-        elif method in ("users"):
-            output = self._user(r, **attr)
+        elif method == "delete":
+            output = self._delete(r, **attr)
         else:
             r.error(501, self.manager.ERROR.BAD_METHOD)
 
@@ -1662,7 +1662,7 @@ class S3RoleManager(S3Method):
 
 
     # -------------------------------------------------------------------------
-    def matrix(self, r, **attr):
+    def _list(self, r, **attr):
         """
         Role/Permission matrix
 
@@ -1733,11 +1733,8 @@ class S3RoleManager(S3Method):
 
                 role_edit = action_button(T("Edit"), role_id, None)
                 role_delete = action_button(T("Delete"), role_id, "delete")
-                role_users = action_button(T("Users"), role_id, "users")
 
-                tdata = [TD(role_edit, XML("&nbsp;"),
-                            role_delete, XML("&nbsp;"),
-                            role_users), TD(role_name)]
+                tdata = [TD(role_edit, XML("&nbsp;"), role_delete), TD(role_name)]
 
                 if show_matrix:
                     # Display the permission matrix
@@ -1802,13 +1799,18 @@ class S3RoleManager(S3Method):
 
         output = dict()
 
+        # Form helper
+        mandatory = lambda l: DIV(l, XML("&nbsp;"), SPAN("*", _class="req"))
+
         request = self.request
         session = self.session
-        auth = self.manager.auth
         db = self.db
         T = self.T
 
         settings = self.manager.s3.crud
+
+        auth = self.manager.auth
+        acl_table = auth.permission.table
 
         if r.interactive:
 
@@ -1823,7 +1825,6 @@ class S3RoleManager(S3Method):
                 role_desc = None
 
             # ACL Widget
-            acl_table = db.s3_permission
             acl_table.oacl.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
             acl_table.uacl.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
             acl_widget = lambda f, v: S3ACLWidget.widget(acl_table[f], v, _name=f)
@@ -1835,7 +1836,7 @@ class S3RoleManager(S3Method):
             formstyle = settings.formstyle
 
             # Role form
-            form_rows = formstyle("role_name", DIV(T("Role Name"), XML("&nbsp;"), SPAN("*", _class="req")),
+            form_rows = formstyle("role_name", mandatory(T("Role Name")),
                                   INPUT(value=role_name,
                                         _name="role_name",
                                         _type="text"), "") + \
@@ -1847,18 +1848,27 @@ class S3RoleManager(S3Method):
 
             # ACL form
             level = request.get_vars.get("acl", "controller")
-            if level == "table":
-                acl_form = DIV([], _id="acl_form")
+            acls = Storage()
+            if r.record:
+                # Get existing ACLs
+                role_id = r.record.id
+                rows = db(acl_table.group_id == role_id).select()
             else:
-                form_rows = (TR(TD("Controller"),
-                                TD("Function"),
-                                TD(uacl),
-                                TD(oacl)))
+                role_id = None
+                rows = []
 
-                acl_form = DIV(TABLE(form_rows), _id="acl_form")
+            form_rows = []
+            if level == "table":
+                # Table ACLs
+                pass
+            else:
+                # Controller ACLs
+                pass
+            acl_form = DIV(TABLE(form_rows), _id="acl_form")
 
             # Action row
-            action_row = DIV(INPUT(_type="submit", _value="Save"), _id="action_row")
+            action_row = DIV(INPUT(_type="submit", _value="Save"),
+                             _id="action_row")
 
             # Aggregate form
             form = FORM(role_form, acl_form, action_row)
@@ -1882,17 +1892,13 @@ class S3RoleManager(S3Method):
 
 
     # -------------------------------------------------------------------------
-    def _user(self, r, **attr):
+    def _delete(self, r, **attr):
         """
-        See/modify users with a role
+        Delete roles
 
         """
 
-        output = dict()
+        r.error(400, "Not implemented yet")
 
-        self.response.error = self.T("USERS Not Implemented Yet")
-
-        self.response.view = self._view(r, "display.html")
-        return output
 
 # =============================================================================

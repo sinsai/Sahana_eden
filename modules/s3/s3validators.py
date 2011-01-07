@@ -578,7 +578,7 @@ class IS_ACL(IS_IN_SET):
         for v in value:
             try:
                 flag = int(v)
-            except TypeError:
+            except (ValueError, TypeError):
                 flag = 0x0000
             else:
                 acl |= flag

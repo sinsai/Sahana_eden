@@ -447,7 +447,7 @@ class AuthS3(Auth):
                 if not user:
                     # invalid login
                     session.error = self.messages.invalid_login
-                    redirect(self.url(args=request.args))
+                    redirect(self.url(args=request.args, vars=request.get_vars))
         else:
             # use a central authentication server
             cas = self.settings.login_form

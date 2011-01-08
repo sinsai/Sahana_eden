@@ -11,7 +11,7 @@
  */
 
 /**
- * The WMSCapabilities and WFSDescribeFEature formats parse the document and
+ * The WMSCapabilities and WFSDescribeFeature formats parse the document and
  * pass the raw data to the WMSCapabilitiesReader/AttributeReader.  There,
  * records are created from layer data.  The rest of the data is lossed.  It
  * makes sense to store this raw data somewhere - either on the OpenLayers
@@ -123,7 +123,7 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
                         this.fireEvent("failure", this, "Invalid capabilities document.");
                     } else {
                         if (!this.title) {
-                            this.title = this.store.reader.raw.service.title;                        
+                            this.title = this.store.reader.raw.service.title;
                         }
                         this.fireEvent("ready", this);
                     }

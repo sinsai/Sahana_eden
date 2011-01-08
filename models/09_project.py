@@ -400,7 +400,7 @@ if deployment_settings.has_module("project"):
     resourcename = "activity"
     tablename = "%s_%s" % (application, resourcename)
     table = db.define_table(tablename,
-                            Field("name"),
+                            Field("name", requires=IS_NOT_EMPTY()),
                             organisation_id("donor_id",
                                             label = T("Funding Organization"),
                                             comment = DIV(A(ADD_ORGANIZATION,

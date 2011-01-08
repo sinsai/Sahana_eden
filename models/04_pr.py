@@ -74,6 +74,9 @@ def address_onvalidation(form):
     """
         Write the Postcode & Street Address fields from the Location
         - also used by org_office
+
+        @ToDo: Allow the reverse operation.
+        If these fields are populated then create an appropriate location
     """
 
     if "location_id" in form.vars:

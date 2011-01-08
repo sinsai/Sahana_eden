@@ -105,6 +105,7 @@ class S3UploadWidget(UploadWidget):
         
     @author: Fran Boon (fran@aidiq.com)
 
+    @ToDo: Add support for allow_future=False
     """
 
     @staticmethod

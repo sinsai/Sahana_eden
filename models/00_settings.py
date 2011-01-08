@@ -25,8 +25,7 @@ if not session.s3:
 ###############
 def s3_is_mobile_client(request):
     """
-    Test if client is a mobile device
-
+        Simple UA Test whether client is a mobile device
     """
 
     if request.env.http_x_wap_profile or request.env.http_profile:
@@ -46,10 +45,9 @@ if session.s3.mobile is None:
 
 def s3_populate_browser_compatibility(request):
     """
-    Use WURFL for browser compatibility detection
+        Use WURFL for browser compatibility detection
 
-    @todo: define a list of features to store
-
+        @ToDo: define a list of features to store
     """
 
     features = Storage(
@@ -80,8 +78,9 @@ def s3_populate_browser_compatibility(request):
     return browser
 
 # Store in session
-if session.s3.browser is None:
-    session.s3.browser = s3_populate_browser_compatibility(request)
+# - commented-out until we make use of it
+#if session.s3.browser is None:
+#    session.s3.browser = s3_populate_browser_compatibility(request)
 
 ##################
 # Global variables

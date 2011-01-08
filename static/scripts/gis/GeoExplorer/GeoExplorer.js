@@ -208,39 +208,7 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
             isTarget: false,
             allowDrop: false
         });
-        treeRoot.appendChild(new GeoExt.tree.LayerContainer({
-            text: "Overlays",
-            iconCls: "gx-folder",
-            expanded: true,
-            loader: new GeoExt.tree.LayerLoader({
-                store: this.mapPanel.layers,
-                filter: function(record) {
-                    return !record.get("group") &&
-                        record.get("layer").displayInLayerSwitcher == true;
-                },
-                createNode: function(attr) {
-                    var layer = attr.layer;
-                    var store = attr.layerStore;
-                    if (layer && store) {
-                        var record = store.getAt(store.findBy(function(r) {
-                            return r.get("layer") === layer;
-                        }));
-                        if (record && !record.get("queryable")) {
-                            attr.iconCls = "gx-tree-rasterlayer-icon";
-                        }
-                    }
-                    return GeoExt.tree.LayerLoader.prototype.createNode.apply(this, [attr]);
-                }
-            }),
-            singleClickExpand: true,
-            allowDrag: false,
-            listeners: {
-                append: function(tree, node) {
-                    node.expand();
-                }
-            }
-        }));
-        
+
         treeRoot.appendChild(new GeoExt.tree.LayerContainer({
             text: "Base Layers",
             iconCls: "gx-folder",
@@ -280,6 +248,40 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
                 }
             }
         }));
+
+        treeRoot.appendChild(new GeoExt.tree.LayerContainer({
+            text: "Overlays",
+            iconCls: "gx-folder",
+            expanded: true,
+            loader: new GeoExt.tree.LayerLoader({
+                store: this.mapPanel.layers,
+                filter: function(record) {
+                    return !record.get("group") &&
+                        record.get("layer").displayInLayerSwitcher == true;
+                },
+                createNode: function(attr) {
+                    var layer = attr.layer;
+                    var store = attr.layerStore;
+                    if (layer && store) {
+                        var record = store.getAt(store.findBy(function(r) {
+                            return r.get("layer") === layer;
+                        }));
+                        if (record && !record.get("queryable")) {
+                            attr.iconCls = "gx-tree-rasterlayer-icon";
+                        }
+                    }
+                    return GeoExt.tree.LayerLoader.prototype.createNode.apply(this, [attr]);
+                }
+            }),
+            singleClickExpand: true,
+            allowDrag: false,
+            listeners: {
+                append: function(tree, node) {
+                    node.expand();
+                }
+            }
+        }));
+        
         
         var layerPropertiesDialog;
         var showPropertiesAction = new Ext.Action({

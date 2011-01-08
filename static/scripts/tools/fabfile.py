@@ -282,11 +282,13 @@ def migrate_on():
 def migrate():
     """ Perform a Migration """
     print(green("%s: Performing Migration" % env.host))
-    child = pexpect.spawn("ssh -i /root/.ssh/sahana_release %s@%s" % (env.user, env.host))
-    child.expect(":~#")
-    child.sendline("cd /home/web2py")
-    child.expect("/home/web2py#")
-    child.sendline("sudo -H -u web2py python web2py.py -N -S eden -M -R applications/eden/static/scripts/tools/noop.py")
+    with cd("/home/web2py"):
+        run("sudo -H -u web2py python web2py.py -N -S eden -M -R applications/eden/static/scripts/tools/noop.py", pty=True)
+    #child = pexpect.spawn("ssh -i /root/.ssh/sahana_release %s@%s" % (env.user, env.host))
+    #child.expect(":~#")
+    #child.sendline("cd /home/web2py")
+    #child.expect("/home/web2py#")
+    #child.sendline("sudo -H -u web2py python web2py.py -N -S eden -M")
     # @ToDo check if we need to interact otherwise automate
     # - not working :/
     # special characters in regexes matching?

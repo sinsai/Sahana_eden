@@ -60,8 +60,10 @@ if deployment_settings.has_module(module):
 
 
     #table.document.represent = lambda document, table=table: A(table.document.retrieve(document)[0], _href=URL(r=request, f="download", args=[document]))
-    table.datetime.requires = IS_DATETIME()
+    table.datetime.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
+    table.datetime.represent = lambda value: shn_as_local_time(value)
     table.datetime.label = T("Date/Time")
+    table.datetime.default = request.utcnow
 
     # CRUD strings
     ADD_FLOOD_REPORT = T("Add Flood Report")

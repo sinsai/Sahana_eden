@@ -1799,7 +1799,7 @@ class S3RoleManager(S3Method):
 
         output = dict()
 
-        # Form helper
+        # Form helper: mark a field label mandatory
         mandatory = lambda l: DIV(l, XML("&nbsp;"), SPAN("*", _class="req"))
 
         request = self.request
@@ -1829,10 +1829,7 @@ class S3RoleManager(S3Method):
             # ACL Widget
             acl_table.oacl.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
             acl_table.uacl.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
-            acl_widget = lambda f, n, v: S3ACLWidget.widget(acl_table[f], v, _id=n)
-
-            #oacl = acl_widget("oacl", auth.permission.NONE)
-            #uacl = acl_widget("uacl", auth.permission.NONE)
+            acl_widget = lambda f, n, v: S3ACLWidget.widget(acl_table[f], v, _id=n, _class="acl-widget")
 
             # Form style from CRUD settings
             formstyle = settings.formstyle
@@ -1846,7 +1843,7 @@ class S3RoleManager(S3Method):
                                   TEXTAREA(value=role_desc,
                                            _name="role_desc",
                                            _rows="4"), "")
-            role_form = DIV(TABLE(form_rows), _id="role_form")
+            role_form = DIV(TABLE(form_rows), _id="role-form")
 
             # ACL form
             level = request.get_vars.get("acl", "controller")
@@ -1859,36 +1856,56 @@ class S3RoleManager(S3Method):
             form_rows = []
             if level == "table":
                 # Table ACLs
+                thead = THEAD(TR(TH("Tablename"), TH("All Resources"), TH("Owned Resources")))
                 model = self.manager.model
                 ptables = model.primary_resources(prefixes=controllers)
-                print ptables
-                pass
-            else:
-                # Controller ACLs
-                print controllers
-                rows = dict([(r.controller, r) for r in rows
-                             if r.controller in controllers])
-                for c in controllers:
+                rows = dict([(r.tablename, r) for r in rows
+                             if r.tablename in ptables])
+                i = 0
+                for t in ptables:
+                    i += 1
                     uacl = auth.permission.ALL
                     oacl = auth.permission.ALL
-                    function = None
+                    if t in rows:
+                        r = rows[t]
+                        if r.uacl is not None:
+                            uacl = r.uacl
+                        if r.oacl is not None:
+                            oacl = r.oacl
+                    uacl = acl_widget("uacl", "%s_uacl" % t, uacl)
+                    oacl = acl_widget("oacl", "%s_oacl" % t, oacl)
+                    _class = i % 2 and "even" or "odd"
+                    form_rows.append(TR(TD(t), TD(uacl), TD(oacl), _class=_class))
+            else:
+                # Controller ACLs
+                thead = THEAD(TR(TH("Controller"), TH("Function"), TH("All Resources"), TH("Owned Resources")))
+                rows = dict([(r.controller, r) for r in rows
+                             if r.controller in controllers])
+                i = 0
+                for c in controllers:
+                    i += 1
+                    uacl = auth.permission.ALL
+                    oacl = auth.permission.ALL
+                    f = None
+                    cn = self.controllers[c].name_nice
                     if c in rows:
-                        row = rows[c]
-                        function = row.function
-                        if row.uacl is not None:
-                            uacl = row.uacl
-                        if row.oacl is not None:
-                            oacl = row.oacl
-                    print "%s/%s=(0x%04X, 0x%04X)" % (c, function, uacl, oacl)
-                    form_rows.append(TR(TD(c),
-                                        TD(function),
-                                        TD(acl_widget("uacl", "%s_%s_uacl" % (c, function), uacl)),
-                                        TD(acl_widget("oacl", "%s_%s_oacl" % (c, function), oacl))))
-            acl_form = DIV(TABLE(form_rows), _id="acl_form")
+                        r = rows[c]
+                        f = r.function
+                        if not f:
+                            f = "ANY"
+                        if r.uacl is not None:
+                            uacl = r.uacl
+                        if r.oacl is not None:
+                            oacl = r.oacl
+                    uacl = acl_widget("uacl", "%s_%s_uacl" % (c, f), uacl)
+                    oacl = acl_widget("oacl", "%s_%s_oacl" % (c, f), oacl)
+                    _class = i % 2 and "even" or "odd"
+                    form_rows.append(TR(TD(cn), TD(f), TD(uacl), TD(oacl), _class=_class))
+
+            acl_form = DIV(TABLE(thead, TBODY(form_rows), _class="display", _id="list"), _id="table-container")
 
             # Action row
-            action_row = DIV(INPUT(_type="submit", _value="Save"),
-                             _id="action_row")
+            action_row = DIV(INPUT(_type="submit", _value="Save"), _id="action-row")
 
             # Aggregate form
             form = FORM(role_form, acl_form, action_row)

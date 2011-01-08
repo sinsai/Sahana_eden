@@ -1,0 +1,12 @@
+table.acl-widget td {
+    border: none !important;
+    padding: 0px !important;
+}
+
+#table-container {
+    margin-top: 20px;
+}
+
+#acl-table tr th {
+    font-weight: bold;
+}

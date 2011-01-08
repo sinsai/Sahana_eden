@@ -191,6 +191,7 @@ $(document).ready(function() {
             Buttons = '';
             // Loop through each action to build the button
             for (i=0; i < Actions.length; i++) {
+                $('th:eq(0)').css( { 'width': 'auto' } );
                 // Extract the id # from the link
                 var re = />(.*)</i;
                 id = re.exec(aData[0])[1];

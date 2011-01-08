@@ -34,6 +34,7 @@
 """
 
 __all__ = ["S3DateWidget",
+           "S3DateTimeWidget",
            "S3UploadWidget",
            "S3AutocompleteWidget",
            "S3LocationAutocompleteWidget",
@@ -73,7 +74,7 @@ class S3DateWidget(FormWidget):
         self.max = after
 
 
-    def __call__(self ,field, value, **attributes):
+    def __call__(self, field, value, **attributes):
 
         default = dict(
             _type = "text",
@@ -88,6 +89,80 @@ class S3DateWidget(FormWidget):
         $( '#%s' ).datepicker( 'option', 'yearRange', 'c-%s:c+%s' );
     });
     """ % (selector, self.min, self.max)
+
+        return TAG[""](
+                        INPUT(**attr),
+                        SCRIPT(date_options)
+                      )
+
+
+# -----------------------------------------------------------------------------
+
+class S3DateTimeWidget(FormWidget):
+
+    """
+    Standard DateTime widget, based on the widget above, but instead of using
+    jQuery datepicker we use the DHTML datetime calendar.
+
+    @author: Fernando Brito (email@fernandobrito.com)
+
+    """
+
+    def __init__(self,
+                 allow_future=True,    # Allow dates in the future?
+                ):
+
+        self.allow_future = allow_future
+
+    def __call__(self, field, value, **attributes):
+
+        default = dict(
+            _type = "text",
+            _class = "datetime_widget",  # Prevent default "datetime" calendar from showing up
+            value = (value!=None and str(value)) or "",
+            )
+        attr = StringWidget._attributes(field, default, **attributes)
+
+        selector = str(field).replace(".", "_")
+
+        date_options = """
+        $('#%s').focus( function() {
+            Calendar.setup({
+                inputField: this.id,
+                ifFormat: '%%Y-%%m-%%d %%H:%%M:%%S',
+                dateStatusFunc: disallowDate,
+                showsTime: true,
+                timeFormat: '24'
+            });
+        })
+        """ % (selector)
+
+        if self.allow_future == False:
+            date_options += """
+            var Today = new Date();
+
+           function disallowDate(date) {
+              if ( date.getFullYear() > Today.getFullYear() ) {
+                return true; // Disable next years
+              }
+              else if ( date.getMonth() > Today.getMonth() &&
+                        date.getYear() == Today.getYear() ) {
+               return true; // Disable months until end of year
+              }
+              else if ( date.getDate() > Today.getDate() &&
+                        date.getMonth() == Today.getMonth() &&
+                        date.getYear()  == Today.getYear() ) {
+                return true; // Disable days until end of month
+              }
+              return false;  // Enable
+            }
+            """
+        else: # So Calendar.setup won't raise an error
+            date_options += """
+            function disallowDate(date) {
+                return false; // Enable
+            }
+            """
 
         return TAG[""](
                         INPUT(**attr),

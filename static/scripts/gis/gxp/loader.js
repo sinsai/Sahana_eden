@@ -37,6 +37,7 @@
         "plugins/WMSSource.js",
         //"plugins/OSMSource.js",
         "plugins/TMSSource.js",
+        //"plugins/KMLSource.js",
         "plugins/GoogleSource.js",
         //"plugins/YahooSource.js",
         "plugins/OLSource.js",

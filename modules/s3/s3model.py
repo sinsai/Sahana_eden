@@ -199,6 +199,41 @@ class S3ResourceModel(object):
 
         return False
 
+    # -------------------------------------------------------------------------
+    def primary_resources(self, prefixes=[]):
+        """
+        Get primay resources (tablenames)
+
+        """
+
+        tablenames = []
+        for t in self.db.tables:
+            if "_" not in t:
+                continue
+            else:
+                prefix, name = t.split("_", 1)
+            table = self.db[t]
+
+            if "id" in table.fields and prefix in prefixes:
+                is_component = False
+                if not self.has_components(prefix, name):
+                    hook = self.components.get(name, None)
+                    if hook:
+                        link = hook.get("_component", None)
+                        if link and link.tablename == t:
+                            continue
+                        for h in hook.values():
+                            if isinstance(h, dict):
+                                link = h.get("_component", None)
+                                if link and link.tablename == t:
+                                    is_component = True
+                                    break
+                        if is_component:
+                            continue
+                tablenames.append(t)
+
+        return tablenames
+
 
     # Resource Methods ========================================================
 

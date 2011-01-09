@@ -46,7 +46,7 @@ if shn_has_role(1):
         ]]
     )
 #==============================================================================
-#Nursix: Could this be made more generic?
+# Nursix: Could this be made more generic?
 def shn_create_next_component(s3crud, module, resourcename, component):
     return URL(r = request, c= module, f = resourcename,
                args = [s3xrc.get_session(module, resourcename), component],
@@ -371,7 +371,7 @@ if deployment_settings.has_module(module):
     s3xrc.model.configure(table, 
                           create_next = lambda s3crud: \
                               shn_create_next_component(s3crud, 
-                                                        "logs", "out", "send_item")
+                                                        "logs", "send", "send_item")
                           )    
 
     #==============================================================================

@@ -75,6 +75,7 @@ def shn_logs_req_rheader(r):
 
 #=============================================================================
 def recv():
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]    
@@ -107,9 +108,9 @@ def shn_logs_recv_rheader(r):
                                    TR( TH( T("Date") + ": "),
                                        recv_record.date,
                                       ),
-                                   TR( TH( T( "By" ) + ": "),
+                                   TR( TH( T("By") + ": "),
                                        shn_inventory_store_represent(recv_record.inventory_store_id),
-                                       TH( T( "From" ) + ": "),                                       
+                                       TH( T("From") + ": "),                                       
                                        shn_inventory_store_represent(recv_record.from_location_id),
                                       ),                                      
                                    TR( TH( T("Comments") + ": "),
@@ -149,18 +150,18 @@ def recv_process():
     for recv_item in recv_items:
         recv_item_id = recv_item.logs_recv_item.item_id
         if recv_item_id in store_items_dict.keys():
-            #This item already exists in the store, and the quantity must be incremeneted
+            # This item already exists in the store, and the quantity must be incremeneted
             store_item = Storage(store_items_dict[recv_item_id])
             store_item_id = store_item.inventory_store_item["id"]
             
-            #convert the recv items packet into the store item packet
+            # convert the recv items packet into the store item packet
             quantity = store_item.inventory_store_item["quantity"] + \
                        (recv_item.supply_item_packet.quantity / \
                         store_item.supply_item_packet["quantity"]) * \
                         recv_item.logs_recv_item.quantity
             item = dict(quantity = quantity)
         else:
-            #This item must be added to the store 
+            # This item must be added to the store 
             store_item_id = 0
             item = dict( inventory_store_id = inventory_store_id,
                          item_id = recv_item.logs_recv_item.item_id,
@@ -172,7 +173,7 @@ def recv_process():
         
     response.message = T("Received Items added to Warehouse Items")  
     
-    #Go to the Warehouse which has received these items
+    # Go to the Warehouse which has received these items
     redirect(URL(r = request,
                  c = "inventory",
                  f = "store",
@@ -181,15 +182,16 @@ def recv_process():
              )    
     
 #==============================================================================
-
 def send():
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
-    table = db[tablename]    
-    output = s3_rest_controller(module, 
-                                resource, 
+    table = db[tablename]
+    output = s3_rest_controller(module,
+                                resource,
                                 rheader=shn_logs_send_rheader)
-    return output    
+    return output
+
 #------------------------------------------------------------------------------
 def shn_logs_send_rheader(r):
     """ Resource Header for Out """
@@ -207,10 +209,10 @@ def shn_logs_send_rheader(r):
                                    TR( TH( T("Date") + ": "),
                                        req_record.date,
                                       ),
-                                   TR( TH( T( "By" ) + ": "),
+                                   TR( TH( T("From") + ": "),
                                        shn_inventory_store_represent(req_record.inventory_store_id),
-                                       TH( T( "To" ) + ": "),                                       
-                                       shn_inventory_store_represent(req_record.to_inventory_store_id),
+                                       TH( T("To") + ": "),                                       
+                                       shn_gis_location_represent(req_record.to_location_id),
                                       ),                                      
                                    TR( TH( T("Comments") + ": "),
                                        TD(req_record.comments, _colspan=3)
@@ -220,7 +222,7 @@ def shn_logs_send_rheader(r):
                                 )
                 return rheader
     return None
-#------------------------------------------------------------------------------
+#==============================================================================
 # Below unused any more
 #==============================================================================
 #def shn_distrib_rheader(r, tabs=[]):

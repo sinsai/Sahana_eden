@@ -1698,14 +1698,14 @@ class S3RoleManager(S3Method):
             table_acl = auth.permission.table
             query = resource.get_query()
             query = query & (table_acl.group_id == self.table.id) # & (table_acl.function == None)
-
             rows = self.db(query).select(table_acl.ALL)
-
+            
             acls = Storage()
             for row in rows:
                 if row.controller not in acls.keys():
                     acl = acls[row.controller] = Storage()
-                    acl[row.group_id] = Storage(oacl = row.oacl, uacl = row.uacl)
+                acls[row.controller][row.group_id] = Storage(oacl = row.oacl, uacl = row.uacl)
+            print acls
 
             # Table header
             headers = [TH("ID"), TH(T("Role"))]
@@ -1829,7 +1829,10 @@ class S3RoleManager(S3Method):
             # ACL Widget
             acl_table.oacl.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
             acl_table.uacl.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
-            acl_widget = lambda f, n, v: S3ACLWidget.widget(acl_table[f], v, _id=n, _class="acl-widget")
+            acl_widget = lambda f, n, v: S3ACLWidget.widget(acl_table[f], v,
+                                                            _id=n,
+                                                            _name=n,
+                                                            _class="acl-widget")
 
             # Form style from CRUD settings
             formstyle = settings.formstyle
@@ -1845,64 +1848,86 @@ class S3RoleManager(S3Method):
                                            _rows="4"), "")
             role_form = DIV(TABLE(form_rows), _id="role-form")
 
-            # ACL form
+            # ACL forms
             level = request.get_vars.get("acl", "controller")
             acls = Storage()
-            rows = db(acl_table.group_id == role_id).select()
+            records = db(acl_table.group_id == role_id).select()
 
             controllers = [c for c in self.controllers.keys()
                              if c not in self.HIDE_CONTROLLER]
 
+            # Controller ACL form
+            thead = THEAD(TR(TH(T("Controller")),
+                             TH(T("Function")),
+                             TH(T("All Resources")),
+                             TH(T("Owned Resources"))))
             form_rows = []
-            if level == "table":
-                # Table ACLs
-                thead = THEAD(TR(TH("Tablename"), TH("All Resources"), TH("Owned Resources")))
-                model = self.manager.model
-                ptables = model.primary_resources(prefixes=controllers)
-                rows = dict([(r.tablename, r) for r in rows
-                             if r.tablename in ptables])
-                i = 0
-                for t in ptables:
-                    i += 1
-                    uacl = auth.permission.ALL
-                    oacl = auth.permission.ALL
-                    if t in rows:
-                        r = rows[t]
-                        if r.uacl is not None:
-                            uacl = r.uacl
-                        if r.oacl is not None:
-                            oacl = r.oacl
-                    uacl = acl_widget("uacl", "%s_uacl" % t, uacl)
-                    oacl = acl_widget("oacl", "%s_oacl" % t, oacl)
-                    _class = i % 2 and "even" or "odd"
-                    form_rows.append(TR(TD(t), TD(uacl), TD(oacl), _class=_class))
-            else:
-                # Controller ACLs
-                thead = THEAD(TR(TH("Controller"), TH("Function"), TH("All Resources"), TH("Owned Resources")))
-                rows = dict([(r.controller, r) for r in rows
-                             if r.controller in controllers])
-                i = 0
-                for c in controllers:
-                    i += 1
-                    uacl = auth.permission.ALL
-                    oacl = auth.permission.ALL
-                    f = None
-                    cn = self.controllers[c].name_nice
-                    if c in rows:
-                        r = rows[c]
-                        f = r.function
-                        if not f:
-                            f = "ANY"
-                        if r.uacl is not None:
-                            uacl = r.uacl
-                        if r.oacl is not None:
-                            oacl = r.oacl
-                    uacl = acl_widget("uacl", "%s_%s_uacl" % (c, f), uacl)
-                    oacl = acl_widget("oacl", "%s_%s_oacl" % (c, f), oacl)
-                    _class = i % 2 and "even" or "odd"
-                    form_rows.append(TR(TD(cn), TD(f), TD(uacl), TD(oacl), _class=_class))
+            rows = dict([(row.controller, row) for row in records
+                            if row.controller in controllers])
+            i = 0
+            for c in controllers:
+                i += 1
+                uacl = auth.permission.ALL
+                oacl = auth.permission.ALL
+                f = "ANY"
+                t = "ANY"
+                _id = None
+                cn = self.controllers[c].name_nice
+                if c in rows:
+                    row = rows[c]
+                    f = row.function
+                    _id = row.id
+                    if row.uacl is not None:
+                        uacl = row.uacl
+                    if row.oacl is not None:
+                        oacl = row.oacl
+                if not f:
+                    f = "ANY"
+                n = "%s_%s_%s_%s" % (_id, c, f, t)
+                print n
+                uacl = acl_widget("uacl", "acl_u_%s" % n, uacl)
+                oacl = acl_widget("oacl", "acl_o_%s" % n, oacl)
+                _class = i % 2 and "even" or "odd"
+                form_rows.append(TR(TD(cn), TD(f), TD(uacl), TD(oacl), _class=_class))
+            controller_acl_form = DIV(TABLE(thead, TBODY(form_rows)),
+                                      _id="controller_acl_form")
 
-            acl_form = DIV(TABLE(thead, TBODY(form_rows), _class="display", _id="list"), _id="table-container")
+            # Table ACL form
+            thead = THEAD(TR(TH(T("Tablename")),
+                             TH(T("All Resources")),
+                             TH(T("Owned Resources"))))
+            form_rows = []
+            model = self.manager.model
+            ptables = model.primary_resources(prefixes=controllers)
+            rows = dict([(row.tablename, row) for row in records
+                            if row.tablename in ptables])
+            i = 0
+            for t in rows:
+                i += 1
+                uacl = auth.permission.ALL
+                oacl = auth.permission.ALL
+                _id = None
+                if t in rows:
+                    row = rows[t]
+                    _id = row.id
+                    if row.uacl is not None:
+                        uacl = row.uacl
+                    if row.oacl is not None:
+                        oacl = row.oacl
+                if _id:
+                    n = "%s_%s" % (t, _id)
+                else:
+                    n = t
+                uacl = acl_widget("uacl", "t_u_%s" % n, uacl)
+                oacl = acl_widget("oacl", "t_o_%s" % n, oacl)
+                _class = i % 2 and "even" or "odd"
+                form_rows.append(TR(TD(t), TD(uacl), TD(oacl), _class=_class))
+            table_acl_form = DIV(TABLE(thead, TBODY(form_rows)),
+                                       _id="table_acl_form")
+
+            acl_form = DIV(controller_acl_form,
+                           table_acl_form,
+                           _id="table-container")
 
             # Action row
             action_row = DIV(INPUT(_type="submit", _value="Save"), _id="action-row")
@@ -1910,17 +1935,58 @@ class S3RoleManager(S3Method):
             # Aggregate form
             form = FORM(role_form, acl_form, action_row)
 
+            if role_id:
+                form.append(INPUT(_type="hidden", _name="role_id", value=role_id))
+
             # Process the form
             if form.accepts(request.post_vars, session):
-                print "title=%s" % form.vars.t1
-                print "description=%s" % form.vars.t2
-                print "uacl=%s" % form.vars.uacl
-                print "oacl=%s" % form.vars.oacl
+                vars = form.vars
+                if r.record:
+                    r.record.update_record(role = vars.role_name,
+                                           description = vars.role_desc)
+                    role_id = form.vars.role_id
+                else:
+                    role_id = self.table.insert(role = vars.role_name,
+                                                description = vars.role_desc)
+
+                if role_id:
+                    rows = Storage()
+                    for v in form.vars:
+                        if v[:4] == "acl_":
+                            # This is an ACL
+                            x, name = v[4:].split("_", 1)
+                            i, c, f, t = name.split("_", 3)
+                            if c == "ANY":
+                                c = None
+                            if f == "ANY":
+                                f = None
+                            if t == "ANY":
+                                t = None
+                            try:
+                                i = int(i)
+                            except:
+                                i = None
+                            if name not in rows:
+                                rows[name] = Storage()
+                            rows[name].update({"id": i,
+                                               "group_id": role_id,
+                                               "controller": c,
+                                               "function": f,
+                                               "tablename": t,
+                                               "%sacl" % x: form.vars[v]})
+                    for row in rows.values():
+                        _id = row.id
+                        del row["id"]
+                        print row
+                        if _id:
+                            db(acl_table.id == _id).update(**row)
+                        else:
+                            _id = acl_table.insert(**row)
+                            print "Created as %s" % _id
+                            
                 redirect(URL(r=request, f="role", vars=request.get_vars))
 
             output.update(form=form)
-
-            self.response.error = self.T("EDIT Not Implemented Yet")
             self.response.view = "admin/role_update.html"
         else:
             r.error(501, self.manager.BAD_FORMAT)

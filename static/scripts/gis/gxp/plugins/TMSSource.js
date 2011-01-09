@@ -33,7 +33,7 @@ Ext.namespace("gxp.plugins");
  *
  *  .. code-block:: javascript
  *
- *    "osm": {
+ *    osm: {
  *        ptype: "gx_tmssource"
  *    }
  *
@@ -93,7 +93,7 @@ gxp.plugins.TMSSource = Ext.extend(gxp.plugins.LayerSource, {
      *  Creates a store of layer records.  Fires "ready" when store is loaded.
      */
     createStore: function() {
-        
+
         var options = {
             projection: "EPSG:900913",
             maxExtent: new OpenLayers.Bounds(
@@ -108,8 +108,7 @@ gxp.plugins.TMSSource = Ext.extend(gxp.plugins.LayerSource, {
             getURL: this.getTileURL,
             displayOutsideMaxExtent: true
         };
-        
-        // @ToDo: isBaseLayer: false
+
         var layers = [
             new OpenLayers.Layer.TMS(
                 "OpenStreetMap (Mapnik)",

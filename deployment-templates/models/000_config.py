@@ -332,13 +332,13 @@ deployment_settings.modules = OrderedDict(
     ),
     # Assess currently depends on IRS
     assess = Storage(
-         name_nice = "Assessments",
-         description = "Rapid Assessments & Flexible Impact Assessments",
+         name_nice = T("Assessments"),
+         description = T("Rapid Assessments & Flexible Impact Assessments"),
          module_type = 2,
     ),
     survey = Storage(
-             name_nice = "Survey Module",
-             description = "Create, enter, and manage surveys.",
+             name_nice = T("Survey Module"),
+             description = T("Create, enter, and manage surveys."),
              module_type = 10,
     ),
     delphi = Storage(
@@ -347,8 +347,8 @@ deployment_settings.modules = OrderedDict(
             module_type = 10,
     ),
     importer = Storage(
-             name_nice = "Spreadsheet Importer",
-             description = "Used to import data from spreadsheets into the database",
+             name_nice = T("Spreadsheet Importer"),
+             description = T("Used to import data from spreadsheets into the database"),
              module_type = 10,
     ),
     #flood = Storage(

@@ -33,7 +33,7 @@ Ext.namespace("gxp.plugins");
  *
  *  .. code-block:: javascript
  *
- *    "osm": {
+ *    osm: {
  *        ptype: "gx_osmsource"
  *    }
  *

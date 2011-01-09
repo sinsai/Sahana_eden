@@ -53,7 +53,7 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             location_id(empty=False),
-                            Field("datetime", "datetime"),
+                            Field("datetime", "datetime", widget=S3DateTimeWidget(allow_future=False)),
                             document_id(),
                             comments(),
                             migrate=migrate, *s3_meta_fields())

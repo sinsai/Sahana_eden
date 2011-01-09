@@ -583,6 +583,12 @@ def twitter_settings():
 
     """ RESTful CRUD controller for Twitter settings - appears in the administration menu """
 
+    try:
+        import tweepy 
+    except:
+        session.error =  T("tweepy module not available within the running Python - this needs installing for non-Tropo Twitter support!")
+        redirect(URL(r=request, c="admin", f="index")) 
+
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
@@ -605,11 +611,6 @@ def twitter_settings():
     )
 
     def prep(r):
-        try:
-            import tweepy
-        except:
-            session.error = T("Couldn't import tweepy library")
-            return True
         if not (deployment_settings.twitter.oauth_consumer_key and deployment_settings.twitter.oauth_consumer_secret):
             session.error = T("You should edit Twitter settings in models/000_config.py")
             return True

@@ -144,6 +144,7 @@ def shn_irs_rheader(r, tabs=[]):
             if location:
                 location = shn_gis_location_represent(location)
             create_request = DIV(P(), A(T("Create Request"), _class="action-btn colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars={"format":"popup", "caller":"irs_ireport"}), _title=T("Add Request")), P())
+            create_task    = DIV(P(), A(T("Create Task"), _class="action-btn colorbox", _href=URL(r=request, c="project", f="task", args="create", vars={"format":"popup", "caller":"irs_ireport"}), _title=T("Add Task")), P())
             rheader = DIV(TABLE(
                             TR(
                                 TH(T("Short Description") + ": "), report.name,
@@ -153,6 +154,7 @@ def shn_irs_rheader(r, tabs=[]):
                                 TH(T("Location") + ": "), location)
                             ),
                           create_request,
+                          create_task,
                           rheader_tabs)
 
         return rheader

@@ -438,7 +438,7 @@ ADD_DONOR = T("Add Donor")
 donor_id = S3ReusableField("donor_id", db.org_organisation, sortby="name",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", "%(name)s", multiple=True, filterby="type", filter_opts=[4])),
                     represent = shn_donor_represent,
-                    label = T("Donor"),
+                    label = T("Funding Organization"),
                     comment = DIV(A(ADD_DONOR, _class="colorbox", _href=URL(r=request, c="org", f="organisation", args="create", vars=dict(format="popup", child="donor_id")), _target="top", _title=ADD_DONOR),
                               DIV( _class="tooltip", _title=ADD_DONOR + "|" + T("The Donor(s) for this project. Multiple values can be selected by holding down the 'Control' key."))),
                     ondelete = "RESTRICT"

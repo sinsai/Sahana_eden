@@ -32,6 +32,14 @@ table.acl-widget td {
     margin: 4px;
 }
 
+#action-row a {
+    padding-left: 10px;
+}
+
+.red {
+    font-weight: bold;
+}
+
 #table-acls {
     display: none;
 }

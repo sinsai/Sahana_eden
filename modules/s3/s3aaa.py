@@ -1785,7 +1785,9 @@ class S3RoleManager(S3Method):
             tbody = TBODY(trows)
             items = TABLE(thead, tbody, _id="list", _class="display")
             output.update(items=items, sortby=[[1, 'asc']])
-            self.response.view = self._view(r, "list.html")
+            add_btn = A(T("Add Role"), _href=URL(r=request, c="admin", f="role", args=["create"]), _class="action-btn")
+            output.update(add_btn=add_btn)
+            self.response.view = "admin/role_list.html"
             self.response.s3.actions = []
             self.response.s3.no_sspag = True
 
@@ -1829,7 +1831,7 @@ class S3RoleManager(S3Method):
                 role_name = r.record.role
                 role_desc = r.record.description
             else:
-                output.update(title=T("Create Role"))
+                output.update(title=T("New Role"))
                 role_id = None
                 role_name = None
                 role_desc = None
@@ -1860,7 +1862,8 @@ class S3RoleManager(S3Method):
                                   TEXTAREA(value=role_desc,
                                            _name="role_desc",
                                            _rows="4"), "")
-            role_form = DIV(TABLE(form_rows), _id="role-form")
+            key_row = P(T("* Required Fields"), _class="red")
+            role_form = DIV(TABLE(form_rows), key_row, _id="role-form")
 
             # ----------- ACL forms -------------------------------------------
 
@@ -1979,7 +1982,9 @@ class S3RoleManager(S3Method):
             acl_form = DIV(controller_acl_form, table_acl_form, _id="table-container")
 
             # Action row
-            action_row = DIV(INPUT(_type="submit", _value="Save"), _id="action-row")
+            action_row = DIV(INPUT(_type="submit", _value="Save"),
+                             A(T("Cancel"), _href=URL(r=request, c="admin", f="role", vars=request.get_vars)),
+                             _id="action-row")
 
             # Aggregate form
             form = FORM(role_form, acl_form, action_row)
@@ -2038,7 +2043,7 @@ class S3RoleManager(S3Method):
                 redirect(URL(r=request, f="role", vars=request.get_vars))
 
             output.update(form=form)
-            self.response.view = "admin/role_update.html"
+            self.response.view = "admin/role_edit.html"
 
         else:
             r.error(501, self.manager.BAD_FORMAT)

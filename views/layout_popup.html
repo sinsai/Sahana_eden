@@ -28,7 +28,7 @@ function s3_tb_refresh() {
     if (caller.match(/survey_template_link_table_survey_question_id/)) {
         // Survey Question
         var url = '{{=URL(r=request, c="survey", f="template_link")}}';
-        url += '/options.json?field=survey_question_id'
+        url += '/options.s3json?field=survey_question_id'
         var selector = self.parent.$('#survey_question_id');
         var selected_values = selector.selectedValues();
         var options = self.parent.$('#survey_question_id *');
@@ -108,7 +108,7 @@ function s3_tb_refresh() {
 
         // URL to retrieve the Options list for the field of the master resource
         var url = '{{=URL(r=request, c="aaa", f="bbb")}}'.replace('aaa/bbb', caller_prefix + '/' + parent_resource);
-        url += '/options.json?field=' + child_resource;
+        url += '/options.s3json?field=' + child_resource;
         var selector = self.parent.$('#' + caller);
         var dummy = self.parent.$('#dummy_' + caller);
         var has_dummy = (dummy.val() != undefined);

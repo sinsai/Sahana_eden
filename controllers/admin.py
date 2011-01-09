@@ -1091,6 +1091,9 @@ def role():
         return True
     response.s3.prep = prep
 
+    response.s3.no_sspag = True
+    response.extra_styles = ["S3/role.css"]
+
     output = s3_rest_controller(prefix, name)
     return output
 

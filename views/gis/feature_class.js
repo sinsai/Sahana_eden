@@ -1,4 +1,4 @@
-﻿<script type="text/javascript">//<![CDATA[
+<script type="text/javascript">//<![CDATA[
 $(function() {
     var loading_categories = '<option value="">' + '{{=T("Loading Categories...")}}</option>';
     var select_category = '<option value="" selected>' + '{{=T("Select a category")}}' + '...</option>';
@@ -12,7 +12,7 @@ $(function() {
             var widget = "<select id='gis_feature_class_category'>" + loading_categories + '</select>';
             $('#gis_feature_class_category__row > td.w2p_fw').html(widget);
             $('#gis_feature_class_category__row').show();
-            var url = '{{=URL(r=request, c="irs", f="ireport", args="options.json", vars={"field":"category"})}}';
+            var url = '{{=URL(r=request, c="irs", f="ireport", args="options.s3json", vars={"field":"category"})}}';
             load_categories = function(data, status){
                 var options;
                 if (data.option.length == 0) {
@@ -26,7 +26,7 @@ $(function() {
                     }
                 }
                 $('#gis_feature_class_category').html(options);
-            };	
+            };
             $.getJSONS3(url, load_categories, false);
         } else {
             $('#gis_feature_class_category__row').hide();

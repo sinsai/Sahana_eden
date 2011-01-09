@@ -1456,6 +1456,7 @@ class GIS(object):
                   mgrs = {},
                   window = False,
                   window_hide = False,
+                  closable = True,
                   collapsed = False,
                   public_url = "http://127.0.0.1:8000"
                 ):
@@ -1513,6 +1514,7 @@ class GIS(object):
                 }
             @param window: Have viewport pop out of page into a resizable window
             @param window_hide: Have the window hidden by default, ready to appear (e.g. on clicking a button)
+            @param closable: In Window mode, whether the window is closable or not
             @param collapsed: Start the Tools panel (West region) collapsed
             @param public_url: pass from model (not yet defined when Module instantiated
         """
@@ -2430,27 +2432,31 @@ OpenLayers.Util.extend( selectPdfControl, {
         strategy_cluster = """new OpenLayers.Strategy.Cluster({distance: """ + str(cluster_distance) + """, threshold: """ + str(cluster_threshold) + """})"""
 
         # Layout
-        if window and window_hide:
-            layout = """
-        mapWin = new Ext.Window({
-            id: 'gis-map-window',
-            collapsible: true,
-            constrain: true,
+        if window:
+            if window_hide:
+                layout = """
             closeAction: 'hide',
             """
-            layout2 = """
-        """
-        elif window:
+                layout2 = """
+            """
+            else:
+                if closable:
+                    layout = """
+                """
+                else:
+                    layout = """
+            closable: false,
+                """
+                layout2 = """
+        mapWin.show();
+        mapWin.maximize();
+            """
             layout = """
         mapWin = new Ext.Window({
             id: 'gis-map-window',
             collapsible: true,
             constrain: true,
-            """
-            layout2 = """
-        mapWin.show();
-        mapWin.maximize();
-        """
+        """ + layout
         else:
             # Embedded
             layout = """

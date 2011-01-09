@@ -46,15 +46,9 @@ if shn_has_role(1):
         ]]
     )
 #==============================================================================
-#Nursix: Could this be made more generic?
-#def shn_create_next_component(s3crud, module, resourcename, component):
-    #return URL(r = request, c= module, f = resourcename,
-               #args = [s3xrc.get_session(module, resourcename), component],
-               #)
-#==============================================================================
-
 module = "logs"
 if deployment_settings.has_module(module):
+
 #==============================================================================
 # Request
     resourcename = "req"
@@ -399,9 +393,11 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Sent Items currently registered"))
 
     #------------------------------------------------------------------------------
-    # In Items as component of In
-    # In Items as a component of Items
+    # Send Items as component of Send
+    # Send Items as a component of Items
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(logs_send = "logs_send_id",
                                           supply_item = "item_id"))
+
+#==============================================================================

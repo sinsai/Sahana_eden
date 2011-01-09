@@ -14,7 +14,13 @@ $(function() {
     message = subject + '\n\n' + message + '\n\n' + contact + '\n\nIncident Report: ' + report_id;
     $('#project_task_description').val(message);
     var location = self.parent.$('#irs_ireport_location_id').val();
-    $('#project_task_location_id').val(location);
+    if (location) {
+        $('#project_task_location_id').val(location);
+        // Hide the Location until we get the Location Selector to display the Location properly
+        // - this would probably be best done by populating all these values server-side
+        // - but this isn't possible unless the parent record is saved, which is currently doesn't need to be
+        $('[id*=location]').hide()
+    }
   {{pass}}
 });
 //]]></script>

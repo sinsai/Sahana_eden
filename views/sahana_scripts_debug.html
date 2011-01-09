@@ -79,14 +79,32 @@ jQuery(document).ready(function(){
 {{include "l10n.js"}}
 
 function s3_viewMap(feature_id) {
-    var url = '{{=URL(r=request, c='gis', f='display_feature')}}/' + feature_id;
+    var url = '{{=URL(r=request, c="gis", f="display_feature")}}/' + feature_id;
+    var oldhtml = $('#map').html();
     var iframe = "<iframe width='640' height='480' src='" + url + "'></iframe>";
+    var closelink = $("<a href=\"#\">{{=T("Close map")}}</a>");
+
+    closelink.bind( "click", function(evt) {
+        $('#map').html(oldhtml);
+        evt.preventDefault();
+    });
+
     $('#map').html(iframe);
+    $('#map').append($("<div style='margin-bottom: 10px' />").append(closelink));
 }
 function s3_viewMapMulti(module, resource, instance, jresource) {
-    var url = '{{=URL(r=request, c='gis', f='display_features')}}/?module=' + module + '&resource=' + resource + '&instance=' + instance + '&jresource=' + jresource;
+    var url = '{{=URL(r=request, c="gis", f="display_features")}}/?module=' + module + '&resource=' + resource + '&instance=' + instance + '&jresource=' + jresource;
+    var oldhtml = $('#map').html();
     var iframe = "<iframe width='640' height='480' src='" + url + "'></iframe>";
+    var closelink = $("<a href=\"#\">{{=T("Close map")}}</a>");
+
+    closelink.bind( 'click', function(evt) {
+        $('#map').html(oldhtml);
+        evt.preventDefault();
+    });
+
     $('#map').html(iframe);
+    $('#map').append($("<div style='margin-bottom: 10px' />").append(closelink));
 }
 jQuery(document).ready(function() {
     jQuery('input.date').datepicker({

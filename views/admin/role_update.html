@@ -1,2 +1,14 @@
 {{extend "layout.html"}}
 {{include "_update.html"}}
+<script type="text/javascript">//<![CDATA[
+$(document).ready(function(){
+    $('#tacl-btn').click(function() {
+        $('#table-acls').show()
+        $('#controller-acls').hide()
+    });
+    $('#cacl-btn').click(function() {
+        $('#controller-acls').show()
+        $('#table-acls').hide()
+    });
+});
+//]]></script>

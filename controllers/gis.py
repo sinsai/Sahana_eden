@@ -1553,6 +1553,7 @@ def display_feature():
         #bbox = bounds,
         zoom = zoom,
         window = True,
+        closable = False,
         collapsed = True
     )
 
@@ -1607,6 +1608,7 @@ def display_features():
         feature_queries = [{"name" : "Features", "query" : features, "active" : True}],
         bbox = bounds,
         window = True,
+        closable = False,
         collapsed = True
     )
 

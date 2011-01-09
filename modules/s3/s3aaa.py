@@ -51,8 +51,11 @@ from gluon.validators import *
 from gluon.sql import Field, Row, Query
 from gluon.sqlhtml import SQLFORM, SQLTABLE
 from gluon.tools import Auth
+from gluon.contrib.simplejson.ordered_dict import OrderedDict
 
 from s3rest import S3Method
+from s3widgets import S3ACLWidget
+from s3validators import IS_ACL
 
 DEFAULT = lambda: None
 table_field = re.compile("[\w_]+\.[\w_]+")
@@ -104,6 +107,7 @@ class AuthS3(Auth):
         self.permission = S3Permission(self, environment)
 
 
+    # -------------------------------------------------------------------------
     def __get_migrate(self, tablename, migrate=True):
 
         if type(migrate).__name__ == "str":
@@ -114,6 +118,7 @@ class AuthS3(Auth):
             return True
 
 
+    # -------------------------------------------------------------------------
     def define_tables(self, migrate=True):
 
         """ to be called unless tables are defined manually
@@ -298,6 +303,7 @@ class AuthS3(Auth):
         self.permission.define_table()
 
 
+    # -------------------------------------------------------------------------
     def login_bare(self, username, password):
         """
         Logins user
@@ -339,6 +345,8 @@ class AuthS3(Auth):
 
         return False
 
+
+    # -------------------------------------------------------------------------
     def login(
         self,
         next=DEFAULT,
@@ -439,7 +447,7 @@ class AuthS3(Auth):
                 if not user:
                     # invalid login
                     session.error = self.messages.invalid_login
-                    redirect(self.url(args=request.args))
+                    redirect(self.url(args=request.args, vars=request.get_vars))
         else:
             # use a central authentication server
             cas = self.settings.login_form
@@ -480,6 +488,8 @@ class AuthS3(Auth):
         else:
             redirect(next)
 
+
+    # -------------------------------------------------------------------------
     def register(
         self,
         next=DEFAULT,
@@ -629,6 +639,8 @@ class AuthS3(Auth):
             redirect(next)
         return form
 
+
+    # -------------------------------------------------------------------------
     def shn_logged_in(self):
         """
         Check whether the user is currently logged-in
@@ -644,6 +656,8 @@ class AuthS3(Auth):
 
         return True
 
+
+    # -------------------------------------------------------------------------
     def shn_has_role(self, role):
         """
         Check whether the currently logged-in user has a role
@@ -680,6 +694,7 @@ class AuthS3(Auth):
             return False
 
 
+    # -------------------------------------------------------------------------
     def shn_has_permission(self, method, table, record_id = 0):
 
         """
@@ -740,6 +755,8 @@ class AuthS3(Auth):
 
         return authorised
 
+
+    # -------------------------------------------------------------------------
     def shn_accessible_query(self, method, table):
 
         """
@@ -779,6 +796,8 @@ class AuthS3(Auth):
                            (permission.table_name == table)\
                            ._select(permission.record_id))
 
+
+    # -------------------------------------------------------------------------
     def shn_register(self, form):
         """
         S3 framework function
@@ -799,6 +818,7 @@ class AuthS3(Auth):
         self.shn_link_to_person(user=form.vars)
 
 
+    # -------------------------------------------------------------------------
     def shn_has_membership(self, group_id=None, user_id=None, role=None):
         """
         Checks if user is member of group_id or role
@@ -831,6 +851,8 @@ class AuthS3(Auth):
     # Override original method
     has_membership = shn_has_membership
 
+
+    # -------------------------------------------------------------------------
     def shn_requires_membership(self, role):
         """
         Decorator that prevents access to action if not logged in or
@@ -868,6 +890,8 @@ class AuthS3(Auth):
     # Override original method
     requires_membership = shn_requires_membership
 
+
+    # -------------------------------------------------------------------------
     def shn_link_to_person(self, user=None):
 
         """
@@ -948,6 +972,7 @@ class AuthS3(Auth):
                 if self.user and self.user.id == user.id:
                     self.user.person_uuid = person_uuid
 
+
 # =============================================================================
 class S3Permission(object):
 
@@ -955,7 +980,7 @@ class S3Permission(object):
     S3 Class to handle permissions
 
     @author: Dominic König <dominic@aidiq.com>
-    @status: uncompleted, currently unused
+    @status: work in progress
 
     """
 
@@ -969,13 +994,23 @@ class S3Permission(object):
     ALL = CREATE | READ | UPDATE | DELETE
     NONE = 0x0000 # must be 0!
 
-    PERMISSION_OPTS = {
-        #NONE  : "NONE",
-        CREATE: "CREATE",
-        READ  : "READ",
-        UPDATE: "UPDATE",
-        DELETE: "DELETE",
-    }
+    PERMISSION_OPTS = OrderedDict([
+        #(NONE, "NONE"),
+        [CREATE, "CREATE"],
+        [READ  , "READ"],
+        [UPDATE, "UPDATE"],
+        [DELETE, "DELETE"],
+        #(READ, "READ"),
+        #(CREATE|UPDATE|DELETE, "WRITE")
+    ])
+
+    # Method string <-> required permission
+    METHODS = Storage(
+        create = CREATE,
+        read = READ,
+        update = UPDATE,
+        delete = DELETE
+    )
 
     # Policy helpers
     most_permissive = lambda self, acl: \
@@ -1077,8 +1112,8 @@ class S3Permission(object):
                             Field("controller", length=64),
                             Field("function", length=512),
                             Field("tablename", length=512),
-                            Field("opermissions", "integer", default=self.ALL),
-                            Field("spermissions", "integer", default=self.READ),
+                            Field("oacl", "integer", default=self.ALL),
+                            Field("uacl", "integer", default=self.READ),
                             migrate=self.migrate)
 
 
@@ -1102,7 +1137,7 @@ class S3Permission(object):
 
         """
 
-        return self.ALL # not used yet
+        #return self.ALL # not used yet
 
         ADMIN = 1
         EDITOR = 4
@@ -1204,9 +1239,9 @@ class S3Permission(object):
                 function_acl = []
                 for row in rows:
                     if not row.function:
-                        controller_acl += (row.opermissions, row.spermissions)
+                        controller_acl += (row.oacl, row.uacl)
                     else:
-                        function_acl += (row.opermissions, row.spermissions)
+                        function_acl += (row.oacl, row.uacl)
                 controller_acl = most_permissive(controller_acl)
                 function_acl = most_permissive(function_acl)
                 page_acl = most_permissive((controller_acl, function_acl))
@@ -1263,7 +1298,7 @@ class S3Permission(object):
             else:
                 query = (t.group_id == None) & q
             rows = self.db(query).select()
-            table_acl = [(r.opermissions, r.spermissions) for r in rows]
+            table_acl = [(r.oacl, r.uacl) for r in rows]
             if table_acl:
                 # ACL found, apply most permissive role
                 table_acl = self.most_permissive(table_acl)
@@ -1344,16 +1379,97 @@ class S3Permission(object):
 
 
     # -------------------------------------------------------------------------
-    def require(self):
+    def accessible_query(self, table, *methods):
         """
-        Permission check including action upon failure
+        Query for records which the user is permitted to access with method
 
-            - example:
-              auth.permission.require(my_table, auth.permission.ALL)
+        @param table: the DB table
+        @param methods: list of methods for which permission is required (AND),
+                        any combination "create", "read", "update", "delete"
+
+        Example::
+            query = auth.permission.accessible_query(table, "read", "update")
 
         """
 
-        raise NotImplementedError
+        required = self.METHODS
+
+        # Default query
+        pkey = table.fields[0]
+        query = (table[pkey] != None)
+
+        # Required ACL
+        racl = reduce(lambda a, b: a | b,
+                     [required[m] for m in methods if m in required], self.NONE)
+        if not racl:
+            return query
+
+        # User & Roles
+        user_id = None
+        if self.auth.user is not None:
+            user_id = self.auth.user.id
+        roles = []
+        if self.session.s3 is not None:
+            roles = self.session.s3.roles or []
+
+        # Available ACLs
+        pacl = self.page_acl()
+        tacl = self.table_acl(table)
+        acl = (tacl[0] & pacl[0], tacl[1] & pacl[1])
+
+        # Ownership required?
+        permitted = (acl[0] | acl[1]) & racl == racl
+        if not permitted:
+            query = (table[pkey] == None)
+            ownership_required = False
+        elif "owned_by" in table or "created_by" in table:
+            ownership_required = permitted and acl[1] & racl != racl
+
+        # Generate query
+        if ownership_required:
+            query = None
+            if "owned_by" in table:
+                query = (table.owned_by.belongs(roles))
+            if "created_by" in table:
+                q = (table.created_by == user_id)
+                if query is not None:
+                    query = (query | q)
+                else:
+                    query = q
+
+        return query
+
+
+    # -------------------------------------------------------------------------
+    def has_permission(self, table, record=None, method=None):
+        """
+        Check permission to access a record
+
+        @param table: the table
+        @param record: the record or record ID (None for any record)
+        @param method: the method (or tuple/list of methods),
+                       any of "create", "read", "update", "delete"
+
+        @note: when submitting a record, the record ID and the ownership
+               fields (="created_by", "owned_by") must be contained if
+               available, otherwise the record will be re-loaded
+
+        """
+
+        required = self.METHODS
+
+        if not isinstance(method, (list, tuple)):
+            method = [method]
+
+        # Required ACL
+        racl = reduce(lambda a, b: a | b,
+                     [required[m] for m in method if m in required], self.NONE)
+
+        # Available ACL
+        aacl = self(table=table, record=record)
+
+        permitted = racl & aacl == racl
+        return permitted
 
 
     # -------------------------------------------------------------------------
@@ -1510,61 +1626,382 @@ class S3Audit(object):
 # =============================================================================
 class S3RoleManager(S3Method):
 
-    """ REST Method to manage ACLs """
+    """ REST Method to manage ACLs
+
+        @status: work in progress
+
+    """
+
+    # Controllers to hide from the permissions matrix
+    HIDE_CONTROLLER = ("admin", "default")
+
+    # Roles to hide from the permissions matrix
+    PROTECTED_ROLES = (1, 3, 4)
 
     controllers = Storage()
 
+    # -------------------------------------------------------------------------
     def apply_method(self, r, **attr):
+        """
+        Apply role manager
 
-        # Remove this:
-        self.response.error = self.T("Not Implemented")
-        self.response.view = "display.html"
-        return dict()
+        """
 
-        if self.method == "list":
-            output = self.select(r, **attr)
+        method = self.method
+
+        if method == "list":
+            output = self._list(r, **attr)
+        elif method in ("read", "create", "update"):
+            output = self._edit(r, **attr)
+        elif method == "delete":
+            output = self._delete(r, **attr)
         else:
             r.error(501, self.manager.ERROR.BAD_METHOD)
 
         return output
 
 
-    def select(self, r, **attr):
+    # -------------------------------------------------------------------------
+    def _list(self, r, **attr):
+        """
+        Role/Permission matrix
 
-        output = dict(
-                    title = self.T("List of Roles"),
-                    subtitle = self.T("Roles")
-                 )
+        """
 
+        output = dict()
+
+        request = self.request
         resource = self.resource
+        auth = self.manager.auth
 
-        resource.load()
-        headers = [TH("Id"), TH("Role")]
-        for c in self.controllers.keys():
-            headers.append(TH(self.controllers[c].name_nice))
-        thead = THEAD(TR(headers))
-        trows = []
-        i = 1
-        for row in resource:
+        T = self.T
 
-            role_id = row.id
-            role_name = row.role
+        if r.id:
+            return self._edit(r, **attr)
 
-            tdata = [TD(A(role_id)), TD(role_name)]
-            for c in self.controllers.keys():
-                tdata.append(TD("CRUD (CRUD)", _nowrap="nowrap"))
+        show_matrix = request.get_vars.get("matrix", False) and True
 
-            c = i % 2 and "even" or "odd"
-            trows.append(TR(tdata, _class=c))
-        tbody = TBODY(trows)
+        if r.interactive:
 
-        role_list = TABLE(thead, tbody, _id="list", _class="display")
-        output.update(items=role_list, sortby=None)
+            # Title and subtitle
+            output.update(title = T("List of Roles"), subtitle = T("Roles"))
 
-        self.response.view = self._view(r, "list.html")
-        self.response.s3.actions = []
-        self.response.s3.no_sspag = True
+            # Filter out protected roles
+            resource.add_filter(~(self.table.id.belongs(self.PROTECTED_ROLES)))
+            resource.load()
+
+            # Get active controllers
+            controllers = [c for c in self.controllers.keys()
+                             if c not in self.HIDE_CONTROLLER]
+
+            # ACLs
+            table_acl = auth.permission.table
+            query = resource.get_query()
+            query = query & (table_acl.group_id == self.table.id) # & (table_acl.function == None)
+            rows = self.db(query).select(table_acl.ALL)
+            
+            acls = Storage()
+            for row in rows:
+                if row.controller not in acls.keys():
+                    acl = acls[row.controller] = Storage()
+                acls[row.controller][row.group_id] = Storage(oacl = row.oacl, uacl = row.uacl)
+            print acls
+
+            # Table header
+            headers = [TH("ID"), TH(T("Role"))]
+            if show_matrix:
+                headers += [TH(self.controllers[c].name_nice) for c in controllers]
+            else:
+                headers += [TH(T("Description"))]
+            thead = THEAD(TR(headers))
+
+            # Table body
+            trows = []
+            i = 1
+            for row in resource:
+
+                role_id = row.id
+                role_name = row.role
+                role_desc = row.description
+
+                action_button = lambda l, i, m: A(l, _href=URL(r=request,
+                                                            c="admin",
+                                                            f="role",
+                                                            args=(m and [i, m] or [i]),
+                                                            vars=request.get_vars),
+                                                            _class="action-btn")
+
+                role_edit = action_button(T("Edit"), role_id, None)
+                role_delete = action_button(T("Delete"), role_id, "delete")
+
+                tdata = [TD(role_edit, XML("&nbsp;"), role_delete), TD(role_name)]
+
+                if show_matrix:
+                    # Display the permission matrix
+                    for c in controllers:
+                        if c in acls:
+                            if role_id in acls[c]:
+                                acl = (acls[c][role_id].oacl, acls[c][role_id].uacl)
+                            else:
+                                acl = (auth.permission.NONE, auth.permission.NONE)
+                        else:
+                            acl = (auth.permission.ALL, auth.permission.ALL)
+
+                        oacl = ""
+                        uacl = ""
+                        options = auth.permission.PERMISSION_OPTS
+                        for o in options:
+                            if o == 0 and acl[0] == 0:
+                                oacl = "%s%s" % (oacl, options[o][0])
+                            elif acl[0] and acl[0] & o:
+                                oacl = "%s%s" % (oacl, options[o][0])
+                            else:
+                                oacl = "%s-" % oacl
+                            if o == 0 and acl[1] == 0:
+                                uacl = "%s%s" % (uacl, options[o][0])
+                            elif acl[1] and acl[1] & o:
+                                uacl = "%s%s" % (uacl, options[o][0])
+                            else:
+                                uacl = "%s-" % uacl
+                        values = "%s (%s)" % (uacl, oacl)
+                        tdata += [TD(values, _nowrap="nowrap")]
+                else:
+                    # Display role descriptions
+                    tdata += [TD(role_desc)]
+
+                c = i % 2 and "even" or "odd"
+                trows.append(TR(tdata, _class=c))
+            tbody = TBODY(trows)
+
+            items = TABLE(thead, tbody, _id="list", _class="display")
+            output.update(items=items, sortby=[[1, 'asc']])
+
+            self.response.view = self._view(r, "list.html")
+            self.response.s3.actions = []
+            self.response.s3.no_sspag = True
+
+        elif r.representation == "xls":
+            # Not implemented yet
+            r.error(501, self.manager.ERROR.BAD_FORMAT)
+
+        else:
+            r.error(501, self.manager.ERROR.BAD_FORMAT)
 
         return output
+
+
+    # -------------------------------------------------------------------------
+    def _edit(self, r, **attr):
+        """
+        Create/update roles
+
+        """
+
+        output = dict()
+
+        # Form helper: mark a field label mandatory
+        mandatory = lambda l: DIV(l, XML("&nbsp;"), SPAN("*", _class="req"))
+
+        request = self.request
+        session = self.session
+        db = self.db
+        T = self.T
+
+        settings = self.manager.s3.crud
+
+        auth = self.manager.auth
+        acl_table = auth.permission.table
+
+        if r.interactive:
+
+            # Get the current record (if any)
+            if r.record:
+                output.update(title=T("Edit Role"))
+                role_id = r.record.id
+                role_name = r.record.role
+                role_desc = r.record.description
+            else:
+                output.update(title=T("Create Role"))
+                role_id = None
+                role_name = None
+                role_desc = None
+
+            # ACL Widget
+            acl_table.oacl.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
+            acl_table.uacl.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
+            acl_widget = lambda f, n, v: S3ACLWidget.widget(acl_table[f], v,
+                                                            _id=n,
+                                                            _name=n,
+                                                            _class="acl-widget")
+
+            # Form style from CRUD settings
+            formstyle = settings.formstyle
+
+            # Role form
+            form_rows = formstyle("role_name", mandatory(T("Role Name")),
+                                  INPUT(value=role_name,
+                                        _name="role_name",
+                                        _type="text"), "") + \
+                        formstyle("role_desc", T("Description"),
+                                  TEXTAREA(value=role_desc,
+                                           _name="role_desc",
+                                           _rows="4"), "")
+            role_form = DIV(TABLE(form_rows), _id="role-form")
+
+            # ACL forms
+            level = request.get_vars.get("acl", "controller")
+            acls = Storage()
+            records = db(acl_table.group_id == role_id).select()
+
+            controllers = [c for c in self.controllers.keys()
+                             if c not in self.HIDE_CONTROLLER]
+
+            # Controller ACL form
+            thead = THEAD(TR(TH(T("Controller")),
+                             TH(T("Function")),
+                             TH(T("All Resources")),
+                             TH(T("Owned Resources"))))
+            form_rows = []
+            rows = dict([(row.controller, row) for row in records
+                            if row.controller in controllers])
+            i = 0
+            for c in controllers:
+                i += 1
+                uacl = auth.permission.ALL
+                oacl = auth.permission.ALL
+                f = "ANY"
+                t = "ANY"
+                _id = None
+                cn = self.controllers[c].name_nice
+                if c in rows:
+                    row = rows[c]
+                    f = row.function
+                    _id = row.id
+                    if row.uacl is not None:
+                        uacl = row.uacl
+                    if row.oacl is not None:
+                        oacl = row.oacl
+                if not f:
+                    f = "ANY"
+                n = "%s_%s_%s_%s" % (_id, c, f, t)
+                print n
+                uacl = acl_widget("uacl", "acl_u_%s" % n, uacl)
+                oacl = acl_widget("oacl", "acl_o_%s" % n, oacl)
+                _class = i % 2 and "even" or "odd"
+                form_rows.append(TR(TD(cn), TD(f), TD(uacl), TD(oacl), _class=_class))
+            controller_acl_form = DIV(TABLE(thead, TBODY(form_rows)),
+                                      _id="controller_acl_form")
+
+            # Table ACL form
+            thead = THEAD(TR(TH(T("Tablename")),
+                             TH(T("All Resources")),
+                             TH(T("Owned Resources"))))
+            form_rows = []
+            model = self.manager.model
+            ptables = model.primary_resources(prefixes=controllers)
+            rows = dict([(row.tablename, row) for row in records
+                            if row.tablename in ptables])
+            i = 0
+            for t in rows:
+                i += 1
+                uacl = auth.permission.ALL
+                oacl = auth.permission.ALL
+                _id = None
+                if t in rows:
+                    row = rows[t]
+                    _id = row.id
+                    if row.uacl is not None:
+                        uacl = row.uacl
+                    if row.oacl is not None:
+                        oacl = row.oacl
+                if _id:
+                    n = "%s_%s" % (t, _id)
+                else:
+                    n = t
+                uacl = acl_widget("uacl", "t_u_%s" % n, uacl)
+                oacl = acl_widget("oacl", "t_o_%s" % n, oacl)
+                _class = i % 2 and "even" or "odd"
+                form_rows.append(TR(TD(t), TD(uacl), TD(oacl), _class=_class))
+            table_acl_form = DIV(TABLE(thead, TBODY(form_rows)),
+                                       _id="table_acl_form")
+
+            acl_form = DIV(controller_acl_form,
+                           table_acl_form,
+                           _id="table-container")
+
+            # Action row
+            action_row = DIV(INPUT(_type="submit", _value="Save"), _id="action-row")
+
+            # Aggregate form
+            form = FORM(role_form, acl_form, action_row)
+
+            if role_id:
+                form.append(INPUT(_type="hidden", _name="role_id", value=role_id))
+
+            # Process the form
+            if form.accepts(request.post_vars, session):
+                vars = form.vars
+                if r.record:
+                    r.record.update_record(role = vars.role_name,
+                                           description = vars.role_desc)
+                    role_id = form.vars.role_id
+                else:
+                    role_id = self.table.insert(role = vars.role_name,
+                                                description = vars.role_desc)
+
+                if role_id:
+                    rows = Storage()
+                    for v in form.vars:
+                        if v[:4] == "acl_":
+                            # This is an ACL
+                            x, name = v[4:].split("_", 1)
+                            i, c, f, t = name.split("_", 3)
+                            if c == "ANY":
+                                c = None
+                            if f == "ANY":
+                                f = None
+                            if t == "ANY":
+                                t = None
+                            try:
+                                i = int(i)
+                            except:
+                                i = None
+                            if name not in rows:
+                                rows[name] = Storage()
+                            rows[name].update({"id": i,
+                                               "group_id": role_id,
+                                               "controller": c,
+                                               "function": f,
+                                               "tablename": t,
+                                               "%sacl" % x: form.vars[v]})
+                    for row in rows.values():
+                        _id = row.id
+                        del row["id"]
+                        print row
+                        if _id:
+                            db(acl_table.id == _id).update(**row)
+                        else:
+                            _id = acl_table.insert(**row)
+                            print "Created as %s" % _id
+                            
+                redirect(URL(r=request, f="role", vars=request.get_vars))
+
+            output.update(form=form)
+            self.response.view = "admin/role_update.html"
+        else:
+            r.error(501, self.manager.BAD_FORMAT)
+
+        return output
+
+
+    # -------------------------------------------------------------------------
+    def _delete(self, r, **attr):
+        """
+        Delete roles
+
+        """
+
+        r.error(400, "Not implemented yet")
+
 
 # =============================================================================

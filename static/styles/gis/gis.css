@@ -86,7 +86,7 @@
     height: 20px !important;
     width: 20px !important;
 }
-#mappanel .geolocation {
+.x-btn-text.geolocation {
   background-image: url(../../img/gis/geolocation.png) !important;
   height: 20px !important;
   width: 20px !important;

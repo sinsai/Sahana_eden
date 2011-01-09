@@ -2,8 +2,8 @@
 
 """ Custom UI Widgets
 
-    @author: Michael Howden <michael[at]aidiq.com>
-    @date: 2010-03-17
+    @author: Michael Howden <michael@aidiq.com>
+    @author: Fran Boon <fran@aidiq.com>
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
 
@@ -34,6 +34,7 @@
 """
 
 __all__ = ["S3DateWidget",
+           "S3DateTimeWidget",
            "S3UploadWidget",
            "S3AutocompleteWidget",
            "S3LocationAutocompleteWidget",
@@ -59,7 +60,7 @@ class S3DateWidget(FormWidget):
 
     """
     Standard Date widget, but with a modified yearRange to support Birth dates
-    
+
     @author: Fran Boon (fran@aidiq.com)
 
     """
@@ -73,7 +74,7 @@ class S3DateWidget(FormWidget):
         self.max = after
 
 
-    def __call__(self ,field, value, **attributes):
+    def __call__(self, field, value, **attributes):
 
         default = dict(
             _type = "text",
@@ -96,12 +97,90 @@ class S3DateWidget(FormWidget):
 
 
 # -----------------------------------------------------------------------------
+
+class S3DateTimeWidget(FormWidget):
+
+    """
+    Standard DateTime widget, based on the widget above, but instead of using
+    jQuery datepicker we use the DHTML datetime calendar.
+
+    @author: Fernando Brito (email@fernandobrito.com)
+
+    """
+
+    def __init__(self,
+                 allow_future=True,    # Allow dates in the future?
+                ):
+
+        self.allow_future = allow_future
+
+    def __call__(self, field, value, **attributes):
+
+        default = dict(
+            _type = "text",
+            _class = "datetime_widget",  # Prevent default "datetime" calendar from showing up
+            value = (value!=None and str(value)) or "",
+            )
+        attr = StringWidget._attributes(field, default, **attributes)
+
+        selector = str(field).replace(".", "_")
+
+        date_options = """
+        $('#%s').focus( function() {
+            Calendar.setup({
+                inputField: this.id,
+                ifFormat: '%%Y-%%m-%%d %%H:%%M:%%S',
+                dateStatusFunc: disallowDate,
+                showsTime: true,
+                timeFormat: '24'
+            });
+        })
+        """ % (selector)
+
+        if self.allow_future == False:
+            date_options += """
+            var Today = new Date();
+
+           function disallowDate(date) {
+              if ( date.getFullYear() > Today.getFullYear() ) {
+                return true; // Disable next years
+              }
+              else if ( date.getMonth() > Today.getMonth() &&
+                        date.getYear() == Today.getYear() ) {
+               return true; // Disable months until end of year
+              }
+              else if ( date.getDate() > Today.getDate() &&
+                        date.getMonth() == Today.getMonth() &&
+                        date.getYear()  == Today.getYear() ) {
+                return true; // Disable days until end of month
+              }
+              return false;  // Enable
+            }
+            """
+        else: # So Calendar.setup won't raise an error
+            date_options += """
+            function disallowDate(date) {
+                return false; // Enable
+            }
+            """
+
+        return TAG[""](
+                        INPUT(**attr),
+                        SCRIPT(date_options)
+                      )
+
+
+# -----------------------------------------------------------------------------
 class S3UploadWidget(UploadWidget):
 
     """
     Subclassed to not show the delete checkbox when field is mandatory
         - This now been included as standard within Web2Py from r2867
         - Leaving this unused example in the codebase so that we can easily amend this if we wish to later
+        
+    @author: Fran Boon (fran@aidiq.com)
+
+    @ToDo: Add support for allow_future=False
     """
 
     @staticmethod
@@ -131,7 +210,7 @@ class S3UploadWidget(UploadWidget):
             if UploadWidget.is_image(value):
                 br = BR()
                 image = IMG(_src = url, _width = UploadWidget.DEFAULT_WIDTH)
-            
+
             requires = attr["requires"]
             if requires == [] or isinstance(requires, IS_EMPTY_OR):
                 inp = DIV(inp, '[',
@@ -660,7 +739,7 @@ class S3LocationSelectorWidget(FormWidget):
                 if _parent.parent:
                     _grandparent = db(locations.id == _parent.parent).select(locations.level, locations.parent, limitby=(0, 1)).first()
                     if _grandparent.level:
-                        default[_grandparentparent.level] = _parent.parent
+                        default[_grandparent.level] = _parent.parent
                     if _grandparent.parent:
                         _greatgrandparent = db(locations.id == _grandparent.parent).select(locations.level, locations.parent, limitby=(0, 1)).first()
                         if _greatgrandparent.level:
@@ -1471,7 +1550,7 @@ class JSON(INPUT):
 
 # -----------------------------------------------------------------------------
 class S3MultiSelectWidget(FormWidget):
-    
+
     """
     This widget will return a table which can have rows added or
     deleted (not currently edited). This widget can be added to a
@@ -1676,7 +1755,7 @@ class S3MultiSelectWidget(FormWidget):
         @param column_fields: provides the order
         @param column_field_represents: functions to find the values
             of the fields in the row
-        @type column_field_represents: dict of {fieldname: function} 
+        @type column_field_represents: dict of {fieldname: function}
 
         """
 
@@ -1761,10 +1840,10 @@ class S3MultiSelectWidget(FormWidget):
 
 # -----------------------------------------------------------------------------
 class S3ACLWidget(CheckboxesWidget):
-    
+
     """
     Widget class for ACLs
-    
+
     @author: Dominic König <dominic@aidiq.com>
 
     @todo: add option dependency logic (JS)
@@ -1793,13 +1872,53 @@ class S3ACLWidget(CheckboxesWidget):
                                 break
                             else:
                                 continue
-                        elif value & flag == flag:
+                        elif value and value & flag == flag:
                             values.append(k)
                     except ValueError:
                         pass
                 value = values
 
-        return CheckboxesWidget.widget(field, value, **attributes)
+        #return CheckboxesWidget.widget(field, value, **attributes)
+
+        attr = OptionsWidget._attributes(field, {}, **attributes)
+
+        options = [(k, v) for k, v in options if k!='']
+        opts = []
+        cols = attributes.get('cols',1)
+        totals = len(options)
+        mods = totals%cols
+        rows = totals/cols
+        if mods:
+            rows += 1
+
+        for r_index in range(rows):
+            tds = []
+            for k, v in options[r_index*cols:(r_index+1)*cols]:
+                tds.append(TD(INPUT(_type='checkbox',
+                                    _name=attr.get("_name", field.name),
+                                    requires=attr.get('requires',None),
+                                    hideerror=True, _value=k,
+                                    value=(k in value)), v))
+            opts.append(TR(tds))
+
+        if opts:
+            opts[-1][0][0]['hideerror'] = False
+        return TABLE(*opts, **attr)
+
+        # was values = re.compile('[\w\-:]+').findall(str(value))
+        #values = not isinstance(value,(list,tuple)) and [value] or value
+
+
+        #requires = field.requires
+        #if not isinstance(requires, (list, tuple)):
+            #requires = [requires]
+        #if requires:
+            #if hasattr(requires[0], 'options'):
+                #options = requires[0].options()
+            #else:
+                #raise SyntaxError, 'widget cannot determine options of %s' \
+                    #% field
+
 
 
 # -----------------------------------------------------------------------------

@@ -292,6 +292,10 @@ function S3ClearNavigateAwayConfirm() {
 
 function S3EnableNavigateAwayConfirm() {
     $(document).ready(function() {
+        if ( $('[class=error]').length > 0 ) {
+            // If there are errors, ensure the unsaved form is still protected
+ 	        S3SetNavigateAwayConfirm(); 
+ 	    } 
         $(':input:not(input[id=gis_location_advanced_checkbox])').keypress( S3SetNavigateAwayConfirm );		
         $(':input:not(input[id=gis_location_advanced_checkbox])').change( S3SetNavigateAwayConfirm );	
         $('form').submit( S3ClearNavigateAwayConfirm );

@@ -37,6 +37,7 @@
     *********************************************************************** -->
     <xsl:output method="xml"/>
     <xsl:include href="../xml/commons.xsl"/>
+    <xsl:include href="../xml/countries.xsl"/>
 
     <!-- ****************************************************************** -->
     <xsl:param name="domain"/>
@@ -101,22 +102,22 @@
                             <xsl:value-of select="concat($uuid, '_address')"/>
                         </xsl:attribute>
                         <data field="type" value="1">Home Address</data>
-                        <data field="street1">
+                        <data field="address">
                             <xsl:value-of select="./pfif:home_street/text()"/>
                         </data>
-                        <data field="city">
+                        <data field="L3">
                             <xsl:value-of select="./pfif:home_city/text()"/>
+                        </data>
+                        <data field="L1">
+                            <xsl:value-of select="./pfif:home_state/text()"/>
+                        </data>
+                        <data field="L0">
+                            <xsl:call-template name="iso2countryname">
+                                <xsl:with-param name="country" select="./pfif:home_country/text()"/>
+                            </xsl:call-template>
                         </data>
                         <data field="postcode">
                             <xsl:value-of select="./pfif:home_postal_code/text()"/>
-                        </data>
-                        <data field="state">
-                            <xsl:value-of select="./pfif:home_state/text()"/>
-                        </data>
-                        <data field="country">
-                            <xsl:attribute name="value">
-                                <xsl:value-of select="./pfif:home_country/text()"/>
-                            </xsl:attribute>
                         </data>
                     </resource>
                 </xsl:if>

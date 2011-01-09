@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008-2010 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
  * 
  * Published under the BSD license.
  * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
@@ -23,9 +23,9 @@ Ext.namespace("gxp.plugins");
 /** api: constructor
  *  .. class:: BingSource(config)
  *
- *    Plugin for using OpenStreetMap layers with :class:`gxp.Viewer` instances.
+ *    Plugin for using Bing layers with :class:`gxp.Viewer` instances.
  *
- *    Available layer names are "mapnik" and "osmarender"
+ *    Available layer names are "Road", "Aerial" and "AerialWithLabels"
  */
 /** api: example
  *  The configuration in the ``sources`` property of the :class:`gxp.Viewer` is
@@ -55,8 +55,8 @@ gxp.plugins.BingSource = Ext.extend(gxp.plugins.LayerSource, {
     ptype: "gx_bingsource",
 
     /** api: property[store]
-     *  ``GeoExt.data.LayerStore``. Will contain records with "mapnik" and
-     *  "osmarender" as name field values.
+     *  ``GeoExt.data.LayerStore``. Will contain records with "Road" and
+     *  "Aerial" as name field values.
      */
     
     /** api: config[title]

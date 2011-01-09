@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008-2010 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
  * 
  * Published under the BSD license.
  * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
@@ -50,6 +50,13 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
      *  automatically set the layer? Default is true.
      */
     autoSetLayer: true,
+    
+    /** api: config[layer]
+     *  ``Object`` with source and name properties. A layer to use if
+     *  ``autoSetLayer`` is false or before a layerselectionchange event is
+     *  fired. The layer referenced here will be set as soon as it is added to
+     *  the target's map.
+     */
 
     /** api: config[autoLoadFeatures]
      *  ``Boolean`` Automatically load features after a new layer has been set?
@@ -129,11 +136,9 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
      */
     page: null,
     
-    /** private: method[init]
+    /** private: method[constructor]
      */
-    init: function(target) {
-        gxp.plugins.FeatureEditor.superclass.init.apply(this, arguments);
-        
+    constructor: function() {
         this.addEvents(
             /** api: event[beforequery]
              *  Fired before a WFS GetFeature request is issued. This event
@@ -179,7 +184,7 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
             
             /** api: event[layerchange]
              *  Fired after a layer change, as soon as the layer's schema is
-             *  available.
+             *  available and a ``featureStore`` has been created.
              *
              *  Listener arguments:
              *
@@ -224,7 +229,13 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
              */
             "setpage"
         );
-        
+        gxp.plugins.FeatureManager.superclass.constructor.apply(this, arguments);        
+    },
+    
+    /** private: method[init]
+     */
+    init: function(target) {
+        gxp.plugins.FeatureManager.superclass.init.apply(this, arguments);
         this.toolsShowingLayer = {};
         
         this.style = {
@@ -260,7 +271,7 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
             })
         };
         
-        this.featureLayer = new OpenLayers.Layer.Vector(Ext.id(), {
+        this.featureLayer = new OpenLayers.Layer.Vector(this.id, {
             displayInLayerSwitcher: false,
             styleMap: new OpenLayers.StyleMap({
                 "select": OpenLayers.Util.extend({display: ""},
@@ -271,6 +282,9 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
 
         if (this.autoSetLayer) {
             this.target.on("beforelayerselectionchange", this.setLayer, this);
+        }
+        if (this.layer) {
+            this.target.getLayerRecord(this.layer, this.setLayer, this);
         }
         this.on("layerchange", function(mgr, layer, schema) {
             this.schema = schema;
@@ -308,8 +322,7 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
      *      "all"
      */
     showLayer: function(id, display) {
-        style = display || "all";
-        this.toolsShowingLayer[id] = style;
+        this.toolsShowingLayer[id] = display || "all";
         this.setLayerDisplay();
     },
     
@@ -343,9 +356,28 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
                 this.featureLayer.styleMap.styles["default"] = style;
                 this.featureLayer.redraw();
             }
-            this.target.mapPanel.map.addLayer(this.featureLayer);
+            var map = this.target.mapPanel.map;
+            map.addLayer(this.featureLayer);
+            map.events.on({
+                addlayer: this.raiseLayer,
+                scope: this
+            });
         } else if (this.featureLayer.map) {
             this.target.mapPanel.map.removeLayer(this.featureLayer);
+            map.events.un({
+                addlayer: this.raiseLayer,
+                scope: this
+            });
+        }
+    },
+    
+    /** private: method[raiseLayer]
+     *  Called whenever a layer is added to the map to keep this layer on top.
+     */
+    raiseLayer: function() {
+        var map = this.featureLayer && this.featureLayer.map;
+        if (map) {
+            map.setLayerIndex(this.featureLayer, map.layers.length);
         }
     },
     
@@ -361,28 +393,49 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
         if (this.fireEvent("beforequery", this, filter, callback, scope) !== false) {
             this.filter = filter;
             this.pages = null;
-            callback && this.featureLayer.events.register(
-                "featuresadded", this, function(evt) {
-                    if (this._query) {
-                        delete this._query;
-                        this.featureLayer.events.unregister(
-                            "featuresadded", this, arguments.callee
-                        );
-                        callback.call(scope, evt.features);
+            if (callback) {
+                this.featureLayer.events.register(
+                    "featuresadded", this, function(evt) {
+                        if (this._query) {
+                            delete this._query;
+                            this.featureLayer.events.unregister(
+                                "featuresadded", this, arguments.callee
+                            );
+                            callback.call(scope, evt.features);
+                        }
                     }
-                }
-            );
+                );
+            }
             this._query = true;
             if (!this.featureStore) {
                 this.paging && this.on("layerchange", function() {
                     this.setPage();
                 }, this, {single: true});
-                this.setFeatureStore(filter);
+                this.setFeatureStore(filter, !this.paging);
             } else {
                 this.featureStore.setOgcFilter(filter);
-                this.paging && this.setPage();
+                if (this.paging) {
+                    this.setPage();
+                } else {
+                    this.featureStore.load();
+                }
             };
-            this.paging || this.featureStore.load();
+        }
+    },
+    
+    /** api: method[clearFeatures]
+     *  Unload all features.
+     */
+    clearFeatures: function() {
+        var store = this.featureStore;
+        if (store) {
+            store.removeAll();
+            // TODO: make abort really work in OpenLayers
+            var proxy = store.proxy;
+            proxy.abortRequest();
+            if (proxy.protocol.response) {
+                proxy.protocol.response.abort();
+            }
         }
     },
     

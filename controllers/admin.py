@@ -239,6 +239,9 @@ def user():
     table = db[tablename]
 
     # Model options
+    s3xrc.model.add_component(module, "membership",
+                              joinby=dict(auth_user="user_id"),
+                              multiple=True)
 
     # CRUD Strings
     ADD_USER = T("Add User")
@@ -1070,26 +1073,26 @@ def role():
         multiple=True)
 
     def prep(r):
-
-        # Restrict formats
         if r.representation not in ("html",):
             return False
 
-        # Set REST method handler
-        resource = r.resource
         handler = s3base.S3RoleManager()
-
         handler.controllers = deployment_settings.modules
 
+        # Configure REST methods
+        resource = r.resource
+        resource.add_method("users", handler)
         resource.set_handler("read", handler)
         resource.set_handler("list", handler)
         resource.set_handler("copy", handler)
         resource.set_handler("create", handler)
         resource.set_handler("update", handler)
         resource.set_handler("delete", handler)
-
         return True
     response.s3.prep = prep
+
+    response.s3.no_sspag = True
+    response.extra_styles = ["S3/role.css"]
 
     output = s3_rest_controller(prefix, name)
     return output
@@ -1119,15 +1122,15 @@ def acl():
     table.tablename.requires = IS_EMPTY_OR(IS_IN_SET([t._tablename for t in db], zero=T("ANY")))
     table.tablename.represent = lambda val: val and val or T("ANY")
 
-    table.spermissions.label = T("All Resources")
-    table.spermissions.widget = S3ACLWidget.widget
-    table.spermissions.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
-    table.spermissions.represent = lambda val: acl_represent(val, auth.permission.PERMISSION_OPTS)
+    table.uacl.label = T("All Resources")
+    table.uacl.widget = S3ACLWidget.widget
+    table.uacl.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
+    table.uacl.represent = lambda val: acl_represent(val, auth.permission.PERMISSION_OPTS)
 
-    table.opermissions.label = T("Owned Resources")
-    table.opermissions.widget = S3ACLWidget.widget
-    table.opermissions.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
-    table.opermissions.represent = lambda val: acl_represent(val, auth.permission.PERMISSION_OPTS)
+    table.oacl.label = T("Owned Resources")
+    table.oacl.widget = S3ACLWidget.widget
+    table.oacl.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
+    table.oacl.represent = lambda val: acl_represent(val, auth.permission.PERMISSION_OPTS)
 
     s3xrc.model.configure(table,
         create_next = URL(r=request),
@@ -1148,7 +1151,7 @@ def acl_represent(acl, options):
     for o in options.keys():
         if o == 0 and acl == 0:
             values.append("%s" % options[o][0])
-        elif acl & o == o:
+        elif acl and acl & o == o:
             values.append("%s" % options[o][0])
         else:
             values.append("_")

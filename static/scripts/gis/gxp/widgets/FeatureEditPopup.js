@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008-2010 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
  * 
  * Published under the BSD license.
  * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
@@ -59,6 +59,11 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
      *  the attributes that the feature has currently set.
      */
     schema: null,
+    
+    /** api: config[excludeFields]
+     *  ``Array`` Optional list of field names (case sensitive) that are to be
+     *  excluded from the property grid.
+     */
     
     /** api: config[readOnly]
      *  ``Boolean`` Set to true to disable editing. Default is false.
@@ -253,6 +258,13 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
             source: feature.attributes,
             customEditors: customEditors,
             listeners: {
+                "viewready": function() {
+                    this.grid.getStore().filterBy(function(r) {
+                        return this.excludeFields ?
+                            this.excludeFields.indexOf(r.get("name")) == -1 :
+                            true;
+                    }, this);
+                },
                 "beforeedit": function() {
                     return this.editing;
                 },
@@ -377,6 +389,9 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
             );
             this.feature.layer.map.addControl(this.modifyControl);
             this.modifyControl.activate();
+            //TODO remove the line below when
+            // http://trac.osgeo.org/openlayers/ticket/3009 is fixed
+            this.modifyControl.beforeSelectFeature(this.feature);
             this.modifyControl.selectFeature(this.feature);
         }
     },

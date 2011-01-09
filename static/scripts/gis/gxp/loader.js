@@ -35,8 +35,11 @@
         "plugins/LayerSource.js",
         "plugins/BingSource.js",
         "plugins/WMSSource.js",
-        "plugins/OSMSource.js",
+        //"plugins/OSMSource.js",
+        "plugins/TMSSource.js",
+        //"plugins/KMLSource.js",
         "plugins/GoogleSource.js",
+        //"plugins/YahooSource.js",
         "plugins/OLSource.js",
         "plugins/StyleWriter.js",
         "plugins/GeoServerStyleWriter.js",
@@ -48,7 +51,7 @@
         "plugins/FeatureManager.js",
         "plugins/FeatureToField.js",
         "plugins/QueryForm.js",
-        "plugins/SelectFeature.js",
+        //"plugins/SelectFeature.js",
         "plugins/LayerTree.js",
         "plugins/RemoveLayer.js"
     );

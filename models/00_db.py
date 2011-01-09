@@ -32,6 +32,8 @@ migrate = deployment_settings.get_base_migrate()
 db_string = deployment_settings.get_database_string()
 if db_string[0].find("sqlite") != -1:
     db = DAL(db_string[0], check_reserved=["mysql", "postgres"])
+    # on SQLite 3.6.19+ this enables foreign key support (Py2.7+)
+    db.executesql("PRAGMA foreign_keys=ON")
 else:
     # Tuple (inc pool_size)
     try:

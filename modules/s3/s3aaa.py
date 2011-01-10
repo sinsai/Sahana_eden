@@ -1620,7 +1620,7 @@ class S3RoleManager(S3Method):
 
     """ REST Method to manage ACLs
 
-        @status: work in progress
+        @status: alpha
 
     """
 
@@ -1674,6 +1674,7 @@ class S3RoleManager(S3Method):
         if r.id:
             return self._edit(r, **attr)
 
+        # Show permission matrix?
         show_matrix = request.get_vars.get("matrix", False) and True
 
         if r.interactive:
@@ -1681,7 +1682,7 @@ class S3RoleManager(S3Method):
             # Title and subtitle
             output.update(title = T("List of Roles"))
 
-            # Filter out protected roles
+            # Filter out hidden roles
             resource.add_filter(~(self.table.id.belongs(self.HIDE_ROLES)))
             resource.load()
 
@@ -1695,8 +1696,8 @@ class S3RoleManager(S3Method):
             query = query & (acl_table.group_id == self.table.id)
             records = self.db(query).select(acl_table.ALL)
 
-            acls = Storage()
             any = "ANY"
+            acls = Storage({any:Storage()})
             for acl in records:
                 c = acl.controller
                 f = acl.function
@@ -1791,10 +1792,15 @@ class S3RoleManager(S3Method):
                 _class = i % 2 and "even" or "odd"
                 trows.append(TR(tdata, _class=_class))
             tbody = TBODY(trows)
+
+            # Aggregate list
             items = TABLE(thead, tbody, _id="list", _class="display")
             output.update(items=items, sortby=[[1, 'asc']])
+
+            # Add-button
             add_btn = A(T("Add Role"), _href=URL(r=request, c="admin", f="role", args=["create"]), _class="action-btn")
             output.update(add_btn=add_btn)
+
             self.response.view = "admin/role_list.html"
             self.response.s3.actions = []
             self.response.s3.no_sspag = True
@@ -1812,7 +1818,7 @@ class S3RoleManager(S3Method):
     # -------------------------------------------------------------------------
     def _edit(self, r, **attr):
         """
-        Create/update roles
+        Create/update role
 
         """
 
@@ -1844,24 +1850,17 @@ class S3RoleManager(S3Method):
                 role_name = None
                 role_desc = None
 
-            # -------- Form helpers -------------------------------------------
-
-            # Form helper: add an asterisk to the label of mandatory fields
+            # Form helpers ----------------------------------------------------
             mandatory = lambda l: DIV(l, XML("&nbsp;"), SPAN("*", _class="req"))
-
-            # Form helper: create an ACL widget
             acl_table.oacl.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
             acl_table.uacl.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
             acl_widget = lambda f, n, v: S3ACLWidget.widget(acl_table[f], v,
                                                             _id=n,
                                                             _name=n,
                                                             _class="acl-widget")
-            # Form style from CRUD settings
             formstyle = crud_settings.formstyle
 
-            # --------- Role form ---------------------------------------------
-
-            # Role form
+            # Role form -------------------------------------------------------
             form_rows = formstyle("role_name", mandatory(T("Role Name")),
                                   INPUT(value=role_name,
                                         _name="role_name",
@@ -1873,23 +1872,16 @@ class S3RoleManager(S3Method):
             key_row = P(T("* Required Fields"), _class="red")
             role_form = DIV(TABLE(form_rows), key_row, _id="role-form")
 
-            # ----------- ACL forms -------------------------------------------
-
+            # Prepare ACL forms
             any = "ANY"
-
-            # Get the active controllers
             controllers = [c for c in self.controllers.keys()
                              if c not in self.HIDE_CONTROLLER]
-
-            # Get primary resources in the active controllers
             ptables = model.primary_resources(prefixes=controllers)
-
-            # Get all existing ACLs
             records = db(acl_table.group_id == role_id).select()
 
-            # Controller ACL form
+            # Controller ACL form ---------------------------------------------
 
-            # relevant ACLs
+            # Relevant ACLs
             acls = Storage()
             for acl in records:
                 if acl.controller in controllers:
@@ -1907,7 +1899,7 @@ class S3RoleManager(S3Method):
                              TH(T("All Records")),
                              TH(T("Owned Records"))))
 
-            # Table rows
+            # Rows for existing ACLs
             form_rows = []
             i = 0
             for c in controllers:
@@ -1942,24 +1934,32 @@ class S3RoleManager(S3Method):
                     cn = self.controllers[c].name_nice
                     form_rows.append(TR(TD(cn), TD(f), TD(uacl), TD(oacl), _class=_class))
 
-            # @todo: Row to Add a controller ACL?
+            # Row to enter a new controller ACL
+            # @todo: make controllers a SELECT
+            _class = i % 2 and "odd" or "even"
+            form_rows.append(TR(
+                TD(INPUT(_type="text", _name="new_controller")),
+                TD(INPUT(_type="text", _name="new_function")),
+                TD(acl_widget("uacl", "new_c_uacl", auth.permission.NONE)),
+                TD(acl_widget("oacl", "new_c_oacl", auth.permission.NONE)), _class=_class))
 
-            # Aggregate
+            # Subheading, button to switch to table ACLs
             tacl_button = A(T("Table Permissions"), _id="tacl-btn", _class="action-btn")
             controller_acl_form = DIV(DIV(H4(T("Controller Permissions")), tacl_button),
                                       TABLE(thead, TBODY(form_rows)), _id="controller-acls")
 
-            # Table ACL form
+            # Table ACL form --------------------------------------------------
+
+            # Relevant ACLs
+            acls = dict([(acl.tablename, acl) for acl in records
+                                              if acl.tablename in ptables])
 
             # Table header
             thead = THEAD(TR(TH(T("Tablename")),
                              TH(T("All Records")),
                              TH(T("Owned Records"))))
 
-            # Relevant ACLs
-            acls = dict([(acl.tablename, acl) for acl in records
-                                              if acl.tablename in ptables])
-
+            # Rows for existing table ACLs
             form_rows = []
             i = 0
             for t in ptables:
@@ -1980,13 +1980,20 @@ class S3RoleManager(S3Method):
                 oacl = acl_widget("oacl", "acl_o_%s" % n, oacl)
                 form_rows.append(TR(TD(t), TD(uacl), TD(oacl), _class=_class))
 
-            # @todo: Row to Add a table ACL?
+            # Row to enter a new table ACL
+            # @todo: make tablename field a SELECT
+            _class = i % 2 and "odd" or "even"
+            form_rows.append(TR(
+                TD(INPUT(_type="text", _name="new_table")),
+                TD(acl_widget("uacl", "new_t_uacl", auth.permission.NONE)),
+                TD(acl_widget("oacl", "new_t_oacl", auth.permission.NONE)), _class=_class))
 
-            # Aggregate
+            # Subheading, button to switch to controller ACLs
             cacl_button = A(T("Controller Permissions"), _id="cacl-btn", _class="action-btn")
             table_acl_form = DIV(DIV(H4(T("Table Permissions")), cacl_button),
                                  TABLE(thead, TBODY(form_rows)), _id="table-acls")
 
+            # Aggregate ACL form
             acl_form = DIV(controller_acl_form, table_acl_form, _id="table-container")
 
             # Action row
@@ -1994,17 +2001,15 @@ class S3RoleManager(S3Method):
                              A(T("Cancel"), _href=URL(r=request, c="admin", f="role", vars=request.get_vars)),
                              _id="action-row")
 
-            # Aggregate form
+            # Complete form
             form = FORM(role_form, acl_form, action_row)
 
             # Append role_id
             if role_id:
                 form.append(INPUT(_type="hidden", _name="role_id", value=role_id))
 
-            # --------- Process the form --------------------------------------
-
+            # Process the form ------------------------------------------------
             if form.accepts(request.post_vars, session):
-
                 vars = form.vars
 
                 # Update the role
@@ -2021,7 +2026,7 @@ class S3RoleManager(S3Method):
 
                     # Collect the ACLs
                     acls = Storage()
-                    for v in form.vars:
+                    for v in vars:
                         if v[:4] == "acl_":
                             acl_type, name = v[4:].split("_", 1)
                             n = name.split("_", 3)
@@ -2031,6 +2036,7 @@ class S3RoleManager(S3Method):
                                 i = int(i)
                             else:
                                 i = None
+                            name = "%s_%s_%s"
                             if name not in acls:
                                 acls[name] = Storage()
                             acls[name].update({"id": i,
@@ -2038,7 +2044,24 @@ class S3RoleManager(S3Method):
                                                "controller": c,
                                                "function": f,
                                                "tablename": t,
-                                               "%sacl" % acl_type: form.vars[v]})
+                                               "%sacl" % acl_type: vars[v]})
+                    for v in ("new_controller", "new_table"):
+                        if vars[v]:
+                            c = v == "new_controller" and vars.new_controller or None
+                            f = v == "new_controller" and vars.new_function or None
+                            t = v == "new_table" and vars.new_table or None
+                            name = "%s_%s_%s" % (c and c or any, f and f or any, t and t or any)
+                            x = v == "new_table" and "t" or "c"
+                            uacl = vars["new_%s_uacl" % x]
+                            oacl = vars["new_%s_oacl" % x]
+                            if name not in acls:
+                                acls[name] = Storage()
+                            acls[name].update(group_id=role_id,
+                                              controller=c,
+                                              function=f,
+                                              tablename=t,
+                                              oacl=oacl,
+                                              uacl=uacl)
 
                     # Save the ACLs
                     for acl in acls.values():
@@ -2062,13 +2085,15 @@ class S3RoleManager(S3Method):
     # -------------------------------------------------------------------------
     def _delete(self, r, **attr):
         """
-        Delete roles
+        Delete role
 
         """
 
         session = self.session
         request = self.request
         T = self.T
+
+        auth = self.manager.auth
 
         if r.interactive:
 
@@ -2079,12 +2104,25 @@ class S3RoleManager(S3Method):
                 if role_id in self.PROTECTED_ROLES:
                     session.error = '%s "%s" %s' % (T("Role"), role_name, T("cannot be deleted."))
                     redirect(URL(r=request, c="admin", f="role", vars=request.get_vars))
+                else:
+                    # Delete all ACLs for this role:
+                    acl_table = auth.permission.table
+                    self.db(acl_table.group_id == role_id).delete()
+                    # Remove all memberships:
+                    membership_table = self.db.auth_membership
+                    self.db(membership_table.group_id == role_id).delete()
+                    # Update roles in session:
+                    session.s3.roles = [role for role in session.s3.roles if role != role_id]
+                    # Remove role:
+                    self.db(self.table.id == role_id).delete()
+                    # Confirmation:
+                    session.confirmation = '%s "%s" %s' % (T("Role"), role_name, T("deleted"))
             else:
                 session.error = T("No role to delete")
-                redirect(URL(r=request, c="admin", f="role", vars=request.get_vars))
-
         else:
             r.error(501, self.manager.BAD_FORMAT)
+
+        redirect(URL(r=request, c="admin", f="role", vars=request.get_vars))
 
 
 # =============================================================================

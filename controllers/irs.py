@@ -113,7 +113,7 @@ def ireport():
     response.s3.postp = user_postp
 
     rheader = lambda r: shn_irs_rheader(r, tabs = [(T("Report Details"), None),
-                                                   (T("Images"), "image")
+                                                   (T("Images"), "iimage")
                                                   ])
 
     output = s3_rest_controller(module, resource, rheader=rheader)

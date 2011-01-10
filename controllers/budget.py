@@ -14,13 +14,34 @@ if module not in deployment_settings.modules or not deployment_settings.has_modu
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T("Parameters"), False, URL(r=request, f="parameters")],
-    [T("Items"), False, URL(r=request, f="item")],
-    [T("Kits"), False, URL(r=request, f="kit")],
-    [T("Bundles"), False, URL(r=request, f="bundle")],
-    [T("Staff"), False, URL(r=request, f="staff")],
-    [T("Locations"), False, URL(r=request, f="location")],
-    [T("Projects"), False, URL(r=request, f="project")],
-    [T("Budgets"), False, URL(r=request, f="budget")]
+    [T("Items"), False, URL(r=request, f="item"), [
+        [T("List"), False, URL(r=request, f="item")],
+        [T("Add"), False, URL(r=request, f="item", args="create")],
+    ]],
+    [T("Kits"), False, URL(r=request, f="kit"), [
+        [T("List"), False, URL(r=request, f="kit")],
+        [T("Add"), False, URL(r=request, f="kit", args="create")],
+    ]],
+    [T("Bundles"), False, URL(r=request, f="bundle"), [
+        [T("List"), False, URL(r=request, f="bundle")],
+        [T("Add"), False, URL(r=request, f="bundle", args="create")],
+    ]],
+    [T("Staff"), False, URL(r=request, f="staff"), [
+        [T("List"), False, URL(r=request, f="staff")],
+        [T("Add"), False, URL(r=request, f="staff", args="create")],
+    ]],
+    [T("Locations"), False, URL(r=request, f="location"), [
+        [T("List"), False, URL(r=request, f="location")],
+        [T("Add"), False, URL(r=request, f="location", args="create")],
+    ]],
+    [T("Projects"), False, URL(r=request, f="project"), [
+        [T("List"), False, URL(r=request, f="project")],
+        [T("Add"), False, URL(r=request, f="project", args="create")],
+    ]],
+    [T("Budgets"), False, URL(r=request, f="budget"), [
+        [T("List"), False, URL(r=request, f="budget")],
+        [T("Add"), False, URL(r=request, f="budget", args="create")],
+    ]]
 ]
 
 # Options used in multiple functions

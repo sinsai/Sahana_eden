@@ -1550,15 +1550,15 @@ class GIS(object):
         # - these over-ride the arguments
         if "lat" in request.vars:
             lat = request.vars.lat
-        elif not lat:
+        if lat is None or lat == "":
             lat = config.lat
         if "lon" in request.vars:
             lon = request.vars.lon
-        elif not lon:
+        if lon is None or lon == "":
             lon = config.lon
         if "zoom" in request.vars:
             zoom = request.vars.zoom
-        elif not zoom:
+        if not zoom:
             zoom = config.zoom
         if not projection:
             projection = config.epsg

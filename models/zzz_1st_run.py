@@ -1172,7 +1172,7 @@ if populate:
         auth.add_group("HMSOrg", description = "HMSOrg - permission to submit pledges")
         auth.add_group("HMSViewer", description = "HMSViewer - permission to access HMS")
         # Ticketing
-        auth.add_group("TicketAdmin", description = "TicketAdmin - full access to Ticketing")
+        #auth.add_group("TicketAdmin", description = "TicketAdmin - full access to Ticketing")
 
     # Security Defaults for all tables (if using 'full' security policy)
     if session.s3.security_policy != 1:

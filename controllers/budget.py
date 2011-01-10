@@ -168,14 +168,15 @@ def parameter():
 def item():
     """ RESTful CRUD controller """
     resource = request.function
-    table = module + "_" + resource
+    tablename = module + "_" + resource
+    table = db[tablename]
 
     # Model options used in multiple controllers so defined at the top of the file
 
     # CRUD Strings
     ADD_ITEM = T("Add Item")
     LIST_ITEMS = T("List Items")
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_ITEM,
         title_display = T("Item Details"),
         title_list = LIST_ITEMS,
@@ -304,14 +305,15 @@ def item_export_pdf():
 def kit():
     """ RESTful CRUD controller """
     resource = request.function
-    table = module + "_" + resource
+    tablename = module + "_" + resource
+    table = db[tablename]
 
     # Model options used in multiple controllers so defined at the top of the file
 
     # CRUD Strings
     ADD_KIT = T("Add Kit")
     LIST_KITS = T("List Kits")
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_KIT,
         title_display = T("Kit Details"),
         title_list = LIST_KITS,
@@ -738,14 +740,15 @@ def kit_import_csv():
 def bundle():
     """ RESTful CRUD controller """
     resource = request.function
-    table = module + "_" + resource
+    tablename = module + "_" + resource
+    table = db[tablename]
 
     # Model options used in multiple controllers so defined at the top of the file
 
     # CRUD Strings
     ADD_BUNDLE = T("Add Bundle")
     LIST_BUNDLES = T("List Bundles")
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_BUNDLE,
         title_display = T("Bundle Details"),
         title_list = LIST_BUNDLES,
@@ -1043,14 +1046,15 @@ def bundle_update_items():
 def staff():
     """ RESTful CRUD controller """
     resource = request.function
-    table = module + "_" + resource
+    tablename = module + "_" + resource
+    #table = db[tablename]
 
     # Model options used in multiple controllers so defined at the top of the file
 
     # CRUD Strings
     ADD_STAFF_TYPE = T("Add Staff Type")
     LIST_STAFF_TYPE = T("List Staff Types")
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_STAFF_TYPE,
         title_display = T("Staff Type Details"),
         title_list = LIST_STAFF_TYPE,
@@ -1072,14 +1076,15 @@ def staff():
 def location():
     """ RESTful CRUD controller """
     resource = request.function
-    table = module + "_" + resource
+    tablename = module + "_" + resource
+    #table = db[tablename]
 
     # Model options used in multiple controllers so defined at the top of the file
 
     # CRUD Strings
     ADD_LOCATION = T("Add Location")
     LIST_LOCATIONS = T("List Locations")
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_LOCATION,
         title_display = T("Location Details"),
         title_list = LIST_LOCATIONS,
@@ -1102,8 +1107,8 @@ def project():
     """ RESTful CRUD controller """
 
     resource = request.function
-    tablename = "project_%s" % (resource)
-    table = db[tablename]
+    #tablename = "project_%s" % (resource)
+    #table = db[tablename]
 
     tabs = [(T("Basic Details"), None),
             (T("Staff"), "staff"),
@@ -1122,14 +1127,15 @@ def project():
 def budget():
     """ RESTful CRUD controller """
     resource = request.function
-    table = module + "_" + resource
+    tablename = module + "_" + resource
+    #table = db[tablename]
 
     # Model options used in multiple controllers so defined at the top of the file
 
     # CRUD Strings
     ADD_BUDGET = T("Add Budget")
     LIST_BUDGETS = T("List Budgets")
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_BUDGET,
         title_display = T("Budget Details"),
         title_list = LIST_BUDGETS,

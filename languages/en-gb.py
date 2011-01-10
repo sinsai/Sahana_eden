@@ -644,6 +644,7 @@
 'Clinical Laboratory': 'Clinical Laboratory',
 'Clinical Operations': 'Clinical Operations',
 'Clinical Status': 'Clinical Status',
+'Close map': 'Close map',
 'Closed': 'Closed',
 'Clothing': 'Clothing',
 'Cluster Distance': 'Cluster Distance',

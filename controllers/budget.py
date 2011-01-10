@@ -5,6 +5,7 @@
 """
 
 module = request.controller
+resourcename = request.function
 
 # Requires 'project' module too
 if module not in deployment_settings.modules or not deployment_settings.has_module("project"):
@@ -14,13 +15,34 @@ if module not in deployment_settings.modules or not deployment_settings.has_modu
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T("Parameters"), False, URL(r=request, f="parameters")],
-    [T("Items"), False, URL(r=request, f="item")],
-    [T("Kits"), False, URL(r=request, f="kit")],
-    [T("Bundles"), False, URL(r=request, f="bundle")],
-    [T("Staff"), False, URL(r=request, f="staff")],
-    [T("Locations"), False, URL(r=request, f="location")],
-    [T("Projects"), False, URL(r=request, f="project")],
-    [T("Budgets"), False, URL(r=request, f="budget")]
+    [T("Items"), False, URL(r=request, f="item"), [
+        [T("List"), False, URL(r=request, f="item")],
+        [T("Add"), False, URL(r=request, f="item", args="create")],
+    ]],
+    [T("Kits"), False, URL(r=request, f="kit"), [
+        [T("List"), False, URL(r=request, f="kit")],
+        [T("Add"), False, URL(r=request, f="kit", args="create")],
+    ]],
+    [T("Bundles"), False, URL(r=request, f="bundle"), [
+        [T("List"), False, URL(r=request, f="bundle")],
+        [T("Add"), False, URL(r=request, f="bundle", args="create")],
+    ]],
+    [T("Staff"), False, URL(r=request, f="staff"), [
+        [T("List"), False, URL(r=request, f="staff")],
+        [T("Add"), False, URL(r=request, f="staff", args="create")],
+    ]],
+    [T("Locations"), False, URL(r=request, f="location"), [
+        [T("List"), False, URL(r=request, f="location")],
+        [T("Add"), False, URL(r=request, f="location", args="create")],
+    ]],
+    [T("Projects"), False, URL(r=request, f="project"), [
+        [T("List"), False, URL(r=request, f="project")],
+        [T("Add"), False, URL(r=request, f="project", args="create")],
+    ]],
+    [T("Budgets"), False, URL(r=request, f="budget"), [
+        [T("List"), False, URL(r=request, f="budget")],
+        [T("Add"), False, URL(r=request, f="budget", args="create")],
+    ]]
 ]
 
 # Options used in multiple functions
@@ -131,7 +153,7 @@ def index():
     "Module's Home Page"
 
     module_name = deployment_settings.modules[module].name_nice
-
+    response.title = module_name
     return dict(module_name=module_name)
 
 def parameters():
@@ -147,8 +169,7 @@ def parameter():
 
     """ RESTful CRUD controller """
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # Model Options
@@ -163,19 +184,19 @@ def parameter():
         title_display = T("Parameters"))
 
     s3xrc.model.configure(table, deletable=False)
-    return s3_rest_controller(module, resource)
+    return s3_rest_controller(module, resourcename)
 
 def item():
     """ RESTful CRUD controller """
-    resource = request.function
-    table = module + "_" + resource
+    tablename = module + "_" + resourcename
+    table = db[tablename]
 
     # Model options used in multiple controllers so defined at the top of the file
 
     # CRUD Strings
     ADD_ITEM = T("Add Item")
     LIST_ITEMS = T("List Items")
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_ITEM,
         title_display = T("Item Details"),
         title_list = LIST_ITEMS,
@@ -199,7 +220,7 @@ def item():
                           extra="description",
                           orderby=db.budget_item.category_type)
 
-    return s3_rest_controller(module, resource)
+    return s3_rest_controller(module, resourcename)
 
 def item_export_pdf():
     """
@@ -303,15 +324,15 @@ def item_export_pdf():
 
 def kit():
     """ RESTful CRUD controller """
-    resource = request.function
-    table = module + "_" + resource
+    tablename = module + "_" + resourcename
+    table = db[tablename]
 
     # Model options used in multiple controllers so defined at the top of the file
 
     # CRUD Strings
     ADD_KIT = T("Add Kit")
     LIST_KITS = T("List Kits")
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_KIT,
         title_display = T("Kit Details"),
         title_list = LIST_KITS,
@@ -333,7 +354,7 @@ def kit():
         s3xrc.model.configure(table,
             update_next=URL(r=request, f="kit_item", args=request.args[1]))
 
-    return s3_rest_controller(module, resource, main="code")
+    return s3_rest_controller(module, resourcename, main="code")
 
 def kit_item():
     "Many to Many CRUD Controller"
@@ -702,8 +723,8 @@ def kit_export_csv():
     """
     output = ""
 
-    for resource in ["kit", "item", "kit_item"]:
-        _table = module + "_" + resource
+    for resourcename in ["kit", "item", "kit_item"]:
+        _table = module + "_" + resourcename
         table = db[_table]
         # Filter Search list to just those records which user can read
         query = shn_accessible_query("read", table)
@@ -737,15 +758,15 @@ def kit_import_csv():
 
 def bundle():
     """ RESTful CRUD controller """
-    resource = request.function
-    table = module + "_" + resource
+    tablename = module + "_" + resourcename
+    table = db[tablename]
 
     # Model options used in multiple controllers so defined at the top of the file
 
     # CRUD Strings
     ADD_BUNDLE = T("Add Bundle")
     LIST_BUNDLES = T("List Bundles")
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_BUNDLE,
         title_display = T("Bundle Details"),
         title_list = LIST_BUNDLES,
@@ -765,7 +786,7 @@ def bundle():
         s3xrc.model.configure(table,
             update_next=URL(r=request, f="bundle_kit_item", args=request.args[1]))
 
-    return s3_rest_controller(module, resource)
+    return s3_rest_controller(module, resourcename)
 
 def bundle_kit_item():
     "Many to Many CRUD Controller"
@@ -1042,15 +1063,15 @@ def bundle_update_items():
 
 def staff():
     """ RESTful CRUD controller """
-    resource = request.function
-    table = module + "_" + resource
+    tablename = module + "_" + resourcename
+    #table = db[tablename]
 
     # Model options used in multiple controllers so defined at the top of the file
 
     # CRUD Strings
     ADD_STAFF_TYPE = T("Add Staff Type")
     LIST_STAFF_TYPE = T("List Staff Types")
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_STAFF_TYPE,
         title_display = T("Staff Type Details"),
         title_list = LIST_STAFF_TYPE,
@@ -1066,20 +1087,20 @@ def staff():
         msg_record_deleted = T("Staff Type deleted"),
         msg_list_empty = T("No Staff Types currently registered"))
 
-    return s3_rest_controller(module, resource)
+    return s3_rest_controller(module, resourcename)
 
 # This should be deprecated & replaced with a link to gis_location
 def location():
     """ RESTful CRUD controller """
-    resource = request.function
-    table = module + "_" + resource
+    tablename = module + "_" + resourcename
+    #table = db[tablename]
 
     # Model options used in multiple controllers so defined at the top of the file
 
     # CRUD Strings
     ADD_LOCATION = T("Add Location")
     LIST_LOCATIONS = T("List Locations")
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_LOCATION,
         title_display = T("Location Details"),
         title_list = LIST_LOCATIONS,
@@ -1095,15 +1116,14 @@ def location():
         msg_record_deleted = T("Location deleted"),
         msg_list_empty = T("No Locations currently registered"))
 
-    return s3_rest_controller(module, resource, main="code")
+    return s3_rest_controller(module, resourcename, main="code")
 
 def project():
 
     """ RESTful CRUD controller """
 
-    resource = request.function
-    tablename = "project_%s" % (resource)
-    table = db[tablename]
+    #tablename = "project_%s" % (resourcename)
+    #table = db[tablename]
 
     tabs = [(T("Basic Details"), None),
             (T("Staff"), "staff"),
@@ -1113,7 +1133,7 @@ def project():
            ]
     rheader = lambda r: shn_project_rheader(r, tabs=tabs)
 
-    output = s3_rest_controller("project", resource,
+    output = s3_rest_controller("project", resourcename,
                                 rheader=rheader)
 
     return output
@@ -1121,15 +1141,15 @@ def project():
 
 def budget():
     """ RESTful CRUD controller """
-    resource = request.function
-    table = module + "_" + resource
+    tablename = module + "_" + resourcename
+    #table = db[tablename]
 
     # Model options used in multiple controllers so defined at the top of the file
 
     # CRUD Strings
     ADD_BUDGET = T("Add Budget")
     LIST_BUDGETS = T("List Budgets")
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_BUDGET,
         title_display = T("Budget Details"),
         title_list = LIST_BUDGETS,
@@ -1145,7 +1165,7 @@ def budget():
         msg_record_deleted = T("Budget deleted"),
         msg_list_empty = T("No Budgets currently registered"))
 
-    return s3_rest_controller(module, resource)
+    return s3_rest_controller(module, resourcename)
 
 def budget_staff_bundle():
     "Many to Many CRUD Controller"

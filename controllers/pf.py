@@ -162,6 +162,7 @@ def index():
 
     # Set view, update menu and return output
     response.view = "pf/index.html"
+    response.title = module_name
     shn_menu()
     return output
 

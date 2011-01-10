@@ -217,6 +217,8 @@ def index():
                          (db.delphi_problem.active == True)). \
                          select(orderby =~ db.delphi_problem.last_modification)
         result.append((group, latest_problems, actions))
+
+    response.title = module_name
     return dict(groups_problems=result, name="Active Problems",
                 module_name=module_name)
 

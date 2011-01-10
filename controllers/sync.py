@@ -19,6 +19,7 @@ def index():
 
     """ Module's Home Page """
 
+    response.title = module_name
     return dict(module_name=module_name)
 
 

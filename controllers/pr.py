@@ -112,7 +112,7 @@ def index():
     output = s3_rest_controller("pr", "person",
                                 add_btn=add_btn)
     response.view = "pr/index.html"
-
+    response.title = module_name
     shn_menu()
     return output
 

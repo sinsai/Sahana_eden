@@ -185,7 +185,7 @@ if deployment_settings.has_module("project"):
     project_id = S3ReusableField("project_id", db.project_project, sortby="name",
                             requires = IS_NULL_OR(IS_ONE_OF(db, "project_project.id", "%(code)s")),
                             represent = lambda id: (id and [db.project_project[id].code] or [NONE])[0],
-                            comment = DIV(A(ADD_PROJECT, _class="colorbox", _href=URL(r=request, c="org", f="project", args="create", vars=dict(format="popup")), _target="top", _title=ADD_PROJECT),
+                            comment = DIV(A(ADD_PROJECT, _class="colorbox", _href=URL(r=request, c="project", f="project", args="create", vars=dict(format="popup")), _target="top", _title=ADD_PROJECT),
                                       DIV( _class="tooltip", _title=ADD_PROJECT + "|" + T("Add new project."))),
                             label = "Project",
                             ondelete = "RESTRICT"

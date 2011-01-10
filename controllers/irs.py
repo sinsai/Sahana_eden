@@ -39,6 +39,7 @@ def index():
     """ Custom View """
 
     module_name = deployment_settings.modules[module].name_nice
+    response.title = module_name
     return dict(module_name=module_name)
 
 
@@ -112,7 +113,7 @@ def ireport():
     response.s3.postp = user_postp
 
     rheader = lambda r: shn_irs_rheader(r, tabs = [(T("Report Details"), None),
-                                                   (T("Images"), "image")
+                                                   (T("Images"), "iimage")
                                                   ])
 
     output = s3_rest_controller(module, resource, rheader=rheader)

@@ -22,6 +22,7 @@ def index():
     """
     response.view = "logs/index.html"
     module_name = deployment_settings.modules["logs"].name_nice
+    response.title = module_name
     return dict(module_name=module_name)    
 
     #request.function = "store"

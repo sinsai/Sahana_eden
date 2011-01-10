@@ -88,6 +88,7 @@ def index():
     status = [[str(T("identified")), int(identified)],
               [str(T("unidentified")), int(total-identified)]]
 
+    response.title = module_name
     return dict(module_name=module_name,
                 total=total,
                 status=status)

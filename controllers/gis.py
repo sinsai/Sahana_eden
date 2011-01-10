@@ -46,6 +46,7 @@ def index():
 
     map = define_map(window=window, toolbar=toolbar)
 
+    response.title = module_name
     return dict(module_name=module_name, map=map)
 
 # -----------------------------------------------------------------------------
@@ -1494,6 +1495,7 @@ def map_viewing_client():
 
     map = define_map(window=window, toolbar=toolbar, config=config)
 
+    response.title = T("Map Viewing Client")
     return dict(map=map)
 
 # -----------------------------------------------------------------------------

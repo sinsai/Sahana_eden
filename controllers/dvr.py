@@ -36,5 +36,5 @@ def index():
     "Module's Home Page"
     
     module_name = deployment_settings.modules[module].name_nice
-    
+    response.title = module_name
     return dict(module_name=module_name)

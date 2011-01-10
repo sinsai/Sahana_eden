@@ -1861,11 +1861,11 @@ class S3RoleManager(S3Method):
             formstyle = crud_settings.formstyle
 
             # Role form -------------------------------------------------------
-            form_rows = formstyle("role_name", mandatory(T("Role Name")),
+            form_rows = formstyle("role_name", mandatory(T("Role Name") + ":"),
                                   INPUT(value=role_name,
                                         _name="role_name",
                                         _type="text"), "") + \
-                        formstyle("role_desc", T("Description"),
+                        formstyle("role_desc", T("Description") + ":",
                                   TEXTAREA(value=role_desc,
                                            _name="role_desc",
                                            _rows="4"), "")
@@ -1881,7 +1881,6 @@ class S3RoleManager(S3Method):
                                                            distinct=True)
             if tacls:
                 ptables = [acl.tablename for acl in tacls]
-            print ptables
             records = db(acl_table.group_id == role_id).select()
 
             # Controller ACL form ---------------------------------------------
@@ -1942,8 +1941,9 @@ class S3RoleManager(S3Method):
             # Row to enter a new controller ACL
             # @todo: make controllers a SELECT
             _class = i % 2 and "even" or "odd"
-            c_opts = [OPTION(self.controllers[c].name_nice, _value=c) for c in controllers]
-            c_select = SELECT(_name="new_controller", *c_opts, name="org_select")
+            c_opts = [OPTION("", _value=None, _selected="selected")] + \
+                     [OPTION(self.controllers[c].name_nice, _value=c) for c in controllers]
+            c_select = SELECT(_name="new_controller", *c_opts)
 
             form_rows.append(TR(
                 TD(c_select),

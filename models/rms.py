@@ -48,7 +48,7 @@ if deployment_settings.has_module(module):
                             super_link(db.sit_situation),
                             Field("datetime", "datetime"),  # 'timestamp' is a reserved word in Postgres
                             location_id(),
-                            person_id("requestor_person_id"),
+                            person_id(),
                             hospital_id(),    # @ToDo: Check if the HMS module is enabled for adding FK: check CR for an example
                             shelter_id(),     # @ToDo: Check if the CR module is enabled for adding FK: check CR for an example
                             organisation_id(),
@@ -68,8 +68,8 @@ if deployment_settings.has_module(module):
 
 
     # Make Person Mandatory
-    table.requestor_person_id.requires = IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent, orderby="pr_person.first_name")
-    table.requestor_person_id.label = T("Requestor")
+    table.person_id.requires = IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent, orderby="pr_person.first_name")
+    table.person_id.label = T("Requestor")
 
     table.datetime.requires = IS_DATETIME()
     table.datetime.label = T("Date & Time")

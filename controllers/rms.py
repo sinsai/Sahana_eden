@@ -77,7 +77,7 @@ def req():
             # listadd arrives here as method=None
             if not r.component:
                 table.datetime.default = request.utcnow
-                table.requestor_person_id.default = s3_logged_in_person()
+                table.person_id.default = s3_logged_in_person()
 
                 # @ToDo Default the Organisation too
 

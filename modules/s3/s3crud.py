@@ -1051,6 +1051,7 @@ class S3CRUD(S3Method):
             # Add asterisk to labels of required fields
             labels = Storage()
             mark_required = self._config("mark_required")
+            response.s3.has_required = False
             for field in table:
                 if field.writable:
                     required = field.required or \
@@ -1071,6 +1072,7 @@ class S3CRUD(S3Method):
                                 required = True
                                 break
                     if required:
+                        response.s3.has_required = True
                         labels[field.name] = DIV("%s:" % field.label, SPAN(" *", _class="req"))
 
 

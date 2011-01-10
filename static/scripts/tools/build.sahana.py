@@ -250,7 +250,6 @@ def docss():
         "../../styles/S3/jquery.autocomplete.css",
         "../../styles/S3/jquery.cluetip.css",
         "../../styles/S3/jquery.dataTables.css",
-        "../../styles/S3/jquery.jqplot.css",
         "../../styles/S3/jquery.ui.core.css",
         "../../styles/S3/jquery.ui.autocomplete.css",
         "../../styles/S3/jquery.ui.datepicker.css",

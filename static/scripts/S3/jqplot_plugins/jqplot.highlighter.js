@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2009 Chris Leonello
+ * Copyright (c) 2009 - 2010 Chris Leonello
  * jqPlot is currently available for use in all personal or commercial projects 
  * under both the MIT and GPL version 2.0 licenses. This means that you can 
  * choose the license that best suits your project and use it accordingly. 
  *
  * The author would appreciate an email letting him know of any substantial
- * use of jqPlot.  You can reach the author at: chris dot leonello at gmail 
- * dot com or see http://www.jqplot.com/info.php .  This is, of course, 
+ * use of jqPlot.  You can reach the author at: chris at jqplot dot com 
+ * or see http://www.jqplot.com/info.php .  This is, of course, 
  * not required.
  *
  * If you are feeling kind and generous, consider supporting the project by
@@ -86,7 +86,7 @@
         // prop: tooltipLocation
         // Where to position tooltip, 'n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'
         this.tooltipLocation = 'nw';
-        // prop: tooltipFade
+        // prop: fadeTooltip
         // true = fade in/out tooltip, flase = show/hide tooltip
         this.fadeTooltip = true;
         // prop: tooltipFadeSpeed
@@ -126,6 +126,11 @@
         // Typically this is 1.  Certain plots, like OHLC, will
         // have more y values in each data point array.
         this.yvalues = 1;
+        // prop: bringSeriesToFront
+        // This option requires jQuery 1.4+
+        // True to bring the series of the highlighted point to the front
+        // of other series.
+        this.bringSeriesToFront = false;
         this._tooltipElem;
         this.isHighlighting = false;
 
@@ -143,6 +148,8 @@
     
     // called within scope of series
     $.jqplot.Highlighter.parseOptions = function (defaults, options) {
+        // Add a showHighlight option to the series 
+        // and set it to true by default.
         this.showHighlight = true;
     };
     
@@ -157,7 +164,7 @@
         
         var p = this.plugins.highlighter;
         p._tooltipElem = $('<div class="jqplot-highlighter-tooltip" style="position:absolute;display:none"></div>');
-        this.target.append(p._tooltipElem);
+        this.eventCanvas._elem.before(p._tooltipElem);
     };
     
     $.jqplot.preInitHooks.push($.jqplot.Highlighter.init);
@@ -322,7 +329,8 @@
         elem.css('left', x);
         elem.css('top', y);
         if (hl.fadeTooltip) {
-            elem.fadeIn(hl.tooltipFadeSpeed);
+            // Fix for stacked up animations.  Thnanks Trevor!
+            elem.stop(true,true).fadeIn(hl.tooltipFadeSpeed);
         }
         else {
             elem.show();
@@ -332,6 +340,7 @@
     
     function handleMove(ev, gridpos, datapos, neighbor, plot) {
         var hl = plot.plugins.highlighter;
+        var c = plot.plugins.cursor;
         if (hl.show) {
             if (neighbor == null && hl.isHighlighting) {
                var ctx = hl.highlightCanvas._ctx;
@@ -342,6 +351,9 @@
                 else {
                     hl._tooltipElem.hide();
                 }
+                if (hl.bringSeriesToFront) {
+                    plot.restorePreviousSeriesOrder();
+                }
                hl.isHighlighting = false;
             
             }
@@ -350,8 +362,11 @@
                 if (hl.showMarker) {
                     draw(plot, neighbor);
                 }
-                if (hl.showTooltip) {
+                if (hl.showTooltip && (!c || !c._zoom.started)) {
                     showTooltip(plot, plot.series[neighbor.seriesIndex], neighbor);
+                }
+                if (hl.bringSeriesToFront) {
+                    plot.moveSeriesToFront(neighbor.seriesIndex);
                 }
             }
         }

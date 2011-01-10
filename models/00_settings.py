@@ -196,7 +196,7 @@ if deployment_settings.get_auth_openid():
     except ImportError:
         session.warning = T("Library support not available for OpenID")
 
-auth.settings.expiration = 14400  # seconds
+auth.settings.expiration = 28800  # seconds
 # Require captcha verification for registration
 #auth.settings.captcha = RECAPTCHA(request, public_key="PUBLIC_KEY", private_key="PRIVATE_KEY")
 # Require Email Verification

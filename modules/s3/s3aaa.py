@@ -1861,11 +1861,11 @@ class S3RoleManager(S3Method):
             formstyle = crud_settings.formstyle
 
             # Role form -------------------------------------------------------
-            form_rows = formstyle("role_name", mandatory(T("Role Name")),
+            form_rows = formstyle("role_name", mandatory(T("Role Name") + ":"),
                                   INPUT(value=role_name,
                                         _name="role_name",
                                         _type="text"), "") + \
-                        formstyle("role_desc", T("Description"),
+                        formstyle("role_desc", T("Description") + ":",
                                   TEXTAREA(value=role_desc,
                                            _name="role_desc",
                                            _rows="4"), "")
@@ -1876,7 +1876,12 @@ class S3RoleManager(S3Method):
             any = "ANY"
             controllers = [c for c in self.controllers.keys()
                              if c not in self.HIDE_CONTROLLER]
-            ptables = model.primary_resources(prefixes=controllers)
+            ptables = []
+            #ptables = model.primary_resources(prefixes=controllers)
+            tacls = db(acl_table.tablename != None).select(acl_table.tablename,
+                                                           distinct=True)
+            if tacls:
+                ptables = [acl.tablename for acl in tacls]
             records = db(acl_table.group_id == role_id).select()
 
             # Controller ACL form ---------------------------------------------
@@ -1936,16 +1941,21 @@ class S3RoleManager(S3Method):
 
             # Row to enter a new controller ACL
             # @todo: make controllers a SELECT
-            _class = i % 2 and "odd" or "even"
+            _class = i % 2 and "even" or "odd"
+            c_opts = [OPTION("", _value=None, _selected="selected")] + \
+                     [OPTION(self.controllers[c].name_nice, _value=c) for c in controllers]
+            c_select = SELECT(_name="new_controller", *c_opts)
+
             form_rows.append(TR(
-                TD(INPUT(_type="text", _name="new_controller")),
+                TD(c_select),
                 TD(INPUT(_type="text", _name="new_function")),
                 TD(acl_widget("uacl", "new_c_uacl", auth.permission.NONE)),
                 TD(acl_widget("oacl", "new_c_oacl", auth.permission.NONE)), _class=_class))
 
             # Subheading, button to switch to table ACLs
-            tacl_button = A(T("Table Permissions"), _id="tacl-btn", _class="action-btn")
-            controller_acl_form = DIV(DIV(H4(T("Controller Permissions")), tacl_button),
+            cacl_tab = SPAN(A(T("Controller Permissions")), _class="rheader_tab_here")
+            tacl_tab = SPAN(A(T("Table Permissions"), _id="tacl-tab"), _class="rheader_tab_last")
+            controller_acl_form = DIV(DIV(cacl_tab, tacl_tab, _id="rheader_tabs"),
                                       TABLE(thead, TBODY(form_rows)), _id="controller-acls")
 
             # Table ACL form --------------------------------------------------
@@ -1964,33 +1974,40 @@ class S3RoleManager(S3Method):
             i = 0
             for t in ptables:
                 _class = i % 2 and "even" or "odd"
-                if t not in acls:
-                    continue
+                #if t not in acls:
+                    #continue
                 i += 1
-                acl = acls[t]
-                uacl = acl.uacl
-                if uacl is None:
-                    uacl = auth.permission.NONE
-                oacl = acl.oacl
-                if oacl is None:
-                    oacl = auth.permission.NONE
-                _id = acl.id
+                uacl = auth.permission.NONE
+                oacl = auth.permission.NONE
+                _id = None
+                if t in acls:
+                    acl = acls[t]
+                    if acl.uacl is not None:
+                        uacl = acl.uacl
+                    if acl.oacl is not None:
+                        oacl = acl.oacl
+                    _id = acl.id
                 n = "%s_ANY_ANY_%s" % (_id, t)
                 uacl = acl_widget("uacl", "acl_u_%s" % n, uacl)
                 oacl = acl_widget("oacl", "acl_o_%s" % n, oacl)
                 form_rows.append(TR(TD(t), TD(uacl), TD(oacl), _class=_class))
 
             # Row to enter a new table ACL
-            # @todo: make tablename field a SELECT
-            _class = i % 2 and "odd" or "even"
+            _class = i % 2 and "even" or "odd"
+            all_tables = [t._tablename for t in self.db]
             form_rows.append(TR(
-                TD(INPUT(_type="text", _name="new_table")),
+                TD(INPUT(_type="text", _name="new_table",
+                         requires=IS_EMPTY_OR(IS_IN_SET(all_tables, zero=None,
+                                    error_message=T("Undefined Table"))))),
                 TD(acl_widget("uacl", "new_t_uacl", auth.permission.NONE)),
-                TD(acl_widget("oacl", "new_t_oacl", auth.permission.NONE)), _class=_class))
+                TD(acl_widget("oacl", "new_t_oacl", auth.permission.NONE)),
+                                                                _class=_class))
 
-            # Subheading, button to switch to controller ACLs
-            cacl_button = A(T("Controller Permissions"), _id="cacl-btn", _class="action-btn")
-            table_acl_form = DIV(DIV(H4(T("Table Permissions")), cacl_button),
+            # Tabs
+            cacl_tab = SPAN(A(T("Controller Permissions"), _id="cacl-tab"),
+                            _class="rheader_tab_other")
+            tacl_tab = SPAN(A(T("Table Permissions")), _class="rheader_tab_here")
+            table_acl_form = DIV(DIV(cacl_tab, tacl_tab, _id="rheader_tabs"),
                                  TABLE(thead, TBODY(form_rows)), _id="table-acls")
 
             # Aggregate ACL form
@@ -1998,7 +2015,8 @@ class S3RoleManager(S3Method):
 
             # Action row
             action_row = DIV(INPUT(_type="submit", _value="Save"),
-                             A(T("Cancel"), _href=URL(r=request, c="admin", f="role", vars=request.get_vars)),
+                             A(T("Cancel"),
+                             _href=URL(r=request, c="admin", f="role", vars=request.get_vars)),
                              _id="action-row")
 
             # Complete form
@@ -2036,7 +2054,7 @@ class S3RoleManager(S3Method):
                                 i = int(i)
                             else:
                                 i = None
-                            name = "%s_%s_%s"
+                            name = "%s_%s_%s" % (c, f, t)
                             if name not in acls:
                                 acls[name] = Storage()
                             acls[name].update({"id": i,
@@ -2050,7 +2068,7 @@ class S3RoleManager(S3Method):
                             c = v == "new_controller" and vars.new_controller or None
                             f = v == "new_controller" and vars.new_function or None
                             t = v == "new_table" and vars.new_table or None
-                            name = "%s_%s_%s" % (c and c or any, f and f or any, t and t or any)
+                            name = "%s_%s_%s" % (c, f, t)
                             x = v == "new_table" and "t" or "c"
                             uacl = vars["new_%s_uacl" % x]
                             oacl = vars["new_%s_oacl" % x]
@@ -2074,6 +2092,8 @@ class S3RoleManager(S3Method):
                 redirect(URL(r=request, f="role", vars=request.get_vars))
 
             output.update(form=form)
+            if form.errors and "new_table" in form.errors:
+                output.update(acl="table")
             self.response.view = "admin/role_edit.html"
 
         else:

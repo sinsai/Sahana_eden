@@ -30,13 +30,20 @@
 {{pass}}
 <script type="text/javascript">//<![CDATA[
 $(document).ready(function(){
-    $('#tacl-btn').click(function() {
+    $('#tacl-tab').click(function() {
         $('#table-acls').show()
         $('#controller-acls').hide()
     });
-    $('#cacl-btn').click(function() {
+    $('#cacl-tab').click(function() {
         $('#controller-acls').show()
         $('#table-acls').hide()
     });
+    {{try:}}
+        {{if acl=="table":}}
+            $('#table-acls').show()
+            $('#controller-acls').hide()
+        {{pass}}
+    {{except:}}
+    {{pass}}
 });
 //]]></script>

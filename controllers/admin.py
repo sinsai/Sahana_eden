@@ -1077,7 +1077,9 @@ def role():
             return False
 
         handler = s3base.S3RoleManager()
-        handler.controllers = deployment_settings.modules
+        modules = deployment_settings.modules
+        handler.controllers = Storage([(m, modules[m]) for m in modules
+                                                       if modules[m].restricted])
 
         # Configure REST methods
         resource = r.resource

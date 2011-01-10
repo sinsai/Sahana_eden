@@ -1624,7 +1624,7 @@ class S3Resource(object):
         if component is not None:
             c = self.components.get(component, None)
             if c:
-                tree = c.resource.options(fields=fields)
+                tree = c.resource.options(fields=fields, as_json=as_json)
                 return tree
             else:
                 raise AttributeError

@@ -1628,7 +1628,10 @@ class S3RoleManager(S3Method):
     HIDE_CONTROLLER = ("admin", "default")
 
     # Roles to hide from the permissions matrix
-    PROTECTED_ROLES = (1, 3, 4)
+    HIDE_ROLES = (1, 3, 4)
+
+    # Undeletable roles
+    PROTECTED_ROLES = (1, 2, 3, 4)
 
     controllers = Storage()
 
@@ -1679,7 +1682,7 @@ class S3RoleManager(S3Method):
             output.update(title = T("List of Roles"))
 
             # Filter out protected roles
-            resource.add_filter(~(self.table.id.belongs(self.PROTECTED_ROLES)))
+            resource.add_filter(~(self.table.id.belongs(self.HIDE_ROLES)))
             resource.load()
 
             # Get active controllers
@@ -1737,14 +1740,19 @@ class S3RoleManager(S3Method):
                 role_name = role.role
                 role_desc = role.description
 
-                action_button = lambda l, i, m: \
-                                A(l, _href=URL(r=request, c="admin", f="role",
-                                               args=(m and [i, m] or [i]),
-                                               vars=request.get_vars),
-                                               _class="action-btn")
-                edit_btn = action_button(T("Edit"), role_id, None)
-                delete_btn = action_button(T("Delete"), role_id, "delete")
-                tdata = [TD(edit_btn, XML("&nbsp;"), delete_btn), TD(role_name)]
+                edit_btn = A(T("Edit"),
+                             _href=URL(r=request, c="admin", f="role",
+                                       args=[role_id], vars=request.get_vars),
+                             _class="action-btn")
+
+                if role_id in self.PROTECTED_ROLES:
+                    tdata = [TD(edit_btn), TD(role_name)]
+                else:
+                    delete_btn = A(T("Delete"),
+                                _href=URL(r=request, c="admin", f="role",
+                                            args=[role_id, "delete"], vars=request.get_vars),
+                                _class="delete-btn")
+                    tdata = [TD(edit_btn, XML("&nbsp;"), delete_btn), TD(role_name)]
 
                 if show_matrix:
                     # Display the permission matrix
@@ -2058,7 +2066,25 @@ class S3RoleManager(S3Method):
 
         """
 
-        r.error(400, "Not implemented yet")
+        session = self.session
+        request = self.request
+        T = self.T
+
+        if r.interactive:
+
+            if r.record:
+                role_id = r.record.id
+                role_name = r.record.role
+
+                if role_id in self.PROTECTED_ROLES:
+                    session.error = '%s "%s" %s' % (T("Role"), role_name, T("cannot be deleted."))
+                    redirect(URL(r=request, c="admin", f="role", vars=request.get_vars))
+            else:
+                session.error = T("No role to delete")
+                redirect(URL(r=request, c="admin", f="role", vars=request.get_vars))
+
+        else:
+            r.error(501, self.manager.BAD_FORMAT)
 
 
 # =============================================================================

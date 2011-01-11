@@ -76,9 +76,9 @@ admin_menu_options = [
     ]],
     [T("User Management"), False, URL(r=request, c="admin", f="user"), [
         [T("Users"), False, URL(r=request, c="admin", f="user")],
-        [T("Roles"), False, URL(r=request, c="admin", f="group")],
-        [T("Membership"), False, URL(r=request, c="admin", f="membership")],
-        [T("Role Manager"), False, URL(r=request, c="admin", f="role")],
+        [T("Roles"), False, URL(r=request, c="admin", f="role")],
+        #[T("Roles"), False, URL(r=request, c="admin", f="group")],
+        #[T("Membership"), False, URL(r=request, c="admin", f="membership")],
     ]],
     [T("Database"), False, "#", [
         [T("Import"), False, URL(r=request, c="admin", f="import_data")],
@@ -119,7 +119,7 @@ for module in deployment_settings.modules:
             authorised = False
             groups = re.split("\|", _module.access)[1:-1]
             for group in groups:
-                if shn_has_role(group):
+                if s3_has_role(group):
                     authorised = True
             if authorised == True:
                 s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
@@ -132,7 +132,7 @@ for module in deployment_settings.modules:
             authorised = False
             groups = re.split("\|", _module.access)[1:-1]
             for group in groups:
-                if shn_has_role(group):
+                if s3_has_role(group):
                     authorised = True
             if authorised == True:
                 s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
@@ -145,7 +145,7 @@ for module in deployment_settings.modules:
             authorised = False
             groups = re.split("\|", _module.access)[1:-1]
             for group in groups:
-                if shn_has_role(group):
+                if s3_has_role(group):
                     authorised = True
             if authorised == True:
                 s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
@@ -158,7 +158,7 @@ for module in deployment_settings.modules:
             authorised = False
             groups = re.split("\|", _module.access)[1:-1]
             for group in groups:
-                if shn_has_role(group):
+                if s3_has_role(group):
                     authorised = True
             if authorised == True:
                 s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
@@ -171,7 +171,7 @@ for module in deployment_settings.modules:
             authorised = False
             groups = re.split("\|", _module.access)[1:-1]
             for group in groups:
-                if shn_has_role(group):
+                if s3_has_role(group):
                     authorised = True
             if authorised == True:
                 s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
@@ -188,7 +188,7 @@ for module in deployment_settings.modules:
             authorised = False
             groups = re.split("\|", _module.access)[1:-1]
             for group in groups:
-                if shn_has_role(group):
+                if s3_has_role(group):
                     authorised = True
             if authorised == True:
                 modules_submenu.append([_module.name_nice, False, URL(r=request, c=module, f="index")])

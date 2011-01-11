@@ -19,7 +19,7 @@ if deployment_settings.modules[module].access:
     authorised = False
     groups = re.split("\|", _module.access)[1:-1]
     for group in groups:
-        if shn_has_role(group):
+        if s3_has_role(group):
             authorised = True
     if not authorised:
         unauthorised()

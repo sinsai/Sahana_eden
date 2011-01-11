@@ -100,7 +100,7 @@ class S3Resource(object):
 
         # Authorization hooks
         self.permit = manager.permit
-        self.accessible_query = manager.auth.shn_accessible_query
+        self.accessible_query = manager.auth.s3_accessible_query
 
         # Audit hook
         self.audit = manager.audit
@@ -2271,7 +2271,7 @@ class S3Method(object):
         self.db = self.manager.db
 
         # Settings
-        self.permit = self.manager.auth.shn_has_permission
+        self.permit = self.manager.auth.s3_has_permission
         self.download_url = self.manager.s3.download_url
 
         # Init

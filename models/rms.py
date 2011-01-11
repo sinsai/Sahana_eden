@@ -257,7 +257,7 @@ if deployment_settings.has_module(module):
         if attr is None:
             attr = {}
 
-        if not shn_has_permission("read", db.rms_req):
+        if not s3_has_permission("read", db.rms_req):
             session.error = UNAUTHORISED
             redirect(URL(r=request, c="default", f="user", args="login", vars={"_next":URL(r=request, args="search_simple", vars=request.vars)}))
 
@@ -367,8 +367,8 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Request Item deleted"),
         msg_list_empty = T("No Items currently requested"))
 
-    table.item_id.requires = IS_ONE_OF(db, "supply_item.id", "%(name)s") 
-    #table.quantity.requires = IS_NOT_EMPTY() 
+    table.item_id.requires = IS_ONE_OF(db, "supply_item.id", "%(name)s")
+    #table.quantity.requires = IS_NOT_EMPTY()
 
     # Items as component of Locations
     s3xrc.model.add_component(module, resourcename,

@@ -203,7 +203,7 @@ def showSkillOptions():
     output["table"] = ""
     if search_form.accepts(request.vars, session, keepvalues=True):
         search_skill_ids =  request.vars.skill_types_id
-        
+
         table1 = db.vol_skill
         table2 = db.vol_skill_types
         table3 = db.pr_person
@@ -214,11 +214,11 @@ def showSkillOptions():
                     (table2.id == search_skill_ids)).select(table1.person_id)
 
         vol_idset = []
-        html = DIV(DIV(B(T("List of Volunteers for this skills set"))))  
+        html = DIV(DIV(B(T("List of Volunteers for this skills set"))))
         for id in vol_id:
             vol_idset.append(id.person_id)
-            
-                 
+
+
         for pe_id in vol_idset:
             person_details = db((table3.id == pe_id)).select(table3.first_name, table3.middle_name, table3.last_name).first()
             skillset = db(table1.person_id == pe_id).select(table1.status).first()
@@ -226,14 +226,14 @@ def showSkillOptions():
             # @ToDo: Make the notification message configurable
             msg.send_by_pe_id(pe_id, "CERT: Please Report for Duty", "We ask you to report for duty if you are available", 1, 1)
 
-        html.append(DIV(B(T("Volunteers were notified!"))))        
+        html.append(DIV(B(T("Volunteers were notified!"))))
     #for one_pr in person_details:
         #skillset = "approved"
         #html += DIV(LABEL(vita.fullname(one_pr)),DIV(T("Skill Status") + ": "), UL(skillset), _id="table-container")
         #person_data="<div>"+str(person_details)+"</div>"
         html2 = DIV(html, _id="table-container")
         output["table"] = html2
-        
+
     return output
 
 # -----------------------------------------------------------------------------
@@ -389,9 +389,9 @@ def view_map():
 
     """
         Show Location of a Volunteer on the Map
-        
+
         Use most recent presence if available, else any address that's available.
-        
+
         @ToDo: Convert to a custom method of the person resource
     """
 
@@ -401,7 +401,7 @@ def view_map():
     persons = db.pr_person
     presences = db.pr_presence
     locations = db.gis_location
-    
+
     # Include the person's last verified location, assuming that they're not missing
     presence_query = (persons.id == person_id) & \
                      (persons.missing == False) & \
@@ -439,7 +439,7 @@ def view_map():
 
         config = gis.get_config()
 
-        if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
+        if not deployment_settings.get_security_map() or s3_has_role("MapAdmin"):
             catalogue_toolbar = True
         else:
             catalogue_toolbar = False
@@ -451,23 +451,23 @@ def view_map():
             _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=False, polygons=layer.polygons)
             if _layer:
                 feature_queries.append(_layer)
-        
+
         # Add the Volunteer layer
         try:
             marker_id = db(db.gis_marker.name == "volunteer").select().first().id
         except:
             marker_id = 1
-        
+
         # Can't use this since the location_id link is via pr_presence not pr_person
         #_layer = gis.get_feature_layer("pr", "person", "Volunteer", "Volunteer", config=config, marker_id=marker_id, active=True, polygons=False)
         #if _layer:
         #    feature_queries.append(_layer)
-        
+
         # Insert the name into the query & replace the location_id with the person_id
         for i in range(0, len(features)):
             features[i].gis_location.name = vita.fullname(db(db.pr_person.id == features[i].pr_person.id).select(limitby=(0, 1)).first())
             features[i].gis_location.id = features[i].pr_person.id
-        
+
         feature_queries.append({"name" : "Volunteer",
                                 "query" : features,
                                 "active" : True,
@@ -493,7 +493,7 @@ def view_map():
     session.warning = T("No location known for this person")
     redirect(URL(r=request, c="vol", f="person", args=[person_id, "presence"]))
 
-def popup(): 
+def popup():
 
     """
         Controller that returns a person's data
@@ -502,7 +502,7 @@ def popup():
 
     person_id = request.args(0)
 
-    vol_query = (db.pr_person.id == person_id) 
+    vol_query = (db.pr_person.id == person_id)
     vol = db(vol_query).select(db.pr_person.first_name, db.pr_person.middle_name, db.pr_person.last_name, limitby=(0, 1)).first()
 
     skill_query = (db.vol_skill.person_id == person_id) & (db.vol_skill.skill_types_id == db.vol_skill_types.id)
@@ -529,7 +529,7 @@ def view_team_map():
         Use most recent presence if available
 
         @ToDo: Fallback to addresses
-        
+
         @ToDo: Convert to a custom method of the group resource
     """
 
@@ -543,7 +543,7 @@ def view_team_map():
     persons = db.pr_person
     presences = db.pr_presence
     locations = db.gis_location
-    
+
     # Presence Data for Members who aren't Missing & have a Verified Presence
     features = db(persons.id.belongs(member_person_ids) & \
                  (persons.missing == False) & \
@@ -581,7 +581,7 @@ def view_team_map():
 
         config = gis.get_config()
 
-        if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
+        if not deployment_settings.get_security_map() or s3_has_role("MapAdmin"):
             catalogue_toolbar = True
         else:
             catalogue_toolbar = False
@@ -593,23 +593,23 @@ def view_team_map():
             _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=False, polygons=layer.polygons)
             if _layer:
                 feature_queries.append(_layer)
-        
+
         # Add the Volunteer layer
         try:
             marker_id = db(db.gis_marker.name == "volunteer").select().first().id
         except:
             marker_id = 1
-        
+
         # Can't use this since the location_id link is via pr_presence not pr_person
         #_layer = gis.get_feature_layer("pr", "person", "Volunteer", "Volunteer", config=config, marker_id=marker_id, active=True, polygons=False)
         #if _layer:
         #    feature_queries.append(_layer)
-        
+
         # Insert the name into the query & replace the location_id with the person_id
         for i in range(0, len(features)):
             features[i].gis_location.name = vita.fullname(db(db.pr_person.id == features[i].pr_person.id).select(limitby=(0, 1)).first())
             features[i].gis_location.id = features[i].pr_person.id
-        
+
         feature_queries.append({"name" : "Volunteers",
                                 "query" : features,
                                 "active" : True,
@@ -652,14 +652,14 @@ def view_project_map():
 
     """
         Show Location of all Tasks on the Map
-        
+
         @ToDo: Different Colours for Status
             Green for Complete
             Red for Urgent/Incomplete
             Amber for Non-Urgent/Incomplete
-            
+
         @ToDo: A single map with both Tasks & Volunteers displayed on it
-        
+
         @ToDo: Convert to a custom method of the project resource
     """
 
@@ -695,7 +695,7 @@ def view_project_map():
 
         config = gis.get_config()
 
-        if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
+        if not deployment_settings.get_security_map() or s3_has_role("MapAdmin"):
             catalogue_toolbar = True
         else:
             catalogue_toolbar = False
@@ -707,13 +707,13 @@ def view_project_map():
             _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=False, polygons=layer.polygons)
             if _layer:
                 feature_queries.append(_layer)
-        
+
         # Add the Tasks layer
         # Can't use this since we want to use different colours, not markers
         #_layer = gis.get_feature_layer("project", "task", "Tasks", "Task", config=config, marker_id=marker_id, active=True, polygons=False)
         #if _layer:
         #    feature_queries.append(_layer)
-        
+
         # Insert the name into the query & replace the location_id with the task_id
         for i in range(0, len(features)):
             features[i].gis_location.name = features[i].project_task.subject
@@ -728,8 +728,8 @@ def view_project_map():
             else:
                 # Amber for 'Feedback' or 'non-urgent'
                 features[i].gis_location.color = "	#FFBF00"
-            
-        
+
+
         feature_queries.append({
                                 "name" : "Tasks",
                                 "query" : features,
@@ -806,7 +806,7 @@ def view_offices_map():
         project_location = project_locations.first()
         lat = project_location.gis_location.lat
         lon = project_location.gis_location.lon
-        
+
         if (lat is None) or (lon is None):
             # Zero is allowed
             session.error = T("Project has no Lat/Lon")
@@ -816,7 +816,7 @@ def view_offices_map():
         features = gis.get_features_in_radius(lat, lon, radius, tablename="org_office")
 
         # @ToDo: we also want the Project to show (with different Icon): project_locations set ready
-    
+
     else:
         features = db((offices.id > 0) & \
                       (locations.id == offices.location_id)).select(locations.id,
@@ -842,7 +842,7 @@ def view_offices_map():
 
         config = gis.get_config()
 
-        if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
+        if not deployment_settings.get_security_map() or s3_has_role("MapAdmin"):
             catalogue_toolbar = True
         else:
             catalogue_toolbar = False
@@ -854,7 +854,7 @@ def view_offices_map():
             _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=False, polygons=layer.polygons)
             if _layer:
                 feature_queries.append(_layer)
-        
+
         # Add the Offices layer
         # Can't use this since we may have a custom spatial query
         #_layer = gis.get_feature_layer("org", "office", "Offices", "Office", config=config, marker_id=marker_id, active=True, polygons=False)
@@ -881,7 +881,7 @@ def view_offices_map():
             #    else:
             #        # Amber for 'Feedback' or 'non-urgent'
             #        features[i].gis_location.color = "	#FFBF00"
-        
+
         feature_queries.append({
                                 "name" : "Tasks",
                                 "query" : features,
@@ -918,7 +918,7 @@ def view_offices_map():
 
         response.view = "vol/view_map.html"
         return dict(map=html)
-    
+
     else:
         # Redirect to offices if none found
         session.error = T("No Offices found!")

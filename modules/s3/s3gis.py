@@ -3,7 +3,7 @@
 """ GIS Module
 
     @version: 0.0.9
-    
+
     @requires: U{B{I{gluon}} <http://web2py.com>}
     @requires: U{B{I{shapely}} <http://trac.gispython.org/lab/wiki/Shapely>}
 
@@ -1885,7 +1885,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         # Toolbar
         if toolbar or add_feature:
-            if 1 in session.s3.roles or auth.shn_has_role("MapAdmin"):
+            if 1 in session.s3.roles or auth.s3_has_role("MapAdmin"):
             #if auth.is_logged_in():
                 # Provide a way to save the viewport
                 # @ToDo Extend to personalised Map Views
@@ -2602,7 +2602,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
         """
             for layer in openstreetmap_enabled:
-                if layer.role_required and not auth.shn_has_role(layer.role_required):
+                if layer.role_required and not auth.s3_has_role(layer.role_required):
                     continue
                 name = layer.name
                 name_safe = re.sub('\W', '_', name)
@@ -2645,7 +2645,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             if google_enabled:
                 google.key = self.get_api_key("google")
                 for layer in google_enabled:
-                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                    if layer.role_required and not auth.s3_has_role(layer.role_required):
                         continue
                     for subtype in gis_layer_google_subtypes:
                         if layer.subtype == subtype:
@@ -2724,7 +2724,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             if yahoo_enabled:
                 yahoo.key = self.get_api_key("yahoo")
                 for layer in yahoo_enabled:
-                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                    if layer.role_required and not auth.s3_has_role(layer.role_required):
                         continue
                     for subtype in gis_layer_yahoo_subtypes:
                         if layer.subtype == subtype:
@@ -2754,7 +2754,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 bing.key = self.get_api_key("bing")
                 if bing.key:
                     for layer in bing_enabled:
-                        if layer.role_required and not auth.shn_has_role(layer.role_required):
+                        if layer.role_required and not auth.s3_has_role(layer.role_required):
                             continue
                         for subtype in gis_layer_bing_subtypes:
                             if layer.subtype == subtype:
@@ -2795,7 +2795,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         if wfs_enabled:
             layers_wfs = cluster_style_options
         for layer in wfs_enabled:
-            if layer.role_required and not auth.shn_has_role(layer.role_required):
+            if layer.role_required and not auth.s3_has_role(layer.role_required):
                 continue
             name = layer.name
             name_safe = re.sub('\W', '_', name)
@@ -2860,7 +2860,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_wms = ""
         wms_enabled = db(db.gis_layer_wms.enabled == True).select()
         for layer in wms_enabled:
-            if layer.role_required and not auth.shn_has_role(layer.role_required):
+            if layer.role_required and not auth.s3_has_role(layer.role_required):
                 continue
             name = layer.name
             name_safe = re.sub('\W', '_', name)
@@ -2916,7 +2916,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_tms = ""
         tms_enabled = db(db.gis_layer_tms.enabled == True).select()
         for layer in tms_enabled:
-            if layer.role_required and not auth.shn_has_role(layer.role_required):
+            if layer.role_required and not auth.s3_has_role(layer.role_required):
                 continue
             name = layer.name
             name_safe = re.sub('\W', '_', name)
@@ -2939,7 +2939,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_xyz = ""
         xyz_enabled = db(db.gis_layer_tms.enabled == True).select()
         for layer in xyz_enabled:
-            if layer.role_required and not auth.shn_has_role(layer.role_required):
+            if layer.role_required and not auth.s3_has_role(layer.role_required):
                 continue
             name = layer.name
             name_safe = re.sub('\W', '_', name)
@@ -2982,7 +2982,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_js = ""
         js_enabled = db(db.gis_layer_js.enabled == True).select()
         for layer in js_enabled:
-            if layer.role_required and not auth.shn_has_role(layer.role_required):
+            if layer.role_required and not auth.s3_has_role(layer.role_required):
                 continue
             layers_js  += layer.code
 
@@ -3447,7 +3447,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
         """
                 for layer in georss_enabled:
-                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                    if layer.role_required and not auth.s3_has_role(layer.role_required):
                         continue
                     name = layer["name"]
                     url = layer["url"]
@@ -3563,7 +3563,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
         """
                 for layer in gpx_enabled:
-                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                    if layer.role_required and not auth.s3_has_role(layer.role_required):
                         continue
                     name = layer["name"]
                     track = db(db.gis_track.id == layer.track_id).select(db.gis_track.track, limitby=(0, 1)).first()
@@ -3700,7 +3700,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
         """
                 for layer in kml_enabled:
-                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                    if layer.role_required and not auth.s3_has_role(layer.role_required):
                         continue
                     name = layer["name"]
                     url = layer["url"]
@@ -3812,7 +3812,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             # Coordinate Grid
             coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select(db.gis_layer_coordinate.name, db.gis_layer_coordinate.visible, db.gis_layer_coordinate.role_required)
             if coordinate_enabled:
-                if layer.role_required and not auth.shn_has_role(layer.role_required):
+                if layer.role_required and not auth.s3_has_role(layer.role_required):
                     pass
                 else:
                     layer = coordinate_enabled.first()

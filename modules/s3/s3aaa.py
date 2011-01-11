@@ -49,7 +49,7 @@ from gluon.validators import *
 #    from gluon.contrib.gql import Field, Row, Query
 #except ImportError:
 from gluon.sql import Field, Row, Query
-from gluon.sqlhtml import SQLFORM, SQLTABLE
+from gluon.sqlhtml import SQLFORM, SQLTABLE, CheckboxesWidget
 from gluon.tools import Auth
 from gluon.contrib.simplejson.ordered_dict import OrderedDict
 
@@ -73,12 +73,12 @@ class AuthS3(Auth):
             requires_membership()
 
         - add:
-            shn_has_role()
-            shn_has_permission()
-            shn_logged_in()
-            shn_accessible_query()
-            shn_register() callback
-            shn_link_to_person()
+            s3_has_role()
+            s3_has_permission()
+            s3_logged_in()
+            s3_accessible_query()
+            s3_register() callback
+            s3_link_to_person()
 
         - language
 
@@ -641,7 +641,7 @@ class AuthS3(Auth):
 
 
     # -------------------------------------------------------------------------
-    def shn_logged_in(self):
+    def s3_logged_in(self):
         """
         Check whether the user is currently logged-in
 
@@ -658,7 +658,7 @@ class AuthS3(Auth):
 
 
     # -------------------------------------------------------------------------
-    def shn_has_role(self, role):
+    def s3_has_role(self, role):
         """
         Check whether the currently logged-in user has a role
 
@@ -671,7 +671,7 @@ class AuthS3(Auth):
         session = self.session
 
         # => trigger basic auth
-        if not self.shn_logged_in():
+        if not self.s3_logged_in():
             return False
 
         # Administrators have all roles
@@ -695,7 +695,7 @@ class AuthS3(Auth):
 
 
     # -------------------------------------------------------------------------
-    def shn_has_permission(self, method, table, record_id = 0):
+    def s3_has_permission(self, method, table, record_id = 0):
 
         """
             S3 framework function to define whether a user can access a record in manner "method"
@@ -718,7 +718,7 @@ class AuthS3(Auth):
                 authorised = True
             else:
                 # Authentication required for Create/Update/Delete.
-                authorised = self.shn_logged_in()
+                authorised = self.s3_logged_in()
 
         elif session.s3.security_policy == 2:
             # Editor policy
@@ -727,13 +727,13 @@ class AuthS3(Auth):
                 authorised = True
             elif method == "create":
                 # Authentication required for Create.
-                authorised = self.shn_logged_in()
+                authorised = self.s3_logged_in()
             elif record_id == 0 and method == "update":
                 # Authenticated users can update at least some records
-                authorised = self.shn_logged_in()
+                authorised = self.s3_logged_in()
             else:
                 # Editor role required for Update/Delete.
-                authorised = self.shn_has_role("Editor")
+                authorised = self.s3_has_role("Editor")
                 if not authorised and self.user and "created_by" in table:
                     # Creator of Record is allowed to Edit
                     record = db(table.id == record_id).select(table.created_by, limitby=(0, 1)).first()
@@ -752,9 +752,9 @@ class AuthS3(Auth):
 
         else:
             # Full policy
-            if self.shn_logged_in():
+            if self.s3_logged_in():
                 # Administrators are always authorised
-                if self.shn_has_role(1):
+                if self.s3_has_role(1):
                     authorised = True
                 else:
                     # Require records in auth_permission to specify access (default Web2Py-style)
@@ -767,7 +767,7 @@ class AuthS3(Auth):
 
 
     # -------------------------------------------------------------------------
-    def shn_accessible_query(self, method, table):
+    def s3_accessible_query(self, method, table):
         """
         Returns a query with all accessible records for the current logged in user
 
@@ -797,7 +797,7 @@ class AuthS3(Auth):
             return query
 
         # "Full" security policy
-        if self.shn_has_role(1):
+        if self.s3_has_role(1):
             # Administrators can see all data
             return table.id > 0
 
@@ -820,7 +820,7 @@ class AuthS3(Auth):
 
 
     # -------------------------------------------------------------------------
-    def shn_register(self, form):
+    def s3_register(self, form):
         """
         S3 framework function
 
@@ -837,17 +837,17 @@ class AuthS3(Auth):
         self.add_membership(authenticated, form.vars.id)
 
         # S3: Add to Person Registry as well and Email to pr_pe_contact
-        self.shn_link_to_person(user=form.vars)
+        self.s3_link_to_person(user=form.vars)
 
 
     # -------------------------------------------------------------------------
-    def shn_has_membership(self, group_id=None, user_id=None, role=None):
+    def s3_has_membership(self, group_id=None, user_id=None, role=None):
         """
         Checks if user is member of group_id or role
 
         Extends Web2Py's requires_membership() to add new functionality:
             - Custom Flash style
-            - Uses shn_has_role()
+            - Uses s3_has_role()
 
         """
 
@@ -857,7 +857,7 @@ class AuthS3(Auth):
         except:
             group_id = self.id_group(group_id) # interpret group_id as a role
 
-        if self.shn_has_role(group_id):
+        if self.s3_has_role(group_id):
             r = True
         else:
             r = False
@@ -871,11 +871,11 @@ class AuthS3(Auth):
         return r
 
     # Override original method
-    has_membership = shn_has_membership
+    has_membership = s3_has_membership
 
 
     # -------------------------------------------------------------------------
-    def shn_requires_membership(self, role):
+    def s3_requires_membership(self, role):
         """
         Decorator that prevents access to action if not logged in or
         if user logged in is not a member of group_id.
@@ -883,7 +883,7 @@ class AuthS3(Auth):
 
         Extends Web2Py's requires_membership() to add new functionality:
             - Custom Flash style
-            - Uses shn_has_role()
+            - Uses s3_has_role()
             - Administrators (id=1) are deemed to have all roles
 
         """
@@ -891,12 +891,12 @@ class AuthS3(Auth):
         def decorator(action):
 
             def f(*a, **b):
-                if not self.shn_logged_in():
+                if not self.s3_logged_in():
                     request = self.environment.request
                     next = URL(r=request, args=request.args, vars=request.get_vars)
                     redirect(self.settings.login_url + "?_next=" + urllib.quote(next))
 
-                if not self.shn_has_role(role) and not self.shn_has_role(1):
+                if not self.s3_has_role(role) and not self.s3_has_role(1):
                     self.environment.session.error = self.messages.access_denied
                     next = self.settings.on_failed_authorization
                     redirect(next)
@@ -910,11 +910,11 @@ class AuthS3(Auth):
         return decorator
 
     # Override original method
-    requires_membership = shn_requires_membership
+    requires_membership = s3_requires_membership
 
 
     # -------------------------------------------------------------------------
-    def shn_link_to_person(self, user=None):
+    def s3_link_to_person(self, user=None):
 
         """
         Links user accounts to person registry entries
@@ -995,6 +995,68 @@ class AuthS3(Auth):
                     self.user.person_uuid = person_uuid
 
 
+    # -------------------------------------------------------------------------
+    def s3_create_role(self, role, description, *acls):
+        """
+        Back-end method to create roles with ACLs
+
+        """
+
+        table = self.settings.table_group
+
+        query = (table.role == role)
+        record = self.db(query).select(limitby=(0, 1)).first()
+        if record:
+            role_id = record.id
+            record.update_record(role=role, description=description)
+        else:
+            role_id = table.insert(role=role, description=description)
+
+        if role_id:
+            for acl in acls:
+                self.s3_update_acl(role_id, **acl)
+
+
+    # -------------------------------------------------------------------------
+    def s3_update_acl(self, role, c=None, f=None, t=None, oacl=None, uacl=None):
+        """
+        Back-end method to update an ACL
+
+        """
+
+        table = self.permission.table
+
+        if c is None and f is None and t is None:
+            return None
+
+        if t is not None:
+            c = f = None
+
+        if oacl is None:
+            oacl = self.permission.NONE
+        if uacl is None:
+            uacl = self.permission.NONE
+
+        if role:
+            query = ((table.group_id == role) &
+                     (table.controller == c) &
+                     (table.function == f) &
+                     (table.tablename == f))
+            record = self.db(query).select(table.id, limitby=(0,1)).first()
+            acl = dict(group_id=role,
+                       controller=c,
+                       function=f,
+                       tablename=t,
+                       oacl=oacl,
+                       uacl=uacl)
+            if record:
+                success = record.update_record(**acl)
+            else:
+                success = table.insert(**acl)
+
+        return success
+
+
 # =============================================================================
 class S3Permission(object):
 
@@ -1034,6 +1096,7 @@ class S3Permission(object):
         delete = DELETE
     )
 
+    # see models/zzz_1st_run.py
     ADMIN = 1
     EDITOR = 4
 
@@ -1545,7 +1608,7 @@ class S3Permission(object):
 
         if self.format == "html":
             # HTML interactive request => flash message + redirect
-            if self.auth.shn_logged_in():
+            if self.auth.s3_logged_in():
                 self.session.error = self.INSUFFICIENT_PRIVILEGES
                 redirect(self.homepage)
             else:
@@ -1553,7 +1616,7 @@ class S3Permission(object):
                 redirect(self.loginpage)
         else:
             # non-HTML request => raise proper HTTP error
-            if self.auth.shn_logged_in():
+            if self.auth.s3_logged_in():
                 raise HTTP(403)
             else:
                 raise HTTP(401)
@@ -1700,10 +1763,10 @@ class S3RoleManager(S3Method):
     HIDE_CONTROLLER = ("admin", "default")
 
     # Roles to hide from the permissions matrix
-    HIDE_ROLES = (1, 3, 4)
+    HIDE_ROLES = (1, 3, 4, 5)
 
     # Undeletable roles
-    PROTECTED_ROLES = (1, 2, 3, 4)
+    PROTECTED_ROLES = (1, 2, 3, 4, 5)
 
     controllers = Storage()
 
@@ -1722,6 +1785,8 @@ class S3RoleManager(S3Method):
             output = self._edit(r, **attr)
         elif method == "delete":
             output = self._delete(r, **attr)
+        elif method == "roles":
+            output = self._roles(r, **attr)
         else:
             r.error(501, self.manager.ERROR.BAD_METHOD)
 
@@ -1936,7 +2001,10 @@ class S3RoleManager(S3Method):
             form_rows = formstyle("role_name", mandatory(T("Role Name") + ":"),
                                   INPUT(value=role_name,
                                         _name="role_name",
-                                        _type="text"), "") + \
+                                        _type="text",
+                                        requires=IS_NOT_IN_DB(db,
+                                            "auth_group.role",
+                                            allowed_override=[role_name])), "") + \
                         formstyle("role_desc", T("Description") + ":",
                                   TEXTAREA(value=role_desc,
                                            _name="role_desc",
@@ -1948,7 +2016,7 @@ class S3RoleManager(S3Method):
             any = "ANY"
             controllers = [c for c in self.controllers.keys()
                              if c not in self.HIDE_CONTROLLER]
-            #ptables = model.primary_resources(prefixes=controllers)
+            ptables = []
             tacls = db(acl_table.tablename != None).select(acl_table.tablename,
                                                            distinct=True)
             if tacls:
@@ -2213,6 +2281,69 @@ class S3RoleManager(S3Method):
             r.error(501, self.manager.BAD_FORMAT)
 
         redirect(URL(r=request, c="admin", f="role", vars=request.get_vars))
+
+
+    # -------------------------------------------------------------------------
+    def _roles(self, r, **attr):
+        """
+        Update roles of a user
+
+        """
+
+        output = dict()
+
+        db = self.db
+        T = self.T
+
+        session = self.session
+        request = self.request
+        crud_settings = self.manager.s3.crud
+        formstyle = crud_settings.formstyle
+
+        mtable = db.auth_membership
+        gtable = db.auth_group
+
+        if r.record:
+            user = r.record
+            user_id = user.id
+            username = user.email
+            query = (mtable.user_id == user_id)
+            memberships = db(query).select()
+            memberships = Storage([(str(m.group_id), m.id) for m in memberships])
+            roles = db().select(gtable.id, gtable.role)
+            roles = Storage([(str(g.id), " %s" % g.role) for g in roles if g.id not in (2, 3)])
+            field = Storage(name="roles",
+                            requires = IS_IN_SET(roles, multiple=True))
+            widget = CheckboxesWidget.widget(field, memberships.keys())
+
+            form = FORM(TABLE(
+                    TR(TD(widget)),
+                    TR(TD(INPUT(_type="submit", _value=T("Save")),
+                          A(T("Cancel"), _href=r.there(), _style="padding-left:10px")))))
+
+            if form.accepts(request.post_vars, session):
+                assign = form.vars.roles
+                for role in roles:
+                    query = (mtable.user_id == user_id) & \
+                            (mtable.group_id == role)
+                    if str(role) not in assign:
+                        db(query).delete()
+                    else:
+                        membership = db(query).select(limitby=(0, 1)).first()
+                        if not membership:
+                            mtable.insert(user_id=user_id, group_id=role)
+                redirect(r.there())
+
+            output.update(title="%s - %s" % (T("Assigned Roles"), username),
+                          form=form)
+
+            self.response.view = "admin/user_roles.html"
+            return output
+
+        else:
+            session.error = T("No user to update")
+
+        redirect(URL(r=request, c="admin", f="user"))
 
 
 # =============================================================================

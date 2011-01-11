@@ -32,7 +32,7 @@ def shn_menu():
             #[T("Search"), False, URL(r=request, f="assess", args="search")],
         ]],
     ]
-    if shn_has_role(1):
+    if s3_has_role(1):
         menu_editor = [
             [T("Edit Options"), False, URL(r=request, f="#"), [
                 [T("List / Add Baseline Types"), False, URL(r=request, f="baseline_type")],

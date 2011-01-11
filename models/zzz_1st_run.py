@@ -86,7 +86,7 @@ if populate:
             theme = 1
         )
 
-    # Organisation Registry       
+    # Organisation Registry
     tablename = "org_cluster"
     table = db[tablename]
     if not db(table.id > 0).count():
@@ -273,7 +273,7 @@ if populate:
             table.insert( name = "Ha. of fields" )
 
     # Impacts
-    if deployment_settings.has_module("irs") or deployment_settings.has_module("assess"):        
+    if deployment_settings.has_module("irs") or deployment_settings.has_module("assess"):
         tablename = "impact_type"
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -284,7 +284,7 @@ if populate:
                                                      table = "org_cluster",
                                                      field = "id",
                                                      look_up = "Food",
-                                                     look_up_field = "abrv") 
+                                                     look_up_field = "abrv")
                           )
             table.insert( name = "# People at Risk From Vector-Borne Diseases",
                           cluster_id = \
@@ -292,7 +292,7 @@ if populate:
                                                      table = "org_cluster",
                                                      field = "id",
                                                      look_up = "Health",
-                                                     look_up_field = "abrv") 
+                                                     look_up_field = "abrv")
                           )
             table.insert( name = "# People without Access to Safe Drinking-Water",
                           cluster_id = \
@@ -300,7 +300,7 @@ if populate:
                                                      table = "org_cluster",
                                                      field = "id",
                                                      look_up = "WASH",
-                                                     look_up_field = "abrv") 
+                                                     look_up_field = "abrv")
                           )
             table.insert( name = "# Houses Damaged",
                           cluster_id = \
@@ -308,7 +308,7 @@ if populate:
                                                      table = "org_cluster",
                                                      field = "id",
                                                      look_up = "Shelter",
-                                                     look_up_field = "abrv") 
+                                                     look_up_field = "abrv")
                           )
             table.insert( name = "# Houses Flooded",
                           cluster_id = \
@@ -316,7 +316,7 @@ if populate:
                                                      table = "org_cluster",
                                                      field = "id",
                                                      look_up = "Shelter",
-                                                     look_up_field = "abrv") 
+                                                     look_up_field = "abrv")
                           )
             table.insert( name = "Water Level still high?",
                           cluster_id = \
@@ -324,7 +324,7 @@ if populate:
                                                      table = "org_cluster",
                                                      field = "id",
                                                      look_up = "Shelter",
-                                                     look_up_field = "abrv") 
+                                                     look_up_field = "abrv")
                           )
             table.insert( name = "Ha. Fields Flooded",
                           cluster_id = \
@@ -332,7 +332,7 @@ if populate:
                                                      table = "org_cluster",
                                                      field = "id",
                                                      look_up = "Agriculture",
-                                                     look_up_field = "abrv") 
+                                                     look_up_field = "abrv")
                           )
 
     # Supply / Inventory
@@ -421,7 +421,7 @@ if populate:
             table.insert( name = T("People Needing Food") )
             table.insert( name = T("People Needing Water") )
             table.insert( name = T("People Needing Shelter") )
-    
+
     # Budget Module
     if "budget" in deployment_settings.modules:
         tablename = "budget_parameter"
@@ -1147,41 +1147,34 @@ if populate:
 
     # Authorization
     # User Roles (uses native Web2Py Auth Groups)
+    acl = auth.permission
     table = auth.settings.table_group_name
     if not db(db[table].id > 0).count():
-        # The 1st 4 permissions are hard-coded for performance reasons
-        # This must stay as id=1
-        auth.add_group("Administrator", description = "System Administrator - can access & make changes to any data")
-        # This must stay as id=2
-        auth.add_group("Authenticated", description = "Authenticated - all logged-in users")
-        # This must stay as id=3
-        auth.add_group("Creator", description = "Creator - dummy role which isn't meant to have users added to it. Used to restrict records to just those created by the user")
-        # Optional roles for delegating access
-        # This must stay as id=4
-        auth.add_group("Editor", description = "Editor - can access & make changes to any unprotected data")
-        auth.add_group("UserAdmin", description = "UserAdmin - allowed to manage the membership of the Editor role")
-        #auth.add_group("Restricted", description = "Restricted - is given a simplified full-screen view so as to minimise the possibility of errors")
-        # GIS
-        auth.add_group("MapAdmin", description = "MapAdmin - allowed access to edit the MapService Catalogue")
-        # DVI
-        auth.add_group("DVI", description = "DVI - allowed access to the DVI module")
-        # HMS
-        auth.add_group("HMSAdmin", description = "HMSAdmin - full access to HMS")
-        auth.add_group("HMSOfficer", description = "HMSOfficer - permission to edit requests and pledges")
-        auth.add_group("HMSFacility", description = "HMSFacility - permission to submit status and requests")
-        auth.add_group("HMSOrg", description = "HMSOrg - permission to submit pledges")
-        auth.add_group("HMSViewer", description = "HMSViewer - permission to access HMS")
-        # Ticketing
-        #auth.add_group("TicketAdmin", description = "TicketAdmin - full access to Ticketing")
+        create_role = auth.s3_create_role
+        # Do not remove or change order of these 5 definitions (System Roles):
+        create_role("Administrator", "System Administrator - can access & make changes to any data")
+        create_role("Authenticated", "Authenticated - all logged-in users")
+        create_role("Creator", "Creator - dummy role which isn't meant to have users added to it. Used to restrict records to just those created by the user")
+        create_role("Editor", "Editor - can access & make changes to any unprotected data")
+        create_role("MapAdmin", description = "MapAdmin - allowed access to edit the MapService Catalogue")
+
+        # Additional roles + ACLs
+        create_role("DVI", "Role for DVI staff - permission to access the DVI module",
+                    dict(c="dvi", uacl=acl.ALL, oacl=acl.ALL))
+        create_role("HMS Staff", "Hospital Staff - permission to add/update own records in the HMS",
+                    dict(c="hms", uacl=acl.CREATE, oacl=acl.ALL))
+        create_role("HMS Admin", "Hospital Admin - permission to add/update all records in the HMS",
+                    dict(c="hms", uacl=acl.ALL, oacl=acl.ALL))
+
 
     # Security Defaults for all tables (if using 'full' security policy)
-    if session.s3.security_policy != 1:
+    if session.s3.security_policy not in (1,2,3,4):
         table = auth.settings.table_permission_name
         if not db(db[table].id > 0).count():
             # For performance we only populate this once (at system startup)
             # => need to populate manually when adding new tables to the database! (less RAD)
             authenticated = auth.id_group("Authenticated")
-            #editors = auth.id_group("Editor")
+            editors = auth.id_group("Editor")
             for tablename in db.tables:
                 table = db[tablename]
                 # allow all registered users the ability to Read all records

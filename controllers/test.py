@@ -41,9 +41,9 @@ def webgrid():
     # Show Edit/Delete links based on whether user can access them:
     grid.action_links = ['view']
     grid.action_headers = ['']
-    #if auth.has_permission(table, 'update'):
+    #if auth.s3_has_permission('update', table):
     #    grid.action_links.append('edit')
-    #if auth.has_permission(table, 'delete'):
+    #if auth.s3_has_permission('delete', table):
     #    grid.action_links.append('delete')
 
     return dict(grid=grid())

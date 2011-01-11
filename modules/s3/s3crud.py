@@ -1358,7 +1358,7 @@ class S3CRUD(S3Method):
         response = r.response
 
         prefix, name, table, tablename = r.target()
-        permit = r.manager.auth.shn_has_permission
+        permit = r.manager.auth.s3_has_permission
         model = r.manager.model
 
         if authorised is None:

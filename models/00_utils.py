@@ -160,7 +160,7 @@ def s3_logged_in_person():
 
     """ Get the person ID of the current user """
 
-    if auth.shn_logged_in():
+    if auth.s3_logged_in():
         person = db.pr_person
         record = db(person.uuid == session.auth.user.person_uuid).select(
                     person.id, limitby=(0,1)).first()
@@ -222,7 +222,7 @@ def shn_action_buttons(r,
 
     prefix, name, table, tablename = r.target()
 
-    if shn_has_permission("update", table) and \
+    if s3_has_permission("update", table) and \
        not auth.permission.ownership_required(table, "update"):
         if not update_url:
             update_url = str(URL(r=request, args = args + ["update"]))
@@ -236,12 +236,12 @@ def shn_action_buttons(r,
             dict(label=str(READ), _class="action-btn", url=read_url)
         ]
 
-    if deletable and shn_has_permission("delete", table):
+    if deletable and s3_has_permission("delete", table):
         if not delete_url:
             delete_url = str(URL(r=request, args = args + ["delete"]))
             # Check which records can be deleted
         if auth.permission.ownership_required(table, "delete"):
-            q = auth.shn_accessible_query("delete", table)
+            q = auth.s3_accessible_query("delete", table)
             rows = db(q).select(table.id)
             restrict = [str(row.id) for row in rows]
             response.s3.actions.append(
@@ -252,7 +252,7 @@ def shn_action_buttons(r,
                 dict(label=str(DELETE), _class="delete-btn", url=delete_url)
             )
 
-    if copyable and shn_has_permission("create", table):
+    if copyable and s3_has_permission("create", table):
         if not copy_url:
             copy_url = str(URL(r=request, args = args + ["copy"]))
         response.s3.actions.append(
@@ -675,7 +675,7 @@ def shn_represent_extra(table, module, resource, deletable=True, extra=None):
 
     """
 
-    authorised = shn_has_permission("delete", table._tablename)
+    authorised = s3_has_permission("delete", table._tablename)
     item_list = []
     if extra:
         extra_list = extra.split()
@@ -862,7 +862,7 @@ def s3_rest_controller(prefix, resourcename, **attr):
 
             # Add default action buttons
             prefix, name, table, tablename = r.target()
-            authorised = shn_has_permission("update", tablename)
+            authorised = s3_has_permission("update", tablename)
 
             # If the component has components itself, then use the
             # component's native controller for CRU(D) => make sure
@@ -896,7 +896,7 @@ def s3_rest_controller(prefix, resourcename, **attr):
             # Override Add-button, link to native controller and put
             # the primary key into vars for automatic linking
             if native and not listadd and \
-               shn_has_permission("create", tablename):
+               s3_has_permission("create", tablename):
                 label = shn_get_crud_string(tablename,
                                             "label_create_button")
                 hook = r.resource.components[name]

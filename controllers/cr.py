@@ -23,7 +23,7 @@ def shn_menu():
             #[T("Search"), False, URL(r=request, f="shelter", args="search")],
         ]],
     ]
-    if shn_has_role("Editor"):
+    if s3_has_role("Editor"):
         menu_editor = [
             [T("Shelter Types and Services"), False, URL(r=request, f="#"), [
                 [T("List / Add Services"), False, URL(r=request, f="shelter_service")],

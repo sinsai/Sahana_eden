@@ -740,6 +740,16 @@ class AuthS3(Auth):
                     if record and self.user.id == record.created_by:
                         authorised = True
 
+        elif session.s3.security_policy == 3:
+            # Controller ACLs
+            self.permission.skip_table_acls = True
+            authorised = self.permission.has_permission(table, record=record_id, method=method)
+
+        elif session.s3.security_policy == 4:
+            # Controller+Table ACLs
+            self.permission.skip_table_acls = False
+            authorised = self.permission.has_permission(table, record=record_id, method=method)
+
         else:
             # Full policy
             if self.shn_logged_in():
@@ -758,27 +768,39 @@ class AuthS3(Auth):
 
     # -------------------------------------------------------------------------
     def shn_accessible_query(self, method, table):
-
         """
-            Returns a query with all accessible records for the current logged in user
-            @note: This method does not work on GAE because it uses JOIN and IN
+        Returns a query with all accessible records for the current logged in user
+
+        @note: This method does not work on GAE because it uses JOIN and IN
+
         """
 
         db = self.db
         session = self.session
         T = self.environment.T
 
-        # If using the "simple" security policy then show all records
-        if session.s3.security_policy == 1:
-            # simple
+        policy = session.s3.security_policy
+
+        if policy == 1:
+            # "simple" security policy: show all records
             return table.id > 0
-        # If using the "editor" security policy then show all records
-        elif session.s3.security_policy == 2:
-            # editor
+        elif policy == 2:
+            # "editor" security policy: show all records
             return table.id > 0
-        # Administrators can see all data
+        elif policy == 3:
+            # Controller ACLs: use S3Permission method
+            query = self.permission.accessible_query(table, method)
+            return query
+        elif policy == 4:
+            # Controller+Table ACLs: use S3Permission method
+            query = self.permission.accessible_query(table, method)
+            return query
+
+        # "Full" security policy
         if self.shn_has_role(1):
+            # Administrators can see all data
             return table.id > 0
+
         # If there is access to the entire table then show all records
         try:
             user_id = self.user.id
@@ -1012,6 +1034,9 @@ class S3Permission(object):
         delete = DELETE
     )
 
+    ADMIN = 1
+    EDITOR = 4
+
     # Policy helpers
     most_permissive = lambda self, acl: \
                              reduce(lambda x, y: (x[0]|y[0], x[1]|y[1]),
@@ -1139,16 +1164,16 @@ class S3Permission(object):
 
         #return self.ALL # not used yet
 
-        ADMIN = 1
-        EDITOR = 4
-
         t = self.table # Permissions table
+
+        if record == 0:
+            record = None
 
         # Get user roles
         roles = []
         if self.session.s3 is not None:
             roles = self.session.s3.roles or []
-        if ADMIN in roles:
+        if self.ADMIN in roles:
             return self.ALL
 
         # Fall back to current request
@@ -1157,26 +1182,21 @@ class S3Permission(object):
 
         page_acl = self.page_acl(c=c, f=f)
 
-        # Done?
         if table is None or self.skip_table_acls:
-            acl = page_acl[0] | page_acl[1]
-            return acl
-
-        # Get the table ACL
-        if EDITOR in roles:
-            table_acl = (self.ALL, self.ALL)
+            acl = page_acl
         else:
-            table_acl = self.table_acl(table=table, c=c)
-
-        # Overall policy
-        acl = self.most_restrictive((page_acl, table_acl))
+            if self.EDITOR in roles:
+                table_acl = (self.ALL, self.ALL)
+            else:
+                table_acl = self.table_acl(table=table, c=c)
+            acl = self.most_restrictive((page_acl, table_acl))
 
         if acl[0] == self.NONE and acl[1] == self.NONE:
             # No table access
             acl = self.NONE
         elif record is None:
             # No record specified
-            acl = acl[1]
+            acl = acl[0] | acl[1]
         else:
             # Check record ownership
             acl = self.is_owner(table, record) and acl[0] or acl[1]
@@ -1232,9 +1252,9 @@ class S3Permission(object):
                 function_acl = []
                 for row in rows:
                     if not row.function:
-                        controller_acl += (row.oacl, row.uacl)
+                        controller_acl += [(row.oacl, row.uacl)]
                     else:
-                        function_acl += (row.oacl, row.uacl)
+                        function_acl += [(row.oacl, row.uacl)]
                 controller_acl = most_permissive(controller_acl)
                 function_acl = most_permissive(function_acl)
                 page_acl = most_permissive((controller_acl, function_acl))
@@ -1267,7 +1287,7 @@ class S3Permission(object):
 
         """
 
-        if table is None:
+        if table is None or self.skip_table_acls:
             return self.page_acl(c=c)
 
         t = self.table
@@ -1337,7 +1357,7 @@ class S3Permission(object):
 
         if not user_id and not roles:
             return False
-        elif 1 in roles:
+        elif self.ADMIN in roles:
             return True
         else:
             record_id = None
@@ -1406,14 +1426,17 @@ class S3Permission(object):
 
         # Available ACLs
         pacl = self.page_acl()
-        tacl = self.table_acl(table)
-        acl = (tacl[0] & pacl[0], tacl[1] & pacl[1])
+        if self.skip_table_acls:
+            acl = pacl
+        else:
+            tacl = self.table_acl(table)
+            acl = (tacl[0] & pacl[0], tacl[1] & pacl[1])
 
         # Ownership required?
         permitted = (acl[0] | acl[1]) & racl == racl
+        ownership_required = False
         if not permitted:
             query = (table[pkey] == None)
-            ownership_required = False
         elif "owned_by" in table or "created_by" in table:
             ownership_required = permitted and acl[1] & racl != racl
 
@@ -1430,6 +1453,48 @@ class S3Permission(object):
                     query = q
 
         return query
+
+
+    # -------------------------------------------------------------------------
+    def ownership_required(self, table, *methods):
+        """
+        Check if record ownership is required for a method
+
+        @param table: the table
+        @param methods: methods to check (OR)
+
+        """
+
+        roles = []
+        if self.session.s3 is not None:
+            roles = self.session.s3.roles or []
+
+        if self.ADMIN in roles or self.EDITOR in roles:
+            return False # Admins and Editors do not need to own a record
+
+        required = self.METHODS
+        racl = reduce(lambda a, b: a | b,
+                     [required[m] for m in methods if m in required], self.NONE)
+        if not racl:
+            return False
+
+        # Available ACLs
+        pacl = self.page_acl()
+        if self.skip_table_acls:
+            acl = pacl
+        else:
+            tacl = self.table_acl(table)
+            acl = (tacl[0] & pacl[0], tacl[1] & pacl[1])
+
+        # Ownership required?
+        permitted = (acl[0] | acl[1]) & racl == racl
+        ownership_required = False
+        if not permitted:
+            query = (table[pkey] == None)
+        elif "owned_by" in table or "created_by" in table:
+            ownership_required = permitted and acl[1] & racl != racl
+
+        return ownership_required
 
 
     # -------------------------------------------------------------------------
@@ -1939,7 +2004,6 @@ class S3RoleManager(S3Method):
                     form_rows.append(TR(TD(cn), TD(f), TD(uacl), TD(oacl), _class=_class))
 
             # Row to enter a new controller ACL
-            # @todo: make controllers a SELECT
             _class = i % 2 and "even" or "odd"
             c_opts = [OPTION("", _value=None, _selected="selected")] + \
                      [OPTION(self.controllers[c].name_nice, _value=c) for c in controllers]

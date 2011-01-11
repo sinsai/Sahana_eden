@@ -34,8 +34,8 @@ def s3_sessions():
         roles = [m.group_id for m in memberships]
     session.s3.roles = roles
     # not used yet:
-    #if not auth.permission():
-        #auth.permission.fail()
+    if not auth.permission():
+        auth.permission.fail()
 
     # Are we running in debug mode?
     session.s3.debug = request.vars.get("debug", None) or \
@@ -220,6 +220,8 @@ def shn_action_buttons(r,
     else:
         args = ["[id]"]
 
+    prefix, name, table, tablename = r.target()
+
     if shn_has_permission("update", r.table):
         if not update_url:
             update_url = str(URL(r=request, args = args + ["update"]))
@@ -230,9 +232,18 @@ def shn_action_buttons(r,
         if deletable and shn_has_permission("delete", r.table):
             if not delete_url:
                 delete_url = str(URL(r=request, args = args + ["delete"]))
-            response.s3.actions.append(
-                dict(label=str(DELETE), _class="delete-btn", url=delete_url)
-            )
+            if auth.permission.ownership_required(table, "delete"):
+                # Check which records can be deleted
+                q = auth.permission.accessible_query(table, "delete")
+                rows = db(q).select(table.id)
+                restrict = [str(row.id) for row in rows]
+                response.s3.actions.append(
+                    dict(label=str(DELETE), _class="delete-btn", url=delete_url, restrict=restrict)
+                )
+            else:
+                response.s3.actions.append(
+                    dict(label=str(DELETE), _class="delete-btn", url=delete_url)
+                )
         if copyable:
             if not copy_url:
                 copy_url = str(URL(r=request, args = args + ["copy"]))

@@ -126,6 +126,10 @@ class S3CRUD(S3Method):
 
         # Check permission for create
         authorised = self.permit("create", self.tablename)
+        # Check permission to update the parent when creating a component:
+        if r.component and r.record is not None:
+            authorised = authorised and self.permit("update", r.table,
+                                                    record_id=r.record.id)
         if not authorised:
             if r.method is not None:
                 r.unauthorised()
@@ -373,11 +377,18 @@ class S3CRUD(S3Method):
 
         # Get the target record ID
         record_id = self._record_id(r)
-        if not record_id:
-            if r.component and not r.multiple:
-                authorised = self.permit("create", tablename)
-                if authorised:
-                    return self.create(r, **attr)
+
+        # Check authorization to read the record
+        authorised = self.permit("read", table, record_id=record_id)
+        if not authorised:
+            r.unauthorised()
+
+        # If this is a single-component and no record exists,
+        # try to create one if the user is permitted
+        if not record_id and r.component and not r.multiple:
+            authorised = self.permit("create", tablename)
+            if authorised:
+                return self.create(r, **attr)
 
         if r.interactive:
 
@@ -632,10 +643,16 @@ class S3CRUD(S3Method):
         # Get the target record ID
         record_id = self._record_id(r)
 
-        # Check permission for delete
+        # Check if deletable
         if not deletable:
             r.error(403, self.manager.ERROR.NOT_PERMITTED)
+
+        # Check permission to delete
         authorised = self.permit("delete", self.tablename, record_id)
+        # Check permission to update the parent when deleting a component:
+        if r.component and r.record is not None:
+            authorised = authorised and self.permit("update", r.table,
+                                                    record_id=r.record.id)
         if not authorised:
             r.unauthorised()
 
@@ -707,6 +724,11 @@ class S3CRUD(S3Method):
         insertable = self._config("insertable", True)
         listadd = self._config("listadd", True)
         list_fields = self._config("list_fields")
+
+        # Check permission to read in this table
+        authorised = self.permit("read", self.tablename)
+        if not authorised:
+            r.unauthorised()
 
         # Pagination
         vars = request.get_vars

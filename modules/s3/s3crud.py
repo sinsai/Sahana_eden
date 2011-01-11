@@ -664,7 +664,9 @@ class S3CRUD(S3Method):
                         TD(INPUT(_type="submit", _value=T("Delete"),
                            _style="margin-left: 10px;")))))
             items = self.select(r, **attr).get("items", None)
-            output.update(form=form, items=items)
+            if isinstance(items, DIV):
+                output.update(form=form)
+            output.update(items=items)
             response.view = self._view(r, "delete.html")
 
         elif r.http == "POST" or \

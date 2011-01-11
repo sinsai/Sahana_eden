@@ -1172,6 +1172,9 @@ class S3Permission(object):
         # Get user roles
         roles = []
         if self.session.s3 is not None:
+            # Do not check ACLs in policies without ACLs
+            if self.session.s3.security_policy not in (3, 4):
+                return self.ALL
             roles = self.session.s3.roles or []
         if self.ADMIN in roles:
             return self.ALL
@@ -1467,6 +1470,9 @@ class S3Permission(object):
 
         roles = []
         if self.session.s3 is not None:
+            # No ownership required in policies without ACLs
+            if self.session.s3.security_policy not in (3, 4):
+                return False
             roles = self.session.s3.roles or []
 
         if self.ADMIN in roles or self.EDITOR in roles:

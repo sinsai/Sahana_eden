@@ -222,40 +222,42 @@ def shn_action_buttons(r,
 
     prefix, name, table, tablename = r.target()
 
-    if shn_has_permission("update", r.table):
+    if shn_has_permission("update", table) and \
+       not auth.permission.ownership_required(table, "update"):
         if not update_url:
             update_url = str(URL(r=request, args = args + ["update"]))
         response.s3.actions = [
             dict(label=str(UPDATE), _class="action-btn", url=update_url),
         ]
-        # Provide the ability to delete records in bulk
-        if deletable and shn_has_permission("delete", r.table):
-            if not delete_url:
-                delete_url = str(URL(r=request, args = args + ["delete"]))
-            if auth.permission.ownership_required(table, "delete"):
-                # Check which records can be deleted
-                q = auth.permission.accessible_query(table, "delete")
-                rows = db(q).select(table.id)
-                restrict = [str(row.id) for row in rows]
-                response.s3.actions.append(
-                    dict(label=str(DELETE), _class="delete-btn", url=delete_url, restrict=restrict)
-                )
-            else:
-                response.s3.actions.append(
-                    dict(label=str(DELETE), _class="delete-btn", url=delete_url)
-                )
-        if copyable:
-            if not copy_url:
-                copy_url = str(URL(r=request, args = args + ["copy"]))
-            response.s3.actions.append(
-                dict(label=str(COPY), _class="action-btn", url=copy_url)
-            )
     else:
         if not read_url:
             read_url = str(URL(r=request, args = args))
         response.s3.actions = [
             dict(label=str(READ), _class="action-btn", url=read_url)
         ]
+
+    if deletable and shn_has_permission("delete", table):
+        if not delete_url:
+            delete_url = str(URL(r=request, args = args + ["delete"]))
+            # Check which records can be deleted
+        if auth.permission.ownership_required(table, "delete"):
+            q = auth.shn_accessible_query("delete", table)
+            rows = db(q).select(table.id)
+            restrict = [str(row.id) for row in rows]
+            response.s3.actions.append(
+                dict(label=str(DELETE), _class="delete-btn", url=delete_url, restrict=restrict)
+            )
+        else:
+            response.s3.actions.append(
+                dict(label=str(DELETE), _class="delete-btn", url=delete_url)
+            )
+
+    if copyable and shn_has_permission("create", table):
+        if not copy_url:
+            copy_url = str(URL(r=request, args = args + ["copy"]))
+        response.s3.actions.append(
+            dict(label=str(COPY), _class="action-btn", url=copy_url)
+        )
 
     return
 
@@ -873,7 +875,8 @@ def s3_rest_controller(prefix, resourcename, **attr):
             # Get table config
             model = s3xrc.model
             listadd = model.get_config(table, "listadd", True)
-            editable = model.get_config(table, "editable", True)
+            editable = model.get_config(table, "editable", True) and \
+                       not auth.permission.ownership_required(table, "update")
             deletable = model.get_config(table, "deletable", True)
             copyable = model.get_config(table, "copyable", False)
 

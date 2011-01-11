@@ -38,7 +38,7 @@ logs_menu = [
                 [T("Add"), False, URL(r=request, c="supply", f="item", args="create")],
             ]],
             ]
-if shn_has_role(1):
+if s3_has_role(1):
     logs_menu.append(
         [T("Item Categories"), False, URL(r=request, c="supply", f="item_category"),[
             [T("List"), False, URL(r=request, c="supply", f="item_category")],

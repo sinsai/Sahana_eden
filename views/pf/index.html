@@ -1,7 +1,7 @@
 {{extend "layout.html"}}
 <div id='home'>
 {{=H2(module_name)}}
-{{if auth.shn_logged_in():}}
+{{if auth.s3_logged_in():}}
 <div>
 {{=H5(T("Search here for a person's record in order to:"))}}
 <ul style="margin-left: 40px;">

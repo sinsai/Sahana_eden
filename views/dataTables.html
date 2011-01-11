@@ -195,6 +195,19 @@ $(document).ready(function() {
                 // Extract the id # from the link
                 var re = />(.*)</i;
                 id = re.exec(aData[0])[1];
+                // Check if action is restricted to a subset of records
+                if ("restrict" in Actions[i]) {
+                    permitted = false;
+                    for (j=0, iLen=Actions[i].restrict.length; j < iLen; j++) {
+                        if (id == Actions[i].restrict[j]) {
+                            permitted = true;
+                            break;
+                        }
+                    }
+                    if (!permitted) {
+                        continue;
+                    }
+                }
                 c = Actions[i]._class
                 re = /%5Bid%5D/g;
                 Buttons = Buttons + '<a class="'+ c +'" href="' + Actions[i].url.replace(re, id) + '">' + Utf8.decode(Actions[i].label) + '</a>' + '&nbsp;';

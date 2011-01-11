@@ -33,7 +33,7 @@ global_env['datetime'] = datetime
 #
 # S3 Auth
 #
-if not shn_has_role(1):
+if not s3_has_role(1):
     unauthorised()
 
 module = "admin"

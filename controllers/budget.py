@@ -159,7 +159,7 @@ def index():
 def parameters():
     "Select which page to go to depending on login status"
     table = db.budget_parameter
-    authorised = shn_has_permission("update", table)
+    authorised = s3_has_permission("update", table)
     if authorised:
         redirect (URL(r=request, f="parameter", args=[1, "update"]))
     else:
@@ -385,7 +385,7 @@ def kit_item():
         redirect(URL(r=request, f="kit"))
 
     table = db.budget_kit_item
-    authorised = shn_has_permission("update", table)
+    authorised = s3_has_permission("update", table)
 
     _kit = db.budget_kit[kit]
     title = _kit.code
@@ -495,7 +495,7 @@ def kit_update_items():
         redirect(URL(r=request, f="kit"))
 
     table = db.budget_kit_item
-    authorised = shn_has_permission("update", table)
+    authorised = s3_has_permission("update", table)
     if authorised:
         for var in request.vars:
             if "qty" in var:
@@ -727,7 +727,7 @@ def kit_export_csv():
         _table = module + "_" + resourcename
         table = db[_table]
         # Filter Search list to just those records which user can read
-        query = shn_accessible_query("read", table)
+        query = s3_accessible_query("read", table)
         # Filter Search List to remove entries which have been deleted
         if "deleted" in table:
             query = ((table.deleted == False) | (table.deleted == None)) & query # includes None for backward compatability
@@ -798,7 +798,7 @@ def bundle_kit_item():
         redirect(URL(r=request, f="bundle"))
 
     tables = [db.budget_bundle_kit, db.budget_bundle_item]
-    authorised = shn_has_permission("update", tables[0]) and shn_has_permission("update", tables[1])
+    authorised = s3_has_permission("update", tables[0]) and s3_has_permission("update", tables[1])
 
     _bundle = db.budget_bundle[bundle]
     title = _bundle.name
@@ -1007,7 +1007,7 @@ def bundle_update_items():
         redirect(URL(r=request, f="bundle"))
 
     tables = [db.budget_bundle_kit, db.budget_bundle_item]
-    authorised = shn_has_permission("update", tables[0]) and shn_has_permission("update", tables[1])
+    authorised = s3_has_permission("update", tables[0]) and s3_has_permission("update", tables[1])
     if authorised:
         for var in request.vars:
             if "kit" in var:
@@ -1177,7 +1177,7 @@ def budget_staff_bundle():
         redirect(URL(r=request, f="budget"))
 
     tables = [db.budget_budget_staff, db.budget_budget_bundle]
-    authorised = shn_has_permission("update", tables[0]) and shn_has_permission("update", tables[1])
+    authorised = s3_has_permission("update", tables[0]) and s3_has_permission("update", tables[1])
 
     _budget = db.budget_budget[budget]
     title = _budget.name
@@ -1423,7 +1423,7 @@ def budget_update_items():
         redirect(URL(r=request, f="budget"))
 
     tables = [db.budget_budget_staff, db.budget_budget_bundle]
-    authorised = shn_has_permission("update", tables[0]) and shn_has_permission("update", tables[1])
+    authorised = s3_has_permission("update", tables[0]) and s3_has_permission("update", tables[1])
     if authorised:
         for var in request.vars:
             if "staff" in var:

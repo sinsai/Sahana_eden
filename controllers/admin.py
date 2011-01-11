@@ -24,7 +24,7 @@ def index():
     response.title = module_name
     return dict(module_name=module_name)
 
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def setting():
 
     """ RESTful CRUD controller """
@@ -67,7 +67,7 @@ def setting():
     output = s3_rest_controller("s3", resourcename, list_btn=None)
     return output
 
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def theme():
     """ RESTful CRUD controller """
     resource = "theme"
@@ -230,7 +230,7 @@ def theme_check(form):
     # Validation passed
     return
 
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def user():
     """ RESTful CRUD controller """
     module = "auth"
@@ -239,9 +239,8 @@ def user():
     table = db[tablename]
 
     # Model options
-    s3xrc.model.add_component(module, "membership",
-                              joinby=dict(auth_user="user_id"),
-                              multiple=True)
+    role_manager = s3base.S3RoleManager()
+    s3xrc.model.set_method(module, resource, method="roles", action=role_manager)
 
     # CRUD Strings
     ADD_USER = T("Add User")
@@ -291,9 +290,15 @@ def user():
     s3xrc.model.configure(table,
         main="first_name",
         # Add users to Person Registry & 'Authenticated' role:
-        create_onaccept = lambda form: auth.shn_register(form),
+        create_onaccept = lambda form: auth.s3_register(form),
         create_onvalidation = lambda form: user_create_onvalidation(form))
-    return s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
+
+    if response.s3.actions:
+        response.s3.actions.insert(1,
+                    dict(label=str(T("Roles")), _class="action-btn",
+                         url=str(URL(r=request, c="admin", f="user", args=["[id]", "roles"]))))
+    return output
 
 def user_create_onvalidation (form):
     if (form.request_vars.has_key("password_two") and \
@@ -320,7 +325,7 @@ def user_approve(form):
         else:
             return
 
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def usergroup():
     """
         User update form with groups
@@ -394,7 +399,7 @@ def usergroup():
 
     return dict(data=data, records=records, form=form)
 
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def group():
 
     """ RESTful CRUD controller """
@@ -427,7 +432,7 @@ def group():
     s3xrc.model.configure(table, main="role")
     return s3_rest_controller(prefix, resourcename)
 
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def membership():
 
     """ RESTful CRUD controller """
@@ -462,7 +467,7 @@ def membership():
     s3xrc.model.configure(table, main="user_id")
     return s3_rest_controller(prefix, resourcename)
 
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def users():
     """
         List/amend which users are in a Group
@@ -537,7 +542,7 @@ def group_dupes(form, page, arg):
         session.error = T("User already has this role")
         redirect(URL(r=request, f=page, args=arg))
 
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def group_remove_users():
     """
         Remove users from a group
@@ -557,7 +562,7 @@ def group_remove_users():
     session.flash = T("Users removed")
     redirect(URL(r=request, f="users", args=[group]))
 
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def groups():
     """
         List/amend which groups a User is in
@@ -614,7 +619,7 @@ def groups():
     output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form=form))
     return output
 
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def user_remove_groups():
     """ Remove groups from a user """
     if len(request.args) == 0:
@@ -633,7 +638,7 @@ def user_remove_groups():
     redirect(URL(r=request, f="groups", args=[user]))
 
 # Import Data
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def import_data():
     """
         Import data via POST upload to CRUD controller. Old - being replaced by Sync/Importer.
@@ -651,7 +656,7 @@ def import_data():
     return dict(title=title,
                 import_job_form=import_job_form)
 
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def import_csv_data():
     """
         Import CSV data via POST upload to Database.
@@ -674,7 +679,7 @@ def export_data():
     title = T("Export Data")
     return dict(title=title)
 
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def export_csv():
     """
         Export entire database as CSV. Old - being replaced by Sync.
@@ -695,7 +700,7 @@ def export_csv():
 
 # Unstructured Data Import
 # Deprecated - being replaced by Importer
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def import_job():
     "RESTful CRUD controller to handle 'jobs' for importing unstructured data."
     # CRUD Strings
@@ -957,7 +962,7 @@ def handleResults():
     return dict(title=title, item=message)
 
 # Ticket Viewer functions Borrowed from admin application of web2py
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def errors():
     """ Error handler """
 
@@ -1035,7 +1040,7 @@ class TRACEBACK(object):
 
 
 # Ticket viewing
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def ticket():
     """ Ticket handler """
 
@@ -1055,7 +1060,7 @@ def ticket():
                 layer=e.layer)
 
 # -----------------------------------------------------------------------------
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def role():
     """
     Role Editor
@@ -1101,7 +1106,7 @@ def role():
 
 
 # -----------------------------------------------------------------------------
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def acl():
     """
     Preliminary controller for ACLs

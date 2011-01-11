@@ -62,9 +62,9 @@ auth = s3base.AuthS3(globals(), deployment_settings, db)
 s3_audit = s3base.S3Audit(db, session, migrate=migrate)
 
 # Shortcuts
-shn_has_role = auth.shn_has_role
-shn_has_permission = auth.shn_has_permission
-shn_accessible_query = auth.shn_accessible_query
+s3_has_role = auth.s3_has_role
+s3_has_permission = auth.s3_has_permission
+s3_accessible_query = auth.s3_accessible_query
 
 # Custom classes which extend default Gluon
 FieldS3 = s3base.FieldS3

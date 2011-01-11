@@ -95,7 +95,7 @@ def index():
 
     self_registration = deployment_settings.get_security_self_registration()
 
-    title = T("Sahana Eden Open Source Disaster Management Platform")
+    title = T("Sahana Eden Disaster Management Platform")
     login_form = None
     register_form = None
 
@@ -109,6 +109,7 @@ def index():
             request.args = ["register"]
             register_form = auth()
 
+    response.title = title
     return dict(title = title,
                 div_sit = div_sit,
                 div_arrow_1 = div_arrow_1,

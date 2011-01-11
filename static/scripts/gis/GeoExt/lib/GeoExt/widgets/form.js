@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008-2010 The Open Source Geospatial Foundation
+ * Copyright (c) 2008-2011 The Open Source Geospatial Foundation
  * 
  * Published under the BSD license.
  * See http://svn.geoext.org/core/trunk/geoext/license.txt for the full text
@@ -64,10 +64,12 @@ GeoExt.form.toFilter = function(form, logicalOp, wildcard) {
         );
     }
 
-    return new OpenLayers.Filter.Logical({
-        type: logicalOp || OpenLayers.Filter.Logical.AND,
-        filters: filters
-    });
+    return filters.length == 1 && logicalOp != OpenLayers.Filter.Logical.NOT ?
+        filters[0] :
+        new OpenLayers.Filter.Logical({
+            type: logicalOp || OpenLayers.Filter.Logical.AND,
+            filters: filters
+        });
 };
 
 /** private: constant[FILTER_MAP]
@@ -162,7 +164,7 @@ GeoExt.form.recordToField = function(record) {
     }
 
     return field;
-}
+};
 
 /** private: constant[REGEXES]
   *  ``Object`` Regular expressions for determining what type

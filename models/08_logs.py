@@ -21,7 +21,7 @@ logs_menu = [
             [
                 [T("List"), False, URL(r=request, c="logs", f="req")],
                 [T("Add"), False, URL(r=request, c="logs", f="req", args="create")],
-            ]],            
+            ]],
             [T("Receive"), False, URL(r=request, c="logs", f="recv"),
             [
                 [T("List"), False, URL(r=request, c="logs", f="recv")],
@@ -31,7 +31,7 @@ logs_menu = [
             [
                 [T("List"), False, URL(r=request, c="logs", f="send")],
                 [T("Add"), False, URL(r=request, c="logs", f="send", args="create")],
-            ]],            
+            ]],
             [T("Catalog Items"), False, URL(r=request, c="supply", f="item"),
             [
                 [T("List"), False, URL(r=request, c="supply", f="item")],
@@ -46,24 +46,18 @@ if shn_has_role(1):
         ]]
     )
 #==============================================================================
-#Nursix: Could this be made more generic?
-def shn_create_next_component(s3crud, module, resourcename, component):
-    return URL(r = request, c= module, f = resourcename,
-               args = [s3xrc.get_session(module, resourcename), component],
-               )    
-#==============================================================================        
-
 module = "logs"
 if deployment_settings.has_module(module):
+
 #==============================================================================
-# Request 
+# Request
     resourcename = "req"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            Field("request_date", 
+                            Field("request_date",
                                   "date",
                                   label = T("Date Requested")),
-                            Field("require_date", 
+                            Field("require_date",
                                   "date",
                                   label = T("Date Required")),
                             inventory_store_id(label = T("Requested From Warehouse")),
@@ -100,11 +94,11 @@ if deployment_settings.has_module(module):
         if id:
             logs_req_row = db(db.logs_req.id == id).\
                               select(db.logs_req.date,
-                                     db.logs_req.from_location_id,  
+                                     db.logs_req.from_location_id,
                                      limitby=(0, 1))\
                               .first()
             return "%s - %s" % (shn_gis_location_represent( \
-                                logs_req_row.from_location_id), 
+                                logs_req_row.from_location_id),
                                 logs_req_row.date)
         else:
             return NONE
@@ -113,10 +107,10 @@ if deployment_settings.has_module(module):
     # Reusable Field
     logs_req_id = S3ReusableField("logs_req_id", db.logs_req, sortby="name",
                                   requires = IS_NULL_OR( \
-                                                 IS_ONE_OF(db, 
-                                                           "logs_req.id", 
-                                                           logs_req_represent, 
-                                                           orderby="logs_req_id.date", 
+                                                 IS_ONE_OF(db,
+                                                           "logs_req.id",
+                                                           logs_req_represent,
+                                                           orderby="logs_req_id.date",
                                                            sort=True)),
                                  represent = logs_req_represent,
                                  label = T("Receive Shipment"),
@@ -124,21 +118,19 @@ if deployment_settings.has_module(module):
                                  #          DIV( _class="tooltip", _title=T("Distribution") + "|" + T("Add Distribution."))),
                                  ondelete = "RESTRICT"
                                  )
-    
+
     #------------------------------------------------------------------------------
     # Logs In as a component of Inventory Store
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict( inventory_store = \
-                                               "inventory_store_id" ) )    
-    
+                                               "inventory_store_id" ) )
+
     #------------------------------------------------------------------------------
     # Redirect to the Items tabs after creation
-    s3xrc.model.configure(table, 
-                          create_next = lambda s3crud: \
-                              shn_create_next_component(s3crud, 
-                                                        "logs", "req", "req_item")
-                          )
+    s3xrc.model.configure(table,
+                          create_next = URL(r=request, c="logs", f="req", args=["[id]", "req_item"]))
+
     #==============================================================================
     # Request Items
     #
@@ -176,12 +168,12 @@ if deployment_settings.has_module(module):
     # Request Items as a component of Items
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(logs_req = "logs_req_id", 
-                                          supply_item = "item_id"))    
-    
+                              joinby=dict(logs_req = "logs_req_id",
+                                          supply_item = "item_id"))
+
 #==============================================================================
 # Received (In/Receive / Donation / etc)
-#    
+#
     resourcename = "recv"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
@@ -220,11 +212,11 @@ if deployment_settings.has_module(module):
         if id:
             logs_recv_row = db(db.logs_recv.id == id).\
                               select(db.logs_recv.date,
-                                     db.logs_recv.from_location_id,  
+                                     db.logs_recv.from_location_id,
                                      limitby=(0, 1))\
                               .first()
             return "%s - %s" % (shn_gis_location_represent( \
-                                logs_recv_row.from_location_id), 
+                                logs_recv_row.from_location_id),
                                 logs_recv_row.date)
         else:
             return NONE
@@ -232,9 +224,9 @@ if deployment_settings.has_module(module):
     # -----------------------------------------------------------------------------
     # Reusable Field
     logs_recv_id = S3ReusableField("logs_recv_id", db.logs_recv, sortby="date",
-                                 requires = IS_NULL_OR(IS_ONE_OF(db, 
-                                                                 "logs_recv.id", 
-                                                                 logs_recv_represent, 
+                                 requires = IS_NULL_OR(IS_ONE_OF(db,
+                                                                 "logs_recv.id",
+                                                                 logs_recv_represent,
                                                                  orderby="logs_recv_id.date", sort=True)),
                                  represent = logs_recv_represent,
                                  label = T("Receive Shipment"),
@@ -242,20 +234,17 @@ if deployment_settings.has_module(module):
                                  #          DIV( _class="tooltip", _title=T("Distribution") + "|" + T("Add Distribution."))),
                                  ondelete = "RESTRICT"
                                  )
-    
+
     #------------------------------------------------------------------------------
     # Logs In as a component of Inventory Store
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict( inventory_store ="inventory_store_id" ) )   
-     
+                              joinby=dict( inventory_store ="inventory_store_id" ) )
+
     #------------------------------------------------------------------------------
     # Redirect to the Items tabs after creation
-    s3xrc.model.configure(table, 
-                          create_next = lambda s3crud: \
-                              shn_create_next_component(s3crud, 
-                                                        "logs", "recv", "recv_item")
-                          )    
+    s3xrc.model.configure(table,
+                          create_next = URL(r=request, c="logs", f="recv", args=["[id]", "recv_item"]))
 
     #==============================================================================
     # In (Receive / Donation / etc) Items
@@ -294,12 +283,12 @@ if deployment_settings.has_module(module):
     # In Items as a component of Items
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(logs_recv = "logs_recv_id", 
-                                          supply_item = "item_id"))   
+                              joinby=dict(logs_recv = "logs_recv_id",
+                                          supply_item = "item_id"))
 
 #==============================================================================
-# Send (Outgoing / Dispatch / etc) 
-#    
+# Send (Outgoing / Dispatch / etc)
+#
     resourcename = "send"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
@@ -337,11 +326,11 @@ if deployment_settings.has_module(module):
         if id:
             logs_req_row = db(db.logs_send.id == id).\
                               select(db.logs_send.date,
-                                     db.logs_send.to_location_id,  
+                                     db.logs_send.to_location_id,
                                      limitby=(0, 1))\
                               .first()
             return "%s - %s" % (shn_gis_location_represent( \
-                                    logs_send_row.to_location_id), 
+                                    logs_send_row.to_location_id),
                                 logs_send_row.date)
         else:
             return NONE
@@ -349,9 +338,9 @@ if deployment_settings.has_module(module):
     # -----------------------------------------------------------------------------
     # Reusable Field
     logs_send_id = S3ReusableField("logs_send_id", db.logs_send, sortby="date",
-                                 requires = IS_NULL_OR(IS_ONE_OF(db, 
-                                                                 "logs_send.id", 
-                                                                 logs_send_represent, 
+                                 requires = IS_NULL_OR(IS_ONE_OF(db,
+                                                                 "logs_send.id",
+                                                                 logs_send_represent,
                                                                  orderby="logs_send_id.date", sort=True)),
                                  represent = logs_send_represent,
                                  label = T("Receive Shipment"),
@@ -359,20 +348,17 @@ if deployment_settings.has_module(module):
                                  #          DIV( _class="tooltip", _title=T("Distribution") + "|" + T("Add Distribution."))),
                                  ondelete = "RESTRICT"
                                  )
-    
+
     #------------------------------------------------------------------------------
     # Logs In as a component of Inventory Store
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict( inventory_store ="inventory_store_id" ) )    
-    
+                              joinby=dict( inventory_store ="inventory_store_id" ) )
+
     #------------------------------------------------------------------------------
     # Redirect to the Items tabs after creation
-    s3xrc.model.configure(table, 
-                          create_next = lambda s3crud: \
-                              shn_create_next_component(s3crud, 
-                                                        "logs", "out", "send_item")
-                          )    
+    s3xrc.model.configure(table,
+                          create_next = URL(r=request, c="logs", f="send", args=["[id]", "send_item"]))
 
     #==============================================================================
     # Send (Outgoing / Dispatch / etc) Items
@@ -407,9 +393,11 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Sent Items currently registered"))
 
     #------------------------------------------------------------------------------
-    # In Items as component of In
-    # In Items as a component of Items
+    # Send Items as component of Send
+    # Send Items as a component of Items
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(logs_send = "logs_send_id", 
-                                          supply_item = "item_id"))         
+                              joinby=dict(logs_send = "logs_send_id",
+                                          supply_item = "item_id"))
+
+#==============================================================================

@@ -323,10 +323,15 @@ table = db.define_table(tablename,
                         Field("name", notnull=True),
                         organisation_id(),
                         Field("type", "integer"),
-                        location_id(),
                         Field("parent", "reference org_office"),   # This form of hierarchy may not work on all Databases
-                        Field("address", "text"),
-                        Field("postcode"),
+                        location_id(),
+                        Field("address", "text", label=T("Address"), writable=False), # Populated from location_id
+                        Field("L4", label=deployment_settings.get_gis_locations_hierarchy("L4"), writable=False), # Populated from location_id
+                        Field("L3", label=deployment_settings.get_gis_locations_hierarchy("L3"), writable=False), # Populated from location_id
+                        Field("L2", label=deployment_settings.get_gis_locations_hierarchy("L2"), writable=False), # Populated from location_id
+                        Field("L1", label=deployment_settings.get_gis_locations_hierarchy("L1"), writable=False), # Populated from location_id
+                        Field("L0", label=deployment_settings.get_gis_locations_hierarchy("L0"), writable=False), # Populated from location_id
+                        Field("postcode", label=T("Postcode"), writable=False), # Populated from location_id
                         Field("phone1"),
                         Field("phone2"),
                         Field("email"),
@@ -359,8 +364,6 @@ table.number_of_vehicles.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
 table.name.label = T("Name")
 table.parent.label = T("Parent Office")
 table.type.label = T("Type")
-table.address.label = T("Address")
-table.postcode.label = T("Postcode")
 table.phone1.label = T("Phone 1")
 table.phone2.label = T("Phone 2")
 table.email.label = T("Email")
@@ -407,12 +410,19 @@ s3xrc.model.add_component(module, resourcename,
 
 s3xrc.model.configure(table,
                       super_entity=(db.pr_pentity, db.org_site),
-                      list_fields=["id",
-                                   "name",
-                                   "organisation_id",   # Filtered in Component views
-                                   "location_id",
-                                   "phone1",
-                                   "email"])
+                      onvalidation=lambda form: address_onvalidation(form),
+                      list_fields=[
+                        "id",
+                        "name",
+                        "organisation_id",   # Filtered in Component views
+                        #"L4",
+                        "L3",
+                        "L2",
+                        "L1",
+                        "L0",
+                        "phone1",
+                        "email"
+                    ])
 
 # Donors are a type of Organisation
 def shn_donor_represent(donor_ids):
@@ -428,7 +438,7 @@ ADD_DONOR = T("Add Donor")
 donor_id = S3ReusableField("donor_id", db.org_organisation, sortby="name",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", "%(name)s", multiple=True, filterby="type", filter_opts=[4])),
                     represent = shn_donor_represent,
-                    label = T("Donor"),
+                    label = T("Funding Organization"),
                     comment = DIV(A(ADD_DONOR, _class="colorbox", _href=URL(r=request, c="org", f="organisation", args="create", vars=dict(format="popup", child="donor_id")), _target="top", _title=ADD_DONOR),
                               DIV( _class="tooltip", _title=ADD_DONOR + "|" + T("The Donor(s) for this project. Multiple values can be selected by holding down the 'Control' key."))),
                     ondelete = "RESTRICT"

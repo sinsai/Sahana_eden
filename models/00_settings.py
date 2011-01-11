@@ -20,29 +20,75 @@ response.s3.gis = Storage()
 if not session.s3:
     session.s3 = Storage()
 
-########################
-# Is it a mobile client?
-########################
-def ifmobile(request):
+###############
+# Client tests
+###############
+def s3_is_mobile_client(request):
+    """
+        Simple UA Test whether client is a mobile device
+    """
+
     if request.env.http_x_wap_profile or request.env.http_profile:
         return True
-    if request.env.http_accept and (request.env.http_accept.find("text/vnd.wap.wml") > 0):
+    if request.env.http_accept and \
+       request.env.http_accept.find("text/vnd.wap.wml") > 0:
         return True
     keys = ["iphone", "ipod", "android", "opera mini", "blackberry", "palm", "windows ce", "iemobile", "smartphone", "medi", "sk-0", "vk-v", "aptu", "xda-", "mtv ", "v750", "p800", "opwv", "send", "xda2", "sage", "t618", "qwap", "veri", "t610", "tcl-", "vx60", "vx61", "lg-k", "lg-l", "lg-m", "lg-o", "lg-a", "lg-b", "lg-c", "xdag", "lg-f", "lg-g", "sl45", "emul", "lg-p", "lg-s", "lg-t", "lg-u", "lg-w", "6590", "t250", "qc21", "ig01", "port", "m1-w", "770s", "n710", "ez60", "mt50", "g1 u", "vk40", "bird", "tagt", "pose", "jemu", "beck", "go.w", "jata", "gene", "smar", "g-mo", "o2-x", "htc_", "hei-", "fake", "qc-7", "smal", "htcp", "htcs", "craw", "htct", "aste", "htca", "htcg", "teli", "telm", "kgt", "mwbp", "kwc-", "owg1", "htc ", "kgt/", "htc-", "benq", "slid", "qc60", "dmob", "blac", "smt5", "nec-", "sec-", "sec1", "sec0", "fetc", "spv ", "mcca", "nem-", "spv-", "o2im", "m50/", "ts70", "arch", "qtek", "opti", "devi", "winw", "rove", "winc", "talk", "pant", "netf", "pana", "esl8", "pand", "vite", "v400", "whit", "scoo", "good", "nzph", "mtp1", "doco", "raks", "wonu", "cmd-", "cell", "mode", "im1k", "modo", "lg-d", "idea", "jigs", "bumb", "sany", "vulc", "vx70", "psio", "fly_", "mate", "pock", "cdm-", "fly-", "i230", "lge-", "lge/", "argo", "qc32", "n701", "n700", "mc21", "n500", "midp", "t-mo", "airn", "bw-u", "iac", "bw-n", "lg g", "erk0", "sony", "alav", "503i", "pt-g", "au-m", "treo", "ipaq", "dang", "seri", "mywa", "eml2", "smb3", "brvw", "sgh-", "maxo", "pg-c", "qci-", "vx85", "vx83", "vx80", "vx81", "pg-8", "pg-6", "phil", "pg-1", "pg-2", "pg-3", "ds12", "scp-", "dc-s", "brew", "hipt", "kddi", "qc07", "elai", "802s", "506i", "dica", "mo01", "mo02", "avan", "kyoc", "ikom", "siem", "kyok", "dopo", "g560", "i-ma", "6310", "sie-", "grad", "ibro", "sy01", "nok6", "el49", "rim9", "upsi", "inno", "wap-", "sc01", "ds-d", "aur ", "comp", "wapp", "wapr", "waps", "wapt", "wapu", "wapv", "wapy", "newg", "wapa", "wapi", "wapj", "wapm", "hutc", "lg/u", "yas-", "hita", "lg/l", "lg/k", "i-go", "4thp", "bell", "502i", "zeto", "ez40", "java", "n300", "n302", "mmef", "pn-2", "newt", "1207", "sdk/", "gf-5", "bilb", "zte-", "maui", "qc-3", "qc-2", "blaz", "r600", "hp i", "qc-5", "moto", "cond", "motv", "virg", "ccwa", "audi", "shar", "i-20", "samm", "sama", "sams", "sch-", "mot ", "http", "505i", "mot-", "n502", "topl", "n505", "mobi", "3gso", "wmlb", "ezwa", "qc12", "abac", "tdg-", "neon", "mio8", "sp01", "rozo", "vx98", "dait", "t600", "anyw", "tx-9", "sava", "m-cr", "tsm-", "mioa", "tsm5", "klon", "capi", "tsm3", "hcit", "libw", "lg50", "mc01", "amoi", "lg54", "ez70", "se47", "n203", "vk52", "vk53", "vk50", "webc", "haie", "semc", "grun", "play", "palm", "a wa", "anny", "prox", "o2 x", "ezze", "symb", "hs-c", "pg13", "mits", "kpt ", "qa-a", "501i", "pdxg", "iris", "pluc", "acoo", "soft", "hpip", "iac/", "iac-", "aus ", "s55/", "vx53", "vx52", "chtm", "meri", "merc", "your", "huaw", "cldc", "voda", "smit", "x700", "mozz", "lexi", "up.b", "sph-", "keji", "jbro", "wig ", "attw", "pire", "r380", "lynx", "anex", "vm40", "hd-m", "504i", "w3c ", "c55/", "w3c-", "upg1", "t218", "tosh", "acer", "hd-t", "eric", "hd-p", "noki", "acs-", "dbte", "n202", "tim-", "alco", "ezos", "dall", "leno", "alca", "asus", "m3ga", "utst", "aiko", "n102", "n101", "n100", "oran"]
     ua = (request.env.http_user_agent or "").lower()
-    if [key for key in keys if ua.find(key) >= 0]:
+    if [key for key in keys if key in ua]:
         return True
     return False
 
-response.s3.mobile = ifmobile(request)
+# Store in session
+if session.s3.mobile is None:
+    session.s3.mobile = s3_is_mobile_client(request)
+
+def s3_populate_browser_compatibility(request):
+    """
+        Use WURFL for browser compatibility detection
+
+        @ToDo: define a list of features to store
+    """
+
+    features = Storage(
+        #category = ["list","of","features","to","store"]
+    )
+
+    try:
+        from pywurfl.algorithms import TwoStepAnalysis
+    except ImportError:
+        s3_debug("pywurfl python module has not been installed, browser compatibility listing will not be populated. Download pywurfl from http://pypi.python.org/pypi/pywurfl/")
+        return False
+    wurfl = local_import("wurfl")
+    device = wurfl.devices.select_ua(unicode(request.env.http_user_agent),
+                                     search=TwoStepAnalysis(wurfl.devices))
+
+    browser = Storage()
+    #for feature in device:
+        #if feature[0] not in category_list:
+            #category_list.append(feature[0])
+    #for category in features:
+        #if category in
+        #browser[category] = Storage()
+    for feature in device:
+        if feature[0] in features and \
+           feature[1] in features[feature[0]]:
+            browser[feature[0]][feature[1]] = feature[2]
+
+    return browser
+
+# Store in session
+# - commented-out until we make use of it
+#if session.s3.browser is None:
+#    session.s3.browser = s3_populate_browser_compatibility(request)
 
 ##################
 # Global variables
 ##################
 
 # Interactive view formats
-shn_interactive_view_formats = ("html", "popup", "iframe")
-s3.interactive_view_formats = shn_interactive_view_formats
+s3.interactive_view_formats = ("html", "popup", "iframe")
+shn_interactive_view_formats = s3.interactive_view_formats  # backwards-compatibility
 
 # Error messages
 UNAUTHORISED = T("Not authorised!")
@@ -79,11 +125,13 @@ s3.l10n_languages = deployment_settings.get_L10n_languages()
 
 # Default strings are in US English
 T.current_languages = ["en", "en-us"]
+language = "en"
 # Check if user has selected a specific language
 if request.vars._language:
     session.s3.language = request.vars._language
 if session.s3.language:
-    T.force(session.s3.language)
+    language = session.s3.language
+    T.force(language)
 elif auth.is_logged_in():
     # Use user preference
     language = auth.user.language
@@ -91,6 +139,19 @@ elif auth.is_logged_in():
 #else:
 #    # Use what browser requests (default web2py behaviour)
 #    T.force(T.http_accept_language)
+
+# Store for views (e.g. Ext)
+if language.find("-") == -1:
+    # Ext peculiarities
+    if language == "vi":
+        response.s3.language = "vn"
+    elif language == "el":
+        response.s3.language = "el_GR"
+    else:
+        response.s3.language = language
+else:
+    lang_parts = language.split("-")
+    response.s3.language = "%s_%s" % (lang_parts[0], lang_parts[1].upper())
 
 # List of Languages which use a Right-to-Left script (Arabic, Hebrew, Farsi, Urdu)
 s3_rtl_languages = ["ur"]
@@ -135,7 +196,7 @@ if deployment_settings.get_auth_openid():
     except ImportError:
         session.warning = T("Library support not available for OpenID")
 
-auth.settings.expiration = 14400  # seconds
+auth.settings.expiration = 28800  # seconds
 # Require captcha verification for registration
 #auth.settings.captcha = RECAPTCHA(request, public_key="PUBLIC_KEY", private_key="PRIVATE_KEY")
 # Require Email Verification
@@ -256,7 +317,7 @@ s3xrc.content_type = Storage(
 )
 
 # JSON Formats
-s3xrc.json_formats = ["geojson"]
+s3xrc.json_formats = ["geojson", "s3json"]
 
 s3xrc.ROWSPERPAGE = 20
 

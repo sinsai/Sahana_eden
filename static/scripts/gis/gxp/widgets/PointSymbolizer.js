@@ -1,6 +1,12 @@
 /**
- * Copyright (c) 2008-2010 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
  * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
+ */
+
+/** 
  * @include widgets/FillSymbolizer.js
  * @include widgets/StrokeSymbolizer.js
  */
@@ -27,6 +33,20 @@ gxp.PointSymbolizer = Ext.extend(Ext.Panel, {
      */
     symbolizer: null,
     
+    /** i18n */
+    graphicCircleText: "circle",
+    graphicSquareText: "square",
+    graphicTriangleText: "triangle",
+    graphicStarText: "star",
+    graphicCrossText: "cross",
+    graphicXText: "x",
+    graphicExternalText: "external",
+    urlText: "URL",
+    opacityText: "opacity",
+    symbolText: "Symbol",
+    sizeText: "Size",
+    rotationText: "Rotation",
+    
     /** api: config[pointGraphics]
      *  ``Array``
      *  A list of objects to be used as the root of the data for a
@@ -39,6 +59,7 @@ gxp.PointSymbolizer = Ext.extend(Ext.Panel, {
      *  URL.
      *
      * Fields:
+     *
      *  * display - ``String`` The name to be displayed to the user.
      *  * preview - ``String`` URL to a graphic for preview.
      *  * value - ``String`` Value to be sent to the server.
@@ -46,13 +67,13 @@ gxp.PointSymbolizer = Ext.extend(Ext.Panel, {
      *      ``false``, the value will be assumed to be a url for an external graphic.
      */
     pointGraphics: [
-        {display: "circle", value: "circle", mark: true},
-        {display: "square", value: "square", mark: true},
-        {display: "triangle", value: "triangle", mark: true},
-        {display: "star", value: "star", mark: true},
-        {display: "cross", value: "cross", mark: true},
-        {display: "x", value: "x", mark: true},
-        {display: "external"}
+        {display: this.graphicCircleText, value: "circle", mark: true},
+        {display: this.graphicSquareText, value: "square", mark: true},
+        {display: this.graphicTriangleText, value: "triangle", mark: true},
+        {display: this.graphicStarText, value: "star", mark: true},
+        {display: this.graphicCrossText, value: "cross", mark: true},
+        {display: this.graphicXText, value: "x", mark: true},
+        {display: this.graphicExternalText}
     ],
     
    /** api: config[colorManager]
@@ -114,7 +135,7 @@ gxp.PointSymbolizer = Ext.extend(Ext.Panel, {
         
         this.urlField = new Ext.form.TextField({
             name: "url",
-            fieldLabel: "URL",
+            fieldLabel: this.urlText,
             value: this.symbolizer["externalGraphic"],
             hidden: true,
             listeners: {
@@ -134,7 +155,7 @@ gxp.PointSymbolizer = Ext.extend(Ext.Panel, {
             items: [this.urlField, {
                 xtype: "slider",
                 name: "opacity",
-                fieldLabel: "Opacity",
+                fieldLabel: this.opacityText,
                 value: [(this.symbolizer["graphicOpacity"] == null) ? 100 : this.symbolizer["graphicOpacity"] * 100],
                 isFormField: true,
                 listeners: {
@@ -146,8 +167,8 @@ gxp.PointSymbolizer = Ext.extend(Ext.Panel, {
                 },
                 plugins: [
                     new GeoExt.SliderTip({
-                        getText: function(slider) {
-                            return slider.getValue() + "%";
+                        getText: function(thumb) {
+                            return thumb.value + "%";
                         }
                     })
                 ],
@@ -158,7 +179,7 @@ gxp.PointSymbolizer = Ext.extend(Ext.Panel, {
         this.items = [{
             xtype: "combo",
             name: "mark",
-            fieldLabel: "Symbol",
+            fieldLabel: this.symbolText,
             store: new Ext.data.JsonStore({
                 data: {root: this.pointGraphics},
                 root: "root",
@@ -214,7 +235,7 @@ gxp.PointSymbolizer = Ext.extend(Ext.Panel, {
         }, {
             xtype: "textfield",
             name: "size",
-            fieldLabel: "Size",
+            fieldLabel: this.sizeText,
             value: this.symbolizer["pointRadius"] && this.symbolizer["pointRadius"] * 2,
             listeners: {
                 change: function(field, value) {
@@ -227,7 +248,7 @@ gxp.PointSymbolizer = Ext.extend(Ext.Panel, {
         }, {
             xtype: "textfield",
             name: "rotation",
-            fieldLabel: "Rotation",
+            fieldLabel: this.rotationText,
             value: this.symbolizer["rotation"],
             listeners: {
                 change: function(field, value) {
@@ -270,5 +291,5 @@ gxp.PointSymbolizer = Ext.extend(Ext.Panel, {
     
 });
 
-/** api: xtype = gx_strokesymbolizer */
+/** api: xtype = gx_pointsymbolizer */
 Ext.reg('gx_pointsymbolizer', gxp.PointSymbolizer);

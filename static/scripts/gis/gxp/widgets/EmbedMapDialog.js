@@ -1,9 +1,11 @@
 /**
- * Copyright (c) 2010 OpenPlans
+ * Copyright (c) 2008-2011 The Open Planning Project
+ * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
  */
 
-/**
- */
 
 Ext.namespace("gxp");
 
@@ -18,6 +20,7 @@ Ext.namespace("gxp");
  *  current path as url:
  * 
  *  .. code-block:: javascript
+ *
  *      new Ext.Window({
  *           title: "Export Map",
  *           layout: "fit",

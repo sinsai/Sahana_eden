@@ -44,8 +44,8 @@ if deployment_settings.has_module(module):
                             reporter(),
                             Field("since", "datetime"),
                             Field("details", "text"),
-                            location_id(),
-                            Field("location_details"),
+                            location_id(label=T("Last known location")),
+                            #Field("location_details"),
                             Field("contact", "text"),
                             migrate=migrate, *s3_meta_fields())
 
@@ -59,22 +59,22 @@ if deployment_settings.has_module(module):
     table.since.default = request.utcnow
 
     table.location_id.label = T("Last known location")
-    table.location_id.comment = DIV(A(ADD_LOCATION,
-            _class="colorbox",
-            _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
-            _target="top",
-            _title=ADD_LOCATION),
-        DIV( _class="tooltip",
-            _title=T("Last known location") + "|" + T("The last known location of the missing person before disappearance."))),
-    table.location_details.label = T("Location details")
+    #table.location_id.comment = DIV(A(ADD_LOCATION,
+            #_class="colorbox",
+            #_href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
+            #_target="top",
+            #_title=ADD_LOCATION),
+        #DIV( _class="tooltip",
+            #_title=T("Last known location") + "|" + T("The last known location of the missing person before disappearance."))),
+    #table.location_details.label = T("Location details")
 
-    table.details.label = T("Details")
-    table.details.comment = DIV(DIV(_class="tooltip",
-        _title=T("Details") + "|" + T("Circumstances of disappearance, other victims/witnesses who last saw the missing person alive.")))
+    #table.details.label = T("Details")
+    #table.details.comment = DIV(DIV(_class="tooltip",
+        #_title=T("Details") + "|" + T("Circumstances of disappearance, other victims/witnesses who last saw the missing person alive.")))
 
     table.contact.label = T("Contact")
     table.contact.comment =  DIV(DIV(_class="tooltip",
-        _title=T("Contact") + "|" + T("Contact person in case of news or further questions (if different from reporting person). Include telephone number, address and email as available.")))
+        _title=T("Contact") + "|" + T("Contact person(s) in case of news or further questions (if different from reporting person). Include telephone number, address and email as available.")))
 
     s3xrc.model.add_component(module, resourcename,
                               multiple=False,
@@ -82,11 +82,16 @@ if deployment_settings.has_module(module):
 
 
     def shn_pf_report_onaccept(form):
+        """
+        @todo: docstring
+
+        """
 
         table = db.pr_person
+        person_id = request.post_vars.person_id
 
-        if form.vars.person_id:
-            person = db(table.id == form.vars.person_id).select(table.pe_id, limitby=(0,1)).first()
+        if person_id:
+            person = db(table.id == person_id).select(table.pe_id, limitby=(0,1)).first()
             if person:
                 pe_id = person.pe_id
             else:

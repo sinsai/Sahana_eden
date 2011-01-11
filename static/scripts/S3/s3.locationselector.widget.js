@@ -85,7 +85,7 @@ function s3_gis_dropdown_hide(level) {
     }
 }
 
-function s3_gis_save_location(name, lat, lon, addr_street) {
+function s3_gis_save_location(name, lat, lon, addr_street, addr_postcode) {
     // Locate the Parent - try the lowest level 1st
     var _parent = $('#gis_location_L5').val();
     if (undefined == _parent || '' == _parent){
@@ -120,7 +120,12 @@ function s3_gis_save_location(name, lat, lon, addr_street) {
     if ('' == addr_street) {
         // pass
     } else {
-        url = url + '&addr_street=' + addr_street;
+        url = url + '&addr_street=' + addr_street.replace(/\n/g, '%0d');
+    }
+    if ('' == addr_postcode) {
+        // pass
+    } else {
+        url = url + '&addr_postcode=' + addr_postcode;
     }
     if (undefined == _parent || '' == _parent){
         // pass
@@ -281,7 +286,7 @@ $(function(){
             }
         });
 
-        $('#gis_location_add-btn').click( function() {
+        $('#gis_location_add-btn').click( function(evt) {
             // When 'Add Location' pressed
             if ( '' != S3.gis.uuid ) {
                 // Save the value of S3.gis.uuid in case we cancel
@@ -318,10 +323,14 @@ $(function(){
             $('#gis_location_name').removeClass('hidden').show();
             $('#gis_location_addr_street_label').removeClass('hidden').show();
             $('#gis_location_addr_street_row').removeClass('hidden').show();
+            $('#gis_location_postcode_label').removeClass('hidden').show();
+            $('#gis_location_postcode_row').removeClass('hidden').show();
             $('#gis_location_advanced_div').removeClass('hidden').show();
+
+            evt.preventDefault();
         });
 
-        $('#gis_location_advanced_checkbox').change( function() {
+        $('#gis_location_advanced_checkbox').change( function(evt) {
             if ($('#gis_location_advanced_checkbox').is(':checked')) {
                 // When 'Advanced' checked, unhide the next part
                 $('#gis_location_lat_label').removeClass('hidden').show();
@@ -335,24 +344,32 @@ $(function(){
                 $('#gis_location_lon_label').hide();
                 $('#gis_location_lon_row').hide();
             }
+
+            evt.preventDefault();
         });
 
-        $('#gis_location_search-btn').click( function() {
+        $('#gis_location_search-btn').click( function(evt) {
             // Hide the search button
             $(this).hide();
             // Show the Search Box
             $('#gis_location_autocomplete_div').removeClass('hidden').show();
+
+            evt.preventDefault();
         });
 
-        $('#gis_location_details-btn').click( function() {
+        $('#gis_location_details-btn').click( function(evt) {
             // Show the details
             $('#gis_location_map-btn').removeClass('hidden').show();
             $('#gis_location_addr_street_label').removeClass('hidden').show();
             $('#gis_location_addr_street_row').removeClass('hidden').show();
+            $('#gis_location_postcode_label').removeClass('hidden').show();
+            $('#gis_location_postcode_row').removeClass('hidden').show();
             $('#gis_location_advanced_div').removeClass('hidden').show();
+
+            evt.preventDefault();
         });
 
-        $('#gis_location_cancel-btn').click( function() {
+        $('#gis_location_cancel-btn').click( function(evt) {
             // Restore the value of S3.gis.uuid
             S3.gis.uuid = $('body').data('uuid');
             // Restore the Lat/Lon
@@ -376,12 +393,17 @@ $(function(){
             $('#gis_location_name').hide();
             $('#gis_location_addr_street_label').hide();
             $('#gis_location_addr_street_row').hide();
+            $('#gis_location_postcode_label').hide();
+            $('#gis_location_postcode_row').hide();
             $('#gis_location_advanced_div').hide();
+
+            evt.preventDefault();
         });
 
-        $('#gis_location_geolocate-btn').click( function() {
+        $('#gis_location_geolocate-btn').click( function(evt) {
             // Do an HTML5 GeoLocate: http://dev.w3.org/geo/api/spec-source.html
             navigator.geolocation.getCurrentPosition(s3_gis_geolocate);
+            evt.preventDefault();
         });
 
 
@@ -787,23 +809,41 @@ $(function(){
             var lat = $('#gis_location_lat').val();
             var lon = $('#gis_location_lon').val();
             var addr_street = $('#gis_location_addr_street').val();
+            var addr_postcode = $('#gis_location_postcode').val();
 
             // Only save a new Location if we have data
             if ('' == name) {
-                if (('' == lat || '' == lon) && ('' == addr_street)) {
+                if (('' == lat || '' == lon) && ('' == addr_street) && ('' == addr_postcode)) {
                     // There are no specific location details specified
                     // (Hierarchy may have been done but that's not our issue here)
                     // Allow the Form's save to continue
                     return true;
                 } else {
-                    // We don't have a name, but we do have details, so prompt the user?
-                    // Need to distinguish between details from hierarchy & real details
-                    // @ToDo
-                    return true;
+                    // We don't have a name, but we do have details
+                    
+                    // Should we update the existing location?
+                    name = $('#gis_location_ :selected').text();
+                    if ('Loading Locations...' == name) {
+                        // Need to distinguish between details from hierarchy & real details
+                        // @ToDo: Prompt the user for a name? Autopopulate the name?
+                        // Allow the Form's save to continue
+                        return true;
+                    } else {
+                        // Check if any details have changed
+                        if ((S3.gis.lat == $('#gis_location_lat').val()) && (S3.gis.lon == $('#gis_location_lon').val()) && (S3.gis.addr_street == $('#gis_location_addr_street').val().replace(/\n/g, '%0d')) && (S3.gis.postcode == $('#gis_location_postcode').val())) {
+                            // Skip: Nothing has been changed
+                        } else {
+                            // Update the location
+                            s3_gis_save_location(name, lat, lon, addr_street, addr_postcode);
+                        }
+
+                        // Allow the Form's save to continue
+                        return true;
+                    }
                 }
             }
             // Save the new location
-            s3_gis_save_location(name, lat, lon, addr_street);
+            s3_gis_save_location(name, lat, lon, addr_street, addr_postcode);
 
             // Allow the Form's save to continue
             return true;

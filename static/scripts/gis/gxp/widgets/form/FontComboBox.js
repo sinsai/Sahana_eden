@@ -1,5 +1,9 @@
 /**
- * Copyright (c) 2008-2010 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
+ * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
  */
 
 /** api: (define)
@@ -22,6 +26,8 @@ gxp.form.FontComboBox = Ext.extend(Ext.form.ComboBox, {
      *  "Courier New", "Tahoma", "Times New Roman", "Verdana"].
      */
     fonts: [
+        "Serif",
+        "SansSerif",
         "Arial",
         "Courier New",
         "Tahoma",
@@ -33,7 +39,7 @@ gxp.form.FontComboBox = Ext.extend(Ext.form.ComboBox, {
      *  ``String``
      *  The ``fonts`` item to select by default.
      */
-    defaultFont: "Tahoma",
+    defaultFont: "Serif",
 
     allowBlank: false,
 

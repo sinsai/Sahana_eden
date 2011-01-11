@@ -46,6 +46,7 @@ def index():
     """ Module's Home Page """
 
     module_name = deployment_settings.modules[module].name_nice
+    response.title = module_name
     return dict(module_name=module_name, public_url=deployment_settings.base.public_url)
 
 # -----------------------------------------------------------------------------
@@ -56,7 +57,7 @@ def hospital():
     tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
-     # Pre-processor
+    # Pre-processor
     def prep(r):
         if r.representation in shn_interactive_view_formats:
             # Don't send the locations list to client (pulled by AJAX instead)

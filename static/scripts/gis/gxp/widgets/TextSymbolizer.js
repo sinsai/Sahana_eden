@@ -1,6 +1,12 @@
 /**
- * Copyright (c) 2008-2010 The Open Planning Project
- *
+ * Copyright (c) 2008-2011 The Open Planning Project
+ * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
+ */
+
+/**
  * @include widgets/FillSymbolizer.js
  * @include widgets/form/FontComboBox.js
  */
@@ -62,6 +68,11 @@ gxp.TextSymbolizer = Ext.extend(Ext.Panel, {
     border: false,    
     layout: "form",
     
+    /** i18n */
+    labelValuesText: "Label values",
+    haloText: "Halo",
+    sizeText: "Size",
+    
     initComponent: function() {
         
         if(!this.symbolizer) {
@@ -73,7 +84,7 @@ gxp.TextSymbolizer = Ext.extend(Ext.Panel, {
 
         var defAttributesComboConfig = {
             xtype: "combo",
-            fieldLabel: "Label values",
+            fieldLabel: this.labelValuesText,
             store: this.attributes,
             editable: false,
             triggerAction: "all",
@@ -106,7 +117,7 @@ gxp.TextSymbolizer = Ext.extend(Ext.Panel, {
                 value: this.symbolizer.fontFamily,
                 listeners: {
                     select: function(combo, record) {
-                        this.symbolizer.fontFamily = record.get("text");
+                        this.symbolizer.fontFamily = record.get("field1");
                         this.fireEvent("change", this.symbolizer);
                     },
                     scope: this
@@ -115,12 +126,19 @@ gxp.TextSymbolizer = Ext.extend(Ext.Panel, {
                 xtype: "tbtext",
                 text: "Size: "
             }, {
-                xtype: "textfield",
+                xtype: "numberfield",
+                allowNegative: false,
+                emptyText: OpenLayers.Renderer.defaultSymbolizer.fontSize,
                 value: this.symbolizer.fontSize,
                 width: 30,
                 listeners: {
-                    valid: function(field) {
-                        this.symbolizer.fontSize = Number(field.getValue());
+                    change: function(field, value) {
+                        value = parseFloat(value);
+                        if (isNaN(value)) {
+                            delete this.symbolizer.fontSize;
+                        } else {
+                            this.symbolizer.fontSize = value;
+                        }
                         this.fireEvent("change", this.symbolizer);
                     },
                     scope: this
@@ -153,7 +171,7 @@ gxp.TextSymbolizer = Ext.extend(Ext.Panel, {
         }, {
             xtype: "gx_fillsymbolizer",
             symbolizer: this.symbolizer,
-            defaultColor: OpenLayers.Renderer.defaultSymbolizer["fontColor"],
+            defaultColor: OpenLayers.Renderer.defaultSymbolizer.fontColor,
             checkboxToggle: false,
             autoHeight: true,
             width: 213,
@@ -167,19 +185,26 @@ gxp.TextSymbolizer = Ext.extend(Ext.Panel, {
             }
         }, {
             xtype: "fieldset",
-            title: "Halo",
+            title: this.haloText,
             checkboxToggle: true,
             collapsed: !(this.symbolizer.haloRadius || this.symbolizer.haloColor || this.symbolizer.haloOpacity),
             autoHeight: true,
             labelWidth: 50,
             items: [{
-                xtype: "textfield",
-                fieldLabel: "Size",
+                xtype: "numberfield",
+                fieldLabel: this.sizeText,
                 anchor: "89%",
+                allowNegative: false,
+                emptyText: OpenLayers.Renderer.defaultSymbolizer.haloRadius,
                 value: this.symbolizer.haloRadius,
                 listeners: {
-                    valid: function(field) {
-                        this.symbolizer.haloRadius = field.getValue();
+                    change: function(field, value) {
+                        value = parseFloat(value);
+                        if (isNaN(value)) {
+                            delete this.symbolizer.haloRadius;
+                        } else {
+                            this.symbolizer.haloRadius = value;
+                        }
                         this.fireEvent("change", this.symbolizer);
                     },
                     scope: this
@@ -187,10 +212,10 @@ gxp.TextSymbolizer = Ext.extend(Ext.Panel, {
             }, {
                 xtype: "gx_fillsymbolizer",
                 symbolizer: {
-                    fillColor: this.symbolizer.haloColor,
-                    fillOpacity: this.symbolizer.haloOpacity
+                    fillColor: ("haloColor" in this.symbolizer) ? this.symbolizer.haloColor : OpenLayers.Renderer.defaultSymbolizer.haloColor,
+                    fillOpacity: ("haloOpacity" in this.symbolizer) ? this.symbolizer.haloOpacity : OpenLayers.Renderer.defaultSymbolizer.haloOpacity
                 },
-                defaultColor: OpenLayers.Renderer.defaultSymbolizer["haloColor"],
+                defaultColor: OpenLayers.Renderer.defaultSymbolizer.haloColor,
                 checkboxToggle: false,
                 width: 190,
                 labelWidth: 60,
@@ -215,11 +240,6 @@ gxp.TextSymbolizer = Ext.extend(Ext.Panel, {
                     delete this.symbolizer.haloColor;
                     delete this.symbolizer.haloOpacity;
                     this.fireEvent("change", this.symbolizer)
-                },
-                render: function() {
-                    // workaround for Fill fieldset not being visible after
-                    // the first expand
-                    this.doLayout();
                 },
                 expand: function() {
                     Ext.apply(this.symbolizer, this.haloCache);

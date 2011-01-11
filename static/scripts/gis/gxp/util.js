@@ -1,5 +1,9 @@
 /**
- * Copyright (c) 2009 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
+ * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
  */
 
 
@@ -13,14 +17,14 @@ gxp.util = {
     _uniqueNames: {},
 
     /** api: function[dispatch]
-     *  :param functions: ``Array(Function)`` List of functions to be called.
+     *  :arg functions: ``Array(Function)`` List of functions to be called.
      *      All functions will be called with two arguments - a callback to
      *      call when the sequence is done and a storage object.
-     *  :param complete:  ``Function`` A function that will be called when all
+     *  :arg complete:  ``Function`` A function that will be called when all
      *      other functions report that they are done.  The final callback
      *      will be called with the storage object passed to all other
      *      functions.
-     *  :param scope: ``Object`` Optional object to be set as the scope of all
+     *  :arg scope: ``Object`` Optional object to be set as the scope of all
      *      functions called.
      *      
      *  Allows multiple asynchronous sequences to be called in parallel.  A
@@ -49,40 +53,9 @@ gxp.util = {
         }
     },
     
-    /** api: function[loadScript]
-     *  :param url: ``String`` url of the script file.
-     *  :param complete:  ``Function`` Optional function that will be called
-     *      when the script file is loaded.
-     *  :param scope: ``Object`` Optional object to be set as the scope for
-     *      the complete function.
-     *  :param attributes: ``Object`` Key-value pairs of additional attributes
-     *      for the script tag (e.g. charset)
-     *      
-     *  Allows dynamic loading of javascript resources.
-     */
-    loadScript: function(url, complete, scope, attributes) {
-        var script = document.createElement("script");
-        script.src = url;
-        if(complete) {
-            script.onload = complete.createDelegate(scope || window);
-            script.onreadystatechange = function() {
-                if(this.readyState == "complete") {
-                    complete.call(scope || window);
-                }
-            }
-        }
-        if(attributes) {
-            for(a in attributes) {
-                script[a] = attributes[a];
-            }
-        }
-
-        document.getElementsByTagName("head")[0].appendChild(script);
-    },
-
     /** api: function[uniqueName]
-     *  :param name: ``String`` The name to make unique across this session.
-     *  :param delimiter: ``Char`` Optional. Delimiter for appending the
+     *  :arg name: ``String`` The name to make unique across this session.
+     *  :arg delimiter: ``Char`` Optional. Delimiter for appending the
      *      number that makes the new name unique. Defaults to " " (blank).
      *  :return: ``String`` a unique name based on ``name``
      *  
@@ -107,7 +80,7 @@ gxp.util = {
     },
 
     /** api: function[getAbsoluteUrl]
-     *  :param url: ``String``
+     *  :arg url: ``String``
      *  :return: ``String``
      *  
      *  Converts the provided url to an absolute url.

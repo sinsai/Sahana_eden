@@ -33,8 +33,9 @@ def s3_sessions():
                         _memberships.group_id)
         roles = [m.group_id for m in memberships]
     session.s3.roles = roles
-    if not auth.permission():
-        auth.permission.fail()
+    # not used yet:
+    #if not auth.permission():
+        #auth.permission.fail()
 
     # Are we running in debug mode?
     session.s3.debug = request.vars.get("debug", None) or \
@@ -70,28 +71,6 @@ s3_sessions()
 super_entity = s3xrc.model.super_entity
 super_link = s3xrc.model.super_link
 super_key = s3xrc.model.super_key
-
-def s3_debug(message, value=None):
-
-    """ Debug Function (same name/parameters as JavaScript one)
-
-        Provide an easy, safe, systematic way of handling Debug output
-        (print to stdout doesn't work with WSGI deployments)
-
-    """
-
-    import sys
-    try:
-        output = "S3 Debug: " + str(message)
-        if value:
-            output += ": " + str(value)
-    except:
-        output = "S3 Debug: " + unicode(message)
-        if value:
-            output += ": " + unicode(value)
-
-    print >> sys.stderr, output
-
 
 # -----------------------------------------------------------------------------
 def s3_get_utc_offset():
@@ -858,7 +837,7 @@ def s3_rest_controller(prefix, resourcename, **attr):
     # Parse the request
     resource, r = s3xrc.parse_request(prefix, resourcename)
 
-    resource.set_handler("search", _s3xrc.S3Search())
+    resource.set_handler("search", s3base.S3Search())
     resource.set_handler("copy", shn_copy)
     resource.set_handler("barchart", shn_barchart)
 

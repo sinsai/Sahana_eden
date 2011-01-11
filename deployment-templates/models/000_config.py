@@ -4,9 +4,9 @@
     Deployment settings
     All settings which are typically edited for a deployment should be done here
     Deployers shouldn't typically need to edit any other files.
-    NOTE FOR DEVELOPERS: 
-    /models/000_config.py is NOT in the BZR repository, as this file will be changed 
-    during deployments. 
+    NOTE FOR DEVELOPERS:
+    /models/000_config.py is NOT in the BZR repository, as this file will be changed
+    during deployments.
     To for changes to be committed to trunk, please also edit:
     deployment-templates/models/000_config.py
 """
@@ -16,8 +16,7 @@ FINISHED_EDITING_CONFIG_FILE = False # change to True after you finish editing t
 if not FINISHED_EDITING_CONFIG_FILE:
     raise HTTP(501, body="Please edit models/000_config.py first")
 
-s3cfg = local_import("s3cfg")
-deployment_settings = s3cfg.S3Config(T)
+deployment_settings = s3base.S3Config(T)
 
 # Database settings
 deployment_settings.database.db_type = "sqlite"
@@ -202,18 +201,21 @@ from gluon.contrib.simplejson.ordered_dict import OrderedDict
 deployment_settings.modules = OrderedDict(
     default = Storage(
             name_nice = T("Home"),
+            restricted = False, # Use ACLs to control access to this module (currently deactivated)
             access = None,      # All Users (inc Anonymous) can see this module in the default menu & access the controller
             module_type = 0     # This item is always 1st in the menu
         ),
     admin = Storage(
             name_nice = T("Administration"),
             description = T("Site Administration"),
+            restricted = True,
             access = "|1|",     # Only Administrators can see this module in the default menu & access the controller
             module_type = 0     # This item is handled separately in the menu
         ),
     gis = Storage(
             name_nice = T("Map"),
             description = T("Situation Awareness & Geospatial Analysis"),
+            restricted = False,
             module_type = 1,     # 1st item in the menu
             resources = Storage(
                 gis_location = {"importer" : True}
@@ -222,16 +224,19 @@ deployment_settings.modules = OrderedDict(
     doc = Storage(
             name_nice = T("Documents and Photos"),
             description = T("A library of digital resources, such as photos, documents and reports"),
+            restricted = False,
             module_type = 10,
         ),
     msg = Storage(
             name_nice = T("Messaging"),
             description = T("Sends & Receives Alerts via Email & SMS"),
+            restricted = False,
             module_type = 10,
         ),
     pr = Storage(
             name_nice = T("Person Registry"),
             description = T("Central point to record details on People"),
+            restricted = False,
             access = "|1|",     # Only Administrators can see this module in the default menu (access to controller is possible to all still)
             module_type = 10,
             resources = Storage(
@@ -247,11 +252,13 @@ deployment_settings.modules = OrderedDict(
     pf = Storage(
             name_nice = T("Person Finder"),
             description = T("Helps to report and search for Missing Persons"),
+            restricted = False,
             module_type = 10,
         ),
     dvi = Storage(
             name_nice = T("Disaster Victim Identification"),
             description = T("Disaster Victim Identification"),
+            restricted = True,
             module_type = 10,
             #access = "|DVI|",      # Only users with the DVI role can see this module in the default menu & access the controller
             #audit_read = True,     # Can enable Audit for just an individual module here
@@ -266,8 +273,9 @@ deployment_settings.modules = OrderedDict(
     #        module_type = 10
     #    ),
     org = Storage(
-         name_nice = T("Organization Registry"),
+            name_nice = T("Organization Registry"),
             description = T('Lists "who is doing what & where". Allows relief agencies to coordinate their activities'),
+            restricted = False,
             module_type = 10,
             resources = Storage(
                 org_organisation = {"importer" : True},
@@ -276,14 +284,16 @@ deployment_settings.modules = OrderedDict(
             )
         ),
     project = Storage(
-        name_nice = T("Project Tracking"),
-        description = T("Tracking of Projects, Activities and Tasks"),
-        module_type = 10
-    ),
+            name_nice = T("Project Tracking"),
+            description = T("Tracking of Projects, Activities and Tasks"),
+            restricted = False,
+            module_type = 10
+        ),
     # NB Budget module depends on Project Tracking Module
     budget = Storage(
             name_nice = T("Budgeting Module"),
             description = T("Allows a Budget to be drawn up"),
+            restricted = False,
             module_type = 10,
             resources = Storage(
                 budget_item = {"importer" : True},
@@ -294,12 +304,14 @@ deployment_settings.modules = OrderedDict(
     logs = Storage(
             name_nice = T("Logistics Management"),
             description = T("Managing, Storing and Distributing Items"),
+            restricted = False,
             module_type = 10
         ),
     # NB RMS module depends on HMS, CR & Project
-    rms = Storage(      
+    rms = Storage(
             name_nice = T("Requests"),
             description = T("Tracks requests for aid and matches them against donors who have pledged aid"),
+            restricted = False,
             module_type = 3,
             resources = Storage(
                 rms_req = {"importer" : True},
@@ -308,6 +320,7 @@ deployment_settings.modules = OrderedDict(
     cr = Storage(
             name_nice = T("Shelter Registry"),
             description = T("Tracks the location, distibution, capacity and breakdown of victims in Shelters"),
+            restricted = False,
             module_type = 10,
             resources = Storage(
                 cr_shelter = {"importer" : True }
@@ -316,6 +329,7 @@ deployment_settings.modules = OrderedDict(
     hms = Storage(
             name_nice = T("Hospitals"),
             description = T("Helps to monitor status of hospitals"),
+            restricted = False,
             module_type = 10,
             resources = Storage(
                 hms_hospital = {"importer" : True}
@@ -324,47 +338,56 @@ deployment_settings.modules = OrderedDict(
     vol = Storage(
             name_nice = T("Volunteers"),
             description = T("Manage volunteers by capturing their skills, availability and allocation"),
+            restricted = False,
             module_type = 10,
         ),
     irs = Storage(
-        name_nice = T("Incident Reporting"),
-        description = T("Incident Reporting System"),
-        module_type = 10
-    ),
+            name_nice = T("Incident Reporting"),
+            description = T("Incident Reporting System"),
+            restricted = False,
+            module_type = 10
+        ),
     # Assess currently depends on IRS
     assess = Storage(
-         name_nice = "Assessments",
-         description = "Rapid Assessments & Flexible Impact Assessments",
-         module_type = 2,
-    ),
+            name_nice = "Assessments",
+            description = "Rapid Assessments & Flexible Impact Assessments",
+            restricted = False,
+            module_type = 2,
+        ),
     survey = Storage(
-             name_nice = "Survey Module",
-             description = "Create, enter, and manage surveys.",
-             module_type = 10,
-    ),
-    delphi = Storage(
-         name_nice = T("Delphi Decision Maker"),
-            description = T("Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list."),
+            name_nice = "Survey Module",
+            description = "Create, enter, and manage surveys.",
+            restricted = False,
             module_type = 10,
-    ),
+        ),
+    delphi = Storage(
+            name_nice = T("Delphi Decision Maker"),
+            description = T("Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list."),
+            restricted = False,
+            module_type = 10,
+        ),
     importer = Storage(
-             name_nice = "Spreadsheet Importer",
-             description = "Used to import data from spreadsheets into the database",
-             module_type = 10,
-    ),
+            name_nice = "Spreadsheet Importer",
+            description = "Used to import data from spreadsheets into the database",
+            restricted = False,
+            module_type = 10,
+        ),
     #flood = Storage(
-    #        name_nice = T("Flood Alerts"),
-    #        description = T("Flood Alerts show water levels in various parts of the country"),
-    #        module_type = 10
-    #    ),
+            #name_nice = T("Flood Alerts"),
+            #description = T("Flood Alerts show water levels in various parts of the country"),
+            #restricted = False,
+            #module_type = 10
+        #),
     #ticket = Storage(
-    #        name_nice = T("Ticketing Module"),
-    #        description = T("Master Message Log to process incoming reports & requests"),
-    #        module_type = 10,
-    #    ),
+            #name_nice = T("Ticketing Module"),
+            #description = T("Master Message Log to process incoming reports & requests"),
+            #restricted = False,
+            #module_type = 10,
+        #),
     #lms = Storage(
-    #        name_nice = T("Logistics Management System"),
-    #        description = T("An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities."),
-    #        module_type = 10
-    #    ),
+            #name_nice = T("Logistics Management System"),
+            #description = T("An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities."),
+            #restricted = False,
+            #module_type = 10
+        #),
 )

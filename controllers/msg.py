@@ -39,6 +39,7 @@ def index():
     """ Module's Home Page """
 
     module_name = deployment_settings.modules[prefix].name_nice
+    response.title = module_name
     return dict(module_name=module_name)
 
 
@@ -284,7 +285,7 @@ def parserdooth(message):
 #   -------------Hospital Search [example: get name hospital facility status ] --------------
     if "hospital" in query:
         table = db.hms_hospital
-        resource = s3xrc._resource("hms", "hospital")
+        resource = s3xrc.define_resource("hms", "hospital")
         result = resource.search_simple(fields=["name"],label = str(name))
         if len(result) > 1:
             return "Multiple Matches"
@@ -309,7 +310,7 @@ def parserdooth(message):
 #   -----------------Organisation search [example: get name organisation phone]------------------------------
     if "organisation" in query:
         table = db.org_organisation
-        resource = s3xrc._resource("org", "organisation")
+        resource = s3xrc.define_resource("org", "organisation")
         result = resource.search_simple(fields=["name"], label = str(name))
         if len(result) > 1:
             return "Multiple Matches"
@@ -583,6 +584,12 @@ def twitter_settings():
 
     """ RESTful CRUD controller for Twitter settings - appears in the administration menu """
 
+    try:
+        import tweepy 
+    except:
+        session.error =  T("tweepy module not available within the running Python - this needs installing for non-Tropo Twitter support!")
+        redirect(URL(r=request, c="admin", f="index")) 
+
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
@@ -605,11 +612,6 @@ def twitter_settings():
     )
 
     def prep(r):
-        try:
-            import tweepy
-        except:
-            session.error = T("Couldn't import tweepy library")
-            return True
         if not (deployment_settings.twitter.oauth_consumer_key and deployment_settings.twitter.oauth_consumer_secret):
             session.error = T("You should edit Twitter settings in models/000_config.py")
             return True
@@ -643,6 +645,12 @@ def twitter_settings():
             table.pin.value = ""       # but let's be on the safe side
         return True
     response.s3.prep = prep
+
+    # Post-processor
+    def user_postp(r, output):
+        output["list_btn"] = ""
+        return output
+    response.s3.postp = user_postp
 
     response.menu_options = admin_menu_options
     s3xrc.model.configure(table, listadd=False, deletable=False)

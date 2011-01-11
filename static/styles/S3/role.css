@@ -1,0 +1,45 @@
+#table-container {
+    margin-top: 20px;
+    margin-left: 4px;
+}
+
+#controller-acls table,
+#table-acls table {
+    margin-top: 10px;
+}
+
+table.acl-widget {
+    margin-top: 0px !important;
+}
+
+table.acl-widget td {
+    border: none !important;
+    padding: 0px !important;
+}
+
+#controller-acls tr th,
+#table-acls tr th {
+    font-weight: bold;
+    padding: 4px;
+}
+
+#controller-acls tr td,
+#table-acls tr td {
+    padding: 4px;
+}
+
+#action-row {
+    margin: 4px;
+}
+
+#action-row a {
+    padding-left: 10px;
+}
+
+.red {
+    font-weight: bold;
+}
+
+#table-acls {
+    display: none;
+}

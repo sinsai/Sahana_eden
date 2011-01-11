@@ -1,5 +1,9 @@
 /**
- * Copyright (c) 2009 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
+ * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
  */
 
 /**
@@ -35,6 +39,13 @@ gxp.FilterBuilder = Ext.extend(Ext.Container, {
      */
     allowedBuilderTypes: null,
     
+    /** api: config[allowBlank]
+     *  ``Boolean`` Do we allow blank FilterFields? It is safe to say true
+     *  here, but for compatibility reasons with old applications, the default
+     *  is false.
+     */
+    allowBlank: false,
+    
     /** api: config[preComboText]
      *  ``String``
      *  String to display before filter type combo.  Default is ``"Match"``.
@@ -67,7 +78,11 @@ gxp.FilterBuilder = Ext.extend(Ext.Container, {
      */
     customizeFilterOnInit: true,
     
-    
+    /** i18n */
+    addConditionText: "add condition",
+    addGroupText: "add group",
+    removeConditionText: "remove condition",
+
     /** api: config[allowGroups]
      *  ``Boolean``
      *  Allow groups of conditions to be added.  Default is ``true``.
@@ -126,12 +141,12 @@ gxp.FilterBuilder = Ext.extend(Ext.Container, {
 
         gxp.FilterBuilder.superclass.initComponent.call(this);
     },
-    
+
     /** private: method[createToolBar]
      */
     createToolBar: function() {
         var bar = [{
-            text: "add condition",
+            text: this.addConditionText,
             iconCls: "add",
             handler: function() {
                 this.addCondition();
@@ -140,7 +155,7 @@ gxp.FilterBuilder = Ext.extend(Ext.Container, {
         }];
         if(this.allowGroups) {
             bar.push({
-                text: "add group",
+                text: this.addGroupText,
                 iconCls: "add",
                 handler: function() {
                     this.addCondition(true);
@@ -351,6 +366,7 @@ gxp.FilterBuilder = Ext.extend(Ext.Container, {
             filter: filter,
             columnWidth: 1,
             attributes: this.attributes,
+            allowBlank: group ? undefined : this.allowBlank,
             customizeFilterOnInit: group && false,
             listeners: {
                 change: function() {
@@ -458,6 +474,7 @@ gxp.FilterBuilder = Ext.extend(Ext.Container, {
             grandchild = grandchildren[i];
             var fieldCfg = {
                 xtype: "gx_filterfield",
+                allowBlank: this.allowBlank,
                 columnWidth: 1,
                 filter: grandchild,
                 attributes: this.attributes,
@@ -498,10 +515,11 @@ gxp.FilterBuilder = Ext.extend(Ext.Container, {
             items: [{
                 xtype: "container",
                 width: 28,
+                height: 26,
                 style: "padding-left: 2px",
                 items: {
                     xtype: "button",
-                    tooltip: "remove condition",
+                    tooltip: this.removeConditionText,
                     iconCls: "delete",
                     handler: function(btn){
                         this.removeCondition(ct, filterContainer.filter);

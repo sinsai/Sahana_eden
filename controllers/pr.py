@@ -112,7 +112,7 @@ def index():
     output = s3_rest_controller("pr", "person",
                                 add_btn=add_btn)
     response.view = "pr/index.html"
-
+    response.title = module_name
     shn_menu()
     return output
 
@@ -125,7 +125,7 @@ def person():
     def prep(r):
 
         # Override the default Search MethodHandler
-        r.resource.set_handler("search", _s3xrc.S3PersonSearch())
+        r.resource.set_handler("search", s3base.S3PersonSearch())
 
         if r.component_name == "config":
             _config = db.gis_config
@@ -266,9 +266,6 @@ def person_duplicates():
         @todo: user accounts, subscriptions?
     """
 
-    # Import the s3deduplicator module necessary to find the soundex and match percentage of records
-    s3deduplicator = local_import("s3deduplicator")
-
     # Shortcut
     persons = db.pr_person
 
@@ -309,7 +306,7 @@ def person_duplicates():
         count = 1
         i = 0
         for onePerson in records: #[:len(records)/2]:
-            soundex1= s3deduplicator.soundex(onePerson.first_name)
+            soundex1= soundex(onePerson.first_name)
             array1 = []
             array1.append(onePerson.pe_label)
             array1.append(str(onePerson.missing))
@@ -341,7 +338,7 @@ def person_duplicates():
             i = i + 1
             j = 0
             for anotherPerson in records: #[len(records)/2:]:
-                soundex2 = s3deduplicator.soundex(anotherPerson.first_name)
+                soundex2 = soundex(anotherPerson.first_name)
                 if j >= i:
                     array2 =[]
                     array2.append(anotherPerson.pe_label)
@@ -376,7 +373,7 @@ def person_duplicates():
                     if onePerson.id == anotherPerson.id:
                         continue
                     else:
-                        mpercent = s3deduplicator.jaro_winkler_distance_row(array1, array2)
+                        mpercent = jaro_winkler_distance_row(array1, array2)
                         # Pick all records with match percentage is >50 or whose soundex values of first name are equal
                         if int(mpercent) > 50 or (soundex1 == soundex2):
                             count = count + 1

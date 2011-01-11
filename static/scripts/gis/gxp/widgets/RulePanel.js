@@ -1,5 +1,9 @@
 /**
- * Copyright (c) 2008-2010 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
+ * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
  */
 
 /**
@@ -11,12 +15,17 @@
  * @include widgets/FilterBuilder.js
  */
 
-Ext.namespace("gxp");
-
 /** api: (define)
  *  module = gxp
  *  class = RulePanel
  *  base_link = `Ext.TabPanel <http://extjs.com/deploy/dev/docs/?class=Ext.TabPanel>`_
+ */
+Ext.namespace("gxp");
+
+/** api: constructor
+ *  .. class:: RulePanel(config)
+ *   
+ *      Create a panel for assembling SLD rules.
  */
 gxp.RulePanel = Ext.extend(Ext.TabPanel, {
     
@@ -27,13 +36,16 @@ gxp.RulePanel = Ext.extend(Ext.TabPanel, {
     fonts: undefined,
 
     /** api: property[symbolType]
-     *  ``String`` One of "Point", "Line", or "Polygon".  Default is "Point".
+     *  ``String`` One of "Point", "Line", or "Polygon".  If no rule is 
+     *  provided, default is "Point".
      */
     symbolType: "Point",
 
-    /** private: property[rule]
+    /** api: config[rule]
      *  ``OpenLayers.Rule`` Optional rule provided in the initial
-     *  configuration.
+     *  configuration.  If a rule is provided and no `symbolType` is provided,
+     *  the symbol type will be derived from the first symbolizer found in the
+     *  rule.
      */
     rule: null,
     
@@ -113,6 +125,14 @@ gxp.RulePanel = Ext.extend(Ext.TabPanel, {
      *  are available to the <scaleSliderTemplate>.
      */
     modifyScaleTipContext: Ext.emptyFn,
+    
+    /** i18n */
+    labelFeaturesText: "Label Features",
+    advancedText: "Advanced",
+    limitByScaleText: "Limit by scale",
+    limitByConditionText: "Limit by condition",
+    symbolText: "Symbol",
+    nameText: "Name",
 
     /** private */
     initComponent: function() {
@@ -127,12 +147,16 @@ gxp.RulePanel = Ext.extend(Ext.TabPanel, {
             this.rule = new OpenLayers.Rule({
                 name: this.uniqueRuleName()
             });
+        } else {
+            if (!this.initialConfig.symbolType) {
+                this.symbolType = this.getSymbolTypeFromRule(this.rule) || this.symbolType;
+            }
         }
         
         this.activeTab = 0;
         
         this.textSymbolizer = new gxp.TextSymbolizer({
-            symbolizer: this.rule.symbolizer["Text"],
+            symbolizer: this.getTextSymbolizer(),
             attributes: this.attributes,
             fonts: this.fonts,
             listeners: {
@@ -170,13 +194,13 @@ gxp.RulePanel = Ext.extend(Ext.TabPanel, {
         
         this.filterBuilder = new gxp.FilterBuilder({
             allowGroups: this.nestedFilters,
-            filter: this.rule && this.rule.filter,
+            filter: this.rule && this.rule.filter && this.rule.filter.clone(),
             attributes: this.attributes,
             listeners: {
                 change: function(builder) {
                     var filter = builder.getFilter(); 
                     this.rule.filter = filter;
-                    this.fireEvent("change", this, this.rule)
+                    this.fireEvent("change", this, this.rule);
                 },
                 scope: this
             }
@@ -188,20 +212,20 @@ gxp.RulePanel = Ext.extend(Ext.TabPanel, {
             bodyStyle: {"padding": "10px"},
             items: [{
                 xtype: "fieldset",
-                title: "Label Features",
+                title: this.labelFeaturesText,
                 autoHeight: true,
                 checkboxToggle: true,
-                collapsed: !this.rule.symbolizer["Text"],
+                collapsed: !this.hasTextSymbolizer(),
                 items: [
                     this.textSymbolizer
                 ],
                 listeners: {
                     collapse: function() {
-                        delete this.rule.symbolizer["Text"];
+                        OpenLayers.Util.removeItem(this.rule.symbolizers, this.getTextSymbolizer());
                         this.fireEvent("change", this, this.rule);
                     },
                     expand: function() {
-                        this.rule.symbolizer["Text"] = this.textSymbolizer.symbolizer;
+                        this.setTextSymbolizer(this.textSymbolizer.symbolizer);
                         this.fireEvent("change", this, this.rule);
                     },
                     scope: this
@@ -214,7 +238,7 @@ gxp.RulePanel = Ext.extend(Ext.TabPanel, {
                 autoScroll: true,
                 items: [this.createHeaderPanel(), this.createSymbolizerPanel()]
             }, this.items[0], {
-                title: "Advanced",
+                title: this.advancedText,
                 defaults: {
                     style: {
                         margin: "7px"
@@ -223,7 +247,7 @@ gxp.RulePanel = Ext.extend(Ext.TabPanel, {
                 autoScroll: true,
                 items: [{
                     xtype: "fieldset",
-                    title: "Limit by scale",
+                    title: this.limitByScaleText,
                     checkboxToggle: true,
                     collapsed: !(this.rule && (this.rule.minScaleDenominator || this.rule.maxScaleDenominator)),
                     autoHeight: true,
@@ -232,7 +256,7 @@ gxp.RulePanel = Ext.extend(Ext.TabPanel, {
                         collapse: function() {
                             delete this.rule.minScaleDenominator;
                             delete this.rule.maxScaleDenominator;
-                            this.fireEvent("change", this, this.rule)
+                            this.fireEvent("change", this, this.rule);
                         },
                         expand: function() {
                             /**
@@ -256,14 +280,14 @@ gxp.RulePanel = Ext.extend(Ext.TabPanel, {
                                 changed = true;
                             }
                             if (changed) {
-                                this.fireEvent("change", this, this.rule)
+                                this.fireEvent("change", this, this.rule);
                             }
                         },
                         scope: this
                     }
                 }, {
                     xtype: "fieldset",
-                    title: "Limit by condition",
+                    title: this.limitByConditionText,
                     checkboxToggle: true,
                     collapsed: !(this.rule && this.rule.filter),
                     autoHeight: true,
@@ -271,17 +295,17 @@ gxp.RulePanel = Ext.extend(Ext.TabPanel, {
                     listeners: {
                         collapse: function(){
                             delete this.rule.filter;
-                            this.fireEvent("change", this, this.rule)
+                            this.fireEvent("change", this, this.rule);
                         },
                         expand: function(){
                             var changed = false;
                             this.rule.filter = this.filterBuilder.getFilter();
-                            this.fireEvent("change", this, this.rule)
+                            this.fireEvent("change", this, this.rule);
                         },
                         scope: this
                     }
                 }]
-            }]
+            }];
         };
         this.items[0].autoHeight = true;
 
@@ -305,7 +329,52 @@ gxp.RulePanel = Ext.extend(Ext.TabPanel, {
 
         gxp.RulePanel.superclass.initComponent.call(this);
     },
+
+    /** private: method[hasTextSymbolizer]
+     */
+    hasTextSymbolizer: function() {
+        var candidate, symbolizer;
+        for (var i=0, ii=this.rule.symbolizers.length; i<ii; ++i) {
+            candidate = this.rule.symbolizers[i];
+            if (candidate instanceof OpenLayers.Symbolizer.Text) {
+                symbolizer = candidate;
+                break;
+            }
+        }
+        return symbolizer;
+    },
     
+    /** private: method[getTextSymbolizer]
+     *  Get the first text symbolizer in the rule.  If one does not exist,
+     *  create one.
+     */
+    getTextSymbolizer: function() {
+        var symbolizer = this.hasTextSymbolizer();
+        if (!symbolizer) {
+            symbolizer = new OpenLayers.Symbolizer.Text();
+        }
+        return symbolizer;
+    },
+    
+    /** private: method[setTextSymbolizer]
+     *  Update the first text symbolizer in the rule.  If one does not exist,
+     *  add it.
+     */
+    setTextSymbolizer: function(symbolizer) {
+        var found;
+        for (var i=0, ii=this.rule.symbolizers.length; i<ii; ++i) {
+            candidate = this.rule.symbolizers[i];
+            if (this.rule.symbolizers[i] instanceof OpenLayers.Symbolizer.Text) {
+                this.rule.symbolizers[i] = symbolizer;
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            this.rule.symbolizers.push(symbolizer);
+        }        
+    },
+
     /** private: method[uniqueRuleName]
      *  Generate a unique rule name.  This name will only be unique for this
      *  session assuming other names are created by the same method.  If
@@ -322,9 +391,8 @@ gxp.RulePanel = Ext.extend(Ext.TabPanel, {
     createHeaderPanel: function() {
         this.symbolizerSwatch = new GeoExt.FeatureRenderer({
             symbolType: this.symbolType,
-            symbolizers: [this.rule.symbolizer[this.symbolType]],
             isFormField: true,
-            fieldLabel: "Symbol"
+            fieldLabel: this.symbolText
         });
         return {
             xtype: "form",
@@ -343,7 +411,7 @@ gxp.RulePanel = Ext.extend(Ext.TabPanel, {
                     width: 150,
                     items: [{
                         xtype: "textfield",
-                        fieldLabel: "Name",
+                        fieldLabel: this.nameText,
                         anchor: "95%",
                         value: this.rule && (this.rule.title || this.rule.name || ""),
                         listeners: {
@@ -366,10 +434,33 @@ gxp.RulePanel = Ext.extend(Ext.TabPanel, {
     /** private: method[createSymbolizerPanel]
      */
     createSymbolizerPanel: function() {
-        symbolizerConfig = {
+        // use first symbolizer that matches symbolType
+        var candidate, symbolizer;
+        var Type = OpenLayers.Symbolizer[this.symbolType];
+        var existing = false;
+        if (Type) {
+            for (var i=0, ii=this.rule.symbolizers.length; i<ii; ++i) {
+                candidate = this.rule.symbolizers[i];
+                if (candidate instanceof Type) {
+                    existing = true;
+                    symbolizer = candidate;
+                    break;
+                }
+            }
+            if (!symbolizer) {
+                // allow addition of new symbolizer
+                symbolizer = new Type({fill: false, stroke: false});
+            }
+        } else {
+            throw new Error("Appropriate symbolizer type not included in build: " + this.symbolType);
+        }
+        this.symbolizerSwatch.setSymbolizers([symbolizer],
+            {draw: this.symbolizerSwatch.rendered}
+        );
+        var cfg = {
             xtype: "gx_" + this.symbolType.toLowerCase() + "symbolizer",
-            symbolizer: this.rule.symbolizer[this.symbolType],
-            bodyStyle: {"padding": "10px"},
+            symbolizer: symbolizer,
+            bodyStyle: {padding: "10px"},
             border: false,
             labelWidth: 70,
             defaults: {
@@ -380,35 +471,40 @@ gxp.RulePanel = Ext.extend(Ext.TabPanel, {
                     this.symbolizerSwatch.setSymbolizers(
                         [symbolizer], {draw: this.symbolizerSwatch.rendered}
                     );
+                    if (!existing) {
+                        this.rule.symbolizers.push(symbolizer);
+                        existing = true;
+                    }
                     this.fireEvent("change", this, this.rule);
                 },
                 scope: this
             }
         };
         if (this.symbolType === "Point" && this.pointGraphics) {
-            symbolizerConfig.pointGraphics = this.pointGraphics;
+            cfg.pointGraphics = this.pointGraphics;
         }
-
-        return symbolizerConfig;
+        return cfg;
+        
     },
 
-    /** api: function[getSymbolTypeFromRule]
-     *  :arg rule: ``OpenLayers.Rule``
-     *  :return: ``String` "Point", "Line" or "Polygon" (or undefined if none
-     *  of the three)
+    /** private: method[getSymbolTypeFromRule]
+     *  :arg rule: `OpenLayers.Rule`
+     *  :return: `String` "Point", "Line" or "Polygon" (or undefined if none
+     *      of the three.
      *
      *  Determines the symbol type of the first symbolizer of a rule that is
      *  not a text symbolizer
      */
-    getSymbolTypeFromRule: function(rule){
-        var symbolizer = rule.symbolizer;
-        if (symbolizer["Line"] || symbolizer["Point"] || symbolizer["Polygon"]) {
-            for (var type in symbolizer) {
-                if (type != "Text") {
-                    return type;
-                }
+    getSymbolTypeFromRule: function(rule) {
+        var candidate, type;
+        for (var i=0, ii=rule.symbolizers.length; i<ii; ++i) {
+            candidate = rule.symbolizers[i];
+            if (!(candidate instanceof OpenLayers.Symbolizer.Text)) {
+                type = candidate.CLASS_NAME.split(".").pop();
+                break;
             }
         }
+        return type;
     }
 
 });

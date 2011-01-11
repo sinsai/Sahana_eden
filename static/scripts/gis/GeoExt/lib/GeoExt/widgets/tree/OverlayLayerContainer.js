@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008-2010 The Open Source Geospatial Foundation
+ * Copyright (c) 2008-2011 The Open Source Geospatial Foundation
  * 
  * Published under the BSD license.
  * See http://svn.geoext.org/core/trunk/geoext/license.txt for the full text
@@ -25,19 +25,25 @@ Ext.namespace("GeoExt.tree");
  * 
  *     A layer container that will collect all overlay layers of an OpenLayers
  *     map. Only layers that have displayInLayerSwitcher set to true will be
- *     included.
+ *     included. The childrens' iconCls defaults to
+ *     "gx-tree-layer-icon" and this node' text defaults to "Overlays".
  * 
  *     To use this node type in ``TreePanel`` config, set nodeType to
  *     "gx_overlaylayercontainer".
  */
 GeoExt.tree.OverlayLayerContainer = Ext.extend(GeoExt.tree.LayerContainer, {
 
+    /** private: property[text]
+     *  ``String`` The text for this node.
+     */
+    text: 'Overlays',
+
     /** private: method[constructor]
      *  Private constructor override.
      */
     constructor: function(config) {
         config = Ext.applyIf(config || {}, {
-            text: "Overlays"
+            text: this.text
         });
         config.loader = Ext.applyIf(config.loader || {}, {
             filter: function(record){

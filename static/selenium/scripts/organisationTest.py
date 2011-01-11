@@ -3,18 +3,22 @@ import unittest, re
 
 class OrganisationTest(SahanaTest):
     """ Test the Organisation registry """
-    orgs = []
-                
+    _sortList = ("CreateOrg",
+                 "OpenOrgUIWithAdmin", 
+                 "OpenOrgUIWithUser",
+                )
+    
     def firstRun(self):
         sel = OrganisationTest.selenium
         self.action.logout()
         # Log in as admin an then move to the add organisation page 
-        sel.open("/eden/org/organisation/create")
-        self.action.errorMsg("Not Authorised")
+        sel.open("org/organisation/create")
+        self.action.errorMsg("Authentication Required")
         self.assertEqual("Login", self.selenium.get_text("//h2"))
         self.useSahanaAdminAccount()
         self.action.login(self._user, self._password )
         # Add the test organisations
+        OrganisationTest.orgs = []
         self.addOrg()
 
     
@@ -28,7 +32,7 @@ class OrganisationTest(SahanaTest):
         country = country.strip()
         website = website.strip()
         
-        sel.open("eden/org/organisation/create")
+        sel.open("org/organisation/create")
         self.assertEqual("Add Organization", sel.get_text("//h2"))
         sel.type("org_organisation_name", name)
         sel.type("org_organisation_acronym", acronym)
@@ -39,7 +43,7 @@ class OrganisationTest(SahanaTest):
         sel.type("org_organisation_website", website)
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
-        self.action.successMsg("Organization added")
+        self.assertTrue(self.action.successMsg("Organization added"), "failed to add the organisation %s" % name)
         self.assertEqual("List Organizations", sel.get_text("//h2"))
         print "Organisation %s created" % (name)
         
@@ -60,10 +64,10 @@ class OrganisationTest(SahanaTest):
                                          )
                 OrganisationTest.orgs.append(details[0].strip())
 
-    def test_CreateOrgUI(self):
+    def CreateOrg(self):
         """ Test to check the elements of the create organisation form """ 
         sel = OrganisationTest.selenium
-        sel.open("/eden/org/organisation/create")
+        sel.open("org/organisation/create")
         # check that the UI controls are present
         self.action.checkForm ((("input", "org_organisation_name"),
                     ("input", "org_organisation_acronym"),
@@ -79,7 +83,7 @@ class OrganisationTest(SahanaTest):
                    ("Twitter", "Donation", "Comments")
                   )
 
-    def test_OpenOrgUIAdmin(self):
+    def OpenOrgUIWithAdmin(self):
         """ Test to check the elements of the list organisation form logged in with the admin account
         
         In turn it will check each of the tabs on the list screen
@@ -88,7 +92,7 @@ class OrganisationTest(SahanaTest):
         sel = OrganisationTest.selenium
         self.useSahanaAdminAccount()
         self.action.login(self._user, self._password )
-        sel.open("/eden/org/organisation")
+        sel.open("org/organisation")
         self.action.searchUnique(self.orgs[0])
         sel.click("link=Open")
         sel.wait_for_page_to_load("30000")
@@ -124,7 +128,7 @@ class OrganisationTest(SahanaTest):
         self.action.clickTab("Activities")
         self.action.btnLink ("show-add-btn", "Add Activity")
 
-    def test_OpenOrgUIUser(self):
+    def OpenOrgUIWithUser(self):
         """ Test to check the elements of the list organisation form when not logged in 
         
         In turn it will check each of the tabs on the list screen
@@ -132,7 +136,7 @@ class OrganisationTest(SahanaTest):
         """ 
         sel = OrganisationTest.selenium
         self.action.logout()
-        sel.open("/eden/org/organisation")
+        sel.open("org/organisation")
         self.action.searchUnique(self.orgs[0])
         sel.click("link=Open")
         sel.wait_for_page_to_load("30000")
@@ -147,7 +151,7 @@ class OrganisationTest(SahanaTest):
         self.action.noBtnLink ("show-add-btn", "Add Warehouse")
 
         self.action.clickTab("Assessments")
-#        self.action.noBtnLink ("add-btn", "Add Assessment")
+        self.action.noBtnLink ("add-btn", "Add Assessment")
 
         self.action.clickTab("Projects")
         self.action.noBtnLink ("show-add-btn", "Add Project")
@@ -160,7 +164,7 @@ class OrganisationTest(SahanaTest):
         sel = OrganisationTest.selenium
         self.useSahanaAdminAccount()
         self.action.login(self._user, self._password )
-        sel.open("/eden/org/organisation")
+        sel.open("org/organisation")
         for org in OrganisationTest.orgs:
             self.action.searchUnique(org)
             sel.click("link=Delete")

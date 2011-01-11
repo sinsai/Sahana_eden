@@ -1,8 +1,8 @@
 /**
- * Copyright (c) 2009 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
  * 
  * Published under the BSD license.
- * See http://svn.opengeo.org/gxp/trunk/license.txt for the full text
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
  * of the license.
  */
 
@@ -17,6 +17,7 @@ gxp.data.WFSProtocolProxy = Ext.extend(GeoExt.data.ProtocolProxy, {
     
     /** api: method[setFilter]
      *  :arg filter: ``OpenLayers.Filter`` Filter to be set on the WFS protocol.
+     *
      *  Does not trigger anything on the protocol (for now).
      */
     setFilter: function(filter) {
@@ -27,6 +28,7 @@ gxp.data.WFSProtocolProxy = Ext.extend(GeoExt.data.ProtocolProxy, {
     
     /** api: constructor
      *  .. class:: WFSProtocolProxy
+     *
      *      A data proxy for use with ``OpenLayers.Protocol.WFS`` objects.
      *      
      *      This is mainly to extend Ext 3.0 functionality to the
@@ -52,8 +54,8 @@ gxp.data.WFSProtocolProxy = Ext.extend(GeoExt.data.ProtocolProxy, {
         });
         
         // create the protocol if none provided
-        if(!this.protocol) {
-            config.protocol = new OpenLayers.Protocol.WFS({
+        if(!(this.protocol && this.protocol instanceof OpenLayers.Protocol)) {
+            config.protocol = new OpenLayers.Protocol.WFS(Ext.apply({
                 version: config.version,
                 srsName: config.srsName,
                 url: config.url,
@@ -63,7 +65,7 @@ gxp.data.WFSProtocolProxy = Ext.extend(GeoExt.data.ProtocolProxy, {
                 schema: config.schema,
                 filter: config.filter,
                 maxFeatures: config.maxFeatures
-            });
+            }, config.protocol));
         }
 
         gxp.data.WFSProtocolProxy.superclass.constructor.apply(this, arguments);
@@ -101,7 +103,7 @@ gxp.data.WFSProtocolProxy = Ext.extend(GeoExt.data.ProtocolProxy, {
             // get features from records
             var features = new Array(records.length);
             Ext.each(records, function(r, i) {
-                features[i] = r.get("feature");
+                features[i] = r.getFeature();
             }, this);
 
             
@@ -134,8 +136,8 @@ gxp.data.WFSProtocolProxy = Ext.extend(GeoExt.data.ProtocolProxy, {
             var state, feature;
             var destroys = [];
             var insertIds = response.insertIds || [];
-            var j = 0;
-            for(var i=0, len=features.length; i<len; ++i) {
+            var i, len, j = 0;
+            for(i=0, len=features.length; i<len; ++i) {
                 feature = features[i];
                 state = feature.state;
                 if(state) {
@@ -149,8 +151,7 @@ gxp.data.WFSProtocolProxy = Ext.extend(GeoExt.data.ProtocolProxy, {
                 }
             }
             
-            var feature;
-            for(var i=0, len=destroys.length; i<len; ++i) {
+            for(i=0, len=destroys.length; i<len; ++i) {
                 feature = destroys[i];
                 feature.layer && feature.layer.destroyFeatures([feature]);
             }
@@ -171,8 +172,9 @@ gxp.data.WFSProtocolProxy = Ext.extend(GeoExt.data.ProtocolProxy, {
              * reader.extractValues - which seems like a nice place to grab the
              * fids from the features.  However, we need the fid in the data
              * object *before* extractValues is called.  So, we create a basic
-             * data object with just the fid (mapping determined by
-             * reader.meta.idProperty).
+             * data object with just the id (mapping determined by
+             * reader.meta.idProperty or, for Ext > 3.0, reader.getId) and the
+             * state property, which is always reset to null after a commit.
              *
              * After the reader.realize method determines that the data is valid
              * (determined by reader.isValid(data)), then extractValues gets
@@ -187,12 +189,21 @@ gxp.data.WFSProtocolProxy = Ext.extend(GeoExt.data.ProtocolProxy, {
              * Bottom line (based on my current understanding): we need to
              * implement extractValues for the FeatureReader.
              */
-            var len = features.length;
+            len = features.length;
             var data = new Array(len);
             var f;
-            for (var i=0; i<len; ++i) {
+            for (i=0; i<len; ++i) {
                 f = features[i];
-                data[i] = {id: f.id, feature: f};
+                // TODO - check if setting the state to null here is appropriate,
+                // or if feature state handling should rather be done in
+                // GeoExt.data.FeatureStore
+                data[i] = {id: f.id, feature: f, state: null};
+                var fields = o.records[i].fields;
+                for (var a in f.attributes) {
+                    if (fields.containsKey(a)) {
+                        data[i][a] = f.attributes[a];
+                    }
+                }
             }
 
             o.callback.call(o.scope, data, response.priv, true);

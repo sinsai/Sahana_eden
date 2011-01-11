@@ -1,6 +1,12 @@
 /**
- * Copyright (c) 2008-2010 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
  * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
+ */
+ 
+/**
  * @include widgets/form/ColorField.js
  */
 
@@ -49,6 +55,11 @@ gxp.FillSymbolizer = Ext.extend(Ext.FormPanel, {
 
     border: false,
     
+    /** i18n */
+    fillText: "Fill",
+    colorText: "Color",
+    opacityText: "Opacity",
+    
     initComponent: function() {
         
         if(!this.symbolizer) {
@@ -62,58 +73,63 @@ gxp.FillSymbolizer = Ext.extend(Ext.FormPanel, {
         
         this.items = [{
             xtype: "fieldset",
-            title: "Fill",
+            title: this.fillText,
             autoHeight: true,
             checkboxToggle: this.checkboxToggle,
             collapsed: this.checkboxToggle === true &&
-                this.symbolizer["fill"] === false,
+                this.symbolizer.fill === false,
             hideMode: "offsets",
             defaults: {
                 width: 100 // TODO: move to css
             },
             items: [{
                 xtype: "gx_colorfield",
-                fieldLabel: "Color",
+                fieldLabel: this.colorText,
                 name: "color",
-                value: this.symbolizer["fillColor"],
+                emptyText: OpenLayers.Renderer.defaultSymbolizer.fillColor,
+                value: this.symbolizer.fillColor,
                 defaultBackground: this.defaultColor ||
-                    OpenLayers.Renderer.defaultSymbolizer["fillColor"],
+                    OpenLayers.Renderer.defaultSymbolizer.fillColor,
                 plugins: colorFieldPlugins,
                 listeners: {
                     valid: function(field) {
-                        this.symbolizer["fillColor"] = field.getValue();
-                        this.fireEvent("change", this.symbolizer);
+                        var newValue = field.getValue();
+                        var modified = this.symbolizer.fillColor != newValue; 
+                        this.symbolizer.fillColor = newValue;
+                        modified && this.fireEvent("change", this.symbolizer);
                     },
                     scope: this
                 }
             }, {
                 xtype: "slider",
-                fieldLabel: "Opacity",
+                fieldLabel: this.opacityText,
                 name: "opacity",
-                values: [(this.symbolizer["fillOpacity"] == null) ? 100 : this.symbolizer["fillOpacity"] * 100],
+                values: [(("fillOpacity" in this.symbolizer) ? this.symbolizer.fillOpacity : OpenLayers.Renderer.defaultSymbolizer.fillOpacity) * 100],
                 isFormField: true,
                 listeners: {
                     changecomplete: function(slider, value) {
-                        this.symbolizer["fillOpacity"] = value / 100;
+                        this.symbolizer.fillOpacity = value / 100;
                         this.fireEvent("change", this.symbolizer);
                     },
                     scope: this
                 },
                 plugins: [
                     new GeoExt.SliderTip({
-                        getText: function(slider) {
-                            return slider.getValue() + "%";
+                        getText: function(thumb) {
+                            return thumb.value + "%";
                         }
                     })
                 ]
             }],
             listeners: {
                 "collapse": function() {
-                    this.symbolizer["fill"] = false;
-                    this.fireEvent("change", this.symbolizer);
+                    if (this.symbolizer.fill !== false) {
+                        this.symbolizer.fill = false;
+                        this.fireEvent("change", this.symbolizer);
+                    }
                 },
                 "expand": function() {
-                    this.symbolizer["fill"] = true;
+                    this.symbolizer.fill = true;
                     this.fireEvent("change", this.symbolizer);
                 },
                 scope: this

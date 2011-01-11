@@ -361,55 +361,55 @@ if populate:
         table.insert(
             item_category_id = agriculture,
             name = "Rice Seed",
-            unit = "sack20kg",
+            base_unit = "sack20kg",
             comments = "This should provide enough seed for 1 Hectare of land"
             )
         table.insert(
             item_category_id = food,
             name = "Rice",
-            unit = "sack50kg",
+            base_unit = "sack50kg",
             comments = "This should feed 125 people for 1 day"
             )
         table.insert(
             item_category_id = food,
             name = "Cooking Utensils",
-            unit = "kit",
+            base_unit = "kit",
             comments = "Cooking Utensils for a Household"
             )
         table.insert(
             item_category_id = health,
             name = "First Ait Kit",
-            unit = "kit",
+            base_unit = "kit",
             comments = "This should provide basic first aid (bandages, oral rehydration salts, etc) for 100 people to self-administer"
             )
         table.insert(
             item_category_id = health,
             name = "Medical Kit",
-            unit = "kit",
+            base_unit = "kit",
             comments = "This should provide medical supplies (medicines, vaccines) for a professional clinic to provide assistance to a total community of 10,000 people."
             )
         table.insert(
             item_category_id = shelter,
             name = "Shelter Kit",
-            unit = "kit",
+            base_unit = "kit",
             comments = "This kit is suitable to provide emergency repair to a damaged home. It contains a tarpaulin, zinc sheet, wooden poles, hammer & nails"
             )
         table.insert(
             item_category_id = shelter,
             name = "Tent",
-            unit = "piece",
+            base_unit = "piece",
             comments = "This should house a family of up to 8 people"
             )
         table.insert(
             item_category_id = wash,
             name = "Hygiene Kit",
-            unit = "kit",
+            base_unit = "kit",
             comments = "Personal Hygiene supplies for 100 Households (5 persons/household): Each get 2x Buckets, 10x Soap, Cotton cloth"
             )
         table.insert(
             item_category_id = wash,
             name = "Water Purification Sachets",
-            unit = "kit",
+            base_unit = "kit",
             comments = "Designed to provide a 1st phase drinking water purification solution at the household level. Contains 600 sachets to provide sufficient drinking water (4l) for 100 people for 30 days."
             )
 
@@ -987,16 +987,16 @@ if populate:
                     subtype = subtype,
                     enabled = False
                 )
-    #tablename = "gis_layer_bing"
-    #table = db[tablename]
-    #if not db(table.id > 0).count():
+    tablename = "gis_layer_bing"
+    table = db[tablename]
+    if not db(table.id > 0).count():
         # Populate table
-    #    for subtype in gis_layer_bing_subtypes:
-    #        table.insert(
-    #                name = "Bing " + subtype,
-    #                subtype = subtype,
-    #                enabled = False
-    #            )
+        for subtype in gis_layer_bing_subtypes:
+            table.insert(
+                    name = "Bing " + subtype,
+                    subtype = subtype,
+                    enabled = False
+                )
     tablename = "gis_layer_mgrs"
     table = db[tablename]
     if not db(table.id > 0).count():
@@ -1172,7 +1172,7 @@ if populate:
         auth.add_group("HMSOrg", description = "HMSOrg - permission to submit pledges")
         auth.add_group("HMSViewer", description = "HMSViewer - permission to access HMS")
         # Ticketing
-        auth.add_group("TicketAdmin", description = "TicketAdmin - full access to Ticketing")
+        #auth.add_group("TicketAdmin", description = "TicketAdmin - full access to Ticketing")
 
     # Security Defaults for all tables (if using 'full' security policy)
     if session.s3.security_policy != 1:

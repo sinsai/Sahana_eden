@@ -1,6 +1,9 @@
 /**
- * Copyright (c) 2008 The Open Planning Project
- *
+ * Copyright (c) 2008-2011 The Open Planning Project
+ * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
  */
 
 // @include widgets/NewSourceWindow.js
@@ -8,8 +11,9 @@
 /** api: (define)
  *  module = gxp.grid
  *  class = CapabilitiesGrid
- *  extends = Ext.grid.GridPanel
+ *  base_link = `Ext.grid.GridPanel <http://extjs.com/deploy/dev/docs/?class=Ext.grid.GridPanel>`_
  */
+Ext.namespace("gxp.grid");
 
 /** api: constructor
  *  .. class:: CapabilitiesGrid(config)
@@ -18,7 +22,6 @@
  *      contents of a ``GeoExt.data.WMSCapabilitiesStore``\ .  The user can
  *      add layers to a passed-in ``GeoExt.MapPanel`` from the grid.
  */
-Ext.namespace("gxp.grid");
 gxp.grid.CapabilitiesGrid = Ext.extend(Ext.grid.GridPanel, {
 
     /** api: config[store]
@@ -93,13 +96,14 @@ gxp.grid.CapabilitiesGrid = Ext.extend(Ext.grid.GridPanel, {
      * - queryableHeaderText 
      * - layerSelectionLabel
      * - layerAdditionLabel
+     * - expanderTemplateText
      */
     nameHeaderText : "Name",
     titleHeaderText : "Title",
     queryableHeaderText : "Queryable",
     layerSelectionLabel: "View available data from:",
     layerAdditionLabel: "or add a new server.",
-
+    expanderTemplateText: "<p><b>Abstract:</b> {abstract}</p>",
 
     /** private: method[initComponent]
      *
@@ -119,8 +123,8 @@ gxp.grid.CapabilitiesGrid = Ext.extend(Ext.grid.GridPanel, {
 
         if (!("expander" in this)){
             this.expander = new Ext.grid.RowExpander({
-                tpl : new Ext.Template(
-                    '<p><b>Abstract:</b> {abstract}</p>')});
+                tpl : new Ext.Template(this.expanderTemplateText)
+            });
         }
 
         if(!this.plugins && this.expander){

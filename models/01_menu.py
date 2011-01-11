@@ -77,7 +77,8 @@ admin_menu_options = [
     [T("User Management"), False, URL(r=request, c="admin", f="user"), [
         [T("Users"), False, URL(r=request, c="admin", f="user")],
         [T("Roles"), False, URL(r=request, c="admin", f="group")],
-        [T("Membership"), False, URL(r=request, c="admin", f="membership")]
+        [T("Membership"), False, URL(r=request, c="admin", f="membership")],
+        [T("Role Manager"), False, URL(r=request, c="admin", f="role")],
     ]],
     [T("Database"), False, "#", [
         [T("Import"), False, URL(r=request, c="admin", f="import_data")],
@@ -97,7 +98,7 @@ admin_menu_options = [
             [T("History"), False, URL(r=request, c="sync", f="log")]
     ]],
     [T("Messaging"), False, "#", admin_menu_messaging],
-    [T("Edit Application"), False, URL(r=request, a="admin", c="default", f="design", args=[request.application])],
+    #[T("Edit Application"), False, URL(r=request, a="admin", c="default", f="design", args=[request.application])],
     [T("Tickets"), False, URL(r=request, c="admin", f="errors")],
     #[T("Functional Tests"), False, URL(r=request, c="static", f="selenium", args=["core", "TestRunner.html"], vars=dict(test="../tests/TestSuite.html", auto="true", resultsUrl=URL(r=request, c="admin", f="handleResults")))]
 ]

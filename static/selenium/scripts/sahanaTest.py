@@ -22,6 +22,7 @@ class SahanaTest(unittest.TestCase):
     """
     _seleniumCreated = False
     _classDetailsCollected = False
+    _sortList = None
     _user = "user@example.com"
     _password = "testing"
     @staticmethod
@@ -37,6 +38,7 @@ class SahanaTest(unittest.TestCase):
             in this method are shared amongst all subclasses. That is:
             SahanaTest.selenium and SahanaTest.action
         """
+
         # only run once
         if not SahanaTest._seleniumCreated:
             if browser == "*custom":
@@ -67,6 +69,7 @@ class SahanaTest(unittest.TestCase):
             cls.firstRunExists = False
             cls.lastRunExists = False
             cls.timings = []
+            cls.action.openReport()
             # Use inspect to find the number of test methods
             # this is then used in tearDown() to work out if lastRun() needs to be invoked
             methods = inspect.getmembers(cls, inspect.ismethod)
@@ -77,6 +80,9 @@ class SahanaTest(unittest.TestCase):
                     cls.firstRunExists = True
                 if name == "lastRun":
                     cls.lastRunExists = True
+            # the testcaseCount needs to be modified if _sortList exists
+            if cls._sortList != None:
+                cls.testcaseCount = len(cls._sortList)
             # This cls version will now hide the SahanaTest version
             cls._classDetailsCollected = True
             cls.timings.append(time.time())
@@ -85,11 +91,15 @@ class SahanaTest(unittest.TestCase):
     @classmethod
     def finish(cls):
         cls.testcaseFinishedCount += 1
-        if cls.testcaseFinishedCount == cls.testcaseCount:
-            cls.timings[0] = time.time() - cls.timings[0]
-            return True
+        return cls.testcaseFinishedCount == cls.testcaseCount
+
+    @classmethod
+    def sortTests(cls,list):
+        print cls
+        if cls._sortList:
+            return map(cls,cls._sortList)
         else:
-            return False
+            return None
 
     @classmethod
     def useSahanaAdminAccount(cls):
@@ -121,5 +131,11 @@ class SahanaTest(unittest.TestCase):
         if self.finish():
             if self.lastRunExists:
                 self.lastRun()
-            print "Total processing time took %.3f seconds" % self.timings[0]
+            self.timings[0] = time.time() - self.timings[0]
+            if (self.timings[0] > 60):
+                print "Total processing time took %1.0f:%2.3f seconds" % (self.timings[0]//60, self.timings[0]%60)
+            else:
+                print "Total processing time took %.3f seconds" % self.timings[0]
+            self.__class__._classDetailsCollected = False # Set it up for the next full run
             self.action.logout()
+            self.action.closeReport("Total processing time took %.3f seconds\n" % self.timings[0])

@@ -40,10 +40,19 @@ OpenLayers.Layer.XYZ = OpenLayers.Class(OpenLayers.Layer.Grid, {
      *     for a requested tile.  For example, if you supply a zoomOffset
      *     of 3, when the map is at the zoom 0, tiles will be requested from
      *     level 3 of your cache.  Default is 0 (assumes cache level and map
-     *     zoom are equivalent).
+     *     zoom are equivalent).  Using <zoomOffset> is an alternative to
+     *     setting <serverResolutions> if you only want to expose a subset
+     *     of the server resolutions.
      */
     zoomOffset: 0,
     
+    /**
+     * APIProperty: serverResolutions
+     * {Array} A list of all resolutions available on the server.  Only set this
+     *     property if the map resolutions differs from the server.
+     */
+    serverResolutions: null,
+
     /**
      * Constructor: OpenLayers.Layer.XYZ
      *
@@ -98,7 +107,7 @@ OpenLayers.Layer.XYZ = OpenLayers.Class(OpenLayers.Layer.Grid, {
     },    
 
     /**
-     * Method: getUrl
+     * Method: getURL
      *
      * Parameters:
      * bounds - {<OpenLayers.Bounds>}
@@ -109,23 +118,37 @@ OpenLayers.Layer.XYZ = OpenLayers.Class(OpenLayers.Layer.Grid, {
      *          parameters
      */
     getURL: function (bounds) {
+        var xyz = this.getXYZ(bounds);
+        var url = this.url;
+        if (url instanceof Array) {
+            var s = '' + xyz.x + xyz.y + xyz.z;
+            url = this.selectUrl(s, url);
+        }
+        
+        return OpenLayers.String.format(url, xyz);
+    },
+    
+    /**
+     * Method: getXYZ
+     * Calculates x, y and z for the given bounds.
+     *
+     * Parameters:
+     * bounds - {<OpenLayers.Bounds>}
+     *
+     * Returns:
+     * {Object} - an object with x, y and z properties.
+     */
+    getXYZ: function(bounds) {
         var res = this.map.getResolution();
         var x = Math.round((bounds.left - this.maxExtent.left) 
             / (res * this.tileSize.w));
         var y = Math.round((this.maxExtent.top - bounds.top) 
             / (res * this.tileSize.h));
-        var z = this.map.getZoom() + this.zoomOffset;
+        var z = this.serverResolutions != null ?
+            OpenLayers.Util.indexOf(this.serverResolutions, res) :
+            this.map.getZoom() + this.zoomOffset;
 
-        var url = this.url;
-        var s = '' + x + y + z;
-        if (url instanceof Array)
-        {
-            url = this.selectUrl(s, url);
-        }
-        
-        var path = OpenLayers.String.format(url, {'x': x, 'y': y, 'z': z});
-
-        return path;
+        return {'x': x, 'y': y, 'z': z};
     },
     
     /**

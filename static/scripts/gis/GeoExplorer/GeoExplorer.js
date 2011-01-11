@@ -208,39 +208,7 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
             isTarget: false,
             allowDrop: false
         });
-        treeRoot.appendChild(new GeoExt.tree.LayerContainer({
-            text: "Overlays",
-            iconCls: "gx-folder",
-            expanded: true,
-            loader: new GeoExt.tree.LayerLoader({
-                store: this.mapPanel.layers,
-                filter: function(record) {
-                    return !record.get("group") &&
-                        record.get("layer").displayInLayerSwitcher == true;
-                },
-                createNode: function(attr) {
-                    var layer = attr.layer;
-                    var store = attr.layerStore;
-                    if (layer && store) {
-                        var record = store.getAt(store.findBy(function(r) {
-                            return r.get("layer") === layer;
-                        }));
-                        if (record && !record.get("queryable")) {
-                            attr.iconCls = "gx-tree-rasterlayer-icon";
-                        }
-                    }
-                    return GeoExt.tree.LayerLoader.prototype.createNode.apply(this, [attr]);
-                }
-            }),
-            singleClickExpand: true,
-            allowDrag: false,
-            listeners: {
-                append: function(tree, node) {
-                    node.expand();
-                }
-            }
-        }));
-        
+
         treeRoot.appendChild(new GeoExt.tree.LayerContainer({
             text: "Base Layers",
             iconCls: "gx-folder",
@@ -280,6 +248,40 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
                 }
             }
         }));
+
+        treeRoot.appendChild(new GeoExt.tree.LayerContainer({
+            text: "Overlays",
+            iconCls: "gx-folder",
+            expanded: true,
+            loader: new GeoExt.tree.LayerLoader({
+                store: this.mapPanel.layers,
+                filter: function(record) {
+                    return !record.get("group") &&
+                        record.get("layer").displayInLayerSwitcher == true;
+                },
+                createNode: function(attr) {
+                    var layer = attr.layer;
+                    var store = attr.layerStore;
+                    if (layer && store) {
+                        var record = store.getAt(store.findBy(function(r) {
+                            return r.get("layer") === layer;
+                        }));
+                        if (record && !record.get("queryable")) {
+                            attr.iconCls = "gx-tree-rasterlayer-icon";
+                        }
+                    }
+                    return GeoExt.tree.LayerLoader.prototype.createNode.apply(this, [attr]);
+                }
+            }),
+            singleClickExpand: true,
+            allowDrag: false,
+            listeners: {
+                append: function(tree, node) {
+                    node.expand();
+                }
+            }
+        }));
+        
         
         var layerPropertiesDialog;
         var showPropertiesAction = new Ext.Action({
@@ -415,15 +417,15 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
             map: this.mapPanel.map,
             defaults: {cls: 'legend-item'}
             // TODO: remove when http://trac.geoext.org/ticket/305 is fixed
-            ,items: []
+            //,items: []
         });        
 
         var westPanel = new Ext.Panel({
+            header: false,
             border: true,
             layout: "border",
             region: "west",
             width: 250,
-            header: false,
             split: true,
             collapsible: true,
             collapseMode: "mini",
@@ -433,9 +435,6 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
         });
         
         this.toolbar = new Ext.Toolbar({
-            xtype: "toolbar",
-            region: "north",
-            height: 27,
             disabled: true,
             items: this.createTools()
         });
@@ -491,11 +490,15 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
             activeItem: 0
         });
         
-        this.portalItems = [
-            this.toolbar,
-            this.mapPanelContainer,
-            westPanel
-        ];
+        this.portalItems = [{
+            region: "center",
+            layout: "border",
+            tbar: this.toolbar,
+            items: [
+                this.mapPanelContainer,
+                westPanel
+            ]
+        }];
         
         GeoExplorer.superclass.initPortal.apply(this, arguments);        
     },

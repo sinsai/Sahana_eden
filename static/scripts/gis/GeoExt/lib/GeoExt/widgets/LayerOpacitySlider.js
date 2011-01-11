@@ -1,4 +1,4 @@
-/* Copyright (c) 2008-2010 The Open Source Geospatial Foundation
+/* Copyright (c) 2008-2011 The Open Source Geospatial Foundation
  * Published under the BSD license.
  * See http://geoext.org/svn/geoext/core/trunk/license.txt for the full text
  * of the license.
@@ -172,7 +172,7 @@ GeoExt.LayerOpacitySlider = Ext.extend(Ext.Slider, {
     /** private: method[unbind]
      */
     unbind: function() {
-        if (this.layer && this.layer.map) {
+        if (this.layer && this.layer.map && this.layer.map.events) {
             this.layer.map.events.un({
                 changelayer: this.update,
                 scope: this
@@ -184,7 +184,8 @@ GeoExt.LayerOpacitySlider = Ext.extend(Ext.Slider, {
      *  Registered as a listener for opacity change.  Updates the value of the slider.
      */
     update: function(evt) {
-        if (evt.property === "opacity" && evt.layer == this.layer) {
+        if (evt.property === "opacity" && evt.layer == this.layer &&
+            !this._settingOpacity) {
             this.setValue(this.getOpacityValue(this.layer));
         }
     },
@@ -290,7 +291,9 @@ GeoExt.LayerOpacitySlider = Ext.extend(Ext.Slider, {
             if (this.inverse === true) {
                 value = 1 - value;
             }
+            this._settingOpacity = true;
             this.layer.setOpacity(value);
+            delete this._settingOpacity;
         }
     },
 

@@ -1,5 +1,9 @@
 /**
- * Copyright (c) 2009 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
+ * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
  */
 
 /** api: (define)
@@ -39,6 +43,11 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
      *  ``OpenLayers.Feature.Vector`` The feature to edit and display.
      */
     
+    /** api: config[vertexRenderIntent]
+     *  ``String`` renderIntent for feature vertices when modifying. Undefined
+     *  by default.
+     */
+    
     /** api: property[feature]
      *  ``OpenLayers.Feature.Vector`` The feature being edited/displayed.
      */
@@ -50,6 +59,16 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
      *  the attributes that the feature has currently set.
      */
     schema: null,
+    
+    /** api: config[excludeFields]
+     *  ``Array`` Optional list of field names (case sensitive) that are to be
+     *  excluded from the property grid.
+     */
+    
+    /** api: config[readOnly]
+     *  ``Boolean`` Set to true to disable editing. Default is false.
+     */
+    readOnly: false,
     
     /** api: config[allowDelete]
      *  ``Boolean`` Set to true to provide a Delete button for deleting the
@@ -130,7 +149,8 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
              *  
              *  Listener arguments:
              *  * panel - :class:`gxp.FeatureEditPopup` This popup.
-             *  * feature - ``OpenLayers.Feature`` The feature.
+             *  * feature - ``OpenLayers.Feature`` The feature. Will be null
+             *    if editing of a feature that was just inserted was cancelled.
              */
             "canceledit",
             
@@ -145,6 +165,9 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
         );
         
         var feature = this.feature;
+        if (!this.location) {
+            this.location = feature
+        };
         
         this.anchored = !this.editing;
         
@@ -154,6 +177,10 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
             var name, type, value;
             this.schema.each(function(r) {
                 type = this.getFieldType(r.get("type"));
+                if (type.match(/gml:((Multi)?(Point|Line|Polygon|Curve|Surface)).*/)) {
+                    // exclude gml geometries
+                    return;
+                }
                 name = r.get("name");
                 value = feature.attributes[name];
                 switch(type) {
@@ -231,6 +258,13 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
             source: feature.attributes,
             customEditors: customEditors,
             listeners: {
+                "viewready": function() {
+                    this.grid.getStore().filterBy(function(r) {
+                        return this.excludeFields ?
+                            this.excludeFields.indexOf(r.get("name")) == -1 :
+                            true;
+                    }, this);
+                },
                 "beforeedit": function() {
                     return this.editing;
                 },
@@ -240,12 +274,20 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
                 scope: this
             }
         });
+        
+        /**
+         * TODO: This is a workaround for getting attributes with undefined
+         * values to show up in the property grid.  Decide if this should be 
+         * handled in another way.
+         */
+        this.grid.propStore.isEditableValue = function() {return true};
 
         this.items = [
             this.grid
         ];
 
         this.bbar = new Ext.Toolbar({
+            hidden: this.readOnly,
             items: [
                 this.editButton,
                 this.deleteButton,
@@ -304,7 +346,7 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
     },
     
     /** private: method[getFieldType]
-     *  :param attrType: ``String`` Attribute type.
+     *  :arg attrType: ``String`` Attribute type.
      *  :returns: ``String`` Field type
      *
      *  Given a feature attribute type, return an Ext field type if possible.
@@ -323,7 +365,7 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
             "xsd:string": "string",
             "xsd:float": "float",
             "xsd:double": "float"
-        })[attrType];
+        })[attrType] || attrType;
     },
 
     /** private: method[startEditing]
@@ -343,16 +385,19 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
 
             this.modifyControl = new OpenLayers.Control.ModifyFeature(
                 this.feature.layer,
-                {standalone: true}
+                {standalone: true, vertexRenderIntent: this.vertexRenderIntent}
             );
             this.feature.layer.map.addControl(this.modifyControl);
             this.modifyControl.activate();
+            //TODO remove the line below when
+            // http://trac.osgeo.org/openlayers/ticket/3009 is fixed
+            this.modifyControl.beforeSelectFeature(this.feature);
             this.modifyControl.selectFeature(this.feature);
         }
     },
     
     /** private: method[stopEditing]
-     *  :param save: ``Boolean`` If set to true, changes will be saved and the
+     *  :arg save: ``Boolean`` If set to true, changes will be saved and the
      *      ``featuremodified`` event will be fired.
      */
     stopEditing: function(save) {
@@ -363,12 +408,13 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
             this.modifyControl.destroy();
             
             var feature = this.feature;
-            if(feature.state === this.getDirtyState()) {
-                if(save === true) {
+            if (feature.state === this.getDirtyState()) {
+                if (save === true) {
                     this.fireEvent("featuremodified", this, feature);
                 } else if(feature.state === OpenLayers.State.INSERT) {
                     this.editing = false;
                     feature.layer.destroyFeatures([feature]);
+                    this.fireEvent("canceledit", this, null);
                     this.close();
                 } else {
                     var layer = feature.layer;
@@ -382,10 +428,12 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
                 }
             }
 
-            this.cancelButton.hide();
-            this.saveButton.hide();
-            this.editButton.show();
-            this.allowDelete && this.deleteButton.show();
+            if (!this.isDestroyed) {
+                this.cancelButton.hide();
+                this.saveButton.hide();
+                this.editButton.show();
+                this.allowDelete && this.deleteButton.show();
+            }
             
             this.editing = false;
         }

@@ -15,17 +15,15 @@ import pexpect
 # fab [test|demo|prod] deploy
 #
 
-test_host = "test.eden.sahanafoundation.org"
+# These sites update straight to Trunk (keeping current data)
 demo_host = "demo.eden.sahanafoundation.org"
+live_host = "colombia.sahanafoundation.org"
+# This site updates to the version on Test
 prod_host = "pakistan.sahanafoundation.org"
+# This site updates to current Trunk (refreshing Data from Prod)
+test_host = "test.eden.sahanafoundation.org"
 all_hosts = [prod_host, demo_host, test_host, "eden.sahanafoundation.org", "humanityroad.sahanafoundation.org", "geo.eden.sahanafoundation.org", "camp.eden.sahanafoundation.org"]
 env.key_filename = ["/root/.ssh/sahana_release"]
-
-# Definitions for 'Test' infrastructure
-def test():
-    """ List of server(s) for Test infrastructure """
-    env.user = "root"
-    env.hosts = [test_host]
 
 # Definitions for 'Demo' infrastructure
 def demo():
@@ -33,11 +31,23 @@ def demo():
     env.user = "root"
     env.hosts = [demo_host]
 
+# Definitions for 'Live' infrastructure
+def live():
+    """ List of server(s) for Live infrastructure """
+    env.user = "root"
+    env.hosts = [live_host]
+
 # Definitions for 'Production' infrastructure
 def prod():
     """ List of server(s) for Production infrastructure """
     env.user = "root"
     env.hosts = [prod_host]
+
+# Definitions for 'Test' infrastructure
+def test():
+    """ List of server(s) for Test infrastructure """
+    env.user = "root"
+    env.hosts = [test_host]
 
 
 # Definitions for 'All' infrastructure
@@ -282,11 +292,13 @@ def migrate_on():
 def migrate():
     """ Perform a Migration """
     print(green("%s: Performing Migration" % env.host))
-    child = pexpect.spawn("ssh -i /root/.ssh/sahana_release %s@%s" % (env.user, env.host))
-    child.expect(":~#")
-    child.sendline("cd /home/web2py")
-    child.expect("/home/web2py#")
-    child.sendline("sudo -H -u web2py python web2py.py -N -S eden -M")
+    with cd("/home/web2py"):
+        run("sudo -H -u web2py python web2py.py -N -S eden -M -R applications/eden/static/scripts/tools/noop.py", pty=True)
+    #child = pexpect.spawn("ssh -i /root/.ssh/sahana_release %s@%s" % (env.user, env.host))
+    #child.expect(":~#")
+    #child.sendline("cd /home/web2py")
+    #child.expect("/home/web2py#")
+    #child.sendline("sudo -H -u web2py python web2py.py -N -S eden -M")
     # @ToDo check if we need to interact otherwise automate
     # - not working :/
     # special characters in regexes matching?
@@ -296,10 +308,11 @@ def migrate():
     #child.sendline("y")
     #child.expect("/home/web2py#")
     #child.sendline("exit")
-    print child.before
-    print (green("Need to exit() w2p shell & also exit the SSH session once you have fixed anything which needs fixing"))
+
+    #print child.before
+    #print (green("Need to exit() w2p shell & also exit the SSH session once you have fixed anything which needs fixing"))
     # Give control of the child to the user.
-    child.interact()
+    #child.interact()
 
 def migrate_off():
     """ Disabling migrations """
@@ -334,7 +347,7 @@ def pull():
             print(green("%s: Upgrading to version %i" % (env.host, env.revno)))
             run("bzr pull -r %i" % env.revno, pty=True)
         except:
-            if "test" in env.host or "demo" in env.host:
+            if "test" in env.host or "demo" in env.host or "colombia" in env.host:
                 # Upgrade to current Trunk
                 print(green("%s: Upgrading to current Trunk" % env.host))
                 run("bzr pull", pty=True)

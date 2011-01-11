@@ -35,11 +35,11 @@ $(document).ready(function() {
                 minlength: '  {{=T("Please enter a valid email address")}}'
             }
         },
-         errorPlacement: function(error, element) {
-              error.appendTo( element.parent().next() );
-         },
-         submitHandler: function(form) {
-                form.submit();
-         }
+        errorPlacement: function(error, element) {
+            error.appendTo( element.parent().next() );
+        },
+        submitHandler: function(form) {
+            form.submit();
+        }
     });
 });

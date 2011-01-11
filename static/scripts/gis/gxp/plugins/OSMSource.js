@@ -1,23 +1,80 @@
 /**
- * @require plugins/LayerSource.js
+ * Copyright (c) 2008-2011 The Open Planning Project
+ * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
  */
 
+/**
+ * @requires plugins/LayerSource.js
+ */
+
+/** api: (define)
+ *  module = gxp.plugins
+ *  class = OSMSource
+ */
+
+/** api: (extends)
+ *  plugins/LayerSource.js
+ */
 Ext.namespace("gxp.plugins");
 
+/** api: constructor
+ *  .. class:: OSMSource(config)
+ *
+ *    Plugin for using OpenStreetMap layers with :class:`gxp.Viewer` instances.
+ *
+ *    Available layer names are "mapnik" and "osmarender"
+ */
+/** api: example
+ *  The configuration in the ``sources`` property of the :class:`gxp.Viewer` is
+ *  straightforward:
+ *
+ *  .. code-block:: javascript
+ *
+ *    osm: {
+ *        ptype: "gx_osmsource"
+ *    }
+ *
+ *  A typical configuration for a layer from this source (in the ``layers``
+ *  array of the viewer's ``map`` config option would look like this:
+ *
+ *  .. code-block:: javascript
+ *
+ *    {
+ *        source: "osm",
+ *        name: "osmarender"
+ *    }
+ *
+ */
 gxp.plugins.OSMSource = Ext.extend(gxp.plugins.LayerSource, {
     
     /** api: ptype = gx_osmsource */
     ptype: "gx_osmsource",
 
     /** api: property[store]
-     *  ``GeoExt.data.LayerStore``
+     *  ``GeoExt.data.LayerStore``. Will contain records with "mapnik" and
+     *  "osmarender" as name field values.
      */
     
-    /** api: property[title]
+    /** api: config[title]
      *  ``String``
-     *  A descriptive title for this layer source.  Default is "Google Layers".
+     *  A descriptive title for this layer source (i18n).
      */
     title: "OpenStreetMap Layers",
+    
+    /** api: config[osmAttribution]
+     *  ``String``
+     *  Attribution string for mapnik generated layer (i18n).
+     */
+    mapnikAttribution: "Data CC-By-SA by <a href='http://openstreetmap.org/'>OpenStreetMap</a>",
+
+    /** api: config[homeAttribution]
+     *  ``String``
+     *  Attribution string for osmarender generated layer (i18n).
+     */
+    osmarenderAttribution: "Data CC-By-SA by <a href='http://openstreetmap.org/'>OpenStreetMap</a>",
 
     /** api: method[createStore]
      *
@@ -46,7 +103,7 @@ gxp.plugins.OSMSource = Ext.extend(gxp.plugins.LayerSource, {
                     "http://c.tile.openstreetmap.org/${z}/${x}/${y}.png"
                 ],
                 OpenLayers.Util.applyDefaults({                
-                    attribution: "Data CC-By-SA by <a href='http://openstreetmap.org/'>OpenStreetMap</a>",
+                    attribution: this.mapnikAttribution,
                     type: "mapnik"
                 }, options)
             ),
@@ -58,7 +115,7 @@ gxp.plugins.OSMSource = Ext.extend(gxp.plugins.LayerSource, {
                     "http://c.tah.openstreetmap.org/Tiles/tile/${z}/${x}/${y}.png"
                 ],
                 OpenLayers.Util.applyDefaults({                
-                    attribution: "Data CC-By-SA by <a href='http://openstreetmap.org/'>OpenStreetMap</a>",
+                    attribution: this.osmarenderAttribution,
                     type: "osmarender"
                 }, options)
             )
@@ -71,7 +128,8 @@ gxp.plugins.OSMSource = Ext.extend(gxp.plugins.LayerSource, {
                 {name: "name", type: "string", mapping: "type"},
                 {name: "abstract", type: "string", mapping: "attribution"},
                 {name: "group", type: "string", defaultValue: "background"},
-                {name: "fixed", type: "boolean", defaultValue: true}
+                {name: "fixed", type: "boolean", defaultValue: true},
+                {name: "selected", type: "boolean"}
             ]
         });
         this.store.each(function(l) {
@@ -112,6 +170,7 @@ gxp.plugins.OSMSource = Ext.extend(gxp.plugins.LayerSource, {
                 layer.visibility = config.visibility
             }
             
+            record.set("selected", config.selected || false);
             record.set("source", config.source);
             record.set("name", config.name);
             if ("group" in config) {

@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2009 Chris Leonello
+ * Copyright (c) 2009 - 2010 Chris Leonello
  * jqPlot is currently available for use in all personal or commercial projects 
  * under both the MIT and GPL version 2.0 licenses. This means that you can 
  * choose the license that best suits your project and use it accordingly. 
  *
  * The author would appreciate an email letting him know of any substantial
- * use of jqPlot.  You can reach the author at: chris dot leonello at gmail 
- * dot com or see http://www.jqplot.com/info.php .  This is, of course, 
+ * use of jqPlot.  You can reach the author at: chris at jqplot dot com 
+ * or see http://www.jqplot.com/info.php .  This is, of course, 
  * not required.
  *
  * If you are feeling kind and generous, consider supporting the project by
@@ -77,11 +77,14 @@
         this.labelsFromSeries = false;
         // prop: seriesLabelIndex
         // array index for location of labels within data point arrays.
-        // if null, will use the last element of teh data point array.
+        // if null, will use the last element of the data point array.
         this.seriesLabelIndex = null;
         // prop: labels
         // array of arrays of labels, one array for each series.
         this.labels = [];
+        // actual labels that will get displayed.
+        // needed to preserve user specified labels in labels array.
+        this._labels = [];
         // prop: stackedValue
         // true to display value as stacked in a stacked plot.
         // no effect if labels is specified.
@@ -100,10 +103,17 @@
         // Number of pixels that the label must be away from an axis
         // boundary in order to be drawn.  Negative values will allow overlap
         // with the grid boundaries.
-        this.edgeTolerance = 0;
+        this.edgeTolerance = -5;
+        // prop: formatter
+        // A class of a formatter for the tick text.  sprintf by default.
+        this.formatter = $.jqplot.DefaultTickFormatter;
+        // prop: formatString
+        // string passed to the formatter.
+        this.formatString = '';
         // prop: hideZeros
         // true to not show a label for a value which is 0.
         this.hideZeros = false;
+        this._elems = [];
         
         $.extend(true, this, options);
     };
@@ -115,15 +125,35 @@
     // called with scope of a series
     $.jqplot.PointLabels.init = function (target, data, seriesDefaults, opts){
         var options = $.extend(true, {}, seriesDefaults, opts);
+        options.pointLabels = options.pointLabels || {};
+        if (this.renderer.constructor == $.jqplot.BarRenderer && this.barDirection == 'horizontal' && !options.pointLabels.location) {
+            options.pointLabels.location = 'e';
+        }
         // add a pointLabels attribute to the series plugins
         this.plugins.pointLabels = new $.jqplot.PointLabels(options.pointLabels);
-        var p = this.plugins.pointLabels;
-        if (p.labels.length == 0 || p.labelsFromSeries) {
+        this.plugins.pointLabels.setLabels.call(this);
+    };
+    
+    // called with scope of series
+    $.jqplot.PointLabels.prototype.setLabels = function() {   
+        var p = this.plugins.pointLabels; 
+        var labelIdx;
+        if (p.seriesLabelIndex != null) {
+            labelIdx = p.seriesLabelIndex;
+        }
+        else if (this.renderer.constructor == $.jqplot.BarRenderer && this.barDirection == 'horizontal') {
+            labelIdx = 0;
+        }
+        else {
+            labelIdx = this._plotData[0].length -1;
+        }
+        p._labels = [];
+        if (p.labels.length == 0 || p.labelsFromSeries) {    
             if (p.stackedValue) {
                 if (this._plotData.length && this._plotData[0].length){
-                    var idx = p.seriesLabelIndex || this._plotData[0].length -1;
+                    // var idx = p.seriesLabelIndex || this._plotData[0].length -1;
                     for (var i=0; i<this._plotData.length; i++) {
-                        p.labels.push(this._plotData[i][idx]);
+                        p._labels.push(this._plotData[i][labelIdx]);
                     }
                 }
             }
@@ -133,12 +163,15 @@
                     d = this._data;
                 }
                 if (d.length && d[0].length) {
-                    var idx = p.seriesLabelIndex || d[0].length -1;
+                    // var idx = p.seriesLabelIndex || d[0].length -1;
                     for (var i=0; i<d.length; i++) {
-                        p.labels.push(d[i][idx]);
+                        p._labels.push(d[i][labelIdx]);
                     }
                 }
             }
+        }
+        else if (p.labels.length){
+            p._labels = p.labels;
         }
     };
     
@@ -219,60 +252,37 @@
     // called with scope of series
     $.jqplot.PointLabels.draw = function (sctx, options) {
         var p = this.plugins.pointLabels;
+        // set labels again in case they have changed.
+        p.setLabels.call(this);
+        // remove any previous labels
+        for (var i=0; i<p._elems.length; i++) {
+            p._elems[i].remove();
+        }
         if (p.show) {
-            // var xoffset, yoffset;
-            //         
-            // switch (p.location) {
-            //     case 'nw':
-            //         xoffset = function(elem) { return -elem.outerWidth(true) - p.xpadding; };
-            //         yoffset = function(elem) { return -elem.outerHeight(true) - p.ypadding; };
-            //         break;
-            //     case 'n':
-            //         xoffset = function(elem) { return -elem.outerWidth(true)/2; };
-            //         yoffset = function(elem) { return -elem.outerHeight(true) - p.ypadding; };
-            //         break;
-            //     case 'ne':
-            //         xoffset = function(elem) { return p.xpadding; };
-            //         yoffset = function(elem) { return -elem.outerHeight(true) - p.ypadding; };
-            //         break;
-            //     case 'e':
-            //         xoffset = function(elem) { return p.xpadding; };
-            //         yoffset = function(elem) { return -elem.outerHeight(true)/2; };
-            //         break;
-            //     case 'se':
-            //         xoffset = function(elem) { return p.xpadding; };
-            //         yoffset = function(elem) { return p.ypadding; };
-            //         break;
-            //     case 's':
-            //         xoffset = function(elem) { return -elem.outerWidth(true)/2; };
-            //         yoffset = function(elem) { return p.ypadding; };
-            //         break;
-            //     case 'sw':
-            //         xoffset = function(elem) { return -elem.outerWidth(true) - p.xpadding; };
-            //         yoffset = function(elem) { return p.ypadding; };
-            //         break;
-            //     case 'w':
-            //         xoffset = function(elem) { return -elem.outerWidth(true) - p.xpadding; };
-            //         yoffset = function(elem) { return -elem.outerHeight(true)/2; };
-            //         break;
-            //     default: // same as 'nw'
-            //         xoffset = function(elem) { return -elem.outerWidth(true) - p.xpadding; };
-            //         yoffset = function(elem) { return -elem.outerHeight(true) - p.ypadding; };
-            //         break;
-            // }
+            var ax = '_'+this._stackAxis+'axis';
         
-            for (var i=0; i<p.labels.length; i++) {
-                var pd = this._plotData;
-                var xax = this._xaxis;
-                var yax = this._yaxis;
-                var label = p.labels[i];
+            if (!p.formatString) {
+                p.formatString = this[ax]._ticks[0].formatString;
+                p.formatter = this[ax]._ticks[0].formatter;
+            }
+        
+            var pd = this._plotData;
+            var xax = this._xaxis;
+            var yax = this._yaxis;
+
+            for (var i=p._labels.length-1; i>=0; i--) {
+                var label = p._labels[i];
                 
-                if (p.hideZeros && parseInt(p.labels[i], 10) == 0) {
+                if (p.hideZeros && parseInt(p._labels[i], 10) == 0) {
                     label = '';
                 }
                 
-                var elem = $('<div class="jqplot-point-label" style="position:absolute"></div>');
+                if (label != null) {
+                    label = p.formatter(p.formatString, label);
+                } 
+                var elem = $('<div class="jqplot-point-label jqplot-series-'+this.index+' jqplot-point-'+i+'" style="position:absolute"></div>');
                 elem.insertAfter(sctx.canvas);
+                p._elems.push(elem);
                 if (p.escapeHTML) {
                     elem.text(label);
                 }
@@ -285,6 +295,14 @@
                 }
                 var ell = xax.u2p(pd[i][0]) + p.xOffset(elem, location);
                 var elt = yax.u2p(pd[i][1]) + p.yOffset(elem, location);
+                if (this.renderer.constructor == $.jqplot.BarRenderer) {
+                    if (this.barDirection == "vertical") {
+                        ell += this._barNudge;
+                    }
+                    else {
+                        elt -= this._barNudge;
+                    }
+                }
                 elem.css('left', ell);
                 elem.css('top', elt);
                 var elr = ell + $(elem).width();
@@ -296,7 +314,7 @@
                 var scb = sctx.canvas.height + sct;
                 // if label is outside of allowed area, remove it
                 if (ell - et < scl || elt - et < sct || elr + et > scr || elb + et > scb) {
-                    $(elem).remove();
+                    $(elem).detach();
                 }
             }
         }

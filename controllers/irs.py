@@ -39,6 +39,7 @@ def index():
     """ Custom View """
 
     module_name = deployment_settings.modules[module].name_nice
+    response.title = module_name
     return dict(module_name=module_name)
 
 
@@ -105,9 +106,6 @@ def ireport():
         return True
     response.s3.prep = prep
 
-    if not shn_has_role("Editor"):
-        table.incident_id.readable = table.incident_id.writable = False
-
     # Post-processor
     def user_postp(r, output):
         shn_action_buttons(r, deletable=False, copyable=True)
@@ -115,7 +113,7 @@ def ireport():
     response.s3.postp = user_postp
 
     rheader = lambda r: shn_irs_rheader(r, tabs = [(T("Report Details"), None),
-                                                   (T("Images"), "image")
+                                                   (T("Images"), "iimage")
                                                   ])
 
     output = s3_rest_controller(module, resource, rheader=rheader)
@@ -146,7 +144,8 @@ def shn_irs_rheader(r, tabs=[]):
             location = report.location_id
             if location:
                 location = shn_gis_location_represent(location)
-            create_request = DIV(P(), A(T("Create Request"), _class="action-btn colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars={"format":"popup", "caller":"irs_ireport"}), _title=T("Add Request")), P())
+            create_request = A(T("Create Request"), _class="action-btn colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars={"format":"popup", "caller":"irs_ireport"}), _title=T("Add Request")) 
+            create_task = A(T("Create Task"), _class="action-btn colorbox", _href=URL(r=request, c="project", f="task", args="create", vars={"format":"popup", "caller":"irs_ireport"}), _title=T("Add Task")) 
             rheader = DIV(TABLE(
                             TR(
                                 TH(T("Short Description") + ": "), report.name,
@@ -155,7 +154,7 @@ def shn_irs_rheader(r, tabs=[]):
                                 TH(T("Contacts") + ": "), report.contact,
                                 TH(T("Location") + ": "), location)
                             ),
-                          create_request,
+                          DIV(P(), create_request, " ", create_task, P()),
                           rheader_tabs)
 
         return rheader

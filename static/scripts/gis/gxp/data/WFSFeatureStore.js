@@ -1,8 +1,8 @@
 /**
- * Copyright (c) 2009 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
  * 
  * Published under the BSD license.
- * See http://svn.opengeo.org/gxp/trunk/license.txt for the full text
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
  * of the license.
  */
 
@@ -41,8 +41,8 @@ gxp.data.WFSFeatureStore = Ext.extend(GeoExt.data.FeatureStore, {
     
     /** private */
     constructor: function(config) {
-        if(!config.proxy) {
-            config.proxy = new gxp.data.WFSProtocolProxy({
+        if(!(config.proxy && config.proxy instanceof GeoExt.data.ProtocolProxy)) {
+            config.proxy = new gxp.data.WFSProtocolProxy(Ext.apply({
                 srsName: config.srsName,
                 url: config.url,
                 featureType: config.featureType,
@@ -51,7 +51,7 @@ gxp.data.WFSFeatureStore = Ext.extend(GeoExt.data.FeatureStore, {
                 schema: config.schema,
                 filter: config.ogcFilter,
                 maxFeatures: config.maxFeatures
-            });
+            }, config.proxy));
         }
         if(!config.writer) {
             // a writer is not used, but is required by store.save
@@ -85,6 +85,18 @@ gxp.data.WFSFeatureStore = Ext.extend(GeoExt.data.FeatureStore, {
          * same record.
          */
         this.reader.meta.idProperty = "id";
+        
+        /**
+         * TODO: Same as above, but it seems that the getId method is responsible
+         * for determining the id in Ext > 3.0. This is crucial after changes
+         * are committed (see WFSProtocolProxy::onProtocolCommit), because the
+         * callback there does an isData check, which involves an attempt to get
+         * the id through this method.
+         */
+        this.reader.getId = function(data) {
+            return data.id;
+        };
+        
         
         
     }

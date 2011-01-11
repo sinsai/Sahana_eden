@@ -2,7 +2,6 @@
 
     var jsfiles = new Array(
         "util.js",
-        "Lang.js",
         "data/WFSFeatureStore.js",
         "data/WFSProtocolProxy.js",
         "menu/LayerMenu.js",
@@ -27,16 +26,34 @@
         "widgets/form/ColorField.js",
         "widgets/form/FilterField.js",
         "widgets/form/FontComboBox.js",
+        "widgets/form/ViewerField.js",
         "widgets/grid/CapabilitiesGrid.js",
         "widgets/grid/FeatureGrid.js",
         "widgets/GoogleEarthPanel.js",
+        "widgets/GoogleStreetViewPanel.js",
         "widgets/tips/SliderTip.js",
         "plugins/LayerSource.js",
+        "plugins/BingSource.js",
         "plugins/WMSSource.js",
+        //"plugins/OSMSource.js",
+        "plugins/TMSSource.js",
+        //"plugins/KMLSource.js",
         "plugins/GoogleSource.js",
+        //"plugins/YahooSource.js",
         "plugins/OLSource.js",
         "plugins/StyleWriter.js",
-        "plugins/GeoServerStyleWriter.js"
+        "plugins/GeoServerStyleWriter.js",
+        "plugins/WMSRasterStylesDialog.js",
+        "plugins/Tool.js",
+        "plugins/WMSGetFeatureInfo.js",
+        "plugins/FeatureEditor.js",
+        "plugins/FeatureGrid.js",
+        "plugins/FeatureManager.js",
+        "plugins/FeatureToField.js",
+        "plugins/QueryForm.js",
+        //"plugins/SelectFeature.js",
+        "plugins/LayerTree.js",
+        "plugins/RemoveLayer.js"
     );
     
     var scripts = document.getElementsByTagName("script");

@@ -1,5 +1,9 @@
 /**
- * Copyright (c) 2008-2010 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
+ * 
+ * Published under the BSD license.
+ * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
+ * of the license.
  */
 
 /** api: (define)
@@ -131,7 +135,7 @@ gxp.form.ColorField = Ext.extend(Ext.form.TextField,  {
     },
     
     /** api: method[setValue]
-     *  :param value: ``Object``
+     *  :arg value: ``Object``
      *  
      *  Sets the value of the field. If the value matches one of the well known
      *  colors in ``cssColors``, a human readable value will be displayed

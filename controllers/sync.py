@@ -19,6 +19,7 @@ def index():
 
     """ Module's Home Page """
 
+    response.title = module_name
     return dict(module_name=module_name)
 
 
@@ -681,7 +682,7 @@ def s3_sync_eden_eden(peer, mode, tablenames,
 
         # Create resource
         prefix, name = tablename.split("_", 1)
-        resource = s3xrc._resource(prefix, name)
+        resource = s3xrc.define_resource(prefix, name)
 
         if is_json:
             _get = resource.fetch_json
@@ -885,7 +886,7 @@ def s3_sync_eden_other(peer, mode, tablenames,
 
         # Create resource
         prefix, name = tablename.split("_", 1)
-        resource = s3xrc._resource(prefix, name)
+        resource = s3xrc.define_resource(prefix, name)
 
         if pull and mode in [1, 3]:
 

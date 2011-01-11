@@ -1496,6 +1496,7 @@ class S3Permission(object):
         permitted = (acl[0] | acl[1]) & racl == racl
         ownership_required = False
         if not permitted:
+            pkey = table.fields[0]
             query = (table[pkey] == None)
         elif "owned_by" in table or "created_by" in table:
             ownership_required = permitted and acl[1] & racl != racl

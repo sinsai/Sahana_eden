@@ -2740,6 +2740,7 @@
 'Sahana Eden': 'Sahana Eden',
 'Sahana Eden <=> Other': 'Sahana Eden <=> Other',
 'Sahana Eden <=> Sahana Eden': 'Sahana Eden <=> Sahana Eden',
+'Sahana Eden Disaster Management Platform': 'Sahana Eden Disaster Management Platform',
 'Sahana Eden Open Source Disaster Management Platform': 'Sahana Eden Open Source Disaster Management Platform',
 'Sahana Eden Website': 'Sahana Eden Website',
 'Sahana Green': 'Sahana Green',

@@ -1785,8 +1785,10 @@ class S3RoleManager(S3Method):
             output = self._edit(r, **attr)
         elif method == "delete":
             output = self._delete(r, **attr)
-        elif method == "roles":
+        elif method == "roles" and r.name == "user":
             output = self._roles(r, **attr)
+        elif method == "users":
+            output = self._users(r, **attr)
         else:
             r.error(501, self.manager.ERROR.BAD_METHOD)
 
@@ -1883,14 +1885,20 @@ class S3RoleManager(S3Method):
                                        args=[role_id], vars=request.get_vars),
                              _class="action-btn")
 
+                users_btn = A(T("Users"),
+                              _href=URL(r=request, c="admin", f="role",
+                                        args=[role_id, "users"]),
+                              _class="action-btn")
+
                 if role_id in self.PROTECTED_ROLES:
-                    tdata = [TD(edit_btn), TD(role_name)]
+                    tdata = [TD(edit_btn, XML("&nbsp;"), users_btn), TD(role_name)]
                 else:
                     delete_btn = A(T("Delete"),
                                 _href=URL(r=request, c="admin", f="role",
                                             args=[role_id, "delete"], vars=request.get_vars),
                                 _class="delete-btn")
-                    tdata = [TD(edit_btn, XML("&nbsp;"), delete_btn), TD(role_name)]
+                    tdata = [TD(edit_btn, XML("&nbsp;"), users_btn, XML("&nbsp;"), delete_btn),
+                             TD(role_name)]
 
                 if show_matrix:
                     # Display the permission matrix
@@ -2286,7 +2294,7 @@ class S3RoleManager(S3Method):
     # -------------------------------------------------------------------------
     def _roles(self, r, **attr):
         """
-        Update roles of a user
+        View/Update roles of a user
 
         """
 
@@ -2300,50 +2308,170 @@ class S3RoleManager(S3Method):
         crud_settings = self.manager.s3.crud
         formstyle = crud_settings.formstyle
 
-        mtable = db.auth_membership
-        gtable = db.auth_group
+        auth = self.manager.auth
+        gtable = auth.settings.table_group
+        mtable = auth.settings.table_membership
 
-        if r.record:
-            user = r.record
-            user_id = user.id
-            username = user.email
-            query = (mtable.user_id == user_id)
-            memberships = db(query).select()
-            memberships = Storage([(str(m.group_id), m.id) for m in memberships])
-            roles = db().select(gtable.id, gtable.role)
-            roles = Storage([(str(g.id), " %s" % g.role) for g in roles if g.id not in (2, 3)])
-            field = Storage(name="roles",
-                            requires = IS_IN_SET(roles, multiple=True))
-            widget = CheckboxesWidget.widget(field, memberships.keys())
+        if r.interactive:
+            if r.record:
+                user = r.record
+                user_id = user.id
+                username = user.email
+                query = (mtable.user_id == user_id)
+                memberships = db(query).select()
+                memberships = Storage([(str(m.group_id), m.id) for m in memberships])
+                roles = db().select(gtable.id, gtable.role)
+                roles = Storage([(str(g.id), " %s" % g.role) for g in roles if g.id not in (2, 3)])
+                field = Storage(name="roles",
+                                requires = IS_IN_SET(roles, multiple=True))
+                widget = CheckboxesWidget.widget(field, memberships.keys())
 
-            form = FORM(TABLE(
-                    TR(TD(widget)),
-                    TR(TD(INPUT(_type="submit", _value=T("Save")),
-                          A(T("Cancel"), _href=r.there(), _style="padding-left:10px")))))
+                form = FORM(TABLE(
+                            TR(TD(widget)),
+                            TR(TD(INPUT(_type="submit", _value=T("Save")),
+                                  A(T("Cancel"), _href=r.there(), _style="padding-left:10px")))))
 
-            if form.accepts(request.post_vars, session):
-                assign = form.vars.roles
-                for role in roles:
-                    query = (mtable.user_id == user_id) & \
-                            (mtable.group_id == role)
-                    if str(role) not in assign:
-                        db(query).delete()
-                    else:
-                        membership = db(query).select(limitby=(0, 1)).first()
-                        if not membership:
-                            mtable.insert(user_id=user_id, group_id=role)
+                if form.accepts(request.post_vars, session):
+                    assign = form.vars.roles
+                    for role in roles:
+                        query = (mtable.user_id == user_id) & \
+                                (mtable.group_id == role)
+                        if str(role) not in assign:
+                            db(query).delete()
+                        else:
+                            membership = db(query).select(limitby=(0, 1)).first()
+                            if not membership:
+                                mtable.insert(user_id=user_id, group_id=role)
+                    redirect(r.there())
+
+                output.update(title="%s - %s" % (T("Assigned Roles"), username),
+                              form=form)
+
+                self.response.view = "admin/user_roles.html"
+
+            else:
+                session.error = T("No user to update")
                 redirect(r.there())
-
-            output.update(title="%s - %s" % (T("Assigned Roles"), username),
-                          form=form)
-
-            self.response.view = "admin/user_roles.html"
-            return output
-
         else:
-            session.error = T("No user to update")
+            r.error(501, self.manager.BAD_FORMAT)
 
-        redirect(URL(r=request, c="admin", f="user"))
+        return output
+
+
+    # -------------------------------------------------------------------------
+    def _users(self, r, **attr):
+        """
+        View/Update users of a role
+
+        """
+
+        output = dict()
+
+        session = self.session
+        request = self.request
+
+        db = self.db
+        T = self.T
+        auth = self.manager.auth
+
+        utable = auth.settings.table_user
+        gtable = auth.settings.table_group
+        mtable = auth.settings.table_membership
+
+        if r.interactive:
+            if r.record:
+
+                role_id = r.record.id
+                role_name = r.record.role
+                role_desc = r.record.description
+
+                title = "%s: %s" % (T("Role"), role_name)
+                output.update(title=title,
+                              description=role_desc,
+                              group=role_id)
+
+                if auth.settings.username:
+                    username = "username"
+                else:
+                    username = "email"
+
+                # @todo: Audit
+                users = db().select(utable.ALL)
+                assigned = db(mtable.group_id == role_id).select(mtable.ALL)
+
+                assigned_users = [row.user_id for row in assigned]
+                unassigned_users = [(row.id, row) for row in users if row.id not in assigned_users]
+
+                # Delete form
+                if assigned_users:
+                    thead = THEAD(TR(TH(), TH(T("Name")), TH(T("Username")), TH(T("Remove?"))))
+                    trows = []
+                    i = 0
+                    for user in users:
+                        if user.id not in assigned_users:
+                            continue
+                        _class = i % 2 and "even" or "odd"
+                        i += 1
+                        trow = TR(TD(A(), _name="Id"),
+                                  TD("%s %s" % (user.first_name, user.last_name)),
+                                  TD(user[username]),
+                                  TD(INPUT(_type="checkbox", _name="d_%s" % user.id, _class="remove_item")),
+                                _class=_class)
+                        trows.append(trow)
+                    trows.append(TR(TD(), TD(), TD(),
+                                TD(INPUT(_id="submit_delete_button", _type="submit", _value=T("Remove")))))
+                    tbody = TBODY(trows)
+                    del_form = TABLE(thead, tbody, _id="list", _class="display")
+                else:
+                    del_form = T("No users with this role")
+
+                del_form = FORM(DIV(del_form, _id="table-container"), _name="del_form")
+
+                # Add form
+                uname = lambda u: "%s: %s %s" % (u.id, u.first_name, u.last_name)
+                u_opts = [OPTION(uname(u[1]), _value=u[0]) for u in unassigned_users]
+                if u_opts:
+                    u_opts = [OPTION("", _value=None, _selected="selected")] + u_opts
+                    u_select = DIV(TABLE(TR(
+                                    TD(SELECT(_name="new_user", *u_opts)),
+                                    TD(INPUT(_type="submit", _id="submit_add_button", _value=T("Add"))))))
+                else:
+                    u_select = T("No further users can be added")
+                add_form = FORM(DIV(u_select), _name="add_form")
+
+                # Process delete form
+                if del_form.accepts(request.post_vars, session, formname="del_form"):
+                    del_ids = [v[2:] for v in del_form.vars
+                                     if v[:2] == "d_" and del_form.vars[v] == "on"]
+                    db((mtable.group_id == role_id) &
+                       (mtable.user_id.belongs(del_ids))).delete()
+                    redirect(r.here())
+
+                # Process add form
+                if add_form.accepts(request.post_vars, session, formname="add_form"):
+                    if add_form.vars.new_user:
+                        mtable.insert(group_id=role_id, user_id=add_form.vars.new_user)
+                    redirect(r.here())
+
+                form = DIV(H4(T("Users with this role")), del_form,
+                           H4(T("Add new users")), add_form)
+                list_btn = A(T("Back to Roles List"),
+                             _href=URL(r=request, c="admin", f="role"),
+                             _class="action-btn")
+                edit_btn = A(T("Edit Role"),
+                             _href=URL(r=request, c="admin", f="role", args=[role_id]),
+                             _class="action-btn")
+                output.update(form=form, list_btn=list_btn, edit_btn=edit_btn)
+
+                self.response.view = "admin/role_users.html"
+
+            else:
+                session.error = T("No role to update")
+                redirect(r.there())
+        else:
+            r.error(501, self.manager.BAD_FORMAT)
+
+        return output
 
 
 # =============================================================================

@@ -91,8 +91,13 @@ def shn_logs_recv_rheader(r):
                                           f = "recv_process",
                                           args = [recv_record.id]
                                           ),
+                              _id = "recv_process",
                               _class = "action-btn"
                               )
+                
+                recv_btn_confirm = SCRIPT("S3ConfirmClick('#recv_process','%s')" 
+                                          % T("Do you want to receive this shipment?") )
+                
                 rheader_tabs = shn_rheader_tabs( r,
                                                  [(T("Edit Details"), None),
                                                   (T("Items"), "recv_item"),
@@ -100,7 +105,7 @@ def shn_logs_recv_rheader(r):
                                                  )
                 rheader = DIV( TABLE(
                                    TR( TH( T("Date") + ": "),
-                                       recv_record.date,
+                                       recv_record.datetime,
                                       ),
                                    TR( TH( T( "By" ) + ": "),
                                        shn_inventory_store_represent(recv_record.inventory_store_id),
@@ -112,6 +117,7 @@ def shn_logs_recv_rheader(r):
                                       ),
                                      ),
                                 recv_btn,
+                                recv_btn_confirm,
                                 rheader_tabs
                                 )
                 return rheader
@@ -122,7 +128,7 @@ def recv_process():
     recv_record = db.logs_recv[recv_id]
     inventory_store_id = recv_record.inventory_store_id
 
-
+    #Get Recv & Store Items to compare
     recv_items = db( ( db.logs_recv_item.logs_recv_id == recv_id ) & \
                      ( db.logs_recv_item.item_packet_id == db.supply_item_packet.id) &
                      ( db.logs_recv_item.deleted == False ) )\
@@ -164,8 +170,13 @@ def recv_process():
                          )
 
         db.inventory_store_item[store_item_id] = item
+        
+        
+    #Update recv record
+    db.logs_recv[recv_id] = dict(datetime = request.utcnow,
+                                 status = True ) 
 
-    response.message = T("Received Items added to Warehouse Items")
+    response.confirmation = T("Received Items added to Warehouse Items")
 
     #Go to the Warehouse which has received these items
     redirect(URL(r = request,
@@ -200,7 +211,7 @@ def shn_logs_send_rheader(r):
                                                  )
                 rheader = DIV( TABLE(
                                    TR( TH( T("Date") + ": "),
-                                       req_record.date,
+                                       req_record.datetime,
                                       ),
                                    TR( TH( T( "From" ) + ": "),
                                        shn_inventory_store_represent(req_record.inventory_store_id),

@@ -280,7 +280,7 @@ class S3CRUD(S3Method):
             if representation in ("popup", "iframe"):
                 self.next = None
             elif not create_next:
-                self.next = self.resource.url(id=[])
+                self.next = r.component and r.there() or r.here()
             else:
                 try:
                     self.next = create_next(self)
@@ -587,7 +587,7 @@ class S3CRUD(S3Method):
             if representation in ("popup", "iframe"):
                 self.next = None
             elif not update_next:
-                self.next = self.resource.url(id=[])
+                self.next = r.component and r.there() or r.here()
             else:
                 try:
                     self.next = update_next(self)
@@ -735,18 +735,18 @@ class S3CRUD(S3Method):
         # Pagination
         vars = request.get_vars
         if representation == "aadata":
-            start = vars.get("iDisplayStart", None)
+            start = vars.get("iDisplayStart", 0)
             limit = vars.get("iDisplayLength", None)
         else:
-            start = vars.get("start", None)
+            start = vars.get("start", 0)
             limit = vars.get("limit", None)
         if limit is not None:
             try:
                 start = int(start)
                 limit = int(limit)
             except ValueError:
-                start = None
-                limit = None # use default to get all records
+                start = 0
+                limit = None # use default
         else:
             start = None # use default
 
@@ -772,7 +772,7 @@ class S3CRUD(S3Method):
 
             # SSPag?
             if not response.s3.no_sspag:
-                limit = 1 
+                limit = 1
                 session.s3.filter = request.get_vars
 
             # Add hidden add-form (do this before retrieving the list!)
@@ -1069,6 +1069,9 @@ class S3CRUD(S3Method):
                     record.update(missing_fields)
                     record.update(id=None)
 
+            if record is None:
+                record = record_id
+
             # Add asterisk to labels of required fields
             labels = Storage()
             mark_required = self._config("mark_required")
@@ -1096,9 +1099,6 @@ class S3CRUD(S3Method):
                         response.s3.has_required = True
                         labels[field.name] = DIV("%s:" % field.label, SPAN(" *", _class="req"))
 
-
-        if record is None:
-            record = record_id
 
         # Get the form
         form = SQLFORM(table,

@@ -1660,6 +1660,7 @@ def geoexplorer():
 
     geoserver_url = deployment_settings.get_gis_geoserver_url()
 
+    response.title = "GeoExplorer"
     return dict(
                 config=config,
                 bing_key=bing_key,

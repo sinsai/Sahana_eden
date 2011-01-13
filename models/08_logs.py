@@ -177,16 +177,20 @@ if deployment_settings.has_module(module):
     resourcename = "recv"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            Field("date", "date"),
+                            Field("datetime", "date",
+                                  label = "Date"),
                             inventory_store_id(label = T("By Warehouse")),
                             location_id("from_location_id",
                                         label = T("From Location")),
-                            Field("status", "boolean"),
+                            Field("status", "boolean",
+                                  writable = False),
                             person_id(name = "recipient_id",
                                       label = T("Received By")),
                             comments(),
-                            migrate=migrate, *s3_meta_fields())
-
+                            migrate=migrate, *s3_meta_fields()
+                            )
+    
+    table.status.represent = lambda status: T("Received") if status else T("In Process")
     # -----------------------------------------------------------------------------
     # CRUD strings
     ADD_LOGS_IN = T("Receive Shipment")
@@ -292,7 +296,8 @@ if deployment_settings.has_module(module):
     resourcename = "send"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            Field("date", "date"),
+                            Field("datetime", "datetime",
+                                  label = "Date"),
                             inventory_store_id(),
                             location_id("to_location_id",
                                         label = T("To Location") ),

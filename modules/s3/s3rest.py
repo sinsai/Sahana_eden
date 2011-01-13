@@ -1764,7 +1764,7 @@ class S3Resource(object):
                 ids = self.get_id()
                 if not isinstance(ids, (list, tuple)):
                     args.append(str(ids))
-            elif self.parent and not self.parent._multiple:
+            elif self.parent:
                 ids = self.parent.get_id()
                 if not isinstance(ids, (list, tuple)):
                     args.insert(0, str(ids))

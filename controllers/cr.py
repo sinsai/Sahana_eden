@@ -128,50 +128,47 @@ def shelter():
     tablename = module + "_" + resourcename
     table = db[tablename]
 
-    db.pr_presence.pe_id.readable = True
-    db.pr_presence.pe_id.writable = True
-    db.pr_presence.pe_id.label = T("Person/Group")
+    # Make pr_presence.pe_id visible:
+    pe_id = db.pr_presence.pe_id
+    pe_id.readable = True
+    pe_id.writable = True
+
+    # Usually, the pe_id field is an invisible foreign key, therefore it
+    # has no default representation/requirements => need to add this here:
+    pe_id.label = T("Person/Group")
+    pe_id.represent = lambda val: shn_pentity_represent(val)
+    pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id",
+                                              shn_pentity_represent,
+                                              filterby="instance_type",
+                                              orderby="instance_type",
+                                              filter_opts=("pr_person", "pr_group"))
+
     s3xrc.model.configure(db.pr_presence,
+        # presence not deletable in this view! (need to register a check-out
+        # for the same person instead):
+        deletable=False,
         list_fields=["id", "pe_id", "datetime", "presence_condition", "proc_desc"])
 
     # Pre-processor
     response.s3.prep = shn_shelter_prep
 
     s3xrc.model.configure(table,
+        # Go to RAT assessment for this shelter after creation
+        create_next = URL(r=request, c="cr", f="shelter", args=["[id]", "rat"]),
         create_onvalidation = shn_shelter_onvalidation,
         update_onvalidation = shn_shelter_onvalidation)
-
-    # Post-processor
-    def postp(r, output):
-        if r.representation in shn_interactive_view_formats:
-            #if r.method == "create" and not r.component:
-            # listadd arrives here as method=None
-            if r.method != "delete" and not r.component:
-                # Redirect to the Assessments tabs after creation
-                r.next = r.other(method="rat", record_id=s3xrc.get_session(module, resourcename))
-
-            if r.component and r.component.name == "presence":
-                # No Delete on the Action buttons
-                shn_action_buttons(r, deletable=False)
-            #else:
-                ## Normal Action Buttons
-                #shn_action_buttons(r)
-        return output
-    response.s3.postp = postp
 
     shelter_tabs = [(T("Basic Details"), None),
                     (T("Assessments"), "rat"),
                     (T("People"), "presence"),
                     (T("Warehouse"), "store"),  # table is inventory_store
-                    (T("Requests"), "req"),
-                   ]
+                    (T("Requests"), "req")]
 
     rheader = lambda r: shn_shelter_rheader(r, tabs=shelter_tabs)
-
-    output = s3_rest_controller(module, resourcename,
-                                rheader=rheader)
+    output = s3_rest_controller(module, resourcename, rheader=rheader)
 
     return output
+
 
 # -----------------------------------------------------------------------------
 """
@@ -216,7 +213,10 @@ def shn_shelter_prep(r):
     # in request.vars in a variable that won't be used to carry any real
     # form data.
 
-    if r.representation in shn_interactive_view_formats:
+    if r.component and r.component.name == "presence":
+        r.resource.add_filter(db.pr_presence.closed == False)
+
+    if r.interactive:
         # Don't send the locations list to client (pulled by AJAX instead)
         r.table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
 
@@ -269,11 +269,12 @@ def shn_shelter_prep(r):
                     if reporter:
                         db.pr_presence.reporter.default = reporter.id
                         db.pr_presence.observer.default = reporter.id
+                cr_shelter_presence_opts = {
+                    vita.CHECK_IN: vita.presence_conditions[vita.CHECK_IN],
+                    vita.CHECK_OUT: vita.presence_conditions[vita.CHECK_OUT]}
                 db.pr_presence.presence_condition.requires = IS_IN_SET(
-                        (vita.presence_conditions[vita.CHECK_IN],
-                         vita.presence_conditions[vita.CHECK_OUT]), zero=None)
+                    cr_shelter_presence_opts, zero=None)
                 db.pr_presence.presence_condition.default = vita.CHECK_IN
-                r.resource.add_filter(db.pr_presence.closed == False)
                 # Change the Labels
                 s3.crud_strings.pr_presence = Storage(
                     title_create = T("Register Person"),

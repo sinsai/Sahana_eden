@@ -711,18 +711,18 @@ class S3CRUD(S3Method):
         # Pagination
         vars = request.get_vars
         if representation == "aadata":
-            start = vars.get("iDisplayStart", 0)
+            start = vars.get("iDisplayStart", None)
             limit = vars.get("iDisplayLength", None)
         else:
-            start = vars.get("start", 0)
+            start = vars.get("start", None)
             limit = vars.get("limit", None)
         if limit is not None:
             try:
                 start = int(start)
                 limit = int(limit)
             except ValueError:
-                start = 0
-                limit = None # use default
+                start = None
+                limit = None # use default to get all records
         else:
             start = None # use default
 
@@ -748,7 +748,7 @@ class S3CRUD(S3Method):
 
             # SSPag?
             if not response.s3.no_sspag:
-                limit = 1
+                limit = 10 #@todo: Get the DATATABLE_NUM_DISPLAY_ROWS value from  models/00_setting.py in here 
                 session.s3.filter = request.get_vars
 
             # Add hidden add-form (do this before retrieving the list!)

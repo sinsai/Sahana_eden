@@ -377,6 +377,7 @@
 'Airspace Closure': 'Airspace Closure',
 'Alcohol': 'Alcohol',
 'Alert': 'Alert',
+'All': 'All',
 'All Inbound & Outbound Messages are stored here': 'All Inbound & Outbound Messages are stored here',
 'All Requested Items': 'All Requested Items',
 'All Resources': 'All Resources',

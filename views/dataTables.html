@@ -70,8 +70,11 @@ $(document).ready(function() {
 
   {{if not response.s3.no_sspag:}}
     // Cache the pages to reduce server-side calls
+    var DataTableDisplayRows = {{=DATATABLE_NUM_DISPLAY_ROWS}};
     var oCache = {
-        iCacheLower: -1
+    	iCacheInitialized: false,    		
+        iCacheLower: 0,
+        iCacheUpper: DataTableDisplayRows
     };
     function fnSetKey( aoData, sKey, mValue ) {
         for ( var i=0, iLen=aoData.length ; i < iLen ; i++ ) {
@@ -93,7 +96,7 @@ $(document).ready(function() {
         // Adjust the pipe size depending on the page size
         if (iRequestLength == 10) {
             var iPipe = 6;
-        } else if (iRequestLength > 49) {
+        } else if (iRequestLength > 49 || iRequestLength == -1) {
             var iPipe = 2;
         } else {
             // iRequestLength == 25
@@ -103,9 +106,12 @@ $(document).ready(function() {
         var sEcho = fnGetKey(aoData, 'sEcho');
         var iRequestStart = fnGetKey(aoData, 'iDisplayStart');
         var iRequestEnd = iRequestStart + iRequestLength;
+        
         oCache.iDisplayStart = iRequestStart;
         /* outside pipeline? */
-        if ( oCache.iCacheLower < 0 || iRequestStart < oCache.iCacheLower || iRequestEnd > oCache.iCacheUpper ) {
+        if (// oCache.iCacheUpper !== -1 && /* If Display All oCache.iCacheUpper == -1 */
+        	 ( iRequestLength == -1 || oCache.iCacheLower < 0 || iRequestStart < oCache.iCacheLower || iRequestEnd > oCache.iCacheUpper )
+            ) {
             bNeedServer = true;
         }
 
@@ -134,10 +140,21 @@ $(document).ready(function() {
             }
 
             oCache.iCacheLower = iRequestStart;
-            oCache.iCacheUpper = iRequestStart + (iRequestLength * iPipe);
+            if (iRequestLength == -1) {
+            	oCache.iCacheUpper = -1; //Means that all records are in Cache
+            } else {
+            	oCache.iCacheUpper = iRequestStart + (iRequestLength * iPipe);
+            }                       
             oCache.iDisplayLength = fnGetKey( aoData, 'iDisplayLength' );
-            fnSetKey( aoData, 'iDisplayStart', iRequestStart );
-            fnSetKey( aoData, 'iDisplayLength', iRequestLength * iPipe );
+            
+            if (iRequestLength == -1) {
+            	fnSetKey( aoData, 'iDisplayStart', "None" );
+            	fnSetKey( aoData, 'iDisplayLength', "None" );
+            } else {
+            	fnSetKey( aoData, 'iDisplayStart', iRequestStart );
+            	fnSetKey( aoData, 'iDisplayLength', iRequestLength * iPipe );
+            }
+            	
 
             $.getJSON( sSource, aoData, function (json) {
                 /* Callback processing */
@@ -149,11 +166,20 @@ $(document).ready(function() {
                 fnCallback(json)
             } );
         } else {
-            json = jQuery.extend(true, {}, oCache.lastJson);
-            json.sEcho = sEcho; /* Update the echo for each response */
-            json.aaData.splice( 0, iRequestStart - oCache.iCacheLower );
-            json.aaData.splice( iRequestLength, json.aaData.length );
-            fnCallback(json);
+        	if (!oCache.iCacheInitialized) {
+        		json = {
+        			SaveData: false //Prevents the table being redraw
+        		}
+        		oCache.iCacheInitialized = true;
+	        	json.sEcho = sEcho; /* Update the echo for each response */	 
+	        	fnCallback(json);        		
+        	} else {
+	            json = jQuery.extend(true, {}, oCache.lastJson);            
+	            json.aaData.splice( 0, iRequestStart - oCache.iCacheLower );
+	            json.aaData.splice( iRequestLength, json.aaData.length );
+	        	json.sEcho = sEcho; /* Update the echo for each response */	 
+	        	fnCallback(json);
+        	}
             return;
         }
     }
@@ -176,11 +202,16 @@ $(document).ready(function() {
         'bFilter': true,
         'bSort': true,
         'sPaginationType': 'full_numbers',
-        'iDisplayLength': 10,
+        'aLengthMenu': [[10, 25, 50, -1], [10, 25, 50, '{{=T("All")}}']],
+        'iDisplayLength': DataTableDisplayRows,
         'bProcessing': true,
-        'bServerSide': true,
-        'sAjaxSource': '{{=jr.there(representation="aaData")}}',
+        //'bServerSide': false,
+        //'sAjaxSource': null'{{=jr.there(representation="aaData")}}',
         'fnServerData': fnDataTablesPipeline,
+        'fnInitComplete': function(oSettings ) {
+        	oSettings.oFeatures.bServerSide = true;
+        	oSettings.sAjaxSource = '{{=jr.there(representation="aaData")}}';
+        },         	
     {{pass}}
   {{except:}}
   {{pass}}

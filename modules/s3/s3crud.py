@@ -772,7 +772,7 @@ class S3CRUD(S3Method):
 
             # SSPag?
             if not response.s3.no_sspag:
-                limit = 0
+                limit = 1
                 session.s3.filter = request.get_vars
 
             # Add hidden add-form (do this before retrieving the list!)

@@ -262,13 +262,13 @@ def shn_shelter_prep(r):
                 db.pr_presence.location_id.writable = False
                 db.pr_presence.location_id.default = r.record.location_id
                 db.pr_presence.location_id.comment = ""
+                db.pr_presence.proc_desc.readable = db.pr_presence.proc_desc.writable = False
                 # Set defaults
                 db.pr_presence.datetime.default = request.utcnow
                 if auth.is_logged_in():
-                    reporter = db(db.pr_person.uuid == session.auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first()
-                    if reporter:
-                        db.pr_presence.reporter.default = reporter.id
-                        db.pr_presence.observer.default = reporter.id
+                    observer = db(db.pr_person.uuid == session.auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first()
+                    if observer:
+                        db.pr_presence.observer.default = observer.id
                 cr_shelter_presence_opts = {
                     vita.CHECK_IN: vita.presence_conditions[vita.CHECK_IN],
                     vita.CHECK_OUT: vita.presence_conditions[vita.CHECK_OUT]}

@@ -14,16 +14,16 @@ if deployment_settings.has_module(module):
     # *************************************************************************
     # Missing report
     #
-    shn_pf_reporter_comment = \
+    shn_pf_observer_comment = \
         DIV(A(ADD_PERSON,
             _class="colorbox",
             _href=URL(r=request, c="pr", f="person", args="create", vars=dict(format="popup")),
             _target="top",
             _title=ADD_PERSON),
         DIV(DIV(_class="tooltip",
-            _title=T("Reporter") + "|" + T("The person reporting about the missing person."))))
+            _title=T("Observer") + "|" + T("The person reporting the missing person."))))
 
-    reporter = S3ReusableField("reporter",
+    observer = S3ReusableField("observer",
                                db.pr_person,
                                sortby=["first_name", "middle_name", "last_name"],
                                requires = IS_NULL_OR(IS_ONE_OF(db,
@@ -33,7 +33,7 @@ if deployment_settings.has_module(module):
                                represent = lambda id: (id and
                                                        [shn_pr_person_represent(id)] or
                                                        ["None"])[0],
-                               comment = shn_pf_reporter_comment,
+                               comment = shn_pf_observer_comment,
                                ondelete = "RESTRICT")
 
     # -------------------------------------------------------------------------
@@ -41,7 +41,7 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             person_id(),
-                            reporter(),
+                            observer(),
                             Field("since", "datetime"),
                             Field("details", "text"),
                             location_id(label=T("Last known location")),
@@ -51,7 +51,7 @@ if deployment_settings.has_module(module):
 
 
     table.person_id.label = T("Person missing")
-    table.reporter.label = T("Person reporting")
+    table.observer.label = T("Person reporting")
 
     table.since.label = T("Date/Time of disappearance")
     table.since.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
@@ -109,12 +109,12 @@ if deployment_settings.has_module(module):
         query = (table.pe_id == pe_id) & (table.deleted == False) & \
                 (table.presence_condition == vita.MISSING) & \
                 (table.closed == False) & \
-                (table.reporter == user_id)
+                (table.observer == user_id)
         presence = db(query).select(table.id, orderby=~table.datetime, limitby=(0,1)).first()
 
         record = dict(pe_id = pe_id,
                       datetime = request.utcnow,
-                      reporter = user_id,
+                      observer = user_id,
                       location_id = form.vars.location_id,
                       closed = False,
                       presence_condition = vita.MISSING)
@@ -134,7 +134,7 @@ if deployment_settings.has_module(module):
         onaccept = lambda form: shn_pf_report_onaccept(form),
         list_fields = [
             "id",
-            "reporter"
+            "observer"
         ])
 
 # -----------------------------------------------------------------------------

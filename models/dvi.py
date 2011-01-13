@@ -451,16 +451,16 @@ if deployment_settings.has_module(module):
                     location_id = body.location_id
 
                 # Get the current user
-                reporter = None
+                observer = None
                 query = db.pr_person.uuid == session.auth.user.person_uuid
                 user = db(query).select(db.pr_person.id, limitby=(0,1)).first()
                 if user:
-                    report_id = user.id
+                    observer = user.id
 
                 # Insert new presence record
                 presence_id = db.pr_presence.insert(
                     pe_id = person.pe_id,
-                    reporter = reporter,
+                    observer = observer,
                     datetime = request.utcnow,
                     location_id = location_id,
                     presence_condition = vita.DECEASED,

@@ -203,17 +203,17 @@ def person():
 
     def person_prep(r):
 
-        # Pre-populate reporter fields
+        # Pre-populate observer fields
         if auth.s3_logged_in():
             persons = db.pr_person
             person = db(persons.uuid == session.auth.user.person_uuid).select(persons.id, limitby=(0,1)).first()
             if person:
-                db.pr_presence.reporter.default = person.id
-                db.pr_presence.reporter.writable = False
-                db.pr_presence.reporter.comment = None
-                db.pf_missing_report.reporter.default = person.id
-                db.pf_missing_report.reporter.writable = False
-                db.pf_missing_report.reporter.comment = None
+                db.pr_presence.observer.default = person.id
+                db.pr_presence.observer.writable = False
+                db.pr_presence.observer.comment = None
+                db.pf_missing_report.observer.default = person.id
+                db.pf_missing_report.observer.writable = False
+                db.pf_missing_report.observer.comment = None
 
         # Copy config
         if r.component_name == "config":

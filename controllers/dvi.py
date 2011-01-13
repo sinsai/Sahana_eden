@@ -189,12 +189,12 @@ def person():
                     msg_no_match = T("No records matching the query"))
         person = s3_logged_in_person()
         if person:
-            db.pr_presence.reporter.default = person
-            db.pr_presence.reporter.writable = False
-            db.pr_presence.reporter.comment = None
-            db.pf_missing_report.reporter.default = person
-            db.pf_missing_report.reporter.writable = False
-            db.pf_missing_report.reporter.comment = None
+            db.pr_presence.observer.default = person
+            db.pr_presence.observer.writable = False
+            db.pr_presence.observer.comment = None
+            db.pf_missing_report.observer.default = person
+            db.pf_missing_report.observer.writable = False
+            db.pf_missing_report.observer.comment = None
         elif jr.component_name == "presence":
             condition = jr.request.vars.get("condition", None)
             if condition:

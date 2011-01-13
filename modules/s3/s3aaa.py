@@ -1489,6 +1489,8 @@ class S3Permission(object):
         roles = []
         if self.session.s3 is not None:
             roles = self.session.s3.roles or []
+        if self.ADMIN in roles or self.EDITOR in roles:
+            return query
 
         # Available ACLs
         pacl = self.page_acl()

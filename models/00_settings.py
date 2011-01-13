@@ -117,9 +117,6 @@ NOT_APPLICABLE = T("N/A")
 ROWSPERPAGE = 20
 PRETTY_PRINT = False
 
-# DataTable Settings
-DATATABLE_NUM_DISPLAY_ROWS = 10
-
 ###########
 # Languages
 ###########

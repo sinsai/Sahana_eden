@@ -735,17 +735,17 @@ class S3CRUD(S3Method):
         # Pagination
         vars = request.get_vars
         if representation == "aadata":
-            start = vars.get("iDisplayStart", 0)
+            start = vars.get("iDisplayStart", None)
             limit = vars.get("iDisplayLength", None)
         else:
-            start = vars.get("start", 0)
+            start = vars.get("start", None)
             limit = vars.get("limit", None)
         if limit is not None:
             try:
                 start = int(start)
                 limit = int(limit)
             except ValueError:
-                start = 0
+                start = None
                 limit = None # use default
         else:
             start = None # use default
@@ -772,7 +772,7 @@ class S3CRUD(S3Method):
 
             # SSPag?
             if not response.s3.no_sspag:
-                limit = 1
+                limit = 0
                 session.s3.filter = request.get_vars
 
             # Add hidden add-form (do this before retrieving the list!)
@@ -810,6 +810,24 @@ class S3CRUD(S3Method):
                                   linkto=linkto,
                                   download_url=self.download_url,
                                   format=representation)
+
+            # In SSPag, send the first 20 records
+            # (avoids the dataTables Ajax request unless the user tries nagivating around)
+            if not response.s3.no_sspag:
+                totalrows = self.resource.count()
+                if totalrows:
+                    aadata = dict(aaData = self.sqltable(fields=fields,
+                                                        start=0,
+                                                        limit=20,
+                                                        orderby=orderby,
+                                                        linkto=linkto,
+                                                        download_url=self.download_url,
+                                                        as_page=True,
+                                                        format=representation) or [])
+                    aadata.update(iTotalRecords=totalrows, iTotalDisplayRecords=totalrows)
+                    self.response.aadata = json(aadata)
+                    self.response.s3.start = 0
+                    self.response.s3.limit = 20
 
             # Empty table - or just no match?
             if not items:

@@ -186,6 +186,17 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
                 switch(type) {
                     case "string":
                         break;
+                    case "date":
+                        customEditors[name] = new Ext.grid.GridEditor(
+                            new Ext.form.DateField({
+                                format: "Y-m-d",
+                                getValue: function() {
+                                    var value = this.parseDate(Ext.form.DateField.superclass.getValue.call(this)) || "";
+                                    return value instanceof Date ? value.format("Y-m-d") : value;
+                                }
+                            })
+                        );
+                        break;
                     case "boolean":
                         //TODO nodata handling for Boolean
                         value = Boolean(value);
@@ -253,18 +264,20 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
             scope: this
         });
         
+        var excludeFields = this.excludeFields;
         this.grid = new Ext.grid.PropertyGrid({
             border: false,
             source: feature.attributes,
             customEditors: customEditors,
+            viewConfig: {
+                forceFit: true,
+                getRowClass: function(record) {
+                    if (excludeFields.indexOf(record.get("name")) !== -1) {
+                        return "x-hide-nosize";
+                    }
+                }
+            },
             listeners: {
-                "viewready": function() {
-                    this.grid.getStore().filterBy(function(r) {
-                        return this.excludeFields ?
-                            this.excludeFields.indexOf(r.get("name")) == -1 :
-                            true;
-                    }, this);
-                },
                 "beforeedit": function() {
                     return this.editing;
                 },

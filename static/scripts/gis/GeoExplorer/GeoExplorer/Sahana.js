@@ -18,6 +18,28 @@
  */
 GeoExplorer.SahanaComposer = Ext.extend(GeoExplorer.Composer, {
 
+    /** private: method[createOverviewMap]
+     * Adds the :class:`OpenLayers.Control.OverviewMap` to the map.
+     */
+    createOverviewMap: function() {
+        var proj4326 = new OpenLayers.Projection('EPSG:4326');
+        var options = {
+            displayProjection: proj4326,
+            projection: this.mapPanel.map.projection,
+            // Use Manual stylesheet download (means can be done in HEAD to not delay pageload)
+            theme: null,
+            units: this.mapPanel.map.units,
+            maxResolution: this.mapPanel.map.maxResolution,
+            maxExtent: this.mapPanel.map.maxExtent,
+            numZoomLevels: this.mapPanel.map.numZoomLevels
+        };
+        var overviewMap = new OpenLayers.Control.OverviewMap({
+            mapOptions: options
+        });
+
+        this.mapPanel.map.addControl(overviewMap);
+    },
+    
     /**
      * api: method[createTools]
      * Create the toolbar configuration for the main view.

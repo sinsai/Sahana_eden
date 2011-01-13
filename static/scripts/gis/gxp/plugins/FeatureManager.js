@@ -44,18 +44,24 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
      *  ``Boolean`` Should quad-tree paging be enabled? Default is true.
      */
     paging: true,
+    
+    /** api: config[autoZoomPage]
+     *  ``Boolean`` Set to true to always zoom the map to the currently
+     *  selected page. Default is false.
+     */
+    autoZoomPage: false,
 
     /** api: config[autoSetLayer]
-     *  ``Boolean`` Listen to the viewer's layerselectionchange event to
-     *  automatically set the layer? Default is true.
+     *  ``Boolean`` When no ``layer`` is configured, listen to the viewer's
+     *  layerselectionchange event to automatically set the layer. Default is
+     *  true unless ``layer`` is configured.
      */
     autoSetLayer: true,
     
     /** api: config[layer]
-     *  ``Object`` with source and name properties. A layer to use if
-     *  ``autoSetLayer`` is false or before a layerselectionchange event is
-     *  fired. The layer referenced here will be set as soon as it is added to
-     *  the target's map.
+     *  ``Object`` with source and name properties. The layer referenced here
+     *  will be set as soon as it is added to the target's map. When this
+     *  option is configured, ``autoSetLayer`` will be set to false.
      */
 
     /** api: config[autoLoadFeatures]
@@ -138,7 +144,7 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
     
     /** private: method[constructor]
      */
-    constructor: function() {
+    constructor: function(config) {
         this.addEvents(
             /** api: event[beforequery]
              *  Fired before a WFS GetFeature request is issued. This event
@@ -229,6 +235,12 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
              */
             "setpage"
         );
+        
+        // change autoSetLayer default if passed a layer config
+        if (config && config.layer) {
+            this.autoSetLayer = false;
+        }
+        
         gxp.plugins.FeatureManager.superclass.constructor.apply(this, arguments);        
     },
     
@@ -273,22 +285,65 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
         
         this.featureLayer = new OpenLayers.Layer.Vector(this.id, {
             displayInLayerSwitcher: false,
+            visibility: false,
             styleMap: new OpenLayers.StyleMap({
                 "select": OpenLayers.Util.extend({display: ""},
                     OpenLayers.Feature.Vector.style["select"]),
                 "vertex": this.style["all"]
             }, {extendDefault: false})    
         });
-
-        if (this.autoSetLayer) {
-            this.target.on("beforelayerselectionchange", this.setLayer, this);
+        
+        this.target.on({
+            ready: function() {
+                this.target.mapPanel.map.addLayer(this.featureLayer);
+            },
+            scope: this
+        });
+        this.on({
+            //TODO add a beforedestroy event to the tool
+            beforedestroy: function() {
+                this.target.mapPanel.map.removeLayer(this.featureLayer);
+            },
+            scope: this
+        });
+    },
+    
+    /** api: method[activate]
+     *  :returns: ``Boolean`` true when this tool was activated
+     *
+     *  Activates this tool. When active, this tool loads the features for the
+     *  configured layer, or listens to layer changes on the application and
+     *  loads features for the selected layer.
+     */
+    activate: function() {
+        if (gxp.plugins.FeatureManager.superclass.activate.apply(this, arguments)) {
+            if (this.autoSetLayer) {
+                this.target.on("beforelayerselectionchange", this.setLayer, this);
+            }
+            if (this.layer) {
+                this.target.getLayerRecord(this.layer, this.setLayer, this);
+            }
+            this.on("layerchange", this.setSchema, this);
+            return true;
         }
-        if (this.layer) {
-            this.target.getLayerRecord(this.layer, this.setLayer, this);
+    },
+    
+    /** api: method[deactivate]
+     *  :returns: ``Boolean`` true when this tool was deactivated
+     *
+     *  Dectivates this tool. When deactivated, this tool won't listen to layer
+     *  changes on the application and load features for the selected layer.
+     *  The current featureLayer will be cleared.
+     */
+    deactivate: function() {
+        if (gxp.plugins.FeatureManager.superclass.deactivate.apply(this, arguments)) {
+            if (this.autoSetLayer) {
+                this.target.un("beforelayerselectionchange", this.setLayer, this);
+            }
+            this.un("layerchange", this.setSchema, this);
+            this.setLayer();
+            return true;
         }
-        this.on("layerchange", function(mgr, layer, schema) {
-            this.schema = schema;
-        }, this);
     },
     
     /** api: method[setLayer]
@@ -313,6 +368,15 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
             }
         }
         return change;
+    },
+    
+    /** private: method[setSchema]
+     *  :arg mgr: :class:`gxp.plugins.FeatureManager`
+     *  :arg layer: ``GeoExt.data.LayerRecord``
+     *  :arg schema: ``GeoExt.data.AttributeStore``
+     */
+    setSchema: function(mgr, layer, schema) {
+        this.schema = schema;
     },
     
     /** api: method[showLayer]
@@ -350,20 +414,20 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
                 show = this.toolsShowingLayer[i];
             }
         }
+        var map = this.target.mapPanel.map;
         if (show) {
             var style = this.style[show];
             if (style !== this.featureLayer.styleMap.styles["default"]) {
                 this.featureLayer.styleMap.styles["default"] = style;
                 this.featureLayer.redraw();
             }
-            var map = this.target.mapPanel.map;
-            map.addLayer(this.featureLayer);
+            this.featureLayer.setVisibility(true);
             map.events.on({
                 addlayer: this.raiseLayer,
                 scope: this
             });
         } else if (this.featureLayer.map) {
-            this.target.mapPanel.map.removeLayer(this.featureLayer);
+            this.featureLayer.setVisibility(false);
             map.events.un({
                 addlayer: this.raiseLayer,
                 scope: this
@@ -444,42 +508,50 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
      *  :arg autoLoad: ``Boolean``
      */
     setFeatureStore: function(filter, autoLoad) {
-        var rec = this.layerRecord;
-        var source = this.target.getSource(rec);
+        var record = this.layerRecord;
+        var source = this.target.getSource(record);
         if (source && source instanceof gxp.plugins.WMSSource) {
-            source.getSchema(rec, function(s) {
-                if (s === false) {
+            source.getSchema(record, function(schema) {
+                if (schema === false) {
                     this.clearFeatureStore();
                 } else {
-                    var fields = [], match, geometryName;
-                    s.each(function(r) {
+                    var fields = [], geometryName;
+                    var geomRegex = /gml:((Multi)?(Point|Line|Polygon|Curve|Surface)).*/;
+                    var types = {
+                        "xsd:boolean": "boolean",
+                        "xsd:int": "int",
+                        "xsd:integer": "int",
+                        "xsd:short": "int",
+                        "xsd:long": "int",
+                        "xsd:date": "date",
+                        "xsd:string": "string",
+                        "xsd:float": "float",
+                        "xsd:double": "float"
+                    };
+                    schema.each(function(r) {
                         // TODO: To be more generic, we would look for GeometryPropertyType as well.
-                        match = /gml:((Multi)?(Point|Line|Polygon|Curve|Surface)).*/.exec(r.get("type"));
+                        var match = geomRegex.exec(r.get("type"));
                         if (match) {
                             geometryName = r.get("name");
                             this.geometryType = match[1];
                         } else {
-                            fields.push({
+                            // TODO: use (and improve if needed) GeoExt.form.recordToField
+                            var type = types[r.get("type")];
+                            var field = {
                                 name: r.get("name"),
-                                type: ({
-                                    "xsd:boolean": "boolean",
-                                    "xsd:int": "int",
-                                    "xsd:integer": "int",
-                                    "xsd:short": "int",
-                                    "xsd:long": "int",
-                                    "xsd:date": "date",
-                                    "xsd:string": "string",
-                                    "xsd:float": "float",
-                                    "xsd:double": "float"
-                                })[r.get("type")]
-                            });
+                                type: types[type]
+                            }
+                            if (type == "date") {
+                                field.dateFormat = "Y-m-d";
+                            }
+                            fields.push(field);
                         }
                     }, this);
                     var protocolOptions = {
                         srsName: this.target.mapPanel.map.getProjection(),
-                        url: s.url,
-                        featureType: s.reader.raw.featureTypes[0].typeName,
-                        featureNS: s.reader.raw.targetNamespace,
+                        url: schema.url,
+                        featureType: schema.reader.raw.featureTypes[0].typeName,
+                        featureNS: schema.reader.raw.targetNamespace,
                         geometryName: geometryName
                     };
                     this.hitCountProtocol = new OpenLayers.Protocol.WFS(Ext.apply({
@@ -502,7 +574,7 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
                         autoSave: false,
                         listeners: {
                             "write": function() {
-                                rec.getLayer().redraw(true);
+                                record.getLayer().redraw(true);
                             },
                             "load": function() {
                                 this.fireEvent("query", this, this.featureStore);
@@ -511,11 +583,11 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
                         }
                     }, protocolOptions));
                 }
-                this.fireEvent("layerchange", this, rec, s);
+                this.fireEvent("layerchange", this, record, schema);
             }, this);
         } else {
             this.clearFeatureStore();
-            this.fireEvent("layerchange", this, rec, false);
+            this.fireEvent("layerchange", this, record, false);
         }        
     },
     
@@ -804,6 +876,7 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
                 function(page) {
                     this.page = page;
                     this.setPageFilter(page);
+                    this.autoZoomPage && this.target.mapPanel.map.zoomToExtent(page.extent);
                     this.fireEvent("setpage", this, condition, callback, scope);
                     this.featureStore.load({callback: callback, scope: scope});
                 }, this

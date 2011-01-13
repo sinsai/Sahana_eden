@@ -103,6 +103,8 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
      *    * selected: ``Boolean`` - Set to true to mark the layer selected
      *  * map: not available, can be configured with ``maxExtent``,
      *    ``numZoomLevels`` and ``theme``.
+     *  * restrictedExtent: ``Array`` to be consumed by
+     *    ``OpenLayers.Bounds.fromArray`` - the restrictedExtent of the map
      *  * maxExtent: ``Array`` to be consumed by
      *    ``OpenLayers.Bounds.fromArray`` - the maxExtent of the map
      *  * numZoomLevels: ``Number`` - the number of zoom levels if not
@@ -296,9 +298,14 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
     
     addLayerSource: function(options) {
         var id = options.id || Ext.id(null, "gx-source-");
-        var source = Ext.ComponentMgr.createPlugin(
-            options.config, this.defaultSourceType
-        );
+        var source;
+        try {
+            source = Ext.ComponentMgr.createPlugin(
+                options.config, this.defaultSourceType
+            );
+        } catch (err) {
+            throw new Error("Could not create new source plugin with ptype: " + options.config.ptype);
+        }
         source.on({
             ready: function() {
                 var callback = options.callback || Ext.emptyFn;
@@ -324,7 +331,7 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
         
         // split initial map configuration into map and panel config
         if (this.initialConfig.map) {
-            var props = "theme,controls,projection,units,maxExtent,maxResolution,numZoomLevels".split(",");
+            var props = "theme,controls,projection,units,maxExtent,restrictedExtent,maxResolution,numZoomLevels".split(",");
             var prop;
             for (var i=props.length-1; i>=0; --i) {
                 prop = props[i];
@@ -345,6 +352,7 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
                     new OpenLayers.Control.Attribution()
                 ],
                 maxExtent: mapConfig.maxExtent && OpenLayers.Bounds.fromArray(mapConfig.maxExtent),
+                restrictedExtent: mapConfig.restrictedExtent && OpenLayers.Bounds.fromArray(mapConfig.restrictedExtent),
                 numZoomLevels: mapConfig.numZoomLevels || 20
             }, mapConfig),
             center: config.center && new OpenLayers.LonLat(config.center[0], config.center[1]),
@@ -380,9 +388,13 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
         if (this.initialConfig.tools && this.initialConfig.tools.length > 0) {
             var tool;
             for (var i=0, len=this.initialConfig.tools.length; i<len; i++) {
-                tool = Ext.ComponentMgr.createPlugin(
-                    this.initialConfig.tools[i], this.defaultToolType
-                );
+                try {
+                    tool = Ext.ComponentMgr.createPlugin(
+                        this.initialConfig.tools[i], this.defaultToolType
+                    );
+                } catch (err) {
+                    throw new Error("Could not create tool plugin with ptype: " + this.initialConfig.tools[i].ptype);
+                }
                 tool.init(this);
                 this.tools[tool.id] = tool;
             }
@@ -418,7 +430,6 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
 
         // initialize tooltips
         Ext.QuickTips.init();
-        
         this.fireEvent("ready");
     },
     

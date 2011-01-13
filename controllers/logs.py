@@ -84,25 +84,7 @@ def shn_logs_recv_rheader(r):
     if r.representation == "html":
         if r.name == "recv":
             recv_record = r.record
-            if recv_record:
-                recv_btn = A( T("Receive Items"),
-                              _href = URL(r = request,
-                                          c = "logs",
-                                          f = "recv_process",
-                                          args = [recv_record.id]
-                                          ),
-                              _id = "recv_process",
-                              _class = "action-btn"
-                              )
-                
-                recv_btn_confirm = SCRIPT("S3ConfirmClick('#recv_process','%s')" 
-                                          % T("Do you want to receive this shipment?") )
-                
-                rheader_tabs = shn_rheader_tabs( r,
-                                                 [(T("Edit Details"), None),
-                                                  (T("Items"), "recv_item"),
-                                                  ]
-                                                 )
+            if recv_record:   
                 rheader = DIV( TABLE(
                                    TR( TH( T("Date") + ": "),
                                        recv_record.datetime,
@@ -115,11 +97,33 @@ def shn_logs_recv_rheader(r):
                                    TR( TH( T("Comments") + ": "),
                                        TD(recv_record.comments, _colspan=3)
                                       ),
-                                     ),
-                                recv_btn,
-                                recv_btn_confirm,
-                                rheader_tabs
-                                )
+                                     )
+                                )                            
+               
+                if not recv_record.status: 
+                    #Shipment not recv
+                    recv_btn = A( T("Receive Items"),
+                                  _href = URL(r = request,
+                                              c = "logs",
+                                              f = "recv_process",
+                                              args = [recv_record.id]
+                                              ),
+                                  _id = "recv_process",
+                                  _class = "action-btn"
+                                  )
+                    
+                    recv_btn_confirm = SCRIPT("S3ConfirmClick('#recv_process','%s')" 
+                                              % T("Do you want to receive this shipment?") )
+                    rheader.append(recv_btn)
+                    rheader.append(recv_btn_confirm)
+                                    
+                rheader_tabs = shn_rheader_tabs( r,
+                                                 [(T("Edit Details"), None),
+                                                  (T("Items"), "recv_item"),
+                                                  ]
+                                                 )
+                rheader.append(rheader_tabs)                 
+               
                 return rheader
     return None
 #------------------------------------------------------------------------------

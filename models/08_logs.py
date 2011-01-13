@@ -190,7 +190,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate, *s3_meta_fields()
                             )
     
-    table.status.represent = lambda status: T("Received") if status else T("In Process")
+    #table.status.represent = lambda status: T("Received") if status else T("In Process")
     # -----------------------------------------------------------------------------
     # CRUD strings
     ADD_LOGS_IN = T("Receive Shipment")

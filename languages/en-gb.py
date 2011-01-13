@@ -951,6 +951,7 @@
 'Do you know of older people who are primary caregivers of children?': 'Do you know of older people who are primary caregivers of children?',
 'Do you know of parents/caregivers missing children?': 'Do you know of parents/caregivers missing children?',
 'Do you really want to delete these records?': 'Do you really want to delete these records?',
+'Do you want to receive this shipment?': 'Do you want to receive this shipment?',
 'Document': 'Document',
 'Document Details': 'Document Details',
 'Document Scan': 'Document Scan',

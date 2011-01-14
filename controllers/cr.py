@@ -153,14 +153,14 @@ def shelter():
     response.s3.prep = shn_shelter_prep
 
     s3xrc.model.configure(table,
-        # Go to RAT assessment for this shelter after creation
-        create_next = URL(r=request, c="cr", f="shelter", args=["[id]", "rat"]),
+        # Go to People check-in for this shelter after creation
+        create_next = URL(r=request, c="cr", f="shelter", args=["[id]", "presence"]),
         create_onvalidation = shn_shelter_onvalidation,
         update_onvalidation = shn_shelter_onvalidation)
 
     shelter_tabs = [(T("Basic Details"), None),
-                    (T("Assessments"), "rat"),
                     (T("People"), "presence"),
+                    (T("Assessments"), "rat"),
                     (T("Warehouse"), "store"),  # table is inventory_store
                     (T("Requests"), "req")]
 

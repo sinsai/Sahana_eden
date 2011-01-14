@@ -277,7 +277,11 @@ def group():
     table.description.label = T("Team Description")
     table.name.label = T("Team Name")
     db.pr_group_membership.group_id.label = T("Team Id")
-    db.pr_group_membership.group_head.label = T("Team Head")
+    db.pr_group_membership.group_head.label = T("Team Leader")
+
+    # Set Defaults
+    db.pr_group.group_type.default = 3  # 'Relief Team'
+    db.pr_group.group_type.readable = db.pr_group.group_type.writable = False
 
     # CRUD Strings
     ADD_TEAM = T("Add Team")
@@ -325,7 +329,7 @@ def group():
                                        "group_head",
                                        "description"])
 
-    s3xrc.model.configure(table, main="name", extra="description", listadd=False, deletable=False)
+    s3xrc.model.configure(table, main="name", extra="description")
     output = s3_rest_controller("pr", "group",
                                  rheader=lambda jr: shn_pr_rheader(jr,
                                         tabs = [(T("Team Details"), None),

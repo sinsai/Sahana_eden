@@ -360,19 +360,18 @@ def pr_person_onvalidation(form):
 
 # -----------------------------------------------------------------------------
 s3xrc.model.configure(table,
-    main="first_name",
-    extra="last_name",
-    #listadd=False,
-    super_entity=db.pr_pentity,
-    onvalidation=lambda form: pr_person_onvalidation(form),
-    list_fields = [
-        "id",
-        "first_name",
-        "middle_name",
-        "last_name",
-        "gender",
-        "age_group"
-    ])
+                      main="first_name",
+                      extra="last_name",
+                      super_entity=db.pr_pentity,
+                      onvalidation=lambda form: pr_person_onvalidation(form),
+                      list_fields = [
+                        "id",
+                        "first_name",
+                        "middle_name",
+                        "last_name",
+                        "gender",
+                        "age_group"
+                      ])
 
 
 # *****************************************************************************
@@ -383,7 +382,7 @@ s3xrc.model.configure(table,
 pr_group_type_opts = {
     1:T("Family"),
     2:T("Tourist Group"),
-    3:T("Relief Team"),
+    3:T("Relief Team"),     # Don't change this number without changing vol/group()
     4:T("other")
 }
 
@@ -460,10 +459,10 @@ group_id = S3ReusableField("group_id", db.pr_group,
 
 # -----------------------------------------------------------------------------
 s3xrc.model.configure(table,
-    deletable=False,
-    super_entity=db.pr_pentity,
-    main="name",
-    extra="description")
+                      #deletable=False,
+                      super_entity=db.pr_pentity,
+                      main="name",
+                      extra="description")
 
 
 # *****************************************************************************

@@ -21,8 +21,7 @@ if deployment_settings.has_module("logs"):
                             organisation_id(),
                             location_id(),
                             #document_id(),
-                            person_id("contact_person_id"
-                                      ),
+                            person_id("contact_person_id"),
                             super_link(db.org_site),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
@@ -31,7 +30,15 @@ if deployment_settings.has_module("logs"):
     table.location_id.requires = IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True)
 
     table.contact_person_id.label = T("Contact Person")
-    s3xrc.model.configure(table, mark_required=["location_id"])
+    
+    def inventory_store_onvalidation(form): 
+        if form.vars.location_id == None: 
+            form.errors.location_id = T("Enter a location") 
+        return
+
+    s3xrc.model.configure(table,
+                          onvalidation=inventory_store_onvalidation,
+                          mark_required=["location_id"])
 
     # -----------------------------------------------------------------------------
     def inventory_store_represent(id):

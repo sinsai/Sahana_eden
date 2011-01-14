@@ -33,7 +33,7 @@ Ext.namespace("gxp.plugins");
  *
  *  .. code-block:: javascript
  *
- *    osm: {
+ *    "osm": {
  *        ptype: "gx_osmsource"
  *    }
  *
@@ -44,7 +44,7 @@ Ext.namespace("gxp.plugins");
  *
  *    {
  *        source: "osm",
- *        name: "osmarender"
+ *        name: "osmarander"
  *    }
  *
  */
@@ -151,7 +151,7 @@ gxp.plugins.OSMSource = Ext.extend(gxp.plugins.LayerSource, {
         if (index > -1) {
 
             record = this.store.getAt(index).copy(Ext.data.Record.id({}));
-            var layer = record.get("layer").clone();
+            var layer = record.getLayer().clone();
  
             // set layer title from config
             if (config.title) {

@@ -23,9 +23,9 @@ Ext.namespace("gxp.plugins");
 /** api: constructor
  *  .. class:: BingSource(config)
  *
- *    Plugin for using Bing layers with :class:`gxp.Viewer` instances.
+ *    Plugin for using OpenStreetMap layers with :class:`gxp.Viewer` instances.
  *
- *    Available layer names are "Road", "Aerial" and "AerialWithLabels"
+ *    Available layer names are "mapnik" and "osmarender"
  */
 /** api: example
  *  The configuration in the ``sources`` property of the :class:`gxp.Viewer` is
@@ -55,8 +55,8 @@ gxp.plugins.BingSource = Ext.extend(gxp.plugins.LayerSource, {
     ptype: "gx_bingsource",
 
     /** api: property[store]
-     *  ``GeoExt.data.LayerStore``. Will contain records with "Road" and
-     *  "Aerial" as name field values.
+     *  ``GeoExt.data.LayerStore``. Will contain records with "mapnik" and
+     *  "osmarender" as name field values.
      */
     
     /** api: config[title]
@@ -146,7 +146,7 @@ gxp.plugins.BingSource = Ext.extend(gxp.plugins.LayerSource, {
         if (index > -1) {
 
             record = this.store.getAt(index).copy(Ext.data.Record.id({}));
-            var layer = record.get("layer").clone();
+            var layer = record.getLayer().clone();
  
             // set layer title from config
             if (config.title) {

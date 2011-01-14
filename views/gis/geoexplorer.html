@@ -140,4 +140,9 @@
     // mapExtent null
     //s3_gis_app.createOverviewMap();
     //s3_gis_app.mapPanel.map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: s3_gis_app.mapPanel.map.options}));
+  {{if mouse_position and mouse_position is not "mgrs":}}
+    s3_gis_app.mapPanel.map.addControl(new OpenLayers.Control.MousePosition({displayProjection: s3_gis_proj4326}));
+  {{elif mouse_position == "mgrs":}}
+    s3_gis_app.mapPanel.map.addControl(new OpenLayers.Control.MGRSMousePosition({displayProjection: s3_gis_proj4326}));
+  {{pass}}
 //]]></script>

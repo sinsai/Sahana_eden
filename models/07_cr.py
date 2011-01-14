@@ -201,7 +201,8 @@ if deployment_settings.has_module(module):
                                        "name",
                                        "shelter_type_id",
                                        "shelter_service_id",
-                                       "location_id"])
+                                       "location_id",
+                                       "person_id"])
 
     # Link to shelter from pr_presence
     table = db.pr_presence

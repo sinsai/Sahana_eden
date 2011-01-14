@@ -1087,9 +1087,6 @@ class S3CRUD(S3Method):
                     record.update(missing_fields)
                     record.update(id=None)
 
-            if record is None:
-                record = record_id
-
             # Add asterisk to labels of required fields
             labels = Storage()
             mark_required = self._config("mark_required")
@@ -1117,6 +1114,8 @@ class S3CRUD(S3Method):
                         response.s3.has_required = True
                         labels[field.name] = DIV("%s:" % field.label, SPAN(" *", _class="req"))
 
+        if record is None:
+            record = record_id
 
         # Get the form
         form = SQLFORM(table,

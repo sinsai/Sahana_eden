@@ -20,11 +20,12 @@ GeoExplorer.SahanaComposer = Ext.extend(GeoExplorer.Composer, {
 
     /** private: method[createOverviewMap]
      * Adds the :class:`OpenLayers.Control.OverviewMap` to the map.
+     * http://trac.osgeo.org/openlayers/wiki/Control/OverviewMap
      */
     createOverviewMap: function() {
         var proj4326 = new OpenLayers.Projection('EPSG:4326');
         var options = {
-            displayProjection: proj4326,
+            //displayProjection: proj4326,
             projection: this.mapPanel.map.projection,
             // Use Manual stylesheet download (means can be done in HEAD to not delay pageload)
             theme: null,
@@ -79,6 +80,8 @@ GeoExplorer.SahanaComposer = Ext.extend(GeoExplorer.Composer, {
         //position.coords.heading;
         //position.coords.speed;
         // @ToDo: Avoid hardcoded appname (not sure how to get there from 'this' in this context)
+        // http://www.sencha.com/learn/Manual:Utilities:Function
+        //this.mapPanel.map.setCenter(new OpenLayers.LonLat(lon, lat).transform(proj4326, window.s3_gis_app.mapPanel.map.getProjectionObject()), zoomLevel);
         window.s3_gis_app.mapPanel.map.setCenter(new OpenLayers.LonLat(lon, lat).transform(proj4326, window.s3_gis_app.mapPanel.map.getProjectionObject()), zoomLevel);
     }
 

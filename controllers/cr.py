@@ -251,11 +251,7 @@ def shn_shelter_prep(r):
                 db.rms_req.location_id.comment = ""
                 # Set defaults
                 db.rms_req.datetime.default = request.utcnow
-                if auth.is_logged_in():
-                    requestor = db(db.pr_person.uuid == session.auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first()
-                    if requestor:
-                        db.rms_req.person_id.default = requestor.id
-
+                db.rms_req.person_id.default = s3_logged_in_person()
 
             elif r.component.name == "presence":
                 # Hide the Implied fields
@@ -265,10 +261,7 @@ def shn_shelter_prep(r):
                 db.pr_presence.proc_desc.readable = db.pr_presence.proc_desc.writable = False
                 # Set defaults
                 db.pr_presence.datetime.default = request.utcnow
-                if auth.is_logged_in():
-                    observer = db(db.pr_person.uuid == session.auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first()
-                    if observer:
-                        db.pr_presence.observer.default = observer.id
+                db.pr_presence.observer.default = s3_logged_in_person()
                 cr_shelter_presence_opts = {
                     vita.CHECK_IN: vita.presence_conditions[vita.CHECK_IN],
                     vita.CHECK_OUT: vita.presence_conditions[vita.CHECK_OUT]}

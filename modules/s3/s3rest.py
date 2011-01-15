@@ -1972,6 +1972,7 @@ class S3Request(object):
                 manager.error = self.manager.ERROR.BAD_RECORD
                 if self.representation == "html":
                     self.session.error = manager.error
+                    self.component = None # => avoid infinite loop
                     redirect(self.there())
                 else:
                     raise KeyError(manager.error)

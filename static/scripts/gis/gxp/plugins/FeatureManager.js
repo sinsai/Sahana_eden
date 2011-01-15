@@ -575,7 +575,7 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
                         autoSave: false,
                         listeners: {
                             "write": function() {
-                                record.getLayer().redraw(true);
+                                this.redrawMatchingLayers(record);
                             },
                             "load": function() {
                                 this.fireEvent("query", this, this.featureStore);
@@ -590,6 +590,22 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
             this.clearFeatureStore();
             this.fireEvent("layerchange", this, record, false);
         }        
+    },
+    
+    /** private: method[redrawMatchingLayers]
+     *  :arg record: ``GeoExt.data.LayerRecord``
+     *
+     *  Called after features have been edited.  This method redraws all map
+     *  layers with the same name & source as the provided layer record.
+     */
+    redrawMatchingLayers: function(record) {
+        var name = record.get("name");
+        var source = record.get("source");
+        this.target.mapPanel.layers.each(function(candidate) {
+            if (candidate.get("source") === source && candidate.get("name") === name) {
+                candidate.getLayer().redraw(true);
+            }
+        });
     },
     
     /** private: method[clearFeatureStore]
@@ -875,9 +891,12 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
             }
             this.processPage(this.pages[condition.index], condition,
                 function(page) {
+                    var map = this.target.mapPanel.map;
                     this.page = page;
                     this.setPageFilter(page);
-                    this.autoZoomPage && this.target.mapPanel.map.zoomToExtent(page.extent);
+                    if (this.autoZoomPage && !map.getExtent().containsLonLat(page.extent.getCenterLonLat())) {
+                        map.zoomToExtent(page.extent);
+                    }
                     this.fireEvent("setpage", this, condition, callback, scope);
                     this.featureStore.load({callback: callback, scope: scope});
                 }, this

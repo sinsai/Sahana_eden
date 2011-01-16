@@ -860,8 +860,6 @@ def shn_gis_location_represent(id):
         # Hyperlink
         #represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[id]))
         # Map
-        #represent = A(text, _href="#", _onclick="s3_viewMap(" + str(id) +");return false")
-        # Do not open in a browser tab (fix by jgeralnik):
         represent = A(text, _style="cursor:pointer; cursor:hand", _onclick="s3_viewMap(" + str(id) +");return false")
         # ToDo: Convert to popup? (HTML again!)
     except:

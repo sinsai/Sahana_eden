@@ -8,7 +8,7 @@
     @requires: U{B{I{gluon}} <http://web2py.com>}
 
     @author: Dominic König <dominic[at]aidiq.com>
-    
+
     @copyright: 2010 (c) Sahana Software Foundation
     @license: MIT
 
@@ -110,11 +110,11 @@ class S3Vita(object):
 
     # -------------------------------------------------------------------------
     def presence_accept(self, presence):
+        """
+        Update the presence log of a person entity
 
-        """ Update the presence log of a person entity
-
-                - mandatory to be called as onaccept routine at any creation,
-                  update or deletion of pr_presence records
+            - mandatory to be called as onaccept routine at any modification
+              of pr_presence records
 
         """
 
@@ -214,8 +214,8 @@ class S3Vita(object):
     # -------------------------------------------------------------------------
     def pentity(self, entity):
 
-        """ Get the PersonEntity record for the given ID, ID label, sub-entity
-            or related record
+        """ Get the PersonEntity record for the given ID, ID Tag Number,
+            sub-entity or related record
 
         """
 
@@ -369,7 +369,7 @@ class S3Vita(object):
 
         """
             Returns the full name of a person
-            
+
             @ToDo: Support being passed a pe_id instead of a record
         """
 
@@ -398,7 +398,7 @@ class S3Vita(object):
                 mname = "%s " % self.truncate(mname, 24)
             if lname:
                 lname = "%s " % self.truncate(lname, 24, nice = False)
-                    
+
             if mname.isspace():
                 return "%s%s" % (fname, lname)
             else:

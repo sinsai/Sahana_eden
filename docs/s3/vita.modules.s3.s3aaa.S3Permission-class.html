@@ -78,7 +78,7 @@ object --+
         Dominic K&#246;nig &lt;dominic@aidiq.com&gt;
       </p>
       <p><strong>Status:</strong>
-        uncompleted, currently unused
+        work in progress
       </p>
 </div><!-- ==================== INSTANCE METHODS ==================== -->
 <a name="section-InstanceMethods"></a>
@@ -218,10 +218,51 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.S3Permission-class.html#require" class="summary-sig-name">require</a>(<span class="summary-sig-arg">self</span>)</span><br />
-      Permission check including action upon failure</td>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.S3Permission-class.html#accessible_query" class="summary-sig-name">accessible_query</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">table</span>,
+        <span class="summary-sig-arg">*methods</span>)</span><br />
+      Query for records which the user is permitted to access with method</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3Permission.require">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3Permission.accessible_query">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.S3Permission-class.html#ownership_required" class="summary-sig-name">ownership_required</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">table</span>,
+        <span class="summary-sig-arg">*methods</span>)</span><br />
+      Check if record ownership is required for a method</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3Permission.ownership_required">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.S3Permission-class.html#has_permission" class="summary-sig-name">has_permission</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">table</span>,
+        <span class="summary-sig-arg">record</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">method</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Check permission to access a record</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3Permission.has_permission">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -335,7 +376,29 @@ object --+
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a href="vita.modules.s3.s3aaa.S3Permission-class.html#PERMISSION_OPTS" class="summary-name">PERMISSION_OPTS</a> = <code title="{CREATE: &quot;CREATE&quot;, READ: &quot;READ&quot;, UPDATE: &quot;UPDATE&quot;, DELETE: &quot;DELETE&quot;,}">{CREATE: &quot;CREATE&quot;, READ: &quot;READ&quot;, UPDATE: &quot;UP<code class="variable-ellipsis">...</code></code>
+        <a href="vita.modules.s3.s3aaa.S3Permission-class.html#PERMISSION_OPTS" class="summary-name">PERMISSION_OPTS</a> = <code title="OrderedDict([[CREATE, &quot;CREATE&quot;], [READ, &quot;READ&quot;], [UPDATE, &quot;UPDATE&quot;], [\
+DELETE, &quot;DELETE&quot;],])">OrderedDict([[CREATE, &quot;CREATE&quot;], [READ, &quot;REA<code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="vita.modules.s3.s3aaa.S3Permission-class.html#METHODS" class="summary-name">METHODS</a> = <code title="Storage(create= CREATE, read= READ, update= UPDATE, delete= DELETE)">Storage(create= CREATE, read= READ, update= UPDATE, <code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="vita.modules.s3.s3aaa.S3Permission-class.html#ADMIN" class="summary-name">ADMIN</a> = <code title="1">1</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="vita.modules.s3.s3aaa.S3Permission-class.html#EDITOR" class="summary-name">EDITOR</a> = <code title="4">4</code>
     </td>
   </tr>
 <tr>
@@ -570,29 +633,98 @@ object --+
       </p>
 </div></td></tr></table>
 </div>
-<a name="require"></a>
+<a name="accessible_query"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">require</span>(<span class="sig-arg">self</span>)</span>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">accessible_query</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">table</span>,
+        <span class="sig-arg">*methods</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3Permission.require">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3Permission.accessible_query">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>Permission check including action upon failure</p>
-  <ul>
-    <li>
-      example: auth.permission.require(my_table, auth.permission.ALL)
-    </li>
-  </ul>
+  <p>Query for records which the user is permitted to access with 
+  method</p>
+  <p>Example:</p>
+<pre class="literalblock">
+   query = auth.permission.accessible_query(table, &quot;read&quot;, &quot;update&quot;)
+</pre>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>table</code></strong> - the DB table</li>
+        <li><strong class="pname"><code>methods</code></strong> - list of methods for which permission is required (AND), any 
+          combination &quot;create&quot;, &quot;read&quot;, 
+          &quot;update&quot;, &quot;delete&quot;</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
+</div>
+<a name="ownership_required"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">ownership_required</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">table</span>,
+        <span class="sig-arg">*methods</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3Permission.ownership_required">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Check if record ownership is required for a method</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>table</code></strong> - the table</li>
+        <li><strong class="pname"><code>methods</code></strong> - methods to check (OR)</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="has_permission"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">has_permission</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">table</span>,
+        <span class="sig-arg">record</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">method</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3Permission.has_permission">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Check permission to access a record</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>table</code></strong> - the table</li>
+        <li><strong class="pname"><code>record</code></strong> - the record or record ID (None for any record)</li>
+        <li><strong class="pname"><code>method</code></strong> - the method (or tuple/list of methods), any of &quot;create&quot;,
+          &quot;read&quot;, &quot;update&quot;, &quot;delete&quot;</li>
+    </ul></dd>
+  </dl>
+<div class="fields">      <p><strong>Note:</strong>
+        when submitting a record, the record ID and the ownership fields 
+        (=&quot;created_by&quot;, &quot;owned_by&quot;) must be contained 
+        if available, otherwise the record will be re-loaded
+      </p>
+</div></td></tr></table>
 </div>
 <a name="fail"></a>
 <div>
@@ -770,7 +902,62 @@ CREATE | READ | UPDATE | DELETE
   <dl class="fields">
     <dt>Value:</dt>
       <dd><table><tr><td><pre class="variable">
-{CREATE: &quot;CREATE&quot;, READ: &quot;READ&quot;, UPDATE: &quot;UPDATE&quot;, DELETE: &quot;DELETE&quot;,}
+OrderedDict([[CREATE, &quot;CREATE&quot;], [READ, &quot;READ&quot;], [UPDATE, &quot;UPDATE&quot;], [<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+DELETE, &quot;DELETE&quot;],])
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="METHODS"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">METHODS</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+Storage(create= CREATE, read= READ, update= UPDATE, delete= DELETE)
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="ADMIN"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">ADMIN</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+1
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="EDITOR"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">EDITOR</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+4
 </pre></td></tr></table>
 </dd>
   </dl>
@@ -844,7 +1031,7 @@ lambda self, acl:
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Sun Jan  2 09:00:28 2011
+    Generated by Epydoc 3.0.1 on Mon Jan 17 00:32:28 2011
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

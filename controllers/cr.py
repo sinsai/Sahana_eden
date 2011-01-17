@@ -23,7 +23,7 @@ def shn_menu():
             #[T("Search"), False, URL(r=request, f="shelter", args="search")],
         ]],
     ]
-    if shn_has_role("Editor"):
+    if s3_has_role("Editor"):
         menu_editor = [
             [T("Shelter Types and Services"), False, URL(r=request, f="#"), [
                 [T("List / Add Services"), False, URL(r=request, f="shelter_service")],
@@ -153,9 +153,9 @@ def shelter():
             if r.component and r.component.name == "presence":
                 # No Delete on the Action buttons
                 shn_action_buttons(r, deletable=False)
-            else:
-                # Normal Action Buttons
-                shn_action_buttons(r)
+            #else:
+                ## Normal Action Buttons
+                #shn_action_buttons(r)
         return output
     response.s3.postp = postp
 
@@ -219,7 +219,7 @@ def shn_shelter_prep(r):
     if r.representation in shn_interactive_view_formats:
         # Don't send the locations list to client (pulled by AJAX instead)
         r.table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
-        
+
         # Remember this is html or popup.
         response.cr_shelter_request_was_html_or_popup = True
 
@@ -254,7 +254,7 @@ def shn_shelter_prep(r):
                 if auth.is_logged_in():
                     requestor = db(db.pr_person.uuid == session.auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first()
                     if requestor:
-                        db.rms_req.requestor_person_id.default = requestor.id
+                        db.rms_req.person_id.default = requestor.id
 
 
             elif r.component.name == "presence":
@@ -339,10 +339,10 @@ def shn_shelter_rheader(r, tabs=[]):
         record = r.record
         if record:
             rheader_tabs = shn_rheader_tabs(r, tabs)
-            
+
             if r.name == "shelter":
                 location = shn_gis_location_represent(record.location_id)
-            
+
                 rheader = DIV(TABLE(
                                     TR(
                                         TH(T("Name") + ": "), record.name

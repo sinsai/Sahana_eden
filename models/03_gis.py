@@ -23,7 +23,7 @@ _gis.countries = Storage()
 
 # This is needed for onvalidation
 # @ToDo: & Location Selector (old currently, new in future?)
-if shn_has_role("MapAdmin"):
+if s3_has_role("MapAdmin"):
     _gis.edit_L0 = _gis.edit_L1 = _gis.edit_L2 = _gis.edit_L3 = _gis.edit_L4 = _gis.edit_L5 = True
 else:
     _gis.edit_L0 = deployment_settings.get_gis_edit_l0()
@@ -779,7 +779,7 @@ def s3_gis_location_parents(r, **attr):
     table = resource.table
 
     # Check permission
-    if not shn_has_permission("read", table):
+    if not s3_has_permission("read", table):
         r.unauthorised()
 
     if r.representation == "html":

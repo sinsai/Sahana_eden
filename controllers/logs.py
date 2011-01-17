@@ -189,13 +189,98 @@ def recv_process():
                  args = [inventory_store_id, "store_item"]
                  )
              )
-
 #==============================================================================
+class QUANTITY_ITEM_IN_STORE:
+    def __init__(self, 
+                 store_item_id,
+                 item_packet_id):
+        self.store_item_id = store_item_id
+        self.item_packet_id = item_packet_id
+    def __call__(self, value):
+        error = "Date Error" # @todo: better error catching
+        store_item_record = db( (db.inventory_store_item.id == self.store_item_id) & \
+                                (db.inventory_store_item.item_packet_id == db.supply_item_packet.id)
+                               ).select(db.inventory_store_item.quantity,
+                                        db.supply_item_packet.quantity,
+                                        db.supply_item_packet.name,
+                                        limitby = [0,1]).first() # @todo: this should be a virtual field
+        if store_item_record and value:
+            send_quantity = int(value) * shn_get_db_field_value(db,
+                                                           "supply_item_packet",
+                                                           "quantity",                                                           
+                                                           self.item_packet_id   
+                                                           )       
+            store_quantity = store_item_record.inventory_store_item.quantity * \
+                             store_item_record.supply_item_packet.quantity
+            if send_quantity > store_quantity:
+                return (value, 
+                        "Only %s %s (%s) in the store." %
+                        (store_quantity,
+                         store_item_record.supply_item_packet.name,
+                         store_item_record.supply_item_packet.quantity)    
+                        )
+            else:
+                return (value, None)
+        else:
+            return (value, error)
+    def formatter(self, value):
+        return value
+
 def send():
     """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
+    
+    #Set Validator for checking against the number of items in the warehouse
+    if (request.vars.store_item_id):
+        db.logs_send_item.quantity.requires = QUANTITY_ITEM_IN_STORE(request.vars.store_item_id, 
+                                                                     request.vars.item_packet_id)
+    
+    def prep(r):        
+        #Restrict to items from this warehouse only
+        #store_item_ids = [store_item.item_id for store_item in 
+        #    db( ( db.inventory_store_item.inventory_store_id == r.record.inventory_store_id) & \
+        #        ( db.inventory_store_item.deleted == False) ).select(db.inventory_store_item.item_id) ]
+        db.logs_send_item.store_item_id.requires = IS_ONE_OF(db, 
+                                                             "inventory_store_item.id", 
+                                                             shn_inventory_store_item_represent, 
+                                                             orderby="inventory_store_item.id", 
+                                                             sort=True,
+                                                             filterby = "inventory_store_id",
+                                                             filter_opts = [r.record.inventory_store_id]
+                                                             )
+
+        js_store_quantity = SCRIPT("""
+        function ItemPackeIDChange() {       
+            $('#TotalQuantity').remove();           
+            $('[name = "quantity"]').after('<img src="/eden/static/img/ajax-loader.gif" id="store_quantity_loader_img">');    
+                 
+            url = '/eden/inventory/store_item_quantity/' 
+            url += $('[name = "store_item_id"]').val();
+            $.getJSON(url, function(data) {
+                /* @todo Error Checking */
+                var StoreQuantity = data.inventory_store_item.quantity; 
+                var StorePacketQuantity = data.supply_item_packet.quantity; 
+                
+                var PacketName = $('[name = "item_packet_id"] option:selected').text();
+                var re = /\(([0-9])*\)/;
+                var PacketQuantity = re.exec(PacketName)[1];
+                
+                var Quantity = (StoreQuantity * StorePacketQuantity) / PacketQuantity;
+                                
+                TotalQuantity = '<span id = "TotalQuantity"> / ' + Quantity.toFixed(2) + ' ' + PacketName + ' in store.</span>';
+                $('#store_quantity_loader_img').remove();
+                $('[name = "quantity"]').after(TotalQuantity);
+            });
+        };
+        $('[name = "item_packet_id"]').change(ItemPackeIDChange);
+        """ % dict(inventory_store_id = r.record.inventory_store_id) )
+        db.logs_send_item.item_packet_id.comment.append(js_store_quantity)
+        return True
+        
+    response.s3.prep = prep           
+        
     output = s3_rest_controller(module,
                                 resource,
                                 rheader=shn_logs_send_rheader)
@@ -213,6 +298,10 @@ def shn_logs_send_rheader(r):
                                                   (T("Items"), "send_item"),
                                                   ]
                                                  )
+                
+
+                                                                       
+                
                 rheader = DIV( TABLE(
                                    TR( TH( T("Date") + ": "),
                                        req_record.datetime,

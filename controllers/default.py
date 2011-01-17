@@ -24,7 +24,7 @@ def download():
     return response.download(request, db)
 
 # Add newly-registered users to Person Registry & 'Authenticated' role
-auth.settings.register_onaccept = lambda form: auth.shn_register(form)
+auth.settings.register_onaccept = lambda form: auth.s3_register(form)
 
 _table_user = auth.settings.table_user
 _table_user.first_name.label = T("First Name")
@@ -68,15 +68,15 @@ def index():
     div_res = DIV(H3(T("RESPONSE")),
                   menu_box(T("Activities"), "project", "activity"),
                   menu_box(T("Requests"),   "rms",     "req"),
-                  #+menu_box(T("Distribution"), "logs", "distrib") 
+                  #+menu_box(T("Distribution"), "logs", "distrib")
                   _class = "menu_div",
                   _id = "menu_div_response")
-    
+
     #div_additional = DIV(A(DIV(T("Mobile Assess."),
     #                       _class = "menu_box"
     #                       ),
     #                    _href = URL( r=request, c="assess", f= "mobile_basic_assess")
-    #                   ))    
+    #                   ))
 
     modules = deployment_settings.modules
 

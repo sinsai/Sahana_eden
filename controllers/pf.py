@@ -106,7 +106,7 @@ def index():
         if not r.component:
             open_button_label = DETAILS
 
-            if auth.shn_logged_in():
+            if auth.s3_logged_in():
 
                 # Define URLs
                 report_missing = str(URL(r=request, f=resourcename,
@@ -148,7 +148,7 @@ def index():
     response.s3.prep = prep
     response.s3.postp = postp
 
-    if auth.shn_logged_in():
+    if auth.s3_logged_in():
         add_btn = A(T("Add Person"),
                     _class="action-btn",
                     _href=URL(r=request, f="person", args="create"))
@@ -204,7 +204,7 @@ def person():
     def person_prep(r):
 
         # Pre-populate reporter fields
-        if auth.shn_logged_in():
+        if auth.s3_logged_in():
             persons = db.pr_person
             person = db(persons.uuid == session.auth.user.person_uuid).select(persons.id, limitby=(0,1)).first()
             if person:

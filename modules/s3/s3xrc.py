@@ -148,7 +148,7 @@ class S3ResourceController(object):
         self.importer = S3Importer(self)
 
         # Hooks
-        self.permit = self.auth.shn_has_permission
+        self.permit = self.auth.s3_has_permission
         self.messages = None
         self.tree_resolve = None
         self.resolve = None
@@ -898,7 +898,7 @@ class S3ResourceController(object):
                 tree = etree.ElementTree(tree)
             callback(self.tree_resolve, tree)
 
-        permit = self.auth.shn_has_permission
+        permit = self.auth.s3_has_permission
         audit = self.audit
 
         tablename = resource.tablename

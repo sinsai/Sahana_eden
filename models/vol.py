@@ -325,7 +325,7 @@ if deployment_settings.has_module(module):
         if attr is None:
             attr = {}
 
-        if not shn_has_permission("read", db.project_project):
+        if not s3_has_permission("read", db.project_project):
             session.error = UNAUTHORISED
             redirect(URL(r=request, c="default", f="user", args="login", vars={"_next":URL(r=request, args="search_location", vars=request.vars)}))
 

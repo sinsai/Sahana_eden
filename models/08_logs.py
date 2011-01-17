@@ -38,7 +38,7 @@ logs_menu = [
                 [T("Add"), False, URL(r=request, c="supply", f="item", args="create")],
             ]],
             ]
-if shn_has_role(1):
+if s3_has_role(1):
     logs_menu.append(
         [T("Item Categories"), False, URL(r=request, c="supply", f="item_category"),[
             [T("List"), False, URL(r=request, c="supply", f="item_category")],
@@ -140,7 +140,9 @@ if deployment_settings.has_module(module):
                             logs_req_id(),
                             item_id(),
                             item_packet_id(),
-                            Field("quantity", "double"),
+                            Field("quantity", 
+                                  "double",
+                                  notnull = True),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
@@ -177,7 +179,7 @@ if deployment_settings.has_module(module):
     resourcename = "recv"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            Field("datetime", "date",
+                            Field("datetime", "datetime",
                                   label = "Date"),
                             inventory_store_id(label = T("By Warehouse")),
                             location_id("from_location_id",
@@ -215,23 +217,23 @@ if deployment_settings.has_module(module):
     def logs_recv_represent(id):
         if id:
             logs_recv_row = db(db.logs_recv.id == id).\
-                              select(db.logs_recv.date,
+                              select(db.logs_recv.datetime,
                                      db.logs_recv.from_location_id,
                                      limitby=(0, 1))\
                               .first()
-            return "%s - %s" % (shn_gis_location_represent( \
-                                logs_recv_row.from_location_id),
-                                logs_recv_row.date)
+            return SPAN( shn_gis_location_represent( logs_recv_row.from_location_id),
+                         " - ",
+                        logs_recv_row.datetime)
         else:
             return NONE
 
     # -----------------------------------------------------------------------------
     # Reusable Field
-    logs_recv_id = S3ReusableField("logs_recv_id", db.logs_recv, sortby="date",
+    logs_recv_id = S3ReusableField("logs_recv_id", db.logs_recv, sortby="datetime",
                                  requires = IS_NULL_OR(IS_ONE_OF(db,
                                                                  "logs_recv.id",
                                                                  logs_recv_represent,
-                                                                 orderby="logs_recv_id.date", sort=True)),
+                                                                 orderby="logs_recv_id.datetime", sort=True)),
                                  represent = logs_recv_represent,
                                  label = T("Receive Shipment"),
                                  #comment = DIV(A(ADD_DISTRIBUTION, _class="colorbox", _href=URL(r=request, c="logs", f="distrib", args="create", vars=dict(format="popup")), _target="top", _title=ADD_DISTRIBUTION),
@@ -259,7 +261,8 @@ if deployment_settings.has_module(module):
                             logs_recv_id(),
                             item_id(),
                             item_packet_id(),
-                            Field("quantity", "double"),
+                            Field("quantity", "double",
+                                  notnull = True),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
@@ -329,24 +332,24 @@ if deployment_settings.has_module(module):
     # -----------------------------------------------------------------------------
     def logs_send_represent(id):
         if id:
-            logs_req_row = db(db.logs_send.id == id).\
-                              select(db.logs_send.date,
+            logs_send_row = db(db.logs_send.id == id).\
+                              select(db.logs_send.datetime,
                                      db.logs_send.to_location_id,
                                      limitby=(0, 1))\
                               .first()
-            return "%s - %s" % (shn_gis_location_represent( \
-                                    logs_send_row.to_location_id),
-                                logs_send_row.date)
+            return SPAN( shn_gis_location_represent( logs_send_row.to_location_id),
+                         " - ",
+                        logs_send_row.datetime)            
         else:
             return NONE
 
     # -----------------------------------------------------------------------------
     # Reusable Field
-    logs_send_id = S3ReusableField("logs_send_id", db.logs_send, sortby="date",
+    logs_send_id = S3ReusableField("logs_send_id", db.logs_send, sortby="datetime",
                                  requires = IS_NULL_OR(IS_ONE_OF(db,
                                                                  "logs_send.id",
                                                                  logs_send_represent,
-                                                                 orderby="logs_send_id.date", sort=True)),
+                                                                 orderby="logs_send_id.datetime", sort=True)),
                                  represent = logs_send_represent,
                                  label = T("Receive Shipment"),
                                  #comment = DIV(A(ADD_DISTRIBUTION, _class="colorbox", _href=URL(r=request, c="logs", f="distrib", args="create", vars=dict(format="popup")), _target="top", _title=ADD_DISTRIBUTION),
@@ -372,9 +375,10 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             logs_send_id(),
-                            item_id(),
+                            store_item_id(),
                             item_packet_id(),
-                            Field("quantity", "double"),
+                            Field("quantity", "double",
+                                  notnull = True),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
@@ -403,6 +407,6 @@ if deployment_settings.has_module(module):
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(logs_send = "logs_send_id",
-                                          supply_item = "item_id"))
+                                          store_item = "store_item_id"))
 
 #==============================================================================

@@ -25,7 +25,7 @@ def index():
     response.title = module_name
     return dict(module_name=module_name)
 
-@auth.requires_membership("Administrator")
+@auth.s3_requires_membership("Administrator")
 def spreadsheet():
 
     """ RESTful Controller """

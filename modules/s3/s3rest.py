@@ -100,7 +100,7 @@ class S3Resource(object):
 
         # Authorization hooks
         self.permit = manager.permit
-        self.accessible_query = manager.auth.shn_accessible_query
+        self.accessible_query = manager.auth.s3_accessible_query
 
         # Audit hook
         self.audit = manager.audit
@@ -401,42 +401,43 @@ class S3Resource(object):
 
         numrows = 0
         for row in records:
-            if self.permit("delete", self.tablename, row.id):
 
-                # Clear session
-                if self.manager.get_session(prefix=self.prefix, name=self.name) == row.id:
-                    self.manager.clear_session(prefix=self.prefix, name=self.name)
+            # Check permission to delete this row
+            if not self.permit("delete", self.table, record_id=row.id):
+                continue
 
-                # Test row for deletability
-                try:
+            # Clear session
+            if self.manager.get_session(prefix=self.prefix, name=self.name) == row.id:
+                self.manager.clear_session(prefix=self.prefix, name=self.name)
+
+            # Test row for deletability
+            try:
+                del self.table[row.id]
+            except:
+                self.manager.session.error = self.ERROR.INTEGRITY_ERROR
+            finally:
+                # We don't want to delete yet, so let's rollback
+                self.db.rollback()
+
+            if self.manager.session.error != self.ERROR.INTEGRITY_ERROR:
+                # Archive record?
+                if archive_not_delete and "deleted" in self.table:
+                    self.db(self.table.id == row.id).update(deleted=True)
+                    numrows += 1
+                    self.audit("delete", self.prefix, self.name,
+                                record=row.id, representation=format)
+                    model.delete_super(self.table, row)
+                    if ondelete:
+                        callback(ondelete, row)
+                # otherwise: delete record
+                else:
                     del self.table[row.id]
-                except:
-                    self.manager.session.error = self.ERROR.INTEGRITY_ERROR
-                finally:
-                    # We don't want to delete yet, so let's rollback
-                    self.db.rollback()
-
-                if self.manager.session.error != self.ERROR.INTEGRITY_ERROR:
-                    # Archive record?
-                    if archive_not_delete and "deleted" in self.table:
-                        self.db(self.table.id == row.id).update(deleted=True)
-                        numrows += 1
-                        self.audit("delete", self.prefix, self.name,
-                                  record=row.id, representation=format)
-                        model.delete_super(self.table, row)
-                        if ondelete:
-                            callback(ondelete, row)
-
-                    # otherwise: delete record
-                    else:
-                        del self.table[row.id]
-                        numrows += 1
-                        self.audit("delete", self.prefix, self.name,
-                                   record=row.id,
-                                   representation=format)
-                        model.delete_super(self.table, row)
-                        if ondelete:
-                            callback(ondelete, row)
+                    numrows += 1
+                    self.audit("delete", self.prefix, self.name,
+                                record=row.id, representation=format)
+                    model.delete_super(self.table, row)
+                    if ondelete:
+                        callback(ondelete, row)
 
         return numrows
 
@@ -931,14 +932,14 @@ class S3Resource(object):
         """
 
         method = r.method
-        permit = self.permit
+        #permit = self.permit
 
         model = self.manager.model
 
         tablename = r.component and r.component.tablename or r.tablename
 
         if method is None or method in ("read", "display"):
-            authorised = permit("read", tablename)
+            #authorised = permit("read", tablename)
             if self.__transformable(r):
                 method = "export_tree"
             elif r.component:
@@ -962,19 +963,22 @@ class S3Resource(object):
                     method = "list"
 
         elif method in ("create", "update"):
-            authorised = permit(method, tablename)
+            #authorised = permit(method, tablename)
             # @todo 2.3: Add user confirmation here:
             if self.__transformable(r, method="import"):
                 method = "import_tree"
 
-        elif method == "copy":
-            authorised = permit("create", tablename)
+        #elif method == "copy":
+            #authorised = permit("create", tablename)
 
         elif method == "delete":
             return self.__delete(r)
 
-        elif method in ("options", "fields", "search", "barchart"):
-            authorised = permit("read", tablename)
+        #elif method in ("options", "fields", "search", "barchart"):
+            #authorised = permit("read", tablename)
+
+        elif method in ("options", "fields", "search", "copy", "barchart"):
+            pass
 
         elif method == "clear" and not r.component:
             self.manager.clear_session(self.prefix, self.name)
@@ -996,10 +1000,10 @@ class S3Resource(object):
         else:
             r.error(501, self.ERROR.BAD_METHOD)
 
-        if not authorised:
-            r.unauthorised()
-        else:
-            return self.get_handler(method)
+        #if not authorised:
+            #r.unauthorised()
+        #else:
+        return self.get_handler(method)
 
 
     # -------------------------------------------------------------------------
@@ -1011,15 +1015,15 @@ class S3Resource(object):
 
         """
 
-        permit = self.permit
+        #permit = self.permit
 
         if self.__transformable(r, method="import"):
-            authorised = permit("create", self.tablename) and \
-                         permit("update", self.tablename)
-            if not authorised:
-                r.unauthorised()
-            else:
-                return self.get_handler("import_tree")
+            #authorised = permit("create", self.tablename) and \
+                         #permit("update", self.tablename)
+            #if not authorised:
+                #r.unauthorised()
+            #else:
+            return self.get_handler("import_tree")
         else:
             r.error(501, self.ERROR.BAD_FORMAT)
 
@@ -1061,13 +1065,13 @@ class S3Resource(object):
 
         """
 
-        permit = self.permit
+        #permit = self.permit
 
-        tablename = r.component and r.component.tablename or r.tablename
+        #tablename = r.component and r.component.tablename or r.tablename
 
-        authorised = permit("delete", tablename)
-        if not authorised:
-            r.unauthorised()
+        #authorised = permit("delete", tablename)
+        #if not authorised:
+            #r.unauthorised()
 
         return self.get_handler("delete")
 
@@ -2267,7 +2271,7 @@ class S3Method(object):
         self.db = self.manager.db
 
         # Settings
-        self.permit = self.manager.auth.shn_has_permission
+        self.permit = self.manager.auth.s3_has_permission
         self.download_url = self.manager.s3.download_url
 
         # Init

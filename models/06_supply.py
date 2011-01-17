@@ -105,17 +105,16 @@ if deployment_settings.has_module("logs"):
                 comment = DIV(A(ADD_ITEM, _class="colorbox", _href=URL(r=request, c="supply", f="item", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ITEM),
                           DIV( _class="tooltip", _title=T("Catalog Item") + "|" + ADD_ITEM)),
                 ondelete = "RESTRICT"
-                )
-    
+                )    
     #==============================================================================
     # Item Packet
     #
     resourcename = "item_packet"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            item_id(),
+                            item_id(notnull=True),
                             Field("name", length=128, notnull=True), #Ideally this would reference another table for normalising Packet names
-                            Field("quantity", "double"),
+                            Field("quantity", "double", notnull=True),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
     # CRUD strings
@@ -142,7 +141,8 @@ if deployment_settings.has_module("logs"):
                 requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item_packet.id", "%(name)s", sort=True)),
                 represent = lambda id: shn_get_db_field_value(db=db, table="supply_item_packet", field="name", look_up=id),
                 label = T("Packet"),    
-                comment = DIV(A( ADD_ITEM_PACKET, 
+                comment = DIV(DIV( _class="tooltip", _title=T("Item Packets") + "|" + T("Needs elaboration!!!")),
+                              A( ADD_ITEM_PACKET, 
                                  _class="colorbox", 
                                  _href=URL(r=request, 
                                            c="supply", 
@@ -151,9 +151,71 @@ if deployment_settings.has_module("logs"):
                                            vars=dict(format="popup")
                                            ), 
                                  _target="top", 
+                                 _id = "item_packet_add",
+                                 _style = "display: none",
                                  ),
-                              DIV( _class="tooltip", _title=T("Item Packets") + "|" + T("The category of the Item."))
-                          ),
+                                 IMG(_src = "/" + request.application + "/static/img/ajax-loader.gif",
+                                     _id = "item_packet_loader_img",
+                                     _style = "display:none;"
+                                      ),                                     
+                SCRIPT("""
+    /* Hide the item packet input if the item hasn't been entered */
+    /* Show the item packet input id the item has already been entered (if this is an error) */              
+    if ($('[name $= "item_id"]').val() == '') {
+        $('[id$="item_packet_id__row1"]').hide();
+        $('[id$="item_packet_id__row"]').hide();    
+    }
+   
+    /* Includes Inventory Item too */
+    $('[name $= "item_id"]').change(function() {
+                
+        var selSubField = $('[name = "item_packet_id"]');
+        
+        $('[id$="item_packet_id__row1"]').show();
+        $('[id$="item_packet_id__row"]').show();        
+        
+        /* Show Throbber */
+        selSubField.after('<img src="/eden/static/img/ajax-loader.gif" id="item_packet_loader_img">');
+        selSubField.hide();
+        
+        if ($(this).attr('name') == 'item_id') {
+            url = '/eden/supply/item_packet.json?item_packet.item_id=' + $(this).val();
+        } else {
+            url = '/eden/inventory/store_item_packets/' + $(this).val();
+        }
+                                
+        $.getJSON(url, function(data) {
+            /* Create Select Element */
+            var options = '';
+            var v = '';
+            
+            if (data.length == 0) {
+                options += '<option value="">' + '{{=T("No Packets  for Item")}}</options>';
+            } else {
+                for (var i = 0; i < data.length; i++){
+                    v = data[i].id;
+                    options += '<option value="' +  data[i].id + '">' + data[i].name + ' (' + data[i].quantity + ')</option>';
+                }                
+            }
+            selSubField.html(options);  
+            selSubField.val(1); /* default value */       
+            selSubField.show(); 
+            
+            /* Show "Add" Button & modify link */  
+            href = $('#item_packet_add').attr('href') + "&item_id=" + $('[name = "item_id"]').val();
+            $('#item_packet_add').attr('href', href)
+            $('#item_packet_add').show();
+            
+            /* Hide Throbber */
+            $('#item_packet_loader_img').remove();
+            
+            if ( typeof ItemPackeIDChange == "function" ) {
+                ItemPackeIDChange();
+            }; 
+        });
+    });
+                """) ),
+
                 ondelete = "RESTRICT"
                 )    
     #Packets as component of Items

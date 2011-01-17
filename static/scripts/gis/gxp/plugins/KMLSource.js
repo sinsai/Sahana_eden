@@ -181,7 +181,7 @@ gxp.plugins.KMLSource = Ext.extend(gxp.plugins.LayerSource, {
         if (index > -1) {
 
             record = this.store.getAt(index).copy(Ext.data.Record.id({}));
-            var layer = record.get("layer").clone();
+            var layer = record.getLayer().clone();
  
             // set layer title from config
             if (config.title) {

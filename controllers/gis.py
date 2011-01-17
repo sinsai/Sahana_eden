@@ -1660,13 +1660,18 @@ def geoexplorer():
 
     geoserver_url = deployment_settings.get_gis_geoserver_url()
 
+    # 'normal', 'mgrs' or 'off'
+    mouse_position = deployment_settings.get_gis_mouse_position()
+
+    response.title = "GeoExplorer"
     return dict(
                 config=config,
                 bing_key=bing_key,
                 google_key=google_key,
                 yahoo_key=yahoo_key,
                 print_service=print_service,
-                geoserver_url=geoserver_url
+                geoserver_url=geoserver_url,
+                mouse_position = mouse_position
                )
 
 def about():

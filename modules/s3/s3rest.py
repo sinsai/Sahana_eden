@@ -2,7 +2,7 @@
 
 """ RESTful API (S3XRC)
 
-    @version: 2.3.2
+    @version: 2.3.3
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
@@ -1253,6 +1253,8 @@ class S3Resource(object):
         @param r: the S3Request
         @param attr: the request attributes
 
+        @todo: use the importer!
+
         """
 
         xml = self.xml
@@ -1764,7 +1766,7 @@ class S3Resource(object):
                 ids = self.get_id()
                 if not isinstance(ids, (list, tuple)):
                     args.append(str(ids))
-            elif self.parent and not self.parent._multiple:
+            elif self.parent:
                 ids = self.parent.get_id()
                 if not isinstance(ids, (list, tuple)):
                     args.insert(0, str(ids))
@@ -1972,6 +1974,7 @@ class S3Request(object):
                 manager.error = self.manager.ERROR.BAD_RECORD
                 if self.representation == "html":
                     self.session.error = manager.error
+                    self.component = None # => avoid infinite loop
                     redirect(self.there())
                 else:
                     raise KeyError(manager.error)

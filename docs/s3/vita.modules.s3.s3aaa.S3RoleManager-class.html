@@ -3,7 +3,7 @@
           "DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-  <title>vita.modules.s3.s3xrc.S3ImportJob</title>
+  <title>vita.modules.s3.s3aaa.S3RoleManager</title>
   <link rel="stylesheet" href="epydoc.css" type="text/css" />
   <script type="text/javascript" src="epydoc.js"></script>
 </head>
@@ -45,8 +45,8 @@
         Package&nbsp;vita ::
         Package&nbsp;modules ::
         <a href="vita.modules.s3-module.html">Package&nbsp;s3</a> ::
-        <a href="vita.modules.s3.s3xrc-module.html">Module&nbsp;s3xrc</a> ::
-        Class&nbsp;S3ImportJob
+        <a href="vita.modules.s3.s3aaa-module.html">Module&nbsp;s3aaa</a> ::
+        Class&nbsp;S3RoleManager
       </span>
     </td>
     <td>
@@ -56,24 +56,30 @@
     onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
         <tr><td align="right"><span class="options"
             >[<a href="frames.html" target="_top">frames</a
-            >]&nbsp;|&nbsp;<a href="vita.modules.s3.s3xrc.S3ImportJob-class.html"
+            >]&nbsp;|&nbsp;<a href="vita.modules.s3.s3aaa.S3RoleManager-class.html"
             target="_top">no&nbsp;frames</a>]</span></td></tr>
       </table>
     </td>
   </tr>
 </table>
 <!-- ==================== CLASS DESCRIPTION ==================== -->
-<h1 class="epydoc">Class S3ImportJob</h1><p class="nomargin-top"><span class="codelink"><a href="vita.modules.s3.s3xrc-pysrc.html#S3ImportJob">source&nbsp;code</a></span></p>
+<h1 class="epydoc">Class S3RoleManager</h1><p class="nomargin-top"><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3RoleManager">source&nbsp;code</a></span></p>
 <pre class="base-tree">
-object --+
-         |
-        <strong class="uidshort">S3ImportJob</strong>
+     object --+    
+              |    
+<a href="vita.modules.s3.s3rest.S3Method-class.html">s3rest.S3Method</a> --+
+                  |
+                 <strong class="uidshort">S3RoleManager</strong>
 </pre>
 
 <hr />
-<p>Helper class for data imports</p>
+<p>REST Method to manage ACLs</p>
 
-<!-- ==================== INSTANCE METHODS ==================== -->
+<hr />
+<div class="fields">      <p><strong>Status:</strong>
+        alpha
+      </p>
+</div><!-- ==================== INSTANCE METHODS ==================== -->
 <a name="section-InstanceMethods"></a>
 <table class="summary" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
@@ -96,21 +102,12 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3.s3xrc.S3ImportJob-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">manager</span>,
-        <span class="summary-sig-arg">prefix</span>,
-        <span class="summary-sig-arg">name</span>,
-        <span class="summary-sig-arg">id</span>,
-        <span class="summary-sig-arg">record</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">element</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">mtime</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">rmap</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">directory</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">onvalidation</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">onaccept</span>=<span class="summary-sig-default">None</span>)</span><br />
-      x.__init__(...) initializes x; see x.__class__.__doc__ for signature</td>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.S3RoleManager-class.html#apply_method" class="summary-sig-name">apply_method</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">r</span>,
+        <span class="summary-sig-arg">**attr</span>)</span><br />
+      Apply role manager</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3xrc-pysrc.html#S3ImportJob.__init__">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3RoleManager.apply_method">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -118,17 +115,18 @@ object --+
       
     </td>
   </tr>
-<tr>
+<tr class="private">
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3.s3xrc.S3ImportJob-class.html#get_resolution" class="summary-sig-name">get_resolution</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">field</span>)</span><br />
-      Find Sync resolution for a particular field in this record</td>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.S3RoleManager-class.html#_list" class="summary-sig-name" onclick="show_private();">_list</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">r</span>,
+        <span class="summary-sig-arg">**attr</span>)</span><br />
+      List roles/permissions</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3xrc-pysrc.html#S3ImportJob.get_resolution">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3RoleManager._list">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -136,16 +134,18 @@ object --+
       
     </td>
   </tr>
-<tr>
+<tr class="private">
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3.s3xrc.S3ImportJob-class.html#commit" class="summary-sig-name">commit</a>(<span class="summary-sig-arg">self</span>)</span><br />
-      Commits the record to the database</td>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.S3RoleManager-class.html#_edit" class="summary-sig-name" onclick="show_private();">_edit</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">r</span>,
+        <span class="summary-sig-arg">**attr</span>)</span><br />
+      Create/update role</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3xrc-pysrc.html#S3ImportJob.commit">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3RoleManager._edit">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -153,16 +153,18 @@ object --+
       
     </td>
   </tr>
-<tr>
+<tr class="private">
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3.s3xrc.S3ImportJob-class.html#resolve_references" class="summary-sig-name">resolve_references</a>(<span class="summary-sig-arg">self</span>)</span><br />
-      Resolve references of this record</td>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.S3RoleManager-class.html#_delete" class="summary-sig-name" onclick="show_private();">_delete</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">r</span>,
+        <span class="summary-sig-arg">**attr</span>)</span><br />
+      Delete role</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3xrc-pysrc.html#S3ImportJob.resolve_references">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3RoleManager._delete">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -170,18 +172,37 @@ object --+
       
     </td>
   </tr>
-<tr>
+<tr class="private">
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3.s3xrc.S3ImportJob-class.html#writeback" class="summary-sig-name">writeback</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">field</span>,
-        <span class="summary-sig-arg">value</span>)</span><br />
-      Update a field in the record</td>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.S3RoleManager-class.html#_roles" class="summary-sig-name" onclick="show_private();">_roles</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">r</span>,
+        <span class="summary-sig-arg">**attr</span>)</span><br />
+      View/Update roles of a user</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3xrc-pysrc.html#S3ImportJob.writeback">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3RoleManager._roles">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.S3RoleManager-class.html#_users" class="summary-sig-name" onclick="show_private();">_users</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">r</span>,
+        <span class="summary-sig-arg">**attr</span>)</span><br />
+      View/Update users of a role</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3RoleManager._users">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -191,11 +212,18 @@ object --+
   </tr>
   <tr>
     <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="vita.modules.s3.s3rest.S3Method-class.html">s3rest.S3Method</a></code></b>:
+      <code><a href="vita.modules.s3.s3rest.S3Method-class.html#__call__">__call__</a></code>
+      </p>
+    <div class="private">    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="vita.modules.s3.s3rest.S3Method-class.html">s3rest.S3Method</a></code></b> (private):
+      <code><a href="vita.modules.s3.s3rest.S3Method-class.html#_config" onclick="show_private();">_config</a></code>
+      </p></div>
     <p class="indent-wrapped-lines"><b>Inherited from <code>object</code></b>:
       <code>__delattr__</code>,
       <code>__format__</code>,
       <code>__getattribute__</code>,
       <code>__hash__</code>,
+      <code>__init__</code>,
       <code>__new__</code>,
       <code>__reduce__</code>,
       <code>__reduce_ex__</code>,
@@ -205,6 +233,33 @@ object --+
       <code>__str__</code>,
       <code>__subclasshook__</code>
       </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== STATIC METHODS ==================== -->
+<a name="section-StaticMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Static Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-StaticMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <div class="private">    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="vita.modules.s3.s3rest.S3Method-class.html">s3rest.S3Method</a></code></b> (private):
+      <code><a href="vita.modules.s3.s3rest.S3Method-class.html#_extend_view" onclick="show_private();">_extend_view</a></code>,
+      <code><a href="vita.modules.s3.s3rest.S3Method-class.html#_record_id" onclick="show_private();">_record_id</a></code>,
+      <code><a href="vita.modules.s3.s3rest.S3Method-class.html#_view" onclick="show_private();">_view</a></code>
+      </p></div>
     </td>
   </tr>
 </table>
@@ -229,36 +284,28 @@ object --+
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a href="vita.modules.s3.s3xrc.S3ImportJob-class.html#METHOD" class="summary-name">METHOD</a> = <code title="Storage(CREATE= &quot;create&quot;, UPDATE= &quot;update&quot;)">Storage(CREATE= &quot;create&quot;, UPDATE= &quot;update&quot;)</code>
+        <a href="vita.modules.s3.s3aaa.S3RoleManager-class.html#HIDE_CONTROLLER" class="summary-name">HIDE_CONTROLLER</a> = <code title="&quot;admin&quot;, &quot;default&quot;">&quot;admin&quot;, &quot;default&quot;</code>
     </td>
   </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a href="vita.modules.s3.s3xrc.S3ImportJob-class.html#RESOLUTION" class="summary-name">RESOLUTION</a> = <code title="Storage(THIS= &quot;THIS&quot;, OTHER= &quot;OTHER&quot;, NEWER= &quot;NEWER&quot;, MASTER= &quot;MASTER&quot;\
-, MASTERCOPY= &quot;MASTERCOPY&quot;)">Storage(THIS= &quot;THIS&quot;, OTHER= &quot;OTHER&quot;, NEWER= &quot;NEW<code class="variable-ellipsis">...</code></code>
+        <a href="vita.modules.s3.s3aaa.S3RoleManager-class.html#HIDE_ROLES" class="summary-name">HIDE_ROLES</a> = <code title="1, 3, 4, 5">1, 3, 4, 5</code>
     </td>
   </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a href="vita.modules.s3.s3xrc.S3ImportJob-class.html#UID" class="summary-name">UID</a> = <code title="&quot;uuid&quot;">&quot;uuid&quot;</code>
+        <a href="vita.modules.s3.s3aaa.S3RoleManager-class.html#PROTECTED_ROLES" class="summary-name">PROTECTED_ROLES</a> = <code title="1, 2, 3, 4, 5">1, 2, 3, 4, 5</code>
     </td>
   </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a href="vita.modules.s3.s3xrc.S3ImportJob-class.html#MCI" class="summary-name">MCI</a> = <code title="&quot;mci&quot;">&quot;mci&quot;</code>
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-        <a href="vita.modules.s3.s3xrc.S3ImportJob-class.html#MTIME" class="summary-name">MTIME</a> = <code title="&quot;modified_on&quot;">&quot;modified_on&quot;</code>
+        <a href="vita.modules.s3.s3aaa.S3RoleManager-class.html#controllers" class="summary-name">controllers</a> = <code title="Storage()">Storage()</code>
     </td>
   </tr>
 </table>
@@ -305,140 +352,139 @@ object --+
   </td>
 </tr>
 </table>
-<a name="__init__"></a>
+<a name="apply_method"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">manager</span>,
-        <span class="sig-arg">prefix</span>,
-        <span class="sig-arg">name</span>,
-        <span class="sig-arg">id</span>,
-        <span class="sig-arg">record</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">element</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">mtime</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">rmap</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">directory</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">onvalidation</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">onaccept</span>=<span class="sig-default">None</span>)</span>
-    <br /><em class="fname">(Constructor)</em>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">apply_method</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">r</span>,
+        <span class="sig-arg">**attr</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3xrc-pysrc.html#S3ImportJob.__init__">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3RoleManager.apply_method">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>x.__init__(...) initializes x; see x.__class__.__doc__ for 
-  signature</p>
+  <p>Apply role manager</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>manager</code></strong> - the S3ResourceController</li>
-        <li><strong class="pname"><code>prefix</code></strong> - prefix of the resource name (=module name)</li>
-        <li><strong class="pname"><code>name</code></strong> - the resource name (=without prefix)</li>
-        <li><strong class="pname"><code>id</code></strong> - the target record ID</li>
-        <li><strong class="pname"><code>record</code></strong> - the record data to import</li>
-        <li><strong class="pname"><code>element</code></strong> - the corresponding element from the element tree</li>
-        <li><strong class="pname"><code>rmap</code></strong> - map of references for this record</li>
-        <li><strong class="pname"><code>directory</code></strong> - resource directory of the input tree</li>
-        <li><strong class="pname"><code>onvalidation</code></strong> - extra function to validate records</li>
-        <li><strong class="pname"><code>onaccept</code></strong> - callback function for committed importes</li>
+        <li><strong class="pname"><code>r</code></strong> - the S3Request</li>
+        <li><strong class="pname"><code>attr</code></strong> - dictionary of parameters for the method handler</li>
     </ul></dd>
+    <dt>Returns:</dt>
+        <dd>output object to send to the view</dd>
     <dt>Overrides:
-        object.__init__
-        <dd><em class="note">(inherited documentation)</em></dd>
+        <a href="vita.modules.s3.s3rest.S3Method-class.html#apply_method">s3rest.S3Method.apply_method</a>
     </dt>
   </dl>
 </td></tr></table>
 </div>
-<a name="get_resolution"></a>
-<div>
+<a name="_list"></a>
+<div class="private">
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_resolution</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">field</span>)</span>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_list</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">r</span>,
+        <span class="sig-arg">**attr</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3xrc-pysrc.html#S3ImportJob.get_resolution">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3RoleManager._list">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>Find Sync resolution for a particular field in this record</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>field</code></strong> - the field name</li>
-    </ul></dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="commit"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">commit</span>(<span class="sig-arg">self</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3xrc-pysrc.html#S3ImportJob.commit">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Commits the record to the database</p>
+  <p>List roles/permissions</p>
   <dl class="fields">
   </dl>
 </td></tr></table>
 </div>
-<a name="resolve_references"></a>
-<div>
+<a name="_edit"></a>
+<div class="private">
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">resolve_references</span>(<span class="sig-arg">self</span>)</span>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_edit</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">r</span>,
+        <span class="sig-arg">**attr</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3xrc-pysrc.html#S3ImportJob.resolve_references">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3RoleManager._edit">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>Resolve references of this record</p>
+  <p>Create/update role</p>
   <dl class="fields">
   </dl>
 </td></tr></table>
 </div>
-<a name="writeback"></a>
-<div>
+<a name="_delete"></a>
+<div class="private">
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">writeback</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">field</span>,
-        <span class="sig-arg">value</span>)</span>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_delete</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">r</span>,
+        <span class="sig-arg">**attr</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3xrc-pysrc.html#S3ImportJob.writeback">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3RoleManager._delete">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>Update a field in the record</p>
+  <p>Delete role</p>
   <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>field</code></strong> - field name</li>
-        <li><strong class="pname"><code>value</code></strong> - value to write</li>
-    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_roles"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_roles</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">r</span>,
+        <span class="sig-arg">**attr</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3RoleManager._roles">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>View/Update roles of a user</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="_users"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_users</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">r</span>,
+        <span class="sig-arg">**attr</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3RoleManager._users">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>View/Update users of a role</p>
+  <dl class="fields">
   </dl>
 </td></tr></table>
 </div>
@@ -461,92 +507,73 @@ object --+
   </td>
 </tr>
 </table>
-<a name="METHOD"></a>
+<a name="HIDE_CONTROLLER"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
-  <h3 class="epydoc">METHOD</h3>
+  <h3 class="epydoc">HIDE_CONTROLLER</h3>
   
   <dl class="fields">
   </dl>
   <dl class="fields">
     <dt>Value:</dt>
       <dd><table><tr><td><pre class="variable">
-Storage(CREATE= &quot;create&quot;, UPDATE= &quot;update&quot;)
+&quot;admin&quot;, &quot;default&quot;
 </pre></td></tr></table>
 </dd>
   </dl>
 </td></tr></table>
 </div>
-<a name="RESOLUTION"></a>
+<a name="HIDE_ROLES"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
-  <h3 class="epydoc">RESOLUTION</h3>
+  <h3 class="epydoc">HIDE_ROLES</h3>
   
   <dl class="fields">
   </dl>
   <dl class="fields">
     <dt>Value:</dt>
       <dd><table><tr><td><pre class="variable">
-Storage(THIS= &quot;THIS&quot;, OTHER= &quot;OTHER&quot;, NEWER= &quot;NEWER&quot;, MASTER= &quot;MASTER&quot;<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
-, MASTERCOPY= &quot;MASTERCOPY&quot;)
+1, 3, 4, 5
 </pre></td></tr></table>
 </dd>
   </dl>
 </td></tr></table>
 </div>
-<a name="UID"></a>
+<a name="PROTECTED_ROLES"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
-  <h3 class="epydoc">UID</h3>
+  <h3 class="epydoc">PROTECTED_ROLES</h3>
   
   <dl class="fields">
   </dl>
   <dl class="fields">
     <dt>Value:</dt>
       <dd><table><tr><td><pre class="variable">
-&quot;uuid&quot;
+1, 2, 3, 4, 5
 </pre></td></tr></table>
 </dd>
   </dl>
 </td></tr></table>
 </div>
-<a name="MCI"></a>
+<a name="controllers"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
-  <h3 class="epydoc">MCI</h3>
+  <h3 class="epydoc">controllers</h3>
   
   <dl class="fields">
   </dl>
   <dl class="fields">
     <dt>Value:</dt>
       <dd><table><tr><td><pre class="variable">
-&quot;mci&quot;
-</pre></td></tr></table>
-</dd>
-  </dl>
-</td></tr></table>
-</div>
-<a name="MTIME"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <h3 class="epydoc">MTIME</h3>
-  
-  <dl class="fields">
-  </dl>
-  <dl class="fields">
-    <dt>Value:</dt>
-      <dd><table><tr><td><pre class="variable">
-&quot;modified_on&quot;
+Storage()
 </pre></td></tr></table>
 </dd>
   </dl>
@@ -584,7 +611,7 @@ Storage(THIS= &quot;THIS&quot;, OTHER= &quot;OTHER&quot;, NEWER= &quot;NEWER&quo
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Mon Jan 17 00:32:29 2011
+    Generated by Epydoc 3.0.1 on Mon Jan 17 00:32:28 2011
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

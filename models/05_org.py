@@ -26,6 +26,7 @@ org_site_types = Storage(
     cr_shelter = T("Shelter"),
     org_office = T("Office"),
     hms_hospital = T("Hospital"),
+    inventory_store = T("Inventory Store"),
 )
 
 resource = "site"

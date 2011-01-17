@@ -26,8 +26,9 @@
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/rowactions/js/RowExpander.js"></script>
 {{if session.s3.debug:}}
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/openlayers/lib/OpenLayers.js"></script>
-<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/geoext/lib/GeoExt.js"></script>
-<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/geoext/lib/overrides/override-ext-ajax.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExt/lib/GeoExt.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExt/lib/overrides/override-ext-ajax.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExt/ux/GeoNamesSearchCombo.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/gxp/loader.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer/Composer.js"></script>
@@ -59,6 +60,7 @@
     var s3_gis_center = new OpenLayers.LonLat(s3_gis_lon, s3_gis_lat);
     s3_gis_center.transform(s3_gis_proj4326, s3_gis_projection_current);
     var s3_gis_zoom = {{=config.zoom}};
+    var s3_gis_numZoomLevels = {{=config.zoom_levels}};
     var s3_gis_app = new GeoExplorer.{{if request.args(0) == "viewer.html":}}Viewer{{else:}}SahanaComposer{{pass}}({
         proxy: s3_gis_proxy_url,
       {{if print_service:}}
@@ -110,6 +112,7 @@
             }
         },
         map: {
+            //displayProjection: s3_gis_proj4326,   // Doesn't get passed-through
             projection: s3_gis_projection_current,
             units: s3_gis_units,
             maxResolution: s3_gis_maxResolution,
@@ -132,7 +135,33 @@
                 ]
             }],
             center: [s3_gis_center.lon, s3_gis_center.lat],
-            zoom: s3_gis_zoom
+            zoom: s3_gis_zoom,
+            numZoomLevels: s3_gis_numZoomLevels
         }
     });
+    // Not working yet
+    // http://trac.osgeo.org/openlayers/wiki/Control/OverviewMap
+    //s3_gis_app.createOverviewMap();
+    //s3_gis_app.on('portalready', function() {
+        // Still not late enough
+    //    this.mapPanel.map.addControl(new OpenLayers.Control.OverviewMap({
+    //        center: s3_gis_center,
+    //        mapOptions: {
+                //displayProjection: s3_gis_proj4326,
+    //            projection: s3_gis_projection_current,
+                // Use Manual stylesheet download (means can be done in HEAD to not delay pageload)
+    //            theme: null,
+    //            units: s3_gis_units,
+    //            maxResolution: s3_gis_maxResolution,
+    //            maxExtent: new OpenLayers.Bounds(s3_gis_maxExtent[0], s3_gis_maxExtent[1], s3_gis_maxExtent[2], s3_gis_maxExtent[3]),
+    //            numZoomLevels: s3_gis_numZoomLevels,
+                //layers: [s3_gis_app.mapPanel.map.baseLayer.clone()]
+    //        }
+    //    }));
+    //});
+  {{if mouse_position and mouse_position is not "mgrs":}}
+    s3_gis_app.mapPanel.map.addControl(new OpenLayers.Control.MousePosition({displayProjection: s3_gis_proj4326}));
+  {{elif mouse_position == "mgrs":}}
+    s3_gis_app.mapPanel.map.addControl(new OpenLayers.Control.MGRSMousePosition({displayProjection: s3_gis_proj4326}));
+  {{pass}}
 //]]></script>

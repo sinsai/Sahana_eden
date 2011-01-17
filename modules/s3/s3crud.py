@@ -2,7 +2,7 @@
 
 """ RESTful CRUD Methods (S3XRC)
 
-    @version: 2.3.2
+    @version: 2.3.3
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
@@ -280,7 +280,7 @@ class S3CRUD(S3Method):
             if representation in ("popup", "iframe"):
                 self.next = None
             elif not create_next:
-                self.next = self.resource.url(id=[])
+                self.next = r.component and r.there() or r.here()
             else:
                 try:
                     self.next = create_next(self)
@@ -383,14 +383,14 @@ class S3CRUD(S3Method):
         if not authorised:
             r.unauthorised()
 
-        # If this is a single-component and no record exists,
-        # try to create one if the user is permitted
-        if not record_id and r.component and not r.multiple:
-            authorised = self.permit("create", tablename)
-            if authorised:
-                return self.create(r, **attr)
-
         if r.interactive:
+
+            # If this is a single-component and no record exists,
+            # try to create one if the user is permitted
+            if not record_id and r.component and not r.multiple:
+                authorised = self.permit("create", tablename)
+                if authorised:
+                    return self.create(r, **attr)
 
             # Redirect to update if user has permission unless
             # a method has been specified in the URL
@@ -587,7 +587,7 @@ class S3CRUD(S3Method):
             if representation in ("popup", "iframe"):
                 self.next = None
             elif not update_next:
-                self.next = self.resource.url(id=[])
+                self.next = r.component and r.there() or r.here()
             else:
                 try:
                     self.next = update_next(self)
@@ -649,6 +649,7 @@ class S3CRUD(S3Method):
 
         # Check permission to delete
         authorised = self.permit("delete", self.tablename, record_id)
+
         # Check permission to update the parent when deleting a component:
         if r.component and r.record is not None:
             authorised = authorised and self.permit("update", r.table,
@@ -746,7 +747,7 @@ class S3CRUD(S3Method):
                 limit = int(limit)
             except ValueError:
                 start = None
-                limit = None # use default to get all records
+                limit = None # use default
         else:
             start = None # use default
 
@@ -810,6 +811,24 @@ class S3CRUD(S3Method):
                                   linkto=linkto,
                                   download_url=self.download_url,
                                   format=representation)
+
+            # In SSPag, send the first 20 records with the initial response
+            # (avoids the dataTables Ajax request unless the user tries nagivating around)
+            if not response.s3.no_sspag:
+                totalrows = self.resource.count()
+                if totalrows:
+                    aadata = dict(aaData = self.sqltable(fields=fields,
+                                                        start=0,
+                                                        limit=20,
+                                                        orderby=orderby,
+                                                        linkto=linkto,
+                                                        download_url=self.download_url,
+                                                        as_page=True,
+                                                        format=representation) or [])
+                    aadata.update(iTotalRecords=totalrows, iTotalDisplayRecords=totalrows)
+                    self.response.aadata = json(aadata)
+                    self.response.s3.start = 0
+                    self.response.s3.limit = 20
 
             # Empty table - or just no match?
             if not items:
@@ -935,8 +954,6 @@ class S3CRUD(S3Method):
         @param as_page: return the list as JSON page
         @param as_list: return the list as Python list
         @param format: the representation format
-
-        @todo: rename this function?
 
         """
 
@@ -1069,9 +1086,6 @@ class S3CRUD(S3Method):
                     record.update(missing_fields)
                     record.update(id=None)
 
-            if record is None:
-                record = record_id
-
             # Add asterisk to labels of required fields
             labels = Storage()
             mark_required = self._config("mark_required")
@@ -1099,6 +1113,8 @@ class S3CRUD(S3Method):
                         response.s3.has_required = True
                         labels[field.name] = DIV("%s:" % field.label, SPAN(" *", _class="req"))
 
+        if record is None:
+            record = record_id
 
         # Get the form
         form = SQLFORM(table,
@@ -1175,7 +1191,7 @@ class S3CRUD(S3Method):
                     _id=None,
                     _class="action-btn"):
         """
-        Generate a link button
+        Generate a CRUD action button
 
         @param label: the link label (None if using CRUD string)
         @param tablename: the name of table for CRUD string selection

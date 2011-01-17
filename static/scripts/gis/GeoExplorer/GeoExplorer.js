@@ -157,7 +157,7 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
      * Create the various parts that compose the layout.
      */
     initPortal: function() {
-        
+
         // TODO: make a proper component out of this
         var mapOverlay = this.createMapOverlay();
         this.mapPanel.add(mapOverlay);
@@ -338,6 +338,7 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
         };
 
         var layerTree = new Ext.tree.TreePanel({
+            id: 'layerTree',
             root: treeRoot,
             rootVisible: false,
             border: false,
@@ -393,10 +394,16 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
         });
         
         var layersContainer = new Ext.Panel({
+            id: 'layersContainer',
+            title: "Layers",                                             // i18n
             autoScroll: true,
             border: false,
-            region: 'center',
-            title: "Layers",
+            //flex: 1,                        // takes-effect when parent uses 'box' layout
+            //height: 500,                  // center region: no width/height specified
+            region: 'center',               // takes-effect when parent uses 'border' layout
+            split: true,                    // enables resizing
+            //minSize: 250,
+            //maxSize: 300,
             items: [layerTree],
             tbar: [
                 addLayerButton,
@@ -406,13 +413,15 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
         });
 
         var legendContainer = new GeoExt.LegendPanel({
-            title: "Legend",
-            border: false,
-            region: 'south',
-            height: 200,
-            collapsible: true,
-            split: true,
+            id: 'legendContainer',
+            title: 'Legend',                                                // i18n
             autoScroll: true,
+            border: false,
+            collapsible: true,
+            //flex: 2,                        // takes-effect when parent uses 'box' layout
+            region: 'south',                // takes-effect when parent uses 'border' layout
+            height: 200,
+            split: true,                    // enables resizing
             ascending: false,
             map: this.mapPanel.map,
             defaults: {cls: 'legend-item'}
@@ -420,17 +429,46 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
             //,items: []
         });        
 
+        // GeoNames search - added here & not in Sahana.js
+        var mapSearch = new GeoExt.ux.GeoNamesSearchCombo({
+            map: this.mapPanel.map,
+            zoom: 12
+        });
+
+        var searchCombo = new Ext.Panel({
+            id: 'searchCombo',
+            title: 'Search Geonames',                                       // i18n
+            border: false,
+            //collapsible: true,
+            //collapsed: true,
+            layout: 'border',
+            region: 'north',                // takes-effect when parent uses 'border' layout
+            rootVisible: false,
+            height: 48,
+            lines: false,
+            html: '',
+            items: [{
+                    region: 'center',
+                    items: [ mapSearch ]
+                }]
+        });
+        
         var westPanel = new Ext.Panel({
+            id: 'westPanel',
             header: false,
             border: true,
-            layout: "border",
-            region: "west",
+            layout: 'border',               // fit just shows a single panel, accordion cannot show both layerTree & legendPanel at the same time
+            //layoutConfig: {               // for box layout
+            //    align : 'stretch', 
+                //pack  : 'start'
+            //},
+            region: 'west',
             width: 250,
             split: true,
             collapsible: true,
-            collapseMode: "mini",
+            collapseMode: 'mini',
             items: [
-                layersContainer, legendContainer
+                layersContainer, searchCombo, legendContainer
             ]
         });
         
@@ -500,7 +538,7 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
             ]
         }];
         
-        GeoExplorer.superclass.initPortal.apply(this, arguments);        
+        GeoExplorer.superclass.initPortal.apply(this, arguments);
     },
     
     /**

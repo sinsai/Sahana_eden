@@ -19,6 +19,9 @@ if deployment_settings.has_module(module):
                             comments(),
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
+
+    table.name.requires = IS_NOT_ONE_OF(db, "%s.name" % tablename)
+
     ADD_SHELTER_TYPE = T("Add Shelter Type")
     LIST_SHELTER_TYPES = T("List Shelter Types")
     s3.crud_strings[tablename] = Storage(
@@ -201,7 +204,8 @@ if deployment_settings.has_module(module):
                                        "name",
                                        "shelter_type_id",
                                        "shelter_service_id",
-                                       "location_id"])
+                                       "location_id",
+                                       "person_id"])
 
     # Link to shelter from pr_presence
     table = db.pr_presence

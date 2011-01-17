@@ -29,7 +29,7 @@ table = super_entity(tablename, "pe_id", pr_pe_types,
 s3xrc.model.configure(table, editable=False, deletable=False, listadd=False)
 
 # -----------------------------------------------------------------------------
-def shn_pentity_represent(id, default_label="[no label]"):
+def shn_pentity_represent(id, default_label="[No ID Tag]"):
 
     """ Represent a Person Entity in option fields or list views """
 
@@ -98,7 +98,7 @@ def shn_pentity_represent(id, default_label="[no label]"):
 
 # -----------------------------------------------------------------------------
 pe_label = S3ReusableField("pe_label", length=128,
-                           label = T("ID Label"),
+                           label = T("ID Tag Number"),
                            requires = IS_NULL_OR(IS_NOT_ONE_OF(db,
                                       "pr_pentity.pe_label")))
 
@@ -254,7 +254,7 @@ table.first_name.requires = IS_NOT_EMPTY(error_message = T("Please enter a First
 # http://eden.sahanafoundation.org/ticket/834
 
 table.pe_label.comment = DIV(DIV(_class="tooltip",
-    _title=T("ID Label") + "|" + T("Number or Label on the identification tag this person is wearing (if any).")))
+    _title=T("ID Tag Number") + "|" + T("Number or Label on the identification tag this person is wearing (if any).")))
 table.first_name.comment =  DIV(_class="tooltip",
     _title=T("First name") + "|" + T("The first or only name of the person (mandatory)."))
 table.preferred_name.comment = DIV(DIV(_class="tooltip",
@@ -360,19 +360,18 @@ def pr_person_onvalidation(form):
 
 # -----------------------------------------------------------------------------
 s3xrc.model.configure(table,
-    main="first_name",
-    extra="last_name",
-    #listadd=False,
-    super_entity=db.pr_pentity,
-    onvalidation=lambda form: pr_person_onvalidation(form),
-    list_fields = [
-        "id",
-        "first_name",
-        "middle_name",
-        "last_name",
-        "gender",
-        "age_group"
-    ])
+                      main="first_name",
+                      extra="last_name",
+                      super_entity=db.pr_pentity,
+                      onvalidation=lambda form: pr_person_onvalidation(form),
+                      list_fields = [
+                        "id",
+                        "first_name",
+                        "middle_name",
+                        "last_name",
+                        "gender",
+                        "age_group"
+                      ])
 
 
 # *****************************************************************************
@@ -383,7 +382,7 @@ s3xrc.model.configure(table,
 pr_group_type_opts = {
     1:T("Family"),
     2:T("Tourist Group"),
-    3:T("Relief Team"),
+    3:T("Relief Team"),     # Don't change this number without changing vol/group()
     4:T("other")
 }
 
@@ -460,10 +459,10 @@ group_id = S3ReusableField("group_id", db.pr_group,
 
 # -----------------------------------------------------------------------------
 s3xrc.model.configure(table,
-    deletable=False,
-    super_entity=db.pr_pentity,
-    main="name",
-    extra="description")
+                      #deletable=False,
+                      super_entity=db.pr_pentity,
+                      main="name",
+                      extra="description")
 
 
 # *****************************************************************************
@@ -574,7 +573,7 @@ def shn_pr_rheader(jr, tabs=[]):
 
                     TR(TH("%s: " % T("Name")),
                        vita.fullname(person),
-                       TH("%s: " % T("ID Label")),
+                       TH("%s: " % T("ID Tag Number")),
                        "%(pe_label)s" % person),
 
                     TR(TH("%s: " % T("Date of Birth")),

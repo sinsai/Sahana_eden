@@ -11,9 +11,9 @@
  */
 
 /**
- * The WMSCapabilities and WFSDescribeFeature formats parse the document and
+ * The WMSCapabilities and WFSDescribeFeatureType formats parse the document and
  * pass the raw data to the WMSCapabilitiesReader/AttributeReader.  There,
- * records are created from layer data.  The rest of the data is lossed.  It
+ * records are created from layer data.  The rest of the data is lost.  It
  * makes sense to store this raw data somewhere - either on the OpenLayers
  * format or the GeoExt reader.  Until there is a better solution, we'll
  * override the reader's readRecords method  here so that we can have access to
@@ -60,7 +60,7 @@ Ext.namespace("gxp.plugins");
  *
  *    defaultSourceType: "gx_wmssource",
  *    sources: {
- *        opengeo: {
+ *        "opengeo": {
  *            url: "http://suite.opengeo.org/geoserver/wms"
  *        }
  *    }
@@ -101,17 +101,27 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
      */
     schemaCache: null,
     
+    /** api: config[version]
+     *  ``String``
+     *  If specified, the version string will be included in WMS GetCapabilities
+     *  requests.  By default, no version is set.
+     */
+    
     /** api: method[createStore]
      *
      *  Creates a store of layer records.  Fires "ready" when store is loaded.
      */
     createStore: function() {
+        var baseParams = {
+            SERVICE: "WMS",
+            REQUEST: "GetCapabilities"
+        };
+        if (this.version) {
+            baseParams.VERSION = this.version;
+        }
         this.store = new GeoExt.data.WMSCapabilitiesStore({
             url: this.url,
-            baseParams: {
-                SERVICE: "WMS",
-                REQUEST: "GetCapabilities"
-            },
+            baseParams: baseParams,
             autoLoad: true,
             listeners: {
                 load: function() {
@@ -123,7 +133,7 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
                         this.fireEvent("failure", this, "Invalid capabilities document.");
                     } else {
                         if (!this.title) {
-                            this.title = this.store.reader.raw.service.title;
+                            this.title = this.store.reader.raw.service.title;                        
                         }
                         this.fireEvent("ready", this);
                     }
@@ -156,7 +166,7 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
         if (index > -1) {
             var original = this.store.getAt(index);
 
-            var layer = original.get("layer");
+            var layer = original.getLayer();
 
             /**
              * TODO: The WMSCapabilitiesReader should allow for creation
@@ -367,7 +377,7 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
                         url: r.get("owsURL"),
                         baseParams: {
                             SERVICE: "WFS",
-                            VERSION: "1.1.1",
+                            VERSION: "1.1.0",
                             REQUEST: "DescribeFeatureType",
                             TYPENAME: typeName
                         },
@@ -395,7 +405,7 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
      */
     getConfigForRecord: function(record) {
         var config = gxp.plugins.WMSSource.superclass.getConfigForRecord.apply(this, arguments);
-        var layer = record.get("layer");
+        var layer = record.getLayer();
         var params = layer.params;
         return Ext.apply(config, {
             format: params.FORMAT,

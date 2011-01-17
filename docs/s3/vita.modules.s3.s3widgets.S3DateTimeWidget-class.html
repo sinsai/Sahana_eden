@@ -3,7 +3,7 @@
           "DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-  <title>vita.modules.s3.s3gis.YahooGeocoder</title>
+  <title>vita.modules.s3.s3widgets.S3DateTimeWidget</title>
   <link rel="stylesheet" href="epydoc.css" type="text/css" />
   <script type="text/javascript" src="epydoc.js"></script>
 </head>
@@ -45,8 +45,8 @@
         Package&nbsp;vita ::
         Package&nbsp;modules ::
         <a href="vita.modules.s3-module.html">Package&nbsp;s3</a> ::
-        <a href="vita.modules.s3.s3gis-module.html">Module&nbsp;s3gis</a> ::
-        Class&nbsp;YahooGeocoder
+        <a href="vita.modules.s3.s3widgets-module.html">Module&nbsp;s3widgets</a> ::
+        Class&nbsp;S3DateTimeWidget
       </span>
     </td>
     <td>
@@ -56,27 +56,29 @@
     onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
         <tr><td align="right"><span class="options"
             >[<a href="frames.html" target="_top">frames</a
-            >]&nbsp;|&nbsp;<a href="vita.modules.s3.s3gis.YahooGeocoder-class.html"
+            >]&nbsp;|&nbsp;<a href="vita.modules.s3.s3widgets.S3DateTimeWidget-class.html"
             target="_top">no&nbsp;frames</a>]</span></td></tr>
       </table>
     </td>
   </tr>
 </table>
 <!-- ==================== CLASS DESCRIPTION ==================== -->
-<h1 class="epydoc">Class YahooGeocoder</h1><p class="nomargin-top"><span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#YahooGeocoder">source&nbsp;code</a></span></p>
+<h1 class="epydoc">Class S3DateTimeWidget</h1><p class="nomargin-top"><span class="codelink"><a href="vita.modules.s3.s3widgets-pysrc.html#S3DateTimeWidget">source&nbsp;code</a></span></p>
 <pre class="base-tree">
-object --+    
-         |    
-  <a href="vita.modules.s3.s3gis.Geocoder-class.html" onclick="show_private();">Geocoder</a> --+
-             |
-            <strong class="uidshort">YahooGeocoder</strong>
+??-81 --+
+        |
+       <strong class="uidshort">S3DateTimeWidget</strong>
 </pre>
 
 <hr />
-<p>Yahoo Geocoder module Should convert this to be a thin wrapper for 
-  modules.geopy.geocoders.`</p>
+<p>Standard DateTime widget, based on the widget above, but instead of 
+  using jQuery datepicker we use the DHTML datetime calendar.</p>
 
-<!-- ==================== INSTANCE METHODS ==================== -->
+<hr />
+<div class="fields">      <p><strong>Author:</strong>
+        Fernando Brito (email@fernandobrito.com)
+      </p>
+</div><!-- ==================== INSTANCE METHODS ==================== -->
 <a name="section-InstanceMethods"></a>
 <table class="summary" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
@@ -99,12 +101,10 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3.s3gis.YahooGeocoder-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">location</span>,
-        <span class="summary-sig-arg">db</span>)</span><br />
-      Initialise parent class &amp; make any necessary modifications</td>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3widgets.S3DateTimeWidget-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">allow_future</span>=<span class="summary-sig-default">True</span>)</span></td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#YahooGeocoder.__init__">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3.s3widgets-pysrc.html#S3DateTimeWidget.__init__">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -118,75 +118,17 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3.s3gis.YahooGeocoder-class.html#get_api_key" class="summary-sig-name">get_api_key</a>(<span class="summary-sig-arg">self</span>)</span><br />
-      Acquire API key from the database</td>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3widgets.S3DateTimeWidget-class.html#__call__" class="summary-sig-name">__call__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">field</span>,
+        <span class="summary-sig-arg">value</span>,
+        <span class="summary-sig-arg">**attributes</span>)</span></td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#YahooGeocoder.get_api_key">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3.s3widgets-pysrc.html#S3DateTimeWidget.__call__">source&nbsp;code</a></span>
             
           </td>
         </tr>
       </table>
       
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3.s3gis.YahooGeocoder-class.html#get_xml" class="summary-sig-name">get_xml</a>(<span class="summary-sig-arg">self</span>)</span><br />
-      Return the output in XML format</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#YahooGeocoder.get_xml">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-  <tr>
-    <td colspan="2" class="summary">
-    <p class="indent-wrapped-lines"><b>Inherited from <code>object</code></b>:
-      <code>__delattr__</code>,
-      <code>__format__</code>,
-      <code>__getattribute__</code>,
-      <code>__hash__</code>,
-      <code>__new__</code>,
-      <code>__reduce__</code>,
-      <code>__reduce_ex__</code>,
-      <code>__repr__</code>,
-      <code>__setattr__</code>,
-      <code>__sizeof__</code>,
-      <code>__str__</code>,
-      <code>__subclasshook__</code>
-      </p>
-    </td>
-  </tr>
-</table>
-<!-- ==================== PROPERTIES ==================== -->
-<a name="section-Properties"></a>
-<table class="summary" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr bgcolor="#70b0f0" class="table-header">
-  <td colspan="2" class="table-header">
-    <table border="0" cellpadding="0" cellspacing="0" width="100%">
-      <tr valign="top">
-        <td align="left"><span class="table-header">Properties</span></td>
-        <td align="right" valign="top"
-         ><span class="options">[<a href="#section-Properties"
-         class="privatelink" onclick="toggle_private();"
-         >hide private</a>]</span></td>
-      </tr>
-    </table>
-  </td>
-</tr>
-  <tr>
-    <td colspan="2" class="summary">
-    <p class="indent-wrapped-lines"><b>Inherited from <code>object</code></b>:
-      <code>__class__</code>
-      </p>
     </td>
   </tr>
 </table>
@@ -216,57 +158,38 @@ object --+
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">location</span>,
-        <span class="sig-arg">db</span>)</span>
+        <span class="sig-arg">allow_future</span>=<span class="sig-default">True</span>)</span>
     <br /><em class="fname">(Constructor)</em>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#YahooGeocoder.__init__">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3.s3widgets-pysrc.html#S3DateTimeWidget.__init__">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>Initialise parent class &amp; make any necessary modifications</p>
+  
   <dl class="fields">
-    <dt>Overrides:
-        object.__init__
-    </dt>
   </dl>
 </td></tr></table>
 </div>
-<a name="get_api_key"></a>
+<a name="__call__"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_api_key</span>(<span class="sig-arg">self</span>)</span>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__call__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">field</span>,
+        <span class="sig-arg">value</span>,
+        <span class="sig-arg">**attributes</span>)</span>
+    <br /><em class="fname">(Call operator)</em>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#YahooGeocoder.get_api_key">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3.s3widgets-pysrc.html#S3DateTimeWidget.__call__">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>Acquire API key from the database</p>
-  <dl class="fields">
-  </dl>
-</td></tr></table>
-</div>
-<a name="get_xml"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_xml</span>(<span class="sig-arg">self</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#YahooGeocoder.get_xml">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
   
-  <p>Return the output in XML format</p>
   <dl class="fields">
   </dl>
 </td></tr></table>
@@ -303,7 +226,7 @@ object --+
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Mon Jan 17 00:32:28 2011
+    Generated by Epydoc 3.0.1 on Mon Jan 17 00:32:29 2011
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

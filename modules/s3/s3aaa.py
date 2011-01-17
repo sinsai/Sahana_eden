@@ -1461,12 +1461,12 @@ class S3Permission(object):
         """
         Query for records which the user is permitted to access with method
 
+        Example::
+            query = auth.permission.accessible_query(table, "read", "update")
+
         @param table: the DB table
         @param methods: list of methods for which permission is required (AND),
                         any combination "create", "read", "update", "delete"
-
-        Example::
-            query = auth.permission.accessible_query(table, "read", "update")
 
         """
 
@@ -1489,6 +1489,8 @@ class S3Permission(object):
         roles = []
         if self.session.s3 is not None:
             roles = self.session.s3.roles or []
+        if self.ADMIN in roles or self.EDITOR in roles:
+            return query
 
         # Available ACLs
         pacl = self.page_acl()

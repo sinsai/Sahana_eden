@@ -145,11 +145,11 @@ class GIS(object):
     # -----------------------------------------------------------------------------
     def download_kml(self, url, public_url):
         """
-            Download a KML file:
-                unzip it if-required
-                follow NetworkLinks recursively if-required
+        Download a KML file:
+            - unzip it if-required
+            - follow NetworkLinks recursively if-required
 
-            Returns a file object
+        Returns a file object
         """
 
         response = self.response
@@ -290,12 +290,14 @@ class GIS(object):
     # -----------------------------------------------------------------------------
     def get_children(self, parent_id):
         """
-            Return a list of all GIS Features which are children of the requested feature
-            @ Using Materialized path for retrieving the children
-            @author: Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
+        Return a list of all GIS Features which are children of
+        the requested feature, using Materialized path for retrieving
+        the children
 
-            This has been chosen over Modified Preorder Tree Traversal for greater efficiency:
-            http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+        @author: Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
+
+        This has been chosen over Modified Preorder Tree Traversal for greater efficiency:
+        http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
         """
 
         db = self.db
@@ -384,9 +386,9 @@ class GIS(object):
     # -----------------------------------------------------------------------------
     def get_feature_layer(self, prefix, resourcename, layername, popup_label, config=None, marker_id=None, filter=None, active=True, polygons=False):
         """
-            Return a Feature Layer suitable to display on a map
-            @param: layername: Used as the label in the LayerSwitcher
-            @param: popup_label: Used in Cluster Popups to differentiate between types
+        Return a Feature Layer suitable to display on a map
+        @param layername: used as the label in the LayerSwitcher
+        @param popup_label: used in Cluster Popups to differentiate between types
         """
         db = self.db
         cache = self.cache
@@ -1360,7 +1362,7 @@ class GIS(object):
             Returns Rows of locations which intersect the given shape.
 
             Relies on Shapely for wkt parsing and intersection.
-            @ToDo provide an option to use PostGIS/Spatialite
+            @todo: provide an option to use PostGIS/Spatialite
         """
 
         db = self.db
@@ -1381,7 +1383,7 @@ class GIS(object):
         Returns a generator of locations whose shape intersects the given LatLon.
 
         Relies on Shapely.
-        @ToDo provide an option to use PostGIS/Spatialite
+        @todo: provide an option to use PostGIS/Spatialite
         """
 
         point = shapely.geometry.point.Point(lon, lat)
@@ -1393,7 +1395,7 @@ class GIS(object):
         Returns all Locations whose geometry intersects the given feature.
 
         Relies on Shapely.
-        @ToDo provide an option to use PostGIS/Spatialite
+        @todo: provide an option to use PostGIS/Spatialite
         """
         shape = wkt_loads(feature.wkt)
         return self.get_features_by_shape(shape)

@@ -2344,6 +2344,7 @@ class S3RoleManager(S3Method):
                             membership = db(query).select(limitby=(0, 1)).first()
                             if not membership:
                                 mtable.insert(user_id=user_id, group_id=role)
+                    session.confirmation = T("User Updated")
                     redirect(r.there())
 
                 output.update(title="%s - %s" % (T("Assigned Roles"), username),

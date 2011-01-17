@@ -184,7 +184,7 @@ if deployment_settings.has_module(module):
 
     dvi_body_search_simple = s3xrc.search_simple(
             label = T("ID Tag"),
-            comment = T("To search for a body, enter the ID label of the body. You may use % as wildcard. Press 'Search' without input to list all bodies."),
+            comment = T("To search for a body, enter the ID tag number of the body. You may use % as wildcard. Press 'Search' without input to list all bodies."),
             fields = ["pe_label"])
 
     # Plug into REST controller
@@ -495,7 +495,7 @@ if deployment_settings.has_module(module):
                 if body:
                     rheader = DIV(TABLE(
 
-                        TR(TH("%s: " % T("ID Label")),
+                        TR(TH("%s: " % T("ID Tag Number")),
                            "%(pe_label)s" % body,
                            TH(""),
                            ""),

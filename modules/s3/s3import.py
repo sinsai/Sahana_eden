@@ -2,7 +2,7 @@
 
 """ Resource Import Toolkit (S3XRC)
 
-    @version: 2.3.2
+    @version: 2.3.3
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{gluon}} <http://web2py.com>}

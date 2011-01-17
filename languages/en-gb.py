@@ -1474,6 +1474,7 @@
 'Hygiene problems': 'Hygiene problems',
 'ID Label': 'ID Label',
 'ID Tag': 'ID Tag',
+'ID Tag Number': 'ID Tag Number',
 'ID type': 'ID type',
 'Ice Pressure': 'Ice Pressure',
 'Iceberg': 'Iceberg',

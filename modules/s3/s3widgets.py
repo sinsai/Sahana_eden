@@ -177,7 +177,7 @@ class S3UploadWidget(UploadWidget):
     Subclassed to not show the delete checkbox when field is mandatory
         - This now been included as standard within Web2Py from r2867
         - Leaving this unused example in the codebase so that we can easily amend this if we wish to later
-        
+
     @author: Fran Boon (fran@aidiq.com)
 
     @ToDo: Add support for allow_future=False
@@ -1753,9 +1753,9 @@ class S3MultiSelectWidget(FormWidget):
 
         @param id: for the row
         @param column_fields: provides the order
-        @param column_field_represents: functions to find the values
+        @param column_fields_represent: functions to find the values
             of the fields in the row
-        @type column_field_represents: dict of {fieldname: function}
+        @type column_fields_represent: dict of {fieldname: function}
 
         """
 

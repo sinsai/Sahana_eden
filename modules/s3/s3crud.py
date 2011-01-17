@@ -2,7 +2,7 @@
 
 """ RESTful CRUD Methods (S3XRC)
 
-    @version: 2.3.2
+    @version: 2.3.3
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
@@ -383,14 +383,14 @@ class S3CRUD(S3Method):
         if not authorised:
             r.unauthorised()
 
-        # If this is a single-component and no record exists,
-        # try to create one if the user is permitted
-        if not record_id and r.component and not r.multiple:
-            authorised = self.permit("create", tablename)
-            if authorised:
-                return self.create(r, **attr)
-
         if r.interactive:
+
+            # If this is a single-component and no record exists,
+            # try to create one if the user is permitted
+            if not record_id and r.component and not r.multiple:
+                authorised = self.permit("create", tablename)
+                if authorised:
+                    return self.create(r, **attr)
 
             # Redirect to update if user has permission unless
             # a method has been specified in the URL
@@ -649,6 +649,7 @@ class S3CRUD(S3Method):
 
         # Check permission to delete
         authorised = self.permit("delete", self.tablename, record_id)
+
         # Check permission to update the parent when deleting a component:
         if r.component and r.record is not None:
             authorised = authorised and self.permit("update", r.table,
@@ -811,7 +812,7 @@ class S3CRUD(S3Method):
                                   download_url=self.download_url,
                                   format=representation)
 
-            # In SSPag, send the first 20 records
+            # In SSPag, send the first 20 records with the initial response
             # (avoids the dataTables Ajax request unless the user tries nagivating around)
             if not response.s3.no_sspag:
                 totalrows = self.resource.count()
@@ -953,8 +954,6 @@ class S3CRUD(S3Method):
         @param as_page: return the list as JSON page
         @param as_list: return the list as Python list
         @param format: the representation format
-
-        @todo: rename this function?
 
         """
 
@@ -1192,7 +1191,7 @@ class S3CRUD(S3Method):
                     _id=None,
                     _class="action-btn"):
         """
-        Generate a link button
+        Generate a CRUD action button
 
         @param label: the link label (None if using CRUD string)
         @param tablename: the name of table for CRUD string selection

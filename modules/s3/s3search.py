@@ -4,7 +4,7 @@
 
     @author: Fran Boon <fran[at]aidiq.com>
     @author: Dominic König <dominic[at]aidiq.com>
-    
+
     @requires: U{B{I{gluon}} <http://web2py.com>}
 
     @copyright: 2009-2010 (c) Sahana Software Foundation
@@ -452,7 +452,8 @@ class S3SearchSimple(S3CRUD):
                 if form.vars.label == "":
                     form.vars.label = "%"
                 results = resource.search_simple(fields=self.__fields,
-                                                 label=form.vars.label)
+                                                 label=form.vars.label,
+                                                 filterby=response.s3.filter)
                 if results:
                     linkto = self._linkto(r)
                     if not list_fields:

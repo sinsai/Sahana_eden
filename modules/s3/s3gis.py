@@ -268,17 +268,31 @@ class GIS(object):
             max_lat = -90
     
             for feature in features:
+
+                # Skip features without lon, lat.
                 try:
                     # A simple feature set?
                     lon = feature.lon
-                except:
-                    # A Join
-                    feature = feature.gis_location
+                    lat = feature.lat
 
-                min_lon = min(feature.lon, min_lon)
-                min_lat = min(feature.lat, min_lat)
-                max_lon = max(feature.lon, max_lon)
-                max_lat = max(feature.lat, max_lat)
+                except:
+                    try:
+                        # A Join
+                        lon = feature.gis_location.lon
+                        lat = feature.gis_location.lat
+
+                    except:
+                        continue
+
+                # Also skip those set to None. Note must use explicit test,
+                # as zero is a legal value.
+                if lon is None or lat is None:
+                    continue
+
+                min_lon = min(lon, min_lon)
+                min_lat = min(lat, min_lat)
+                max_lon = max(lon, max_lon)
+                max_lat = max(lat, max_lat)
 
         else: # no features
             min_lon = max_lon = config.lon

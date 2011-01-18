@@ -314,4 +314,4 @@ function S3ConfirmClick(ElementID, Message) {
 	        return false;
 	    }
 	});
-}
+};

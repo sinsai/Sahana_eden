@@ -2,9 +2,8 @@
 <div id='home'>
 {{=H2(T("Logistics Management"))}}
 <p>
-{{=T("Managing, Storing and Distributing Catalog Items.")}}
+{{=T("Managing, Storing and Distributing Items.")}}
 </p>
 <h3>{{=T("Features Include")}}:</h3>
-{{=LI(A("Warehouses", _href=URL(r=request, c = "inventory", f="store")))}} - register a Warehouse & add Items to it
-{{=LI(A("Distributions", _href=URL(r=request, c="logs", f="send")))}} - register a Distribution & add Items to it
-	{{=LI(A("Catalog Items", _href=URL(r=request, c="supply", f="item")))}} - manage the Catalog of Items 
+{{=LI(A("Warehouses", _href=URL(r=request, c = "inventory", f="store")))}} - Manage Warehouses
+{{=LI(A("Catalog Items", _href=URL(r=request, c="supply", f="item")))}} - Manage Items Catalog 

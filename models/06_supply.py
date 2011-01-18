@@ -159,16 +159,7 @@ if deployment_settings.has_module("logs"):
                                      _style = "display:none;"
                                       ),                                     
                 SCRIPT("""
-    /* Hide the item packet input if the item hasn't been entered */
-    /* Show the item packet input id the item has already been entered (if this is an error) */              
-    if ($('[name $= "item_id"]').val() == '') {
-        $('[id$="item_packet_id__row1"]').hide();
-        $('[id$="item_packet_id__row"]').hide();    
-    }
-   
-    /* Includes Inventory Item too */
-    $('[name $= "item_id"]').change(function() {
-                
+    function ItemIDChange() {                
         var selSubField = $('[name = "item_packet_id"]');
         
         $('[id$="item_packet_id__row1"]').show();
@@ -178,10 +169,10 @@ if deployment_settings.has_module("logs"):
         selSubField.after('<img src="/eden/static/img/ajax-loader.gif" id="item_packet_loader_img">');
         selSubField.hide();
         
-        if ($(this).attr('name') == 'item_id') {
-            url = '/eden/supply/item_packet.json?item_packet.item_id=' + $(this).val();
+        if ($('[name = "item_id"]').length != 0) {
+            url = '/eden/supply/item_packet.json?item_packet.item_id=' + $('[name = "item_id"]').val();
         } else {
-            url = '/eden/inventory/store_item_packets/' + $(this).val();
+            url = '/eden/inventory/store_item_packets/' + $('[name $= "item_id"]').val();
         }
                                 
         $.getJSON(url, function(data) {
@@ -209,15 +200,38 @@ if deployment_settings.has_module("logs"):
             /* Hide Throbber */
             $('#item_packet_loader_img').remove();
             
-            if ( typeof ItemPackeIDChange == "function" ) {
-                ItemPackeIDChange();
+            if ( typeof ItemPacketIDChange == "function" ) {
+                ItemPacketIDChange();
             }; 
-        });
-    });
+        });   
+    }
+                
+    if ($('[name $= "item_id"]').val() == '') {
+        /* Hide the item packet input if the item hasn't been entered */
+        $('[id$="item_packet_id__row1"]').hide();
+        $('[id$="item_packet_id__row"]').hide();    
+    } else {
+        /* Show the item packet input id the item has already been entered (if this is an error or update) */      
+        ItemIDChange();
+    }
+   
+    /* Includes Inventory Item too */
+    $('[name $= "item_id"]').change(ItemIDChange);
                 """) ),
 
                 ondelete = "RESTRICT"
                 )    
+    
+    def shn_record_packet_quantity(r):
+        item_packet_id = r.get("item_packet_id",None)
+        if item_packet_id:
+            return shn_get_db_field_value(db,
+                                          "supply_item_packet",
+                                          "quantity",
+                                          item_packet_id)  
+        else:
+            return None  
+    
     #Packets as component of Items
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,

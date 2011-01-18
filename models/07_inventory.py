@@ -95,6 +95,8 @@ if deployment_settings.has_module("logs"):
     s3xrc.model.add_component(module, resourcename,
                               multiple=False,
                               joinby=super_key(db.org_site))
+    # -----------------------------------------------------------------------------
+    #s3xrc.model.set_method(module, "store", method="incoming", action=inventory_store_incoming )
 
     #==============================================================================
     # Inventory Item
@@ -108,6 +110,9 @@ if deployment_settings.has_module("logs"):
                             Field("quantity", 
                                   "double",
                                   notnull = True),
+                            Field("packet_quantity",
+                                  "double",
+                                  compute = shn_record_packet_quantity),                               
                             comments(),
                             migrate=migrate, *s3_meta_fields())
     

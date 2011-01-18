@@ -20,18 +20,18 @@ logs_menu = [
             [T("Request"), False, URL(r=request, c="logs", f="req"),
             [
                 [T("List"), False, URL(r=request, c="logs", f="req")],
-                [T("Add"), False, URL(r=request, c="logs", f="req", args="create")],
+          #      [T("Add"), False, URL(r=request, c="logs", f="req", args="create")],
             ]],
-            [T("Receive"), False, URL(r=request, c="logs", f="recv"),
-            [
-                [T("List"), False, URL(r=request, c="logs", f="recv")],
-                [T("Add"), False, URL(r=request, c="logs", f="recv", args="create")],
-            ]],
-            [T("Send"), False, URL(r=request, c="logs", f="send"),
-            [
-                [T("List"), False, URL(r=request, c="logs", f="send")],
-                [T("Add"), False, URL(r=request, c="logs", f="send", args="create")],
-            ]],
+           # [T("Receive"), False, URL(r=request, c="logs", f="recv"),
+           # [
+           #     [T("List"), False, URL(r=request, c="logs", f="recv")],
+           #     [T("Add"), False, URL(r=request, c="logs", f="recv", args="create")],
+           # ]],
+           # [T("Send"), False, URL(r=request, c="logs", f="send"),
+           # [
+           #     [T("List"), False, URL(r=request, c="logs", f="send")],
+           #     [T("Add"), False, URL(r=request, c="logs", f="send", args="create")],
+           # ]],
             [T("Catalog Items"), False, URL(r=request, c="supply", f="item"),
             [
                 [T("List"), False, URL(r=request, c="supply", f="item")],
@@ -208,7 +208,7 @@ if deployment_settings.has_module(module):
         label_list_button = LIST_LOGS_IN,
         label_create_button = ADD_LOGS_IN,
         label_delete_button = T("Delete Received Shipment"),
-        msg_record_created = T("Shipment Received"),
+        msg_record_created = T("Shipment Created"),
         msg_record_modified = T("Received Shipment updated"),
         msg_record_deleted = T("Received Shipment canceled"),
         msg_list_empty = T("No Received Shipments"))
@@ -267,7 +267,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate, *s3_meta_fields())
 
     # CRUD strings
-    ADD_LOGS_IN_ITEM = T("Add Item")
+    ADD_LOGS_IN_ITEM = T("Add Item to Shipment")
     LIST_LOGS_IN_ITEMS = T("List Received Items")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_LOGS_IN_ITEM,
@@ -276,7 +276,7 @@ if deployment_settings.has_module(module):
         title_update = T("Edit Received Item"),
         title_search = T("Search Received Items"),
         subtitle_create = T("Add New Received Item"),
-        subtitle_list = T("Received Items"),
+        subtitle_list = T("Shipment Items"),
         label_list_button = LIST_LOGS_IN_ITEMS,
         label_create_button = ADD_LOGS_IN_ITEM,
         label_delete_button = T("Delete Received Item"),
@@ -294,6 +294,17 @@ if deployment_settings.has_module(module):
                                           supply_item = "item_id"))
 
 #==============================================================================
+    def shn_logs_send_store_id(r):
+        if r.to_location_id:
+            return shn_get_db_field_value(db,
+                                          "inventory_store",
+                                          "id",
+                                          r.to_location_id,
+                                          "location_id")
+        else:
+            return None
+
+#==============================================================================
 # Send (Outgoing / Dispatch / etc)
 #
     resourcename = "send"
@@ -304,27 +315,33 @@ if deployment_settings.has_module(module):
                             inventory_store_id(),
                             location_id("to_location_id",
                                         label = T("To Location") ),
-                            Field("status", "boolean"),
+                            Field("to_inventory_store_id",
+                                  "integer",
+                                  compute = shn_logs_send_store_id,
+                                  readable = False),
+                            Field("status", "boolean",
+                                  writable = False),
                             person_id(name = "recipient_id"),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
+    table.status.represent = lambda status: T("Sent") if status else T("In Process")
     # -----------------------------------------------------------------------------
     # CRUD strings
-    ADD_LOGS_OUT = T("Send Shipment")
-    LIST_LOGS_OUT = T("List Sent Shipments")
+    ADD_LOGS_OUT = T("Add New Shipment to Send")
+    LIST_LOGS_OUT = T("List Shipments")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_LOGS_OUT,
-        title_display = T("Sent Shipment Details"),
+        title_display = T("Shipment Details"),
         title_list = LIST_LOGS_OUT,
-        title_update = T("Edit Sent Shipment"),
+        title_update = T("Edit Shipment to Send"),
         title_search = T("Search Sent Shipments"),
         subtitle_create = ADD_LOGS_OUT,
-        subtitle_list = T("Sent Shipments"),
+        subtitle_list = T("Shipments"),
         label_list_button = LIST_LOGS_OUT,
         label_create_button = ADD_LOGS_OUT,
         label_delete_button = T("Delete Sent Shipment"),
-        msg_record_created = T("Shipment Sent"),
+        msg_record_created = T("Shipment Created"),
         msg_record_modified = T("Sent Shipment updated"),
         msg_record_deleted = T("Sent Shipment canceled"),
         msg_list_empty = T("No Sent Shipments"))
@@ -358,7 +375,7 @@ if deployment_settings.has_module(module):
                                  )
 
     #------------------------------------------------------------------------------
-    # Logs In as a component of Inventory Store
+    # Logs Send  as a component of Inventory Store
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict( inventory_store ="inventory_store_id" ) )
@@ -371,6 +388,10 @@ if deployment_settings.has_module(module):
     #==============================================================================
     # Send (Outgoing / Dispatch / etc) Items
     #
+    log_sent_item_status = {0: NONE,
+                            1: "Invalid Quantity"
+                            }
+    
     resourcename = "send_item"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
@@ -380,10 +401,15 @@ if deployment_settings.has_module(module):
                             Field("quantity", "double",
                                   notnull = True),
                             comments(),
+                            Field("status", 
+                                  "integer",
+                                  requires = IS_NULL_OR(IS_IN_SET(log_sent_item_status)),
+                                  represent = lambda status: log_sent_item_status[status] if status else log_sent_item_status[0],
+                                  writable = False),
                             migrate=migrate, *s3_meta_fields())
 
     # CRUD strings
-    ADD_LOGS_OUT_ITEM = T("Sent Item")
+    ADD_LOGS_OUT_ITEM = T("Add Item to Shipment")
     LIST_LOGS_OUT_ITEMS = T("List Sent Items")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_LOGS_OUT_ITEM,
@@ -392,11 +418,11 @@ if deployment_settings.has_module(module):
         title_update = T("Edit Sent Item"),
         title_search = T("Search Sent Items"),
         subtitle_create = T("Add New Sent Item"),
-        subtitle_list = T("Sent Items"),
+        subtitle_list = T("Shipment Items"),
         label_list_button = LIST_LOGS_OUT_ITEMS,
         label_create_button = ADD_LOGS_OUT_ITEM,
         label_delete_button = T("Delete Sent Item"),
-        msg_record_created = T("Sent Item added"),
+        msg_record_created = T("Item Added to Shipment"),
         msg_record_modified = T("Sent Item updated"),
         msg_record_deleted = T("Sent Item deleted"),
         msg_list_empty = T("No Sent Items currently registered"))

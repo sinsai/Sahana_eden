@@ -39,6 +39,7 @@ def shn_store_rheader(r):
             rheader_tabs = shn_rheader_tabs(r, tabs = [ (T("Details"), None),
                                                         (T("Items"), "store_item"),
                                                         (T("Request"), "req"),
+                                                        #(T("Incoming"), "incoming"),
                                                         (T("Received" ), "recv"),
                                                         (T("Sent"), "send"),
                                                        ])
@@ -47,7 +48,16 @@ def shn_store_rheader(r):
                                    TH(T("Location") + ": "), shn_gis_location_represent(inventory_store.location_id),
                                    TH(T("Description") + ": "), inventory_store.comments,
                                    ),
-                               ),
+                                TR( A("Incoming Shipments",
+                                      _href = URL( r = request,
+                                                   c = "inventory",
+                                                   f = "store_incoming",
+                                                   args = [r.record.id]
+                                                  ),
+                                      _class = "action-btn"
+                                     )
+                                  ),
+                                ),
                           rheader_tabs
                           )
             return rheader
@@ -88,6 +98,28 @@ def store_item():
     table = db[tablename]
 
     return s3_rest_controller(module, resource)
+
+def store_incoming():
+    inventory_store_id = request.args[0]
+    request.args = []
+    response.s3.filter = ( (db.logs_send.to_inventory_store_id == inventory_store_id) & \
+                        (db.logs_send.status == True) 
+                        )
+    output = s3_rest_controller("logs",
+                                "send"
+                                )        
+    response.s3.actions = [dict(url = str(URL(r=request,
+                                              c = "logs",
+                                              f = "recv_sent",
+                                              args = ["[id]"]
+                                              )
+                                          ),
+                                _class = "action-btn",
+                                label = "Receive Shipment"
+                                )
+                           ]
+
+    return output
 
 def store_item_quantity():
     response.headers["Content-Type"] = "text/x-json"

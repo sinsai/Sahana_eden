@@ -16,9 +16,9 @@ if module not in deployment_settings.modules:
 # Options Menu (available in all Functions' Views)
 def shn_menu():
     menu = [
-        [T("Shelters"), False, URL(r=request, f="shelter"), [
-            [T("List"), False, URL(r=request, f="shelter")],
-            [T("Add"), False, URL(r=request, f="shelter", args="create")],
+        [T("Shelters"), False, aURL(r=request, f="shelter"), [
+            [T("List"), False, aURL(r=request, f="shelter")],
+            [T("Add"), False, aURL(p="create", r=request, f="shelter", args="create")],
             # @ToDo Search by type, services, location, available space
             #[T("Search"), False, URL(r=request, f="shelter", args="search")],
         ]],

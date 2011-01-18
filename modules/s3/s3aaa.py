@@ -1299,7 +1299,8 @@ class S3Permission(object):
         page = "%s/%s" % (c, f)
         if page in self.unrestricted_pages:
             page_acl = (self.ALL, self.ALL)
-        elif c in self.modules and not self.modules[c].restricted:
+        elif c not in self.modules or \
+             c in self.modules and not self.modules[c].restricted:
             # Controller is not restricted => simple authorization
             if roles:
                 page_acl = (self.ALL, self.ALL)

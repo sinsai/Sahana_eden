@@ -14,10 +14,10 @@ if prefix not in deployment_settings.modules:
 # Options Menu (available in all Functions)
 def shn_menu():
     menu = [
-        [T("Home"), False, URL(r=request, f="index")],
-        [T("Projects"), False, URL(r=request, f="project"),[
-            [T("Search"), False, URL(r=request, f="project", args="search_location")],
-            [T("Add Project"), False, URL(r=request, f="project", args="create")],
+        [T("Home"), False, aURL(r=request, f="index")],
+        [T("Projects"), False, aURL(r=request, f="project"),[
+            [T("Search"), False, aURL(r=request, f="project", args="search_location")],
+            [T("Add Project"), False, aURL(p="create", r=request, f="project", args="create")],
         ]],
     ]
     if session.rcvars and "project_project" in session.rcvars:
@@ -25,8 +25,8 @@ def shn_menu():
         selection = db.project_project[project_id]
         if selection:
             menu_project = [
-                    ["%s %s" % (T("Project") + ":", selection.code), False, URL(r=request, f="project", args=[project_id]),[
-                        [T("Tasks"), False, URL(r=request, f="project", args=[project_id, "task"])],
+                    ["%s %s" % (T("Project") + ":", selection.code), False, aURL(r=request, f="project", args=[project_id]),[
+                        [T("Tasks"), False, aURL(r=request, f="project", args=[project_id, "task"])],
                         # Staff cannot be a component of Project since staff may be assigned to many projects
                         #[T("Staff"), False, URL(r=request, f="project", args=[project_id, "staff"])],
                     ]]
@@ -34,9 +34,9 @@ def shn_menu():
             menu.extend(menu_project)
 
     menu_teams = [
-        [T("Teams"), False, URL(r=request, f="group"),[
-            [T("List"), False, URL(r=request, f="group")],
-            [T("Add"), False, URL(r=request, f="group", args="create")],
+        [T("Teams"), False, aURL(r=request, f="group"),[
+            [T("List"), False, aURL(r=request, f="group")],
+            [T("Add"), False, aURL(p="create", r=request, f="group", args="create")],
         ]]
     ]
     menu.extend(menu_teams)
@@ -46,18 +46,18 @@ def shn_menu():
         if selection:
             team_name = shn_pr_group_represent(group_id)
             menu_teams = [
-                ["%s %s" % (T("Team") + ":", team_name), False, URL(r=request, f="group", args=[group_id, "read"]),[
-                    [T("View On Map"), False, URL(r=request, f="view_team_map", args=[group_id])],
-                    [T("Send Notification"), False, URL(r=request, f="compose_group", vars={"group_id":group_id})],
-                    [T("Find Volunteers"), False, URL(r=request, f="showSkillOptions")],
+                ["%s %s" % (T("Team") + ":", team_name), False, aURL(r=request, f="group", args=[group_id, "read"]),[
+                    [T("View On Map"), False, aURL(r=request, f="view_team_map", args=[group_id])],
+                    [T("Send Notification"), False, aURL(r=request, f="compose_group", vars={"group_id":group_id})],
+                    [T("Find Volunteers"), False, aURL(r=request, f="showSkillOptions")],
                 ]],
             ]
             menu.extend(menu_teams)
 
     menu_persons = [
-        [T("Volunteers"), False, URL(r=request, f="person", args=["search_simple"]),[
-            [T("List"), False, URL(r=request, f="person")],
-            [T("Add"), False, URL(r=request, f="person", args="create")],
+        [T("Volunteers"), False, aURL(r=request, f="person", args=["search_simple"]),[
+            [T("List"), False, aURL(r=request, f="person")],
+            [T("Add"), False, aURL(p="create", r=request, f="person", args="create")],
             # Not ready yet
             #[T("Search by Skill Types"), False, URL(r=request, f="showSkillOptions")],
         ]]
@@ -71,24 +71,24 @@ def shn_menu():
             # ?vol_tabs=person and ?vol_tabs=volunteer are used by the person
             # controller to select which set of tabs to display.
             menu_person = [
-                ["%s %s" % (T("Person") + ":", person_name), False, URL(r=request, f="person", args=[person_id, "read"]),[
+                ["%s %s" % (T("Person") + ":", person_name), False, aURL(r=request, f="person", args=[person_id, "read"]),[
                     # The arg "volunteer" causes this to display the
                     # vol_volunteer tab initially.
-                    [T("Volunteer Data"), False, URL(r=request, f="person", args=[person_id, "volunteer"], vars={"vol_tabs":"volunteer"})],
+                    [T("Volunteer Data"), False, aURL(r=request, f="person", args=[person_id, "volunteer"], vars={"vol_tabs":"volunteer"})],
                     # The default tab is pr_person, which is fine here.
-                    [T("Person Data"), False, URL(r=request, f="person", args=[person_id], vars={"vol_tabs":"person"})],
-                    [T("View On Map"), False, URL(r=request, f="view_map", args=[person_id])],
+                    [T("Person Data"), False, aURL(r=request, f="person", args=[person_id], vars={"vol_tabs":"person"})],
+                    [T("View On Map"), False, aURL(r=request, f="view_map", args=[person_id])],
                     [T("Send Notification"), False, URL(r=request, f="compose_person", vars={"person_id":person_id})],
                 ]],
             ]
             menu.extend(menu_person)
     menu_skills = [
-        [T("Skill Types"), False, URL(r=request, f="skill_types")],
+        [T("Skill Types"), False, aURL(r=request, f="skill_types")],
     ]
     menu.extend(menu_skills)
     if auth.user is not None:
         menu_user = [
-            [T("My Tasks"), False, URL(r=request, f="task", args="")],
+            [T("My Tasks"), False, aURL(r=request, f="task", args="")],
         ]
         menu.extend(menu_user)
     response.menu_options = menu
@@ -207,7 +207,7 @@ def person():
 
     # Override prefix
     _prefix = "pr"
-    
+
     # Choose table
     tablename = "%s_%s" % (_prefix, resourcename)
     table = db[tablename]

@@ -147,7 +147,7 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
                         msg = "Trouble creating layer store from response.";
                     }
                     // TODO: decide on signature for failure listeners
-                    this.fireEvent("failure", this, msg, Array.prototype.concat(arguments));
+                    this.fireEvent("failure", this, msg, Array.prototype.slice.call(arguments));
                 },
                 scope: this
             }
@@ -180,8 +180,11 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
             var layerProjection = this.getProjection(original);
 
             var nativeExtent = original.get("bbox")[projection.getCode()];
+            var swapAxis = OpenLayers.Layer.WMS.prototype.reverseAxisOrder.call(
+                Ext.applyIf({map: this.target.mapPanel.map}, layer)
+            );
             var maxExtent = 
-                (nativeExtent && OpenLayers.Bounds.fromArray(nativeExtent.bbox)) || 
+                (nativeExtent && OpenLayers.Bounds.fromArray(nativeExtent.bbox, swapAxis)) || 
                 OpenLayers.Bounds.fromArray(original.get("llbbox")).transform(new OpenLayers.Projection("EPSG:4326"), projection);
             
             // make sure maxExtent is valid (transform does not succeed for all llbbox)
@@ -284,8 +287,7 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
             this.describeLayerStore = new GeoExt.data.WMSDescribeLayerStore({
                 url: req.href,
                 baseParams: {
-                    // TODO: version negotiation?
-                    VERSION: "1.1.1",
+                    VERSION: this.store.reader.raw.version,
                     REQUEST: "DescribeLayer"
                 }
             });
@@ -377,6 +379,7 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
                         url: r.get("owsURL"),
                         baseParams: {
                             SERVICE: "WFS",
+                            //TODO should get version from WFS GetCapabilities
                             VERSION: "1.1.0",
                             REQUEST: "DescribeFeatureType",
                             TYPENAME: typeName

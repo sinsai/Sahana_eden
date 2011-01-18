@@ -60,6 +60,7 @@ KML_NAMESPACE = "http://earth.google.com/kml/2.2"
 # Which resources have a different icon per-category
 gis_categorised_resources = ["irs_ireport"]
 
+from gluon.dal import Rows
 from gluon.storage import Storage, Messages
 from gluon.html import *
 #from gluon.http import HTTP
@@ -461,6 +462,68 @@ class GIS(object):
             return None
 
     # -----------------------------------------------------------------------------
+    def get_features_in_polygon(self, location_id, tablename=None, category=None):
+        """
+            Returns a gluon.sql.Rows of Features within a Polygonal Location
+        """
+
+        db = self.db
+        session = self.session
+        T = self.T
+        locations = db.gis_location
+
+        # Check that the location is a polygon
+        location = db(locations.id == location_id).select(locations.wkt, locations.lon_min, locations.lon_max, locations.lat_min, locations.lat_max, limitby=(0, 1)).first()
+        if location and location.wkt and location.wkt.startswith("POLYGON"):
+            # ok
+            pass
+        else:
+            s3_debug("Location searched within isn't a Polygon!")
+            session.error = T("Location searched within isn't a Polygon!")
+            return None
+
+        try:
+            polygon = wkt_loads(location.wkt)
+        except:
+            s3_debug("Invalid Polygon!")
+            session.error = T("Invalid Polygon!")
+            return None
+
+        lon_min = locations.lon_min
+        lon_max = locations.lon_max
+        lat_min = locations.lat_min
+        lat_max = locations.lat_max
+        
+        table = db[tablename]
+        deployment_settings = self.deployment_settings
+        
+        query = (table.location_id == locations.id)
+        if "deleted" in table.fields:
+            query = query & (table.deleted == False)
+        # @ToDo: Check AAA
+
+        features = db(query).select(locations.wkt, locations.lat, locations.lon, table.ALL)
+        output = Rows()
+        # @ToDo: provide option to use PostGIS/Spatialite
+        # if deployment_settings.gis.spatialdb and deployment_settings.database.db_type == "postgres":
+        # 1st check for Features included within the bbox (faster)
+        def in_bbox(row):
+            _location = row.gis_location
+            return (_location.lon > lon_min) & (_location.lon < lon_max) & (_location.lat > lat_min) & (_location.lat < lat_max)
+        for row in features.find(lambda row: in_bbox(row)):
+            # Search within this subset with a full geometry check
+            # Uses Shapely.
+            try:
+                shape = wkt_loads(row.gis_location.wkt)
+                if shape.intersects(polygon):
+                    # Save Record
+                    output.records.append(row)
+            except shapely.geos.ReadingError:
+                s3_debug("Error reading wkt of location with id", row.id)
+
+        return output
+
+    # -----------------------------------------------------------------------------
     def get_features_in_radius(self, lat, lon, radius, tablename=None, category=None):
         """
             Returns Features within a Radius (in km) of a LatLon Location
@@ -499,6 +562,7 @@ class GIS(object):
                 query_string = cursor.mogrify("SELECT * FROM gis_location WHERE ST_DWithin (ST_GeomFromText ('POINT (%s %s)', 4326), the_geom, %s);" % (lat, lon, radius))
 
             cursor.execute(query_string)
+            # @ToDo: Export Rows?
             features = []
             for record in cursor:
                 d = dict(record.items())
@@ -623,7 +687,7 @@ class GIS(object):
                                            locations.lon_min,
                                            locations.lat_max,
                                            locations.lon_max)
-            features = []
+            features = Rows()
             for record in records:
                 # Calculate the Great Circle distance
                 if tablename:
@@ -637,7 +701,7 @@ class GIS(object):
                                                         record.lat,
                                                         record.lon)
                 if distance < radius:
-                    features.append(record)
+                    features.records.append(record)
                 else:
                     # skip
                     continue
@@ -1287,7 +1351,7 @@ class GIS(object):
             A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
 
             Relies on Shapely.
-            @ToDo provide an option to use PostGIS/Spatialite
+            @ToDo: provide an option to use PostGIS/Spatialite
         """
 
         if not "gis_feature_type" in form.vars:
@@ -1362,7 +1426,7 @@ class GIS(object):
             Returns Rows of locations which intersect the given shape.
 
             Relies on Shapely for wkt parsing and intersection.
-            @todo: provide an option to use PostGIS/Spatialite
+            @ToDo: provide an option to use PostGIS/Spatialite
         """
 
         db = self.db
@@ -1395,7 +1459,7 @@ class GIS(object):
         Returns all Locations whose geometry intersects the given feature.
 
         Relies on Shapely.
-        @todo: provide an option to use PostGIS/Spatialite
+        @ToDo: provide an option to use PostGIS/Spatialite
         """
         shape = wkt_loads(feature.wkt)
         return self.get_features_by_shape(shape)

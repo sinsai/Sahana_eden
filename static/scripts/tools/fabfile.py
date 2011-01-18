@@ -322,7 +322,7 @@ def migrate_off():
 
 def optimise():
     """ Apply Optimisation """
-    #@ ToDo
+    # @ToDo: create a script from this which creates indexes according to database type read from 000_config
     # Restore indexes via Python script run in Web2Py environment
     #      w2p
     #       tablename = "pr_person"

@@ -412,6 +412,15 @@ if populate:
             base_unit = "kit",
             comments = "Designed to provide a 1st phase drinking water purification solution at the household level. Contains 600 sachets to provide sufficient drinking water (4l) for 100 people for 30 days."
             )
+        
+        #enter base_unit as packets
+        item_rows = db(table.id > 0).select(table.id, table.base_unit)
+        for item_row in item_rows:
+            db.supply_item_packet.insert(
+                item_id = item_row.id,
+                name = item_row.base_unit,
+                quantity = 1
+               )             
 
     # Project Module
     if deployment_settings.has_module("project"):

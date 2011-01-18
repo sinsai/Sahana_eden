@@ -14,6 +14,7 @@ if prefix not in deployment_settings.modules:
 # Options Menu (available in all Functions)
 def shn_menu():
     menu = [
+        [T("Home"), False, URL(r=request, f="index")],
         [T("Projects"), False, URL(r=request, f="project"),[
             [T("Search"), False, URL(r=request, f="project", args="search_location")],
             [T("Add Project"), False, URL(r=request, f="project", args="create")],
@@ -99,9 +100,98 @@ def index():
 
     """ Module's Home Page """
 
-    module_name = deployment_settings.modules[prefix].name_nice
+    # Module's nice name
+    try:
+        module_name = deployment_settings.modules[prefix].name_nice
+    except:
+        module_name = T("Volunteer Management")
+
+    # Override prefix and resourcename
+    _prefix = "pr"
+    resourcename = "person"
+
+    # Choose table
+    tablename = "%s_%s" % (_prefix, resourcename)
+    table = db[tablename]
+
+    # Configure redirection and list fields
+    register_url = str(URL(r=request, f=resourcename,
+                           args=["[id]", "volunteer"],
+                           vars={"vol_tabs":1}))
+    s3xrc.model.configure(table,
+                          create_next=register_url,
+                          list_fields=["id",
+                                       "first_name",
+                                       "middle_name",
+                                       "last_name",
+                                       "gender",
+                                       "occupation"])
+
+    # Pre-process
+    def prep(r):
+
+        """ Redirect to search_simple/person view """
+
+        if r.representation == "html":
+            if not r.id:
+                r.method = "search_simple"
+                r.custom_action = shn_pr_person_search_simple
+            else:
+               redirect(URL(r=request, f=resourcename, args=[r.id]))
+        return True
+
+
+    # Post-process
+    def postp(r, output):
+
+        """ Custom action buttons """
+
+        response.s3.actions = []
+
+        # Button labels
+        REGISTER = str(T("Register"))
+        DETAILS = str(T("Details"))
+
+        if not r.component:
+            open_button_label = DETAILS
+
+            if auth.s3_logged_in():
+                # Set action buttons
+                response.s3.actions = [
+                    dict(label=REGISTER, _class="action-btn", url=register_url)
+                ]
+
+        else:
+            open_button_label = UPDATE
+
+        # Always have an Open-button
+        linkto = r.resource.crud._linkto(r, update=True)("[id]")
+        response.s3.actions.append(dict(label=open_button_label,
+                                        _class="action-btn", url=linkto))
+
+        return output
+
+    # Set hooks
+    response.s3.prep = prep
+    response.s3.postp = postp
+
+    if auth.s3_logged_in():
+        add_btn = A(T("Add Person"),
+                    _class="action-btn",
+                    _href=URL(r=request, f="person", args="create"))
+    else:
+        add_btn = None
+
+    # REST controllerperson
+    output = s3_rest_controller(_prefix, resourcename,
+                                module_name=module_name,
+                                add_btn=add_btn)
+
+    # Set view, update menu and return output
+    response.view = "vol/index.html"
     response.title = module_name
-    return dict(module_name=module_name)
+    shn_menu()
+    return output
 
 
 # -----------------------------------------------------------------------------
@@ -115,12 +205,26 @@ def person():
         in the URL's vars is "person" or "volunteer".
     """
 
+    # Override prefix
+    _prefix = "pr"
+    
+    # Choose table
+    tablename = "%s_%s" % (_prefix, resourcename)
+    table = db[tablename]
+
+    # Configure redirection and list fields
+    register_url = str(URL(r=request, f=resourcename,
+                           args=["[id]", "volunteer"],
+                           vars={"vol_tabs":1}))
+    s3xrc.model.configure(table,
+                          create_next=register_url)
+
     tab_set = "person"
     if "vol_tabs" in request.vars:
         tab_set = request.vars["vol_tabs"]
     if tab_set == "person":
-        #db.pr_person.pr_impact_tags.readable=False
-        db.pr_person.missing.default = False
+        #table.pr_impact_tags.readable=False
+        table.missing.default = False
         tabs = [(T("Basic Details"), None),
                 (T("Images"), "image"),
                 (T("Identity"), "identity"),
@@ -128,41 +232,68 @@ def person():
                 (T("Contact Data"), "pe_contact"),
                 (T("Presence Log"), "presence")]
     else:
-        # TODO: These files are for the multiselect widget used for skills.
-        # Check if we still need them if we switch to a different widget.
-        response.files.append(URL(r=request,c='static/scripts/S3',f='jquery.multiSelect.js'))
-        response.files.append(URL(r=request,c='static/styles/S3',f='jquery.multiSelect.css'))
+        # If using jquery.multiselect widget
+        #response.files.append(URL(r=request, c="static/scripts/S3", f="jquery.multiSelect.js"))
+        #response.files.append(URL(r=request, c="static/styles/S3", f="jquery.multiSelect.css"))
         db.pr_group_membership.group_id.label = T("Team Id")
-        db.pr_group_membership.group_head.label = T("Team Head")
+        db.pr_group_membership.group_head.label = T("Team Leader")
         s3xrc.model.configure(db.pr_group_membership,
                               list_fields=["id",
                                            "group_id",
                                            "group_head",
                                            "description"])
-        # TODO: If we don't know what a "status report" is supposed to be,
-        # take it out.  Take out resources til they're modernized.
         tabs = [
-                #(T("Status Report"), None),
                 (T("Availablity"), "volunteer"),
                 (T("Teams"), "group_membership"),
                 (T("Skills"), "skill"),
+                # @ToDo: Modernize Resources
                 #(T("Resources"), "resource"),
                ]
 
-    # Only display active volunteers
-    response.s3.filter = (db.pr_person.id == db.vol_volunteer.person_id) & (db.vol_volunteer.status == 1)
+    # Pre-process
+    def prep(r):
+        if r.representation in s3.interactive_view_formats:
+            # CRUD strings
+            ADD_VOL = T("Add Volunteer")
+            LIST_VOLS = T("List Volunteers")
+            s3.crud_strings[tablename] = Storage(
+                title_create = T("Add a Volunteer"),
+                title_display = T("Volunteer Details"),
+                title_list = LIST_VOLS,
+                title_update = T("Edit Volunteer Details"),
+                title_search = T("Search Volunteers"),
+                subtitle_create = ADD_VOL,
+                subtitle_list = T("Volunteers"),
+                label_list_button = LIST_VOLS,
+                label_create_button = ADD_VOL,
+                label_delete_button = T("Delete Volunteer"),
+                msg_record_created = T("Volunteer added"),
+                msg_record_modified = T("Volunteer details updated"),
+                msg_record_deleted = T("Volunteer deleted"),
+                msg_list_empty = T("No Volunteers currently registered"))
 
-    db.pr_presence.presence_condition.default = vita.CONFIRMED
-    db.pr_presence.presence_condition.readable = False
-    db.pr_presence.presence_condition.writable = False
-    db.pr_presence.orig_id.readable = False
-    db.pr_presence.orig_id.writable = False
-    db.pr_presence.dest_id.readable = False
-    db.pr_presence.dest_id.writable = False
-    db.pr_presence.proc_desc.readable = False
-    db.pr_presence.proc_desc.writable = False
+        if r.component:
+            # Allow users to be registered as volunteers
+            if r.component == "presence":
+                db.pr_presence.presence_condition.default = vita.CONFIRMED
+                db.pr_presence.presence_condition.readable = False
+                db.pr_presence.presence_condition.writable = False
+                db.pr_presence.orig_id.readable = False
+                db.pr_presence.orig_id.writable = False
+                db.pr_presence.dest_id.readable = False
+                db.pr_presence.dest_id.writable = False
+                db.pr_presence.proc_desc.readable = False
+                db.pr_presence.proc_desc.writable = False
+        else:
+            # Only display active volunteers
+            response.s3.filter = (table.id == db.vol_volunteer.person_id) & (db.vol_volunteer.status == 1)
 
-    output = s3_rest_controller("pr", resourcename,
+        return True
+
+
+    response.s3.prep = prep
+
+    output = s3_rest_controller(_prefix, resourcename,
                                 rheader=lambda r: shn_pr_rheader(r, tabs))
 
     shn_menu()

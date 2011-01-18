@@ -249,42 +249,62 @@ class GIS(object):
         return bearing
 
     # -----------------------------------------------------------------------------
-    def _min_not_none(self, *args):
-        """
-            Utility function: returns minimal argument that is not None.
-        """
-        return min([a for a in args if a is not None])
-
-    # -----------------------------------------------------------------------------
     def get_bounds(self, features=[]):
         """
             Calculate the Bounds of a list of Features
             e.g. to use in GPX export for correct zooming
+            Ensure a minimum size of bounding box, and that the points
+            are inset from the border.
             @ToDo: Optimised Geospatial routines rather than this crude hack
         """
-        min_lon = 180
-        min_lat = 90
-        max_lon = -180
-        max_lat = -90
-        min_not_none = self._min_not_none  # use this instead of min
-        for feature in features:
-            try:
-                # A simple feature set?
-                lon = feature.lon
-            except:
-                # A Join
-                feature = feature.gis_location
-            min_lon = min_not_none(feature.lon, feature.lon_min, min_lon)
-            min_lat = min_not_none(feature.lat, feature.lat_min, min_lat)
-            max_lon = max(feature.lon, feature.lon_max, max_lon)
-            max_lat = max(feature.lat, feature.lat_max, max_lat)
+
+        config = self.get_config()
+
+        if len(features) > 0:
+
+            min_lon = 180
+            min_lat = 90
+            max_lon = -180
+            max_lat = -90
+    
+            for feature in features:
+                try:
+                    # A simple feature set?
+                    lon = feature.lon
+                except:
+                    # A Join
+                    feature = feature.gis_location
+
+                min_lon = min(feature.lon, min_lon)
+                min_lat = min(feature.lat, min_lat)
+                max_lon = max(feature.lon, max_lon)
+                max_lat = max(feature.lat, max_lat)
+
+        else: # no features
+            min_lon = max_lon = config.lon
+            min_lat = max_lat = config.lat
+
+        # Assure a reasonable-sized box.
+        delta_lon = (config.bbox_min_size - (max_lon - min_lon)) / 2.0
+        if delta_lon > 0:
+            min_lon -= delta_lon
+            max_lon += delta_lon
+        delta_lat = (config.bbox_min_size - (max_lat - min_lat)) / 2.0
+        if delta_lat > 0:
+            min_lat -= delta_lat
+            max_lat += delta_lat
+
+        # Move bounds outward by specified inset.
+        min_lon -= config.bbox_inset
+        max_lon += config.bbox_inset
+        min_lat -= config.bbox_inset
+        max_lat += config.bbox_inset
 
         # Check that we're still within overall bounds
-        config = self.get_config()
-        min_lon = max(config.lon, min_lon)
-        min_lat = max(config.lat, min_lat)
-        max_lon = min_not_none(config.lon, max_lon)
-        max_lat = min_not_none(config.lat, max_lat)
+        min_lon = max(config.min_lon, min_lon)
+        min_lat = max(config.min_lat, min_lat)
+        max_lon = min(config.max_lon, max_lon)
+        max_lat = min(config.max_lat, max_lat)
 
         return dict(min_lon=min_lon, min_lat=min_lat, max_lon=max_lon, max_lat=max_lat)
 

@@ -154,6 +154,8 @@ table = db.define_table(tablename,
                         Field("lat", "double"),
                         Field("lon", "double"),
                         Field("zoom", "integer"),
+                        Field("bbox_min_size", "double", default=0.01),
+                        Field("bbox_inset", "double", default=0.007),
                         projection_id(),
                         symbology_id(),
                         marker_id(),
@@ -177,6 +179,8 @@ table.pe_id.readable = table.pe_id.writable = False
 table.lat.requires = IS_LAT()
 table.lon.requires = IS_LON()
 table.zoom.requires = IS_INT_IN_RANGE(1, 20)
+table.bbox_min_size.requires = IS_FLOAT_IN_RANGE(0, 90)
+table.bbox_inset.requires = IS_FLOAT_IN_RANGE(0, 90)
 table.map_height.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(160, 1024)]
 table.map_width.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(320, 1280)]
 table.min_lat.requires = IS_LAT()
@@ -189,6 +193,8 @@ table.cluster_threshold.requires = IS_INT_IN_RANGE(1, 10)
 table.lat.label = T("Latitude")
 table.lon.label = T("Longitude")
 table.zoom.label = T("Zoom")
+table.bbox_min_size.label = T("Bounding Box Size")
+table.bbox_inset.label = T("Bounding Box Insets")
 table.marker_id.label = T("Default Marker")
 table.map_height.label = T("Map Height")
 table.map_width.label = T("Map Width")
@@ -201,6 +207,8 @@ table.wmsbrowser_url.label =  T("WMS Browser URL")
 table.lat.comment = DIV( _class="tooltip", _title=T("Latitude") + "|" + T("Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere."))
 table.lon.comment = DIV( _class="tooltip", _title=T("Longitude") + "|" + T("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas."))
 table.zoom.comment = DIV( _class="tooltip", _title=T("Zoom") + "|" + T("How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail."))
+table.bbox_min_size.comment = DIV( _class="tooltip", _title=T("Minimum Bounding Box") + "|" + T("When a map is displayed that focuses on a collection of points, the map is zoomed to show just the region bounding the points. This value gives a minimum width and height in degrees for the region shown. Without this, a map showing a single point would not show any extent around that point. After the map is displayed, it can be zoomed as desired."))
+table.bbox_inset.comment = DIV( _class="tooltip", _title=T("Bounding Box Insets") + "|" + T("When a map is displayed that focuses on a collection of points, the map is zoomed to show just the region bounding the points. This value adds a small mount of distance outside the points. Without this, the outermost points would be on the bounding box, and might not be visible."))
 table.map_height.comment = DIV( _class="tooltip", _title=T("Height") + "|" + T("Default Height of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here."))
 table.map_width.comment = DIV( _class="tooltip", _title=T("Width") + "|" + T("Default Width of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here."))
 table.wmsbrowser_name.comment = DIV( _class="tooltip", _title=T("WMS Browser Name") + "|" + T("The title of the WMS Browser panel in the Tools panel."))

@@ -143,6 +143,8 @@ if deployment_settings.has_module(module):
                             Field("quantity", 
                                   "double",
                                   notnull = True),
+                            Field("quantity_fulfilled", 
+                                  "double",                                  
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 

@@ -129,18 +129,17 @@ class Action(unittest.TestCase):
         
         sel = self.sel
         self.searchUnique(email)
-        sel.click("link=Open")
+        self.assertEqual("Roles", sel.get_text("//table[@id='list']/tbody/tr[1]/td[1]/a[2]"))
+        sel.click("//table[@id='list']/tbody/tr[1]/td[1]/a[2]")
         sel.wait_for_page_to_load("30000")
-        sel.click("//div[@id='content']/a[2]")
-        sel.wait_for_page_to_load("30000")
-        sel.click("auth_membership_group_id")
         for role in roleList:
-            sel.select("auth_membership_group_id", "value=" + str(role.strip()))
-            sel.click("//input[@value='Add']")
-            sel.wait_for_page_to_load("30000")
-            msg = "Failed to add role %s to user %s" % (role.strip() , email)
-            self.assertTrue(self.successMsg("User Updated"), msg)
-            print "User %s added to group %s" % (email, role.strip())
+            sel.click("//input[@name='roles' and @value='%s']" % role.strip())
+        sel.click("//input[@value='Save']")
+        sel.wait_for_page_to_load("30000")
+        # @ToDo: Message to get all roles (if multiple) not just last 1
+        msg = "Failed to add role %s to user %s" % (role.strip() , email)
+        self.assertTrue(self.successMsg("User Updated"), msg)
+        print "User %s added to group %s" % (email, role.strip())
         sel.open("admin/user")
 
     def delUser(self, email):

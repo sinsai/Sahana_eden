@@ -3,12 +3,12 @@
 {{=H2(module_name)}}
 {{if auth.s3_logged_in():}}
 <div>
-{{=H5(T("Search here for a person's record in order to:"))}}
+{{=H5(T("Search here for a person in order to:"))}}
 <ul style="margin-left: 40px;">
-    <li>{{=T("Report that person missing")}}</li>
-    <li>{{=T("Report the person as found")}}</li>
-<!--     <li>{{=T("Give information about where and when you have seen the person")}}</li> -->
-    <li>{{=T("View and/or update details of the person's record")}}</li>
+    <li>{{=T("Report them missing")}}</li>
+    <li>{{=T("Report them as found")}}</li>
+<!--     <li>{{=T("Give information about where and when you have seen them")}}</li> -->
+    <li>{{=T("View and/or update their details")}}</li>
 </ul>
 {{try:}}
 {{if myself:}}
@@ -43,7 +43,7 @@
 {{try:}}
 {{if add_btn:}}
 <p>&nbsp;</p>
-<p>{{=T("If you cannot find the record of the person you want to report missing, you can add it by clicking 'Add Person' below:")}}</p>
+<p>{{=T("If you cannot find the person you want to report missing, you can add them by clicking 'Add Person' below:")}}</p>
 <p>&nbsp;</p>
 {{=add_btn}}
 {{pass}}

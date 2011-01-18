@@ -60,6 +60,7 @@ mail = Mail()
 # AAA
 auth = s3base.AuthS3(globals(), deployment_settings, db)
 s3_audit = s3base.S3Audit(db, session, migrate=migrate)
+aURL = auth.permission.accessible_url
 
 # Shortcuts
 s3_has_role = auth.s3_has_role

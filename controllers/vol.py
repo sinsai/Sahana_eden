@@ -274,7 +274,7 @@ def person():
 
         if r.component:
             # Allow users to be registered as volunteers
-            if r.component == "presence":
+            if r.component.name == "presence":
                 db.pr_presence.presence_condition.default = vita.CONFIRMED
                 db.pr_presence.presence_condition.readable = False
                 db.pr_presence.presence_condition.writable = False
@@ -663,21 +663,19 @@ def view_team_map():
 
         Use most recent presence for each if available
 
-        @ToDo: Convert to a custom method of the group resource
     """
 
-    # To Whom it May Concern:
-    # Do not place fussy restrictions on which presence records are acceptable.
-    # If the volunteer is also a missing person, *show them anyway*. If you
-    # want, use the volunteer's popup to note said status. If I were that
-    # volunteer's team lead, and they went missing, I would *want to know*.
-    # If they have only "closed" presence records or non-"persistent" records,
-    # likewise feel free to say something on the popup. But *leave the location
-    # in*, please. If it's all we've got, it's better'n nothing.
-    # Do not require that the volunteer have their presence *verified*.  Yeesh.
-    # Unless there is some state that is set right here in vol by an action
-    # deliberately taken by a volunteer or team lead to explicitly state that
-    # a presence should no longer be used, *use it*. Kthx.
+    # @ToDo: Convert to a custom method of the group resource
+
+    # Currently all presence records created in vol have condition set to
+    # confirmed (see person controller's prep).  Then we ignore records that
+    # are not confirmed.  This does not guarantee that only vol-specific
+    # records are used, but if other modules use confirmed to mean the
+    # presence record is valid, that is probably acceptable.  @ToDo: Could
+    # we make use of some of the other presence conditions, like transit and
+    # check-in/out?  @ToDo: Is it proper to exclude conditions like missing?
+    # What if the team manager wants to know what happened to their volunteers?
+    # Could indicate status, e.g., by marker color or in popup.
 
     group_id = request.args(0)
 
@@ -686,10 +684,20 @@ def view_team_map():
     members = db(members_query).select(db.pr_group_membership.person_id)
     member_person_ids = [ x.person_id for x in members ]
 
-    # Presence data of the members with Presence Logs
+    # Presence data of the members with Presence Logs:
+    # Get only valid presence data for each person.  Here, valid means
+    # not closed (a closed presence has been explicitly marked no longer
+    # valid) and the presence condition is confirmed (all presences made
+    # in the vol module are set to confirmed).  Also exclude missing
+    # persons.  See @ToDo re. possible alternate uses of condition.
+    # Note the explicit tests against False are due to a Web2py issue:
+    # Use of unary negation leads to a syntax error in the generated SQL.
     presence_rows = db(
         db.pr_person.id.belongs(member_person_ids) &
+        (db.pr_person.missing == False) &
         (db.pr_presence.pe_id == db.pr_person.pe_id) &
+        db.pr_presence.presence_condition.belongs(vita.PERSISTANT_PRESENCE) &
+        (db.pr_presence.closed == False) &
         (db.gis_location.id ==  db.pr_presence.location_id)).select(
             db.gis_location.ALL,
             db.pr_person.id,

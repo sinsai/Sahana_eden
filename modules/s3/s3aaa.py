@@ -1292,6 +1292,8 @@ class S3Permission(object):
         roles = []
         if self.session.s3 is not None:
             roles = self.session.s3.roles or []
+        if self.ADMIN in roles:
+            return (self.ALL, self.ALL)
 
         c = c or self.controller
         f = f or self.function

@@ -1,19 +1,14 @@
 .olLayerGoogleCopyright {
-    left: 2px;
-    bottom: 2px;  
-}
-.olLayerGooglePoweredBy {
-    left: 2px;
-    bottom: 15px;   
-}
-/*
-.olLayerGoogleCopyright {
+    /* Ignored now
     right: 3px;
     bottom: 2px;
     left: auto;
+    */
+    /* Stupid annoying popup with duplicate info! */
+    visibility: hidden;
 }
 .olLayerGooglePoweredBy {
-    left: 2px;
-    bottom: 2px;   
+    /* Keep clear of our MousePointer */
+    right: 100px;
+    bottom: 2px;  
 }
-*/

@@ -259,6 +259,12 @@ class GIS(object):
         """
 
         config = self.get_config()
+        if not config.bbox_min_size:
+            # DB not a fresh one, so new values not prepopulated
+            # @ToDo: clean up when we don't have legacy systems to upgrade
+            config.bbox_min_size = 0.01
+        if not config.bbox_inset:
+            config.bbox_inset = 0.007
 
         if len(features) > 0:
 

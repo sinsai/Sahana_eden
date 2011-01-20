@@ -1,14 +1,17 @@
 .olLayerGoogleCopyright {
-    /* Ignored now
     right: 3px;
     bottom: 2px;
-    left: auto;
-    */
-    /* Stupid annoying popup with duplicate info! */
-    visibility: hidden;
+    left: auto;  
+}
+.olLayerGoogleV3.olLayerGoogleCopyright {
+    bottom: 0px;
+    right: 0px !important;
 }
 .olLayerGooglePoweredBy {
-    /* Keep clear of our MousePointer */
-    right: 100px;
-    bottom: 2px;  
+    left: 2px;
+    bottom: 2px;   
 }
+.olLayerGoogleV3.olLayerGooglePoweredBy {
+    bottom: 0px !important;
+}
+

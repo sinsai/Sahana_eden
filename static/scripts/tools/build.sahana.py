@@ -267,6 +267,7 @@ def docss():
         "../../styles/gis/google.css",
         "../../styles/gis/style.css",
         "../../styles/gis/ie6-style.css",
+        "../../styles/gis/gxp.css",
         "../../styles/gis/geoexplorer.css",
         "../../styles/gis/ie.css"
     ]

@@ -1,30 +1,7 @@
-/* fixes textarea scrollbar issue in FF on OSX */
-.ext-gecko.ext-mac textarea.x-form-field {
-    padding: 1px 2px;
-}
-
 /* workaround for semi-alpha pixels in IE7: background needs to be the same
  * as the toolbar's background color */
 .ext-ie .x-item-disabled .x-btn-text {
     background-color: #EAEAEA;
-}
-
-.icon-measure-length {
-    background: url(../../img/gis/geosilk/ruler.png) /*no-repeat 0 0*/ !important;
-/*
-    margin: 0 !important;
-    width: 16px !important;
-    height: 16px !important;
-*/
-}
-
-.icon-measure-area {
-    background: url(../../img/gis/geosilk/ruler_square.png) /*no-repeat 0 0*/ !important;
-/*
-    margin: 0 !important;
-    width: 16px !important;
-    height: 16px !important;
-*/
 }
 
 .legend-item {
@@ -48,64 +25,6 @@ div.map-overlay div.overlay-element {
     bottom: 0px;
     left: 0px;
     margin-top: 0px;
-}
-
-.x-btn .add {
-    background-image: url(../../img/gis/gxp/add.png);
-}
-
-.x-btn .cancel {
-    background-image: url(../../img/gis/gxp/decline.png);
-}
-
-.x-btn .delete {
-    background-image: url(../../img/silk/delete.png);
-}
-
-.x-btn .duplicate {
-    background-image: url(../../img/silk/arrow_divide.png);
-}
-
-.x-btn .edit {
-    background-image: url(../../img/gis/gxp/pencil.png);
-}
-
-.x-btn .save {
-    background-image: url(../../img/gis/gxp/accept.png);
-}
-
-/* gx_featureeditor */
-.x-btn .gx-icon-addfeature, .x-menu-item .gx-icon-addfeature {
-    background-image: url(../../img/silk/pencil_add.png);
-}
-
-/* gx_wmsgetfeatureinfo */
-.x-btn .gx-icon-getfeatureinfo, .x-menu-item .gx-icon-getfeatureinfo {
-    background-image: url(../../img/silk/information.png);
-}
-
-.x-btn .gx-icon-editfeature, .x-menu-item .gx-icon-editfeature {
-    background-image: url(../../img/silk/map_edit.png);
-}
-
-/* gx_queryform */
-.x-btn .gx-icon-find, .x-menu-item .gx-icon-find { 
-    background-image: url(../../img/silk/find.png);
-}
-
-/* gx_removelayer */
-.x-btn .gx-icon-removelayers, .x-menu-item .gx-icon-removelayers {
-    background-image: url(../../img/silk/delete.png);
-}
-
-/* gx_selectfeature */
-.x-btn .gx-icon-selectfeature, .x-menu-item .gx-icon-selectfeature { 
-    background-image: url(../../img/silk/cursor.png);
-}
-
-/* gx_featuregrid */
-.x-btn .gx-icon-zoom-to, .x-menu-item .gx-icon-zoom-to { 
-    background-image: url(../../img/silk/magnifier.png);
 }
 
 .x-btn .icon-3D {
@@ -322,19 +241,6 @@ div.map-overlay div.overlay-element {
     border-width: 2px 2px medium;
     margin-top: -2px;
     text-align: center;
-}
-
-.gx-export-section {
-    padding: 10px 10px 5px 10px;
-    /* New Below */
-    margin-bottom: 0;
-}
-
-/* gx_embedmapdialog */
-.gx-field-label {
-    font-weight: bold;
-    margin: 4px;
-    vertical-align: baseline;
 }
 
 .gx-filterbuilder .x-toolbar {

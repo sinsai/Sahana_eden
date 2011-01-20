@@ -274,7 +274,7 @@ def person():
 
         if r.component:
             # Allow users to be registered as volunteers
-            if r.component == "presence":
+            if r.component.name == "presence":
                 db.pr_presence.presence_condition.default = vita.CONFIRMED
                 db.pr_presence.presence_condition.readable = False
                 db.pr_presence.presence_condition.writable = False
@@ -659,73 +659,95 @@ def popup():
 def view_team_map():
 
     """
-        Show Location of a Team of Volunteers on the Map
+        Show Locations of a Team of Volunteers on the Map
 
-        Use most recent presence if available
+        Use most recent presence for each if available
 
-        @ToDo: Fallback to addresses
-
-        @ToDo: Convert to a custom method of the group resource
     """
+
+    # @ToDo: Convert to a custom method of the group resource
+
+    # Currently all presence records created in vol have condition set to
+    # confirmed (see person controller's prep).  Then we ignore records that
+    # are not confirmed.  This does not guarantee that only vol-specific
+    # records are used, but if other modules use confirmed to mean the
+    # presence record is valid, that is probably acceptable.  @ToDo: Could
+    # we make use of some of the other presence conditions, like transit and
+    # check-in/out?  @ToDo: Is it proper to exclude conditions like missing?
+    # What if the team manager wants to know what happened to their volunteers?
+    # Could indicate status, e.g., by marker color or in popup.
 
     group_id = request.args(0)
 
+    # Get a list of team (group) member ids.
     members_query = (db.pr_group_membership.group_id == group_id)
-    members = db(members_query).select(db.pr_group_membership.person_id) # Members of a team (aka group)
-    member_person_ids = [ x.person_id for x in members ] # List of members
+    members = db(members_query).select(db.pr_group_membership.person_id)
+    member_person_ids = [ x.person_id for x in members ]
 
-    # Shortcuts
-    persons = db.pr_person
-    presences = db.pr_presence
-    locations = db.gis_location
+    # Presence data of the members with Presence Logs:
+    # Get only valid presence data for each person.  Here, valid means
+    # not closed (a closed presence has been explicitly marked no longer
+    # valid) and the presence condition is confirmed (all presences made
+    # in the vol module are set to confirmed).  Also exclude missing
+    # persons.  See @ToDo re. possible alternate uses of condition.
+    # Note the explicit tests against False are due to a Web2py issue:
+    # Use of unary negation leads to a syntax error in the generated SQL.
+    presence_rows = db(
+        db.pr_person.id.belongs(member_person_ids) &
+        (db.pr_person.missing == False) &
+        (db.pr_presence.pe_id == db.pr_person.pe_id) &
+        db.pr_presence.presence_condition.belongs(vita.PERSISTANT_PRESENCE) &
+        (db.pr_presence.closed == False) &
+        (db.gis_location.id ==  db.pr_presence.location_id)).select(
+            db.gis_location.ALL,
+            db.pr_person.id,
+            db.pr_person.first_name,
+            db.pr_person.middle_name,
+            db.pr_person.last_name,
+            orderby=~db.pr_presence.datetime)
 
-    # Presence Data for Members who aren't Missing & have a Verified Presence
-    features = db(persons.id.belongs(member_person_ids) & \
-                 (persons.missing == False) & \
-                 (presences.pe_id == persons.pe_id) & \
-                 (presences.presence_condition.belongs(vita.PERSISTANT_PRESENCE)) & \
-                 (presences.closed == False) & \
-                 (locations.id == presences.location_id)).select(locations.id,
-                                                                 locations.lat,
-                                                                 locations.lon,
-                                                                 locations.lat_min,
-                                                                 locations.lat_max,
-                                                                 locations.lon_min,
-                                                                 locations.lon_max,
-                                                                 persons.id)
+    # Get latest presence data for each person.
+    # Note sort is stable, so preserves time order.
+    person_location_sort = presence_rows.sort(lambda row:row.pr_person.id)
+    previous_person_id = None
+    features = []
+    for row in person_location_sort:
+        if row.pr_person.id != previous_person_id:
+            features.append(row)
+            member_person_ids.remove(row.pr_person.id)
+            previous_person_id = row.pr_person.id
 
-    # Address of those members without Presence data
-    #address = db(persons.id.belongs(member_person_ids) & \
-    #            (db.pr_address.pe_id == persons.pe_id) & \
-    #            (locations.id ==  db.pr_address.location_id)).select(locations.id,
-    #                                                                 locations.lat,
-    #                                                                 locations.lon,
-    #                                                                 persons.id)
-    #locations_list.extend(address)
+    # Get addresses of those members without presence data.
+    address_rows = db(
+        db.pr_person.id.belongs(member_person_ids) &
+        (db.pr_address.pe_id == db.pr_person.pe_id) &
+        (db.gis_location.id == db.pr_address.location_id)).select(
+            db.gis_location.ALL,
+            db.pr_person.id,
+            db.pr_person.first_name,
+            db.pr_person.middle_name,
+            db.pr_person.last_name)
+
+    features.extend(address_rows)
 
     if features:
 
-        if len(features) > 1:
-            # Set the viewport to the appropriate area to see everyone
-            bounds = gis.get_bounds(features=features)
-        else:
-            # A 1-person bounds zooms in too far for many tilesets
-            lat = features.first().gis_location.lat
-            lon = features.first().gis_location.lon
-            zoom = 15
-
         config = gis.get_config()
 
-        if not deployment_settings.get_security_map() or s3_has_role("MapAdmin"):
-            catalogue_toolbar = True
-        else:
-            catalogue_toolbar = False
+        catalogue_toolbar = not deployment_settings.get_security_map() or s3_has_role("MapAdmin")
 
         # Standard Feature Layers
         feature_queries = []
         feature_layers = db(db.gis_layer_feature.enabled == True).select()
         for layer in feature_layers:
-            _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=False, polygons=layer.polygons)
+            _layer = gis.get_feature_layer(layer.module,
+                                           layer.resource,
+                                           layer.name,
+                                           layer.popup_label,
+                                           config=config,
+                                           marker_id=layer.marker_id,
+                                           active=False,
+                                           polygons=layer.polygons)
             if _layer:
                 feature_queries.append(_layer)
 
@@ -733,17 +755,17 @@ def view_team_map():
         try:
             marker_id = db(db.gis_marker.name == "volunteer").select().first().id
         except:
+            # @ToDo Why not fall back to the person marker?
             marker_id = 1
 
-        # Can't use this since the location_id link is via pr_presence not pr_person
-        #_layer = gis.get_feature_layer("pr", "person", "Volunteer", "Volunteer", config=config, marker_id=marker_id, active=True, polygons=False)
-        #if _layer:
-        #    feature_queries.append(_layer)
-
-        # Insert the name into the query & replace the location_id with the person_id
-        for i in range(0, len(features)):
-            features[i].gis_location.name = vita.fullname(db(db.pr_person.id == features[i].pr_person.id).select(limitby=(0, 1)).first())
-            features[i].gis_location.id = features[i].pr_person.id
+        # Insert the name into the query & replace the location_id with the
+        # person_id.
+        for feature in features:
+            names = Storage(first_name = feature.pr_person.first_name,
+                            middle_name = feature.pr_person.middle_name,
+                            last_name = feature.pr_person.last_name)
+            feature.gis_location.name = vita.fullname(names)
+            feature.gis_location.id = feature.pr_person.id
 
         feature_queries.append({"name" : "Volunteers",
                                 "query" : features,
@@ -752,35 +774,24 @@ def view_team_map():
                                 "popup_url" : URL(r=request, c="vol", f="popup") + "/<id>/read.plain",
                                 "marker" : marker_id})
 
-        try:
-            html = gis.show_map(
-                feature_queries = feature_queries,
-                catalogue_toolbar = catalogue_toolbar,
-                catalogue_overlays = True,
-                toolbar = True,
-                search = True,
-                bbox = bounds,
-                window = True,  # @ToDo: Change to False & create a way to convert an embedded map to a full-screen one without a screen refresh
-            )
-        except:
-            html = gis.show_map(
-                feature_queries = feature_queries,
-                catalogue_toolbar = catalogue_toolbar,
-                catalogue_overlays = True,
-                toolbar = True,
-                search = True,
-                lat = lat,
-                lon = lon,
-                zoom = zoom,
-                window = True,  # @ToDo: Change to False & create a way to convert an embedded map to a full-screen one without a screen refresh
-            )
+        bounds = gis.get_bounds(features=features)
+
+        html = gis.show_map(
+            feature_queries = feature_queries,
+            catalogue_toolbar = catalogue_toolbar,
+            catalogue_overlays = True,
+            toolbar = True,
+            search = True,
+            bbox = bounds,
+            window = True)  # @ToDo: Change to False & create a way to convert an embedded map to a full-screen one without a screen refresh
+
         response.view = "vol/view_map.html"
         return dict(map=html)
 
-    # Redirect to team details if no location is available
-    # Present warning if no location is available
-    session.warning = T("No location known for this team")
-    redirect(URL(r=request, c="vol", f="group", args=[group_id, "address"]))
+    # Redirect to team member list if no locations are available.
+    session.warning = T("No locations found for members of this team")
+    redirect(URL(r=request, c="vol", f="group",
+                 args=[group_id, "group_membership"]))
 
 # -----------------------------------------------------------------------------
 def view_project_map():

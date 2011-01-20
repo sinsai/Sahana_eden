@@ -1,3 +1,7 @@
 {{extend "layout.html"}}
-{{rheader = T("Note that this list only shows active volunteers. To see all people registered in the system, do a search from the home screen instead.")}}
+{{if not jr.component:}}
+  <br />
+  {{=H5(T("Note that this list only shows active volunteers. To see all people registered in the system, do a search from the home screen instead."))}}
+{{else:}}
+{{pass}}
 {{include "_list_create.html"}}

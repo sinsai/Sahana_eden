@@ -1868,9 +1868,9 @@ class S3QueryBuilder(object):
                                     elif values[0] == "EMPTY":
                                         query = ((f != None) & (f != ""))
                                     else:
-                                        query = (f != values[0])
+                                        query = ((f != values[0]) | (f == None))
                                 elif len(values):
-                                    query = (~(f.belongs(values)))
+                                    query = ((~(f.belongs(values))) | (f == None))
                             elif op == "lt":
                                 v = values[-1]
                                 query = (f < v)
@@ -1923,7 +1923,7 @@ class S3QueryBuilder(object):
                                 query = (query)
                             elif op == "unlike":
                                 for v in values:
-                                    q = (~(f.lower().contains(v.lower())))
+                                    q = ((~(f.lower().contains(v.lower()))) | (f == None))
                                     if query:
                                         query = query & q
                                     else:

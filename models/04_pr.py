@@ -160,6 +160,8 @@ s3xrc.model.configure(table,
                       list_fields = [
                         "id",
                         "type",
+                        "address",
+                        "postcode",
                         #"co_name",
                         #"L4",
                         "L3",
@@ -232,13 +234,13 @@ def shn_pe_contact_onvalidation(form):
 
     if form.vars.contact_method == '1':
         email, error = IS_EMAIL()(form.vars.value)
-        if error:          
+        if error:
             form.errors.value = T("Enter a valid email")
 
     return False
 
 s3xrc.model.configure(table,
-                      onvalidation=shn_pe_contact_onvalidation, 
+                      onvalidation=shn_pe_contact_onvalidation,
                       list_fields=[
                         #"id",
                         #"pe_id",

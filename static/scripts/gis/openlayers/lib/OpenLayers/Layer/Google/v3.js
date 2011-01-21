@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -134,6 +134,11 @@ OpenLayers.Layer.Google.v3 = {
 
         var cache = OpenLayers.Layer.Google.cache[this.map.id];
         var container = this.map.viewPortDiv;
+        
+        // move the Map Data popup to the container, if any
+        while (div.lastChild.style.display == "none") {
+            container.appendChild(div.lastChild);
+        }
 
         // move the ToS and branding stuff up to the container div
         var termsOfUse = div.lastChild;

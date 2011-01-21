@@ -237,7 +237,8 @@ class S3LocationSearch(S3Search):
                         # gis_location hierarchical search
                         # Filter out poor-quality data, such as from Ushahidi
                         query = (field.lower().like("%" + value + "%")) & \
-                                (table[exclude_field].lower() != exclude_value)
+                                ((table[exclude_field].lower() != exclude_value) | \
+                                 (table[exclude_field] == None))
 
                     else:
                         # Normal single-field

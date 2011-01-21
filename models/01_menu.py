@@ -109,77 +109,34 @@ s3.menu_modules = []
 # Home always 1st
 _module = deployment_settings.modules["default"]
 s3.menu_modules.append([_module.name_nice, False, URL(r=request, c="default", f="index")])
+
+# Modules to hide due to insufficient permissions
+hidden_modules = auth.permission.hidden_modules()
+
 # The Modules to display at the top level
-for module in deployment_settings.modules:
-    _module = deployment_settings.modules[module]
-    if (_module.module_type == 1):
-        if not _module.access:
-            s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
-        else:
-            authorised = False
-            groups = re.split("\|", _module.access)[1:-1]
-            for group in groups:
-                if s3_has_role(group):
-                    authorised = True
-            if authorised == True:
+for module_type in [1, 2, 3, 4, 5]:
+    for module in deployment_settings.modules:
+        if module in hidden_modules:
+            continue
+        _module = deployment_settings.modules[module]
+        if (_module.module_type == module_type):
+            if not _module.access:
                 s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
-for module in deployment_settings.modules:
-    _module = deployment_settings.modules[module]
-    if (_module.module_type == 2):
-        if not _module.access:
-            s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
-        else:
-            authorised = False
-            groups = re.split("\|", _module.access)[1:-1]
-            for group in groups:
-                if s3_has_role(group):
-                    authorised = True
-            if authorised == True:
-                s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
-for module in deployment_settings.modules:
-    _module = deployment_settings.modules[module]
-    if (_module.module_type == 3):
-        if not _module.access:
-            s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
-        else:
-            authorised = False
-            groups = re.split("\|", _module.access)[1:-1]
-            for group in groups:
-                if s3_has_role(group):
-                    authorised = True
-            if authorised == True:
-                s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
-for module in deployment_settings.modules:
-    _module = deployment_settings.modules[module]
-    if (_module.module_type == 4):
-        if not _module.access:
-            s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
-        else:
-            authorised = False
-            groups = re.split("\|", _module.access)[1:-1]
-            for group in groups:
-                if s3_has_role(group):
-                    authorised = True
-            if authorised == True:
-                s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
-for module in deployment_settings.modules:
-    _module = deployment_settings.modules[module]
-    if (_module.module_type == 5):
-        if not _module.access:
-            s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
-        else:
-            authorised = False
-            groups = re.split("\|", _module.access)[1:-1]
-            for group in groups:
-                if s3_has_role(group):
-                    authorised = True
-            if authorised == True:
-                s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
+            else:
+                authorised = False
+                groups = re.split("\|", _module.access)[1:-1]
+                for group in groups:
+                    if s3_has_role(group):
+                        authorised = True
+                if authorised == True:
+                    s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
 
 # Modules to display off the 'more' menu
 module_more_menu = ([T("more"), False, "#"])
 modules_submenu = []
 for module in deployment_settings.modules:
+    if module in hidden_modules:
+        continue
     _module = deployment_settings.modules[module]
     if (_module.module_type == 10):
         if not _module.access:

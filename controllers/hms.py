@@ -17,13 +17,13 @@ if module not in deployment_settings.modules:
 def shn_menu():
     response.menu_options = [
         [T("Home"), False, URL(r=request, f="index")],
-        [T("Hospitals"), False, URL(r=request, f="hospital"), [
-            [T("List All"), False, URL(r=request, f="hospital")],
-            [T("Find by Name"), False, URL(r=request, f="hospital", args="search_simple")],
-            [T("Add Hospital"), False, URL(r=request, f="hospital", args="create")]
+        [T("Hospitals"), False, aURL(r=request, f="hospital"), [
+            [T("List All"), False, aURL(r=request, f="hospital")],
+            [T("Find by Name"), False, aURL(r=request, f="hospital", args="search_simple")],
+            [T("Add Hospital"), False, aURL(p="create", r=request, f="hospital", args="create")]
         ]],
-        [T("Requests"), False, URL(r=request, c="rms", f="req")],
-        #[T("Pledges"), False, URL(r=request, c="rms", f="pledge")],
+        [T("Requests"), False, aURL(r=request, c="rms", f="req")],
+        #[T("Pledges"), False, aURL(r=request, c="rms", f="pledge")],
     ]
     menu_selected = []
     if session.rcvars and "hms_hospital" in session.rcvars:

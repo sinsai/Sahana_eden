@@ -89,7 +89,7 @@ class Action(unittest.TestCase):
             result = sel.get_text("//div[@id='table-container']")
         except:
             self.fail("No search data found, whilst searching for %s" % searchString)
-        return True
+        return expected in result
 
         
     def searchUnique(self, uniqueName):

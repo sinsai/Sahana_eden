@@ -1456,7 +1456,7 @@ class S3CRUD(S3Method):
             if fieldtype.startswith("reference") and \
                hasattr(field, "sortby") and field.sortby:
                 tn = fieldtype[10:]
-                join = [j for j in left if j.table._tablename == tn]
+                join = [j for j in left if j.first._tablename == tn]
                 if not join:
                     left.append(self.db[tn].on(field == self.db[tn].id))
                 else:

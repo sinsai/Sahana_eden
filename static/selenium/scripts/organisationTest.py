@@ -3,23 +3,15 @@ import unittest, re
 
 class OrganisationTest(SahanaTest):
     """ Test the Organisation registry """
-    _sortList = ("CreateOrg",
+    _sortList = ("checkAuthentication",
+                 "CreateOrg",
                  "OpenOrgUIWithAdmin", 
                  "OpenOrgUIWithUser",
                 )
     
     def firstRun(self):
         sel = OrganisationTest.selenium
-        self.action.logout()
-        # Log in as admin an then move to the add organisation page 
-        sel.open("org/organisation/create")
-        self.action.errorMsg("Authentication Required")
-        self.assertEqual("Login", self.selenium.get_text("//h2"))
-        self.useSahanaAdminAccount()
-        self.action.login(self._user, self._password )
-        # Add the test organisations
         OrganisationTest.orgs = []
-        self.addOrg()
 
     
     def create_organisation(self, name, acronym, type, cluster, country, website):
@@ -44,8 +36,8 @@ class OrganisationTest(SahanaTest):
         sel.click("//input[@value='Save']")
         sel.wait_for_page_to_load("30000")
         self.assertTrue(self.action.successMsg("Organization added"), "failed to add the organisation %s" % name)
-        #self.assertEqual("List Organizations", sel.get_text("//h2"))
-        self.assertEqual("Add Organization", sel.get_text("//h2"))
+        self.assertEqual("List Organizations", sel.get_text("//h2"))
+        #self.assertEqual("Add Organization", sel.get_text("//h2"))
         print "Organisation %s created" % (name)
         
     def addOrg(self):
@@ -65,7 +57,19 @@ class OrganisationTest(SahanaTest):
                                          )
                 OrganisationTest.orgs.append(details[0].strip())
 
+    def checkAuthentication(self):
+        sel = OrganisationTest.selenium
+        self.action.logout()
+        sel.open("org/organisation/create")
+        self.action.errorMsg("Authentication Required")
+        self.assertEqual("Login", self.selenium.get_text("//h2"))
+        
     def CreateOrg(self):
+        # Log in as admin an then move to the add organisation page 
+        self.useSahanaAdminAccount()
+        self.action.login(self._user, self._password )
+        # Add the test organisations
+        self.addOrg()
         """ Test to check the elements of the create organisation form """ 
         sel = OrganisationTest.selenium
         sel.open("org/organisation/create")

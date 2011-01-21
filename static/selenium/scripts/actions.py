@@ -17,6 +17,7 @@ class Action(unittest.TestCase):
             self._diag_SearchResults.close()
 
     def login(self, username, password, reveal=True):
+        print "Logging in as user: " + password
         sel = self.sel
         if sel.is_element_present("link=Logout"):
             # Already logged in check the account

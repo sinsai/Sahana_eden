@@ -53,22 +53,6 @@ if deployment_settings.has_module("logs"):
                 )
 
     #==============================================================================
-    # Units
-    #
-    logs_unit_opts = {
-        "piece" : T("piece"),
-        "kit" : T("kit"),
-        "sack50kg" : T("sack 50kg"),
-        "sack20kg" : T("sack 20kg"),
-        "pack10" : T("pack of 10"),
-        "m" : T("meter"),
-        "m3" : T("meter cubed"),
-        "l" : T("liter"),
-        "kg" : T("kilogram"),
-        "ton" : T("ton"),
-    }
-    
-    #==============================================================================
     # Item
     #
     resourcename = "item"
@@ -76,10 +60,7 @@ if deployment_settings.has_module("logs"):
     table = db.define_table(tablename,
                             item_category_id(),
                             Field("name", length=128, notnull=True, unique=True),
-                            Field("unit", notnull=True, default="piece",
-                                  requires = IS_IN_SET(logs_unit_opts, zero=None),
-                                  represent = lambda opt: logs_unit_opts.get(opt, T("not specified"))
-                                 ),
+                            Field("base_unit", length=128),
                             comments(), # These comments do *not* pull through to an Inventory's Items or a Request's Items
                             migrate=migrate, *s3_meta_fields())
 
@@ -105,23 +86,167 @@ if deployment_settings.has_module("logs"):
     
     def shn_item_represent(id):
         record = db(db.supply_item.id == id).select(db.supply_item.name,
-                                                    db.supply_item.unit,
+                                                    db.supply_item.base_unit,
                                                     limitby=(0, 1)).first()    
         if not record:
             return NONE
-        elif not record.unit:
+        elif not record.base_unit:
             return record.name
         else:
-            item_represent = "%s (%s)" % (record.name, record.unit)
+            item_represent = "%s (%s)" % (record.name, record.base_unit)
             return item_represent
 
 
     # Reusable Field
     item_id = S3ReusableField("item_id", db.supply_item, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item.id", "%(name)s (%(unit)s)", sort=True)),
+                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item.id", "%(name)s", sort=True)),
                 represent = shn_item_represent,
                 label = T("Item"),
                 comment = DIV(A(ADD_ITEM, _class="colorbox", _href=URL(r=request, c="supply", f="item", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ITEM),
                           DIV( _class="tooltip", _title=T("Catalog Item") + "|" + ADD_ITEM)),
                 ondelete = "RESTRICT"
-                )
+                )    
+    #==============================================================================
+    # Item Packet
+    #
+    resourcename = "item_packet"
+    tablename = "%s_%s" % (module, resourcename)
+    table = db.define_table(tablename,
+                            item_id(notnull=True),
+                            Field("name", length=128, notnull=True), #Ideally this would reference another table for normalising Packet names
+                            Field("quantity", "double", notnull=True),
+                            comments(),
+                            migrate=migrate, *s3_meta_fields())
+    # CRUD strings
+    ADD_ITEM_PACKET = T("Add Item Packet")
+    LIST_ITEM_PACKET = T("List Item Packets")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_ITEM_CATEGORY,
+        title_display = T("Item Packet Details"),
+        title_list = LIST_ITEM_CATEGORIES,
+        title_update = T("Edit Item Packet"),
+        title_search = T("Search Item Packets"),
+        subtitle_create = T("Add New Item Packet"),
+        subtitle_list = T("Item Packets"),
+        label_list_button = LIST_ITEM_CATEGORIES,
+        label_create_button = ADD_ITEM_CATEGORY,
+        label_delete_button = T("Delete Item Packet"),
+        msg_record_created = T("Item Packet added"),
+        msg_record_modified = T("Item Packet updated"),
+        msg_record_deleted = T("Item Packet deleted"),
+        msg_list_empty = T("No Item Packets currently registered"))
+
+    # Reusable Field
+    item_packet_id = S3ReusableField("item_packet_id", db.supply_item_packet, sortby="name",
+                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item_packet.id", "%(name)s", sort=True)),
+                represent = lambda id: shn_get_db_field_value(db=db, table="supply_item_packet", field="name", look_up=id),
+                label = T("Packet"),    
+                comment = DIV(DIV( _class="tooltip", _title=T("Item Packets") + "|" + T("Needs elaboration!!!")),
+                              A( ADD_ITEM_PACKET, 
+                                 _class="colorbox", 
+                                 _href=URL(r=request, 
+                                           c="supply", 
+                                           f="item_packet", 
+                                           args="create", 
+                                           vars=dict(format="popup")
+                                           ), 
+                                 _target="top", 
+                                 _id = "item_packet_add",
+                                 _style = "display: none",
+                                 ),
+                                 IMG(_src = "/" + request.application + "/static/img/ajax-loader.gif",
+                                     _id = "item_packet_loader_img",
+                                     _style = "display:none;"
+                                      ),                                     
+                SCRIPT("""
+    function ItemIDChange() {                
+        var selSubField = $('[name = "item_packet_id"]');
+        
+        $('[id$="item_packet_id__row1"]').show();
+        $('[id$="item_packet_id__row"]').show();        
+        
+        /* Show Throbber */
+        selSubField.after('<img src="/eden/static/img/ajax-loader.gif" id="item_packet_loader_img">');
+        selSubField.hide();
+        
+        if ($('[name = "item_id"]').length != 0) {
+            url = '/eden/supply/item_packet.json?item_packet.item_id=' + $('[name = "item_id"]').val();
+        } else {
+            url = '/eden/inventory/store_item_packets/' + $('[name $= "item_id"]').val();
+        }
+                                
+        $.getJSON(url, function(data) {
+            /* Create Select Element */
+            var options = '';
+            var v = '';
+            
+            if (data.length == 0) {
+                options += '<option value="">' + '{{=T("No Packets  for Item")}}</options>';
+            } else {
+                for (var i = 0; i < data.length; i++){
+                    v = data[i].id;
+                    options += '<option value="' +  data[i].id + '">' + data[i].name + ' (' + data[i].quantity + ')</option>';
+                }                
+            }
+            selSubField.html(options);  
+            selSubField.val(1); /* default value */       
+            selSubField.show(); 
+            
+            /* Show "Add" Button & modify link */  
+            href = $('#item_packet_add').attr('href') + "&item_id=" + $('[name = "item_id"]').val();
+            $('#item_packet_add').attr('href', href)
+            $('#item_packet_add').show();
+            
+            /* Hide Throbber */
+            $('#item_packet_loader_img').remove();
+            
+            if ( typeof ItemPacketIDChange == "function" ) {
+                ItemPacketIDChange();
+            }; 
+        });   
+    }
+                
+    if ($('[name $= "item_id"]').val() == '') {
+        /* Hide the item packet input if the item hasn't been entered */
+        $('[id$="item_packet_id__row1"]').hide();
+        $('[id$="item_packet_id__row"]').hide();    
+    } else {
+        /* Show the item packet input id the item has already been entered (if this is an error or update) */      
+        ItemIDChange();
+    }
+   
+    /* Includes Inventory Item too */
+    $('[name $= "item_id"]').change(ItemIDChange);
+                """) ),
+
+                ondelete = "RESTRICT"
+                )    
+    
+    def shn_record_packet_quantity(r):
+        item_packet_id = r.get("item_packet_id",None)
+        if item_packet_id:
+            return shn_get_db_field_value(db,
+                                          "supply_item_packet",
+                                          "quantity",
+                                          item_packet_id)  
+        else:
+            return None  
+    
+    #Packets as component of Items
+    s3xrc.model.add_component(module, resourcename,
+                              multiple=True,
+                              joinby=dict(supply_item="item_id"))        
+    
+    logs_unit_opts = {
+        "piece" : T("piece"),
+        "kit" : T("kit"),
+        "sack50kg" : T("sack 50kg"),
+        "sack20kg" : T("sack 20kg"),
+        "pack10" : T("pack of 10"),
+        "m" : T("meter"),
+        "m3" : T("meter cubed"),
+        "l" : T("liter"),
+        "kg" : T("kilogram"),
+        "ton" : T("ton"),
+    }
+        

@@ -286,7 +286,7 @@ $(function(){
             }
         });
 
-        $('#gis_location_add-btn').click( function() {
+        $('#gis_location_add-btn').click( function(evt) {
             // When 'Add Location' pressed
             if ( '' != S3.gis.uuid ) {
                 // Save the value of S3.gis.uuid in case we cancel
@@ -326,9 +326,11 @@ $(function(){
             $('#gis_location_postcode_label').removeClass('hidden').show();
             $('#gis_location_postcode_row').removeClass('hidden').show();
             $('#gis_location_advanced_div').removeClass('hidden').show();
+
+            evt.preventDefault();
         });
 
-        $('#gis_location_advanced_checkbox').change( function() {
+        $('#gis_location_advanced_checkbox').change( function(evt) {
             if ($('#gis_location_advanced_checkbox').is(':checked')) {
                 // When 'Advanced' checked, unhide the next part
                 $('#gis_location_lat_label').removeClass('hidden').show();
@@ -342,16 +344,20 @@ $(function(){
                 $('#gis_location_lon_label').hide();
                 $('#gis_location_lon_row').hide();
             }
+
+            evt.preventDefault();
         });
 
-        $('#gis_location_search-btn').click( function() {
+        $('#gis_location_search-btn').click( function(evt) {
             // Hide the search button
             $(this).hide();
             // Show the Search Box
             $('#gis_location_autocomplete_div').removeClass('hidden').show();
+
+            evt.preventDefault();
         });
 
-        $('#gis_location_details-btn').click( function() {
+        $('#gis_location_details-btn').click( function(evt) {
             // Show the details
             $('#gis_location_map-btn').removeClass('hidden').show();
             $('#gis_location_addr_street_label').removeClass('hidden').show();
@@ -359,9 +365,11 @@ $(function(){
             $('#gis_location_postcode_label').removeClass('hidden').show();
             $('#gis_location_postcode_row').removeClass('hidden').show();
             $('#gis_location_advanced_div').removeClass('hidden').show();
+
+            evt.preventDefault();
         });
 
-        $('#gis_location_cancel-btn').click( function() {
+        $('#gis_location_cancel-btn').click( function(evt) {
             // Restore the value of S3.gis.uuid
             S3.gis.uuid = $('body').data('uuid');
             // Restore the Lat/Lon
@@ -388,11 +396,14 @@ $(function(){
             $('#gis_location_postcode_label').hide();
             $('#gis_location_postcode_row').hide();
             $('#gis_location_advanced_div').hide();
+
+            evt.preventDefault();
         });
 
-        $('#gis_location_geolocate-btn').click( function() {
+        $('#gis_location_geolocate-btn').click( function(evt) {
             // Do an HTML5 GeoLocate: http://dev.w3.org/geo/api/spec-source.html
             navigator.geolocation.getCurrentPosition(s3_gis_geolocate);
+            evt.preventDefault();
         });
 
 

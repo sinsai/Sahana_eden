@@ -19,11 +19,12 @@ def index():
 
     """ Module's Home Page """
 
+    response.title = module_name
     return dict(module_name=module_name)
 
 
 # -----------------------------------------------------------------------------
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def setting():
 
     """ Synchronisation Settings - RESTful controller """
@@ -48,7 +49,7 @@ def setting():
 
 
 # -----------------------------------------------------------------------------
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def peer():
 
     """ Synchronization Peer - RESTful controller """
@@ -97,7 +98,7 @@ def peer():
 
 
 # -----------------------------------------------------------------------------
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def job():
 
     """ Synchronization Job - RESTful controller """
@@ -1134,7 +1135,7 @@ def sync_resolve(import_job, peer, policy):
 
 
 # -----------------------------------------------------------------------------
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def conflict():
 
     """ Conflict Resolution UI """

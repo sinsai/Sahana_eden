@@ -1,43 +1,55 @@
 {{extend "layout.html"}}
 {{if session.s3.debug:}}
+<link href="/{{=request.application}}/static/styles/gis/gxp.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
 <link href="/{{=request.application}}/static/styles/gis/geoexplorer.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
 <link href="/{{=request.application}}/static/styles/gis/ie.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
 <link href="/{{=request.application}}/static/styles/gis/printpreview.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
 {{pass}}
 
 {{if google_key:}}
-<!-- Google Earth resources-->
+<!-- Google Earth resources -->
 <script src="http://www.google.com/jsapi?key={{=google_key}}"></script>
 <script type="text/javascript">google && google.load("earth", "1");</script>
 {{pass}}
 
 {{if yahoo_key:}}
 <!-- Yahoo resources-->
-<script src="http://api.maps.yahoo.com/ajaxymap?v=3.8&appid={{=yahoo_key}}"></script>
-<!--
+<!-- Old: attempt to download dynamically
 <script src="http://yui.yahooapis.com/2.8.2r1/build/yahoo/yahoo-min.js"></script>
 <script src="http://yui.yahooapis.com/2.8.2r1/build/get/get-min.js"></script>
 <script src="http://yui.yahooapis.com/3.2.0/build/yui/yui-min.js"></script>;
+-->
+<!-- New: just include the JS
+<script src="http://api.maps.yahoo.com/ajaxymap?v=3.8&appid={{=yahoo_key}}"></script>
 -->
 {{pass}}
 
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/rowactions/js/RowExpander.js"></script>
 {{if session.s3.debug:}}
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/openlayers/lib/OpenLayers.js"></script>
-<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/geoext/lib/GeoExt.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExt/lib/GeoExt.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExt/lib/overrides/override-ext-ajax.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExt/ux/GeoNamesSearchCombo.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExt/ux/Toolbar.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/gxp/loader.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer/Composer.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer/NewSourceWindow.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer/Sahana.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer/GeoExplorer/Viewer.js"></script>
 {{else:}}
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/OpenLayers.js"></script>
-<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExt_.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExt.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/geoext/lib/overrides/override-ext-ajax.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/gxp.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExplorer.js"></script>
 {{pass}}
 
 <script type="text/javascript">//<![CDATA[
+    // optionally set locale based on query string parameter
+    if (GeoExt.Lang) {
+        GeoExt.Lang.set(OpenLayers.Util.getParameters()["locale"] || GeoExt.Lang.locale);
+    }
     Ext.BLANK_IMAGE_URL = '/{{=request.application}}/static/img/gis/openlayers/blank.gif';
     OpenLayers.DOTS_PER_INCH = 25.4 / 0.28; // OGC "standardized rendering pixel size"
     OpenLayers.ImgPath = '/{{=request.application}}/static/img/gis/openlayers/';
@@ -54,10 +66,11 @@
     var s3_gis_center = new OpenLayers.LonLat(s3_gis_lon, s3_gis_lat);
     s3_gis_center.transform(s3_gis_proj4326, s3_gis_projection_current);
     var s3_gis_zoom = {{=config.zoom}};
-    var s3_gis_app = new GeoExplorer.{{if request.args(0) == "viewer.html":}}Viewer{{else:}}Composer{{pass}}({
+    var s3_gis_numZoomLevels = {{=config.zoom_levels}};
+    var s3_gis_app = new GeoExplorer.{{if request.args(0) == "viewer.html":}}Viewer{{else:}}SahanaComposer{{pass}}({
         proxy: s3_gis_proxy_url,
       {{if print_service:}}
-        printService: 'http://geo.eden.sahanafoundation.org/geoserver/pdf/',
+        printService: '{{=print_service}}',
       {{pass}}
         alignToGrid: true,
         about: {
@@ -78,7 +91,7 @@
                 title: "Remote Sahana GeoServer"
             },
             osm: {
-                ptype: 'gx_osmsource'
+                ptype: 'gx_tmssource'
             },
             google: {
                 ptype: 'gx_googlesource'
@@ -90,23 +103,32 @@
             },
           {{pass}}
           {{if yahoo_key:}}
-            yahoo: {
-                ptype: 'gx_yahoosource',
-                apiKey: '{{=yahoo_key}}'
-            },
+            //yahoo: {
+            //    ptype: 'gx_yahoosource',
+            //    apiKey: '{{=yahoo_key}}'
+            //},
           {{pass}}
+            //kml: {
+            //    url: "http://example.com/example.kml",
+            //    marker_url: "/{{=request.application}}/static/img/markers/gis_marker.image.marker_red.png",
+            //    type: "gx_kmlsource"
+            //},
             ol: {
                 ptype: 'gx_olsource'
             }
         },
         map: {
+            //displayProjection: s3_gis_proj4326,   // Doesn't get passed-through
             projection: s3_gis_projection_current,
             units: s3_gis_units,
             maxResolution: s3_gis_maxResolution,
             maxExtent: s3_gis_maxExtent,
             layers: [{
                 source: 'osm',
-                title: 'OpenStreetMap',
+                name: 'cyclemap',
+                group: 'background'
+            }, {
+                source: 'osm',
                 name: 'mapnik',
                 group: 'background'
             }, {
@@ -119,7 +141,44 @@
                 ]
             }],
             center: [s3_gis_center.lon, s3_gis_center.lat],
-            zoom: s3_gis_zoom
+            zoom: s3_gis_zoom,
+            numZoomLevels: s3_gis_numZoomLevels
         }
+    });
+
+    // Add custom init code here
+    s3_gis_app.on('ready', function() {
+        // Add a MousePointer to the toolbar
+        this.toolbar.add(
+           new GeoExt.Toolbar.ControlDisplay({
+                map: s3_gis_app.mapPanel.map,
+              {{if mouse_position and mouse_position is not "mgrs":}}
+                control: new OpenLayers.Control.MousePosition({displayProjection: s3_gis_proj4326})
+              {{elif mouse_position == "mgrs":}}
+                control: new OpenLayers.Control.MGRSMousePosition({displayProjection: s3_gis_proj4326})
+              {{pass}}
+            })
+        );
+        this.toolbar.doLayout();
+
+        // Add an OverviewMap
+        //s3_gis_app.createOverviewMap();
+        // Not working yet: bounds is null
+        // Rewrite as GXP plugin?
+        // http://trac.osgeo.org/openlayers/wiki/Control/OverviewMap
+        //this.mapPanel.map.addControl(new OpenLayers.Control.OverviewMap({
+        //    center: s3_gis_center,
+        //    mapOptions: {
+                //displayProjection: s3_gis_proj4326,
+        //        projection: s3_gis_projection_current,
+                // Use Manual stylesheet download (means can be done in HEAD to not delay pageload)
+        //        theme: null,
+        //        units: s3_gis_units,
+        //        maxResolution: s3_gis_maxResolution,
+        //        maxExtent: new OpenLayers.Bounds(s3_gis_maxExtent[0], s3_gis_maxExtent[1], s3_gis_maxExtent[2], s3_gis_maxExtent[3]),
+        //        numZoomLevels: s3_gis_numZoomLevels,
+                //layers: [s3_gis_app.mapPanel.map.baseLayer.clone()]
+        //    }
+        //}));
     });
 //]]></script>

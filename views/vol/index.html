@@ -1,13 +1,42 @@
 {{extend "layout.html"}}
 <div id='home'>
 {{=H2(module_name)}}
-<p>
-{{=T("The")}} {{=module_name}} {{=T("System keeps track of all Volunteers working in the disaster region. It captures not only the places where they are active, but also captures information on the range of services they are providing in each area.")}}
-</p>
-<h3>{{=T("Features Include")}}:</h3>
-<ul>
-<li>{{=T("Registering ad-hoc volunteers willing to contribute")}}</li>
-<li>{{=T("Capturing the essential services each Volunteer is providing and where")}}</li>
-<li>{{=T("Choosing Skill and Resources of Volunteers")}}</li>
+{{if auth.s3_logged_in():}}
+<div>
+{{=H5(T("Search here for a person in order to:"))}}
+<ul style="margin-left: 40px;">
+    <li>{{=T("Register them as a volunteer")}}</li>
+    <li>{{=T("View and/or update their details")}}</li>
 </ul>
+</div>
+{{else:}}
+<div>
+    {{=H5(T("You must be logged in to register volunteers."))}}
+    &nbsp;
+    {{=A(T("Login"), _href="/%s/default/user/login?_next=/%s/vol/index" % (request.application, request.application), _class="action-btn")}}
+</div>
+{{pass}}
+<div style="margin:20px auto; width:96%; max-width:1000px;" >
+    <div style="width:100%; float:left;">
+        {{=H4(T("Search for a Person"))}}
+        {{try:}}{{=form}}{{except:pass}}
+        <div><br /></div>
+        <div id='table-container'>
+            {{try:}}
+            {{=items}}
+            {{except:}}
+            {{pass}}
+        </div>
+{{try:}}
+{{if add_btn:}}
+<p>&nbsp;</p>
+<p>{{=T("If you cannot find the person you want to register as a volunteer, you can add them by clicking 'Add Person' below:")}}</p>
+<p>&nbsp;</p>
+{{=add_btn}}
+{{pass}}
+{{except:}}
+{{pass}}
+        {{include "dataTables.html"}}
+    </div>
+</div>
 </div>

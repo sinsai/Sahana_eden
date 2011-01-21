@@ -3,7 +3,7 @@
 """ GIS Module
 
     @version: 0.0.9
-    
+
     @requires: U{B{I{gluon}} <http://web2py.com>}
     @requires: U{B{I{shapely}} <http://trac.gispython.org/lab/wiki/Shapely>}
 
@@ -60,6 +60,7 @@ KML_NAMESPACE = "http://earth.google.com/kml/2.2"
 # Which resources have a different icon per-category
 gis_categorised_resources = ["irs_ireport"]
 
+from gluon.dal import Rows
 from gluon.storage import Storage, Messages
 from gluon.html import *
 #from gluon.http import HTTP
@@ -145,11 +146,11 @@ class GIS(object):
     # -----------------------------------------------------------------------------
     def download_kml(self, url, public_url):
         """
-            Download a KML file:
-                unzip it if-required
-                follow NetworkLinks recursively if-required
+        Download a KML file:
+            - unzip it if-required
+            - follow NetworkLinks recursively if-required
 
-            Returns a file object
+        Returns a file object
         """
 
         response = self.response
@@ -248,54 +249,96 @@ class GIS(object):
         return bearing
 
     # -----------------------------------------------------------------------------
-    def _min_not_none(self, *args):
-        """
-            Utility function: returns minimal argument that is not None.
-        """
-        return min([a for a in args if a is not None])
-
-    # -----------------------------------------------------------------------------
     def get_bounds(self, features=[]):
         """
             Calculate the Bounds of a list of Features
             e.g. to use in GPX export for correct zooming
+            Ensure a minimum size of bounding box, and that the points
+            are inset from the border.
             @ToDo: Optimised Geospatial routines rather than this crude hack
         """
-        min_lon = 180
-        min_lat = 90
-        max_lon = -180
-        max_lat = -90
-        min_not_none = self._min_not_none  # use this instead of min
-        for feature in features:
-            try:
-                # A simple feature set?
-                lon = feature.lon
-            except:
-                # A Join
-                feature = feature.gis_location
-            min_lon = min_not_none(feature.lon, feature.lon_min, min_lon)
-            min_lat = min_not_none(feature.lat, feature.lat_min, min_lat)
-            max_lon = max(feature.lon, feature.lon_max, max_lon)
-            max_lat = max(feature.lat, feature.lat_max, max_lat)
+
+        config = self.get_config()
+        if not config.bbox_min_size:
+            # DB not a fresh one, so new values not prepopulated
+            # @ToDo: clean up when we don't have legacy systems to upgrade
+            config.bbox_min_size = 0.01
+        if not config.bbox_inset:
+            config.bbox_inset = 0.007
+
+        if len(features) > 0:
+
+            min_lon = 180
+            min_lat = 90
+            max_lon = -180
+            max_lat = -90
+    
+            for feature in features:
+
+                # Skip features without lon, lat.
+                try:
+                    # A simple feature set?
+                    lon = feature.lon
+                    lat = feature.lat
+
+                except:
+                    try:
+                        # A Join
+                        lon = feature.gis_location.lon
+                        lat = feature.gis_location.lat
+
+                    except:
+                        continue
+
+                # Also skip those set to None. Note must use explicit test,
+                # as zero is a legal value.
+                if lon is None or lat is None:
+                    continue
+
+                min_lon = min(lon, min_lon)
+                min_lat = min(lat, min_lat)
+                max_lon = max(lon, max_lon)
+                max_lat = max(lat, max_lat)
+
+        else: # no features
+            min_lon = max_lon = config.lon
+            min_lat = max_lat = config.lat
+
+        # Assure a reasonable-sized box.
+        delta_lon = (config.bbox_min_size - (max_lon - min_lon)) / 2.0
+        if delta_lon > 0:
+            min_lon -= delta_lon
+            max_lon += delta_lon
+        delta_lat = (config.bbox_min_size - (max_lat - min_lat)) / 2.0
+        if delta_lat > 0:
+            min_lat -= delta_lat
+            max_lat += delta_lat
+
+        # Move bounds outward by specified inset.
+        min_lon -= config.bbox_inset
+        max_lon += config.bbox_inset
+        min_lat -= config.bbox_inset
+        max_lat += config.bbox_inset
 
         # Check that we're still within overall bounds
-        config = self.get_config()
-        min_lon = max(config.lon, min_lon)
-        min_lat = max(config.lat, min_lat)
-        max_lon = min_not_none(config.lon, max_lon)
-        max_lat = min_not_none(config.lat, max_lat)
+        min_lon = max(config.min_lon, min_lon)
+        min_lat = max(config.min_lat, min_lat)
+        max_lon = min(config.max_lon, max_lon)
+        max_lat = min(config.max_lat, max_lat)
 
         return dict(min_lon=min_lon, min_lat=min_lat, max_lon=max_lon, max_lat=max_lat)
 
     # -----------------------------------------------------------------------------
     def get_children(self, parent_id):
         """
-            Return a list of all GIS Features which are children of the requested feature
-            @ Using Materialized path for retrieving the children
-            @author: Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
+        Return a list of all GIS Features which are children of
+        the requested feature, using Materialized path for retrieving
+        the children
 
-            This has been chosen over Modified Preorder Tree Traversal for greater efficiency:
-            http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+        @author: Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
+
+        This has been chosen over Modified Preorder Tree Traversal for greater efficiency:
+        http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
         """
 
         db = self.db
@@ -384,9 +427,9 @@ class GIS(object):
     # -----------------------------------------------------------------------------
     def get_feature_layer(self, prefix, resourcename, layername, popup_label, config=None, marker_id=None, filter=None, active=True, polygons=False):
         """
-            Return a Feature Layer suitable to display on a map
-            @param: layername: Used as the label in the LayerSwitcher
-            @param: popup_label: Used in Cluster Popups to differentiate between types
+        Return a Feature Layer suitable to display on a map
+        @param layername: used as the label in the LayerSwitcher
+        @param popup_label: used in Cluster Popups to differentiate between types
         """
         db = self.db
         cache = self.cache
@@ -459,6 +502,68 @@ class GIS(object):
             return None
 
     # -----------------------------------------------------------------------------
+    def get_features_in_polygon(self, location_id, tablename=None, category=None):
+        """
+            Returns a gluon.sql.Rows of Features within a Polygonal Location
+        """
+
+        db = self.db
+        session = self.session
+        T = self.T
+        locations = db.gis_location
+
+        # Check that the location is a polygon
+        location = db(locations.id == location_id).select(locations.wkt, locations.lon_min, locations.lon_max, locations.lat_min, locations.lat_max, limitby=(0, 1)).first()
+        if location and location.wkt and (location.wkt.startswith("POLYGON") or location.wkt.startswith("MULTIPOLYGON")):
+            # ok
+            pass
+        else:
+            s3_debug("Location searched within isn't a Polygon!")
+            session.error = T("Location searched within isn't a Polygon!")
+            return None
+
+        try:
+            polygon = wkt_loads(location.wkt)
+        except:
+            s3_debug("Invalid Polygon!")
+            session.error = T("Invalid Polygon!")
+            return None
+
+        lon_min = locations.lon_min
+        lon_max = locations.lon_max
+        lat_min = locations.lat_min
+        lat_max = locations.lat_max
+        
+        table = db[tablename]
+        deployment_settings = self.deployment_settings
+        
+        query = (table.location_id == locations.id)
+        if "deleted" in table.fields:
+            query = query & (table.deleted == False)
+        # @ToDo: Check AAA
+
+        features = db(query).select(locations.wkt, locations.lat, locations.lon, table.ALL)
+        output = Rows()
+        # @ToDo: provide option to use PostGIS/Spatialite
+        # if deployment_settings.gis.spatialdb and deployment_settings.database.db_type == "postgres":
+        # 1st check for Features included within the bbox (faster)
+        def in_bbox(row):
+            _location = row.gis_location
+            return (_location.lon > lon_min) & (_location.lon < lon_max) & (_location.lat > lat_min) & (_location.lat < lat_max)
+        for row in features.find(lambda row: in_bbox(row)):
+            # Search within this subset with a full geometry check
+            # Uses Shapely.
+            try:
+                shape = wkt_loads(row.gis_location.wkt)
+                if shape.intersects(polygon):
+                    # Save Record
+                    output.records.append(row)
+            except shapely.geos.ReadingError:
+                s3_debug("Error reading wkt of location with id", row.id)
+
+        return output
+
+    # -----------------------------------------------------------------------------
     def get_features_in_radius(self, lat, lon, radius, tablename=None, category=None):
         """
             Returns Features within a Radius (in km) of a LatLon Location
@@ -497,6 +602,7 @@ class GIS(object):
                 query_string = cursor.mogrify("SELECT * FROM gis_location WHERE ST_DWithin (ST_GeomFromText ('POINT (%s %s)', 4326), the_geom, %s);" % (lat, lon, radius))
 
             cursor.execute(query_string)
+            # @ToDo: Export Rows?
             features = []
             for record in cursor:
                 d = dict(record.items())
@@ -621,7 +727,7 @@ class GIS(object):
                                            locations.lon_min,
                                            locations.lat_max,
                                            locations.lon_max)
-            features = []
+            features = Rows()
             for record in records:
                 # Calculate the Great Circle distance
                 if tablename:
@@ -635,7 +741,7 @@ class GIS(object):
                                                         record.lat,
                                                         record.lon)
                 if distance < radius:
-                    features.append(record)
+                    features.records.append(record)
                 else:
                     # skip
                     continue
@@ -1285,7 +1391,7 @@ class GIS(object):
             A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
 
             Relies on Shapely.
-            @ToDo provide an option to use PostGIS/Spatialite
+            @ToDo: provide an option to use PostGIS/Spatialite
         """
 
         if not "gis_feature_type" in form.vars:
@@ -1360,7 +1466,7 @@ class GIS(object):
             Returns Rows of locations which intersect the given shape.
 
             Relies on Shapely for wkt parsing and intersection.
-            @ToDo provide an option to use PostGIS/Spatialite
+            @ToDo: provide an option to use PostGIS/Spatialite
         """
 
         db = self.db
@@ -1381,7 +1487,7 @@ class GIS(object):
         Returns a generator of locations whose shape intersects the given LatLon.
 
         Relies on Shapely.
-        @ToDo provide an option to use PostGIS/Spatialite
+        @todo: provide an option to use PostGIS/Spatialite
         """
 
         point = shapely.geometry.point.Point(lon, lat)
@@ -1393,7 +1499,7 @@ class GIS(object):
         Returns all Locations whose geometry intersects the given feature.
 
         Relies on Shapely.
-        @ToDo provide an option to use PostGIS/Spatialite
+        @ToDo: provide an option to use PostGIS/Spatialite
         """
         shape = wkt_loads(feature.wkt)
         return self.get_features_by_shape(shape)
@@ -1456,6 +1562,7 @@ class GIS(object):
                   mgrs = {},
                   window = False,
                   window_hide = False,
+                  closable = True,
                   collapsed = False,
                   public_url = "http://127.0.0.1:8000"
                 ):
@@ -1513,6 +1620,7 @@ class GIS(object):
                 }
             @param window: Have viewport pop out of page into a resizable window
             @param window_hide: Have the window hidden by default, ready to appear (e.g. on clicking a button)
+            @param closable: In Window mode, whether the window is closable or not
             @param collapsed: Start the Tools panel (West region) collapsed
             @param public_url: pass from model (not yet defined when Module instantiated
         """
@@ -1548,15 +1656,15 @@ class GIS(object):
         # - these over-ride the arguments
         if "lat" in request.vars:
             lat = request.vars.lat
-        elif not lat:
+        if lat is None or lat == "":
             lat = config.lat
         if "lon" in request.vars:
             lon = request.vars.lon
-        elif not lon:
+        if lon is None or lon == "":
             lon = config.lon
         if "zoom" in request.vars:
             zoom = request.vars.zoom
-        elif not zoom:
+        if not zoom:
             zoom = config.zoom
         if not projection:
             projection = config.epsg
@@ -1883,7 +1991,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         # Toolbar
         if toolbar or add_feature:
-            if 1 in session.s3.roles or auth.shn_has_role("MapAdmin"):
+            if 1 in session.s3.roles or auth.s3_has_role("MapAdmin"):
             #if auth.is_logged_in():
                 # Provide a way to save the viewport
                 # @ToDo Extend to personalised Map Views
@@ -1938,7 +2046,6 @@ OpenLayers.Util.extend( selectPdfControl, {
                 }
                 // Convert back to LonLat for saving
                 lonlat.transform(map.getProjectionObject(), proj4326);
-                // @ToDo Use Embedded Potlatch
                 var url = '""" + URL(r=request, f="potlatch2", args="potlatch2.html") + """?lat=' + lonlat.lat + '&lon=' + lonlat.lon + "&zoom=" + zoom_current;
                 window.open(url);
             }
@@ -2431,27 +2538,31 @@ OpenLayers.Util.extend( selectPdfControl, {
         strategy_cluster = """new OpenLayers.Strategy.Cluster({distance: """ + str(cluster_distance) + """, threshold: """ + str(cluster_threshold) + """})"""
 
         # Layout
-        if window and window_hide:
-            layout = """
-        mapWin = new Ext.Window({
-            id: 'gis-map-window',
-            collapsible: true,
-            constrain: true,
+        if window:
+            if window_hide:
+                layout = """
             closeAction: 'hide',
             """
-            layout2 = """
-        """
-        elif window:
+                layout2 = """
+            """
+            else:
+                if closable:
+                    layout = """
+                """
+                else:
+                    layout = """
+            closable: false,
+                """
+                layout2 = """
+        mapWin.show();
+        mapWin.maximize();
+            """
             layout = """
         mapWin = new Ext.Window({
             id: 'gis-map-window',
             collapsible: true,
             constrain: true,
-            """
-            layout2 = """
-        mapWin.show();
-        mapWin.maximize();
-        """
+        """ + layout
         else:
             # Embedded
             layout = """
@@ -2597,7 +2708,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
         """
             for layer in openstreetmap_enabled:
-                if layer.role_required and not auth.shn_has_role(layer.role_required):
+                if layer.role_required and not auth.s3_has_role(layer.role_required):
                     continue
                 name = layer.name
                 name_safe = re.sub('\W', '_', name)
@@ -2640,7 +2751,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             if google_enabled:
                 google.key = self.get_api_key("google")
                 for layer in google_enabled:
-                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                    if layer.role_required and not auth.s3_has_role(layer.role_required):
                         continue
                     for subtype in gis_layer_google_subtypes:
                         if layer.subtype == subtype:
@@ -2719,7 +2830,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             if yahoo_enabled:
                 yahoo.key = self.get_api_key("yahoo")
                 for layer in yahoo_enabled:
-                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                    if layer.role_required and not auth.s3_has_role(layer.role_required):
                         continue
                     for subtype in gis_layer_yahoo_subtypes:
                         if layer.subtype == subtype:
@@ -2749,7 +2860,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 bing.key = self.get_api_key("bing")
                 if bing.key:
                     for layer in bing_enabled:
-                        if layer.role_required and not auth.shn_has_role(layer.role_required):
+                        if layer.role_required and not auth.s3_has_role(layer.role_required):
                             continue
                         for subtype in gis_layer_bing_subtypes:
                             if layer.subtype == subtype:
@@ -2790,7 +2901,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         if wfs_enabled:
             layers_wfs = cluster_style_options
         for layer in wfs_enabled:
-            if layer.role_required and not auth.shn_has_role(layer.role_required):
+            if layer.role_required and not auth.s3_has_role(layer.role_required):
                 continue
             name = layer.name
             name_safe = re.sub('\W', '_', name)
@@ -2855,7 +2966,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_wms = ""
         wms_enabled = db(db.gis_layer_wms.enabled == True).select()
         for layer in wms_enabled:
-            if layer.role_required and not auth.shn_has_role(layer.role_required):
+            if layer.role_required and not auth.s3_has_role(layer.role_required):
                 continue
             name = layer.name
             name_safe = re.sub('\W', '_', name)
@@ -2911,7 +3022,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_tms = ""
         tms_enabled = db(db.gis_layer_tms.enabled == True).select()
         for layer in tms_enabled:
-            if layer.role_required and not auth.shn_has_role(layer.role_required):
+            if layer.role_required and not auth.s3_has_role(layer.role_required):
                 continue
             name = layer.name
             name_safe = re.sub('\W', '_', name)
@@ -2934,7 +3045,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_xyz = ""
         xyz_enabled = db(db.gis_layer_tms.enabled == True).select()
         for layer in xyz_enabled:
-            if layer.role_required and not auth.shn_has_role(layer.role_required):
+            if layer.role_required and not auth.s3_has_role(layer.role_required):
                 continue
             name = layer.name
             name_safe = re.sub('\W', '_', name)
@@ -2977,7 +3088,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_js = ""
         js_enabled = db(db.gis_layer_js.enabled == True).select()
         for layer in js_enabled:
-            if layer.role_required and not auth.shn_has_role(layer.role_required):
+            if layer.role_required and not auth.s3_has_role(layer.role_required):
                 continue
             layers_js  += layer.code
 
@@ -3442,7 +3553,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
         """
                 for layer in georss_enabled:
-                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                    if layer.role_required and not auth.s3_has_role(layer.role_required):
                         continue
                     name = layer["name"]
                     url = layer["url"]
@@ -3558,7 +3669,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
         """
                 for layer in gpx_enabled:
-                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                    if layer.role_required and not auth.s3_has_role(layer.role_required):
                         continue
                     name = layer["name"]
                     track = db(db.gis_track.id == layer.track_id).select(db.gis_track.track, limitby=(0, 1)).first()
@@ -3695,7 +3806,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
         """
                 for layer in kml_enabled:
-                    if layer.role_required and not auth.shn_has_role(layer.role_required):
+                    if layer.role_required and not auth.s3_has_role(layer.role_required):
                         continue
                     name = layer["name"]
                     url = layer["url"]
@@ -3807,7 +3918,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             # Coordinate Grid
             coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select(db.gis_layer_coordinate.name, db.gis_layer_coordinate.visible, db.gis_layer_coordinate.role_required)
             if coordinate_enabled:
-                if layer.role_required and not auth.shn_has_role(layer.role_required):
+                if layer.role_required and not auth.s3_has_role(layer.role_required):
                     pass
                 else:
                     layer = coordinate_enabled.first()

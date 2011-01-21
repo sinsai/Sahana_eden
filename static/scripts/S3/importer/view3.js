@@ -97,7 +97,7 @@ function view3(importsheet)
 			},
 		items : [module_select,resource_select]
 		};
-    
+
     var msForm = new Ext.form.FormPanel({
         title: '<div align = "center">Edit \u2794 <u>Select module and resource</u> \u2794 Map columns to fields<p>Select resource to which data will be imported</p></div>',
         width: 'auto',
@@ -116,9 +116,9 @@ function view3(importsheet)
             height: 200,
             allowBlank:false,
             store: [['org_organisation','Organization Registry'],	//Server call to find component tables here
-                    ['org_office', 'Organization Registry-Office'], 
-                    ['pr_person', 'Person Registry'], 
-                    ['cr_shelter', 'Shelter Registry'],  
+                    ['org_office', 'Organization Registry-Office'],
+                    ['pr_person', 'Person Registry'],
+                    ['cr_shelter', 'Shelter Registry'],
                     ['budget_kits', 'Budgetting-Kits'],
                     ['budget_item', 'Budgetting-Items'],
                     ['budget_kit_item','Budgetting-Kits and items']],
@@ -131,7 +131,7 @@ function view3(importsheet)
                 handler: function(){
                         msForm.hide();
 			resource_select.destroy();
-                        view1(importsheet); 
+                        view1(importsheet);
                         }
                },
                {
@@ -157,7 +157,7 @@ function view3(importsheet)
 			     get_fields.show();
 			     var resource_fields = [];
 			     Ext.Ajax.request({
-					url : 'http://'+url+'/'+application+'/'+final_resources.replace('_','/')+'/fields.json',
+					url : 'http://'+url+'/'+application+'/'+final_resources.replace('_','/')+'/fields.s3json',
 					method : 'GET',
 					timeout : 90000,
 					async : false,
@@ -174,7 +174,7 @@ function view3(importsheet)
 							{
 								if ( resource_fields.field[k]['@writable'] == 'True' && resource_fields.field[k]['@name'] != 'id' && resource_fields.field[k]['@type'] != 'reference auth_user')
 								{
-									
+
 									if(resource_fields.field[k]['@type'].substring(0,9) == 'reference')
 									{
 										if(resource_fields.field[k]['@type'] == 'reference s3_source')
@@ -189,7 +189,7 @@ function view3(importsheet)
 							var nested_resources_structure = {};
 						       if(reference_fields.length == 0)
 							{
-								get_fields.hide();				
+								get_fields.hide();
 								importsheet.final_resources = final_resources;
 								importsheet.fields = fields;
 								msForm.hide();
@@ -202,7 +202,7 @@ function view3(importsheet)
 							        var field = reference_fields[i][0];
 							        //var res = res[0];
 								Ext.Ajax.request({
-									url : 'http://' + url + '/' + application + '/' + res.replace('_','/') + '/fields.json',
+									url : 'http://' + url + '/' + application + '/' + res.replace('_','/') + '/fields.s3json',
 									method : 'GET',
 									timeout : 90000,
 									field_name : field,
@@ -215,7 +215,7 @@ function view3(importsheet)
 											{
 												if ( fields_.field[k]['@writable'] == 'True' && fields_.field[k]['@name'] != 'id')// && fields_.field[k]['@type'].substring(0,9) != 'reference')
 								{
-									
+
 									fields.push(options.field_name + ' --> ' + fields_['@resource'] + ' --> ' + fields_.field[k]['@name']);
 									nested_resources_structure[fields_['@resource']].push(fields_.field[k]['@name']);
 								}
@@ -223,7 +223,7 @@ function view3(importsheet)
 
 							if(nested_fields == reference_fields.length)
 							{
-								get_fields.hide();				
+								get_fields.hide();
 								importsheet.final_resources = final_resources;
 								importsheet.fields = fields;
 								msForm.hide();
@@ -233,7 +233,7 @@ function view3(importsheet)
 							});
 							if(reference_fields.length == 0)
 							{
-								get_fields.hide();				
+								get_fields.hide();
 								importsheet.final_resources = final_resources;
 								importsheet.fields = fields;
 								msForm.hide();
@@ -241,11 +241,11 @@ function view3(importsheet)
 								view4(importsheet);
 							}
 							}
-							
+
 						}
 					});
 			                             }
-                     
+
               }
                     }
     	 ]

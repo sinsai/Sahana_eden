@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008-2010 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
  * 
  * Published under the BSD license.
  * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
@@ -146,7 +146,7 @@ gxp.plugins.BingSource = Ext.extend(gxp.plugins.LayerSource, {
         if (index > -1) {
 
             record = this.store.getAt(index).copy(Ext.data.Record.id({}));
-            var layer = record.get("layer").clone();
+            var layer = record.getLayer().clone();
  
             // set layer title from config
             if (config.title) {

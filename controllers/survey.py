@@ -31,6 +31,7 @@ def index():
     """ Module's Home Page """
 
     module_name = deployment_settings.modules[prefix].name_nice
+    response.title = module_name
     return dict(module_name=module_name)
 
 
@@ -174,7 +175,7 @@ def table():
     s3xrc.model.configure(table, listadd=False)
     output = s3_rest_controller("survey", resourcename)
 
-    authorised = shn_has_permission("create", table)
+    authorised = s3_has_permission("create", table)
     if authorised:
         output.update(add_btn=A(T("Add Survey Answer"),
                                 _href=URL(r=request, f="table", args=["create"], vars={"series_id":request.vars.series_id}),

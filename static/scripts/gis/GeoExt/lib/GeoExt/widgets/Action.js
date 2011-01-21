@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008-2010 The Open Source Geospatial Foundation
+ * Copyright (c) 2008-2011 The Open Source Geospatial Foundation
  * 
  * Published under the BSD license.
  * See http://svn.geoext.org/core/trunk/geoext/license.txt for the full text
@@ -41,6 +41,26 @@ GeoExt.Action = Ext.extend(Ext.Action, {
      *  ``OpenLayers.Control`` The OpenLayers control wrapped in this action.
      */
     control: null,
+
+    /** api: config[activateOnEnable]
+     *  ``Boolean`` Activate the action's control when the action is enabled.
+     *  Default is ``false``.
+     */
+
+    /** api: property[activateOnEnable]
+     *  ``Boolean`` Activate the action's control when the action is enabled.
+     */
+    activateOnEnable: false,
+
+    /** api: config[deactivateOnDisable]
+     *  ``Boolean`` Deactivate the action's control when the action is disabled.
+     *  Default is ``false``.
+     */
+
+    /** api: property[deactivateOnDisable]
+     *  ``Boolean`` Deactivate the action's control when the action is disabled.
+     */
+    deactivateOnDisable: false,
 
     /** api: config[map]
      *  ``OpenLayers.Map`` The OpenLayers map that the control should be added
@@ -91,6 +111,11 @@ GeoExt.Action = Ext.extend(Ext.Action, {
         // constructor won't do it for us
         var ctrl = this.control = config.control;
         delete config.control;
+        
+        this.activateOnEnable = !!config.activateOnEnable;
+        delete config.activateOnEnable;
+        this.deactivateOnDisable = !!config.deactivateOnDisable;
+        delete config.deactivateOnDisable;
 
         // register "activate" and "deactivate" listeners
         // on the control
@@ -223,5 +248,21 @@ GeoExt.Action = Ext.extend(Ext.Action, {
                     });
             }
         }
+    },
+    
+    /** private: method[setDisabled]
+     *  :param v: ``Boolean`` Disable the action's components.
+     *
+     *  Override method on super to optionally deactivate controls on disable.
+     */
+    setDisabled : function(v) {
+        if (!v && this.activateOnEnable && this.control && !this.control.active) {
+            this.control.activate();
+        }
+        if (v && this.deactivateOnDisable && this.control && this.control.active) {
+            this.control.deactivate();
+        }
+        return GeoExt.Action.superclass.setDisabled.apply(this, arguments);
     }
+
 });

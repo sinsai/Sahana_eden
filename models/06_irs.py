@@ -193,6 +193,7 @@ if deployment_settings.has_module(module):
                             location_id(),
                             document_id(),
                             Field("verified", "boolean"),
+                            Field("actioned", "boolean"),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
@@ -227,6 +228,9 @@ if deployment_settings.has_module(module):
     table.verified.label = T("Verified?")
     table.verified.represent = lambda verified: (T("No"), T("Yes"))[verified == True]
 
+    table.actioned.label = T("Actioned?")
+    table.actioned.represent = lambda actioned: (T("No"), T("Yes"))[actioned == True]
+
     # CRUD strings
     ADD_INC_REPORT = T("Add Incident Report")
     LIST_INC_REPORTS = T("List Incident Reports")
@@ -258,6 +262,7 @@ if deployment_settings.has_module(module):
                             "location_id",
                             "organisation_id",
                             "verified",
+                            "actioned",
                             "name",
                             "message",
                             ]
@@ -318,7 +323,7 @@ if deployment_settings.has_module(module):
                               multiple = True,
                               joinby = dict(irs_ireport="incident_id"))
     # -----------------------------------------------------------------------------
-    @auth.shn_requires_membership(1) # must be Administrator
+    @auth.s3_requires_membership(1) # must be Administrator
     def shn_irs_ushahidi_import(r, **attr):
 
         if r.representation == "html" and \

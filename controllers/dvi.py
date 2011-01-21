@@ -19,7 +19,7 @@ if deployment_settings.modules[module].access:
     authorised = False
     groups = re.split("\|", _module.access)[1:-1]
     for group in groups:
-        if shn_has_role(group):
+        if s3_has_role(group):
             authorised = True
     if not authorised:
         unauthorised()
@@ -29,17 +29,17 @@ if deployment_settings.modules[module].access:
 def shn_menu():
     response.menu_options = [
         [T("Home"), False, URL(r=request, f="index")],
-        [T("Recovery Requests"), False, URL(r=request, f="recreq"),[
-            [T("List Requests"), False, URL(r=request, f="recreq")],
-            [T("New Request"), False, URL(r=request, f="recreq", args="create")],
+        [T("Recovery Requests"), False, aURL(r=request, f="recreq"),[
+            [T("List Requests"), False, aURL(r=request, f="recreq")],
+            [T("New Request"), False, aURL(p="create", r=request, f="recreq", args="create")],
         ]],
-        [T("Dead Body Reports"), False, URL(r=request, f="body"),[
-            [T("List all"), False, URL(r=request, f="body")],
-            [T("List unidentified"), False, URL(r=request, f="body", vars=dict(status="unidentified"))],
-            [T("New Report"), False, URL(r=request, f="body", args="create")],
-            [T("Search by ID Tag"), False, URL(r=request, f="body", args="search_simple")]
+        [T("Dead Body Reports"), False, aURL(r=request, f="body"),[
+            [T("List all"), False, aURL(r=request, f="body")],
+            [T("List unidentified"), False, aURL(r=request, f="body", vars=dict(status="unidentified"))],
+            [T("New Report"), False, aURL(p="create", r=request, f="body", args="create")],
+            [T("Search by ID Tag"), False, aURL(r=request, f="body", args="search_simple")]
         ]],
-        [T("Missing Persons"), False, URL(r=request, f="person")]
+        [T("Missing Persons"), False, aURL(r=request, f="person")]
     ]
     menu_selected = []
     if session.rcvars and "dvi_body" in session.rcvars:
@@ -88,6 +88,7 @@ def index():
     status = [[str(T("identified")), int(identified)],
               [str(T("unidentified")), int(total-identified)]]
 
+    response.title = module_name
     return dict(module_name=module_name,
                 total=total,
                 status=status)
@@ -188,12 +189,12 @@ def person():
                     msg_no_match = T("No records matching the query"))
         person = s3_logged_in_person()
         if person:
-            db.pr_presence.reporter.default = person
-            db.pr_presence.reporter.writable = False
-            db.pr_presence.reporter.comment = None
-            db.pf_missing_report.reporter.default = person
-            db.pf_missing_report.reporter.writable = False
-            db.pf_missing_report.reporter.comment = None
+            db.pr_presence.observer.default = person
+            db.pr_presence.observer.writable = False
+            db.pr_presence.observer.comment = None
+            db.pf_missing_report.observer.default = person
+            db.pf_missing_report.observer.writable = False
+            db.pf_missing_report.observer.comment = None
         elif jr.component_name == "presence":
             condition = jr.request.vars.get("condition", None)
             if condition:

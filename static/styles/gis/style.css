@@ -13,6 +13,7 @@ div.olLayerDiv {
    -moz-user-select: none;
 }
 
+/*
 .olLayerGoogleCopyright {
     left: 2px;
     bottom: 2px;  
@@ -21,6 +22,7 @@ div.olLayerDiv {
     left: 2px;
     bottom: 15px;   
 }
+*/
 .olControlAttribution {
     font-size: smaller; 
     right: 3px; 

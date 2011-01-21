@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008-2010 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
  * 
  * Published under the BSD license.
  * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
@@ -82,12 +82,13 @@ gxp.GoogleEarthPanel = Ext.extend(Ext.Panel, {
 
         gxp.GoogleEarthPanel.superclass.initComponent.call(this);
 
+        var mapPanel = this.mapPanel || GeoExt.MapPanel.guess();
         if (!this.map) {
-            this.map = this.mapPanel && this.mapPanel.map;
+            this.map = mapPanel.map ;
         }
 
         if (!this.layers) {
-            this.layers = this.mapPanel && this.mapPanel.layers;
+            this.layers = mapPanel.layers;
         }
 
         this.projection = new OpenLayers.Projection("EPSG:4326");
@@ -97,10 +98,14 @@ gxp.GoogleEarthPanel = Ext.extend(Ext.Panel, {
         // or CSS display = none, the Google Earth plugin will show an error
         // message when it is re-enabled. To counteract this, we delete 
         // the instance and create a new one each time.
-        this.on("show", function() {
-            this.layerCache = {};
-            google.earth.createInstance(this.body.dom, this.onEarthReady.createDelegate(this), function(){});
-        }, this);
+        function render() {
+            if (this.rendered) {
+                this.layerCache = {};
+                google.earth.createInstance(this.body.dom, this.onEarthReady.createDelegate(this), function(){});
+            }
+        };
+        this.on("show", render, this);
+        this.on("render", render, this);
         
         this.on("hide", function() {
             if (this.earth != null) {
@@ -182,15 +187,15 @@ gxp.GoogleEarthPanel = Ext.extend(Ext.Panel, {
         if (this.earth) {
             var add = this.fireEvent("beforeadd", layer);
             if (add !== false) {
-                var name = layer.get("layer").id;
+                var name = layer.getLayer().id;
 
                 if (this.layerCache[name]) {
                     var networkLink = this.layerCache[name];
                 } else {
                     var link = this.earth.createLink('kl_' + name);
-                    var ows = layer.get("layer").url;
+                    var ows = layer.getLayer().url;
                     ows = ows.replace(/\?.*/, '');
-                    var params = layer.get("layer").params
+                    var params = layer.getLayer().params
                     var kmlPath = '/kml?mode=refresh&layers=' + params.LAYERS +
                         "&styles=" + params.STYLES;
                     link.setHref(ows + kmlPath);
@@ -200,7 +205,7 @@ gxp.GoogleEarthPanel = Ext.extend(Ext.Panel, {
                     this.layerCache[name] = networkLink;
                 }
 
-                networkLink.setVisibility(layer.get("layer").getVisibility());
+                networkLink.setVisibility(layer.getLayer().getVisibility());
 
                 if (order !== undefined && order < this.earth.getFeatures().getChildNodes().getLength()) {
                     this.earth.getFeatures().
@@ -335,3 +340,7 @@ gxp.GoogleEarthPanel = Ext.extend(Ext.Panel, {
         return data.clone().transform(this.projection, this.map.getProjectionObject());
     }
 });
+
+
+/** api: xtype = gxp_googleearthpanel */
+Ext.reg("gxp_googleearthpanel", gxp.GoogleEarthPanel);

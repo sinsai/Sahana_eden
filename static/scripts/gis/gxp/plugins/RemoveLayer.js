@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008-2010 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
  * 
  * Published under the BSD license.
  * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
@@ -47,7 +47,7 @@ gxp.plugins.RemoveLayer = Ext.extend(gxp.plugins.Tool, {
      */
     addActions: function() {
         var selectedLayer;
-        var removeLayerAction = gxp.plugins.RemoveLayer.superclass.addActions.apply(this, [{
+        var actions = gxp.plugins.RemoveLayer.superclass.addActions.apply(this, [{
             menuText: this.removeMenuText,
             iconCls: "gx-icon-removelayers",
             disabled: true,
@@ -59,7 +59,8 @@ gxp.plugins.RemoveLayer = Ext.extend(gxp.plugins.Tool, {
                 }
             },
             scope: this
-        }])[0];
+        }]);
+        var removeLayerAction = actions[0]
 
         this.target.on("layerselectionchange", function(record) {
             selectedLayer = record;
@@ -77,7 +78,7 @@ gxp.plugins.RemoveLayer = Ext.extend(gxp.plugins.Tool, {
             "remove": enforceOne
         })
         
-        return removeLayerAction;
+        return actions;
     }
         
 });

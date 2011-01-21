@@ -2,7 +2,7 @@
 
 """ Extensible Resource Controller (S3XRC)
 
-    @version: 2.3.2
+    @version: 2.3.3
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
@@ -148,7 +148,7 @@ class S3ResourceController(object):
         self.importer = S3Importer(self)
 
         # Hooks
-        self.permit = self.auth.shn_has_permission
+        self.permit = self.auth.s3_has_permission
         self.messages = None
         self.tree_resolve = None
         self.resolve = None
@@ -898,7 +898,7 @@ class S3ResourceController(object):
                 tree = etree.ElementTree(tree)
             callback(self.tree_resolve, tree)
 
-        permit = self.auth.shn_has_permission
+        permit = self.auth.s3_has_permission
         audit = self.audit
 
         tablename = resource.tablename
@@ -1868,9 +1868,9 @@ class S3QueryBuilder(object):
                                     elif values[0] == "EMPTY":
                                         query = ((f != None) & (f != ""))
                                     else:
-                                        query = (f != values[0])
+                                        query = ((f != values[0]) | (f == None))
                                 elif len(values):
-                                    query = (~(f.belongs(values)))
+                                    query = ((~(f.belongs(values))) | (f == None))
                             elif op == "lt":
                                 v = values[-1]
                                 query = (f < v)
@@ -1923,7 +1923,7 @@ class S3QueryBuilder(object):
                                 query = (query)
                             elif op == "unlike":
                                 for v in values:
-                                    q = (~(f.lower().contains(v.lower())))
+                                    q = ((~(f.lower().contains(v.lower()))) | (f == None))
                                     if query:
                                         query = query & q
                                     else:

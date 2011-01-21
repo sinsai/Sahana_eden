@@ -32,14 +32,15 @@ table = db.define_table(tablename,
                               label = T("Address Type"),
                               represent = lambda opt: \
                                           pr_address_type_opts.get(opt, UNKNOWN_OPT)),
-                        Field("co_name"),
-                        Field("street1"),       # Should be hidden since part of location_id, populate hidden field in onvalidation to allow XSLT to see it
-                        Field("street2"),       # Should be hidden since part of location_id, populate hidden field in onvalidation to allow XSLT to see it
-                        Field("postcode"),      # Should be hidden since part of location_id, populate hidden field in onvalidation to allow XSLT to see it
-                        Field("city"),          # Should be hidden since part of location_id, populate hidden field in onvalidation to allow XSLT to see it
-                        Field("state"),         # Should be hidden since part of location_id, populate hidden field in onvalidation to allow XSLT to see it
-                        pr_country(),           # Should be hidden since part of location_id, populate hidden field in onvalidation to allow XSLT to see it
+                        Field("co_name", label=T("c/o Name")),
                         location_id(),
+                        Field("address", "text", label=T("Address"), writable=False), # Populated from location_id
+                        Field("L4", label=deployment_settings.get_gis_locations_hierarchy("L4"), writable=False), # Populated from location_id
+                        Field("L3", label=deployment_settings.get_gis_locations_hierarchy("L3"), writable=False), # Populated from location_id
+                        Field("L2", label=deployment_settings.get_gis_locations_hierarchy("L2"), writable=False), # Populated from location_id
+                        Field("L1", label=deployment_settings.get_gis_locations_hierarchy("L1"), writable=False), # Populated from location_id
+                        Field("L0", label=deployment_settings.get_gis_locations_hierarchy("L0"), writable=False), # Populated from location_id
+                        Field("postcode", label=T("Postcode"), writable=False), # Populated from location_id
                         comments(),
                         migrate=migrate, *s3_meta_fields())
 
@@ -51,21 +52,6 @@ table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id", shn_pentity_represent,
                                  orderby="instance_type",
                                  filterby="instance_type",
                                  filter_opts=("pr_person", "pr_group"))
-
-table.co_name.label = T("c/o Name")
-table.street1.label = T("Street")
-table.street1.readable = table.street1.writable = False
-table.street2.label = T("Street (continued)")
-table.street2.readable = table.street2.writable = False
-table.postcode.label = T("ZIP/Postcode")
-table.postcode.readable = table.postcode.writable = False
-table.city.label = T("City")
-table.city.readable = table.city.writable = False
-#table.city.requires = IS_NOT_EMPTY()
-table.state.label = T("State")
-table.state.readable = table.state.writable = False
-table.country.label = T("Country")
-table.country.readable = table.country.writable = False
 
 ADD_ADDRESS = T("Add Address")
 LIST_ADDRESS = T("List of addresses")
@@ -84,22 +70,105 @@ s3.crud_strings[tablename] = Storage(
     msg_record_deleted = T("Address deleted"),
     msg_list_empty = T("No Addresses currently registered"))
 
+def address_onvalidation(form):
+    """
+        Write the Postcode & Street Address fields from the Location
+        - also used by org_office
+
+        @ToDo: Allow the reverse operation.
+        If these fields are populated then create an appropriate location
+    """
+
+    if "location_id" in form.vars:
+        locations = db.gis_location
+        # Read Postcode & Street Address
+        location = db(locations.id == form.vars.location_id).select(locations.addr_street,
+                                                                    locations.addr_postcode,
+                                                                    locations.name,
+                                                                    locations.level,
+                                                                    locations.parent,
+                                                                    locations.path,
+                                                                    limitby=(0, 1)).first()
+        if location:
+            strict = deployment_settings.get_gis_strict_hierarchy()
+            form.vars.address = location.addr_street
+            form.vars.postcode = location.addr_postcode
+            if location.level == "L0":
+                form.vars.L0 = location.name
+            elif location.level == "L1":
+                form.vars.L1 = location.name
+                if location.parent:
+                    country = db(locations.id == location.parent).select(locations.name, limitby=(0, 1)).first()
+                    if country:
+                        form.vars.L0 = country.name
+            else:
+                if location.path:
+                    # Lookup Ancestors
+                    ancestors = location.path.split("/")
+                    numberAncestors = len(ancestors)
+                    if numberAncestors > 1:
+                        del ancestors[numberAncestors - 1]  # Remove self
+                        if strict:
+                            # No need to do a DAL query
+                            for i in range(numberAncestors - 1):
+                                default["L%i" % i] = ancestors[i]
+                        else:
+                            # Do a single SQL query for all ancestors to look up their levels
+                            _ancestors = db(locations.id.belongs(ancestors)).select(locations.name,
+                                                                                    locations.level,
+                                                                                    limitby=(0, numberAncestors - 1))
+                            for ancestor in _ancestors:
+                                form.vars[ancestor.level] = ancestor.name
+                elif location.parent:
+                    # Path not populated, so need to do lookups manually :/
+                    form.vars[location.level] = location.name
+                    _parent = db(locations.id == location.parent).select(locations.name,
+                                                                         locations.level,
+                                                                         locations.parent,
+                                                                         limitby=(0, 1)).first()
+                    if _parent.level:
+                        form.vars[_parent.level] = _parent.name
+                    if _parent.parent:
+                        _grandparent = db(locations.id == _parent.parent).select(locations.name,
+                                                                                 locations.level,
+                                                                                 locations.parent,
+                                                                                 limitby=(0, 1)).first()
+                        if _grandparent.level:
+                            form.vars[_grandparent.level] = _grandparent.name
+                        if _grandparent.parent:
+                            _greatgrandparent = db(locations.id == _grandparent.parent).select(locations.name,
+                                                                                               locations.level,
+                                                                                               locations.parent,
+                                                                                               limitby=(0, 1)).first()
+                            if _greatgrandparent.level:
+                                form.vars[_greatgrandparent.level] = _greatgrandparent.name
+                            if _greatgrandparent.parent:
+                                _greatgreatgrandparent = db(locations.id == _greatgrandparent.parent).select(locations.name,
+                                                                                                             locations.level,
+                                                                                                             locations.parent,
+                                                                                                             limitby=(0, 1)).first()
+                                if _greatgreatgrandparent.level:
+                                    form.vars[_greatgreatgrandparent.level] = _greatgreatgrandparent.name
+
 # Addresses as component of person entities
 s3xrc.model.add_component(prefix, resourcename,
                           multiple=True,
                           joinby=super_key(db.pr_pentity))
 
 s3xrc.model.configure(table,
-    list_fields = [
-        "id",
-        "type",
-        "co_name",
-        "street1",
-        "postcode",
-        "city",
-        "country"
-    ])
-
+                      onvalidation=lambda form: address_onvalidation(form),
+                      list_fields = [
+                        "id",
+                        "type",
+                        "address",
+                        "postcode",
+                        #"co_name",
+                        #"L4",
+                        "L3",
+                        "L2",
+                        "L1",
+                        "L0"
+                    ])
 
 # *****************************************************************************
 # Contact (pe_contact)
@@ -165,13 +234,13 @@ def shn_pe_contact_onvalidation(form):
 
     if form.vars.contact_method == '1':
         email, error = IS_EMAIL()(form.vars.value)
-        if error:          
+        if error:
             form.errors.value = T("Enter a valid email")
 
     return False
 
 s3xrc.model.configure(table,
-                      onvalidation=shn_pe_contact_onvalidation, 
+                      onvalidation=shn_pe_contact_onvalidation,
                       list_fields=[
                         #"id",
                         #"pe_id",
@@ -321,22 +390,21 @@ tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
                         super_link(db.sit_situation), # sit_id
-                        person_id("reporter",
-                                  label=T("Reporter"),
-                                  default = s3_logged_in_person(),
-                                  comment=shn_person_comment(T("Reporter"),
-                                                             T("Person who is reporting about the presence."))),
                         person_id("observer",
                                   label=T("Observer"),
+                                  default = s3_logged_in_person(),
                                   comment=shn_person_comment(T("Observer"),
-                                                             T("Person who observed the presence (if different from reporter)."))),
+                                                             T("Person who has actually seen the person/group."))),
                         Field("shelter_id", "integer"),
                         location_id(widget = S3LocationAutocompleteWidget(request, deployment_settings),
                                     comment = DIV(A(ADD_LOCATION, _class="colorbox", _target="top", _title=ADD_LOCATION,
                                                   _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup"))),
                                               DIV(_class="tooltip",
-                                                  _title=T("Current Location") + "|" + T("The Current Location of the Person, which can be general (for Reporting) or precise (for displaying on a Map). Enter a few characters to search from available locations.")))),
-                        Field("location_details"),
+                                                  _title=T("Current Location") + "|" + T("The Current Location of the Person/Group, which can be general (for Reporting) or precise (for displaying on a Map). Enter a few characters to search from available locations.")))),
+                        Field("location_details",
+                              comment = DIV(_class="tooltip",
+                                            _title=T("Location Details") + "|" + T("Specific Area (e.g. Building/Room) within the Location that this Person/Group is seen."))
+                             ),
                         Field("datetime", "datetime"),
                         Field("presence_condition", "integer",
                               requires = IS_IN_SET(pr_presence_condition_opts,

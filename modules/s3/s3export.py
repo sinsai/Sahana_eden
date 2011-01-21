@@ -2,7 +2,7 @@
 
 """ Resource Export Toolkit (S3XRC)
 
-    @version: 2.3.2
+    @version: 2.3.3
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
@@ -214,7 +214,7 @@ class S3Exporter(object):
             from reportlab.lib.enums import TA_CENTER, TA_RIGHT
         except ImportError:
             session.error = self.ERROR.REPORTLAB_ERROR
-            redirect(URL(r=request, f="index", extension=""))
+            redirect(URL(r=request, extension=""))
 
         # Import Geraldo
         try:
@@ -222,14 +222,14 @@ class S3Exporter(object):
             from geraldo.generators import PDFGenerator
         except ImportError:
             session.error = self. ERROR.GERALDO_ERROR
-            redirect(URL(r=request, f="index", extension=""))
+            redirect(URL(r=request, extension=""))
 
         # Get records
         query = resource.get_query()
         records = db(query).select(table.ALL)
         if not records:
             session.warning = self.ERROR.NO_RECORDS
-            redirect(URL(r=request, f="index", extension=""))
+            redirect(URL(r=request, extension=""))
 
         # Create output stream
         output = StringIO.StringIO()
@@ -358,7 +358,8 @@ class S3Exporter(object):
             import xlwt
         except ImportError:
             session.error = self.ERROR.XLWT_ERROR
-            redirect(URL(r=request))
+            #redirect(r.there(representation="html"))
+            redirect(URL(r=request, extension=""))
 
         output = StringIO.StringIO()
 

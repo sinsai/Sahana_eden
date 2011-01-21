@@ -23,6 +23,7 @@ def index():
     """ Module's Home Page """
 
     module_name = deployment_settings.modules[prefix].name_nice
+    response.title = module_name
     return dict(module_name=module_name)
 
 
@@ -52,15 +53,6 @@ def cluster_subsector():
 def organisation():
 
     """ RESTful CRUD controller """
-
-    # Post-processor
-    def postp(r, output):
-        # No point in downloading large dropdowns which we hide, so provide a smaller represent
-        if r.component and r.component_name in ["office", "project", "store", "assess", "activity"]:
-            db[r.component.tablename].location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
-            response.s3.gis.location_id = r.component.tablename + "_location_id"
-        return output
-    response.s3.postp = postp
 
     rheader = lambda r: shn_org_rheader(r,
                                         tabs = [(T("Basic Details"), None),

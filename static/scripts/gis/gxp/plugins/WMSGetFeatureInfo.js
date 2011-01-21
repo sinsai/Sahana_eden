@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008-2010 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
  * 
  * Published under the BSD license.
  * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
@@ -94,9 +94,9 @@ gxp.plugins.WMSGetFeatureInfo = Ext.extend(gxp.plugins.Tool, {
             info.controls = [];
             queryableLayers.each(function(x){
                 var control = new OpenLayers.Control.WMSGetFeatureInfo({
-                    url: x.get("layer").url,
+                    url: x.getLayer().url,
                     queryVisible: true,
-                    layers: [x.get("layer")],
+                    layers: [x.getLayer()],
                     eventListeners: {
                         getfeatureinfo: function(evt) {
                             var match = evt.text.match(/<body[^>]*>([\s\S]*)<\/body>/);

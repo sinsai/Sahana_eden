@@ -32,6 +32,8 @@ migrate = deployment_settings.get_base_migrate()
 db_string = deployment_settings.get_database_string()
 if db_string[0].find("sqlite") != -1:
     db = DAL(db_string[0], check_reserved=["mysql", "postgres"])
+    # on SQLite 3.6.19+ this enables foreign key support (included in Python 2.7+)
+    db.executesql("PRAGMA foreign_keys=ON")
 else:
     # Tuple (inc pool_size)
     try:
@@ -58,11 +60,12 @@ mail = Mail()
 # AAA
 auth = s3base.AuthS3(globals(), deployment_settings, db)
 s3_audit = s3base.S3Audit(db, session, migrate=migrate)
+aURL = auth.permission.accessible_url
 
 # Shortcuts
-shn_has_role = auth.shn_has_role
-shn_has_permission = auth.shn_has_permission
-shn_accessible_query = auth.shn_accessible_query
+s3_has_role = auth.s3_has_role
+s3_has_permission = auth.s3_has_permission
+s3_accessible_query = auth.s3_accessible_query
 
 # Custom classes which extend default Gluon
 FieldS3 = s3base.FieldS3

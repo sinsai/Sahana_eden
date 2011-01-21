@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008-2010 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
  * 
  * Published under the BSD license.
  * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
@@ -130,7 +130,7 @@ gxp.WMSLayerPanel = Ext.extend(Ext.TabPanel, {
      */
     createDisplayPanel: function() {
         var record = this.layerRecord;
-        var layer = record.get("layer");
+        var layer = record.getLayer();
         var opacity = layer.opacity;
         if(opacity == null) {
             opacity = 1;

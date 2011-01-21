@@ -20,10 +20,10 @@ def shn_menu():
     """ Options menu """
 
     response.menu_options = [
-        [T("Search for a Person"), False, URL(r=request, f="index")],
-        [T("Missing Persons"), False, URL(r=request, f="person"), [
-            [T("List"), False, URL(r=request, f="person")],
-            [T("Add"), False, URL(r=request, f="person", args="create")],
+        [T("Search for a Person"), False, aURL(r=request, f="index")],
+        [T("Missing Persons"), False, aURL(r=request, f="person"), [
+            [T("List"), False, aURL(r=request, f="person")],
+            [T("Add"), False, aURL(p="create", r=request, f="person", args="create")],
         ]]]
 
     menu_selected = []
@@ -106,7 +106,7 @@ def index():
         if not r.component:
             open_button_label = DETAILS
 
-            if auth.shn_logged_in():
+            if auth.s3_logged_in():
 
                 # Define URLs
                 report_missing = str(URL(r=request, f=resourcename,
@@ -148,7 +148,7 @@ def index():
     response.s3.prep = prep
     response.s3.postp = postp
 
-    if auth.shn_logged_in():
+    if auth.s3_logged_in():
         add_btn = A(T("Add Person"),
                     _class="action-btn",
                     _href=URL(r=request, f="person", args="create"))
@@ -162,6 +162,7 @@ def index():
 
     # Set view, update menu and return output
     response.view = "pf/index.html"
+    response.title = module_name
     shn_menu()
     return output
 
@@ -202,17 +203,15 @@ def person():
 
     def person_prep(r):
 
-        # Pre-populate reporter fields
-        if auth.shn_logged_in():
-            persons = db.pr_person
-            person = db(persons.uuid == session.auth.user.person_uuid).select(persons.id, limitby=(0,1)).first()
-            if person:
-                db.pr_presence.reporter.default = person.id
-                db.pr_presence.reporter.writable = False
-                db.pr_presence.reporter.comment = None
-                db.pf_missing_report.reporter.default = person.id
-                db.pf_missing_report.reporter.writable = False
-                db.pf_missing_report.reporter.comment = None
+        # Pre-populate observer fields
+        person_id = s3_logged_in_person()
+        if person:
+            db.pr_presence.observer.default = person_id
+            db.pr_presence.observer.writable = False
+            db.pr_presence.observer.comment = None
+            db.pf_missing_report.observer.default = person_id
+            db.pf_missing_report.observer.writable = False
+            db.pf_missing_report.observer.comment = None
 
         # Copy config
         if r.component_name == "config":

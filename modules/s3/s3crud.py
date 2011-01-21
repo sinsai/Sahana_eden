@@ -2,7 +2,7 @@
 
 """ RESTful CRUD Methods (S3XRC)
 
-    @version: 2.3.2
+    @version: 2.3.3
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
@@ -126,6 +126,10 @@ class S3CRUD(S3Method):
 
         # Check permission for create
         authorised = self.permit("create", self.tablename)
+        # Check permission to update the parent when creating a component:
+        if r.component and r.record is not None:
+            authorised = authorised and self.permit("update", r.table,
+                                                    record_id=r.record.id)
         if not authorised:
             if r.method is not None:
                 r.unauthorised()
@@ -276,7 +280,7 @@ class S3CRUD(S3Method):
             if representation in ("popup", "iframe"):
                 self.next = None
             elif not create_next:
-                self.next = self.resource.url(id=[])
+                self.next = r.there() #r.component and r.there() or r.here()
             else:
                 try:
                     self.next = create_next(self)
@@ -373,13 +377,20 @@ class S3CRUD(S3Method):
 
         # Get the target record ID
         record_id = self._record_id(r)
-        if not record_id:
-            if r.component and not r.multiple:
+
+        # Check authorization to read the record
+        authorised = self.permit("read", table, record_id=record_id)
+        if not authorised:
+            r.unauthorised()
+
+        if r.interactive:
+
+            # If this is a single-component and no record exists,
+            # try to create one if the user is permitted
+            if not record_id and r.component and not r.multiple:
                 authorised = self.permit("create", tablename)
                 if authorised:
                     return self.create(r, **attr)
-
-        if r.interactive:
 
             # Redirect to update if user has permission unless
             # a method has been specified in the URL
@@ -576,7 +587,7 @@ class S3CRUD(S3Method):
             if representation in ("popup", "iframe"):
                 self.next = None
             elif not update_next:
-                self.next = self.resource.url(id=[])
+                self.next = r.there() #r.component and r.there() or r.here()
             else:
                 try:
                     self.next = update_next(self)
@@ -632,10 +643,17 @@ class S3CRUD(S3Method):
         # Get the target record ID
         record_id = self._record_id(r)
 
-        # Check permission for delete
+        # Check if deletable
         if not deletable:
             r.error(403, self.manager.ERROR.NOT_PERMITTED)
+
+        # Check permission to delete
         authorised = self.permit("delete", self.tablename, record_id)
+
+        # Check permission to update the parent when deleting a component:
+        if r.component and r.record is not None:
+            authorised = authorised and self.permit("update", r.table,
+                                                    record_id=r.record.id)
         if not authorised:
             r.unauthorised()
 
@@ -647,7 +665,9 @@ class S3CRUD(S3Method):
                         TD(INPUT(_type="submit", _value=T("Delete"),
                            _style="margin-left: 10px;")))))
             items = self.select(r, **attr).get("items", None)
-            output.update(form=form, items=items)
+            if isinstance(items, DIV):
+                output.update(form=form)
+            output.update(items=items)
             response.view = self._view(r, "delete.html")
 
         elif r.http == "POST" or \
@@ -708,20 +728,25 @@ class S3CRUD(S3Method):
         listadd = self._config("listadd", True)
         list_fields = self._config("list_fields")
 
+        # Check permission to read in this table
+        authorised = self.permit("read", self.tablename)
+        if not authorised:
+            r.unauthorised()
+
         # Pagination
         vars = request.get_vars
         if representation == "aadata":
-            start = vars.get("iDisplayStart", 0)
+            start = vars.get("iDisplayStart", None)
             limit = vars.get("iDisplayLength", None)
         else:
-            start = vars.get("start", 0)
+            start = vars.get("start", None)
             limit = vars.get("limit", None)
         if limit is not None:
             try:
                 start = int(start)
                 limit = int(limit)
             except ValueError:
-                start = 0
+                start = None
                 limit = None # use default
         else:
             start = None # use default
@@ -748,7 +773,7 @@ class S3CRUD(S3Method):
 
             # SSPag?
             if not response.s3.no_sspag:
-                limit = 1
+                limit = 1 
                 session.s3.filter = request.get_vars
 
             # Add hidden add-form (do this before retrieving the list!)
@@ -786,6 +811,24 @@ class S3CRUD(S3Method):
                                   linkto=linkto,
                                   download_url=self.download_url,
                                   format=representation)
+
+            # In SSPag, send the first 20 records with the initial response
+            # (avoids the dataTables Ajax request unless the user tries nagivating around)
+            if not response.s3.no_sspag:
+                totalrows = self.resource.count()
+                if totalrows:
+                    aadata = dict(aaData = self.sqltable(fields=fields,
+                                                        start=0,
+                                                        limit=20,
+                                                        orderby=orderby,
+                                                        linkto=linkto,
+                                                        download_url=self.download_url,
+                                                        as_page=True,
+                                                        format=representation) or [])
+                    aadata.update(iTotalRecords=totalrows, iTotalDisplayRecords=totalrows)
+                    self.response.aadata = json(aadata)
+                    self.response.s3.start = 0
+                    self.response.s3.limit = 20
 
             # Empty table - or just no match?
             if not items:
@@ -911,8 +954,6 @@ class S3CRUD(S3Method):
         @param as_page: return the list as JSON page
         @param as_list: return the list as Python list
         @param format: the representation format
-
-        @todo: rename this function?
 
         """
 
@@ -1045,12 +1086,10 @@ class S3CRUD(S3Method):
                     record.update(missing_fields)
                     record.update(id=None)
 
-            if record is None:
-                record = record_id
-
             # Add asterisk to labels of required fields
             labels = Storage()
             mark_required = self._config("mark_required")
+            response.s3.has_required = False
             for field in table:
                 if field.writable:
                     required = field.required or \
@@ -1071,8 +1110,11 @@ class S3CRUD(S3Method):
                                 required = True
                                 break
                     if required:
+                        response.s3.has_required = True
                         labels[field.name] = DIV("%s:" % field.label, SPAN(" *", _class="req"))
 
+        if record is None:
+            record = record_id
 
         # Get the form
         form = SQLFORM(table,
@@ -1149,7 +1191,7 @@ class S3CRUD(S3Method):
                     _id=None,
                     _class="action-btn"):
         """
-        Generate a link button
+        Generate a CRUD action button
 
         @param label: the link label (None if using CRUD string)
         @param tablename: the name of table for CRUD string selection
@@ -1332,7 +1374,7 @@ class S3CRUD(S3Method):
         response = r.response
 
         prefix, name, table, tablename = r.target()
-        permit = r.manager.auth.shn_has_permission
+        permit = r.manager.auth.s3_has_permission
         model = r.manager.model
 
         if authorised is None:

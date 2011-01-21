@@ -15,8 +15,18 @@ resourcename = request.function
 response.menu_options = logs_menu
 
 #==============================================================================
-#@auth.shn_requires_membership(1)
+#@auth.s3_requires_membership(1)
 def item_category():
+
+    """ RESTful CRUD controller """
+
+    tablename = "%s_%s" % (prefix, resourcename)
+    table = db[tablename]
+
+    s3xrc.model.configure(table, listadd=False)
+    return s3_rest_controller(prefix, resourcename)
+
+def item_packet():
 
     """ RESTful CRUD controller """
 

@@ -15,30 +15,46 @@ import pexpect
 # fab [test|demo|prod] deploy
 #
 
+# This site updates to current Trunk (refreshing Data from Prod)
 test_host = "test.eden.sahanafoundation.org"
-demo_host = "demo.eden.sahanafoundation.org"
 prod_host = "pakistan.sahanafoundation.org"
-all_hosts = [prod_host, demo_host, test_host, "eden.sahanafoundation.org", "humanityroad.sahanafoundation.org", "geo.eden.sahanafoundation.org", "camp.eden.sahanafoundation.org"]
+all_hosts = [prod_host, test_host, "demo.eden.sahanafoundation.org", "eden.sahanafoundation.org", "humanityroad.sahanafoundation.org", "geo.eden.sahanafoundation.org", "camp.eden.sahanafoundation.org"]
 env.key_filename = ["/root/.ssh/sahana_release"]
 
+# Definitions for 'Live' infrastructure
+# (updates from Trunk)
+env.tested = False
+def colombia():
+    """ List of server(s) for Live infrastructure """
+    env.user = "root"
+    env.hosts = ["colombia.sahanafoundation.org"]
+
+def taiwan():
+    """ List of server(s) for Live infrastructure """
+    env.user = "root"
+    env.hosts = ["taiwan.sahanafoundation.org"]
+
+# Definitions for 'Production' infrastructure
+# (updates from test)
+def pakistan():
+    """ List of server(s) for Production infrastructure """
+    env.user = "root"
+    env.tested = True
+    env.hosts = [prod_host]
+
+# Definitions for 'Demo' infrastructure
+# (updates from Trunk)
+def demo():
+    """ List of server(s) for Demo infrastructure """
+    env.user = "root"
+    env.hosts = ["demo.eden.sahanafoundation.org"]
+
 # Definitions for 'Test' infrastructure
+# (updates from Trunk)
 def test():
     """ List of server(s) for Test infrastructure """
     env.user = "root"
     env.hosts = [test_host]
-
-# Definitions for 'Demo' infrastructure
-def demo():
-    """ List of server(s) for Demo infrastructure """
-    env.user = "root"
-    env.hosts = [demo_host]
-
-# Definitions for 'Production' infrastructure
-def prod():
-    """ List of server(s) for Production infrastructure """
-    env.user = "root"
-    env.hosts = [prod_host]
-
 
 # Definitions for 'All' infrastructure
 def all():
@@ -282,11 +298,13 @@ def migrate_on():
 def migrate():
     """ Perform a Migration """
     print(green("%s: Performing Migration" % env.host))
-    child = pexpect.spawn("ssh -i /root/.ssh/sahana_release %s@%s" % (env.user, env.host))
-    child.expect(":~#")
-    child.sendline("cd /home/web2py")
-    child.expect("/home/web2py#")
-    child.sendline("sudo -H -u web2py python web2py.py -N -S eden -M -R applications/eden/static/scripts/tools/noop.py")
+    with cd("/home/web2py"):
+        run("sudo -H -u web2py python web2py.py -N -S eden -M -R applications/eden/static/scripts/tools/noop.py", pty=True)
+    #child = pexpect.spawn("ssh -i /root/.ssh/sahana_release %s@%s" % (env.user, env.host))
+    #child.expect(":~#")
+    #child.sendline("cd /home/web2py")
+    #child.expect("/home/web2py#")
+    #child.sendline("sudo -H -u web2py python web2py.py -N -S eden -M")
     # @ToDo check if we need to interact otherwise automate
     # - not working :/
     # special characters in regexes matching?
@@ -310,7 +328,7 @@ def migrate_off():
 
 def optimise():
     """ Apply Optimisation """
-    #@ ToDo
+    # @ToDo: create a script from this which creates indexes according to database type read from 000_config
     # Restore indexes via Python script run in Web2Py environment
     #      w2p
     #       tablename = "pr_person"
@@ -335,7 +353,8 @@ def pull():
             print(green("%s: Upgrading to version %i" % (env.host, env.revno)))
             run("bzr pull -r %i" % env.revno, pty=True)
         except:
-            if "test" in env.host or "demo" in env.host:
+            #if not "pakistan" in env.host:
+            if not env.tested:
                 # Upgrade to current Trunk
                 print(green("%s: Upgrading to current Trunk" % env.host))
                 run("bzr pull", pty=True)

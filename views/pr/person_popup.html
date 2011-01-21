@@ -11,7 +11,7 @@
 
 <script type="text/javascript">//<![CDATA[
 $(function() {
-    // Hide the ID Label Field (not relevant to this deployment)
+    // Hide the ID Tag Number Field (not relevant to this deployment)
     //$('#pr_person_pr_pe_label__row').hide();
 });
 //]]></script>
@@ -37,7 +37,7 @@ $(function() {
                 });
         });
     } else {
-        // Thickbox popups (see below)
+        // Colorbox popups (see below)
     }
 });
 
@@ -54,15 +54,15 @@ function s3_tb_refresh() {
     var caller = $_GET['caller'];
     // The JSON of the resource we just created
     var re = /[^_]*_[^_]*_(.*)/i;
-    fieldname = re.exec(caller)[1];
-    var url = self.parent.location.pathname.replace('/create','').replace('/update','')+'/options.json?field='+fieldname;
+    var fieldname = re.exec(caller)[1];
+    var url = self.parent.location.pathname.replace('/create', '').replace('/update', '') + '/options.s3json?field=' + fieldname;
     var selector = self.parent.$('#' + caller);
     var dummy = self.parent.$('#dummy_' + caller);
     var has_dummy = (dummy.val() != undefined);
     var options = self.parent.$('#' + caller + ' >option')
     var dropdown = options.length
     if ( dropdown ) {
-        var append=[];
+        var append = [];
     }
     var value_high = 1;
     var represent_high = '';

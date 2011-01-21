@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008-2010 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
  * 
  * Published under the BSD license.
  * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
@@ -25,6 +25,16 @@ gxp.plugins.Tool = Ext.extend(Ext.util.Observable, {
     
     /** api: ptype = gx_tool */
     ptype: "gx_tool",
+    
+    /** api: config[autoActivate]
+     *  ``Boolean`` Set to false if the tool should be initialized without
+     *  activating it. Default is true.
+     */
+    autoActivate: true,
+    
+    /** api: property[active]
+     *  ``Boolean`` Is the tool currently active?
+     */
 
     /** api: config[actions]
      *  ``Array`` Custom actions for tools that do not provide their own. Array
@@ -43,15 +53,23 @@ gxp.plugins.Tool = Ext.extend(Ext.util.Observable, {
      */
     
     /** api: config[actionTarget]
-     *  ``String`` or ``Array`` Where to place the tool's actions (e.g. buttons
-     *  or menus)? This can be any string that references an ``Ext.Container``
-     *  property on the portal, or a unique id configured on a component, or an
-     *  array of the aforementioned if the action is to be put in more than one
-     *  places (e.g. a button and a context menu item). To reference one of the
-     *  toolbars of an ``Ext.Panel``, ".tbar", ".bbar" or ".fbar" has to be
-     *  appended. The default is "map.tbar". The viewer's main MapPanel
-     *  can always be accessed with "map" as actionTarget. Set to null if no
-     *  actions should be created.
+     *  ``Object`` or ``String`` or ``Array`` Where to place the tool's actions 
+     *  (e.g. buttons or menus)? 
+     *
+     *  In case of a string, this can be any string that references an 
+     *  ``Ext.Container`` property on the portal, or a unique id configured on a 
+     *  component.
+     *
+     *  In case of an object, the object has a "target" and an "index" property, 
+     *  so that the tool can be inserted at a specified index in the target. 
+     *               
+     *  actionTarget can also be an array of strings or objects, if the action is 
+     *  to be put in more than one place (e.g. a button and a context menu item).
+     *
+     *  To reference one of the toolbars of an ``Ext.Panel``, ".tbar", ".bbar" or 
+     *  ".fbar" has to be appended. The default is "map.tbar". The viewer's main 
+     *  MapPanel can always be accessed with "map" as actionTarget. Set to null if 
+     *  no actions should be created.
      */
     actionTarget: "map.tbar",
         
@@ -64,13 +82,6 @@ gxp.plugins.Tool = Ext.extend(Ext.util.Observable, {
      *  ``Number`` Optional index of an action that should be active by
      *  default. Only works for actions that are a ``GeoExt.Action`` instance.
      */
-    
-    /** api: config[appendActions]
-     *  ``Boolean`` If set to false, actions won't be added, but inserted to
-     *  the container at the beginning. This is useful to control the order of
-     *  actions in a toolbar. Default is true.
-     */
-    appendActions: true,
     
     /** api: config[outputTarget]
      *  ``String`` Where to add the tool's output container? This can be any
@@ -99,10 +110,30 @@ gxp.plugins.Tool = Ext.extend(Ext.util.Observable, {
      */
     constructor: function(config) {
         this.initialConfig = config;
+        this.active = false;
         Ext.apply(this, config);
         if (!this.id) {
             this.id = Ext.id();
         }
+        
+        this.addEvents(
+            /** api: event[activate]
+             *  Fired when the tool is activated.
+             *
+             *  Listener arguments:
+             *  * tool - :class:`gxp.plugins.Tool` the activated tool
+             */
+            "activate",
+
+            /** api: event[deactivate]
+             *  Fired when the tool is deactivated.
+             *
+             *  Listener arguments:
+             *  * tool - :class:`gxp.plugins.Tool` the deactivated tool
+             */
+            "deactivate"
+        );
+        
         gxp.plugins.Tool.superclass.constructor.apply(this, arguments);
     },
     
@@ -111,7 +142,34 @@ gxp.plugins.Tool = Ext.extend(Ext.util.Observable, {
      */
     init: function(target) {
         this.target = target;
+        this.autoActivate && this.activate();
         this.target.on("portalready", this.addActions, this);
+    },
+    
+    /** api: method[activate]
+     *  :returns: ``Boolean`` true when this tool was activated
+     *
+     *  Activates this tool.
+     */
+    activate: function() {
+        if (this.active === false) {
+            this.active = true;
+            this.fireEvent("activate", this);
+            return true;
+        }
+    },
+    
+    /** api: method[deactivate]
+     *  :returns: ``Boolean`` true when this tool was deactivated
+     *
+     *  Deactivates this tool.
+     */
+    deactivate: function() {
+        if (this.active === true) {
+            this.active = false;
+            this.fireEvent("deactivate", this);
+            return true;
+        }
     },
     
     /** api: method[addActions]
@@ -130,10 +188,14 @@ gxp.plugins.Tool = Ext.extend(Ext.util.Observable, {
         var actionTargets = this.actionTarget instanceof Array ?
             this.actionTarget : [this.actionTarget];
         var a = actions instanceof Array ? actions : [actions];
-        var actionTarget, i, j, parts, ref, item, ct, meth;
+        var actionTarget, i, j, jj, parts, ref, item, ct, meth, index = null;
         for (i=actionTargets.length-1; i>=0; --i) {
             actionTarget = actionTargets[i];
             if (actionTarget) {
+                if (actionTarget instanceof Object) {
+                    index = actionTarget.index;
+                    actionTarget = actionTarget.target;
+                }
                 parts = actionTarget.split(".");
                 ref = parts[0];
                 item = parts.length > 1 && parts[1];
@@ -156,7 +218,7 @@ gxp.plugins.Tool = Ext.extend(Ext.util.Observable, {
                 }
             }
             for (j=0, jj=a.length; j<jj; ++j) {
-                if (!(a[j] instanceof Ext.Action)) {
+                if (!(a[j] instanceof Ext.Action || a[j] instanceof Ext.Component)) {
                     if (typeof a[j] != "string") {
                         a[j] = new Ext.Action(a[j]);
                     }
@@ -171,7 +233,10 @@ gxp.plugins.Tool = Ext.extend(Ext.util.Observable, {
                             {text: action.initialConfig.menuText}
                         );
                     }
-                    action = this.appendActions ? ct.add(action) : ct.insert(0, action);
+                    action = (index === null) ? ct.add(action) : ct.insert(index, action);
+                    if (index !== null) {
+                        index += 1;
+                    }
                     if (this.outputAction != null && j == this.outputAction) {
                         var cmp;
                         action.on("click", function() {
@@ -206,19 +271,28 @@ gxp.plugins.Tool = Ext.extend(Ext.util.Observable, {
 
         config = config || {};
         var ref = this.outputTarget;
-        var ct = ref ?
-            ref == "map" ?
-                this.target.mapPanel :
-                (Ext.getCmp(ref) || this.target.portal[ref]) :
-            new Ext.Window(Ext.apply({
+        var container;
+        if (ref) {
+            if (ref === "map") {
+                container = this.target.mapPanel;
+            } else {
+                container = Ext.getCmp(ref) || this.target.portal[ref];
+            }
+            Ext.apply(config, this.outputConfig);
+        } else {
+            container = new Ext.Window(Ext.apply({
                 hideBorders: true,
                 shadow: false,
                 closeAction: "hide"
             }, this.outputConfig)).show();
-        ref && Ext.apply(config, this.outputConfig);
-        var cmp = ct.add(config);
-        cmp instanceof Ext.Window ? cmp.show() : ct.doLayout();
-        return cmp;
+        }
+        var component = container.add(config);            
+        if (component instanceof Ext.Window) {
+            component.show();
+        } else {
+            container.doLayout();
+        }
+        return component;
     }
     
 });

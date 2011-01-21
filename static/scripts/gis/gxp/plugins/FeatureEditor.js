@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008-2010 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
  * 
  * Published under the BSD license.
  * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
@@ -32,22 +32,38 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
     ptype: "gx_featureeditor",
 
     /** api: config[createFeatureActionTip]
-     * ``String``
-     * Tooltip string for create new feature action (i18n).
+     *  ``String``
+     *  Tooltip string for create new feature action (i18n).
      */
     createFeatureActionTip: "Create a new feature",
+
+    /** api: config[createFeatureActionText]
+     *  ``String``
+     *  Create new feature text.
+     */
     
     /** api: config[editFeatureActionTip]
      *  ``String``
-     * Tooltip string for edit existing feature action (i18n).
+     *  Tooltip string for edit existing feature action (i18n).
      */
     editFeatureActionTip: "Edit existing feature",
+
+    /** api: config[editFeatureActionText]
+     *  ``String``
+     *  Modify feature text.
+     */
 
     /** api: config[featureManager]
      *  ``String`` The id of the :class:`gxp.plugins.FeatureManager` to use
      *  with this tool.
      */
     featureManager: null,
+    
+    /** api: config[snappingAgent]
+     *  ``String`` Optional id of the :class:`gxp.plugins.SnappingAgent` to use
+     *  with this tool.
+     */
+    snappingAgent: null,
     
     /** api: config[readOnly]
      *  ``Boolean`` Set to true to use the FeatureEditor merely as a feature
@@ -71,6 +87,11 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
      *  be. Default is true.
      */
     showSelectedOnly: true,
+    
+    /** api: config[excludeFields]
+     *  ``Array`` Optional list of field names (case sensitive) that are to be
+     *  excluded from the property grid of the FeatureEditPopup.
+     */
     
     /** private: property[drawControl]
      *  ``OpenLayers.Control.DrawFeature``
@@ -104,6 +125,17 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
         var popup;
         var featureManager = this.target.tools[this.featureManager];
         var featureLayer = featureManager.featureLayer;
+
+        // optionally set up snapping
+        var snapId = this.snappingAgent;
+        if (snapId) {
+            var snappingAgent = this.target.tools[snapId];
+            if (snappingAgent) {
+                snappingAgent.addSnappingControl(featureLayer);
+            } else {
+                throw new Error("Unable to locate snapping agent: " + snapId);
+            }
+        }
 
         // intercept calls to methods that change the feature store - allows us
         // to persist unsaved changes before calling the original function
@@ -146,12 +178,21 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
         
         this.drawControl = new OpenLayers.Control.DrawFeature(
             featureLayer,
-            OpenLayers.Handler.Point, {
+            OpenLayers.Handler.Point, 
+            {
                 eventListeners: {
-                    "featureadded": function(evt) {
+                    featureadded: function(evt) {
                         if (this.autoLoadFeatures === true) {
                             this.autoLoadedFeature = evt.feature;
                         }
+                    },
+                    activate: function() {
+                        featureManager.showLayer(
+                            this.id, this.showSelectedOnly && "selected"
+                        );
+                    },
+                    deactivate: function() {
+                        featureManager.hideLayer(this.id);
                     },
                     scope: this
                 }
@@ -167,10 +208,11 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
             multipleKey: "fakeKey",
             eventListeners: {
                 "activate": function() {
-                    (this.autoLoadFeatures === true || featureManager.paging) &&
-                        this.target.mapPanel.map.events.register("click", this,
-                            this.noFeatureClick
+                    if (this.autoLoadFeatures === true || featureManager.paging) {
+                        this.target.mapPanel.map.events.register(
+                            "click", this, this.noFeatureClick
                         );
+                    }
                     featureManager.showLayer(
                         this.id, this.showSelectedOnly && "selected"
                     );
@@ -179,10 +221,11 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
                     );
                 },
                 "deactivate": function() {
-                    (this.autoLoadFeatures === true || featureManager.paging) &&
-                        this.target.mapPanel.map.events.unregister("click",
-                            this, this.noFeatureClick
+                    if (this.autoLoadFeatures === true || featureManager.paging) {
+                        this.target.mapPanel.map.events.unregister(
+                            "click", this, this.noFeatureClick
                         );
+                    }
                     if (popup) {
                         if (popup.editing) {
                             popup.on("cancelclose", function() {
@@ -229,6 +272,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
                         feature: feature,
                         vertexRenderIntent: "vertex",
                         readOnly: this.readOnly,
+                        excludeFields: this.excludeFields,
                         editing: feature.state === OpenLayers.State.INSERT,
                         schema: this.schema,
                         allowDelete: true,
@@ -294,6 +338,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
                 // in the grid.
                 featureManager.featureLayer.events.register("featuresadded", this, function(evt) {
                     featureManager.featureLayer.events.unregister("featuresadded", this, arguments.callee);
+                    this.drawControl.deactivate();
                     this.selectControl.activate();
                     this.selectControl.select(evt.features[0]);
                 });
@@ -304,6 +349,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
         var toggleGroup = this.toggleGroup || Ext.id();
         var actions = gxp.plugins.FeatureEditor.superclass.addActions.call(this, [new GeoExt.Action({
             tooltip: this.createFeatureActionTip,
+            text: this.createFeatureActionText,
             iconCls: "gx-icon-addfeature",
             disabled: true,
             hidden: this.readOnly,
@@ -315,6 +361,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
             map: this.target.mapPanel.map
         }), new GeoExt.Action({
             tooltip: this.editFeatureActionTip,
+            text: this.editFeatureActionText,
             iconCls: "gx-icon-editfeature",
             disabled: true,
             toggleGroup: toggleGroup,
@@ -334,25 +381,50 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
      *  :arg evt: ``Object``
      */
     noFeatureClick: function(evt) {
+        var evtLL = this.target.mapPanel.map.getLonLatFromPixel(evt.xy);
         var featureManager = this.target.tools[this.featureManager];
-        var size = this.target.mapPanel.map.getSize();
-        var layer = this.target.selectedLayer.getLayer();
+        var page = featureManager.page;
+        if (featureManager.paging && page && page.extent.containsLonLat(evtLL)) {
+            // no need to load a different page if the clicked location is
+            // inside the current page bounds
+            return;
+        }
+
+        var layer = featureManager.layerRecord && featureManager.layerRecord.getLayer();
+        if (!layer) {
+            // if the feature manager has no layer currently set, do nothing
+            return;
+        }
+        
+        // construct params for GetFeatureInfo request
+        // layer is not added to map, so we do this manually
+        var map = this.target.mapPanel.map;
+        var size = map.getSize();
+        var params = Ext.applyIf({
+            REQUEST: "GetFeatureInfo",
+            BBOX: map.getExtent().toBBOX(),
+            WIDTH: size.w,
+            HEIGHT: size.h,
+            X: evt.xy.x,
+            Y: evt.xy.y,
+            QUERY_LAYERS: layer.params.LAYERS,
+            INFO_FORMAT: "application/vnd.ogc.gml",
+            EXCEPTIONS: "application/vnd.ogc.se_xml",
+            FEATURE_COUNT: 1
+        }, layer.params);
+        var projectionCode = map.getProjection();
+        if (parseFloat(layer.params.VERSION) >= 1.3) {
+            params.CRS = projectionCode;
+        } else {
+            params.SRS = projectionCode;
+        }
+        
         var store = new GeoExt.data.FeatureStore({
             fields: {},
             proxy: new GeoExt.data.ProtocolProxy({
                 protocol: new OpenLayers.Protocol.HTTP({
-                    url: layer.getFullRequestString({
-                        REQUEST: "GetFeatureInfo",
-                        BBOX: this.target.mapPanel.map.getExtent().toBBOX(),
-                        WIDTH: size.w,
-                        HEIGHT: size.h,
-                        X: evt.xy.x,
-                        Y: evt.xy.y,
-                        QUERY_LAYERS: layer.params.LAYERS,
-                        INFO_FORMAT: "application/vnd.ogc.gml",
-                        EXCEPTIONS: "application/vnd.ogc.se_xml",
-                        FEATURE_COUNT: 1
-                    }),
+                    url: (typeof layer.url === "string") ? layer.url : layer.url[0],
+                    params: params,
                     format: new OpenLayers.Format.WMSGetFeatureInfo()
                 })
             }),
@@ -365,7 +437,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
                             fids: [fid] 
                         });
 
-                        autoLoad = function() {
+                        var autoLoad = function() {
                             featureManager.loadFeatures(
                                 filter, function(features) {
                                     this.autoLoadedFeature = features[0];

@@ -25,8 +25,7 @@ if not session.s3:
 ###############
 def s3_is_mobile_client(request):
     """
-    Test if client is a mobile device
-
+        Simple UA Test whether client is a mobile device
     """
 
     if request.env.http_x_wap_profile or request.env.http_profile:
@@ -46,10 +45,9 @@ if session.s3.mobile is None:
 
 def s3_populate_browser_compatibility(request):
     """
-    Use WURFL for browser compatibility detection
+        Use WURFL for browser compatibility detection
 
-    @todo: define a list of features to store
-
+        @ToDo: define a list of features to store
     """
 
     features = Storage(
@@ -80,16 +78,17 @@ def s3_populate_browser_compatibility(request):
     return browser
 
 # Store in session
-if session.s3.browser is None:
-    session.s3.browser = s3_populate_browser_compatibility(request)
+# - commented-out until we make use of it
+#if session.s3.browser is None:
+#    session.s3.browser = s3_populate_browser_compatibility(request)
 
 ##################
 # Global variables
 ##################
 
 # Interactive view formats
-shn_interactive_view_formats = ("html", "popup", "iframe")
-s3.interactive_view_formats = shn_interactive_view_formats
+s3.interactive_view_formats = ("html", "popup", "iframe")
+shn_interactive_view_formats = s3.interactive_view_formats  # backwards-compatibility
 
 # Error messages
 UNAUTHORISED = T("Not authorised!")
@@ -126,11 +125,13 @@ s3.l10n_languages = deployment_settings.get_L10n_languages()
 
 # Default strings are in US English
 T.current_languages = ["en", "en-us"]
+language = "en"
 # Check if user has selected a specific language
 if request.vars._language:
     session.s3.language = request.vars._language
 if session.s3.language:
-    T.force(session.s3.language)
+    language = session.s3.language
+    T.force(language)
 elif auth.is_logged_in():
     # Use user preference
     language = auth.user.language
@@ -138,6 +139,19 @@ elif auth.is_logged_in():
 #else:
 #    # Use what browser requests (default web2py behaviour)
 #    T.force(T.http_accept_language)
+
+# Store for views (e.g. Ext)
+if language.find("-") == -1:
+    # Ext peculiarities
+    if language == "vi":
+        response.s3.language = "vn"
+    elif language == "el":
+        response.s3.language = "el_GR"
+    else:
+        response.s3.language = language
+else:
+    lang_parts = language.split("-")
+    response.s3.language = "%s_%s" % (lang_parts[0], lang_parts[1].upper())
 
 # List of Languages which use a Right-to-Left script (Arabic, Hebrew, Farsi, Urdu)
 s3_rtl_languages = ["ur"]
@@ -182,7 +196,7 @@ if deployment_settings.get_auth_openid():
     except ImportError:
         session.warning = T("Library support not available for OpenID")
 
-auth.settings.expiration = 14400  # seconds
+auth.settings.expiration = 28800  # seconds
 # Require captcha verification for registration
 #auth.settings.captcha = RECAPTCHA(request, public_key="PUBLIC_KEY", private_key="PRIVATE_KEY")
 # Require Email Verification

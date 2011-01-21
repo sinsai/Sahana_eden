@@ -1209,7 +1209,7 @@ class Locations(SahanaTest):
         """ Search for Locations using the Autocomplete """
 
         # @ToDo: Verify that the result is stored correctly
-        # How do we get name from number without submitting? SHould we just submit every time?
+        # How do we get name from number without submitting? Should we just submit every time?
 
         shelterName = self.makeNameUnique("Shelter L2inL0")
         search = self.makeNameUnique("L2inL0")

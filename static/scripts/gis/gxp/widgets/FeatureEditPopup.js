@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008-2010 The Open Planning Project
+ * Copyright (c) 2008-2011 The Open Planning Project
  * 
  * Published under the BSD license.
  * See https://github.com/opengeo/gxp/raw/master/license.txt for the full text
@@ -59,6 +59,11 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
      *  the attributes that the feature has currently set.
      */
     schema: null,
+    
+    /** api: config[excludeFields]
+     *  ``Array`` Optional list of field names (case sensitive) that are to be
+     *  excluded from the property grid.
+     */
     
     /** api: config[readOnly]
      *  ``Boolean`` Set to true to disable editing. Default is false.
@@ -167,6 +172,7 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
         this.anchored = !this.editing;
         
         var customEditors = {};
+        var customRenderers = {};
         if(this.schema) {
             var attributes = {};
             var name, type, value;
@@ -180,6 +186,23 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
                 value = feature.attributes[name];
                 switch(type) {
                     case "string":
+                        break;
+                    case "date":
+                        customEditors[name] = new Ext.grid.GridEditor(
+                            new Ext.form.DateField({
+                                format: "Y-m-d",
+                                altFormats: "Y-m-d\\Z"
+                            })
+                        );
+                        customRenderers[name] = function(v) {
+                            //TODO see if there i a higher level component that
+                            // would help us here
+                            var value = v;
+                            if (!(value instanceof Date)) {
+                                value = Date.parseDate(v, "Y-m-d\\Z");
+                            }
+                            return value ? value.format("Y-m-d") : v;
+                        }
                         break;
                     case "boolean":
                         //TODO nodata handling for Boolean
@@ -248,10 +271,20 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
             scope: this
         });
         
+        var excludeFields = this.excludeFields;
         this.grid = new Ext.grid.PropertyGrid({
             border: false,
             source: feature.attributes,
             customEditors: customEditors,
+            customRenderers: customRenderers,
+            viewConfig: {
+                forceFit: true,
+                getRowClass: function(record) {
+                    if (excludeFields && excludeFields.indexOf(record.get("name")) !== -1) {
+                        return "x-hide-nosize";
+                    }
+                }
+            },
             listeners: {
                 "beforeedit": function() {
                     return this.editing;
@@ -377,6 +410,9 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
             );
             this.feature.layer.map.addControl(this.modifyControl);
             this.modifyControl.activate();
+            //TODO remove the line below when
+            // http://trac.osgeo.org/openlayers/ticket/3009 is fixed
+            this.modifyControl.beforeSelectFeature(this.feature);
             this.modifyControl.selectFeature(this.feature);
         }
     },
@@ -395,6 +431,19 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
             var feature = this.feature;
             if (feature.state === this.getDirtyState()) {
                 if (save === true) {
+                    //TODO consider handling date types in the OpenLayers.Format
+                    if (this.schema) {
+                        var attribute, rec;
+                        for (var i in feature.attributes) {
+                            rec = this.schema.getAt(this.schema.findExact("name", i));
+                            if (this.getFieldType(rec.get("type")) == "date") {
+                                attribute = feature.attributes[i];
+                                if (attribute instanceof Date) {
+                                    feature.attributes[i] = attribute.format("Y-m-d\\Z");
+                                }
+                            }
+                        }
+                    }
                     this.fireEvent("featuremodified", this, feature);
                 } else if(feature.state === OpenLayers.State.INSERT) {
                     this.editing = false;

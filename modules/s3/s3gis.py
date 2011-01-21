@@ -1421,11 +1421,19 @@ class GIS(object):
                 try:
                     shape = wkt_loads(form.vars.wkt)
                 except:
-                    if form.vars.gis_feature_type  == "2":
-                        form.errors["wkt"] = self.messages.invalid_wkt_linestring
+                    if form.vars.gis_feature_type  == "3":
+                        # POLYGON
+                        try:
+                            # Perhaps this is really a LINESTRING (e.g. OSM import of an unclosed Way)
+                            linestring = "LINESTRING%s" % form.vars.wkt[8:-1]
+                            shape = wkt_loads(linestring)
+                            form.vars.gis_feature_type = 2
+                            form.vars.wkt = linestring
+                        except:
+                            form.errors["wkt"] = self.messages.invalid_wkt_polygon
                     else:
-                        # "3"
-                        form.errors["wkt"] = self.messages.invalid_wkt_polygon
+                        # "2"
+                        form.errors["wkt"] = self.messages.invalid_wkt_linestring
                     return
                 centroid_point = shape.centroid
                 form.vars.lon = centroid_point.x

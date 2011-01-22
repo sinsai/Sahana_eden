@@ -9,6 +9,8 @@
 module = "hms"
 if deployment_settings.has_module(module):
 
+    from gluon.sql import Row
+
     # -----------------------------------------------------------------------------
     # Hospitals
     #

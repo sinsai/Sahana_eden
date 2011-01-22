@@ -129,7 +129,8 @@ class S3XML(object):
         type="type",
         readable="readable",
         writable="writable",
-        has_options="has_options"
+        has_options="has_options",
+        tuid="tuid"
     )
 
     ACTION = Storage(
@@ -714,6 +715,10 @@ class S3XML(object):
                 continue
 
             uids = r.get(self.UID, None)
+            attr = self.UID
+            if not uids:
+                uids = r.get(self.ATTRIBUTE.tuid, None)
+                attr = self.ATTRIBUTE.tuid
             if uids and multiple:
                 uids = uids.strip("|").split("|")
             elif uids:
@@ -741,7 +746,7 @@ class S3XML(object):
                         expr = './/%s[@%s="%s" and @%s="%s"]' % (
                                 self.TAG.resource,
                                 self.ATTRIBUTE.name, resource,
-                                self.UID, uid)
+                                attr, uid)
                         e = root.xpath(expr)
                         if e:
                             relements.append(e[0])
@@ -749,16 +754,21 @@ class S3XML(object):
                     else:
                         reference_list.append(Storage(field=field, entry=entry))
 
-                _uids = map(self.import_uid, uids)
-                records = self.db(ktable[self.UID].belongs(_uids)).select(ktable.id, ktable[self.UID])
-                id_map = dict()
-                map(lambda r: id_map.update({r[self.UID]:r.id}), records)
+                if attr == self.UID:
+                    _uids = map(self.import_uid, uids)
+                    records = self.db(ktable[self.UID].belongs(_uids)).select(ktable.id, ktable[self.UID])
+                    id_map = dict()
+                    map(lambda r: id_map.update({r[self.UID]:r.id}), records)
 
             for relement in relements:
 
-                uid = relement.get(self.UID, None)
-                _uid = self.import_uid(uid)
-                id = _uid and id_map and id_map.get(_uid, None) or None
+                uid = relement.get(attr, None)
+                if attr == self.UID:
+                    _uid = self.import_uid(uid)
+                    id = _uid and id_map and id_map.get(_uid, None) or None
+                else:
+                    _uid = None
+                    id = None
 
                 entry = dict(job=None,
                              resource=resource,

@@ -38,7 +38,7 @@
 
 __all__ = ["S3XML"]
 
-import sys
+import sys, csv
 from gluon.storage import Storage
 from gluon.validators import IS_EMPTY_OR
 import gluon.contrib.simplejson as json
@@ -99,7 +99,10 @@ class S3XML(object):
         field="field",
         option="option",
         options="options",
-        fields="fields"
+        fields="fields",
+        table="table",
+        row="row",
+        col="col"
     )
 
     ATTRIBUTE = Storage(
@@ -1247,6 +1250,33 @@ class S3XML(object):
             return "\n".join([l.rstrip() for l in js.splitlines()])
         else:
             return json.dumps(root_dict)
+
+
+    # -------------------------------------------------------------------------
+    def csv2tree(self, source,
+                 format=None,
+                 delimiter=",",
+                 quotechar='"'):
+
+        source.seek(0)
+        reader = csv.DictReader(source,
+                                delimiter=delimiter,
+                                quotechar=quotechar)
+
+        if format is None:
+            format = "s3csv"
+        root = etree.Element(self.TAG.table)
+        root.set(self.ATTRIBUTE.name, format)
+        for r in reader:
+            row = etree.SubElement(root, self.TAG.row)
+            for k in r:
+                col = etree.SubElement(row, self.TAG.col)
+                col.set(self.ATTRIBUTE.field, k)
+                if r[k].lower() not in ("null", "<null>", "none"):
+                    text = self.xml_encode(unicode(r[k].decode("utf-8")))
+                    col.text = text
+
+        return  etree.ElementTree(root)
 
 
     # -------------------------------------------------------------------------

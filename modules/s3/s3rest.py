@@ -1234,9 +1234,12 @@ class S3Resource(object):
         vars = r.request.vars
 
         json_formats = self.manager.json_formats
+        csv_formats = self.manager.csv_formats
 
         # Get the source
-        if r.representation in json_formats:
+        format = r.representation
+        if format in json_formats or \
+           format in csv_formats:
             if "filename" in vars:
                 source = open(vars["filename"])
             elif "fetchurl" in vars:
@@ -1244,10 +1247,14 @@ class S3Resource(object):
                 source = urllib.urlopen(vars["fetchurl"])
             else:
                 source = self.__read_body(r)
-            format = r.representation
-            if format == "json":
-                format = None
-            tree = xml.json2tree(source, format=format)
+            if format in json_formats:
+                if format == "s3json":
+                    format = None
+                tree = xml.json2tree(source, format=format)
+            elif format in csv_formats:
+                if format == "s3csv":
+                    format = None
+                tree = xml.csv2tree(source, format=format)
         else:
             if "filename" in vars:
                 source = vars["filename"]

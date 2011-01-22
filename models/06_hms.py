@@ -157,7 +157,9 @@ if deployment_settings.has_module(module):
     table.gov_uuid.label = T("Government UID")
     table.gov_uuid.requires = IS_NULL_OR(IS_NOT_ONE_OF(db, "%s.gov_uuid" % tablename))
     table.name.label = T("Name")
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
+    # Hospital names do not have to be unique (same name, different locations/IDs)
+    #table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
+    table.name.requires = IS_NOT_EMPTY()
     table.aka1.label = T("Other Name")
     table.aka2.label = T("Other Name")
     table.address.label = T("Address")

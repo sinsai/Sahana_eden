@@ -52,9 +52,6 @@
     <!-- Hospital -->
     <xsl:template match="row">
         <xsl:if test="./col[@field='name']/text()!=''">
-            <xsl:call-template name="HospitalID">
-                <xsl:with-param name="field">gov_uuid</xsl:with-param>
-            </xsl:call-template>
             <xsl:variable name="facility_type">
                 <xsl:choose>
                     <xsl:when test="./col[@field='category']/text()='HOSPITAL'">1</xsl:when>
@@ -64,6 +61,9 @@
             </xsl:variable>
             <xsl:if test="$facility_type!='98'">
                 <resource name="hms_hospital">
+                    <xsl:call-template name="HospitalID">
+                        <xsl:with-param name="field">gov_uuid</xsl:with-param>
+                    </xsl:call-template>
                     <data field="name">
                         <xsl:value-of select="./col[@field='name']"/>
                     </data>

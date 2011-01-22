@@ -1258,7 +1258,6 @@ class S3XML(object):
                  delimiter=",",
                  quotechar='"'):
 
-        source.seek(0)
         reader = csv.DictReader(source,
                                 delimiter=delimiter,
                                 quotechar=quotechar)

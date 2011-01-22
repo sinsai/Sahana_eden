@@ -154,8 +154,9 @@ class S3ResourceController(object):
         self.resolve = None
         self.log = None
 
-        # JSON formats and content-type headers
+        # JSON/CSV formats and content-type headers
         self.json_formats = []
+        self.csv_formats = []
         self.content_type = Storage()
 
 

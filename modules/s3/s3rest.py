@@ -907,8 +907,8 @@ class S3Resource(object):
             # Put a copy of r into the output for the View to be able to make use of
             output.update(jr=r)
 
-        # Redirection (makes no sense in GET)
-        if r.next is not None and r.http != "GET":
+        # Redirection
+        if r.next is not None and (r.http != "GET" or r.method == "clear"):
             if isinstance(output, dict):
                 form = output.get("form", None)
                 if form and form.errors:
@@ -932,14 +932,11 @@ class S3Resource(object):
         """
 
         method = r.method
-        #permit = self.permit
-
         model = self.manager.model
 
         tablename = r.component and r.component.tablename or r.tablename
 
         if method is None or method in ("read", "display"):
-            #authorised = permit("read", tablename)
             if self.__transformable(r):
                 method = "export_tree"
             elif r.component:
@@ -963,22 +960,11 @@ class S3Resource(object):
                     method = "list"
 
         elif method in ("create", "update"):
-            #authorised = permit(method, tablename)
-            # @todo 2.3: Add user confirmation here:
             if self.__transformable(r, method="import"):
                 method = "import_tree"
 
-        #elif method == "copy":
-            #authorised = permit("create", tablename)
-
         elif method == "delete":
             return self.__delete(r)
-
-        #elif method in ("options", "fields", "search", "barchart"):
-            #authorised = permit("read", tablename)
-
-        elif method in ("options", "fields", "search", "copy", "barchart"):
-            pass
 
         elif method == "clear" and not r.component:
             self.manager.clear_session(self.prefix, self.name)
@@ -995,14 +981,8 @@ class S3Resource(object):
                              vars=request_vars)
             else:
                 r.next = URL(r=r.request, f=self.name)
-            return None
+            return lambda r, **attr: None
 
-        else:
-            r.error(501, self.ERROR.BAD_METHOD)
-
-        #if not authorised:
-            #r.unauthorised()
-        #else:
         return self.get_handler(method)
 
 
@@ -1015,14 +995,7 @@ class S3Resource(object):
 
         """
 
-        #permit = self.permit
-
         if self.__transformable(r, method="import"):
-            #authorised = permit("create", self.tablename) and \
-                         #permit("update", self.tablename)
-            #if not authorised:
-                #r.unauthorised()
-            #else:
             return self.get_handler("import_tree")
         else:
             r.error(501, self.ERROR.BAD_FORMAT)
@@ -1261,9 +1234,12 @@ class S3Resource(object):
         vars = r.request.vars
 
         json_formats = self.manager.json_formats
+        csv_formats = self.manager.csv_formats
 
         # Get the source
-        if r.representation in json_formats:
+        format = r.representation
+        if format in json_formats or \
+           format in csv_formats:
             if "filename" in vars:
                 source = open(vars["filename"])
             elif "fetchurl" in vars:
@@ -1271,10 +1247,14 @@ class S3Resource(object):
                 source = urllib.urlopen(vars["fetchurl"])
             else:
                 source = self.__read_body(r)
-            format = r.representation
-            if format == "json":
-                format = None
-            tree = xml.json2tree(source, format=format)
+            if format in json_formats:
+                if format == "s3json":
+                    format = None
+                tree = xml.json2tree(source, format=format)
+            elif format in csv_formats:
+                if format == "s3csv":
+                    format = None
+                tree = xml.csv2tree(source, format=format)
         else:
             if "filename" in vars:
                 source = vars["filename"]

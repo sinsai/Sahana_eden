@@ -2630,7 +2630,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     // Size for Unclustered Point
                     var pix = 12;
                     // Size for Clustered Point
-                    if(feature.cluster) {
+                    if (feature.cluster) {
                         pix = Math.min(feature.attributes.count/2, 8) + 12;
                     }
                     return pix;
@@ -2639,7 +2639,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     // fillColor for Unclustered Point
                     var color = '#f5902e';
                     // fillColor for Clustered Point
-                    if(feature.cluster) {
+                    if (feature.cluster) {
                         color = '#8087ff';
                     }
                     return color;
@@ -2648,7 +2648,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     // strokeColor for Unclustered Point
                     var color = '#f5902e';
                     // strokeColor for Clustered Point
-                    if(feature.cluster) {
+                    if (feature.cluster) {
                         color = '#2b2f76';
                     }
                     return color;
@@ -2657,7 +2657,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     // Label For Unclustered Point or Cluster of just 2
                     var label = '';
                     // Label For Clustered Point
-                    if(feature.cluster && feature.attributes.count > 2) {
+                    if (feature.cluster && feature.attributes.count > 2) {
                         label = feature.attributes.count;
                     }
                     return label;
@@ -3150,13 +3150,11 @@ OpenLayers.Util.extend( selectPdfControl, {
                 style_marker.strokeOpacity = 1;
             } else {
                 // Set icon dims (set in onload)
-                width = image.width;
-                height = image.height;
+                style_marker.graphicWidth = image.width;
+                style_marker.graphicHeight = image.height;
+                style_marker.graphicXOffset = -(image.width / 2);
+                style_marker.graphicYOffset = -image.height;
                 style_marker.graphicOpacity = 1;
-                style_marker.graphicWidth = width;
-                style_marker.graphicHeight = height;
-                style_marker.graphicXOffset = -(width / 2);
-                style_marker.graphicYOffset = -height;
                 style_marker.externalGraphic = styleMarker.iconURL;
             }
             // Create Feature Vector
@@ -3174,7 +3172,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             var feature = event.feature;
             var id = 'featureLayerPopup';
             centerPoint = feature.geometry.getBounds().getCenterLonLat();
-            if(feature.cluster) {
+            if (feature.cluster) {
                 // Cluster
                 var name, fid, uuid, url;
                 var html = '""" + T("There are multiple records at this location") + """:<ul>';
@@ -3210,7 +3208,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     id,
                     centerPoint,
                     new OpenLayers.Size(200, 200),
-                    "Loading...<img src='""" + URL(r=request, c="static", f="img", args="ajax-loader.gif") + """' border=0>",
+                    """ + '"' + T("Loading") + """...<img src='""" + URL(r=request, c="static", f="img", args="ajax-loader.gif") + """' border=0>",
                     null,
                     true,
                     onPopupClose
@@ -3515,7 +3513,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 layers_features += """
         featureLayer""" + name_safe + """.addFeatures(features);
         """
-            # Append to Features section
+            # Append to allLayers
             layers_features += """
         allLayers = allLayers.concat(featureLayers);
         """
@@ -3530,8 +3528,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_kml = ""
         if catalogue_overlays:
             # GeoRSS
-            query = (db.gis_layer_georss.enabled == True) # No deletable field
-            georss_enabled = db(query).select()
+            georss_enabled = db(db.gis_layer_georss.enabled == True).select()
             if georss_enabled:
                 layers_georss += """
         var georssLayers = new Array();
@@ -3926,10 +3923,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             # Coordinate Grid
             coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select(db.gis_layer_coordinate.name, db.gis_layer_coordinate.visible, db.gis_layer_coordinate.role_required)
             if coordinate_enabled:
+                layer = coordinate_enabled.first()
                 if layer.role_required and not auth.s3_has_role(layer.role_required):
                     pass
                 else:
-                    layer = coordinate_enabled.first()
                     name = layer["name"]
                     # Generate HTML snippet
                     name_safe = re.sub("\W", "_", name)
@@ -3991,9 +3988,9 @@ OpenLayers.Util.extend( selectPdfControl, {
     function zoomToSelectedFeature(lon, lat, zoomfactor) {
         var lonlat = new OpenLayers.LonLat(lon, lat);
         // Get Current Zoom
-        currZoom = map.getZoom();
+        var currZoom = map.getZoom();
         // New Zoom
-        newZoom = currZoom + zoomfactor;
+        var newZoom = currZoom + zoomfactor;
         // Center and Zoom
         map.setCenter(lonlat, newZoom);
         // Remove Popups
@@ -4096,23 +4093,23 @@ OpenLayers.Util.extend( selectPdfControl, {
     // Supports highlightControl for All Vector Layers
     var lastFeature = null;
     var tooltipPopup = null;
-    function tooltipSelect(event){
+    function tooltipSelect(event) {
         var feature = event.feature;
-        if(feature.cluster) {
+        if (feature.cluster) {
             // Cluster
             // no tooltip
         } else {
             // Single Feature
             var selectedFeature = feature;
             // if there is already an opened details window, don\'t draw the tooltip
-            if(feature.popup != null){
+            if (feature.popup != null) {
                 return;
             }
             // if there are other tooltips active, destroy them
-            if(tooltipPopup != null){
+            if (tooltipPopup != null) {
                 map.removePopup(tooltipPopup);
                 tooltipPopup.destroy();
-                if(lastFeature != null){
+                if (lastFeature != null) {
                     delete lastFeature.popup;
                     tooltipPopup = null;
                 }
@@ -4173,7 +4170,7 @@ OpenLayers.Util.extend( selectPdfControl, {
     }
     function tooltipUnselect(event){
         var feature = event.feature;
-        if(feature != null && feature.popup != null){
+        if (feature != null && feature.popup != null) {
             map.removePopup(feature.popup);
             feature.popup.destroy();
             delete feature.popup;
@@ -4191,7 +4188,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         map.addControl(new OpenLayers.Control.Permalink());
         map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
 
-        // Popups
+        // Popups (add these after the layers)
         // onClick Popup
         popupControl = new OpenLayers.Control.SelectFeature(
             allLayers, {

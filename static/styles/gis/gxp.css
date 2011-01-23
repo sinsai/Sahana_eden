@@ -70,7 +70,7 @@
     background-image: url(../../img/gis/silk/delete.png);
 }
 
-/* gx_featuregrid */
+/* gxp_zoomtodataextent, gxp_zoomtoselectedfeatures */
 .x-btn .gx-icon-zoom-to, .x-menu-item .gx-icon-zoom-to { 
     background-image: url(../../img/silk/magnifier.png);
 }

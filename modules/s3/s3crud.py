@@ -2,7 +2,7 @@
 
 """ RESTful CRUD Methods (S3XRC)
 
-    @version: 2.3.3
+    @version: 2.3.4
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
@@ -10,7 +10,7 @@
 
     @author: Dominic König <dominic[at]aidiq.com>
 
-    @copyright: 2009-2010 (c) Sahana Software Foundation
+    @copyright: 2009-2011 (c) Sahana Software Foundation
     @license: MIT
 
     Permission is hereby granted, free of charge, to any person
@@ -773,7 +773,7 @@ class S3CRUD(S3Method):
 
             # SSPag?
             if not response.s3.no_sspag:
-                limit = 1 
+                limit = 1
                 session.s3.filter = request.get_vars
 
             # Add hidden add-form (do this before retrieving the list!)

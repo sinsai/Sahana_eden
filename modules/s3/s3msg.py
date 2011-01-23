@@ -11,7 +11,7 @@
 
     @author: Praneeth Bodduluri <lifeeth[at]gmail.com>
 
-    @copyright: 2009-2010 (c) Sahana Software Foundation
+    @copyright: 2009-2011 (c) Sahana Software Foundation
     @license: MIT
 
     Permission is hereby granted, free of charge, to any person
@@ -194,7 +194,7 @@ class S3Msg(object):
                 pass
 
         return None
-    
+
     def send_text_via_twitter(self, recipient, text=""):
         """
             Function to send text to recipient via direct message (if recipient follows us).
@@ -209,7 +209,7 @@ class S3Msg(object):
         if twitter_settings:
             twitter_api = twitter_settings["twitter_api"]
             twitter_account = twitter_settings["twitter_account"]
-        
+
         if not twitter_api and text:
             # Abort
             return False
@@ -238,7 +238,7 @@ class S3Msg(object):
                     s3_debug("Unable to Tweet @mention")
         return True
 
-    #-------------------------------------------------------------------------------------------------     
+    #-------------------------------------------------------------------------------------------------
     def send_text_via_tropo(self, row_id, message_id, recipient, message, network = "SMS"):
         """
             Send a URL request to Tropo to pick a message up
@@ -461,7 +461,7 @@ class S3Msg(object):
                                          system_generated = True)
                 status = True
                 chainrun = True
-            
+
             elif entity_type == "org_organisation":
                 # Take the entities of it and add in the messaging queue - with
                 # sender as the original sender and marks group email processed
@@ -502,34 +502,34 @@ class S3Msg(object):
         return
 
 
-    #-------------------------------------------------------------------------    
+    #-------------------------------------------------------------------------
     def receive_subscribed_tweets(self):
         """
             Function  to call to drop the tweets into search_results table - called via cron
         """
-        
+
         # Initialize Twitter API
         twitter_settings = self.get_twitter_api()
 
         twitter_api = None
         if twitter_settings:
             twitter_api = twitter_settings["twitter_api"]
-        
+
         if not twitter_api:
             # Abort
             return False
 
         db = self.db
         table = db.msg_twitter_search
-        rows = db().select(table.ALL)     
-                
+        rows = db().select(table.ALL)
+
         results_table = db.msg_twitter_search_results
-        
+
         # Get the latest updated post time to use it as since_id in twitter search
         recent_time = results_table.posted_by.max()
 
         for row in rows:
-            query = row.search_query 
+            query = row.search_query
             try:
                 if recent_time:
                     search_results = twitter_api.search(query, result_type="recent", show_user=True, since_id=recent_time)
@@ -540,8 +540,8 @@ class S3Msg(object):
 
                 for result in search_results:
                     # Check if the tweet already exists in the table
-                    tweet_exists = db((results_table.posted_by == result.from_user) & (results_table.posted_at == result.created_at )).select().first()  
-                    
+                    tweet_exists = db((results_table.posted_by == result.from_user) & (results_table.posted_at == result.created_at )).select().first()
+
                     if tweet_exists:
                         continue
                     else:
@@ -549,14 +549,14 @@ class S3Msg(object):
                                              posted_by = result.from_user,
                                              posted_at = result.created_at,
                                              twitter_search = row.id
-                                            ) 
+                                            )
             except tweepy.TweepError:
                 s3_debug("Unable to get the Tweets for the user search query.")
                 return False
 
             # Explicitly commit DB operations when running from Cron
             db.commit()
-            
+
         return True
 
     #------------------------------------------------------------------------

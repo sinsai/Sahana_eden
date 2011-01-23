@@ -2,7 +2,7 @@
 
 """ Resource Import Toolkit (S3XRC)
 
-    @version: 2.3.3
+    @version: 2.3.4
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
@@ -10,7 +10,7 @@
 
     @author: Dominic König <dominic[at]aidiq.com>
 
-    @copyright: 2009-2010 (c) Sahana Software Foundation
+    @copyright: 2009-2011 (c) Sahana Software Foundation
     @license: MIT
 
     Permission is hereby granted, free of charge, to any person
@@ -181,24 +181,22 @@ class S3Importer(object):
     def xml(self, resource, source,
             files=None,
             id=None,
-            template=None,
-            as_json=False,
-            as_csv=False,
+            format="xml",
+            stylesheet=None,
             ignore_errors=False, **args):
         """
-        Import data from an XML source into a resource
+        XML Importer
 
-        @param resource: the resource to import to
-        @param source: the XML source (or ElementTree)
-        @param files: file attachments as {filename:file}
-        @param id: the ID or list of IDs of records to update (None for all)
-        @param template: the XSLT template
-        @param as_json: source is JSONified XML
-        @param ignore_errors: do not stop at errors (skip invalid elements)
-        @param args: arguments to pass to the XSLT template
-
-        @raise SyntaxError: in case of a parser or transformation error
-        @raise IOError: at insufficient permissions
+        @param resource: the target resource
+        @param source: the data source, accepts source=xxx, source=[xxx, yyy, zzz] or
+                       source=[(resourcename1, xxx), (resourcename2, yyy)], where the
+                       xxx has to be either an ElementTree or a file-like object
+        @param files: attached files (None to read in the HTTP request)
+        @param id: ID (or list of IDs) of the record(s) to update (performs only update)
+        @param format: type of source = "xml", "json" or "csv"
+        @param stylesheet: stylesheet to use for transformation
+        @param ignore_errors: skip invalid records silently
+        @param args: parameters to pass to the transformation stylesheet
 
         """
 
@@ -211,43 +209,63 @@ class S3Importer(object):
         if not authorised:
             raise IOError("Insufficient permissions")
 
-        # Get the tree
-        if isinstance(source, etree._ElementTree):
-            tree = source
-        elif as_json:
-            if isinstance(source, basestring):
-                from StringIO import StringIO
-                source = StringIO(source)
-                tree = xml.json2tree(source)
+        # Resource data
+        prefix = resource.prefix
+        name = resource.name
+
+        # Additional stylesheet parameters
+        tfmt = self.manager.xml.ISOFORMAT
+        utcnow = datetime.datetime.utcnow().strftime(tfmt)
+        domain = self.manager.domain
+        base_url = self.manager.s3.base_url
+        args.update(domain=domain,
+                    base_url=base_url,
+                    prefix=prefix,
+                    name=name,
+                    utcnow=utcnow)
+
+        # Build import tree
+        if not isinstance(source, (list, tuple)):
+            source = [source]
+        tree = None
+        for item in source:
+            if isinstance(item, (list, tuple)):
+                resourcename, s = item[:2]
             else:
-                tree = xml.json2tree(source)
-        elif as_csv:
-            tree = xml.csv2tree(source)
-        else:
-            tree = xml.parse(source)
-        if not tree:
-            raise SyntaxError("Invalid source")
+                resourcename, s = None, item
+            if isinstance(s, etree._ElementTree):
+                t = s
+            elif format == "json":
+                if isinstance(s, basestring):
+                    from StringIO import StringIO
+                    source = StringIO(s)
+                    t = xml.json2tree(s)
+                else:
+                    t = xml.json2tree(s)
+            elif format == "csv":
+                t = xml.csv2tree(s, resourcename=resourcename)
+            else:
+                t = xml.parse(s)
+            if not t:
+                raise SyntaxError("Invalid source")
 
-        # XSLT transformation
-        if template is not None:
-            tfmt = self.manager.xml.ISOFORMAT
-            args.update(domain=self.manager.domain,
-                        base_url=self.manager.s3.base_url,
-                        prefix=resource.prefix,
-                        name=resource.name,
-                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
-            tree = xml.transform(tree, template, **args)
+            if stylesheet is not None:
+                t = xml.transform(t, stylesheet, **args)
+                if not t:
+                    raise SyntaxError(xml.error)
             if not tree:
-                raise SyntaxError(xml.error)
-
-        # Attach files
-        if files is not None and isinstance(files, dict):
-            resource.files = Storage(files)
+                tree = t.getroot()
+            else:
+                tree.extend(list(t.getroot()))
 
         # Import the tree
+        if files is not None and isinstance(files, dict):
+            resource.files = Storage(files)
         success = self.manager.import_tree(resource, id, tree,
-                                             ignore_errors=ignore_errors)
+                                           ignore_errors=ignore_errors)
+        resource.files = Storage()
 
+        # Response message
         if success:
             return xml.json_message()
         else:
@@ -256,11 +274,6 @@ class S3Importer(object):
                                    message=self.manager.error,
                                    tree=tree)
             return msg
-
-        # Remove the attached files
-        resource.files = Storage()
-
-        return success
 
 
 # *****************************************************************************

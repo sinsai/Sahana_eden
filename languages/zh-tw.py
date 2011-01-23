@@ -3908,6 +3908,7 @@
 'Theme updated': 'Theme updated',
 'Themes': 'Themes',
 'There are errors': 'There are errors',
+'There are multiple records at this location': 'There are multiple records at this location',
 'There are not sufficient items in the store to send this shipment': 'There are not sufficient items in the store to send this shipment',
 'There are several ways which you can use to select the Location.': 'There are several ways which you can use to select the Location.',
 'There is no Sahana account associated with that OpenID. Would you like to create one?': 'There is no Sahana account associated with that OpenID. Would you like to create one?',

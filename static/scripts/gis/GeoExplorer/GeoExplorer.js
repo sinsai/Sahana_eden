@@ -547,7 +547,7 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
             },
             items: [
                 this.mapPanel,
-                googleEarthPanel
+                //googleEarthPanel
             ],
             activeItem: 0
         });

@@ -3481,6 +3481,7 @@
 'Theme updated': 'Theme updated',
 'Themes': 'Themes',
 'There are errors': 'There are errors',
+'There are multiple records at this location': 'There are multiple records at this location',
 'There are not sufficient items in the store to send this shipment': 'There are not sufficient items in the store to send this shipment',
 'There was a problem, sorry, please try again later.': 'There was a problem, sorry, please try again later.',
 'These are settings for Inbound Mail.': 'Αυτές είναι οι ρυθμίσεις για εισερχόμενη αλληογγραφία (Mail)',

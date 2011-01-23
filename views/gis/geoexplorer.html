@@ -53,6 +53,8 @@
     Ext.BLANK_IMAGE_URL = '/{{=request.application}}/static/img/gis/openlayers/blank.gif';
     OpenLayers.DOTS_PER_INCH = 25.4 / 0.28; // OGC "standardized rendering pixel size"
     OpenLayers.ImgPath = '/{{=request.application}}/static/img/gis/openlayers/';
+    var centerPoint, currentFeature, popupControl, highlightControl;
+    var allLayers = new Array();
     var s3_gis_geoserver_url = '{{=geoserver_url}}';
     var s3_gis_proxy_url = '/{{=request.application}}/gis/proxy?url=';
     // See http://crschmidt.net/~crschmidt/spherical_mercator.html#reprojecting-points
@@ -67,6 +69,37 @@
     s3_gis_center.transform(s3_gis_proj4326, s3_gis_projection_current);
     var s3_gis_zoom = {{=config.zoom}};
     var s3_gis_numZoomLevels = {{=config.zoom_levels}};
+    
+    // Functions which are called by user & hence need to be in global scope
+
+    // Replace Cluster Popup contents with selected Feature Popup
+    function loadClusterPopup(url, id) {
+        //$.getS3(
+        $.get(
+                url,
+                function(data) {
+                    $('#' + id + '_contentDiv').html(data);
+                    s3_gis_app.mapPanel.map.popups[0].updateSize();
+                },
+                'html'
+            );
+    }
+
+    // Zoom to Selected Feature from within Popup
+    function zoomToSelectedFeature(lon, lat, zoomfactor) {
+        var lonlat = new OpenLayers.LonLat(lon, lat);
+        // Get Current Zoom
+        var currZoom = s3_gis_app.mapPanel.map.getZoom();
+        // New Zoom
+        var newZoom = currZoom + zoomfactor;
+        // Center and Zoom
+        s3_gis_app.mapPanel.map.setCenter(lonlat, newZoom);
+        // Remove Popups
+        for (var i=0; i < s3_gis_app.mapPanel.map.popups.length; ++i)   {
+            s3_gis_app.mapPanel.map.removePopup(map.popups[i]);
+        }
+    }
+    
     var s3_gis_app = new GeoExplorer.{{if request.args(0) == "viewer.html":}}Viewer{{else:}}SahanaComposer{{pass}}({
         proxy: s3_gis_proxy_url,
       {{if print_service:}}
@@ -124,6 +157,11 @@
             maxResolution: s3_gis_maxResolution,
             maxExtent: s3_gis_maxExtent,
             layers: [{
+                //source: "google",
+                //title: "Google Terrain",
+                //name: "TERRAIN",
+                //group: "background"
+            //}, {
                 source: 'osm',
                 name: 'cyclemap',
                 group: 'background'
@@ -160,6 +198,256 @@
             })
         );
         this.toolbar.doLayout();
+
+        // Overlays - quick port from MVC
+        var styleMarker = new Object();
+        var iconURL;
+        var max_w = {{=marker_max_width}};
+        var max_h = {{=marker_max_height}};
+        var scaleImage = function(){
+            var scaleRatio = i.height/i.width;
+            var w = Math.min(i.width, max_w);
+            var h = w * scaleRatio;
+            if (h > max_h) {
+                    h = max_h;
+                    scaleRatio = w/h;
+                    w = w * scaleRatio;
+                }
+            i.height = h;
+            i.width = w;
+        }
+
+        // Style Rule For Clusters
+        var style_cluster_style = {
+            label: '${label}',
+            pointRadius: '${radius}',
+            fillColor: '${fill}',
+            fillOpacity: 0.5,
+            strokeColor: '${stroke}',
+            strokeWidth: 2,
+            strokeOpacity: 1
+        };
+        var style_cluster_options = {
+            context: {
+                radius: function(feature) {
+                    // Size for Unclustered Point
+                    var pix = 12;
+                    // Size for Clustered Point
+                    if (feature.cluster) {
+                        pix = Math.min(feature.attributes.count/2, 8) + 12;
+                    }
+                    return pix;
+                },
+                fill: function(feature) {
+                    // fillColor for Unclustered Point
+                    var color = '#f5902e';
+                    // fillColor for Clustered Point
+                    if (feature.cluster) {
+                        color = '#8087ff';
+                    }
+                    return color;
+                },
+                stroke: function(feature) {
+                    // strokeColor for Unclustered Point
+                    var color = '#f5902e';
+                    // strokeColor for Clustered Point
+                    if(feature.cluster) {
+                        color = '#2b2f76';
+                    }
+                    return color;
+                },
+                label: function(feature) {
+                    // Label For Unclustered Point or Cluster of just 2
+                    var label = '';
+                    // Label For Clustered Point
+                    if (feature.cluster && feature.attributes.count > 2) {
+                        label = feature.attributes.count;
+                    }
+                    return label;
+                }
+            }
+        };
+
+        var featureLayers = new Array();
+        var features = [];
+        var parser = new OpenLayers.Format.WKT();
+        var geom, featureVec;
+
+        function addFeature(feature_id, name, geom, styleMarker, image, popup_url) {
+            geom = geom.transform(s3_gis_proj4326, s3_gis_projection_current);
+            // Needs to be uniquely instantiated
+            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+            if ('' == styleMarker.iconURL) {
+                style_marker.graphicName = styleMarker.graphicName;
+                style_marker.pointRadius = styleMarker.pointRadius;
+                style_marker.fillColor = styleMarker.fillColor;
+                style_marker.fillOpacity = 0.5;
+                style_marker.strokeColor = styleMarker.fillColor;
+                style_marker.strokeWidth = 2;
+                style_marker.strokeOpacity = 1;
+            } else {
+                // Set icon dims (set in onload)
+                style_marker.graphicWidth = image.width;
+                style_marker.graphicHeight = image.height;
+                style_marker.graphicXOffset = -(image.width / 2);
+                style_marker.graphicYOffset = -image.height;
+                style_marker.graphicOpacity = 1;
+                style_marker.externalGraphic = styleMarker.iconURL;
+            }
+            // Create Feature Vector
+            var featureVec = new OpenLayers.Feature.Vector(geom, null, style_marker);
+            featureVec.fid = feature_id;
+            // Store the popup_url in the feature so that onFeatureSelect can read it
+            featureVec.popup_url = popup_url;
+            featureVec.attributes.name = name;
+            return featureVec;
+        }
+
+        {{=XML(layers_features)}}
+
+        // ensure popupControl & highlightControl work on these layers
+        allLayers = allLayers.concat(featureLayers);
+
+        // Popups
+        // onClick Popup
+        popupControl = new OpenLayers.Control.SelectFeature(
+            allLayers, {
+                toggle: true,
+                clickout: true,
+                multiple: false
+            }
+        );
+        // onHover Tooltip
+        highlightControl = new OpenLayers.Control.SelectFeature(
+            allLayers, {
+                hover: true,
+                highlightOnly: true,
+                //renderIntent: 'temporary',
+                eventListeners: {
+                    featurehighlighted: tooltipSelect,
+                    featureunhighlighted: tooltipUnselect
+                }
+            }
+        );
+        this.mapPanel.map.addControl(highlightControl);
+        this.mapPanel.map.addControl(popupControl);
+        highlightControl.activate();
+        popupControl.activate();
+
+        // Supports popupControl for All Vector Layers
+        function onFeatureUnselect(event) {
+            var feature = event.feature;
+            if (feature.popup) {
+                feature.layer.map.removePopup(feature.popup);
+                feature.popup.destroy();
+                delete feature.popup;
+            }
+        }
+        function onPopupClose(evt) {
+            //currentFeature.popup.hide();
+            popupControl.unselectAll();
+        }
+
+        // Supports highlightControl for All Vector Layers
+        var lastFeature = null;
+        var tooltipPopup = null;
+        function tooltipSelect(event) {
+            var feature = event.feature;
+            if (feature.cluster) {
+                // Cluster
+                // no tooltip
+            } else {
+                // Single Feature
+                var selectedFeature = feature;
+                // if there is already an opened details window, don\'t draw the tooltip
+                if (feature.popup != null) {
+                    return;
+                }
+                // if there are other tooltips active, destroy them
+                if (tooltipPopup != null) {
+                    this.layer.map.removePopup(tooltipPopup);
+                    tooltipPopup.destroy();
+                    if (lastFeature != null) {
+                        delete lastFeature.popup;
+                        tooltipPopup = null;
+                    }
+                }
+                lastFeature = feature;
+                centerPoint = feature.geometry.getBounds().getCenterLonLat();
+                _attributes = feature.attributes;
+                if (undefined == _attributes.name && undefined == _attributes.title) {
+                    // KML Layer
+                    var title = feature.layer.title;
+                    if (undefined == title) {
+                        // We don't have a suitable title, so don't display a tooltip
+                        tooltipPopup = null;
+                    } else {
+                        var type = typeof _attributes[title];
+                        if ('object' == type) {
+                            _title = _attributes[title].value;
+                        } else {
+                            _title = _attributes[title];
+                        }
+                        tooltipPopup = new OpenLayers.Popup("activetooltip",
+                            centerPoint,
+                            new OpenLayers.Size(80, 12),
+                            _title,
+                            false
+                        );
+                    }
+                } else if (undefined == _attributes.title) {
+                    // Features
+                    tooltipPopup = new OpenLayers.Popup("activetooltip",
+                            centerPoint,
+                            new OpenLayers.Size(80, 12),
+                            _attributes.name,
+                            false
+                    );
+                } else {
+                    // GeoRSS
+                    tooltipPopup = new OpenLayers.Popup("activetooltip",
+                            centerPoint,
+                            new OpenLayers.Size(80, 12),
+                            _attributes.title,
+                            false
+                    );
+                }
+                if (tooltipPopup != null) {
+                    // should be moved to CSS
+                    tooltipPopup.contentDiv.style.backgroundColor='ffffcb';
+                    tooltipPopup.contentDiv.style.overflow='hidden';
+                    tooltipPopup.contentDiv.style.padding='3px';
+                    tooltipPopup.contentDiv.style.margin='10px';
+                    tooltipPopup.closeOnMove = true;
+                    tooltipPopup.autoSize = true;
+                    tooltipPopup.opacity = 0.7;
+                    feature.popup = tooltipPopup;
+                    this.layer.map.addPopup(tooltipPopup);
+                }
+            }
+        }
+        function tooltipUnselect(event) {
+            var feature = event.feature;
+            if (feature != null && feature.popup != null){
+                feature.layer.map.removePopup(feature.popup);
+                feature.popup.destroy();
+                delete feature.popup;
+                tooltipPopup = null;
+                lastFeature = null;
+            }
+        }
+        
+        function loadDetails(url, id, popup) {
+            //$.getS3(
+            $.get(
+                    url,
+                    function(data) {
+                        $('#' + id + '_contentDiv').html(data);
+                        popup.updateSize();
+                    },
+                    'html'
+                );
+        }
 
         // Add an OverviewMap
         //s3_gis_app.createOverviewMap();

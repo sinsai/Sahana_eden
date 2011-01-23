@@ -1663,6 +1663,348 @@ def geoexplorer():
     # 'normal', 'mgrs' or 'off'
     mouse_position = deployment_settings.get_gis_mouse_position()
 
+    # Feature Layers
+    marker_max_width = deployment_settings.get_gis_marker_max_width()
+    marker_max_height = deployment_settings.get_gis_marker_max_height()
+ 
+    cluster_distance = config.cluster_distance
+    cluster_threshold = config.cluster_threshold
+
+    # Internal Feature Layers
+    layers_features = ""
+    feature_queries = []
+    feature_layers = db(db.gis_layer_feature.enabled == True).select()
+    for layer in feature_layers:
+        if layer.role_required and not auth.s3_has_role(layer.role_required):
+            continue
+        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons)
+        if _layer:
+            feature_queries.append(_layer)
+
+    #if feature_queries or add_feature:
+    if feature_queries:
+
+        import urllib
+
+        if deployment_settings.get_gis_duplicate_features():
+            uuid_from_fid = """
+            var uuid = fid.replace('_', '');
+            """
+        else:
+            uuid_from_fid = """
+            var uuid = fid;
+            """
+
+        layers_features += """
+        function onFeatureSelect(event) {
+            // unselect any previous selections
+            tooltipUnselect(event);
+            var feature = event.feature;
+            var id = 'featureLayerPopup';
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
+            if (feature.cluster) {
+                // Cluster
+                var name, fid, uuid, url;
+                var html = '""" + T("There are multiple records at this location") + """:<ul>';
+                for (var i = 0; i < feature.cluster.length; i++) {
+                    name = feature.cluster[i].attributes.name;
+                    fid = feature.cluster[i].fid;
+                    """ + uuid_from_fid + """
+                    if ( feature.cluster[i].popup_url.match("<id>") != null ) {
+                        url = feature.cluster[i].popup_url.replace("<id>", uuid)
+                    }
+                    else {
+                        url = feature.cluster[i].popup_url + uuid;
+                    }
+                    html += "<li><a href='javascript:loadClusterPopup(" + "\\"" + url + "\\", \\"" + id + "\\"" + ")'>" + name + "</a></li>";
+                }
+                html += '</ul>';
+                html += "<div align='center'><a href='javascript:zoomToSelectedFeature(" + centerPoint.lon + "," + centerPoint.lat + ", 3)'>Zoom in</a></div>";
+                var popup = new OpenLayers.Popup.FramedCloud(
+                    id,
+                    centerPoint,
+                    new OpenLayers.Size(200, 200),
+                    html,
+                    null,
+                    true,
+                    onPopupClose
+                );
+                feature.popup = popup;
+                feature.layer.map.addPopup(popup);
+            } else {
+                // Single Feature
+                var popup_url = feature.popup_url;
+                var popup = new OpenLayers.Popup.FramedCloud(
+                    id,
+                    centerPoint,
+                    new OpenLayers.Size(200, 200),
+                    """ + '"' + T("Loading") + """...<img src='""" + URL(r=request, c="static", f="img", args="ajax-loader.gif") + """' border=0>",
+                    null,
+                    true,
+                    onPopupClose
+                );
+                feature.popup = popup;
+                feature.layer.map.addPopup(popup);
+                // call AJAX to get the contentHTML
+                var fid = feature.fid;
+                """ + uuid_from_fid + """
+                if ( popup_url.match("<id>") != null ) {
+                    popup_url = popup_url.replace("<id>", uuid)
+                }
+                else {
+                    popup_url = popup_url + uuid;
+                }
+                loadDetails(popup_url, id, popup);
+            }
+        }
+        """
+
+    for layer in feature_queries:
+        if "name" in layer:
+            name = str(layer["name"])
+        else:
+            name = "Query" + str(int(random.random()*1000))
+
+        if "marker" in layer:
+            marker = layer["marker"]
+            try:
+                # query
+                marker_id = marker.id
+                markerLayer = marker
+            except:
+                # integer (marker_id)
+                markerLayer = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1), cache=cache).first()
+        else:
+            markerLayer = ""
+
+        if "popup_url" in layer:
+            _popup_url = urllib.unquote(layer["popup_url"])
+        else:
+            _popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
+
+        if "polygon" in layer and layer.polygon:
+            polygons = True
+        else:
+            polygons = False
+
+        # Generate HTML snippet
+        name_safe = re.sub("\W", "_", name)
+        if "active" in layer and layer["active"]:
+            visibility = "featureLayer" + name_safe + ".setVisibility(true);"
+        else:
+            visibility = "featureLayer" + name_safe + ".setVisibility(false);"
+        layers_features += """
+            features = [];
+            var popup_url = '""" + _popup_url + """';
+            // Needs to be uniquely instantiated
+            var style_cluster = new OpenLayers.Style(style_cluster_style, style_cluster_options);
+            // Define StyleMap, Using 'style_cluster' rule for 'default' styling intent
+            var featureClusterStyleMap = new OpenLayers.StyleMap({
+                                              'default': style_cluster,
+                                              'select': {
+                                                  fillColor: '#ffdc33',
+                                                  strokeColor: '#ff9933'
+                                              }
+            });
+
+            var featureLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+                '""" + name + """',
+                {
+                    strategies: [ new OpenLayers.Strategy.Cluster({distance: """ + str(cluster_distance) + """, threshold: """ + str(cluster_threshold) + """}) ],
+                    styleMap: featureClusterStyleMap
+                }
+            );
+            """ + visibility + """
+            featureLayer""" + name_safe + """.events.on({
+                "featureselected": onFeatureSelect,
+                "featureunselected": onFeatureUnselect
+            });
+            featureLayers.push(featureLayer""" + name_safe + """);
+            """
+        features = layer["query"]
+        for _feature in features:
+            try:
+                _feature.gis_location.id
+                # Query was generated by a Join
+                feature = _feature.gis_location
+            except (AttributeError, KeyError):
+                # Query is a simple select
+                feature = _feature
+            # Should we use Polygons or Points?
+            if polygons:
+                if feature.get("wkt"):
+                    wkt = feature.wkt
+                else:
+                    # Deal with manually-imported Features which are missing WKT
+                    try:
+                        lat = feature.lat
+                        lon = feature.lon
+                        if (lat is None) or (lon is None):
+                            # Zero is allowed but not None
+                            if feature.get("parent"):
+                                # Skip the current record if we can
+                                latlon = gis.get_latlon(feature.parent)
+                            elif feature.get("id"):
+                                latlon = gis.get_latlon(feature.id)
+                            else:
+                                # nothing we can do!
+                                continue
+                            if latlon:
+                                lat = latlon["lat"]
+                                lon = latlon["lon"]
+                            else:
+                                # nothing we can do!
+                                continue
+                    except:
+                        if feature.get("parent"):
+                            # Skip the current record if we can
+                            latlon = gis.get_latlon(feature.parent)
+                        elif feature.get("id"):
+                            latlon = gis.get_latlon(feature.id)
+                        else:
+                            # nothing we can do!
+                            continue
+                        if latlon:
+                            lat = latlon["lat"]
+                            lon = latlon["lon"]
+                        else:
+                            # nothing we can do!
+                            continue
+                    wkt = gis.latlon_to_wkt(lat, lon)
+            else:
+                # Just display Point data, even if we have Polygons
+                # @ToDo: DRY with Polygon
+                try:
+                    lat = feature.lat
+                    lon = feature.lon
+                    if (lat is None) or (lon is None):
+                        # Zero is allowed but not None
+                        if feature.get("parent"):
+                            # Skip the current record if we can
+                            latlon = gis.get_latlon(feature.parent)
+                        elif feature.get("id"):
+                            latlon = gis.get_latlon(feature.id)
+                        else:
+                            # nothing we can do!
+                            continue
+                        if latlon:
+                            lat = latlon["lat"]
+                            lon = latlon["lon"]
+                        else:
+                            # nothing we can do!
+                            continue
+                except:
+                    if feature.get("parent"):
+                        # Skip the current record if we can
+                        latlon = gis.get_latlon(feature.parent)
+                    elif feature.get("id"):
+                        latlon = gis.get_latlon(feature.id)
+                    else:
+                        # nothing we can do!
+                        continue
+                    if latlon:
+                        lat = latlon["lat"]
+                        lon = latlon["lon"]
+                    else:
+                        # nothing we can do!
+                        continue
+                wkt = gis.latlon_to_wkt(lat, lon)
+
+            try:
+                # Has a per-feature Vector Shape been added to the query?
+                graphicName = feature.shape
+                if graphicName not in ["circle", "square", "star", "x", "cross", "triangle"]:
+                    # Default to Circle
+                    graphicName = "circle"
+                try:
+                    pointRadius = feature.size
+                    if not pointRadius:
+                        pointRadius = 12
+                except (AttributeError, KeyError):
+                    pointRadius = 12
+                try:
+                    fillColor = feature.color
+                    if not fillColor:
+                        fillColor = "orange"
+                except (AttributeError, KeyError):
+                    fillColor = "orange"
+                marker_url = ""
+            except (AttributeError, KeyError):
+                # Use a Marker not a Vector Shape
+                try:
+                    # Has a per-feature marker been added to the query?
+                    _marker = feature.marker
+                    if _marker:
+                        marker = _marker
+                    else:
+                        marker = marker_default
+                except (AttributeError, KeyError):
+                    if markerLayer:
+                        marker = markerLayer
+                    else:
+                        marker = marker_default
+                # Faster to bypass the download handler
+                #marker_url = URL(r=request, c="default", f="download", args=[marker.image])
+                marker_url = URL(r=request, c="static", f="img", args=["markers", marker.image])
+
+            try:
+                # Has a per-feature popup_label been added to the query?
+                popup_label = feature.popup_label
+            except (AttributeError, KeyError):
+                popup_label = feature.name
+
+            # Allows map API to be used with Storage instead of Rows
+            if not popup_label:
+                popup_label = feature.name
+            # Deal with apostrophes in Feature Names
+            fname = re.sub("'", "\\'", popup_label)
+
+            if marker_url:
+                layers_features += """
+            styleMarker.iconURL = '""" + marker_url + """';
+            // Need unique names
+            // More reliable & faster to use the height/width calculated on upload
+            var i = new Array();
+            i.height = """ + str(marker.height) + """;
+            i.width = """ + str(marker.width) + """;
+            scaleImage(i);
+            """
+            else:
+                layers_features += """
+            var i = '';
+            styleMarker.iconURL = '';
+            styleMarker.graphicName = '""" + graphicName + """';
+            styleMarker.pointRadius = """ + str(pointRadius) + """;
+            styleMarker.fillColor = '""" + fillColor + """';
+            """
+            layers_features += """
+            geom = parser.read('""" + wkt + """').geometry;
+            featureVec = addFeature('""" + str(feature.id) + """', '""" + fname + """', geom, styleMarker, i, popup_url)
+            features.push(featureVec);
+            """
+            if deployment_settings.get_gis_duplicate_features():
+                # Add an additional Point feature to provide wrapping around the Data Line
+                # lon<0 have a duplicate at lon+360
+                if lon < 0:
+                    lon = lon + 360
+                # lon>0 have a duplicate at lon-360
+                else:
+                    lon = lon - 360
+                wkt = gis.latlon_to_wkt(lat, lon)
+                layers_features += """
+            geom = parser.read('""" + wkt + """').geometry;
+            featureVec = addFeature('_""" + str(feature.id) + """', '""" + fname + """', geom, styleMarker, i, popup_url)
+            features.push(featureVec);
+            """
+        # Append to Features layer
+        layers_features += """
+            featureLayer""" + name_safe + """.addFeatures(features);
+            """
+        # Add to Map
+        layers_features += """
+            this.mapPanel.map.addLayer(featureLayer""" + name_safe + """);
+            """
+
     response.title = "GeoExplorer"
     return dict(
                 config=config,
@@ -1671,7 +2013,10 @@ def geoexplorer():
                 yahoo_key=yahoo_key,
                 print_service=print_service,
                 geoserver_url=geoserver_url,
-                mouse_position = mouse_position
+                mouse_position = mouse_position,
+                marker_max_width = marker_max_width,
+                marker_max_height = marker_max_height,
+                layers_features = layers_features
                )
 
 def about():

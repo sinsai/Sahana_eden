@@ -36,7 +36,7 @@ table.file.represent = lambda file, table=table: shn_file_represent(file, table)
 table.url.label = T("URL")
 table.url.represent = lambda url: url and A(url,_href=url) or NONE
 
-table.url.requires = [IS_NULL_OR(IS_URL()),IS_NULL_OR(IS_NOT_ONE_OF(db, "%s.url" % tablename))]
+table.url.requires = [IS_NULL_OR(IS_URL()), IS_NULL_OR(IS_NOT_ONE_OF(db, "%s.url" % tablename))]
 
 table.person_id.label = T("Author")
 table.person_id.comment = shn_person_comment(T("Author"), T("The Author of this Document (optional)"))
@@ -142,7 +142,7 @@ def document_onvalidation(form):
     return
 
 s3xrc.model.configure(table,
-                      mark_required=["file", "url"],
+                      mark_required=["file"],
                       onvalidation=document_onvalidation)
 #==============================================================================
 resourcename = "image"

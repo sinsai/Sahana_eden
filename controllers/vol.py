@@ -14,9 +14,10 @@ if prefix not in deployment_settings.modules:
 # Options Menu (available in all Functions)
 def shn_menu():
     menu = [
-        [T("Projects"), False, URL(r=request, f="project"),[
-            [T("Search"), False, URL(r=request, f="project", args="search_location")],
-            [T("Add Project"), False, URL(r=request, f="project", args="create")],
+        [T("Home"), False, aURL(r=request, f="index")],
+        [T("Projects"), False, aURL(r=request, f="project"),[
+            [T("Search"), False, aURL(r=request, f="project", args="search_location")],
+            [T("Add Project"), False, aURL(p="create", r=request, f="project", args="create")],
         ]],
     ]
     if session.rcvars and "project_project" in session.rcvars:
@@ -24,8 +25,8 @@ def shn_menu():
         selection = db.project_project[project_id]
         if selection:
             menu_project = [
-                    ["%s %s" % (T("Project") + ":", selection.code), False, URL(r=request, f="project", args=[project_id]),[
-                        [T("Tasks"), False, URL(r=request, f="project", args=[project_id, "task"])],
+                    ["%s %s" % (T("Project") + ":", selection.code), False, aURL(r=request, f="project", args=[project_id]),[
+                        [T("Tasks"), False, aURL(r=request, f="project", args=[project_id, "task"])],
                         # Staff cannot be a component of Project since staff may be assigned to many projects
                         #[T("Staff"), False, URL(r=request, f="project", args=[project_id, "staff"])],
                     ]]
@@ -33,9 +34,9 @@ def shn_menu():
             menu.extend(menu_project)
 
     menu_teams = [
-        [T("Teams"), False, URL(r=request, f="group"),[
-            [T("List"), False, URL(r=request, f="group")],
-            [T("Add"), False, URL(r=request, f="group", args="create")],
+        [T("Teams"), False, aURL(r=request, f="group"),[
+            [T("List"), False, aURL(r=request, f="group")],
+            [T("Add"), False, aURL(p="create", r=request, f="group", args="create")],
         ]]
     ]
     menu.extend(menu_teams)
@@ -45,18 +46,18 @@ def shn_menu():
         if selection:
             team_name = shn_pr_group_represent(group_id)
             menu_teams = [
-                ["%s %s" % (T("Team") + ":", team_name), False, URL(r=request, f="group", args=[group_id, "read"]),[
-                    [T("View On Map"), False, URL(r=request, f="view_team_map", args=[group_id])],
-                    [T("Send Notification"), False, URL(r=request, f="compose_group", vars={"group_id":group_id})],
-                    [T("Find Volunteers"), False, URL(r=request, f="showSkillOptions")],
+                ["%s %s" % (T("Team") + ":", team_name), False, aURL(r=request, f="group", args=[group_id, "read"]),[
+                    [T("View On Map"), False, aURL(r=request, f="view_team_map", args=[group_id])],
+                    [T("Send Notification"), False, aURL(r=request, f="compose_group", vars={"group_id":group_id})],
+                    [T("Find Volunteers"), False, aURL(r=request, f="showSkillOptions")],
                 ]],
             ]
             menu.extend(menu_teams)
 
     menu_persons = [
-        [T("Volunteers"), False, URL(r=request, f="person", args=["search_simple"]),[
-            [T("List"), False, URL(r=request, f="person")],
-            [T("Add"), False, URL(r=request, f="person", args="create")],
+        [T("Volunteers"), False, aURL(r=request, f="person", args=["search_simple"]),[
+            [T("List"), False, aURL(r=request, f="person")],
+            [T("Add"), False, aURL(p="create", r=request, f="person", args="create")],
             # Not ready yet
             #[T("Search by Skill Types"), False, URL(r=request, f="showSkillOptions")],
         ]]
@@ -70,24 +71,24 @@ def shn_menu():
             # ?vol_tabs=person and ?vol_tabs=volunteer are used by the person
             # controller to select which set of tabs to display.
             menu_person = [
-                ["%s %s" % (T("Person") + ":", person_name), False, URL(r=request, f="person", args=[person_id, "read"]),[
+                ["%s %s" % (T("Person") + ":", person_name), False, aURL(r=request, f="person", args=[person_id, "read"]),[
                     # The arg "volunteer" causes this to display the
                     # vol_volunteer tab initially.
-                    [T("Volunteer Data"), False, URL(r=request, f="person", args=[person_id, "volunteer"], vars={"vol_tabs":"volunteer"})],
+                    [T("Volunteer Data"), False, aURL(r=request, f="person", args=[person_id, "volunteer"], vars={"vol_tabs":"volunteer"})],
                     # The default tab is pr_person, which is fine here.
-                    [T("Person Data"), False, URL(r=request, f="person", args=[person_id], vars={"vol_tabs":"person"})],
-                    [T("View On Map"), False, URL(r=request, f="view_map", args=[person_id])],
+                    [T("Person Data"), False, aURL(r=request, f="person", args=[person_id], vars={"vol_tabs":"person"})],
+                    [T("View On Map"), False, aURL(r=request, f="view_map", args=[person_id])],
                     [T("Send Notification"), False, URL(r=request, f="compose_person", vars={"person_id":person_id})],
                 ]],
             ]
             menu.extend(menu_person)
     menu_skills = [
-        [T("Skill Types"), False, URL(r=request, f="skill_types")],
+        [T("Skill Types"), False, aURL(r=request, f="skill_types")],
     ]
     menu.extend(menu_skills)
     if auth.user is not None:
         menu_user = [
-            [T("My Tasks"), False, URL(r=request, f="task", args="")],
+            [T("My Tasks"), False, aURL(r=request, f="task", args="")],
         ]
         menu.extend(menu_user)
     response.menu_options = menu
@@ -99,9 +100,98 @@ def index():
 
     """ Module's Home Page """
 
-    module_name = deployment_settings.modules[prefix].name_nice
+    # Module's nice name
+    try:
+        module_name = deployment_settings.modules[prefix].name_nice
+    except:
+        module_name = T("Volunteer Management")
 
-    return dict(module_name=module_name)
+    # Override prefix and resourcename
+    _prefix = "pr"
+    resourcename = "person"
+
+    # Choose table
+    tablename = "%s_%s" % (_prefix, resourcename)
+    table = db[tablename]
+
+    # Configure redirection and list fields
+    register_url = str(URL(r=request, f=resourcename,
+                           args=["[id]", "volunteer"],
+                           vars={"vol_tabs":1}))
+    s3xrc.model.configure(table,
+                          create_next=register_url,
+                          list_fields=["id",
+                                       "first_name",
+                                       "middle_name",
+                                       "last_name",
+                                       "gender",
+                                       "occupation"])
+
+    # Pre-process
+    def prep(r):
+
+        """ Redirect to search_simple/person view """
+
+        if r.representation == "html":
+            if not r.id:
+                r.method = "search_simple"
+                r.custom_action = shn_pr_person_search_simple
+            else:
+               redirect(URL(r=request, f=resourcename, args=[r.id]))
+        return True
+
+
+    # Post-process
+    def postp(r, output):
+
+        """ Custom action buttons """
+
+        response.s3.actions = []
+
+        # Button labels
+        REGISTER = str(T("Register"))
+        DETAILS = str(T("Details"))
+
+        if not r.component:
+            open_button_label = DETAILS
+
+            if auth.s3_logged_in():
+                # Set action buttons
+                response.s3.actions = [
+                    dict(label=REGISTER, _class="action-btn", url=register_url)
+                ]
+
+        else:
+            open_button_label = UPDATE
+
+        # Always have an Open-button
+        linkto = r.resource.crud._linkto(r, update=True)("[id]")
+        response.s3.actions.append(dict(label=open_button_label,
+                                        _class="action-btn", url=linkto))
+
+        return output
+
+    # Set hooks
+    response.s3.prep = prep
+    response.s3.postp = postp
+
+    if auth.s3_logged_in():
+        add_btn = A(T("Add Person"),
+                    _class="action-btn",
+                    _href=URL(r=request, f="person", args="create"))
+    else:
+        add_btn = None
+
+    # REST controllerperson
+    output = s3_rest_controller(_prefix, resourcename,
+                                module_name=module_name,
+                                add_btn=add_btn)
+
+    # Set view, update menu and return output
+    response.view = "vol/index.html"
+    response.title = module_name
+    shn_menu()
+    return output
 
 
 # -----------------------------------------------------------------------------
@@ -115,12 +205,26 @@ def person():
         in the URL's vars is "person" or "volunteer".
     """
 
+    # Override prefix
+    _prefix = "pr"
+
+    # Choose table
+    tablename = "%s_%s" % (_prefix, resourcename)
+    table = db[tablename]
+
+    # Configure redirection and list fields
+    register_url = str(URL(r=request, f=resourcename,
+                           args=["[id]", "volunteer"],
+                           vars={"vol_tabs":1}))
+    s3xrc.model.configure(table,
+                          create_next=register_url)
+
     tab_set = "person"
     if "vol_tabs" in request.vars:
         tab_set = request.vars["vol_tabs"]
     if tab_set == "person":
-        #db.pr_person.pr_impact_tags.readable=False
-        db.pr_person.missing.default = False
+        #table.pr_impact_tags.readable=False
+        table.missing.default = False
         tabs = [(T("Basic Details"), None),
                 (T("Images"), "image"),
                 (T("Identity"), "identity"),
@@ -128,41 +232,68 @@ def person():
                 (T("Contact Data"), "pe_contact"),
                 (T("Presence Log"), "presence")]
     else:
-        # TODO: These files are for the multiselect widget used for skills.
-        # Check if we still need them if we switch to a different widget.
-        response.files.append(URL(r=request,c='static/scripts/S3',f='jquery.multiSelect.js'))
-        response.files.append(URL(r=request,c='static/styles/S3',f='jquery.multiSelect.css'))
+        # If using jquery.multiselect widget
+        #response.files.append(URL(r=request, c="static/scripts/S3", f="jquery.multiSelect.js"))
+        #response.files.append(URL(r=request, c="static/styles/S3", f="jquery.multiSelect.css"))
         db.pr_group_membership.group_id.label = T("Team Id")
-        db.pr_group_membership.group_head.label = T("Team Head")
+        db.pr_group_membership.group_head.label = T("Team Leader")
         s3xrc.model.configure(db.pr_group_membership,
                               list_fields=["id",
                                            "group_id",
                                            "group_head",
                                            "description"])
-        # TODO: If we don't know what a "status report" is supposed to be,
-        # take it out.  Take out resources til they're modernized.
         tabs = [
-                #(T("Status Report"), None),
                 (T("Availablity"), "volunteer"),
                 (T("Teams"), "group_membership"),
                 (T("Skills"), "skill"),
+                # @ToDo: Modernize Resources
                 #(T("Resources"), "resource"),
                ]
 
-    # Only display active volunteers
-    response.s3.filter = (db.pr_person.id == db.vol_volunteer.person_id) & (db.vol_volunteer.status == 1)
+    # Pre-process
+    def prep(r):
+        if r.representation in s3.interactive_view_formats:
+            # CRUD strings
+            ADD_VOL = T("Add Volunteer")
+            LIST_VOLS = T("List Volunteers")
+            s3.crud_strings[tablename] = Storage(
+                title_create = T("Add a Volunteer"),
+                title_display = T("Volunteer Details"),
+                title_list = LIST_VOLS,
+                title_update = T("Edit Volunteer Details"),
+                title_search = T("Search Volunteers"),
+                subtitle_create = ADD_VOL,
+                subtitle_list = T("Volunteers"),
+                label_list_button = LIST_VOLS,
+                label_create_button = ADD_VOL,
+                label_delete_button = T("Delete Volunteer"),
+                msg_record_created = T("Volunteer added"),
+                msg_record_modified = T("Volunteer details updated"),
+                msg_record_deleted = T("Volunteer deleted"),
+                msg_list_empty = T("No Volunteers currently registered"))
 
-    db.pr_presence.presence_condition.default = vita.CONFIRMED
-    db.pr_presence.presence_condition.readable = False
-    db.pr_presence.presence_condition.writable = False
-    db.pr_presence.orig_id.readable = False
-    db.pr_presence.orig_id.writable = False
-    db.pr_presence.dest_id.readable = False
-    db.pr_presence.dest_id.writable = False
-    db.pr_presence.proc_desc.readable = False
-    db.pr_presence.proc_desc.writable = False
+        if r.component:
+            # Allow users to be registered as volunteers
+            if r.component.name == "presence":
+                db.pr_presence.presence_condition.default = vita.CONFIRMED
+                db.pr_presence.presence_condition.readable = False
+                db.pr_presence.presence_condition.writable = False
+                db.pr_presence.orig_id.readable = False
+                db.pr_presence.orig_id.writable = False
+                db.pr_presence.dest_id.readable = False
+                db.pr_presence.dest_id.writable = False
+                db.pr_presence.proc_desc.readable = False
+                db.pr_presence.proc_desc.writable = False
+        else:
+            # Only display active volunteers
+            response.s3.filter = (table.id == db.vol_volunteer.person_id) & (db.vol_volunteer.status == 1)
 
-    output = s3_rest_controller("pr", resourcename,
+        return True
+
+
+    response.s3.prep = prep
+
+    output = s3_rest_controller(_prefix, resourcename,
                                 rheader=lambda r: shn_pr_rheader(r, tabs))
 
     shn_menu()
@@ -203,7 +334,7 @@ def showSkillOptions():
     output["table"] = ""
     if search_form.accepts(request.vars, session, keepvalues=True):
         search_skill_ids =  request.vars.skill_types_id
-        
+
         table1 = db.vol_skill
         table2 = db.vol_skill_types
         table3 = db.pr_person
@@ -214,11 +345,11 @@ def showSkillOptions():
                     (table2.id == search_skill_ids)).select(table1.person_id)
 
         vol_idset = []
-        html = DIV(DIV(B(T("List of Volunteers for this skills set"))))  
+        html = DIV(DIV(B(T("List of Volunteers for this skills set"))))
         for id in vol_id:
             vol_idset.append(id.person_id)
-            
-                 
+
+
         for pe_id in vol_idset:
             person_details = db((table3.id == pe_id)).select(table3.first_name, table3.middle_name, table3.last_name).first()
             skillset = db(table1.person_id == pe_id).select(table1.status).first()
@@ -226,14 +357,14 @@ def showSkillOptions():
             # @ToDo: Make the notification message configurable
             msg.send_by_pe_id(pe_id, "CERT: Please Report for Duty", "We ask you to report for duty if you are available", 1, 1)
 
-        html.append(DIV(B(T("Volunteers were notified!"))))        
+        html.append(DIV(B(T("Volunteers were notified!"))))
     #for one_pr in person_details:
         #skillset = "approved"
         #html += DIV(LABEL(vita.fullname(one_pr)),DIV(T("Skill Status") + ": "), UL(skillset), _id="table-container")
         #person_data="<div>"+str(person_details)+"</div>"
         html2 = DIV(html, _id="table-container")
         output["table"] = html2
-        
+
     return output
 
 # -----------------------------------------------------------------------------
@@ -277,7 +408,11 @@ def group():
     table.description.label = T("Team Description")
     table.name.label = T("Team Name")
     db.pr_group_membership.group_id.label = T("Team Id")
-    db.pr_group_membership.group_head.label = T("Team Head")
+    db.pr_group_membership.group_head.label = T("Team Leader")
+
+    # Set Defaults
+    db.pr_group.group_type.default = 3  # 'Relief Team'
+    db.pr_group.group_type.readable = db.pr_group.group_type.writable = False
 
     # CRUD Strings
     ADD_TEAM = T("Add Team")
@@ -325,7 +460,7 @@ def group():
                                        "group_head",
                                        "description"])
 
-    s3xrc.model.configure(table, main="name", extra="description", listadd=False, deletable=False)
+    s3xrc.model.configure(table, main="name", extra="description")
     output = s3_rest_controller("pr", "group",
                                  rheader=lambda jr: shn_pr_rheader(jr,
                                         tabs = [(T("Team Details"), None),
@@ -389,9 +524,9 @@ def view_map():
 
     """
         Show Location of a Volunteer on the Map
-        
+
         Use most recent presence if available, else any address that's available.
-        
+
         @ToDo: Convert to a custom method of the person resource
     """
 
@@ -401,7 +536,7 @@ def view_map():
     persons = db.pr_person
     presences = db.pr_presence
     locations = db.gis_location
-    
+
     # Include the person's last verified location, assuming that they're not missing
     presence_query = (persons.id == person_id) & \
                      (persons.missing == False) & \
@@ -439,7 +574,7 @@ def view_map():
 
         config = gis.get_config()
 
-        if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
+        if not deployment_settings.get_security_map() or s3_has_role("MapAdmin"):
             catalogue_toolbar = True
         else:
             catalogue_toolbar = False
@@ -451,23 +586,23 @@ def view_map():
             _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=False, polygons=layer.polygons)
             if _layer:
                 feature_queries.append(_layer)
-        
+
         # Add the Volunteer layer
         try:
             marker_id = db(db.gis_marker.name == "volunteer").select().first().id
         except:
             marker_id = 1
-        
+
         # Can't use this since the location_id link is via pr_presence not pr_person
         #_layer = gis.get_feature_layer("pr", "person", "Volunteer", "Volunteer", config=config, marker_id=marker_id, active=True, polygons=False)
         #if _layer:
         #    feature_queries.append(_layer)
-        
+
         # Insert the name into the query & replace the location_id with the person_id
         for i in range(0, len(features)):
             features[i].gis_location.name = vita.fullname(db(db.pr_person.id == features[i].pr_person.id).select(limitby=(0, 1)).first())
             features[i].gis_location.id = features[i].pr_person.id
-        
+
         feature_queries.append({"name" : "Volunteer",
                                 "query" : features,
                                 "active" : True,
@@ -493,7 +628,7 @@ def view_map():
     session.warning = T("No location known for this person")
     redirect(URL(r=request, c="vol", f="person", args=[person_id, "presence"]))
 
-def popup(): 
+def popup():
 
     """
         Controller that returns a person's data
@@ -502,7 +637,7 @@ def popup():
 
     person_id = request.args(0)
 
-    vol_query = (db.pr_person.id == person_id) 
+    vol_query = (db.pr_person.id == person_id)
     vol = db(vol_query).select(db.pr_person.first_name, db.pr_person.middle_name, db.pr_person.last_name, limitby=(0, 1)).first()
 
     skill_query = (db.vol_skill.person_id == person_id) & (db.vol_skill.skill_types_id == db.vol_skill_types.id)
@@ -524,92 +659,114 @@ def popup():
 def view_team_map():
 
     """
-        Show Location of a Team of Volunteers on the Map
+        Show Locations of a Team of Volunteers on the Map
 
-        Use most recent presence if available
+        Use most recent presence for each if available
 
-        @ToDo: Fallback to addresses
-        
-        @ToDo: Convert to a custom method of the group resource
     """
+
+    # @ToDo: Convert to a custom method of the group resource
+
+    # Currently all presence records created in vol have condition set to
+    # confirmed (see person controller's prep).  Then we ignore records that
+    # are not confirmed.  This does not guarantee that only vol-specific
+    # records are used, but if other modules use confirmed to mean the
+    # presence record is valid, that is probably acceptable.  @ToDo: Could
+    # we make use of some of the other presence conditions, like transit and
+    # check-in/out?  @ToDo: Is it proper to exclude conditions like missing?
+    # What if the team manager wants to know what happened to their volunteers?
+    # Could indicate status, e.g., by marker color or in popup.
 
     group_id = request.args(0)
 
+    # Get a list of team (group) member ids.
     members_query = (db.pr_group_membership.group_id == group_id)
-    members = db(members_query).select(db.pr_group_membership.person_id) # Members of a team (aka group)
-    member_person_ids = [ x.person_id for x in members ] # List of members
+    members = db(members_query).select(db.pr_group_membership.person_id)
+    member_person_ids = [ x.person_id for x in members ]
 
-    # Shortcuts
-    persons = db.pr_person
-    presences = db.pr_presence
-    locations = db.gis_location
-    
-    # Presence Data for Members who aren't Missing & have a Verified Presence
-    features = db(persons.id.belongs(member_person_ids) & \
-                 (persons.missing == False) & \
-                 (presences.pe_id == persons.pe_id) & \
-                 (presences.presence_condition.belongs(vita.PERSISTANT_PRESENCE)) & \
-                 (presences.closed == False) & \
-                 (locations.id == presences.location_id)).select(locations.id,
-                                                                 locations.lat,
-                                                                 locations.lon,
-                                                                 locations.lat_min,
-                                                                 locations.lat_max,
-                                                                 locations.lon_min,
-                                                                 locations.lon_max,
-                                                                 persons.id)
+    # Presence data of the members with Presence Logs:
+    # Get only valid presence data for each person.  Here, valid means
+    # not closed (a closed presence has been explicitly marked no longer
+    # valid) and the presence condition is confirmed (all presences made
+    # in the vol module are set to confirmed).  Also exclude missing
+    # persons.  See @ToDo re. possible alternate uses of condition.
+    # Note the explicit tests against False are due to a Web2py issue:
+    # Use of unary negation leads to a syntax error in the generated SQL.
+    presence_rows = db(
+        db.pr_person.id.belongs(member_person_ids) &
+        (db.pr_person.missing == False) &
+        (db.pr_presence.pe_id == db.pr_person.pe_id) &
+        db.pr_presence.presence_condition.belongs(vita.PERSISTANT_PRESENCE) &
+        (db.pr_presence.closed == False) &
+        (db.gis_location.id ==  db.pr_presence.location_id)).select(
+            db.gis_location.ALL,
+            db.pr_person.id,
+            db.pr_person.first_name,
+            db.pr_person.middle_name,
+            db.pr_person.last_name,
+            orderby=~db.pr_presence.datetime)
 
-    # Address of those members without Presence data
-    #address = db(persons.id.belongs(member_person_ids) & \
-    #            (db.pr_address.pe_id == persons.pe_id) & \
-    #            (locations.id ==  db.pr_address.location_id)).select(locations.id,
-    #                                                                 locations.lat,
-    #                                                                 locations.lon,
-    #                                                                 persons.id)
-    #locations_list.extend(address)
+    # Get latest presence data for each person.
+    # Note sort is stable, so preserves time order.
+    person_location_sort = presence_rows.sort(lambda row:row.pr_person.id)
+    previous_person_id = None
+    features = []
+    for row in person_location_sort:
+        if row.pr_person.id != previous_person_id:
+            features.append(row)
+            member_person_ids.remove(row.pr_person.id)
+            previous_person_id = row.pr_person.id
+
+    # Get addresses of those members without presence data.
+    address_rows = db(
+        db.pr_person.id.belongs(member_person_ids) &
+        (db.pr_address.pe_id == db.pr_person.pe_id) &
+        (db.gis_location.id == db.pr_address.location_id)).select(
+            db.gis_location.ALL,
+            db.pr_person.id,
+            db.pr_person.first_name,
+            db.pr_person.middle_name,
+            db.pr_person.last_name)
+
+    features.extend(address_rows)
 
     if features:
 
-        if len(features) > 1:
-            # Set the viewport to the appropriate area to see everyone
-            bounds = gis.get_bounds(features=features)
-        else:
-            # A 1-person bounds zooms in too far for many tilesets
-            lat = features.first().gis_location.lat
-            lon = features.first().gis_location.lon
-            zoom = 15
-
         config = gis.get_config()
 
-        if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
-            catalogue_toolbar = True
-        else:
-            catalogue_toolbar = False
+        catalogue_toolbar = not deployment_settings.get_security_map() or s3_has_role("MapAdmin")
 
         # Standard Feature Layers
         feature_queries = []
         feature_layers = db(db.gis_layer_feature.enabled == True).select()
         for layer in feature_layers:
-            _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=False, polygons=layer.polygons)
+            _layer = gis.get_feature_layer(layer.module,
+                                           layer.resource,
+                                           layer.name,
+                                           layer.popup_label,
+                                           config=config,
+                                           marker_id=layer.marker_id,
+                                           active=False,
+                                           polygons=layer.polygons)
             if _layer:
                 feature_queries.append(_layer)
-        
+
         # Add the Volunteer layer
         try:
             marker_id = db(db.gis_marker.name == "volunteer").select().first().id
         except:
+            # @ToDo Why not fall back to the person marker?
             marker_id = 1
-        
-        # Can't use this since the location_id link is via pr_presence not pr_person
-        #_layer = gis.get_feature_layer("pr", "person", "Volunteer", "Volunteer", config=config, marker_id=marker_id, active=True, polygons=False)
-        #if _layer:
-        #    feature_queries.append(_layer)
-        
-        # Insert the name into the query & replace the location_id with the person_id
-        for i in range(0, len(features)):
-            features[i].gis_location.name = vita.fullname(db(db.pr_person.id == features[i].pr_person.id).select(limitby=(0, 1)).first())
-            features[i].gis_location.id = features[i].pr_person.id
-        
+
+        # Insert the name into the query & replace the location_id with the
+        # person_id.
+        for feature in features:
+            names = Storage(first_name = feature.pr_person.first_name,
+                            middle_name = feature.pr_person.middle_name,
+                            last_name = feature.pr_person.last_name)
+            feature.gis_location.name = vita.fullname(names)
+            feature.gis_location.id = feature.pr_person.id
+
         feature_queries.append({"name" : "Volunteers",
                                 "query" : features,
                                 "active" : True,
@@ -617,49 +774,38 @@ def view_team_map():
                                 "popup_url" : URL(r=request, c="vol", f="popup") + "/<id>/read.plain",
                                 "marker" : marker_id})
 
-        try:
-            html = gis.show_map(
-                feature_queries = feature_queries,
-                catalogue_toolbar = catalogue_toolbar,
-                catalogue_overlays = True,
-                toolbar = True,
-                search = True,
-                bbox = bounds,
-                window = True,  # @ToDo: Change to False & create a way to convert an embedded map to a full-screen one without a screen refresh
-            )
-        except:
-            html = gis.show_map(
-                feature_queries = feature_queries,
-                catalogue_toolbar = catalogue_toolbar,
-                catalogue_overlays = True,
-                toolbar = True,
-                search = True,
-                lat = lat,
-                lon = lon,
-                zoom = zoom,
-                window = True,  # @ToDo: Change to False & create a way to convert an embedded map to a full-screen one without a screen refresh
-            )
+        bounds = gis.get_bounds(features=features)
+
+        html = gis.show_map(
+            feature_queries = feature_queries,
+            catalogue_toolbar = catalogue_toolbar,
+            catalogue_overlays = True,
+            toolbar = True,
+            search = True,
+            bbox = bounds,
+            window = True)  # @ToDo: Change to False & create a way to convert an embedded map to a full-screen one without a screen refresh
+
         response.view = "vol/view_map.html"
         return dict(map=html)
 
-    # Redirect to team details if no location is available
-    # Present warning if no location is available
-    session.warning = T("No location known for this team")
-    redirect(URL(r=request, c="vol", f="group", args=[group_id, "address"]))
+    # Redirect to team member list if no locations are available.
+    session.warning = T("No locations found for members of this team")
+    redirect(URL(r=request, c="vol", f="group",
+                 args=[group_id, "group_membership"]))
 
 # -----------------------------------------------------------------------------
 def view_project_map():
 
     """
         Show Location of all Tasks on the Map
-        
+
         @ToDo: Different Colours for Status
             Green for Complete
             Red for Urgent/Incomplete
             Amber for Non-Urgent/Incomplete
-            
+
         @ToDo: A single map with both Tasks & Volunteers displayed on it
-        
+
         @ToDo: Convert to a custom method of the project resource
     """
 
@@ -695,7 +841,7 @@ def view_project_map():
 
         config = gis.get_config()
 
-        if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
+        if not deployment_settings.get_security_map() or s3_has_role("MapAdmin"):
             catalogue_toolbar = True
         else:
             catalogue_toolbar = False
@@ -707,13 +853,13 @@ def view_project_map():
             _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=False, polygons=layer.polygons)
             if _layer:
                 feature_queries.append(_layer)
-        
+
         # Add the Tasks layer
         # Can't use this since we want to use different colours, not markers
         #_layer = gis.get_feature_layer("project", "task", "Tasks", "Task", config=config, marker_id=marker_id, active=True, polygons=False)
         #if _layer:
         #    feature_queries.append(_layer)
-        
+
         # Insert the name into the query & replace the location_id with the task_id
         for i in range(0, len(features)):
             features[i].gis_location.name = features[i].project_task.subject
@@ -728,8 +874,8 @@ def view_project_map():
             else:
                 # Amber for 'Feedback' or 'non-urgent'
                 features[i].gis_location.color = "	#FFBF00"
-            
-        
+
+
         feature_queries.append({
                                 "name" : "Tasks",
                                 "query" : features,
@@ -806,7 +952,7 @@ def view_offices_map():
         project_location = project_locations.first()
         lat = project_location.gis_location.lat
         lon = project_location.gis_location.lon
-        
+
         if (lat is None) or (lon is None):
             # Zero is allowed
             session.error = T("Project has no Lat/Lon")
@@ -816,7 +962,7 @@ def view_offices_map():
         features = gis.get_features_in_radius(lat, lon, radius, tablename="org_office")
 
         # @ToDo: we also want the Project to show (with different Icon): project_locations set ready
-    
+
     else:
         features = db((offices.id > 0) & \
                       (locations.id == offices.location_id)).select(locations.id,
@@ -842,7 +988,7 @@ def view_offices_map():
 
         config = gis.get_config()
 
-        if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
+        if not deployment_settings.get_security_map() or s3_has_role("MapAdmin"):
             catalogue_toolbar = True
         else:
             catalogue_toolbar = False
@@ -854,7 +1000,7 @@ def view_offices_map():
             _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=False, polygons=layer.polygons)
             if _layer:
                 feature_queries.append(_layer)
-        
+
         # Add the Offices layer
         # Can't use this since we may have a custom spatial query
         #_layer = gis.get_feature_layer("org", "office", "Offices", "Office", config=config, marker_id=marker_id, active=True, polygons=False)
@@ -881,7 +1027,7 @@ def view_offices_map():
             #    else:
             #        # Amber for 'Feedback' or 'non-urgent'
             #        features[i].gis_location.color = "	#FFBF00"
-        
+
         feature_queries.append({
                                 "name" : "Tasks",
                                 "query" : features,
@@ -918,7 +1064,7 @@ def view_offices_map():
 
         response.view = "vol/view_map.html"
         return dict(map=html)
-    
+
     else:
         # Redirect to offices if none found
         session.error = T("No Offices found!")

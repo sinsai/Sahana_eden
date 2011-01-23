@@ -16,15 +16,18 @@ module = "admin"
 response.menu_options = admin_menu_options
 
 # S3 framework functions
+# -----------------------------------------------------------------------------
 def index():
 
     """ Module's Home Page """
 
     module_name = deployment_settings.modules[module].name_nice
-
+    response.title = module_name
     return dict(module_name=module_name)
 
-@auth.shn_requires_membership(1)
+
+# -----------------------------------------------------------------------------
+@auth.s3_requires_membership(1)
 def setting():
 
     """ RESTful CRUD controller """
@@ -67,7 +70,9 @@ def setting():
     output = s3_rest_controller("s3", resourcename, list_btn=None)
     return output
 
-@auth.shn_requires_membership(1)
+
+# -----------------------------------------------------------------------------
+@auth.s3_requires_membership(1)
 def theme():
     """ RESTful CRUD controller """
     resource = "theme"
@@ -121,6 +126,8 @@ def theme():
     return s3_rest_controller(module, resource)
     s3xrc.model.clear_config(table, "onvalidation")
 
+
+# -----------------------------------------------------------------------------
 def theme_apply(form):
     "Apply the Theme specified by Form"
     if form.vars.theme:
@@ -196,6 +203,8 @@ def theme_apply(form):
         session.error = INVALIDREQUEST
         redirect(URL(r=request))
 
+
+# -----------------------------------------------------------------------------
 def theme_check(form):
     "Check the Theme has valid files available. Deprecated"
     # Check which form we're called by
@@ -230,7 +239,9 @@ def theme_check(form):
     # Validation passed
     return
 
-@auth.shn_requires_membership(1)
+
+# -----------------------------------------------------------------------------
+@auth.s3_requires_membership(1)
 def user():
     """ RESTful CRUD controller """
     module = "auth"
@@ -239,9 +250,8 @@ def user():
     table = db[tablename]
 
     # Model options
-    s3xrc.model.add_component(module, "membership",
-                              joinby=dict(auth_user="user_id"),
-                              multiple=True)
+    role_manager = s3base.S3RoleManager()
+    s3xrc.model.set_method(module, resource, method="roles", action=role_manager)
 
     # CRUD Strings
     ADD_USER = T("Add User")
@@ -291,16 +301,26 @@ def user():
     s3xrc.model.configure(table,
         main="first_name",
         # Add users to Person Registry & 'Authenticated' role:
-        create_onaccept = lambda form: auth.shn_register(form),
+        create_onaccept = lambda form: auth.s3_register(form),
         create_onvalidation = lambda form: user_create_onvalidation(form))
-    return s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
+    if response.s3.actions:
+        response.s3.actions.insert(1,
+                    dict(label=str(T("Roles")), _class="action-btn",
+                         url=str(URL(r=request, c="admin", f="user", args=["[id]", "roles"]))))
+    return output
+
+
+# -----------------------------------------------------------------------------
 def user_create_onvalidation (form):
     if (form.request_vars.has_key("password_two") and \
         form.request_vars.password != form.request_vars.password_two):
         form.errors.password = T("Password fields don't match")
     return True
 
+
+# -----------------------------------------------------------------------------
 def user_approve(form):
     "Send an email to user if their account is approved (moved from 'pending' to 'blank'(i.e. enabled))"
     if form.vars.registration_key:
@@ -320,7 +340,9 @@ def user_approve(form):
         else:
             return
 
-@auth.shn_requires_membership(1)
+
+# -----------------------------------------------------------------------------
+@auth.s3_requires_membership(1)
 def usergroup():
     """
         User update form with groups
@@ -394,7 +416,9 @@ def usergroup():
 
     return dict(data=data, records=records, form=form)
 
-@auth.shn_requires_membership(1)
+
+# -----------------------------------------------------------------------------
+@auth.s3_requires_membership(1)
 def group():
 
     """ RESTful CRUD controller """
@@ -427,7 +451,9 @@ def group():
     s3xrc.model.configure(table, main="role")
     return s3_rest_controller(prefix, resourcename)
 
-@auth.shn_requires_membership(1)
+
+# -----------------------------------------------------------------------------
+@auth.s3_requires_membership(1)
 def membership():
 
     """ RESTful CRUD controller """
@@ -462,10 +488,15 @@ def membership():
     s3xrc.model.configure(table, main="user_id")
     return s3_rest_controller(prefix, resourcename)
 
-@auth.shn_requires_membership(1)
+
+# -----------------------------------------------------------------------------
+@auth.s3_requires_membership(1)
 def users():
     """
-        List/amend which users are in a Group
+    List/amend which users are in a Group
+
+    @deprecated
+
     """
 
     try:
@@ -517,7 +548,10 @@ def users():
         username_label = T("Email")
     table_header = THEAD(TR(TH("ID"), TH(T("First Name")), TH(T("Last Name")), TH(username_label), TH(T("Remove"))))
     table_footer = TFOOT(TR(TD(_colspan=4), TD(INPUT(_id="submit_delete_button", _type="submit", _value=T("Remove")))))
-    items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name="custom", _method="post", _enctype="multipart/form-data", _action=URL(r=request, f="group_remove_users", args=[group])))
+    items = DIV(FORM(
+        TABLE(table_header,
+              TBODY(item_list),
+              table_footer, _id="list", _class="display"), _name="custom", _method="post", _enctype="multipart/form-data", _action=URL(r=request, f="group_remove_users", args=[group])))
 
     subtitle = T("Users")
     crud.messages.submit_button = T("Add")
@@ -527,8 +561,16 @@ def users():
     output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form=form))
     return output
 
+
+# -----------------------------------------------------------------------------
 def group_dupes(form, page, arg):
-    """ Onvalidation check for duplicate user roles """
+    """
+    Onvalidation check for duplicate user roles
+
+    @deprecated
+
+    """
+
     user = form.latest["user_id"]
     group = form.latest["group_id"]
     query = (form.table.user_id == user) & (form.table.group_id == group)
@@ -537,7 +579,9 @@ def group_dupes(form, page, arg):
         session.error = T("User already has this role")
         redirect(URL(r=request, f=page, args=arg))
 
-@auth.shn_requires_membership(1)
+
+# -----------------------------------------------------------------------------
+@auth.s3_requires_membership(1)
 def group_remove_users():
     """
         Remove users from a group
@@ -557,7 +601,9 @@ def group_remove_users():
     session.flash = T("Users removed")
     redirect(URL(r=request, f="users", args=[group]))
 
-@auth.shn_requires_membership(1)
+
+# -----------------------------------------------------------------------------
+@auth.s3_requires_membership(1)
 def groups():
     """
         List/amend which groups a User is in
@@ -614,7 +660,9 @@ def groups():
     output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form=form))
     return output
 
-@auth.shn_requires_membership(1)
+
+# -----------------------------------------------------------------------------
+@auth.s3_requires_membership(1)
 def user_remove_groups():
     """ Remove groups from a user """
     if len(request.args) == 0:
@@ -632,8 +680,9 @@ def user_remove_groups():
     session.flash = T("Groups removed")
     redirect(URL(r=request, f="groups", args=[user]))
 
-# Import Data
-@auth.shn_requires_membership(1)
+
+# -----------------------------------------------------------------------------
+@auth.s3_requires_membership(1)
 def import_data():
     """
         Import data via POST upload to CRUD controller. Old - being replaced by Sync/Importer.
@@ -651,7 +700,9 @@ def import_data():
     return dict(title=title,
                 import_job_form=import_job_form)
 
-@auth.shn_requires_membership(1)
+
+# -----------------------------------------------------------------------------
+@auth.s3_requires_membership(1)
 def import_csv_data():
     """
         Import CSV data via POST upload to Database.
@@ -665,7 +716,8 @@ def import_csv_data():
         session.error = T("Unable to parse CSV file!")
     redirect(URL(r=request, f="import_data"))
 
-# Export Data
+
+# -----------------------------------------------------------------------------
 @auth.requires_login()
 def export_data():
     """
@@ -674,7 +726,9 @@ def export_data():
     title = T("Export Data")
     return dict(title=title)
 
-@auth.shn_requires_membership(1)
+
+# -----------------------------------------------------------------------------
+@auth.s3_requires_membership(1)
 def export_csv():
     """
         Export entire database as CSV. Old - being replaced by Sync.
@@ -692,10 +746,10 @@ def export_csv():
     return output.read()
 
 
-
+# -----------------------------------------------------------------------------
 # Unstructured Data Import
 # Deprecated - being replaced by Importer
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def import_job():
     "RESTful CRUD controller to handle 'jobs' for importing unstructured data."
     # CRUD Strings
@@ -727,9 +781,13 @@ def import_job():
     if action == "update":
         return _import_job_update(jr)
 
+
+# -----------------------------------------------------------------------------
 def _import_job_list(jr):
     return shn_list(jr, listadd=False)
 
+
+# -----------------------------------------------------------------------------
 def _import_job_create(jr):
     if jr.http != "POST":
         redirect(jr.there())
@@ -769,6 +827,8 @@ def _import_job_create(jr):
     response.flash = "Form errors!"
     redirect(URL(r=request, f="import_data"))
 
+
+# -----------------------------------------------------------------------------
 def _import_job_update(jr):
     if len(request.args) < 2:
         redirect(jr.there())
@@ -791,6 +851,8 @@ def _import_job_update(jr):
     response.view = "admin/import_job_update.html"
     return output
 
+
+# -----------------------------------------------------------------------------
 def _import_job_update_GET(jr, job):
     table = db.admin_import_line
     query = (table.import_job == job.id)
@@ -831,6 +893,8 @@ def _import_job_update_GET(jr, job):
 
     return {}
 
+
+# -----------------------------------------------------------------------------
 def _import_job_update_POST(jr, job):
     if job.status == "new":
         # Update column map.
@@ -869,6 +933,8 @@ def _import_job_update_POST(jr, job):
 
     return _import_job_update_GET(jr, job)
 
+
+# -----------------------------------------------------------------------------
 def get_matchable_fields(module, resource):
     model_fields = getattr(db, "%s_%s" % (module, resource)).fields
     for name in ["created_on", "modified_on", "id", "uuid", "deleted"]:
@@ -877,6 +943,8 @@ def get_matchable_fields(module, resource):
     return model_fields
 
 
+
+# -----------------------------------------------------------------------------
 # Functional Testing
 # Deprecated: Use static/selenium/scripts/regressionTests.py with it's Tk UI
 def handleResults():
@@ -956,8 +1024,10 @@ def handleResults():
     title = T("Test Results")
     return dict(title=title, item=message)
 
+
+# -----------------------------------------------------------------------------
 # Ticket Viewer functions Borrowed from admin application of web2py
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def errors():
     """ Error handler """
 
@@ -974,6 +1044,8 @@ def errors():
 
     return dict(app=app, tickets=tickets)
 
+
+# -----------------------------------------------------------------------------
 def make_link(path):
     """ Create a link from a path """
     tryFile = path.replace("\\", "/")
@@ -993,6 +1065,7 @@ def make_link(path):
     return ""
 
 
+# -----------------------------------------------------------------------------
 def make_links(traceback):
     """ Make links using the given traceback """
 
@@ -1020,6 +1093,7 @@ def make_links(traceback):
     return result
 
 
+# -----------------------------------------------------------------------------
 class TRACEBACK(object):
     """ Generate the traceback """
 
@@ -1034,8 +1108,9 @@ class TRACEBACK(object):
         return self.s
 
 
+# -----------------------------------------------------------------------------
 # Ticket viewing
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def ticket():
     """ Ticket handler """
 
@@ -1054,11 +1129,12 @@ def ticket():
                 code=e.code,
                 layer=e.layer)
 
+
 # -----------------------------------------------------------------------------
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def role():
     """
-    Role Editor
+    Role Manager
 
     @author: Dominic König <dominic@aidiq.com>
 
@@ -1077,7 +1153,9 @@ def role():
             return False
 
         handler = s3base.S3RoleManager()
-        handler.controllers = deployment_settings.modules
+        modules = deployment_settings.modules
+        handler.controllers = Storage([(m, modules[m]) for m in modules
+                                                       if modules[m].restricted])
 
         # Configure REST methods
         resource = r.resource
@@ -1099,7 +1177,7 @@ def role():
 
 
 # -----------------------------------------------------------------------------
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def acl():
     """
     Preliminary controller for ACLs
@@ -1139,6 +1217,8 @@ def acl():
     output = s3_rest_controller(prefix, name)
     return output
 
+
+# -----------------------------------------------------------------------------
 def acl_represent(acl, options):
     """
     Represent ACLs in tables

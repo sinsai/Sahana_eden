@@ -77,8 +77,8 @@ gluon.tools.Auth --+
       override: define_tables() login() register() requires_membership()
     </li>
     <li>
-      add: shn_has_role() shn_has_permission() shn_logged_in() 
-      shn_accessible_query() shn_register() callback shn_link_to_person()
+      add: s3_has_role() s3_has_permission() s3_logged_in() 
+      s3_accessible_query() s3_register() callback s3_link_to_person()
     </li>
     <li>
       language
@@ -225,10 +225,10 @@ gluon.tools.Auth --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.AuthS3-class.html#shn_logged_in" class="summary-sig-name">shn_logged_in</a>(<span class="summary-sig-arg">self</span>)</span><br />
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.AuthS3-class.html#s3_logged_in" class="summary-sig-name">s3_logged_in</a>(<span class="summary-sig-arg">self</span>)</span><br />
       Check whether the user is currently logged-in</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_logged_in">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_logged_in">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -242,11 +242,11 @@ gluon.tools.Auth --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.AuthS3-class.html#shn_has_role" class="summary-sig-name">shn_has_role</a>(<span class="summary-sig-arg">self</span>,
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.AuthS3-class.html#s3_has_role" class="summary-sig-name">s3_has_role</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">role</span>)</span><br />
       Check whether the currently logged-in user has a role</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_has_role">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_has_role">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -260,7 +260,7 @@ gluon.tools.Auth --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.AuthS3-class.html#shn_has_permission" class="summary-sig-name">shn_has_permission</a>(<span class="summary-sig-arg">self</span>,
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.AuthS3-class.html#s3_has_permission" class="summary-sig-name">s3_has_permission</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">method</span>,
         <span class="summary-sig-arg">table</span>,
         <span class="summary-sig-arg">record_id</span>=<span class="summary-sig-default">0</span>)</span><br />
@@ -268,7 +268,7 @@ gluon.tools.Auth --+
       manner &quot;method&quot; Designed to be called from the RESTlike 
       controller</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_has_permission">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_has_permission">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -282,13 +282,13 @@ gluon.tools.Auth --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.AuthS3-class.html#shn_accessible_query" class="summary-sig-name">shn_accessible_query</a>(<span class="summary-sig-arg">self</span>,
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.AuthS3-class.html#s3_accessible_query" class="summary-sig-name">s3_accessible_query</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">method</span>,
         <span class="summary-sig-arg">table</span>)</span><br />
       Returns a query with all accessible records for the current logged in
       user</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_accessible_query">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_accessible_query">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -302,11 +302,11 @@ gluon.tools.Auth --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.AuthS3-class.html#shn_register" class="summary-sig-name">shn_register</a>(<span class="summary-sig-arg">self</span>,
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.AuthS3-class.html#s3_register" class="summary-sig-name">s3_register</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">form</span>)</span><br />
       S3 framework function</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_register">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_register">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -320,13 +320,13 @@ gluon.tools.Auth --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.AuthS3-class.html#shn_has_membership" class="summary-sig-name">shn_has_membership</a>(<span class="summary-sig-arg">self</span>,
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.AuthS3-class.html#s3_has_membership" class="summary-sig-name">s3_has_membership</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">group_id</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">user_id</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">role</span>=<span class="summary-sig-default">None</span>)</span><br />
       Checks if user is member of group_id or role</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_has_membership">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_has_membership">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -346,7 +346,7 @@ gluon.tools.Auth --+
         <span class="summary-sig-arg">role</span>=<span class="summary-sig-default">None</span>)</span><br />
       Checks if user is member of group_id or role</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_has_membership">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_has_membership">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -360,12 +360,12 @@ gluon.tools.Auth --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.AuthS3-class.html#shn_requires_membership" class="summary-sig-name">shn_requires_membership</a>(<span class="summary-sig-arg">self</span>,
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.AuthS3-class.html#s3_requires_membership" class="summary-sig-name">s3_requires_membership</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">role</span>)</span><br />
       Decorator that prevents access to action if not logged in or if user 
       logged in is not a member of group_id.</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_requires_membership">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_requires_membership">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -384,7 +384,7 @@ gluon.tools.Auth --+
       Decorator that prevents access to action if not logged in or if user 
       logged in is not a member of group_id.</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_requires_membership">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_requires_membership">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -398,11 +398,54 @@ gluon.tools.Auth --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.AuthS3-class.html#shn_link_to_person" class="summary-sig-name">shn_link_to_person</a>(<span class="summary-sig-arg">self</span>,
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.AuthS3-class.html#s3_link_to_person" class="summary-sig-name">s3_link_to_person</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">user</span>=<span class="summary-sig-default">None</span>)</span><br />
       Links user accounts to person registry entries</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_link_to_person">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_link_to_person">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.AuthS3-class.html#s3_create_role" class="summary-sig-name">s3_create_role</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">role</span>,
+        <span class="summary-sig-arg">description</span>,
+        <span class="summary-sig-arg">*acls</span>)</span><br />
+      Back-end method to create roles with ACLs</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_create_role">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.AuthS3-class.html#s3_update_acl" class="summary-sig-name">s3_update_acl</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">role</span>,
+        <span class="summary-sig-arg">c</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">f</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">t</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">oacl</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">uacl</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Back-end method to update an ACL</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_update_acl">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -596,17 +639,17 @@ gluon.tools.Auth --+
   </dl>
 </td></tr></table>
 </div>
-<a name="shn_logged_in"></a>
+<a name="s3_logged_in"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">shn_logged_in</span>(<span class="sig-arg">self</span>)</span>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">s3_logged_in</span>(<span class="sig-arg">self</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_logged_in">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_logged_in">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -620,18 +663,18 @@ gluon.tools.Auth --+
   </dl>
 </td></tr></table>
 </div>
-<a name="shn_has_role"></a>
+<a name="s3_has_role"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">shn_has_role</span>(<span class="sig-arg">self</span>,
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">s3_has_role</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">role</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_has_role">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_has_role">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -644,20 +687,20 @@ gluon.tools.Auth --+
   </dl>
 </td></tr></table>
 </div>
-<a name="shn_has_permission"></a>
+<a name="s3_has_permission"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">shn_has_permission</span>(<span class="sig-arg">self</span>,
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">s3_has_permission</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">method</span>,
         <span class="sig-arg">table</span>,
         <span class="sig-arg">record_id</span>=<span class="sig-default">0</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_has_permission">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_has_permission">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -676,19 +719,19 @@ gluon.tools.Auth --+
       </p>
 </div></td></tr></table>
 </div>
-<a name="shn_accessible_query"></a>
+<a name="s3_accessible_query"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">shn_accessible_query</span>(<span class="sig-arg">self</span>,
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">s3_accessible_query</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">method</span>,
         <span class="sig-arg">table</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_accessible_query">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_accessible_query">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -701,18 +744,18 @@ gluon.tools.Auth --+
       </p>
 </div></td></tr></table>
 </div>
-<a name="shn_register"></a>
+<a name="s3_register"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">shn_register</span>(<span class="sig-arg">self</span>,
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">s3_register</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">form</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_register">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_register">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -731,20 +774,20 @@ gluon.tools.Auth --+
   </dl>
 </td></tr></table>
 </div>
-<a name="shn_has_membership"></a>
+<a name="s3_has_membership"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">shn_has_membership</span>(<span class="sig-arg">self</span>,
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">s3_has_membership</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">group_id</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">user_id</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">role</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_has_membership">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_has_membership">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -755,7 +798,7 @@ gluon.tools.Auth --+
       Custom Flash style
     </li>
     <li>
-      Uses shn_has_role()
+      Uses s3_has_role()
     </li>
   </ul>
   <dl class="fields">
@@ -775,7 +818,7 @@ gluon.tools.Auth --+
         <span class="sig-arg">role</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_has_membership">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_has_membership">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -786,25 +829,25 @@ gluon.tools.Auth --+
       Custom Flash style
     </li>
     <li>
-      Uses shn_has_role()
+      Uses s3_has_role()
     </li>
   </ul>
   <dl class="fields">
   </dl>
 </td></tr></table>
 </div>
-<a name="shn_requires_membership"></a>
+<a name="s3_requires_membership"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">shn_requires_membership</span>(<span class="sig-arg">self</span>,
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">s3_requires_membership</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">role</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_requires_membership">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_requires_membership">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -817,7 +860,7 @@ gluon.tools.Auth --+
       Custom Flash style
     </li>
     <li>
-      Uses shn_has_role()
+      Uses s3_has_role()
     </li>
     <li>
       Administrators (id=1) are deemed to have all roles
@@ -838,7 +881,7 @@ gluon.tools.Auth --+
         <span class="sig-arg">role</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_requires_membership">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_requires_membership">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -851,7 +894,7 @@ gluon.tools.Auth --+
       Custom Flash style
     </li>
     <li>
-      Uses shn_has_role()
+      Uses s3_has_role()
     </li>
     <li>
       Administrators (id=1) are deemed to have all roles
@@ -861,18 +904,18 @@ gluon.tools.Auth --+
   </dl>
 </td></tr></table>
 </div>
-<a name="shn_link_to_person"></a>
+<a name="s3_link_to_person"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">shn_link_to_person</span>(<span class="sig-arg">self</span>,
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">s3_link_to_person</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">user</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.shn_link_to_person">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_link_to_person">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -895,6 +938,53 @@ gluon.tools.Auth --+
       the email address from the user record is registered for that person
     </li>
   </ul>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="s3_create_role"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">s3_create_role</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">role</span>,
+        <span class="sig-arg">description</span>,
+        <span class="sig-arg">*acls</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_create_role">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Back-end method to create roles with ACLs</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="s3_update_acl"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">s3_update_acl</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">role</span>,
+        <span class="sig-arg">c</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">f</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">t</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">oacl</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">uacl</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#AuthS3.s3_update_acl">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Back-end method to update an ACL</p>
   <dl class="fields">
   </dl>
 </td></tr></table>
@@ -931,7 +1021,7 @@ gluon.tools.Auth --+
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Sun Jan  2 09:00:27 2011
+    Generated by Epydoc 3.0.1 on Mon Jan 17 00:32:28 2011
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

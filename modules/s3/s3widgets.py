@@ -177,7 +177,7 @@ class S3UploadWidget(UploadWidget):
     Subclassed to not show the delete checkbox when field is mandatory
         - This now been included as standard within Web2Py from r2867
         - Leaving this unused example in the codebase so that we can easily amend this if we wish to later
-        
+
     @author: Fran Boon (fran@aidiq.com)
 
     @ToDo: Add support for allow_future=False
@@ -1014,10 +1014,10 @@ class S3LocationSelectorWidget(FormWidget):
         else:
             visible = False
         if visible:
-            button = A(T("Location Details"), _href="#",
+            button = A(T("Location Details"), _style="cursor:pointer; cursor:hand",
                        _id="gis_location_details-btn")
         else:
-            button = A(T("Location Details"), _href="#",
+            button = A(T("Location Details"), _style="cursor:pointer; cursor:hand",
                        _id="gis_location_details-btn",
                        _class="hidden")
         dropdowns.append(level_dropdown(_level, visible=visible, current=value, button=button))
@@ -1078,28 +1078,28 @@ class S3LocationSelectorWidget(FormWidget):
         autocomplete = DIV(LABEL(T("Search") + ":"), BR(), INPUT(_id="gis_location_autocomplete"), _id="gis_location_autocomplete_div", _class="hidden")
 
         # Buttons
-        search_button = A(T("Search Locations"), _href="#",
+        search_button = A(T("Search Locations"), _style="cursor:pointer; cursor:hand",
                           _id="gis_location_search-btn")
 
-        add_button = A(T("Add New Location"), _href="#",
+        add_button = A(T("Add New Location"), _style="cursor:pointer; cursor:hand",
                        _id="gis_location_add-btn")
 
-        cancel_button = A(T("Cancel Add"), _href="#",
+        cancel_button = A(T("Cancel Add"), _style="cursor:pointer; cursor:hand",
                           _id="gis_location_cancel-btn",
                           _class="hidden")
 
-        geolocate_button = A(T("Use Current Location"), _href="#",
+        geolocate_button = A(T("Use Current Location"), _style="cursor:pointer; cursor:hand",
                              _id="gis_location_geolocate-btn",
                              _class="hidden")
 
         if map_selector:
-            map_button = A(T("Show Map"), _href="#",
+            map_button = A(T("Show Map"), _style="cursor:pointer; cursor:hand",
                            _id="gis_location_map-btn",
                            _class="hidden")
         else:
             map_button = ""
 
-        geocoder_button = A(T("Lookup Address"), _href="#",
+        geocoder_button = A(T("Lookup Address"), _style="cursor:pointer; cursor:hand",
                             _id="gis_location_geocoder-btn")
 
         latlon_help = locations.lat.comment
@@ -1753,9 +1753,9 @@ class S3MultiSelectWidget(FormWidget):
 
         @param id: for the row
         @param column_fields: provides the order
-        @param column_field_represents: functions to find the values
+        @param column_fields_represent: functions to find the values
             of the fields in the row
-        @type column_field_represents: dict of {fieldname: function}
+        @type column_fields_represent: dict of {fieldname: function}
 
         """
 

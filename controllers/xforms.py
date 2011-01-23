@@ -248,12 +248,12 @@ def importxml(db, xmlinput):
     fh.seek(0, 0)
     db[parent].import_from_csv_file(fh)
 
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def post():
     data = importxml(db, request.body.read())
     return data
 
-@auth.shn_requires_membership(2)
+@auth.s3_requires_membership(2)
 def submission_old():
     """
     Allows for submission of xforms by ODK Collect
@@ -268,7 +268,7 @@ def submission_old():
     r.headers["Location"] = request.env.http_host
     raise r
 
-@auth.shn_requires_membership(2)
+@auth.s3_requires_membership(2)
 def submission():
     """
     Allows for submission of Xforms by ODK Collect

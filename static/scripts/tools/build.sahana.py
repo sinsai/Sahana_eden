@@ -250,7 +250,6 @@ def docss():
         "../../styles/S3/jquery.autocomplete.css",
         "../../styles/S3/jquery.cluetip.css",
         "../../styles/S3/jquery.dataTables.css",
-        "../../styles/S3/jquery.jqplot.css",
         "../../styles/S3/jquery.ui.core.css",
         "../../styles/S3/jquery.ui.autocomplete.css",
         "../../styles/S3/jquery.ui.datepicker.css",
@@ -268,6 +267,7 @@ def docss():
         "../../styles/gis/google.css",
         "../../styles/gis/style.css",
         "../../styles/gis/ie6-style.css",
+        "../../styles/gis/gxp.css",
         "../../styles/gis/geoexplorer.css",
         "../../styles/gis/ie.css"
     ]

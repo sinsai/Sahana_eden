@@ -21,8 +21,7 @@ if deployment_settings.has_module("logs"):
                             organisation_id(),
                             location_id(),
                             #document_id(),
-                            person_id("contact_person_id"
-                                      ),
+                            person_id("contact_person_id"),
                             super_link(db.org_site),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
@@ -31,7 +30,15 @@ if deployment_settings.has_module("logs"):
     table.location_id.requires = IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True)
 
     table.contact_person_id.label = T("Contact Person")
-    s3xrc.model.configure(table, mark_required=["location_id"])
+    
+    def inventory_store_onvalidation(form): 
+        if form.vars.location_id == None: 
+            form.errors.location_id = T("Enter a location") 
+        return
+
+    s3xrc.model.configure(table,
+                          onvalidation=inventory_store_onvalidation,
+                          mark_required=["location_id"])
 
     # -----------------------------------------------------------------------------
     def inventory_store_represent(id):
@@ -88,6 +95,8 @@ if deployment_settings.has_module("logs"):
     s3xrc.model.add_component(module, resourcename,
                               multiple=False,
                               joinby=super_key(db.org_site))
+    # -----------------------------------------------------------------------------
+    #s3xrc.model.set_method(module, "store", method="incoming", action=inventory_store_incoming )
 
     #==============================================================================
     # Inventory Item
@@ -101,6 +110,9 @@ if deployment_settings.has_module("logs"):
                             Field("quantity", 
                                   "double",
                                   notnull = True),
+                            Field("packet_quantity",
+                                  "double",
+                                  compute = shn_record_packet_quantity),                               
                             comments(),
                             migrate=migrate, *s3_meta_fields())
     
@@ -125,9 +137,37 @@ if deployment_settings.has_module("logs"):
         msg_record_modified = T("Warehouse Item updated"),
         msg_record_deleted = T("Warehouse Item deleted"),
         msg_list_empty = T("No Warehouse Items currently registered"))
+    
+    def shn_inventory_store_item_represent (id):
+        record = db( (db.inventory_store_item.id == id) & \
+                     (db.inventory_store_item.item_id == db.supply_item.id) 
+                    ).select( db.supply_item.name,
+                              limitby = [0,1]).first()
+        if record:
+            return record.name
+        else:
+            return None  
+
+    # Reusable Field
+    store_item_id = S3ReusableField("store_item_id", db.inventory_store_item,
+                requires = IS_ONE_OF(db, 
+                                     "inventory_store_item.id", 
+                                     shn_inventory_store_item_represent, 
+                                     orderby="inventory_store_item.id", 
+                                     sort=True),
+                represent = shn_inventory_store_item_represent,
+                label = T("Warehouse Item"),
+                comment = DIV( _class="tooltip", _title=T("Warehouse Item") + "|" + T("Select Items from this Warehouse")),
+                ondelete = "RESTRICT"
+                )    
 
     # Items as component of Stores
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(inventory_store="inventory_store_id",
-                                          supply_item="item_id"))
+                              joinby=dict(inventory_store="inventory_store_id")
+                              )
+    
+    s3xrc.model.add_component(module, resourcename,
+                              multiple=False,
+                              joinby=dict(supply_item="item_id")
+                              )        

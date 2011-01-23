@@ -15,7 +15,7 @@ resourcename = request.function
 response.menu_options = logs_menu
 
 #==============================================================================
-#@auth.shn_requires_membership(1)
+#@auth.s3_requires_membership(1)
 def item_category():
 
     """ RESTful CRUD controller """

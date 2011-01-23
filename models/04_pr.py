@@ -160,6 +160,8 @@ s3xrc.model.configure(table,
                       list_fields = [
                         "id",
                         "type",
+                        "address",
+                        "postcode",
                         #"co_name",
                         #"L4",
                         "L3",
@@ -232,13 +234,13 @@ def shn_pe_contact_onvalidation(form):
 
     if form.vars.contact_method == '1':
         email, error = IS_EMAIL()(form.vars.value)
-        if error:          
+        if error:
             form.errors.value = T("Enter a valid email")
 
     return False
 
 s3xrc.model.configure(table,
-                      onvalidation=shn_pe_contact_onvalidation, 
+                      onvalidation=shn_pe_contact_onvalidation,
                       list_fields=[
                         #"id",
                         #"pe_id",
@@ -388,22 +390,21 @@ tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
                         super_link(db.sit_situation), # sit_id
-                        person_id("reporter",
-                                  label=T("Reporter"),
-                                  default = s3_logged_in_person(),
-                                  comment=shn_person_comment(T("Reporter"),
-                                                             T("Person who is reporting about the presence."))),
                         person_id("observer",
                                   label=T("Observer"),
+                                  default = s3_logged_in_person(),
                                   comment=shn_person_comment(T("Observer"),
-                                                             T("Person who observed the presence (if different from reporter)."))),
+                                                             T("Person who has actually seen the person/group."))),
                         Field("shelter_id", "integer"),
                         location_id(widget = S3LocationAutocompleteWidget(request, deployment_settings),
                                     comment = DIV(A(ADD_LOCATION, _class="colorbox", _target="top", _title=ADD_LOCATION,
                                                   _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup"))),
                                               DIV(_class="tooltip",
-                                                  _title=T("Current Location") + "|" + T("The Current Location of the Person, which can be general (for Reporting) or precise (for displaying on a Map). Enter a few characters to search from available locations.")))),
-                        Field("location_details"),
+                                                  _title=T("Current Location") + "|" + T("The Current Location of the Person/Group, which can be general (for Reporting) or precise (for displaying on a Map). Enter a few characters to search from available locations.")))),
+                        Field("location_details",
+                              comment = DIV(_class="tooltip",
+                                            _title=T("Location Details") + "|" + T("Specific Area (e.g. Building/Room) within the Location that this Person/Group is seen."))
+                             ),
                         Field("datetime", "datetime"),
                         Field("presence_condition", "integer",
                               requires = IS_IN_SET(pr_presence_condition_opts,
@@ -547,6 +548,98 @@ s3.crud_strings[tablename] = Storage(
     msg_record_modified = T("Log entry updated"),
     msg_record_deleted = T("Log entry deleted"),
     msg_list_empty = T("No Presence Log Entries currently registered"))
+
+
+# *****************************************************************************
+# Note (future replacement for pr_presence and pf_missing_report)
+#
+#pr_note_types = {
+    #1:T("Location"),
+    #2:T("Status"),
+    #3:T("Note")
+#}
+
+#pr_note_status = {
+    #1:T("reported"),
+    #2:T("confirmed"),
+    #3:T("invalid")
+#}
+
+#pr_procedure_types = {
+    #1:T("Check-in"),
+    #2:T("Check-out")
+#}
+
+#resourcename = "note"
+#tablename = "%s_%s" % (prefix, resourcename)
+#table = db.define_table(tablename,
+                        #super_link(db.pr_pentity), # pe_id
+                        #person_id("reporter"),
+
+                        ## Note type and status
+                        #Field("note_type", "integer",
+                              #requires = IS_IN_SET(pr_note_types, zero=None),
+                              #default = 3,
+                              #label = T("Note Type"),
+                              #represent = lambda opt: \
+                                          #pr_note_types.get(opt, UNKNOWN_OPT)),
+                        #Field("note_status", "integer",
+                              #requires = IS_IN_SET(pr_note_status, zero=None),
+                              #default = 1,
+                              #label = T("Note Status"),
+                              #represent = lambda opt: \
+                                          #pr_note_status.get(opt, UNKNOWN_OPT)),
+
+                        ## Time stamp
+                        #Field("timestmp", "datetime"),
+
+                        ## Last known location
+                        #location_id(),
+                        #shelter_id(),
+                        #hospital_id(),
+
+                        ## Note text (optional)
+                        #Field("note_text", "text"),
+
+                        ## Person status
+                        #Field("missing", "boolean", default=False),
+                        #Field("injured", "boolean", default=False),
+                        #Field("deceased", "boolean", default=False),
+
+                        ## Procedure: None, Check-in or Check-out
+                        #Field("procedure", "integer",
+                              #requires = IS_EMPTY_OR(IS_IN_SET(pr_procedure_types)),
+                              #default = None,
+                              #label = T("Procedure"),
+                              #represent = lambda opt: \
+                                          #pr_procedure_types.get(opt, UNKNOWN_OPT)),
+
+                        #Field("closed", "boolean", default=False),
+                        #migrate=migrate, *s3_meta_fields())
+
+
+## CRUD strings
+#ADD_NOTE = T("Add Note")
+#s3.crud_strings[tablename] = Storage(
+    #title_create = ADD_NOTE,
+    #title_display = T("Note Details"),
+    #title_list = T("Notes"),
+    #title_update = T("Edit Note"),
+    #title_search = T("Search Notes"),
+    #subtitle_create = T("Add New Note"),
+    #subtitle_list = T("Current Notes"),
+    #label_list_button = T("List Notes"),
+    #label_create_button = ADD_NOTE,
+    #msg_record_created = T("Note added"),
+    #msg_record_modified = T("Note updated"),
+    #msg_record_deleted = T("Note deleted"),
+    #msg_list_empty = T("No notes available"))
+
+
+## Notes as component of person entities
+#s3xrc.model.add_component(prefix, resourcename,
+                          #multiple=True,
+                          #joinby=super_key(db.pr_pentity))
 
 
 # *****************************************************************************

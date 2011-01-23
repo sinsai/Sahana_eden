@@ -14,17 +14,17 @@ response.menu_options = [
     [T("Active Problems"), False, URL(r=request, f="index")],
 ]
 
-if shn_has_role(1):
+if s3_has_role(1):
     response.menu_options.extend([
         [T("Groups"), False, URL(r=request, f="group")],
     ])
 
-if shn_has_role(1):
+if s3_has_role(1):
     response.menu_options.extend([
         [T("Group Memberships"), False, URL(r=request, f="user_to_group")],
     ])
 
-if shn_has_role(1):
+if s3_has_role(1):
     response.menu_options.extend([
         [T("Problem Administration"), False, URL(r=request, f="problem")],
     ])
@@ -217,6 +217,8 @@ def index():
                          (db.delphi_problem.active == True)). \
                          select(orderby =~ db.delphi_problem.last_modification)
         result.append((group, latest_problems, actions))
+
+    response.title = module_name
     return dict(groups_problems=result, name="Active Problems",
                 module_name=module_name)
 
@@ -292,13 +294,13 @@ def new_problem():
     return problem()
 
 def group():
-    if not shn_has_role(1):
+    if not s3_has_role(1):
         raise HTTP(403)
 
     return s3_rest_controller(module, "group")
 
 def user_to_group():
-    if not shn_has_role(1):
+    if not s3_has_role(1):
         raise HTTP(403)
 
     return s3_rest_controller(module, "user_to_group")

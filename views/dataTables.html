@@ -70,9 +70,20 @@ $(document).ready(function() {
 
   {{if not response.s3.no_sspag:}}
     // Cache the pages to reduce server-side calls
-    var oCache = {
-        iCacheLower: -1
-    };
+    {{if response.aadata is not None:}}
+        var oCache = {
+            iCacheLower: {{=response.s3.start}},
+            iCacheUpper: {{=response.s3.limit}},
+            lastJson: {{=XML(response.aadata)}}
+        };
+        var aoData = [{name: "iDisplayLength", value: 10},
+                      {name: "iDisplayStart", value: 0},
+                      {name: "sEcho", value: 1}]
+    {{else:}}
+        var oCache = {
+            iCacheLower: -1
+        };
+    {{pass}}
     function fnSetKey( aoData, sKey, mValue ) {
         for ( var i=0, iLen=aoData.length ; i < iLen ; i++ ) {
             if ( aoData[i].name == sKey ) {
@@ -93,7 +104,7 @@ $(document).ready(function() {
         // Adjust the pipe size depending on the page size
         if (iRequestLength == 10) {
             var iPipe = 6;
-        } else if (iRequestLength > 49) {
+        } else if (iRequestLength > 49 || iRequestLength == -1) {
             var iPipe = 2;
         } else {
             // iRequestLength == 25
@@ -105,7 +116,9 @@ $(document).ready(function() {
         var iRequestEnd = iRequestStart + iRequestLength;
         oCache.iDisplayStart = iRequestStart;
         /* outside pipeline? */
-        if ( oCache.iCacheLower < 0 || iRequestStart < oCache.iCacheLower || iRequestEnd > oCache.iCacheUpper ) {
+        if ( oCache.iCacheUpper !== -1 && /* If Display All oCache.iCacheUpper == -1 */
+        	 ( iRequestLength == -1 || oCache.iCacheLower < 0 || iRequestStart < oCache.iCacheLower || iRequestEnd > oCache.iCacheUpper )
+        	) {
             bNeedServer = true;
         }
 
@@ -134,10 +147,17 @@ $(document).ready(function() {
             }
 
             oCache.iCacheLower = iRequestStart;
-            oCache.iCacheUpper = iRequestStart + (iRequestLength * iPipe);
             oCache.iDisplayLength = fnGetKey( aoData, 'iDisplayLength' );
-            fnSetKey( aoData, 'iDisplayStart', iRequestStart );
-            fnSetKey( aoData, 'iDisplayLength', iRequestLength * iPipe );
+
+            if (iRequestLength == -1) {
+            	oCache.iCacheUpper = -1; /* flag for all records are in Cache */
+            	fnSetKey( aoData, 'iDisplayStart', "None" ); /* No Filter */
+            	fnSetKey( aoData, 'iDisplayLength', "None" );  /* No Filter */
+            } else {
+            	oCache.iCacheUpper = iRequestStart + (iRequestLength * iPipe);
+            	fnSetKey( aoData, 'iDisplayStart', iRequestStart );
+            	fnSetKey( aoData, 'iDisplayLength', iRequestLength * iPipe );
+            }
 
             $.getJSON( sSource, aoData, function (json) {
                 /* Callback processing */
@@ -145,14 +165,18 @@ $(document).ready(function() {
                 if ( oCache.iCacheLower != oCache.iDisplayStart ) {
                     json.aaData.splice( 0, oCache.iDisplayStart - oCache.iCacheLower );
                 }
-                json.aaData.splice( oCache.iDisplayLength, json.aaData.length );
+                if (oCache.iDisplayLength !== -1) {
+                	json.aaData.splice( oCache.iDisplayLength, json.aaData.length );
+                }
                 fnCallback(json)
             } );
         } else {
             json = jQuery.extend(true, {}, oCache.lastJson);
             json.sEcho = sEcho; /* Update the echo for each response */
-            json.aaData.splice( 0, iRequestStart - oCache.iCacheLower );
-            json.aaData.splice( iRequestLength, json.aaData.length );
+            if (iRequestLength !== -1) {
+	            json.aaData.splice( 0, iRequestStart - oCache.iCacheLower );
+	            json.aaData.splice( iRequestLength, json.aaData.length );
+            }
             fnCallback(json);
             return;
         }
@@ -177,6 +201,7 @@ $(document).ready(function() {
         'bSort': true,
         'sPaginationType': 'full_numbers',
         'iDisplayLength': 10,
+        'aLengthMenu': [[10, 25, 50, -1], [10, 25, 50, '{{=T("All")}}']],
         'bProcessing': true,
         'bServerSide': true,
         'sAjaxSource': '{{=jr.there(representation="aaData")}}',
@@ -195,6 +220,19 @@ $(document).ready(function() {
                 // Extract the id # from the link
                 var re = />(.*)</i;
                 id = re.exec(aData[0])[1];
+                // Check if action is restricted to a subset of records
+                if ("restrict" in Actions[i]) {
+                    permitted = false;
+                    for (j=0, iLen=Actions[i].restrict.length; j < iLen; j++) {
+                        if (id == Actions[i].restrict[j]) {
+                            permitted = true;
+                            break;
+                        }
+                    }
+                    if (!permitted) {
+                        continue;
+                    }
+                }
                 c = Actions[i]._class
                 re = /%5Bid%5D/g;
                 Buttons = Buttons + '<a class="'+ c +'" href="' + Actions[i].url.replace(re, id) + '">' + Utf8.decode(Actions[i].label) + '</a>' + '&nbsp;';

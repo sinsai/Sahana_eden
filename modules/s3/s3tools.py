@@ -255,6 +255,8 @@ class MENUS3(DIV):
             div = UL(**self.attributes)
             for i in range(len(data)):
                 (name, right, link) = data[i][:3]
+                if link == False:
+                    continue
                 if not link:
                         link = "#null"
                 if right:
@@ -278,6 +280,8 @@ class MENUS3(DIV):
             div = UL()
             for item in data:
                 (name, right, link) = item[:3]
+                if link == False:
+                    continue
                 li = LI(A(name, _href=link))
                 div.append(li)
         return div

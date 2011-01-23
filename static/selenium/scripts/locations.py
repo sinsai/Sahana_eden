@@ -167,7 +167,9 @@ class Locations(SahanaTest):
 
         # Save the form (without changes)
         self.action.saveForm("Shelter updated")
-        self.action.checkHeading({"Name:" : shelterName})
+        #self.action.checkHeading({"Name:" : shelterName})
+        # Save -> List not Record
+        self.assertEqual("List Shelters", sel.get_text("//div[@id='content']/h2"))
 
     def test_addL0Location(self):
         """ Update an existing Shelter without any Location specified to an L0 """
@@ -1083,9 +1085,11 @@ class Locations(SahanaTest):
         self.action.saveForm("Shelter updated")
 
         # Shelter has correct location
-        self.action.checkHeading({"Name:" : shelterName,
-                                  "Location:" : "%s (N %s W %s)" %(L3b, lat, lon)
-                                 })
+        #self.action.checkHeading({"Name:" : shelterName,
+        #                          "Location:" : "%s (N %s W %s)" %(L3b, lat, lon)
+        #                         })
+        # Save -> List not Record
+        self.assertEqual("List Shelters", sel.get_text("//div[@id='content']/h2"))
 
         # Load again
         self.openRecord(shelterName)
@@ -1203,7 +1207,6 @@ class Locations(SahanaTest):
         self.action.checkHeading({"Name:" : shelterName,
                                   "Location:" : "%s (N %s W %s)" %(location, lat, lon)
                                  })
-
 
     def test_locationSearch(self):
         """ Search for Locations using the Autocomplete """

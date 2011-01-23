@@ -45,6 +45,7 @@ class OrganisationTest(SahanaTest):
         sel.wait_for_page_to_load("30000")
         self.assertTrue(self.action.successMsg("Organization added"), "failed to add the organisation %s" % name)
         self.assertEqual("List Organizations", sel.get_text("//h2"))
+        #self.assertEqual("Add Organization", sel.get_text("//h2"))
         print "Organisation %s created" % (name)
         
     def addOrg(self):
@@ -53,7 +54,7 @@ class OrganisationTest(SahanaTest):
         values = source.readlines()
         source.close()
         for org in values:
-            details = org.split(',')
+            details = org.split(",")
             if len(details) == 6:
                 self.create_organisation(details[0].strip(),
                                          details[1].strip(),

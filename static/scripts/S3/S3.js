@@ -277,9 +277,9 @@ function s3_hideStatus() {
 }
 
 
-//----------------------------------------------------------------------------------------------
+//==============================================================================
 // Code to warn on exit without saving 
-//  by: michael howden
+// @author: Michael Howden (michael@sahanafoundation.org)
 function S3SetNavigateAwayConfirm() {
 	window.onbeforeunload = function() {
             return _s3_msg_unsaved_changes;
@@ -300,4 +300,18 @@ function S3EnableNavigateAwayConfirm() {
         $(':input:not(input[id=gis_location_advanced_checkbox])').change( S3SetNavigateAwayConfirm );	
         $('form').submit( S3ClearNavigateAwayConfirm );
     });
+};
+//==============================================================================
+//@author: Michael Howden (michael@sahanafoundation.org)
+function S3ConfirmClick(ElementID, Message) {
+	//@param ElementID: the ID of the element which will be clicked 
+	//@param Message: the Message displayed in the confirm dialog	
+	jQuery(ElementID).click( function(event) {
+	    if(confirm(Message)) {
+	        return true; 
+	    } else {
+	        event.preventDefault();
+	        return false;
+	    }
+	});
 };

@@ -26,7 +26,7 @@ def shn_menu():
         ]]]
 
     #De-activating until fixed:
-    #if shn_has_role(1):
+    #if s3_has_role(1):
         #response.menu_options.append([T("De-duplicator"), False, URL(r=request, f="person_duplicates")])
 
     menu_selected = []
@@ -102,7 +102,7 @@ def index():
         return output
     response.s3.postp = postp
 
-    if auth.shn_logged_in():
+    if auth.s3_logged_in():
         add_btn = A(T("Add Person"),
                     _class="action-btn",
                     _href=URL(r=request, f="person", args="create"))
@@ -112,7 +112,7 @@ def index():
     output = s3_rest_controller("pr", "person",
                                 add_btn=add_btn)
     response.view = "pr/index.html"
-
+    response.title = module_name
     shn_menu()
     return output
 

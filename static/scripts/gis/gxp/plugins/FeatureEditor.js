@@ -32,16 +32,26 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
     ptype: "gx_featureeditor",
 
     /** api: config[createFeatureActionTip]
-     * ``String``
-     * Tooltip string for create new feature action (i18n).
+     *  ``String``
+     *  Tooltip string for create new feature action (i18n).
      */
     createFeatureActionTip: "Create a new feature",
+
+    /** api: config[createFeatureActionText]
+     *  ``String``
+     *  Create new feature text.
+     */
     
     /** api: config[editFeatureActionTip]
      *  ``String``
-     * Tooltip string for edit existing feature action (i18n).
+     *  Tooltip string for edit existing feature action (i18n).
      */
     editFeatureActionTip: "Edit existing feature",
+
+    /** api: config[editFeatureActionText]
+     *  ``String``
+     *  Modify feature text.
+     */
 
     /** api: config[featureManager]
      *  ``String`` The id of the :class:`gxp.plugins.FeatureManager` to use
@@ -339,6 +349,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
         var toggleGroup = this.toggleGroup || Ext.id();
         var actions = gxp.plugins.FeatureEditor.superclass.addActions.call(this, [new GeoExt.Action({
             tooltip: this.createFeatureActionTip,
+            text: this.createFeatureActionText,
             iconCls: "gx-icon-addfeature",
             disabled: true,
             hidden: this.readOnly,
@@ -350,6 +361,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
             map: this.target.mapPanel.map
         }), new GeoExt.Action({
             tooltip: this.editFeatureActionTip,
+            text: this.editFeatureActionText,
             iconCls: "gx-icon-editfeature",
             disabled: true,
             toggleGroup: toggleGroup,
@@ -369,25 +381,50 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
      *  :arg evt: ``Object``
      */
     noFeatureClick: function(evt) {
+        var evtLL = this.target.mapPanel.map.getLonLatFromPixel(evt.xy);
         var featureManager = this.target.tools[this.featureManager];
-        var size = this.target.mapPanel.map.getSize();
-        var layer = this.target.selectedLayer.getLayer();
+        var page = featureManager.page;
+        if (featureManager.paging && page && page.extent.containsLonLat(evtLL)) {
+            // no need to load a different page if the clicked location is
+            // inside the current page bounds
+            return;
+        }
+
+        var layer = featureManager.layerRecord && featureManager.layerRecord.getLayer();
+        if (!layer) {
+            // if the feature manager has no layer currently set, do nothing
+            return;
+        }
+        
+        // construct params for GetFeatureInfo request
+        // layer is not added to map, so we do this manually
+        var map = this.target.mapPanel.map;
+        var size = map.getSize();
+        var params = Ext.applyIf({
+            REQUEST: "GetFeatureInfo",
+            BBOX: map.getExtent().toBBOX(),
+            WIDTH: size.w,
+            HEIGHT: size.h,
+            X: evt.xy.x,
+            Y: evt.xy.y,
+            QUERY_LAYERS: layer.params.LAYERS,
+            INFO_FORMAT: "application/vnd.ogc.gml",
+            EXCEPTIONS: "application/vnd.ogc.se_xml",
+            FEATURE_COUNT: 1
+        }, layer.params);
+        var projectionCode = map.getProjection();
+        if (parseFloat(layer.params.VERSION) >= 1.3) {
+            params.CRS = projectionCode;
+        } else {
+            params.SRS = projectionCode;
+        }
+        
         var store = new GeoExt.data.FeatureStore({
             fields: {},
             proxy: new GeoExt.data.ProtocolProxy({
                 protocol: new OpenLayers.Protocol.HTTP({
-                    url: layer.getFullRequestString({
-                        REQUEST: "GetFeatureInfo",
-                        BBOX: this.target.mapPanel.map.getExtent().toBBOX(),
-                        WIDTH: size.w,
-                        HEIGHT: size.h,
-                        X: evt.xy.x,
-                        Y: evt.xy.y,
-                        QUERY_LAYERS: layer.params.LAYERS,
-                        INFO_FORMAT: "application/vnd.ogc.gml",
-                        EXCEPTIONS: "application/vnd.ogc.se_xml",
-                        FEATURE_COUNT: 1
-                    }),
+                    url: (typeof layer.url === "string") ? layer.url : layer.url[0],
+                    params: params,
                     format: new OpenLayers.Format.WMSGetFeatureInfo()
                 })
             }),
@@ -400,7 +437,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
                             fids: [fid] 
                         });
 
-                        autoLoad = function() {
+                        var autoLoad = function() {
                             featureManager.loadFeatures(
                                 filter, function(features) {
                                     this.autoLoadedFeature = features[0];

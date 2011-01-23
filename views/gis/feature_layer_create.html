@@ -35,7 +35,7 @@ $(function() {
     // @ToDo: Populate the list of fields from server when the resource changes
     $('#gis_feature_layer_resource').change(function() {
         resource = $(this).val();
-        url = '{{=URL3(r=request)}}' + '/' + resource + '/fields.json';
+        url = '{{=URL3(r=request)}}' + '/' + resource + '/fields.s3json';
         $.getS3(
                 url,
                 function(data) {

@@ -28,8 +28,8 @@ Ext.namespace("gxp.plugins");
  */
 gxp.plugins.ZoomToExtent = Ext.extend(gxp.plugins.Tool, {
     
-    /** api: ptype = gx_zoomtoextent */
-    ptype: "gx_zoomtoextent",
+    /** api: ptype = gxp_zoomtoextent */
+    ptype: "gxp_zoomtoextent",
     
     /** api: config[menuText]
      *  ``String``
@@ -63,7 +63,7 @@ gxp.plugins.ZoomToExtent = Ext.extend(gxp.plugins.Tool, {
      */
     addActions: function() {
         return gxp.plugins.ZoomToExtent.superclass.addActions.apply(this, [{
-            menuText: this.removeMenuText,
+            menuText: this.menuText,
             iconCls: "gx-icon-zoomtoextent",
             tooltip: this.tooltip,
             handler: function() {
@@ -85,6 +85,16 @@ gxp.plugins.ZoomToExtent = Ext.extend(gxp.plugins.Tool, {
                     }
                 }
                 if (extent) {
+                    // respect map properties
+                    var restricted = map.restrictedExtent || map.maxExtent;
+                    if (restricted) {
+                        extent = new OpenLayers.Bounds(
+                            Math.max(extent.left, restricted.left),
+                            Math.max(extent.bottom, restricted.bottom),
+                            Math.min(extent.right, restricted.right),
+                            Math.min(extent.top, restricted.top)
+                        );
+                    }
                     map.zoomToExtent(extent, true);
                 }
             },

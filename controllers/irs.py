@@ -22,7 +22,7 @@ response.menu_options = [
     #[T("Map"), False, URL(r=request, f="maps")],
 ]
 
-if shn_has_role(1):
+if s3_has_role(1):
     response.menu_options.append(
         [T("Incident Categories"), False, URL(r=request, f="icategory"),[
             [T("List"), False, URL(r=request, f="icategory")],
@@ -39,6 +39,7 @@ def index():
     """ Custom View """
 
     module_name = deployment_settings.modules[module].name_nice
+    response.title = module_name
     return dict(module_name=module_name)
 
 
@@ -58,7 +59,7 @@ def maps():
 
 
 # -----------------------------------------------------------------------------
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def icategory():
 
     """
@@ -87,7 +88,7 @@ def ireport():
     table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
 
     # Non-Editors should only see a limited set of options
-    if not shn_has_role("Editor"):
+    if not s3_has_role("Editor"):
         allowed_opts = [irs_incident_type_opts.get(opt.code, opt.code) for opt in db().select(db.irs_icategory.code)]
         allowed_opts.sort()
         table.category.requires = IS_NULL_OR(IS_IN_SET(allowed_opts))
@@ -112,7 +113,7 @@ def ireport():
     response.s3.postp = user_postp
 
     rheader = lambda r: shn_irs_rheader(r, tabs = [(T("Report Details"), None),
-                                                   (T("Images"), "image")
+                                                   (T("Images"), "iimage")
                                                   ])
 
     output = s3_rest_controller(module, resource, rheader=rheader)
@@ -143,7 +144,8 @@ def shn_irs_rheader(r, tabs=[]):
             location = report.location_id
             if location:
                 location = shn_gis_location_represent(location)
-            create_request = DIV(P(), A(T("Create Request"), _class="action-btn colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars={"format":"popup", "caller":"irs_ireport"}), _title=T("Add Request")), P())
+            create_request = A(T("Create Request"), _class="action-btn colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars={"format":"popup", "caller":"irs_ireport"}), _title=T("Add Request"))
+            create_task = A(T("Create Task"), _class="action-btn colorbox", _href=URL(r=request, c="project", f="task", args="create", vars={"format":"popup", "caller":"irs_ireport"}), _title=T("Add Task"))
             rheader = DIV(TABLE(
                             TR(
                                 TH(T("Short Description") + ": "), report.name,
@@ -152,7 +154,7 @@ def shn_irs_rheader(r, tabs=[]):
                                 TH(T("Contacts") + ": "), report.contact,
                                 TH(T("Location") + ": "), location)
                             ),
-                          create_request,
+                          DIV(P(), create_request, " ", create_task, P()),
                           rheader_tabs)
 
         return rheader

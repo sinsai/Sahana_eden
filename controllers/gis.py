@@ -21,7 +21,7 @@ response.menu_options = [
     #[T("Bulk Uploader"), False, URL(r=request, c="doc", f="bulk_upload")]
 ]
 
-if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
+if not deployment_settings.get_security_map() or s3_has_role("MapAdmin"):
     response.menu_options.append([T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")])
     response.menu_options.append([T("De-duplicator"), False, URL(r=request, f="location_duplicates")])
 
@@ -46,6 +46,7 @@ def index():
 
     map = define_map(window=window, toolbar=toolbar)
 
+    response.title = module_name
     return dict(module_name=module_name, map=map)
 
 # -----------------------------------------------------------------------------
@@ -58,7 +59,7 @@ def define_map(window=False, toolbar=False, config=None):
     # @ToDo: Make these configurable
     if not config:
         config = gis.get_config()
-    if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
+    if not deployment_settings.get_security_map() or s3_has_role("MapAdmin"):
         catalogue_toolbar = True
     else:
         catalogue_toolbar = False
@@ -84,7 +85,7 @@ def define_map(window=False, toolbar=False, config=None):
     feature_queries = []
     feature_layers = db(db.gis_layer_feature.enabled == True).select()
     for layer in feature_layers:
-        if layer.role_required and not auth.shn_has_role(layer.role_required):
+        if layer.role_required and not auth.s3_has_role(layer.role_required):
             continue
         _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons)
         if _layer:
@@ -122,7 +123,7 @@ def location():
         r.resource.set_handler("search", s3base.S3LocationSearch())
 
         # Restrict access to Polygons to just MapAdmins
-        if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
             table.code.writable = False
             if r.method == "create":
                 table.code.readable = False
@@ -484,7 +485,7 @@ def map_service_catalogue():
         Map Service Catalogue.
         Allows selection of which Layers are active.
     """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
     subtitle = T("List Layers")
@@ -493,7 +494,7 @@ def map_service_catalogue():
 
     # Hack: We control all perms from this 1 table
     table = db.gis_layer_openstreetmap
-    authorised = shn_has_permission("update", table)
+    authorised = s3_has_permission("update", table)
     item_list = []
     even = True
     if authorised:
@@ -600,7 +601,7 @@ def layers_enable():
 
     # Hack: We control all perms from this 1 table
     table = db.gis_layer_openstreetmap
-    authorised = shn_has_permission("update", table)
+    authorised = s3_has_permission("update", table)
     if authorised:
         for type in gis_layer_types:
             resourcename = "gis_layer_%s" % type
@@ -670,7 +671,7 @@ def layers_enable():
 # -----------------------------------------------------------------------------
 def apikey():
     """ RESTful CRUD controller """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
     tablename = module + "_" + resourcename
@@ -727,7 +728,7 @@ def config():
             s3.crud_strings[tablename].title_display = T("Defaults")
             s3.crud_strings[tablename].title_update = T("Edit Defaults")
             s3.crud_strings[tablename].msg_record_modified = T("Defaults updated")
-        if deployment_settings.get_security_map() and r.id == 1 and r.method in ["create", "update"] and not shn_has_role("MapAdmin"):
+        if deployment_settings.get_security_map() and r.id == 1 and r.method in ["create", "update"] and not s3_has_role("MapAdmin"):
             unauthorised()
         return True
     response.s3.prep = prep
@@ -754,7 +755,7 @@ def feature_class():
         RESTful CRUD controller
         Deprecated? (How to link Symbology with Feature Queries?)
     """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
     tablename = module + "_" + resourcename
@@ -790,7 +791,7 @@ def feature_class():
 
 def layer_feature():
     """ RESTful CRUD controller """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
     tablename = module + "_" + resourcename
@@ -857,7 +858,7 @@ def feature_layer_query(form):
 
 def marker():
     """ RESTful CRUD controller """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
     tablename = module + "_" + resourcename
@@ -892,7 +893,7 @@ def projection():
 
     """ RESTful CRUD controller """
 
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
     tablename = module + "_" + resourcename
@@ -953,7 +954,7 @@ def track():
 
     """ RESTful CRUD controller for GPS Tracks (uploaded as files) """
 
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
     table = module + "_" + resourcename
@@ -988,7 +989,7 @@ NO_TYPE_LAYERS_FMT = "No %s Layers currently defined"
 
 def layer_openstreetmap():
     """ RESTful CRUD controller """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
     tablename = module + "_" + resourcename
@@ -1023,7 +1024,7 @@ def layer_openstreetmap():
 
 def layer_google():
     """ RESTful CRUD controller """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
     tablename = module + "_" + resourcename
@@ -1062,7 +1063,7 @@ def layer_google():
 
 def layer_yahoo():
     """ RESTful CRUD controller """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
     tablename = module + "_" + resourcename
@@ -1099,7 +1100,7 @@ def layer_yahoo():
 
 def layer_mgrs():
     """ RESTful CRUD controller """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
     tablename = module + "_" + resourcename
@@ -1136,7 +1137,7 @@ def layer_mgrs():
 
 def layer_bing():
     """ RESTful CRUD controller """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
     tablename = module + "_" + resourcename
@@ -1173,7 +1174,7 @@ def layer_bing():
 
 def layer_georss():
     """ RESTful CRUD controller """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
     tablename = module + "_" + resourcename
@@ -1210,7 +1211,7 @@ def layer_georss():
 
 def layer_gpx():
     """ RESTful CRUD controller """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
     tablename = module + "_" + resourcename
@@ -1250,7 +1251,7 @@ def layer_gpx():
 
 def layer_kml():
     """ RESTful CRUD controller """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
     tablename = module + "_" + resourcename
@@ -1293,7 +1294,7 @@ def layer_kml():
 
 def layer_tms():
     """ RESTful CRUD controller """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
     tablename = module + "_" + resourcename
@@ -1330,7 +1331,7 @@ def layer_tms():
 
 def layer_wfs():
     """ RESTful CRUD controller """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
     tablename = module + "_" + resourcename
@@ -1367,7 +1368,7 @@ def layer_wfs():
 
 def layer_wms():
     """ RESTful CRUD controller """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
     tablename = module + "_" + resourcename
@@ -1402,7 +1403,7 @@ def layer_wms():
 
     return output
 
-@auth.shn_requires_membership("MapAdmin")
+@auth.s3_requires_membership("MapAdmin")
 def layer_js():
     """ RESTful CRUD controller """
 
@@ -1440,7 +1441,7 @@ def layer_js():
 
 def layer_xyz():
     """ RESTful CRUD controller """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
     tablename = module + "_" + resourcename
@@ -1494,6 +1495,7 @@ def map_viewing_client():
 
     map = define_map(window=window, toolbar=toolbar, config=config)
 
+    response.title = T("Map Viewing Client")
     return dict(map=map)
 
 # -----------------------------------------------------------------------------
@@ -1508,7 +1510,7 @@ def display_feature():
     feature_id = request.args(0)
 
     # Check user is authorised to access record
-    if not shn_has_permission("read", db.gis_location, feature_id):
+    if not s3_has_permission("read", db.gis_location, feature_id):
         session.error = T("No access to this record!")
         raise HTTP(401, body=s3xrc.xml.json_message(False, 401, session.error))
 
@@ -1553,6 +1555,7 @@ def display_feature():
         #bbox = bounds,
         zoom = zoom,
         window = True,
+        closable = False,
         collapsed = True
     )
 
@@ -1595,7 +1598,7 @@ def display_features():
     query = query & deleted
     # Filter out inaccessible
     query2 = db.gis_location.id == jtable.location_id
-    accessible = shn_accessible_query("read", db.gis_location)
+    accessible = s3_accessible_query("read", db.gis_location)
     query2 = query2 & accessible
 
     features = db(query).select(db.gis_location.ALL, left = [db.gis_location.on(query2)])
@@ -1607,6 +1610,7 @@ def display_features():
         feature_queries = [{"name" : "Features", "query" : features, "active" : True}],
         bbox = bounds,
         window = True,
+        closable = False,
         collapsed = True
     )
 
@@ -1656,13 +1660,18 @@ def geoexplorer():
 
     geoserver_url = deployment_settings.get_gis_geoserver_url()
 
+    # 'normal', 'mgrs' or 'off'
+    mouse_position = deployment_settings.get_gis_mouse_position()
+
+    response.title = "GeoExplorer"
     return dict(
                 config=config,
                 bing_key=bing_key,
                 google_key=google_key,
                 yahoo_key=yahoo_key,
                 print_service=print_service,
-                geoserver_url=geoserver_url
+                geoserver_url=geoserver_url,
+                mouse_position = mouse_position
                )
 
 def about():

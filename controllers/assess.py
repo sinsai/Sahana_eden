@@ -19,20 +19,20 @@ if prefix not in deployment_settings.modules:
 # Options Menu (available in all Functions' Views)
 def shn_menu():
     menu = [
-        [T("Rapid Assessments"), False, URL(r=request, f="rat"), [
-            [T("List"), False, URL(r=request, f="rat")],
-            [T("Add"), False, URL(r=request, f="rat", args="create")],
+        [T("Rapid Assessments"), False, aURL(r=request, f="rat"), [
+            [T("List"), False, aURL(r=request, f="rat")],
+            [T("Add"), False, aURL(p="create", r=request, f="rat", args="create")],
             #[T("Search"), False, URL(r=request, f="rat", args="search")],
         ]],
-        [T("Impact Assessments"), False, URL(r=request, f="assess"), [
-            [T("List"), False, URL(r=request, f="assess")],
-            #[T("Add"), False, URL(r=request, f="assess", args="create")],
-            [T("Add"), False, URL(r=request, f="basic_assess")],
-            [T("Mobile"), False, URL(r=request, f="mobile_basic_assess")],
-            #[T("Search"), False, URL(r=request, f="assess", args="search")],
+        [T("Impact Assessments"), False, aURL(r=request, f="assess"), [
+            [T("List"), False, aURL(r=request, f="assess")],
+            #[T("Add"), False, aURL(p="create", r=request, f="assess", args="create")],
+            [T("Add"), False, aURL(r=request, f="basic_assess")],
+            [T("Mobile"), False, aURL(r=request, f="mobile_basic_assess")],
+            #[T("Search"), False, aURL(r=request, f="assess", args="search")],
         ]],
     ]
-    if shn_has_role(1):
+    if s3_has_role(1):
         menu_editor = [
             [T("Edit Options"), False, URL(r=request, f="#"), [
                 [T("List / Add Baseline Types"), False, URL(r=request, f="baseline_type")],
@@ -50,7 +50,7 @@ def index():
     """ Module's Home Page """
 
     module_name = deployment_settings.modules[prefix].name_nice
-
+    response.title = module_name
     return dict(module_name=module_name)
 
 

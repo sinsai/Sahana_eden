@@ -1,0 +1,49 @@
+{{extend "layout.html"}}
+{{try:}}
+ {{=H2(title)}}
+{{except:}}
+{{pass}}
+<div id='rheader'>
+{{try:}}
+ {{=rheader}}
+{{except:}}
+ {{pass}}
+</div>
+{{try:}}
+ {{=H3(subtitle)}}
+{{except:}}
+{{pass}}
+<div class='form-container'>
+{{try:}}
+ {{=form}}
+{{except:}}
+{{pass}}
+</div>
+<p>&nbsp;</p>
+{{try:}}
+ {{=list_btn}}
+{{except:}}
+{{pass}}
+{{try:}}
+ {{=del_btn}}
+{{except:}}
+{{pass}}
+<script type="text/javascript">//<![CDATA[
+$(document).ready(function(){
+    $('#tacl-tab').click(function() {
+        $('#table-acls').show()
+        $('#controller-acls').hide()
+    });
+    $('#cacl-tab').click(function() {
+        $('#controller-acls').show()
+        $('#table-acls').hide()
+    });
+    {{try:}}
+        {{if acl=="table":}}
+            $('#table-acls').show()
+            $('#controller-acls').hide()
+        {{pass}}
+    {{except:}}
+    {{pass}}
+});
+//]]></script>

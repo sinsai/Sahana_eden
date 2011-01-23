@@ -34,6 +34,7 @@
 """
 
 __all__ = ["S3DateWidget",
+           "S3DateTimeWidget",
            "S3UploadWidget",
            "S3AutocompleteWidget",
            "S3LocationAutocompleteWidget",
@@ -73,7 +74,7 @@ class S3DateWidget(FormWidget):
         self.max = after
 
 
-    def __call__(self ,field, value, **attributes):
+    def __call__(self, field, value, **attributes):
 
         default = dict(
             _type = "text",
@@ -96,13 +97,87 @@ class S3DateWidget(FormWidget):
 
 
 # -----------------------------------------------------------------------------
+
+class S3DateTimeWidget(FormWidget):
+
+    """
+    Standard DateTime widget, based on the widget above, but instead of using
+    jQuery datepicker we use the DHTML datetime calendar.
+
+    @author: Fernando Brito (email@fernandobrito.com)
+
+    """
+
+    def __init__(self,
+                 allow_future=True,    # Allow dates in the future?
+                ):
+
+        self.allow_future = allow_future
+
+    def __call__(self, field, value, **attributes):
+
+        default = dict(
+            _type = "text",
+            _class = "datetime_widget",  # Prevent default "datetime" calendar from showing up
+            value = (value!=None and str(value)) or "",
+            )
+        attr = StringWidget._attributes(field, default, **attributes)
+
+        selector = str(field).replace(".", "_")
+
+        date_options = """
+        $('#%s').focus( function() {
+            Calendar.setup({
+                inputField: this.id,
+                ifFormat: '%%Y-%%m-%%d %%H:%%M:%%S',
+                dateStatusFunc: disallowDate,
+                showsTime: true,
+                timeFormat: '24'
+            });
+        })
+        """ % (selector)
+
+        if self.allow_future == False:
+            date_options += """
+            var Today = new Date();
+
+           function disallowDate(date) {
+              if ( date.getFullYear() > Today.getFullYear() ) {
+                return true; // Disable next years
+              }
+              else if ( date.getMonth() > Today.getMonth() &&
+                        date.getYear() == Today.getYear() ) {
+               return true; // Disable months until end of year
+              }
+              else if ( date.getDate() > Today.getDate() &&
+                        date.getMonth() == Today.getMonth() &&
+                        date.getYear()  == Today.getYear() ) {
+                return true; // Disable days until end of month
+              }
+              return false;  // Enable
+            }
+            """
+        else: # So Calendar.setup won't raise an error
+            date_options += """
+            function disallowDate(date) {
+                return false; // Enable
+            }
+            """
+
+        return TAG[""](
+                        INPUT(**attr),
+                        SCRIPT(date_options)
+                      )
+
+
+# -----------------------------------------------------------------------------
 class S3UploadWidget(UploadWidget):
 
     """
     Subclassed to not show the delete checkbox when field is mandatory
         - This now been included as standard within Web2Py from r2867
         - Leaving this unused example in the codebase so that we can easily amend this if we wish to later
-        
+
     @author: Fran Boon (fran@aidiq.com)
 
     @ToDo: Add support for allow_future=False
@@ -939,10 +1014,10 @@ class S3LocationSelectorWidget(FormWidget):
         else:
             visible = False
         if visible:
-            button = A(T("Location Details"), _href="#",
+            button = A(T("Location Details"), _style="cursor:pointer; cursor:hand",
                        _id="gis_location_details-btn")
         else:
-            button = A(T("Location Details"), _href="#",
+            button = A(T("Location Details"), _style="cursor:pointer; cursor:hand",
                        _id="gis_location_details-btn",
                        _class="hidden")
         dropdowns.append(level_dropdown(_level, visible=visible, current=value, button=button))
@@ -1003,28 +1078,28 @@ class S3LocationSelectorWidget(FormWidget):
         autocomplete = DIV(LABEL(T("Search") + ":"), BR(), INPUT(_id="gis_location_autocomplete"), _id="gis_location_autocomplete_div", _class="hidden")
 
         # Buttons
-        search_button = A(T("Search Locations"), _href="#",
+        search_button = A(T("Search Locations"), _style="cursor:pointer; cursor:hand",
                           _id="gis_location_search-btn")
 
-        add_button = A(T("Add New Location"), _href="#",
+        add_button = A(T("Add New Location"), _style="cursor:pointer; cursor:hand",
                        _id="gis_location_add-btn")
 
-        cancel_button = A(T("Cancel Add"), _href="#",
+        cancel_button = A(T("Cancel Add"), _style="cursor:pointer; cursor:hand",
                           _id="gis_location_cancel-btn",
                           _class="hidden")
 
-        geolocate_button = A(T("Use Current Location"), _href="#",
+        geolocate_button = A(T("Use Current Location"), _style="cursor:pointer; cursor:hand",
                              _id="gis_location_geolocate-btn",
                              _class="hidden")
 
         if map_selector:
-            map_button = A(T("Show Map"), _href="#",
+            map_button = A(T("Show Map"), _style="cursor:pointer; cursor:hand",
                            _id="gis_location_map-btn",
                            _class="hidden")
         else:
             map_button = ""
 
-        geocoder_button = A(T("Lookup Address"), _href="#",
+        geocoder_button = A(T("Lookup Address"), _style="cursor:pointer; cursor:hand",
                             _id="gis_location_geocoder-btn")
 
         latlon_help = locations.lat.comment
@@ -1678,9 +1753,9 @@ class S3MultiSelectWidget(FormWidget):
 
         @param id: for the row
         @param column_fields: provides the order
-        @param column_field_represents: functions to find the values
+        @param column_fields_represent: functions to find the values
             of the fields in the row
-        @type column_field_represents: dict of {fieldname: function}
+        @type column_fields_represent: dict of {fieldname: function}
 
         """
 

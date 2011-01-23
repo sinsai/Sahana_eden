@@ -2,7 +2,7 @@
 
 """ Resource Import Toolkit (S3XRC)
 
-    @version: 2.3.2
+    @version: 2.3.3
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
@@ -183,6 +183,7 @@ class S3Importer(object):
             id=None,
             template=None,
             as_json=False,
+            as_csv=False,
             ignore_errors=False, **args):
         """
         Import data from an XML source into a resource
@@ -220,6 +221,8 @@ class S3Importer(object):
                 tree = xml.json2tree(source)
             else:
                 tree = xml.json2tree(source)
+        elif as_csv:
+            tree = xml.csv2tree(source)
         else:
             tree = xml.parse(source)
         if not tree:

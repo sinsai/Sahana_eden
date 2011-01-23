@@ -22,9 +22,10 @@ module_name = deployment_settings.modules[module].name_nice
 def index():
     # Bypass Index page
     redirect( URL(r=request, c="importer", f="spreadsheet/create"))
+    response.title = module_name
     return dict(module_name=module_name)
 
-@auth.requires_membership("Administrator")
+@auth.s3_requires_membership("Administrator")
 def spreadsheet():
 
     """ RESTful Controller """

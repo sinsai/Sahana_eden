@@ -34,8 +34,8 @@ def s3_sessions():
         roles = [m.group_id for m in memberships]
     session.s3.roles = roles
     # not used yet:
-    #if not auth.permission():
-        #auth.permission.fail()
+    if not auth.permission():
+        auth.permission.fail()
 
     # Are we running in debug mode?
     session.s3.debug = request.vars.get("debug", None) or \
@@ -160,7 +160,7 @@ def s3_logged_in_person():
 
     """ Get the person ID of the current user """
 
-    if auth.shn_logged_in():
+    if auth.s3_logged_in():
         person = db.pr_person
         record = db(person.uuid == session.auth.user.person_uuid).select(
                     person.id, limitby=(0,1)).first()
@@ -220,31 +220,44 @@ def shn_action_buttons(r,
     else:
         args = ["[id]"]
 
-    if shn_has_permission("update", r.table):
+    prefix, name, table, tablename = r.target()
+
+    if s3_has_permission("update", table) and \
+       not auth.permission.ownership_required(table, "update"):
         if not update_url:
             update_url = str(URL(r=request, args = args + ["update"]))
         response.s3.actions = [
             dict(label=str(UPDATE), _class="action-btn", url=update_url),
         ]
-        # Provide the ability to delete records in bulk
-        if deletable and shn_has_permission("delete", r.table):
-            if not delete_url:
-                delete_url = str(URL(r=request, args = args + ["delete"]))
-            response.s3.actions.append(
-                dict(label=str(DELETE), _class="delete-btn", url=delete_url)
-            )
-        if copyable:
-            if not copy_url:
-                copy_url = str(URL(r=request, args = args + ["copy"]))
-            response.s3.actions.append(
-                dict(label=str(COPY), _class="action-btn", url=copy_url)
-            )
     else:
         if not read_url:
             read_url = str(URL(r=request, args = args))
         response.s3.actions = [
             dict(label=str(READ), _class="action-btn", url=read_url)
         ]
+
+    if deletable and s3_has_permission("delete", table):
+        if not delete_url:
+            delete_url = str(URL(r=request, args = args + ["delete"]))
+            # Check which records can be deleted
+        if auth.permission.ownership_required(table, "delete"):
+            q = auth.s3_accessible_query("delete", table)
+            rows = db(q).select(table.id)
+            restrict = [str(row.id) for row in rows]
+            response.s3.actions.append(
+                dict(label=str(DELETE), _class="delete-btn", url=delete_url, restrict=restrict)
+            )
+        else:
+            response.s3.actions.append(
+                dict(label=str(DELETE), _class="delete-btn", url=delete_url)
+            )
+
+    if copyable and s3_has_permission("create", table):
+        if not copy_url:
+            copy_url = str(URL(r=request, args = args + ["copy"]))
+        response.s3.actions.append(
+            dict(label=str(COPY), _class="action-btn", url=copy_url)
+        )
 
     return
 
@@ -662,7 +675,7 @@ def shn_represent_extra(table, module, resource, deletable=True, extra=None):
 
     """
 
-    authorised = shn_has_permission("delete", table._tablename)
+    authorised = s3_has_permission("delete", table._tablename)
     item_list = []
     if extra:
         extra_list = extra.split()
@@ -849,7 +862,7 @@ def s3_rest_controller(prefix, resourcename, **attr):
 
             # Add default action buttons
             prefix, name, table, tablename = r.target()
-            authorised = shn_has_permission("update", tablename)
+            authorised = s3_has_permission("update", tablename)
 
             # If the component has components itself, then use the
             # component's native controller for CRU(D) => make sure
@@ -862,7 +875,8 @@ def s3_rest_controller(prefix, resourcename, **attr):
             # Get table config
             model = s3xrc.model
             listadd = model.get_config(table, "listadd", True)
-            editable = model.get_config(table, "editable", True)
+            editable = model.get_config(table, "editable", True) and \
+                       not auth.permission.ownership_required(table, "update")
             deletable = model.get_config(table, "deletable", True)
             copyable = model.get_config(table, "copyable", False)
 
@@ -882,7 +896,7 @@ def s3_rest_controller(prefix, resourcename, **attr):
             # Override Add-button, link to native controller and put
             # the primary key into vars for automatic linking
             if native and not listadd and \
-               shn_has_permission("create", tablename):
+               s3_has_permission("create", tablename):
                 label = shn_get_crud_string(tablename,
                                             "label_create_button")
                 hook = r.resource.components[name]

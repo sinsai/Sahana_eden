@@ -2,7 +2,7 @@
 
 """ RESTful API (S3XRC)
 
-    @version: 2.3.2
+    @version: 2.3.3
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
@@ -100,7 +100,7 @@ class S3Resource(object):
 
         # Authorization hooks
         self.permit = manager.permit
-        self.accessible_query = manager.auth.shn_accessible_query
+        self.accessible_query = manager.auth.s3_accessible_query
 
         # Audit hook
         self.audit = manager.audit
@@ -401,42 +401,43 @@ class S3Resource(object):
 
         numrows = 0
         for row in records:
-            if self.permit("delete", self.tablename, row.id):
 
-                # Clear session
-                if self.manager.get_session(prefix=self.prefix, name=self.name) == row.id:
-                    self.manager.clear_session(prefix=self.prefix, name=self.name)
+            # Check permission to delete this row
+            if not self.permit("delete", self.table, record_id=row.id):
+                continue
 
-                # Test row for deletability
-                try:
+            # Clear session
+            if self.manager.get_session(prefix=self.prefix, name=self.name) == row.id:
+                self.manager.clear_session(prefix=self.prefix, name=self.name)
+
+            # Test row for deletability
+            try:
+                del self.table[row.id]
+            except:
+                self.manager.session.error = self.ERROR.INTEGRITY_ERROR
+            finally:
+                # We don't want to delete yet, so let's rollback
+                self.db.rollback()
+
+            if self.manager.session.error != self.ERROR.INTEGRITY_ERROR:
+                # Archive record?
+                if archive_not_delete and "deleted" in self.table:
+                    self.db(self.table.id == row.id).update(deleted=True)
+                    numrows += 1
+                    self.audit("delete", self.prefix, self.name,
+                                record=row.id, representation=format)
+                    model.delete_super(self.table, row)
+                    if ondelete:
+                        callback(ondelete, row)
+                # otherwise: delete record
+                else:
                     del self.table[row.id]
-                except:
-                    self.manager.session.error = self.ERROR.INTEGRITY_ERROR
-                finally:
-                    # We don't want to delete yet, so let's rollback
-                    self.db.rollback()
-
-                if self.manager.session.error != self.ERROR.INTEGRITY_ERROR:
-                    # Archive record?
-                    if archive_not_delete and "deleted" in self.table:
-                        self.db(self.table.id == row.id).update(deleted=True)
-                        numrows += 1
-                        self.audit("delete", self.prefix, self.name,
-                                  record=row.id, representation=format)
-                        model.delete_super(self.table, row)
-                        if ondelete:
-                            callback(ondelete, row)
-
-                    # otherwise: delete record
-                    else:
-                        del self.table[row.id]
-                        numrows += 1
-                        self.audit("delete", self.prefix, self.name,
-                                   record=row.id,
-                                   representation=format)
-                        model.delete_super(self.table, row)
-                        if ondelete:
-                            callback(ondelete, row)
+                    numrows += 1
+                    self.audit("delete", self.prefix, self.name,
+                                record=row.id, representation=format)
+                    model.delete_super(self.table, row)
+                    if ondelete:
+                        callback(ondelete, row)
 
         return numrows
 
@@ -906,8 +907,8 @@ class S3Resource(object):
             # Put a copy of r into the output for the View to be able to make use of
             output.update(jr=r)
 
-        # Redirection (makes no sense in GET)
-        if r.next is not None and r.http != "GET":
+        # Redirection
+        if r.next is not None and (r.http != "GET" or r.method == "clear"):
             if isinstance(output, dict):
                 form = output.get("form", None)
                 if form and form.errors:
@@ -931,14 +932,11 @@ class S3Resource(object):
         """
 
         method = r.method
-        permit = self.permit
-
         model = self.manager.model
 
         tablename = r.component and r.component.tablename or r.tablename
 
         if method is None or method in ("read", "display"):
-            authorised = permit("read", tablename)
             if self.__transformable(r):
                 method = "export_tree"
             elif r.component:
@@ -962,19 +960,11 @@ class S3Resource(object):
                     method = "list"
 
         elif method in ("create", "update"):
-            authorised = permit(method, tablename)
-            # @todo 2.3: Add user confirmation here:
             if self.__transformable(r, method="import"):
                 method = "import_tree"
 
-        elif method == "copy":
-            authorised = permit("create", tablename)
-
         elif method == "delete":
             return self.__delete(r)
-
-        elif method in ("options", "fields", "search", "barchart"):
-            authorised = permit("read", tablename)
 
         elif method == "clear" and not r.component:
             self.manager.clear_session(self.prefix, self.name)
@@ -991,15 +981,9 @@ class S3Resource(object):
                              vars=request_vars)
             else:
                 r.next = URL(r=r.request, f=self.name)
-            return None
+            return lambda r, **attr: None
 
-        else:
-            r.error(501, self.ERROR.BAD_METHOD)
-
-        if not authorised:
-            r.unauthorised()
-        else:
-            return self.get_handler(method)
+        return self.get_handler(method)
 
 
     # -------------------------------------------------------------------------
@@ -1011,15 +995,8 @@ class S3Resource(object):
 
         """
 
-        permit = self.permit
-
         if self.__transformable(r, method="import"):
-            authorised = permit("create", self.tablename) and \
-                         permit("update", self.tablename)
-            if not authorised:
-                r.unauthorised()
-            else:
-                return self.get_handler("import_tree")
+            return self.get_handler("import_tree")
         else:
             r.error(501, self.ERROR.BAD_FORMAT)
 
@@ -1061,13 +1038,13 @@ class S3Resource(object):
 
         """
 
-        permit = self.permit
+        #permit = self.permit
 
-        tablename = r.component and r.component.tablename or r.tablename
+        #tablename = r.component and r.component.tablename or r.tablename
 
-        authorised = permit("delete", tablename)
-        if not authorised:
-            r.unauthorised()
+        #authorised = permit("delete", tablename)
+        #if not authorised:
+            #r.unauthorised()
 
         return self.get_handler("delete")
 
@@ -1249,15 +1226,20 @@ class S3Resource(object):
         @param r: the S3Request
         @param attr: the request attributes
 
+        @todo: use the importer!
+
         """
 
         xml = self.xml
         vars = r.request.vars
 
         json_formats = self.manager.json_formats
+        csv_formats = self.manager.csv_formats
 
         # Get the source
-        if r.representation in json_formats:
+        format = r.representation
+        if format in json_formats or \
+           format in csv_formats:
             if "filename" in vars:
                 source = open(vars["filename"])
             elif "fetchurl" in vars:
@@ -1265,10 +1247,14 @@ class S3Resource(object):
                 source = urllib.urlopen(vars["fetchurl"])
             else:
                 source = self.__read_body(r)
-            format = r.representation
-            if format == "json":
-                format = None
-            tree = xml.json2tree(source, format=format)
+            if format in json_formats:
+                if format == "s3json":
+                    format = None
+                tree = xml.json2tree(source, format=format)
+            elif format in csv_formats:
+                if format == "s3csv":
+                    format = None
+                tree = xml.csv2tree(source, format=format)
         else:
             if "filename" in vars:
                 source = vars["filename"]
@@ -1624,7 +1610,7 @@ class S3Resource(object):
         if component is not None:
             c = self.components.get(component, None)
             if c:
-                tree = c.resource.options(fields=fields)
+                tree = c.resource.options(fields=fields, as_json=as_json)
                 return tree
             else:
                 raise AttributeError
@@ -1760,7 +1746,7 @@ class S3Resource(object):
                 ids = self.get_id()
                 if not isinstance(ids, (list, tuple)):
                     args.append(str(ids))
-            elif self.parent and not self.parent._multiple:
+            elif self.parent:
                 ids = self.parent.get_id()
                 if not isinstance(ids, (list, tuple)):
                     args.insert(0, str(ids))
@@ -1968,6 +1954,7 @@ class S3Request(object):
                 manager.error = self.manager.ERROR.BAD_RECORD
                 if self.representation == "html":
                     self.session.error = manager.error
+                    self.component = None # => avoid infinite loop
                     redirect(self.there())
                 else:
                     raise KeyError(manager.error)
@@ -2267,7 +2254,7 @@ class S3Method(object):
         self.db = self.manager.db
 
         # Settings
-        self.permit = self.manager.auth.shn_has_permission
+        self.permit = self.manager.auth.s3_has_permission
         self.download_url = self.manager.s3.download_url
 
         # Init

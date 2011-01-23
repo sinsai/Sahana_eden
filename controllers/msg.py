@@ -25,7 +25,7 @@ def shn_menu():
         ]],
         #["CAP", False, URL(r=request, f="tbc")]
     ]
-    if shn_has_role(1):
+    if s3_has_role(1):
         menu_editor = [
             [T("Administration"), False, URL(r=request, f="#"), admin_menu_messaging],
         ]
@@ -39,6 +39,7 @@ def index():
     """ Module's Home Page """
 
     module_name = deployment_settings.modules[prefix].name_nice
+    response.title = module_name
     return dict(module_name=module_name)
 
 
@@ -100,7 +101,7 @@ def outbox():
 
     """ View the contents of the Outbox """
 
-    if not auth.shn_logged_in():
+    if not auth.s3_logged_in():
         session.error = T("Requires Login!")
         redirect(URL(r=request, c="default", f="user", args="login"))
 
@@ -142,7 +143,7 @@ def log():
 
     """ RESTful CRUD controller """
 
-    if not auth.shn_logged_in():
+    if not auth.s3_logged_in():
         session.error = T("Requires Login!")
         redirect(URL(r=request, c="default", f="user", args="login"))
 
@@ -352,7 +353,7 @@ def twitter_search_results():
     return s3_rest_controller(prefix, resourcename)
 
 #------------------------------------------------------------------------------
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def setting():
 
     """ Overall settings for the messaging framework """
@@ -390,7 +391,7 @@ def setting():
 
 
 #------------------------------------------------------------------------------
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def email_settings():
 
     """ RESTful CRUD controller for email settings
@@ -440,7 +441,7 @@ def email_settings():
 
 
 #------------------------------------------------------------------------------
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def modem_settings():
 
     """ RESTful CRUD controller for modem settings - appears in the administration menu """
@@ -490,7 +491,7 @@ def modem_settings():
 
 
 #------------------------------------------------------------------------------
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def gateway_settings():
 
     """ RESTful CRUD controller for gateway settings - appears in the administration menu """
@@ -539,7 +540,7 @@ def gateway_settings():
 
 
 #------------------------------------------------------------------------------
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def tropo_settings():
 
     """ RESTful CRUD controller for Tropo settings - appears in the administration menu """
@@ -578,10 +579,16 @@ def tropo_settings():
 
 
 #------------------------------------------------------------------------------
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def twitter_settings():
 
     """ RESTful CRUD controller for Twitter settings - appears in the administration menu """
+
+    try:
+        import tweepy
+    except:
+        session.error =  T("tweepy module not available within the running Python - this needs installing for non-Tropo Twitter support!")
+        redirect(URL(r=request, c="admin", f="index"))
 
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
@@ -605,11 +612,6 @@ def twitter_settings():
     )
 
     def prep(r):
-        try:
-            import tweepy
-        except:
-            session.error = T("Couldn't import tweepy library")
-            return True
         if not (deployment_settings.twitter.oauth_consumer_key and deployment_settings.twitter.oauth_consumer_secret):
             session.error = T("You should edit Twitter settings in models/000_config.py")
             return True
@@ -824,7 +826,7 @@ def person_search(value):
 #------------------------------------------------------------------------------
 # Enabled only for testing:
 #
-@auth.shn_requires_membership(1)
+@auth.s3_requires_membership(1)
 def tag():
 
     """ RESTful CRUD controller """

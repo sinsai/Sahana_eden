@@ -103,6 +103,8 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
      *    * selected: ``Boolean`` - Set to true to mark the layer selected
      *  * map: not available, can be configured with ``maxExtent``,
      *    ``numZoomLevels`` and ``theme``.
+     *  * restrictedExtent: ``Array`` to be consumed by
+     *    ``OpenLayers.Bounds.fromArray`` - the restrictedExtent of the map
      *  * maxExtent: ``Array`` to be consumed by
      *    ``OpenLayers.Bounds.fromArray`` - the maxExtent of the map
      *  * numZoomLevels: ``Number`` - the number of zoom levels if not
@@ -204,7 +206,7 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
         });
 
         // private array of pending getLayerRecord requests
-        this.getLayerRecordQueue = [];
+        this.createLayerRecordQueue = [];
 
         this.loadConfig(config, this.applyConfig);
         gxp.Viewer.superclass.constructor.apply(this, arguments);
@@ -296,20 +298,25 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
     
     addLayerSource: function(options) {
         var id = options.id || Ext.id(null, "gx-source-");
-        var source = Ext.ComponentMgr.createPlugin(
-            options.config, this.defaultSourceType
-        );
+        var source;
+        try {
+            source = Ext.ComponentMgr.createPlugin(
+                options.config, this.defaultSourceType
+            );
+        } catch (err) {
+            throw new Error("Could not create new source plugin with ptype: " + options.config.ptype);
+        }
         source.on({
             ready: function() {
                 var callback = options.callback || Ext.emptyFn;
-                callback.call(this, id);
+                callback.call(options.scope || this, id);
             },
             failure: function() {
                 var fallback = options.fallback || Ext.emptyFn;
                 delete this.layerSources[id];
-                fallback.apply(this, arguments);
+                fallback.apply(options.scope || this, arguments);
             },
-            scope: options.scope || this
+            scope: this
         });
         this.layerSources[id] = source;
         source.init(this);
@@ -324,7 +331,7 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
         
         // split initial map configuration into map and panel config
         if (this.initialConfig.map) {
-            var props = "theme,controls,projection,units,maxExtent,maxResolution,numZoomLevels".split(",");
+            var props = "theme,controls,projection,units,maxExtent,restrictedExtent,maxResolution,numZoomLevels".split(",");
             var prop;
             for (var i=props.length-1; i>=0; --i) {
                 prop = props[i];
@@ -345,6 +352,7 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
                     new OpenLayers.Control.Attribution()
                 ],
                 maxExtent: mapConfig.maxExtent && OpenLayers.Bounds.fromArray(mapConfig.maxExtent),
+                restrictedExtent: mapConfig.restrictedExtent && OpenLayers.Bounds.fromArray(mapConfig.restrictedExtent),
                 numZoomLevels: mapConfig.numZoomLevels || 20
             }, mapConfig),
             center: config.center && new OpenLayers.LonLat(config.center[0], config.center[1]),
@@ -363,8 +371,6 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
                         this.selectLayer(record);
                     }
                 }
-                // check getLayerRecord request queue
-                this.checkLayerRecordQueue();
             },
             "remove": function(store, record) {
                 if (record.get("selected") === true) {
@@ -380,9 +386,13 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
         if (this.initialConfig.tools && this.initialConfig.tools.length > 0) {
             var tool;
             for (var i=0, len=this.initialConfig.tools.length; i<len; i++) {
-                tool = Ext.ComponentMgr.createPlugin(
-                    this.initialConfig.tools[i], this.defaultToolType
-                );
+                try {
+                    tool = Ext.ComponentMgr.createPlugin(
+                        this.initialConfig.tools[i], this.defaultToolType
+                    );
+                } catch (err) {
+                    throw new Error("Could not create tool plugin with ptype: " + this.initialConfig.tools[i].ptype);
+                }
                 tool.init(this);
                 this.tools[tool.id] = tool;
             }
@@ -413,12 +423,16 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
     },
     
     activate: function() {
-        // add any layers from config
-        this.addLayers();
-
         // initialize tooltips
         Ext.QuickTips.init();
+
+        // add any layers from config
+        this.addLayers();
         
+        // respond to any queued requests for layer records
+        this.checkLayerRecordQueue();
+        
+        // broadcast ready state
         this.fireEvent("ready");
     },
     
@@ -446,7 +460,7 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
             // this is largely a workaround for an OpenLayers Google Layer issue
             // http://trac.openlayers.org/ticket/2661
             baseRecords.sort(function(a, b) {
-                return a.get("layer").visibility < b.get("layer").visibility;
+                return a.getLayer().visibility < b.getLayer().visibility;
             });
             
             var panel = this.mapPanel;
@@ -470,20 +484,41 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
         }        
     },
     
-    /** api: method[getLayerRecord]
-     *  :arg conf: ``Object`` A minimal layer configuration object with source
+    /** api: method[getLayerRecordFromMap]
+     *  :arg config: ``Object`` A minimal layer configuration object with source
+     *      and name properties.
+     *  :returns: ``GeoExt.data.LayerRecord``
+     *
+     *  Retrieves a layer record from the map.
+     */
+    getLayerRecordFromMap: function(config) {
+        var record = null;
+        if (this.mapPanel) {
+            this.mapPanel.layers.each(function(rec) {
+                if (rec.get("source") == config.source && rec.get("name") == config.name) {
+                    record = rec;
+                    return false;
+                }
+            });
+        }
+        return record;
+    },
+    
+    /** api: method[createLayerRecord]
+     *  :arg config: ``Object`` A minimal layer configuration object with source
      *      and name properties.
      *  :arg callback: ``Function`` A function to be called with the layer 
      *      record that corresponds to the given config.
+     *  :arg scope: ``Object`` Optional scope for the callback.
      *
      *  Asyncronously retrieves a layer record given a basic layer config.  The
-     *  callback will be called as soon as the desired layer has been added to
-     *  the map.
+     *  callback will be called as soon as the desired layer source is ready.
+     *  This method should only be called to retrieve layer records from sources
+     *  configured before the call.
      */
-    getLayerRecord: function(conf, callback, scope) {
-        this.getLayerRecordQueue.push({
-            source: conf.source,
-            name: conf.name,
+    createLayerRecord: function(config, callback, scope) {
+        this.createLayerRecordQueue.push({
+            config: config,
             callback: callback,
             scope: scope
         });
@@ -491,32 +526,33 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
     },
     
     /** private: method[checkLayerRecordQueue]
-     *  Check through getLayerRecord requests to see if any can be satisfied.
+     *  Check through createLayerRecord requests to see if any can be satisfied.
      */
     checkLayerRecordQueue: function() {
-        if (this.getLayerRecordQueue.length > 0) {
-            this.mapPanel.layers.each(function(record) {            
-                var source = record.get("source");
-                var name = record.get("name");
-                var remaining = [];
-                var request;
-                for (var i=0, ii=this.getLayerRecordQueue.length; i<ii; ++i) {
-                    request = this.getLayerRecordQueue[i];
-                    if (request.source === source && request.name === name) {
-                        // we call this in the next cycle to guarantee that
-                        // getLayerRecord returns before callback is called
-                        (function(req) {
-                            window.setTimeout(function() {
-                                req.callback.call(req.scope, record);                        
-                            }, 0);
-                        })(request);
-                    } else {
-                        remaining.push(request);
-                    }
+        var request, source, record, called;
+        var remaining = [];
+        for (var i=0, ii=this.createLayerRecordQueue.length; i<ii; ++i) {
+            called = false;
+            request = this.createLayerRecordQueue[i];
+            source = request.config.source;
+            if (source in this.layerSources) {
+                record = this.layerSources[source].createLayerRecord(request.config);
+                if (record) {
+                    // we call this in the next cycle to guarantee that
+                    // createLayerRecord returns before callback is called
+                    (function(req, rec) {
+                        window.setTimeout(function() {
+                            req.callback.call(req.scope, rec);                        
+                        }, 0);
+                    })(request, record);
+                    called = true;
                 }
-                this.getLayerRecordQueue = remaining;
-            }, this);
+            }
+            if (!called) {
+                remaining.push(request);
+            }
         }
+        this.createLayerRecordQueue = remaining;
     },
     
     /** api:method[getSource]
@@ -545,7 +581,7 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
         
         // include all layer config (and add new sources)
         this.mapPanel.layers.each(function(record){
-            var layer = record.get("layer");
+            var layer = record.getLayer();
             if (layer.displayInLayerSwitcher) {
                 var id = record.get("source");
                 var source = this.layerSources[id];

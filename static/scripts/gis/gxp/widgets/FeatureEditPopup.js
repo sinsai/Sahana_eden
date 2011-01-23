@@ -172,6 +172,7 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
         this.anchored = !this.editing;
         
         var customEditors = {};
+        var customRenderers = {};
         if(this.schema) {
             var attributes = {};
             var name, type, value;
@@ -185,6 +186,23 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
                 value = feature.attributes[name];
                 switch(type) {
                     case "string":
+                        break;
+                    case "date":
+                        customEditors[name] = new Ext.grid.GridEditor(
+                            new Ext.form.DateField({
+                                format: "Y-m-d",
+                                altFormats: "Y-m-d\\Z"
+                            })
+                        );
+                        customRenderers[name] = function(v) {
+                            //TODO see if there i a higher level component that
+                            // would help us here
+                            var value = v;
+                            if (!(value instanceof Date)) {
+                                value = Date.parseDate(v, "Y-m-d\\Z");
+                            }
+                            return value ? value.format("Y-m-d") : v;
+                        }
                         break;
                     case "boolean":
                         //TODO nodata handling for Boolean
@@ -253,18 +271,21 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
             scope: this
         });
         
+        var excludeFields = this.excludeFields;
         this.grid = new Ext.grid.PropertyGrid({
             border: false,
             source: feature.attributes,
             customEditors: customEditors,
+            customRenderers: customRenderers,
+            viewConfig: {
+                forceFit: true,
+                getRowClass: function(record) {
+                    if (excludeFields && excludeFields.indexOf(record.get("name")) !== -1) {
+                        return "x-hide-nosize";
+                    }
+                }
+            },
             listeners: {
-                "viewready": function() {
-                    this.grid.getStore().filterBy(function(r) {
-                        return this.excludeFields ?
-                            this.excludeFields.indexOf(r.get("name")) == -1 :
-                            true;
-                    }, this);
-                },
                 "beforeedit": function() {
                     return this.editing;
                 },
@@ -410,6 +431,19 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
             var feature = this.feature;
             if (feature.state === this.getDirtyState()) {
                 if (save === true) {
+                    //TODO consider handling date types in the OpenLayers.Format
+                    if (this.schema) {
+                        var attribute, rec;
+                        for (var i in feature.attributes) {
+                            rec = this.schema.getAt(this.schema.findExact("name", i));
+                            if (this.getFieldType(rec.get("type")) == "date") {
+                                attribute = feature.attributes[i];
+                                if (attribute instanceof Date) {
+                                    feature.attributes[i] = attribute.format("Y-m-d\\Z");
+                                }
+                            }
+                        }
+                    }
                     this.fireEvent("featuremodified", this, feature);
                 } else if(feature.state === OpenLayers.State.INSERT) {
                     this.editing = false;

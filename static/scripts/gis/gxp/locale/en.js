@@ -33,10 +33,31 @@ GeoExt.Lang.add("en", {
         baseNodeText: "Base Layers"
     },
 
+    "gxp.plugins.Measure.prototype": {
+        lengthMenuText: "Length",
+        areaMenuText: "Area",
+        lengthTooltip: "Measure length",
+        areaTooltip: "Measure area",
+        measureTooltip: "Measure"
+    },
+
+    "gxp.plugins.NavigationHistory.prototype": {
+        previousMenuText: "Zoom To Previous Extent",
+        nextMenuText: "Zoom To Next Extent",
+        previousTooltip: "Zoom To Previous Extent",
+        nextTooltip: "Zoom To Next Extent"
+    },
+
     "gxp.plugins.OSMSource.prototype": {
         title: "OpenStreetMap Layers",
+        mapQuestAttribution: "Tiles Courtesy of <a href='http://open.mapquest.co.uk/' target='_blank'>MapQuest</a> <img src='http://developer.mapquest.com/content/osm/mq_logo.png' border='0'>",
         mapnikAttribution: "Data CC-By-SA by <a href='http://openstreetmap.org/'>OpenStreetMap</a>",
         osmarenderAttribution: "Data CC-By-SA by <a href='http://openstreetmap.org/'>OpenStreetMap</a>"
+    },
+
+    "gxp.plugins.PanMap.prototype": {
+        menuText: "Pan Map",
+        tooltip: "Pan Map"
     },
     
     "gxp.plugins.QueryForm.prototype": {
@@ -56,6 +77,13 @@ GeoExt.Lang.add("en", {
     "gxp.plugins.WMSGetFeatureInfo.prototype": {
         infoActionTip: "Get Feature Info",
         popupTitle: "Feature Info"
+    },
+
+    "gxp.plugins.Zoom.prototype": {
+        zoomInMenuText: "Zoom In",
+        zoomOutMenuText: "Zoom Out",
+        zoomInTooltip: "Zoom In",
+        zoomOutTooltip: "Zoom Out"
     },
 
     "gxp.FeatureEditPopup.prototype": {

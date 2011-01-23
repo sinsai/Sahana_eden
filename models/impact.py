@@ -44,7 +44,7 @@ if deployment_settings.has_module("irs") or deployment_settings.has_module("asse
         if auth.has_membership(auth.id_group("'Administrator'")):
             return DIV(A(ADD_IMPACT_TYPE,
                          _class="colorbox",
-                         _href=URL(r=request, c="impact", f="type", args="create", vars=dict(format="popup")),
+                         _href=URL(r=request, c="impact", f="type", args="create", vars=dict(format="popup", child="impact_type_id")),
                          _target="top",
                          _title=ADD_IMPACT_TYPE
                          )

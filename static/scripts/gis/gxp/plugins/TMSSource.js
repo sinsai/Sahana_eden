@@ -33,7 +33,7 @@ Ext.namespace("gxp.plugins");
  *
  *  .. code-block:: javascript
  *
- *    "osm": {
+ *    osm: {
  *        ptype: "gx_tmssource"
  *    }
  *
@@ -76,6 +76,12 @@ gxp.plugins.TMSSource = Ext.extend(gxp.plugins.LayerSource, {
      */
     cyclemapAttribution: "Data CC-By-SA by <a href='http://www.opencyclemap.org/' target='_blank'>OpenCycleMap</a>",
 
+    /** api: config[mapQuestAttribution]
+     *  ``String``
+     *  Attribution string for mapnik generated layer (i18n).
+     */
+    mapQuestAttribution: "Tiles Courtesy of <a href='http://open.mapquest.co.uk/' target='_blank'>MapQuest</a> <img src='http://developer.mapquest.com/content/osm/mq_logo.png' border='0'>",
+
     /** api: config[labelsAttribution]
      *  ``String``
      *  Attribution string for labels generated layer (i18n).
@@ -93,7 +99,7 @@ gxp.plugins.TMSSource = Ext.extend(gxp.plugins.LayerSource, {
      *  Creates a store of layer records.  Fires "ready" when store is loaded.
      */
     createStore: function() {
-        
+
         var options = {
             projection: "EPSG:900913",
             maxExtent: new OpenLayers.Bounds(
@@ -108,8 +114,7 @@ gxp.plugins.TMSSource = Ext.extend(gxp.plugins.LayerSource, {
             getURL: this.getTileURL,
             displayOutsideMaxExtent: true
         };
-        
-        // @ToDo: isBaseLayer: false
+
         var layers = [
             new OpenLayers.Layer.TMS(
                 "OpenStreetMap (Mapnik)",
@@ -133,6 +138,19 @@ gxp.plugins.TMSSource = Ext.extend(gxp.plugins.LayerSource, {
                 OpenLayers.Util.applyDefaults({                
                     attribution: this.cyclemapAttribution,
                     layerType: "cyclemap"
+                }, options)
+            ),
+            new OpenLayers.Layer.TMS(
+                "MapQuest",
+                [
+                    "http://otile1.mqcdn.com/tiles/1.0.0/osm/",
+                    "http://otile2.mqcdn.com/tiles/1.0.0/osm/",
+                    "http://otile3.mqcdn.com/tiles/1.0.0/osm/",
+                    "http://otile4.mqcdn.com/tiles/1.0.0/osm/"
+                ],
+                OpenLayers.Util.applyDefaults({                
+                    attribution: this.mapQuestAttribution,
+                    type: "mapquest"
                 }, options)
             ),
             new OpenLayers.Layer.TMS(
@@ -227,7 +245,7 @@ gxp.plugins.TMSSource = Ext.extend(gxp.plugins.LayerSource, {
         if (index > -1) {
 
             record = this.store.getAt(index).copy(Ext.data.Record.id({}));
-            var layer = record.get("layer").clone();
+            var layer = record.getLayer().clone();
  
             // set layer title from config
             if (config.title) {

@@ -73,7 +73,7 @@
 <a name="L8"></a><tt class="py-lineno">  8</tt>  <tt class="py-line"><tt class="py-docstring">    @requires: U{B{I{gluon}} &lt;http://web2py.com&gt;}</tt> </tt>
 <a name="L9"></a><tt class="py-lineno">  9</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
 <a name="L10"></a><tt class="py-lineno"> 10</tt>  <tt class="py-line"><tt class="py-docstring">    @author: Dominic K&#246;nig &lt;dominic[at]aidiq.com&gt;</tt> </tt>
-<a name="L11"></a><tt class="py-lineno"> 11</tt>  <tt class="py-line"><tt class="py-docstring">    </tt> </tt>
+<a name="L11"></a><tt class="py-lineno"> 11</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
 <a name="L12"></a><tt class="py-lineno"> 12</tt>  <tt class="py-line"><tt class="py-docstring">    @copyright: 2010 (c) Sahana Software Foundation</tt> </tt>
 <a name="L13"></a><tt class="py-lineno"> 13</tt>  <tt class="py-line"><tt class="py-docstring">    @license: MIT</tt> </tt>
 <a name="L14"></a><tt class="py-lineno"> 14</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
@@ -175,11 +175,11 @@
 <a name="L110"></a><tt class="py-lineno">110</tt>  <tt class="py-line"> </tt>
 <a name="L111"></a><tt class="py-lineno">111</tt>  <tt class="py-line">    <tt class="py-comment"># -------------------------------------------------------------------------</tt> </tt>
 <a name="S3Vita.presence_accept"></a><div id="S3Vita.presence_accept-def"><a name="L112"></a><tt class="py-lineno">112</tt> <a class="py-toggle" href="#" id="S3Vita.presence_accept-toggle" onclick="return toggle('S3Vita.presence_accept');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="vita.modules.s3.s3vita.S3Vita-class.html#presence_accept">presence_accept</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">presence</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
-</div><div id="S3Vita.presence_accept-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="S3Vita.presence_accept-expanded"><a name="L113"></a><tt class="py-lineno">113</tt>  <tt class="py-line"> </tt>
-<a name="L114"></a><tt class="py-lineno">114</tt>  <tt class="py-line">        <tt class="py-docstring">""" Update the presence log of a person entity</tt> </tt>
+</div><div id="S3Vita.presence_accept-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="S3Vita.presence_accept-expanded"><a name="L113"></a><tt class="py-lineno">113</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L114"></a><tt class="py-lineno">114</tt>  <tt class="py-line"><tt class="py-docstring">        Update the presence log of a person entity</tt> </tt>
 <a name="L115"></a><tt class="py-lineno">115</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
-<a name="L116"></a><tt class="py-lineno">116</tt>  <tt class="py-line"><tt class="py-docstring">                - mandatory to be called as onaccept routine at any creation,</tt> </tt>
-<a name="L117"></a><tt class="py-lineno">117</tt>  <tt class="py-line"><tt class="py-docstring">                  update or deletion of pr_presence records</tt> </tt>
+<a name="L116"></a><tt class="py-lineno">116</tt>  <tt class="py-line"><tt class="py-docstring">            - mandatory to be called as onaccept routine at any modification</tt> </tt>
+<a name="L117"></a><tt class="py-lineno">117</tt>  <tt class="py-line"><tt class="py-docstring">              of pr_presence records</tt> </tt>
 <a name="L118"></a><tt class="py-lineno">118</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
 <a name="L119"></a><tt class="py-lineno">119</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
 <a name="L120"></a><tt class="py-lineno">120</tt>  <tt class="py-line"> </tt>
@@ -296,8 +296,8 @@ vita.modules.s3.s3rest.S3Resource.update" class="py-name" href="#" onclick="retu
 <a name="L214"></a><tt class="py-lineno">214</tt>  <tt class="py-line">    <tt class="py-comment"># -------------------------------------------------------------------------</tt> </tt>
 <a name="S3Vita.pentity"></a><div id="S3Vita.pentity-def"><a name="L215"></a><tt class="py-lineno">215</tt> <a class="py-toggle" href="#" id="S3Vita.pentity-toggle" onclick="return toggle('S3Vita.pentity');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="vita.modules.s3.s3vita.S3Vita-class.html#pentity">pentity</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">entity</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
 </div><div id="S3Vita.pentity-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="S3Vita.pentity-expanded"><a name="L216"></a><tt class="py-lineno">216</tt>  <tt class="py-line"> </tt>
-<a name="L217"></a><tt class="py-lineno">217</tt>  <tt class="py-line">        <tt class="py-docstring">""" Get the PersonEntity record for the given ID, ID label, sub-entity</tt> </tt>
-<a name="L218"></a><tt class="py-lineno">218</tt>  <tt class="py-line"><tt class="py-docstring">            or related record</tt> </tt>
+<a name="L217"></a><tt class="py-lineno">217</tt>  <tt class="py-line">        <tt class="py-docstring">""" Get the PersonEntity record for the given ID, ID Tag Number,</tt> </tt>
+<a name="L218"></a><tt class="py-lineno">218</tt>  <tt class="py-line"><tt class="py-docstring">            sub-entity or related record</tt> </tt>
 <a name="L219"></a><tt class="py-lineno">219</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
 <a name="L220"></a><tt class="py-lineno">220</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
 <a name="L221"></a><tt class="py-lineno">221</tt>  <tt class="py-line"> </tt>
@@ -459,7 +459,7 @@ vita.modules.s3.s3tools.CrudS3.select" class="py-name" href="#" onclick="return 
 </div><div id="S3Vita.fullname-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="S3Vita.fullname-expanded"><a name="L369"></a><tt class="py-lineno">369</tt>  <tt class="py-line"> </tt>
 <a name="L370"></a><tt class="py-lineno">370</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
 <a name="L371"></a><tt class="py-lineno">371</tt>  <tt class="py-line"><tt class="py-docstring">            Returns the full name of a person</tt> </tt>
-<a name="L372"></a><tt class="py-lineno">372</tt>  <tt class="py-line"><tt class="py-docstring">            </tt> </tt>
+<a name="L372"></a><tt class="py-lineno">372</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
 <a name="L373"></a><tt class="py-lineno">373</tt>  <tt class="py-line"><tt class="py-docstring">            @ToDo: Support being passed a pe_id instead of a record</tt> </tt>
 <a name="L374"></a><tt class="py-lineno">374</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
 <a name="L375"></a><tt class="py-lineno">375</tt>  <tt class="py-line"> </tt>
@@ -488,7 +488,7 @@ vita.modules.s3.s3tools.CrudS3.select" class="py-name" href="#" onclick="return 
 <a name="L398"></a><tt class="py-lineno">398</tt>  <tt class="py-line">                <tt class="py-name">mname</tt> <tt class="py-op">=</tt> <tt class="py-string">"%s "</tt> <tt class="py-op">%</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-149" class="py-name"><a title="vita.modules.s3.s3vita.S3Vita.truncate" class="py-name" href="#" onclick="return doclink('link-149', 'truncate', 'link-148');">truncate</a></tt><tt class="py-op">(</tt><tt class="py-name">mname</tt><tt class="py-op">,</tt> <tt class="py-number">24</tt><tt class="py-op">)</tt> </tt>
 <a name="L399"></a><tt class="py-lineno">399</tt>  <tt class="py-line">            <tt class="py-keyword">if</tt> <tt class="py-name">lname</tt><tt class="py-op">:</tt> </tt>
 <a name="L400"></a><tt class="py-lineno">400</tt>  <tt class="py-line">                <tt class="py-name">lname</tt> <tt class="py-op">=</tt> <tt class="py-string">"%s "</tt> <tt class="py-op">%</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-150" class="py-name"><a title="vita.modules.s3.s3vita.S3Vita.truncate" class="py-name" href="#" onclick="return doclink('link-150', 'truncate', 'link-148');">truncate</a></tt><tt class="py-op">(</tt><tt class="py-name">lname</tt><tt class="py-op">,</tt> <tt class="py-number">24</tt><tt class="py-op">,</tt> <tt class="py-name">nice</tt> <tt class="py-op">=</tt> <tt class="py-name">False</tt><tt class="py-op">)</tt> </tt>
-<a name="L401"></a><tt class="py-lineno">401</tt>  <tt class="py-line">                     </tt>
+<a name="L401"></a><tt class="py-lineno">401</tt>  <tt class="py-line"> </tt>
 <a name="L402"></a><tt class="py-lineno">402</tt>  <tt class="py-line">            <tt class="py-keyword">if</tt> <tt class="py-name">mname</tt><tt class="py-op">.</tt><tt class="py-name">isspace</tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
 <a name="L403"></a><tt class="py-lineno">403</tt>  <tt class="py-line">                <tt class="py-keyword">return</tt> <tt class="py-string">"%s%s"</tt> <tt class="py-op">%</tt> <tt class="py-op">(</tt><tt class="py-name">fname</tt><tt class="py-op">,</tt> <tt class="py-name">lname</tt><tt class="py-op">)</tt> </tt>
 <a name="L404"></a><tt class="py-lineno">404</tt>  <tt class="py-line">            <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
@@ -588,7 +588,7 @@ expandto(location.href);
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Sun Jan  2 09:00:29 2011
+    Generated by Epydoc 3.0.1 on Mon Jan 17 00:32:31 2011
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

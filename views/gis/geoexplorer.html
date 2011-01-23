@@ -69,6 +69,8 @@
     s3_gis_center.transform(s3_gis_proj4326, s3_gis_projection_current);
     var s3_gis_zoom = {{=config.zoom}};
     var s3_gis_numZoomLevels = {{=config.zoom_levels}};
+    var s3_gis_cluster_distance = {{=config.cluster_distance}};
+    var s3_gis_cluster_threshold = {{=config.cluster_threshold}};
     
     // Functions which are called by user & hence need to be in global scope
 
@@ -304,9 +306,106 @@
         }
 
         {{=XML(layers_features)}}
-
         // ensure popupControl & highlightControl work on these layers
         allLayers = allLayers.concat(featureLayers);
+      {{if layers_georss:}}
+        var georssLayers = new Array();
+        var format_georss = new OpenLayers.Format.GeoRSS();
+        function onGeorssFeatureSelect(event) {
+            // unselect any previous selections
+            tooltipUnselect(event);
+            var feature = event.feature;
+            var selectedFeature = feature;
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
+            if (undefined == feature.attributes.description) {
+                var popup = new OpenLayers.Popup.FramedCloud('georsspopup',
+                centerPoint,
+                new OpenLayers.Size(200, 200),
+                '<h2>' + feature.attributes.title + '</h2>',
+                null, true, onPopupClose);
+            } else {
+                var popup = new OpenLayers.Popup.FramedCloud('georsspopup',
+                centerPoint,
+                new OpenLayers.Size(200, 200),
+                '<h2>' + feature.attributes.title + '</h2>' + feature.attributes.description,
+                null, true, onPopupClose);
+            };
+            feature.popup = popup;
+            popup.feature = feature;
+            feature.layer.map.addPopup(popup);
+        }
+        {{=XML(layers_georss)}}
+        allLayers = allLayers.concat(georssLayers);
+      {{pass}}
+      {{if layers_gpx:}}
+        var gpxLayers = new Array();
+        function onGpxFeatureSelect(event) {
+            // unselect any previous selections
+            tooltipUnselect(event);
+            var feature = event.feature;
+            // Anything we want to do here?
+        }
+        {{=XML(layers_gpx)}}
+        allLayers = allLayers.concat(gpxLayers);
+      {{pass}}
+      {{if layers_kml:}}
+        var kmlLayers = new Array();
+        var format_kml = new OpenLayers.Format.KML({
+            extractStyles: true,
+            extractAttributes: true,
+            maxDepth: 2
+        })
+        function onKmlFeatureSelect(event) {
+            // unselect any previous selections
+            tooltipUnselect(event);
+            var feature = event.feature;
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
+            var selectedFeature = feature;
+            var title = feature.layer.title;
+            var _attributes = feature.attributes;
+            var type = typeof _attributes[title];
+            if ('object' == type) {
+                _title = _attributes[title].value;
+            } else {
+                _title = _attributes[title];
+            }
+            var body = feature.layer.body.split(' ');
+            var content = '';
+            for (var i = 0; i < body.length; i++) {
+                type = typeof _attributes[body[i]];
+                if ('object' == type) {
+                    // Geocommons style
+                    var displayName = _attributes[body[i]].displayName;
+                    if (displayName == '') {
+                        displayName = body[i];
+                    }
+                    var value = _attributes[body[i]].value;
+                    var row = '<b>' + displayName + '</b>: ' + value + '<br />';
+                } else {
+                    var row = _attributes[body[i]] + '<br />';
+                }
+                content += row;
+            }
+            // Protect the content against JavaScript attacks
+            if (content.search('<script') != -1) {
+                content = 'Content contained Javascript! Escaped content below.<br />' + content.replace(/</g, '<');
+            }
+            var contents = '<h2>' + _title + '</h2>' + content;
+
+            var popup = new OpenLayers.Popup.FramedCloud('kmlpopup',
+                centerPoint,
+                new OpenLayers.Size(200, 200),
+                contents,
+                null, true, onPopupClose
+            );
+            feature.popup = popup;
+            popup.feature = feature;
+            feature.layer.map.addPopup(popup);
+        }
+        {{=XML(layers_kml)}}
+        allLayers = allLayers.concat(kmlLayers);
+      {{pass}}
+        {{=XML(layer_coordinategrid)}}
 
         // Popups
         // onClick Popup

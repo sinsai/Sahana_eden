@@ -55,10 +55,12 @@
         "plugins/AddLayers.js",
         "plugins/RemoveLayer.js",
         "plugins/Measure.js",
+        "plugins/Navigation.js",
         "plugins/NavigationHistory.js",
-        "plugins/PanMap.js",
         "plugins/Zoom.js",
         "plugins/ZoomToExtent.js"
+        "plugins/ZoomToDataExtent.js"
+        "plugins/ZoomToSelectedFeatures.js"
     );
     
     var scripts = document.getElementsByTagName("script");

@@ -132,7 +132,7 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
 
         config.tools = [
             {
-                ptype: "gxp_panmap", toggleGroup: this.toggleGroup,
+                ptype: "gxp_navigation", toggleGroup: this.toggleGroup,
                 actionTarget: {target: "paneltbar", index: 6}
             }, {
                 ptype: "gx_wmsgetfeatureinfo", toggleGroup: this.toggleGroup,
@@ -490,6 +490,7 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
             split: true,
             collapsible: true,
             collapseMode: "mini",
+            header: false,
             items: [
                 layersContainer, legendContainer
             ]
@@ -547,7 +548,8 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
             },
             items: [
                 this.mapPanel,
-                //googleEarthPanel
+                // This needs commenting out to be able to open with Firebug open
+                googleEarthPanel
             ],
             activeItem: 0
         });

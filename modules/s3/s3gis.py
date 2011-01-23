@@ -3528,8 +3528,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_kml = ""
         if catalogue_overlays:
             # GeoRSS
-            query = (db.gis_layer_georss.enabled == True) # No deletable field
-            georss_enabled = db(query).select()
+            georss_enabled = db(db.gis_layer_georss.enabled == True).select()
             if georss_enabled:
                 layers_georss += """
         var georssLayers = new Array();
@@ -3924,10 +3923,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             # Coordinate Grid
             coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select(db.gis_layer_coordinate.name, db.gis_layer_coordinate.visible, db.gis_layer_coordinate.role_required)
             if coordinate_enabled:
+                layer = coordinate_enabled.first()
                 if layer.role_required and not auth.s3_has_role(layer.role_required):
                     pass
                 else:
-                    layer = coordinate_enabled.first()
                     name = layer["name"]
                     # Generate HTML snippet
                     name_safe = re.sub("\W", "_", name)

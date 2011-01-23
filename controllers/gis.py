@@ -1648,7 +1648,9 @@ def geoexplorer():
         Custom View for GeoExplorer: http://projects.opengeo.org/geoext/wiki/GeoExplorer
     """
 
+    _cache = (cache.ram, 60)
     config = gis.get_config()
+    public_url = deployment_settings.get_base_public_url()
 
     # @ToDo: Optimise to a single query of table
     bing_key = gis.get_api_key("bing")
@@ -1664,11 +1666,10 @@ def geoexplorer():
     mouse_position = deployment_settings.get_gis_mouse_position()
 
     # Feature Layers
+    marker_id_default = config.marker_id
+    marker_default = db(db.gis_marker.id == marker_id_default).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1), cache=_cache).first()
     marker_max_width = deployment_settings.get_gis_marker_max_width()
     marker_max_height = deployment_settings.get_gis_marker_max_height()
- 
-    cluster_distance = config.cluster_distance
-    cluster_threshold = config.cluster_threshold
 
     # Internal Feature Layers
     layers_features = ""
@@ -1773,7 +1774,7 @@ def geoexplorer():
                 markerLayer = marker
             except:
                 # integer (marker_id)
-                markerLayer = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1), cache=cache).first()
+                markerLayer = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1), cache=_cache).first()
         else:
             markerLayer = ""
 
@@ -1800,17 +1801,19 @@ def geoexplorer():
             var style_cluster = new OpenLayers.Style(style_cluster_style, style_cluster_options);
             // Define StyleMap, Using 'style_cluster' rule for 'default' styling intent
             var featureClusterStyleMap = new OpenLayers.StyleMap({
-                                              'default': style_cluster,
-                                              'select': {
-                                                  fillColor: '#ffdc33',
-                                                  strokeColor: '#ff9933'
-                                              }
+                                            'default': style_cluster,
+                                            'select': {
+                                                fillColor: '#ffdc33',
+                                                strokeColor: '#ff9933'
+                                            }
             });
 
+            // Needs to be uniquely instantiated per-layer
+            var strategy_cluster = new OpenLayers.Strategy.Cluster({distance: s3_gis_cluster_distance, threshold: s3_gis_cluster_threshold})
             var featureLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
                 '""" + name + """',
                 {
-                    strategies: [ new OpenLayers.Strategy.Cluster({distance: """ + str(cluster_distance) + """, threshold: """ + str(cluster_threshold) + """}) ],
+                    strategies: [ strategy_cluster ],
                     styleMap: featureClusterStyleMap
                 }
             );
@@ -2005,6 +2008,334 @@ def geoexplorer():
             this.mapPanel.map.addLayer(featureLayer""" + name_safe + """);
             """
 
+    # Can we cache downloaded feeds?
+    # Needed for unzipping & filtering as well
+    cachepath = os.path.join(request.folder, "uploads", "gis_cache")
+    if os.access(cachepath, os.W_OK):
+        cacheable = True
+        import urllib2      # for error handling
+        from gluon.tools import fetch
+    else:
+        cacheable = False
+
+    # GeoRSS
+    layers_georss = ""
+    georss_enabled = db(db.gis_layer_georss.enabled == True).select()
+    for layer in georss_enabled:
+        if layer.role_required and not auth.s3_has_role(layer.role_required):
+            continue
+        name = layer["name"]
+        url = layer["url"]
+        visible = layer["visible"]
+        georss_projection = db(db.gis_projection.id == layer["projection_id"]).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
+        if georss_projection == 4326:
+            projection_str = "projection: s3_gis_proj4326,"
+        else:
+            projection_str = "projection: new OpenLayers.Projection('EPSG:" + georss_projection + "'),"
+        marker_id = layer["marker_id"]
+        if marker_id:
+            marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+        else:
+            marker = db(db.gis_marker.id == marker__id_default).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+        marker_url = URL(r=request, c="static", f="img", args=["markers", marker.image])
+        height = marker.height
+        width = marker.width
+
+        if cacheable:
+            # Download file
+            try:
+                file = fetch(url)
+                warning = ""
+            except urllib2.URLError:
+                warning = "URLError"
+            except urllib2.HTTPError:
+                warning = "HTTPError"
+            _name = name.replace(" ", "_")
+            _name = _name.replace(",", "_")
+            filename = "gis_cache.file." + _name + ".rss"
+            filepath = os.path.join(cachepath, filename)
+            f = open(filepath, "w")
+            # Handle errors
+            if "URLError" in warning or "HTTPError" in warning:
+                # URL inaccessible
+                if os.access(filepath, os.R_OK):
+                    # Use cached version
+                    date = db(db.gis_cache.name == name).select(db.gis_cache.modified_on, limitby=(0, 1)).first().modified_on
+                    response.warning += url + " " + T("not accessible - using cached version from") + " " + str(date) + "\n"
+                    url = URL(r=request, c="default", f="download", args=[filename])
+                else:
+                    # No cached version available
+                    response.warning += url + " " + T("not accessible - no cached version available!") + "\n"
+                    # skip layer
+                    continue
+            else:
+                # Download was succesful
+                # Write file to cache
+                f.write(file)
+                f.close()
+                records = db(db.gis_cache.name == name).select()
+                if records:
+                    records[0].update(modified_on=response.utcnow)
+                else:
+                    db.gis_cache.insert(name=name, file=filename)
+                url = URL(r=request, c="default", f="download", args=[filename])
+        else:
+            # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
+            pass
+
+        # Generate HTML snippet
+        name_safe = re.sub("\W", "_", name)
+        if visible:
+            visibility = "georssLayer" + name_safe + ".setVisibility(true);"
+        else:
+            visibility = "georssLayer" + name_safe + ".setVisibility(false);"
+        layers_georss += """
+        iconURL = '""" + marker_url + """';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = iconURL;
+        // Needs to be uniquely instantiated
+        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+        style_marker.graphicOpacity = 1;
+        style_marker.graphicWidth = i.width;
+        style_marker.graphicHeight = i.height;
+        style_marker.graphicXOffset = -(i.width / 2);
+        style_marker.graphicYOffset = -i.height;
+        style_marker.externalGraphic = iconURL;
+        // Needs to be uniquely instantiated per-layer
+        var strategy_cluster = new OpenLayers.Strategy.Cluster({distance: s3_gis_cluster_distance, threshold: s3_gis_cluster_threshold})
+        var georssLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+            '""" + name_safe + """',
+            {
+                """ + projection_str + """
+                strategies: [ new OpenLayers.Strategy.Fixed(), strategy_cluster ],
+                style: style_marker,
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: '""" + url + """',
+                    format: format_georss
+                })
+            }
+        );
+        """ + visibility + """
+        this.mapPanel.map.addLayer(georssLayer""" + name_safe + """);
+        georssLayers.push(georssLayer""" + name_safe + """);
+        georssLayer""" + name_safe + """.events.on({ "featureselected": onGeorssFeatureSelect, "featureunselected": onFeatureUnselect });
+        """
+   
+     # GPX
+    layers_gpx = ""
+    gpx_enabled = db(db.gis_layer_gpx.enabled == True).select()
+    for layer in gpx_enabled:
+        if layer.role_required and not auth.s3_has_role(layer.role_required):
+            continue
+        name = layer["name"]
+        track = db(db.gis_track.id == layer.track_id).select(db.gis_track.track, limitby=(0, 1)).first()
+        if track:
+            url = URL(r=request, c="default", f="download") + "/" + track.track
+        else:
+            url = ""
+        visible = layer["visible"]
+        waypoints = layer["waypoints"]
+        tracks = layer["tracks"]
+        routes = layer["routes"]
+        marker_id = layer["marker_id"]
+        if marker_id:
+            marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
+        else:
+            marker = marker_default.image
+        marker_url = URL(r=request, c="static", f="img", args=["markers", marker])
+
+        # Generate HTML snippet
+        name_safe = re.sub("\W", "_", name)
+        if visible:
+            visibility = "gpxLayer" + name_safe + ".setVisibility(true);"
+        else:
+            visibility = "gpxLayer" + name_safe + ".setVisibility(false);"
+        gpx_format = "extractAttributes:true"
+        if not waypoints:
+            gpx_format += ", extractWaypoints:false"
+            style_marker = """
+        style_marker.externalGraphic = '';
+        """
+        else:
+            style_marker = """
+        style_marker.graphicOpacity = 1;
+        style_marker.graphicWidth = i.width;
+        style_marker.graphicHeight = i.height;
+        style_marker.graphicXOffset = -(i.width / 2);
+        style_marker.graphicYOffset = -i.height;
+        style_marker.externalGraphic = iconURL;
+        """
+        if not tracks:
+            gpx_format += ", extractTracks:false"
+        if not routes:
+            gpx_format += ", extractRoutes:false"
+        layers_gpx += """
+        iconURL = '""" + marker_url + """';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = iconURL;
+        // Needs to be uniquely instantiated
+        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+        """ + style_marker + """
+        style_marker.strokeColor = 'blue';
+        style_marker.strokeWidth = 6;
+        style_marker.strokeOpacity = 0.5;
+        // Needs to be uniquely instantiated per-layer
+        var strategy_cluster = new OpenLayers.Strategy.Cluster({distance: s3_gis_cluster_distance, threshold: s3_gis_cluster_threshold})
+        var gpxLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+            '""" + name_safe + """',
+            {
+                projection: s3_gis_proj4326,
+                strategies: [ new OpenLayers.Strategy.Fixed(), strategy_cluster ],
+                style: style_marker,
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: '""" + url + """',
+                    format: new OpenLayers.Format.GPX({""" + gpx_format + """})
+                })
+            }
+        );
+        """ + visibility + """
+        this.mapPanel.map.addLayer(gpxLayer""" + name_safe + """);
+        gpxLayers.push(gpxLayer""" + name_safe + """);
+        gpxLayer""" + name_safe + """.events.on({ 'featureselected': onGpxFeatureSelect, 'featureunselected': onFeatureUnselect });
+        """
+
+    # KML
+    layers_kml = ""
+    kml_enabled = db(db.gis_layer_kml.enabled == True).select()
+    for layer in kml_enabled:
+        if layer.role_required and not auth.s3_has_role(layer.role_required):
+            continue
+        name = layer["name"]
+        url = layer["url"]
+        visible = layer["visible"]
+        title = layer["title"] or "name"
+        body = layer["body"] or "description"
+        projection_str = "projection: s3_gis_proj4326,"
+        marker_id = layer["marker_id"]
+        if marker_id:
+            marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+        else:
+            marker = marker_default
+        marker_url = URL(r=request, c="static", f="img", args=["markers", marker.image])
+        height = marker.height
+        width = marker.width
+        if cacheable:
+            # Download file
+            file, warning = gis.download_kml(url, public_url)
+            _name = name.replace(" ", "_")
+            _name = _name.replace(",", "_")
+            filename = "gis_cache.file." + _name + ".kml"
+            filepath = os.path.join(cachepath, filename)
+            f = open(filepath, "w")
+            # Handle errors
+            if "URLError" in warning or "HTTPError" in warning:
+                # URL inaccessible
+                if os.access(filepath, os.R_OK):
+                    statinfo = os.stat(filepath)
+                    if statinfo.st_size:
+                        # Use cached version
+                        date = db(db.gis_cache.name == name).select(db.gis_cache.modified_on, limitby=(0, 1)).first().modified_on
+                        response.warning += url + " " + T("not accessible - using cached version from") + " " + str(date) + "\n"
+                        url = URL(r=request, c="default", f="download", args=[filename])
+                    else:
+                        # 0k file is all that is available
+                        response.warning += url + " " + T("not accessible - no cached version available!") + "\n"
+                        # skip layer
+                        continue
+                else:
+                    # No cached version available
+                    response.warning += url + " " + T("not accessible - no cached version available!") + "\n"
+                    # skip layer
+                    continue
+            else:
+                # Download was succesful
+                if "ParseError" in warning:
+                    # @ToDo Parse detail
+                    response.warning += T("Layer") + ": " + name + " " + T("couldn't be parsed so NetworkLinks not followed.") + "\n"
+                if "GroundOverlay" in warning or "ScreenOverlay" in warning:
+                    response.warning += T("Layer") + ": " + name + " " + T("includes a GroundOverlay or ScreenOverlay which aren't supported in OpenLayers yet, so it may not work properly.") + "\n"
+                # Write file to cache
+                f.write(file)
+                f.close()
+                record = db(db.gis_cache.name == name).select().first()
+                if record:
+                    record.update(modified_on=response.utcnow)
+                else:
+                    db.gis_cache.insert(name=name, file=filename)
+                url = URL(r=request, c="default", f="download", args=[filename])
+        else:
+            # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
+            pass
+
+        # Generate HTML snippet
+        name_safe = re.sub("\W", "_", name)
+        layer_name = "kmlLayer" + name_safe
+        if visible:
+            visibility = layer_name + ".setVisibility(true);"
+        else:
+            visibility = layer_name + ".setVisibility(false);"
+        layers_kml += """
+        iconURL = '""" + marker_url + """';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = iconURL;
+        // Needs to be uniquely instantiated
+        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+        style_marker.graphicOpacity = 1;
+        style_marker.graphicWidth = i.width;
+        style_marker.graphicHeight = i.height;
+        style_marker.graphicXOffset = -(i.width / 2);
+        style_marker.graphicYOffset = -i.height;
+        style_marker.externalGraphic = iconURL;
+        // Needs to be uniquely instantiated per-layer
+        var strategy_cluster = new OpenLayers.Strategy.Cluster({distance: s3_gis_cluster_distance, threshold: s3_gis_cluster_threshold})
+        var kmlLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+            '""" + name + """',
+            {
+                """ + projection_str + """
+                strategies: [ new OpenLayers.Strategy.Fixed(), strategy_cluster ],
+                style: style_marker,
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: '""" + url + """',
+                    format: format_kml
+                })
+            }
+        );
+        """ + visibility + """
+        kmlLayer""" + name_safe + """.title = '""" + title + """';
+        kmlLayer""" + name_safe + """.body = '""" + body + """';
+        this.mapPanel.map.addLayer(kmlLayer""" + name_safe + """);
+        kmlLayers.push(kmlLayer""" + name_safe + """);
+        kmlLayer""" + name_safe + """.events.on({ "featureselected": onKmlFeatureSelect, "featureunselected": onFeatureUnselect });
+        """
+
+    # Coordinate Grid
+    layer_coordinategrid = ""
+    coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select(db.gis_layer_coordinate.name, db.gis_layer_coordinate.visible, db.gis_layer_coordinate.role_required)
+    if coordinate_enabled:
+        layer = coordinate_enabled.first()
+        if layer.role_required and not auth.s3_has_role(layer.role_required):
+            pass
+        else:
+            name = layer["name"]
+            # Generate HTML snippet
+            name_safe = re.sub("\W", "_", name)
+            if "visible" in layer and layer["visible"]:
+                visibility = ""
+            else:
+                visibility = ", visibility: false"
+            layer_coordinategrid = """
+        this.mapPanel.map.addLayer(new OpenLayers.Layer.cdauth.CoordinateGrid(null, { name: '""" + name_safe + """', shortName: 'grid' """ + visibility + """ }));
+        """
+            
     response.title = "GeoExplorer"
     return dict(
                 config=config,
@@ -2016,7 +2347,11 @@ def geoexplorer():
                 mouse_position = mouse_position,
                 marker_max_width = marker_max_width,
                 marker_max_height = marker_max_height,
-                layers_features = layers_features
+                layers_features = layers_features,
+                layers_georss = layers_georss,
+                layers_gpx = layers_gpx,
+                layers_kml = layers_kml,
+                layer_coordinategrid = layer_coordinategrid
                )
 
 def about():

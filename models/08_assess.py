@@ -1822,5 +1822,23 @@ if deployment_settings.has_module(module):
                            method="summary",
                            action=shn_rat_summary)
 
+    #==========================================================================
+    # UN Common Operational Datasets
+    #==========================================================================
+
+    # Population Statistics
+    resourcename = "population"
+    tablename = module + "_" + resourcename
+    table = db.define_table(tablename,
+                            location_id(),
+                            Field("population", "double"),
+                            Field("households", "double"),
+                            Field("median_age", "double"),
+                            Field("average_family_size", "double"),
+                            Field("effective_date", "datetime"),
+                            comments(),
+                            migrate=migrate,
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()))
+
     # -----------------------------------------------------------------------------
     # END

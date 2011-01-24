@@ -1504,7 +1504,9 @@ class S3Permission(object):
                        anchor='',
                        extension=None,
                        env=None,
-                       hmac_key=None):
+                       #not supported by web2py < r2806, and not needed in Eden:
+                       #hmac_key=None
+                      ):
         """
         Return a URL only if accessible by the user, otherwise False
 
@@ -1533,7 +1535,9 @@ class S3Permission(object):
                        anchor=anchor,
                        extension=extension,
                        env=env,
-                       hmac_key=hmac_key)
+                       #not supported by web2py < r2806, and not needed in Eden:
+                       #hmac_key=hmac_key
+                       )
         else:
             return False
 

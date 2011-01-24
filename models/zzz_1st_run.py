@@ -930,35 +930,43 @@ if populate:
                 url1 = "http://a.tile.openstreetmap.org/",
                 url2 = "http://b.tile.openstreetmap.org/",
                 url3 = "http://c.tile.openstreetmap.org/",
-                attribution = '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>'
+                attribution = '<a href="http://www.openstreetmap.org/" target="_blank">OpenStreetMap</a>'
             )
         table.insert(
                 name = "OpenStreetMap (CycleMap)",
                 url1 = "http://a.tile.opencyclemap.org/cycle/",
                 url2 = "http://b.tile.opencyclemap.org/cycle/",
                 url3 = "http://c.tile.opencyclemap.org/cycle/",
-                attribution = '<a href="http://www.opencyclemap.org/">OpenCycleMap</a>'
+                attribution = '<a href="http://www.opencyclemap.org/" target="_blank">OpenCycleMap</a>'
             )
         table.insert(
                 name = "OpenStreetMap (Labels)",
                 url1 = "http://tiler1.censusprofiler.org/labelsonly/",
-                attribution = 'Labels overlay CC-by-SA by <a href="http://oobrien.com/oom/">OpenOrienteeringMap</a>/<a href="http://www.openstreetmap.org/">OpenStreetMap</a> data',
+                attribution = 'Labels overlay CC-by-SA by <a href="http://oobrien.com/oom/" target="_blank">OpenOrienteeringMap</a>/<a href="http://www.openstreetmap.org/">OpenStreetMap</a> data',
                 base = False,
                 visible = False
             )
         table.insert(
                 name = "OpenStreetMap (Relief)",
                 url1 = "http://toolserver.org/~cmarqu/hill/",
-                attribution = 'Relief by <a href="http://hikebikemap.de/">Hike &amp; Bike Map</a>',
+                attribution = 'Relief by <a href="http://hikebikemap.de/" target="_blank">Hike &amp; Bike Map</a>',
                 base = False,
                 visible = False
+            )
+        table.insert(
+                name = "OpenStreetMap (MapQuest)",
+                url1 = "http://otile1.mqcdn.com/tiles/1.0.0/osm/",
+                url2 = "http://otile2.mqcdn.com/tiles/1.0.0/osm/",
+                url3 = "http://otile3.mqcdn.com/tiles/1.0.0/osm/",
+                attribution = 'Tiles Courtesy of <a href="http://open.mapquest.co.uk/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png" border="0">',
+                enabled = False
             )
         table.insert(
                 name = "OpenStreetMap (Osmarender)",
                 url1 = "http://a.tah.openstreetmap.org/Tiles/tile/",
                 url2 = "http://b.tah.openstreetmap.org/Tiles/tile/",
                 url3 = "http://c.tah.openstreetmap.org/Tiles/tile/",
-                attribution = '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>',
+                attribution = '<a href="http://www.openstreetmap.org/" target="_blank">OpenStreetMap</a>',
                 enabled = False
             )
         table.insert(

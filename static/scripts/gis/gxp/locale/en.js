@@ -1,13 +1,17 @@
 
 GeoExt.Lang.add("en", {
 
+    "gxp.plugins.AddLayers.prototype": {
+        addMenuText: "Add layers",
+        addActionTip: "Add layers"
+    },
+    
     "gxp.plugins.BingSource.prototype": {
         title: "Bing Layers",
         roadTitle: "Road",
         aerialTitle: "Aerial",
         labeledAerialTitle: "Bing Aerial With Labels"
-    },
-    
+    },    
 
     "gxp.plugins.FeatureEditor.prototype": {
         createFeatureActionTip: "Create a new feature",
@@ -15,8 +19,7 @@ GeoExt.Lang.add("en", {
     },
     
     "gxp.plugins.FeatureGrid.prototype": {
-        displayFeatureText: "Display on map",
-        zoomToSelectedText: "Zoom to selected"
+        displayFeatureText: "Display on map"
     },
     
     "gxp.plugins.GoogleSource.prototype": {
@@ -41,6 +44,11 @@ GeoExt.Lang.add("en", {
         measureTooltip: "Measure"
     },
 
+    "gxp.plugins.Navigation.prototype": {
+        menuText: "Pan Map",
+        tooltip: "Pan Map"
+    },
+
     "gxp.plugins.NavigationHistory.prototype": {
         previousMenuText: "Zoom To Previous Extent",
         nextMenuText: "Zoom To Next Extent",
@@ -55,11 +63,6 @@ GeoExt.Lang.add("en", {
         osmarenderAttribution: "Data CC-By-SA by <a href='http://openstreetmap.org/'>OpenStreetMap</a>"
     },
 
-    "gxp.plugins.PanMap.prototype": {
-        menuText: "Pan Map",
-        tooltip: "Pan Map"
-    },
-    
     "gxp.plugins.QueryForm.prototype": {
         queryActionText: "Query",
         queryMenuText: "Query layer",
@@ -84,6 +87,21 @@ GeoExt.Lang.add("en", {
         zoomOutMenuText: "Zoom Out",
         zoomInTooltip: "Zoom In",
         zoomOutTooltip: "Zoom Out"
+    },
+    
+    "gxp.plugins.ZoomToExtent.prototype": {
+        menuText: "Zoom To Max Extent",
+        tooltip: "Zoom To Max Extent"
+    },
+    
+    "gxp.plugins.ZoomToDataExtent.prototype": {
+        menuText: "Zoom to layer extent",
+        tooltip: "Zoom to layer extent"
+    },
+    
+    "gxp.plugins.ZoomToSelectedFeatures.prototype": {
+        menuText: "Zoom to selected features",
+        tooltip: "Zoom to selected features"
     },
 
     "gxp.FeatureEditPopup.prototype": {

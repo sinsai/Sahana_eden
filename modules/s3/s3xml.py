@@ -38,7 +38,7 @@
 
 __all__ = ["S3XML"]
 
-import sys
+import sys, csv
 from gluon.storage import Storage
 from gluon.validators import IS_EMPTY_OR
 import gluon.contrib.simplejson as json
@@ -99,7 +99,10 @@ class S3XML(object):
         field="field",
         option="option",
         options="options",
-        fields="fields"
+        fields="fields",
+        table="table",
+        row="row",
+        col="col"
     )
 
     ATTRIBUTE = Storage(
@@ -129,7 +132,8 @@ class S3XML(object):
         type="type",
         readable="readable",
         writable="writable",
-        has_options="has_options"
+        has_options="has_options",
+        tuid="tuid"
     )
 
     ACTION = Storage(
@@ -714,6 +718,10 @@ class S3XML(object):
                 continue
 
             uids = r.get(self.UID, None)
+            attr = self.UID
+            if not uids:
+                uids = r.get(self.ATTRIBUTE.tuid, None)
+                attr = self.ATTRIBUTE.tuid
             if uids and multiple:
                 uids = uids.strip("|").split("|")
             elif uids:
@@ -741,7 +749,7 @@ class S3XML(object):
                         expr = './/%s[@%s="%s" and @%s="%s"]' % (
                                 self.TAG.resource,
                                 self.ATTRIBUTE.name, resource,
-                                self.UID, uid)
+                                attr, uid)
                         e = root.xpath(expr)
                         if e:
                             relements.append(e[0])
@@ -749,16 +757,21 @@ class S3XML(object):
                     else:
                         reference_list.append(Storage(field=field, entry=entry))
 
-                _uids = map(self.import_uid, uids)
-                records = self.db(ktable[self.UID].belongs(_uids)).select(ktable.id, ktable[self.UID])
-                id_map = dict()
-                map(lambda r: id_map.update({r[self.UID]:r.id}), records)
+                if attr == self.UID:
+                    _uids = map(self.import_uid, uids)
+                    records = self.db(ktable[self.UID].belongs(_uids)).select(ktable.id, ktable[self.UID])
+                    id_map = dict()
+                    map(lambda r: id_map.update({r[self.UID]:r.id}), records)
 
             for relement in relements:
 
-                uid = relement.get(self.UID, None)
-                _uid = self.import_uid(uid)
-                id = _uid and id_map and id_map.get(_uid, None) or None
+                uid = relement.get(attr, None)
+                if attr == self.UID:
+                    _uid = self.import_uid(uid)
+                    id = _uid and id_map and id_map.get(_uid, None) or None
+                else:
+                    _uid = None
+                    id = None
 
                 entry = dict(job=None,
                              resource=resource,
@@ -1237,6 +1250,32 @@ class S3XML(object):
             return "\n".join([l.rstrip() for l in js.splitlines()])
         else:
             return json.dumps(root_dict)
+
+
+    # -------------------------------------------------------------------------
+    def csv2tree(self, source,
+                 format=None,
+                 delimiter=",",
+                 quotechar='"'):
+
+        reader = csv.DictReader(source,
+                                delimiter=delimiter,
+                                quotechar=quotechar)
+
+        if format is None:
+            format = "s3csv"
+        root = etree.Element(self.TAG.table)
+        root.set(self.ATTRIBUTE.name, format)
+        for r in reader:
+            row = etree.SubElement(root, self.TAG.row)
+            for k in r:
+                col = etree.SubElement(row, self.TAG.col)
+                col.set(self.ATTRIBUTE.field, k)
+                if r[k].lower() not in ("null", "<null>", "none"):
+                    text = self.xml_encode(unicode(r[k].decode("utf-8")))
+                    col.text = text
+
+        return  etree.ElementTree(root)
 
 
     # -------------------------------------------------------------------------

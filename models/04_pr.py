@@ -551,6 +551,98 @@ s3.crud_strings[tablename] = Storage(
 
 
 # *****************************************************************************
+# Note (future replacement for pr_presence and pf_missing_report)
+#
+#pr_note_types = {
+    #1:T("Location"),
+    #2:T("Status"),
+    #3:T("Note")
+#}
+
+#pr_note_status = {
+    #1:T("reported"),
+    #2:T("confirmed"),
+    #3:T("invalid")
+#}
+
+#pr_procedure_types = {
+    #1:T("Check-in"),
+    #2:T("Check-out")
+#}
+
+#resourcename = "note"
+#tablename = "%s_%s" % (prefix, resourcename)
+#table = db.define_table(tablename,
+                        #super_link(db.pr_pentity), # pe_id
+                        #person_id("reporter"),
+
+                        ## Note type and status
+                        #Field("note_type", "integer",
+                              #requires = IS_IN_SET(pr_note_types, zero=None),
+                              #default = 3,
+                              #label = T("Note Type"),
+                              #represent = lambda opt: \
+                                          #pr_note_types.get(opt, UNKNOWN_OPT)),
+                        #Field("note_status", "integer",
+                              #requires = IS_IN_SET(pr_note_status, zero=None),
+                              #default = 1,
+                              #label = T("Note Status"),
+                              #represent = lambda opt: \
+                                          #pr_note_status.get(opt, UNKNOWN_OPT)),
+
+                        ## Time stamp
+                        #Field("timestmp", "datetime"),
+
+                        ## Last known location
+                        #location_id(),
+                        #shelter_id(),
+                        #hospital_id(),
+
+                        ## Note text (optional)
+                        #Field("note_text", "text"),
+
+                        ## Person status
+                        #Field("missing", "boolean", default=False),
+                        #Field("injured", "boolean", default=False),
+                        #Field("deceased", "boolean", default=False),
+
+                        ## Procedure: None, Check-in or Check-out
+                        #Field("procedure", "integer",
+                              #requires = IS_EMPTY_OR(IS_IN_SET(pr_procedure_types)),
+                              #default = None,
+                              #label = T("Procedure"),
+                              #represent = lambda opt: \
+                                          #pr_procedure_types.get(opt, UNKNOWN_OPT)),
+
+                        #Field("closed", "boolean", default=False),
+                        #migrate=migrate, *s3_meta_fields())
+
+
+## CRUD strings
+#ADD_NOTE = T("Add Note")
+#s3.crud_strings[tablename] = Storage(
+    #title_create = ADD_NOTE,
+    #title_display = T("Note Details"),
+    #title_list = T("Notes"),
+    #title_update = T("Edit Note"),
+    #title_search = T("Search Notes"),
+    #subtitle_create = T("Add New Note"),
+    #subtitle_list = T("Current Notes"),
+    #label_list_button = T("List Notes"),
+    #label_create_button = ADD_NOTE,
+    #msg_record_created = T("Note added"),
+    #msg_record_modified = T("Note updated"),
+    #msg_record_deleted = T("Note deleted"),
+    #msg_list_empty = T("No notes available"))
+
+
+## Notes as component of person entities
+#s3xrc.model.add_component(prefix, resourcename,
+                          #multiple=True,
+                          #joinby=super_key(db.pr_pentity))
+
+
+# *****************************************************************************
 # Subscription (pe_subscription)
 #
 resourcename = "pe_subscription"

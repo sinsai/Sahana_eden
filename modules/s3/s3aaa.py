@@ -1140,6 +1140,7 @@ class S3Permission(object):
         else:
             self.skip_table_acls = False
         self.modules = deployment_settings.modules
+        self.function_acls = True # set to False to disable sub-controller level ACLs
 
         # Permissions table
         self.tablename = tablename or self.TABLENAME
@@ -1330,7 +1331,7 @@ class S3Permission(object):
                     else:
                         function_acl += [(row.oacl, row.uacl)]
                 # Function-specific ACL overrides Controller ACL
-                if function_acl:
+                if function_acl and self.function_acls:
                     page_acl = most_permissive(function_acl)
                 elif controller_acl:
                     page_acl = most_permissive(controller_acl)
@@ -2132,14 +2133,19 @@ class S3RoleManager(S3Method):
                     if not acl.function:
                         f = any
                     else:
-                        f = acl.function
+                        if auth.permission.function_acls:
+                            f = acl.function
+                        else:
+                            continue
                     acls[acl.controller][f] = acl
 
             # Table header
-            thead = THEAD(TR(TH(T("Controller")),
-                             TH(T("Function")),
-                             TH(T("All Records")),
-                             TH(T("Owned Records"))))
+            headers = [TH(T("Application"))]
+            if auth.permission.function_acls:
+                headers.append(TH(T("Function")))
+            headers.extend([TH(T("All Records")),
+                            TH(T("Owned Records"))])
+            thead = THEAD(TR(headers))
 
             # Rows for existing ACLs
             form_rows = []
@@ -2174,22 +2180,26 @@ class S3RoleManager(S3Method):
                     uacl = acl_widget("uacl", "acl_u_%s" % n, uacl)
                     oacl = acl_widget("oacl", "acl_o_%s" % n, oacl)
                     cn = self.controllers[c].name_nice
-                    form_rows.append(TR(TD(cn), TD(f), TD(uacl), TD(oacl), _class=_class))
+                    if auth.permission.function_acls:
+                        form_rows.append(TR(TD(cn), TD(f), TD(uacl), TD(oacl), _class=_class))
+                    else:
+                        form_rows.append(TR(TD(cn), TD(uacl), TD(oacl), _class=_class))
 
             # Row to enter a new controller ACL
-            _class = i % 2 and "even" or "odd"
-            c_opts = [OPTION("", _value=None, _selected="selected")] + \
-                     [OPTION(self.controllers[c].name_nice, _value=c) for c in controllers]
-            c_select = SELECT(_name="new_controller", *c_opts)
+            if auth.permission.function_acls:
+                _class = i % 2 and "even" or "odd"
+                c_opts = [OPTION("", _value=None, _selected="selected")] + \
+                        [OPTION(self.controllers[c].name_nice, _value=c) for c in controllers]
+                c_select = SELECT(_name="new_controller", *c_opts)
 
-            form_rows.append(TR(
-                TD(c_select),
-                TD(INPUT(_type="text", _name="new_function")),
-                TD(acl_widget("uacl", "new_c_uacl", auth.permission.NONE)),
-                TD(acl_widget("oacl", "new_c_oacl", auth.permission.NONE)), _class=_class))
+                form_rows.append(TR(
+                    TD(c_select),
+                    TD(INPUT(_type="text", _name="new_function")),
+                    TD(acl_widget("uacl", "new_c_uacl", auth.permission.NONE)),
+                    TD(acl_widget("oacl", "new_c_oacl", auth.permission.NONE)), _class=_class))
 
             # Subheading, button to switch to table ACLs
-            tabs = [SPAN(A(T("Controller Permissions")), _class="rheader_tab_here")]
+            tabs = [SPAN(A(T("Application Permissions")), _class="rheader_tab_here")]
             if not auth.permission.skip_table_acls:
                 tabs.append(SPAN(A(T("Table Permissions"), _id="tacl-tab"), _class="rheader_tab_last"))
 

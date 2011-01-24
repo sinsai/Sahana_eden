@@ -1797,8 +1797,8 @@ OpenLayers.Map = OpenLayers.Class({
      *           within the min/max range of zoom levels.
      */
     isValidZoomLevel: function(zoomLevel) {
-       return ( (zoomLevel != null) &&
-                (zoomLevel >= 0) && 
+        return ( (zoomLevel != null) &&
+                (zoomLevel >= this.getRestrictedMinZoom()) &&
                 (zoomLevel < this.getNumZoomLevels()) );
     },
     
@@ -1903,7 +1903,20 @@ OpenLayers.Map = OpenLayers.Class({
     },
     
     /**
-     * APIMethod: getNumZoomLevels
+     * Method: getRestrictedMinZoom 
+ 	 * 
+ 	 * Returns: 
+ 	 * {Integer} the minimum zoom level allowed for the current baseLayer. 
+ 	 */ 
+ 	getRestrictedMinZoom: function() { 
+        var minZoom = null; 
+        if (this.baseLayer != null) { 
+            minZoom = this.baseLayer.restrictedMinZoom; 
+        } 
+        return minZoom; 
+ 	}, 
+
+ 	/*** APIMethod: getNumZoomLevels
      * 
      * Returns:
      * {Integer} The total number of zoom levels that can be displayed by the 

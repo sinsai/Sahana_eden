@@ -742,12 +742,23 @@ class AuthS3(Auth):
 
         elif session.s3.security_policy == 3:
             # Controller ACLs
-            self.permission.skip_table_acls = True
+            self.permission.use_cacls = True
+            self.permission.use_facls = False
+            self.permission.use_tacls = False
             authorised = self.permission.has_permission(table, record=record_id, method=method)
 
         elif session.s3.security_policy == 4:
-            # Controller+Table ACLs
-            self.permission.skip_table_acls = False
+            # Controller+Function ACLs
+            self.permission.use_cacls = True
+            self.permission.use_facls = True
+            self.permission.use_tacls = False
+            authorised = self.permission.has_permission(table, record=record_id, method=method)
+
+        elif session.s3.security_policy == 5:
+            # Controller+Function+Table ACLs
+            self.permission.use_cacls = True
+            self.permission.use_facls = True
+            self.permission.use_tacls = True
             authorised = self.permission.has_permission(table, record=record_id, method=method)
 
         else:
@@ -1135,12 +1146,11 @@ class S3Permission(object):
         # Deployment settings
         deployment_settings = env.deployment_settings
         self.policy = deployment_settings.get_security_policy()
-        if self.policy != 4:
-            self.skip_table_acls = True
-        else:
-            self.skip_table_acls = False
+        # Which level of granularity do we want?
+        self.use_cacls = self.policy in (3, 4, 5) # Controller ACLs
+        self.use_facls = self.policy in (4, 5) # Function ACLs
+        self.use_tacls = self.policy in (5,) # Table ACLs
         self.modules = deployment_settings.modules
-        self.function_acls = True # set to False to disable sub-controller level ACLs
 
         # Permissions table
         self.tablename = tablename or self.TABLENAME
@@ -1252,7 +1262,7 @@ class S3Permission(object):
 
         page_acl = self.page_acl(c=c, f=f)
 
-        if table is None or self.skip_table_acls:
+        if table is None or not self.use_tacls:
             acl = page_acl
         else:
             if self.EDITOR in roles:
@@ -1331,7 +1341,7 @@ class S3Permission(object):
                     else:
                         function_acl += [(row.oacl, row.uacl)]
                 # Function-specific ACL overrides Controller ACL
-                if function_acl and self.function_acls:
+                if function_acl and self.use_facls:
                     page_acl = most_permissive(function_acl)
                 elif controller_acl:
                     page_acl = most_permissive(controller_acl)
@@ -1353,7 +1363,7 @@ class S3Permission(object):
 
         """
 
-        if table is None or self.skip_table_acls:
+        if table is None or not self.use_tacls:
             return self.page_acl(c=c)
 
         t = self.table
@@ -1581,7 +1591,7 @@ class S3Permission(object):
 
         # Available ACLs
         pacl = self.page_acl()
-        if self.skip_table_acls:
+        if not self.use_tacls:
             acl = pacl
         else:
             tacl = self.table_acl(table)
@@ -1623,7 +1633,7 @@ class S3Permission(object):
         roles = []
         if self.session.s3 is not None:
             # No ownership required in policies without ACLs
-            if self.session.s3.security_policy not in (3, 4):
+            if self.use_cacls or self.use_facls or self.use_tacls:
                 return False
             roles = self.session.s3.roles or []
 
@@ -1638,7 +1648,7 @@ class S3Permission(object):
 
         # Available ACLs
         pacl = self.page_acl()
-        if self.skip_table_acls:
+        if not self.use_tacls:
             acl = pacl
         else:
             tacl = self.table_acl(table)
@@ -1844,7 +1854,7 @@ class S3RoleManager(S3Method):
 
     """ REST Method to manage ACLs
 
-        @status: alpha
+        @status: work in progress
 
     """
 
@@ -2058,13 +2068,16 @@ class S3RoleManager(S3Method):
 
         output = dict()
 
-
         request = self.request
         session = self.session
         db = self.db
         T = self.T
 
         crud_settings = self.manager.s3.crud
+
+        CACL = T("Application Permissions")
+        FACL = T("Function Permissions")
+        TACL = T("Table Permissions")
 
         auth = self.manager.auth
         model = self.manager.model
@@ -2114,15 +2127,9 @@ class S3RoleManager(S3Method):
             controllers = [c for c in self.controllers.keys()
                              if c not in self.HIDE_CONTROLLER]
             ptables = []
-            tacls = db(acl_table.tablename != None).select(acl_table.tablename,
-                                                           distinct=True)
-            if tacls:
-                ptables = [acl.tablename for acl in tacls]
             records = db(acl_table.group_id == role_id).select()
 
             acl_forms = []
-
-            # Controller ACL form ---------------------------------------------
 
             # Relevant ACLs
             acls = Storage()
@@ -2133,19 +2140,18 @@ class S3RoleManager(S3Method):
                     if not acl.function:
                         f = any
                     else:
-                        if auth.permission.function_acls:
+                        if auth.permission.use_facls:
                             f = acl.function
                         else:
                             continue
                     acls[acl.controller][f] = acl
 
+            # Controller ACL table --------------------------------------------
+
             # Table header
-            headers = [TH(T("Application"))]
-            if auth.permission.function_acls:
-                headers.append(TH(T("Function")))
-            headers.extend([TH(T("All Records")),
-                            TH(T("Owned Records"))])
-            thead = THEAD(TR(headers))
+            thead = THEAD(TR(TH(T("Application")),
+                             TH(T("All Records")),
+                             TH(T("Owned Records"))))
 
             # Rows for existing ACLs
             form_rows = []
@@ -2163,30 +2169,73 @@ class S3RoleManager(S3Method):
                         acl_list.insert(0, default)
                 else:
                     acl_list = Storage(ANY=default)
-                keys = acl_list.keys()
-                keys.sort()
-                for f in keys:
-                    acl = acl_list[f]
-                    _class = i % 2 and "even" or "odd"
-                    i += 1
-                    uacl = auth.permission.NONE
-                    oacl = auth.permission.NONE
-                    if acl.oacl is not None:
-                        oacl = acl.oacl
-                    if acl.uacl is not None:
-                        uacl = acl.uacl
-                    _id = acl.id
-                    n = "%s_%s_%s_ANY" % (_id, c, f)
-                    uacl = acl_widget("uacl", "acl_u_%s" % n, uacl)
-                    oacl = acl_widget("oacl", "acl_o_%s" % n, oacl)
-                    cn = self.controllers[c].name_nice
-                    if auth.permission.function_acls:
-                        form_rows.append(TR(TD(cn), TD(f), TD(uacl), TD(oacl), _class=_class))
-                    else:
-                        form_rows.append(TR(TD(cn), TD(uacl), TD(oacl), _class=_class))
+                acl = acl_list[any]
+                _class = i % 2 and "even" or "odd"
+                i += 1
+                uacl = auth.permission.NONE
+                oacl = auth.permission.NONE
+                if acl.oacl is not None:
+                    oacl = acl.oacl
+                if acl.uacl is not None:
+                    uacl = acl.uacl
+                _id = acl.id
+                n = "%s_%s_ANY_ANY" % (_id, c)
+                uacl = acl_widget("uacl", "acl_u_%s" % n, uacl)
+                oacl = acl_widget("oacl", "acl_o_%s" % n, oacl)
+                cn = self.controllers[c].name_nice
+                form_rows.append(TR(TD(cn), TD(uacl), TD(oacl), _class=_class))
 
-            # Row to enter a new controller ACL
-            if auth.permission.function_acls:
+            # Tabs
+            tabs = [SPAN(A(CACL), _class="rheader_tab_here")]
+            if auth.permission.use_facls:
+                _class = auth.permission.use_tacls and \
+                         "rheader_tab_other" or "rheader_tab_last"
+                tabs.append(SPAN(A(FACL, _class="facl-tab"), _class=_class))
+            if auth.permission.use_tacls:
+                tabs.append(SPAN(A(TACL, _class="tacl-tab"), _class="rheader_tab_last"))
+
+            acl_forms.append(DIV(DIV(tabs, _id="rheader_tabs"),
+                                     TABLE(thead, TBODY(form_rows)), _id="controller-acls"))
+
+            # Function ACL table ----------------------------------------------
+            if auth.permission.use_facls:
+
+                # Table header
+                thead = THEAD(TR(TH(T("Application")),
+                                 TH(T("Function")),
+                                 TH(T("All Records")),
+                                 TH(T("Owned Records"))))
+
+                # Rows for existing ACLs
+                form_rows = []
+                i = 0
+                for c in controllers:
+                    if c in acls:
+                        acl_list = acls[c]
+                    else:
+                        continue
+                    keys = acl_list.keys()
+                    keys.sort()
+                    for f in keys:
+                        if f == any:
+                            continue
+                        acl = acl_list[f]
+                        _class = i % 2 and "even" or "odd"
+                        i += 1
+                        uacl = auth.permission.NONE
+                        oacl = auth.permission.NONE
+                        if acl.oacl is not None:
+                            oacl = acl.oacl
+                        if acl.uacl is not None:
+                            uacl = acl.uacl
+                        _id = acl.id
+                        n = "%s_%s_%s_ANY" % (_id, c, f)
+                        uacl = acl_widget("uacl", "acl_u_%s" % n, uacl)
+                        oacl = acl_widget("oacl", "acl_o_%s" % n, oacl)
+                        cn = self.controllers[c].name_nice
+                        form_rows.append(TR(TD(cn), TD(f), TD(uacl), TD(oacl), _class=_class))
+
+                # Row to enter a new controller ACL
                 _class = i % 2 and "even" or "odd"
                 c_opts = [OPTION("", _value=None, _selected="selected")] + \
                         [OPTION(self.controllers[c].name_nice, _value=c) for c in controllers]
@@ -2198,17 +2247,23 @@ class S3RoleManager(S3Method):
                     TD(acl_widget("uacl", "new_c_uacl", auth.permission.NONE)),
                     TD(acl_widget("oacl", "new_c_oacl", auth.permission.NONE)), _class=_class))
 
-            # Subheading, button to switch to table ACLs
-            tabs = [SPAN(A(T("Application Permissions")), _class="rheader_tab_here")]
-            if not auth.permission.skip_table_acls:
-                tabs.append(SPAN(A(T("Table Permissions"), _id="tacl-tab"), _class="rheader_tab_last"))
+                # Tabs to change to the other view
+                tabs = [SPAN(A(CACL, _class="cacl-tab"), _class="rheader_tab_other"),
+                        SPAN(A(FACL), _class="rheader_tab_here")]
+                if auth.permission.use_tacls:
+                    tabs.append(SPAN(A(TACL, _class="tacl-tab"), _class="rheader_tab_last"))
 
-            acl_forms.append(DIV(DIV(tabs, _id="rheader_tabs"),
-                                     TABLE(thead, TBODY(form_rows)), _id="controller-acls"))
+                acl_forms.append(DIV(DIV(tabs, _id="rheader_tabs"),
+                                         TABLE(thead, TBODY(form_rows)), _id="function-acls"))
 
-            # Table ACL form --------------------------------------------------
 
-            if not auth.permission.skip_table_acls:
+            # Table ACL table -------------------------------------------------
+
+            if auth.permission.use_tacls:
+                tacls = db(acl_table.tablename != None).select(acl_table.tablename,
+                                                               distinct=True)
+                if tacls:
+                    ptables = [acl.tablename for acl in tacls]
                 # Relevant ACLs
                 acls = dict([(acl.tablename, acl) for acl in records
                                                 if acl.tablename in ptables])
@@ -2223,8 +2278,6 @@ class S3RoleManager(S3Method):
                 i = 0
                 for t in ptables:
                     _class = i % 2 and "even" or "odd"
-                    #if t not in acls:
-                        #continue
                     i += 1
                     uacl = auth.permission.NONE
                     oacl = auth.permission.NONE
@@ -2253,10 +2306,11 @@ class S3RoleManager(S3Method):
                                                                     _class=_class))
 
                 # Tabs
-                cacl_tab = SPAN(A(T("Controller Permissions"), _id="cacl-tab"),
-                                _class="rheader_tab_other")
-                tacl_tab = SPAN(A(T("Table Permissions")), _class="rheader_tab_here")
-                acl_forms.append(DIV(DIV(cacl_tab, tacl_tab, _id="rheader_tabs"),
+                tabs = [SPAN(A(CACL, _class="cacl-tab"), _class="rheader_tab_other")]
+                if auth.permission.use_facls:
+                    tabs.append(SPAN(A(FACL, _class="facl-tab"), _class="rheader_tab_other"))
+                tabs.append(SPAN(A(TACL), _class="rheader_tab_here"))
+                acl_forms.append(DIV(DIV(tabs, _id="rheader_tabs"),
                                      TABLE(thead, TBODY(form_rows)), _id="table-acls"))
 
             # Aggregate ACL Form ----------------------------------------------
@@ -2265,8 +2319,8 @@ class S3RoleManager(S3Method):
             # Action row
             action_row = DIV(INPUT(_type="submit", _value="Save"),
                              A(T("Cancel"),
-                             _href=URL(r=request, c="admin", f="role", vars=request.get_vars)),
-                             _id="action-row")
+                               _href=URL(r=request, c="admin", f="role", vars=request.get_vars)),
+                               _id="action-row")
 
             # Complete form
             form = FORM(role_form, acl_form, action_row)
@@ -2341,8 +2395,11 @@ class S3RoleManager(S3Method):
                 redirect(URL(r=request, f="role", vars=request.get_vars))
 
             output.update(form=form)
-            if form.errors and "new_table" in form.errors:
-                output.update(acl="table")
+            if form.errors:
+                if "new_table" in form.errors:
+                    output.update(acl="table")
+                elif "new_controller" in form.errors:
+                    output.update(acl="function")
             self.response.view = "admin/role_edit.html"
 
         else:

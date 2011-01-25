@@ -64,7 +64,7 @@ if deployment_settings.has_module(module):
                                   "date",
                                   label = T("Date Required")),
                             inventory_store_id(label = T("Requested By Store")),
-                            Field("status", 
+                            Field("status",
                                   "integer",
                                   requires = IS_NULL_OR(IS_IN_SET(log_req_status)),
                                   represent = lambda status: log_req_status[status],
@@ -146,17 +146,17 @@ if deployment_settings.has_module(module):
                             logs_req_id(),
                             item_id(),
                             item_packet_id(),
-                            Field("quantity", 
+                            Field("quantity",
                                   "double",
                                   notnull = True),
-                            Field("quantity_fulfilled", 
-                                  "double"),  
+                            Field("quantity_fulfilled",
+                                  "double"),
                             Field("percent_fulfilled",
                                   "double",
                                   compute = lambda r: r.quantity_fulfilled/r.quantity,
                                   represent = lambda percent: "%.0f%%" % percent,
                                   ),
-                            Field("status", "integer"),                             
+                            Field("status", "integer"),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
@@ -190,18 +190,18 @@ if deployment_settings.has_module(module):
 #==============================================================================
 # Received (In/Receive / Donation / etc)
 #
-    
+
     log_recv_type = {1:"Another Store",
                      2:"Dontation",
                      3:"Supplier"}
-     
+
     resourcename = "recv"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            Field("datetime", 
+                            Field("datetime",
                                   "datetime",
                                   label = "Date Received",
-                                  writable = False, 
+                                  writable = False,
                                   readable = False #unless the record is locked
                                   ),
                             inventory_store_id(label = T("By Warehouse")),
@@ -214,7 +214,7 @@ if deployment_settings.has_module(module):
                                             label = T("From Organisation")),
                             location_id("from_location_id",
                                         label = T("From Location")),
-                            Field("from_person"), #Text field, because lookup to pr_person record is unnecessary complex workflow                                              
+                            Field("from_person"), #Text field, because lookup to pr_person record is unnecessary complex workflow
                             Field("status", "boolean",
                                   writable = False,
                                   ),
@@ -223,7 +223,7 @@ if deployment_settings.has_module(module):
                             comments(),
                             migrate=migrate, *s3_meta_fields()
                             )
-    
+
     table.status.represent = lambda status: T("Received") if status else T("In Process")
     # -----------------------------------------------------------------------------
     # CRUD strings
@@ -348,10 +348,14 @@ if deployment_settings.has_module(module):
                             inventory_store_id(label = T("From Warehouse")),
                             location_id("to_location_id",
                                         label = T("To Location") ),
-                            Field("to_inventory_store_id",
-                                  "integer",
-                                  compute = shn_logs_send_store_id,
-                                  readable = False),
+                            inventory_store_id("to_inventory_store_id",
+                                               label = T("To Warehouse"),
+                                               compute = shn_logs_send_store_id,
+                                               readable = False),
+                            #Field("to_inventory_store_id",
+                                  #"integer",
+                                  #compute = shn_logs_send_store_id,
+                                  #readable = False),
                             Field("status", "boolean",
                                   writable = False),
                             person_id(name = "recipient_id"),
@@ -389,7 +393,7 @@ if deployment_settings.has_module(module):
                               .first()
             return SPAN( shn_gis_location_represent( logs_send_row.to_location_id),
                          " - ",
-                        logs_send_row.datetime)            
+                        logs_send_row.datetime)
         else:
             return NONE
 
@@ -425,7 +429,7 @@ if deployment_settings.has_module(module):
     log_sent_item_status = {0: NONE,
                             1: "Invalid Quantity"
                             }
-    
+
     resourcename = "send_item"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
@@ -435,7 +439,7 @@ if deployment_settings.has_module(module):
                             Field("quantity", "double",
                                   notnull = True),
                             comments(),
-                            Field("status", 
+                            Field("status",
                                   "integer",
                                   requires = IS_NULL_OR(IS_IN_SET(log_sent_item_status)),
                                   represent = lambda status: log_sent_item_status[status] if status else log_sent_item_status[0],

@@ -51,6 +51,9 @@ if deployment_settings.has_module(module):
 
 #==============================================================================
 # Request
+    log_req_status = {0:T("Un-Fulfilled"),
+                      1:T("Partially Fulfilled"),
+                      2:T("Fulfilled")}
     resourcename = "req"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
@@ -60,10 +63,13 @@ if deployment_settings.has_module(module):
                             Field("require_date",
                                   "date",
                                   label = T("Date Required")),
-                            inventory_store_id(label = T("Requested From Warehouse")),
-                            location_id("by_location_id",
-                                        label = T("Requested By Location")),
-                            Field("status", "boolean"),
+                            inventory_store_id(label = T("Requested By Store")),
+                            Field("status", 
+                                  "integer",
+                                  requires = IS_NULL_OR(IS_IN_SET(log_req_status)),
+                                  represent = lambda status: log_req_status[status],
+                                  default = 0,
+                                  ),
                             person_id("requester_id",
                                       label = T("Requester") ),
                             comments(),
@@ -93,13 +99,13 @@ if deployment_settings.has_module(module):
     def logs_req_represent(id):
         if id:
             logs_req_row = db(db.logs_req.id == id).\
-                              select(db.logs_req.date,
-                                     db.logs_req.from_location_id,
+                              select(db.logs_req.request_date,
+                                     db.logs_req.inventory_store_id,
                                      limitby=(0, 1))\
                               .first()
-            return "%s - %s" % (shn_gis_location_represent( \
-                                logs_req_row.from_location_id),
-                                logs_req_row.date)
+            return "%s - %s" % (inventory_store_represent( \
+                                logs_req_row.inventory_store_id),
+                                logs_req_row.request_date)
         else:
             return NONE
 
@@ -113,7 +119,7 @@ if deployment_settings.has_module(module):
                                                            orderby="logs_req_id.date",
                                                            sort=True)),
                                  represent = logs_req_represent,
-                                 label = T("Receive Shipment"),
+                                 label = T("Request"),
                                  #comment = DIV(A(ADD_DISTRIBUTION, _class="colorbox", _href=URL(r=request, c="logs", f="distrib", args="create", vars=dict(format="popup")), _target="top", _title=ADD_DISTRIBUTION),
                                  #          DIV( _class="tooltip", _title=T("Distribution") + "|" + T("Add Distribution."))),
                                  ondelete = "RESTRICT"
@@ -144,7 +150,13 @@ if deployment_settings.has_module(module):
                                   "double",
                                   notnull = True),
                             Field("quantity_fulfilled", 
-                                  "double"),                                  
+                                  "double"),  
+                            Field("percent_fulfilled",
+                                  "double",
+                                  compute = lambda r: r.quantity_fulfilled/r.quantity,
+                                  represent = lambda percent: "%.0f%%" % percent,
+                                  ),
+                            Field("status", "integer"),                             
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
@@ -178,16 +190,34 @@ if deployment_settings.has_module(module):
 #==============================================================================
 # Received (In/Receive / Donation / etc)
 #
+    
+    log_recv_type = {1:"Another Store",
+                     2:"Dontation",
+                     3:"Supplier"}
+     
     resourcename = "recv"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            Field("datetime", "datetime",
-                                  label = "Date"),
+                            Field("datetime", 
+                                  "datetime",
+                                  label = "Date Received",
+                                  writable = False, 
+                                  readable = False #unless the record is locked
+                                  ),
                             inventory_store_id(label = T("By Warehouse")),
+                            Field("type",
+                                  "integer",
+                                  requires = IS_NULL_OR(IS_IN_SET(log_recv_type)),
+                                  represent = lambda type: log_recv_type[type] if type else NONE,
+                                  ),
+                            organisation_id("from_organisation_id",
+                                            label = T("From Organisation")),
                             location_id("from_location_id",
                                         label = T("From Location")),
+                            Field("from_person"), #Text field, because lookup to pr_person record is unnecessary complex workflow                                              
                             Field("status", "boolean",
-                                  writable = False),
+                                  writable = False,
+                                  ),
                             person_id(name = "recipient_id",
                                       label = T("Received By")),
                             comments(),
@@ -213,7 +243,8 @@ if deployment_settings.has_module(module):
         msg_record_created = T("Shipment Created"),
         msg_record_modified = T("Received Shipment updated"),
         msg_record_deleted = T("Received Shipment canceled"),
-        msg_list_empty = T("No Received Shipments"))
+        msg_list_empty = T("No Received Shipments")
+    )
 
     # -----------------------------------------------------------------------------
     def logs_recv_represent(id):
@@ -314,7 +345,7 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename,
                             Field("datetime", "datetime",
                                   label = "Date"),
-                            inventory_store_id(),
+                            inventory_store_id(label = T("From Warehouse")),
                             location_id("to_location_id",
                                         label = T("To Location") ),
                             Field("to_inventory_store_id",
@@ -364,28 +395,29 @@ if deployment_settings.has_module(module):
 
     # -----------------------------------------------------------------------------
     # Reusable Field
-    logs_send_id = S3ReusableField("logs_send_id", db.logs_send, sortby="datetime",
-                                 requires = IS_NULL_OR(IS_ONE_OF(db,
-                                                                 "logs_send.id",
-                                                                 logs_send_represent,
-                                                                 orderby="logs_send_id.datetime", sort=True)),
-                                 represent = logs_send_represent,
-                                 label = T("Receive Shipment"),
-                                 #comment = DIV(A(ADD_DISTRIBUTION, _class="colorbox", _href=URL(r=request, c="logs", f="distrib", args="create", vars=dict(format="popup")), _target="top", _title=ADD_DISTRIBUTION),
-                                 #          DIV( _class="tooltip", _title=T("Distribution") + "|" + T("Add Distribution."))),
-                                 ondelete = "RESTRICT"
-                                 )
+    logs_send_id = S3ReusableField( "logs_send_id", db.logs_send, sortby="datetime",
+                                    requires = IS_NULL_OR(IS_ONE_OF(db,
+                                                                    "logs_send.id",
+                                                                    logs_send_represent,
+                                                                    orderby="logs_send_id.datetime", sort=True)),
+                                    represent = logs_send_represent,
+                                    label = T("Receive Shipment"),
+                                    #comment = DIV(A(ADD_DISTRIBUTION, _class="colorbox", _href=URL(r=request, c="logs", f="distrib", args="create", vars=dict(format="popup")), _target="top", _title=ADD_DISTRIBUTION),
+                                    #          DIV( _class="tooltip", _title=T("Distribution") + "|" + T("Add Distribution."))),
+                                    ondelete = "RESTRICT"
+                                    )
 
     #------------------------------------------------------------------------------
-    # Logs Send  as a component of Inventory Store
-    s3xrc.model.add_component(module, resourcename,
-                              multiple=True,
-                              joinby=dict( inventory_store ="inventory_store_id" ) )
+    # Logs Send added as a component of Inventory Store in controller
+    # joinby inventory_store_id (send) OR to_inventory_store_id (incoming), depending on component tab
 
     #------------------------------------------------------------------------------
-    # Redirect to the Items tabs after creation
+    # Redirect to the Items tabs after create & update
+    url_logs_send_items = URL(r=request, c="logs", f="send", args=["[id]", "send_item"])
     s3xrc.model.configure(table,
-                          create_next = URL(r=request, c="logs", f="send", args=["[id]", "send_item"]))
+                          create_next = url_logs_send_items,
+                          update_next = url_logs_send_items
+                          )
 
     #==============================================================================
     # Send (Outgoing / Dispatch / etc) Items

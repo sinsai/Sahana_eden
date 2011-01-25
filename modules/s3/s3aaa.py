@@ -1631,7 +1631,7 @@ class S3Permission(object):
         roles = []
         if self.session.s3 is not None:
             # No ownership required in policies without ACLs
-            if self.use_cacls or self.use_facls or self.use_tacls:
+            if self.policy not in (3, 4, 5):
                 return False
             roles = self.session.s3.roles or []
 

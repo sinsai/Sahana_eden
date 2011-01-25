@@ -452,7 +452,7 @@ table = db.define_table(tablename,
                         Field("source", requires=IS_NULL_OR(IS_IN_SET(gis_source_opts))),
                         comments(),
                         migrate=migrate,
-                        *(s3_timestamp() + s3_uid() + s3_deletion_status()))
+                        *(s3_authorstamp() + s3_timestamp() + s3_uid() + s3_deletion_status()))
 
 table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique

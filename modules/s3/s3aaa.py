@@ -798,12 +798,8 @@ class AuthS3(Auth):
         elif policy == 2:
             # "editor" security policy: show all records
             return table.id > 0
-        elif policy == 3:
-            # Controller ACLs: use S3Permission method
-            query = self.permission.accessible_query(table, method)
-            return query
-        elif policy == 4:
-            # Controller+Table ACLs: use S3Permission method
+        elif policy in (3, 4, 5):
+            # ACLs: use S3Permission method
             query = self.permission.accessible_query(table, method)
             return query
 
@@ -1249,9 +1245,9 @@ class S3Permission(object):
         roles = []
         if self.session.s3 is not None:
             roles = self.session.s3.roles or []
-            if self.policy not in (3, 4):
+            if self.policy not in (3, 4, 5):
                 # Fall back to simple authorization
-                if roles:
+                if self.auth.s3_logged_in():
                     return self.ALL
                 else:
                     return self.READ
@@ -1317,7 +1313,7 @@ class S3Permission(object):
         elif c not in self.modules or \
              c in self.modules and not self.modules[c].restricted:
             # Controller is not restricted => simple authorization
-            if roles:
+            if self.auth.s3_logged_in():
                 page_acl = (self.ALL, self.ALL)
             else:
                 page_acl = (self.READ, self.READ)
@@ -1398,7 +1394,7 @@ class S3Permission(object):
                 if restricted:
                     # Table is restricted, no access
                     table_acl = (self.NONE, self.NONE)
-                elif roles:
+                elif self.auth.s3_logged_in():
                     # Authenticated user, full access
                     table_acl = (self.ALL, self.ALL)
                 else:
@@ -1476,17 +1472,17 @@ class S3Permission(object):
         """
 
         hidden_modules = []
-        if self.policy in (3, 4):
+        if self.policy in (3, 4, 5):
             restricted_modules = [m for m in self.modules
                                     if self.modules[m].restricted]
-            if not self.auth.s3_logged_in():
+            roles = []
+            if self.session.s3 is not None:
+                roles = self.session.s3.roles or []
+            if self.ADMIN in roles or self.EDITOR in roles:
+                return []
+            if not roles:
                 hidden_modules = restricted_modules
             else:
-                roles = []
-                if self.session.s3 is not None:
-                    roles = self.session.s3.roles or []
-                if self.ADMIN in roles or self.EDITOR in roles:
-                    return []
                 t = self.table
                 query = (t.controller.belongs(restricted_modules)) & \
                         (t.tablename == None)
@@ -1635,7 +1631,7 @@ class S3Permission(object):
         roles = []
         if self.session.s3 is not None:
             # No ownership required in policies without ACLs
-            if self.use_cacls or self.use_facls or self.use_tacls:
+            if self.policy not in (3, 4, 5):
                 return False
             roles = self.session.s3.roles or []
 

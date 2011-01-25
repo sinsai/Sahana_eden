@@ -515,10 +515,16 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
 
     for i in xrange(len(tabs)):
         title, component = tabs[i][:2]
+        vars_in_request = True
         if len(tabs[i]) > 2:
-            _vars = tabs[i][2]
+            _vars = tabs[i][2]            
+            for k,v in _vars.iteritems():
+                if r.request.vars.get(k) != v:
+                    vars_in_request = False
+                    break                 
         else:
             _vars = r.request.vars
+            
 
         if component and component.find("/") > 0:
             function, component = component.split("/", 1)
@@ -535,7 +541,7 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
             next = tab
 
         if component:
-            if r.component and r.component.name == component or \
+            if r.component and r.component.name == component and vars_in_request or \
                r.custom_action and r.method == component:
                 tab.update(_class = "rheader_tab_here")
                 previous = i and tablist[i-1] or None

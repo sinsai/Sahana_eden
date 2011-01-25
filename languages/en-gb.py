@@ -3436,6 +3436,7 @@
 'Title': 'Title',
 'To': 'To',
 'To Location': 'To Location',
+'To Warehouse': 'To Warehouse',
 'To begin the sync process, click the button on the right => ': 'To begin the sync process, click the button on the right => ',
 'To begin the sync process, click this button => ': 'To begin the sync process, click this button => ',
 'To edit OpenStreetMap, you need to edit the OpenStreetMap settings in models/000_config.py': 'To edit OpenStreetMap, you need to edit the OpenStreetMap settings in models/000_config.py',

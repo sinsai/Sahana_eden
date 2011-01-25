@@ -1557,6 +1557,8 @@ class S3QueryBuilder(object):
 
         """
 
+        db = resource.db
+
         c = self.parse_url_context(resource, vars)
         q = Storage(context=c)
 
@@ -1570,7 +1572,7 @@ class S3QueryBuilder(object):
                 elif rname in resource.components:
                     table = resource.components[rname].component.table
                 elif rname in c.keys():
-                    table = self.db.get(c[rname].table, None)
+                    table = db.get(c[rname].table, None)
                     if not table:
                         continue
                 else:
@@ -1815,9 +1817,9 @@ class S3QueryBuilder(object):
 
                     _table = resource.db[context.table]
                     if context.multiple:
-                        join = (rtable[context.field].contains(table.id))
+                        join = (rtable[context.field].contains(_table.id))
                     else:
-                        join = (rtable[context.field] == table.id)
+                        join = (rtable[context.field] == _table.id)
                     if cjoin:
                         join = (cjoin & join)
 

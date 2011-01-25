@@ -1109,6 +1109,8 @@ class S3Permission(object):
 
     # see models/zzz_1st_run.py
     ADMIN = 1
+    AUTHENTICATED = 2
+    ANONYMOUS = 3
     EDITOR = 4
 
     # Policy helpers
@@ -1862,7 +1864,7 @@ class S3RoleManager(S3Method):
     HIDE_CONTROLLER = ("admin", "default")
 
     # Roles to hide from the permissions matrix
-    HIDE_ROLES = (1, 3, 4, 5)
+    HIDE_ROLES = (1, 4)
 
     # Undeletable roles
     PROTECTED_ROLES = (1, 2, 3, 4, 5)
@@ -2166,7 +2168,7 @@ class S3RoleManager(S3Method):
                 if c in acls:
                     acl_list = acls[c]
                     if any not in acl_list:
-                        acl_list.insert(0, default)
+                        acl_list[any] = default
                 else:
                     acl_list = Storage(ANY=default)
                 acl = acl_list[any]

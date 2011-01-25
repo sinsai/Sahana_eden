@@ -56,13 +56,15 @@ def define_map(window=False, toolbar=False, config=None):
         This can then be called from both the Index page (embedded) & the Map_Viewing_Client (fullscreen)
     """
 
-    # @ToDo: Make these configurable
     if not config:
         config = gis.get_config()
+
     if not deployment_settings.get_security_map() or s3_has_role("MapAdmin"):
         catalogue_toolbar = True
     else:
         catalogue_toolbar = False
+
+    # @ToDo: Make these configurable
     search = True
     catalogue_overlays = True
 
@@ -2339,14 +2341,14 @@ def geoexplorer():
     response.title = "GeoExplorer"
     return dict(
                 config=config,
+                marker_max_width = marker_max_width,
+                marker_max_height = marker_max_height,
                 bing_key=bing_key,
                 google_key=google_key,
                 yahoo_key=yahoo_key,
                 print_service=print_service,
                 geoserver_url=geoserver_url,
                 mouse_position = mouse_position,
-                marker_max_width = marker_max_width,
-                marker_max_height = marker_max_height,
                 layers_features = layers_features,
                 layers_georss = layers_georss,
                 layers_gpx = layers_gpx,
@@ -2568,6 +2570,14 @@ def potlatch2():
         osm_oauth_consumer_key = deployment_settings.get_osm_oauth_consumer_key()
         osm_oauth_consumer_secret = deployment_settings.get_osm_oauth_consumer_secret()
         if osm_oauth_consumer_key and osm_oauth_consumer_secret:
+            gpx_url = None
+            if "gpx_id" in request.vars:
+                # Pass in a GPX Track
+                # @ToDo: Set the viewport based on the Track, if one is specified
+                track = db(db.gis_track.id == request.vars.gpx_id).select(db.gis_track.track, limitby=(0, 1)).first()
+                if track:
+                    gpx_url = URL(r=request, c="default", f="download") + "/" + track.track
+            
             if "lat" in request.vars:
                 lat = request.vars.lat
                 lon = request.vars.lon
@@ -2583,9 +2593,9 @@ def potlatch2():
                 #zoom = settings.zoom
                 zoom = 14
 
-            response.extra_styles = ["S3/potlatch2.css"]
+            #response.extra_styles = ["S3/potlatch2.css"]
 
-            return dict(lat=lat, lon=lon, zoom=zoom, key=osm_oauth_consumer_key, secret=osm_oauth_consumer_secret)
+            return dict(lat=lat, lon=lon, zoom=zoom, key=osm_oauth_consumer_key, secret=osm_oauth_consumer_secret, gpx_url=gpx_url)
 
         else:
             session.error = T("To edit OpenStreetMap, you need to edit the OpenStreetMap settings in models/000_config.py")
@@ -2595,6 +2605,8 @@ def potlatch2():
         # This is a hack for unconfigured servers.
         # Production instances should configure the server to bypass the Model loads completely
         # (Apache mod_rewrite or Web2Py routes.py)
+        #('.*:/eden/gis/potlatch2/potlatch2.html', '/eden/gis/potlatch2/potlatch2.html'),
+        #('.*:/eden/gis/potlatch2/(?P<file>[\w\./_-]+)', '/eden/static/potlatch2/\g<file>'),
         redirect(URL(a=request.application, c="static", f="potlatch2", args=request.args), how=301)
 
 # -----------------------------------------------------------------------------

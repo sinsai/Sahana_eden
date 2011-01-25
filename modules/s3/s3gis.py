@@ -2049,12 +2049,12 @@ OpenLayers.Util.extend( selectPdfControl, {
                 // Read current settings from map
                 var lonlat = map.getCenter();
                 var zoom_current = map.getZoom();
-                if (zoom_current < 14 ) {
+                if ( zoom_current < 14 ) {
                     zoom_current = 14;
                 }
                 // Convert back to LonLat for saving
                 lonlat.transform(map.getProjectionObject(), proj4326);
-                var url = '""" + URL(r=request, f="potlatch2", args="potlatch2.html") + """?lat=' + lonlat.lat + '&lon=' + lonlat.lon + "&zoom=" + zoom_current;
+                var url = '""" + URL(r=request, f="potlatch2", args="potlatch2.html") + """?lat=' + lonlat.lat + '&lon=' + lonlat.lon + '&zoom=' + zoom_current;
                 window.open(url);
             }
         });

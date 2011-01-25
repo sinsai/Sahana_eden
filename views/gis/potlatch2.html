@@ -64,5 +64,8 @@
 	fo.addVariable("oauth_consumer_secret", "{{=secret}}");
 	fo.addVariable("serverName", "OpenStreetMap");
 	fo.addVariable("siteName", "Sahana Eden");
+  {{if gpx_url:}}
+    fo.addVariable("gpx_url", "{{=gpx_url}}"); // automatically loads a GPX file
+  {{pass}}
 	fo.write("map");
 </script>

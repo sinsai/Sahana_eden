@@ -56,6 +56,7 @@
     var centerPoint, currentFeature, popupControl, highlightControl;
     var allLayers = new Array();
     var s3_gis_geoserver_url = '{{=geoserver_url}}';
+    var s3_gis_potlatch_url = '/{{=request.application}}/gis/potlatch2/potlatch2.html';
     var s3_gis_proxy_url = '/{{=request.application}}/gis/proxy?url=';
     // See http://crschmidt.net/~crschmidt/spherical_mercator.html#reprojecting-points
     var s3_gis_proj4326 = new OpenLayers.Projection('EPSG:4326');
@@ -89,20 +90,22 @@
 
     // Zoom to Selected Feature from within Popup
     function zoomToSelectedFeature(lon, lat, zoomfactor) {
+        var map = s3_gis_app.mapPanel.map;
         var lonlat = new OpenLayers.LonLat(lon, lat);
         // Get Current Zoom
-        var currZoom = s3_gis_app.mapPanel.map.getZoom();
+        var currZoom = map.getZoom();
         // New Zoom
         var newZoom = currZoom + zoomfactor;
         // Center and Zoom
-        s3_gis_app.mapPanel.map.setCenter(lonlat, newZoom);
+        map.setCenter(lonlat, newZoom);
         // Remove Popups
-        for (var i=0; i < s3_gis_app.mapPanel.map.popups.length; ++i)   {
-            s3_gis_app.mapPanel.map.removePopup(map.popups[i]);
+        for (var i=0; i < map.popups.length; ++i)   {
+            map.removePopup(map.popups[i]);
         }
     }
     
     var s3_gis_app = new GeoExplorer.{{if request.args(0) == "viewer.html":}}Viewer{{else:}}SahanaComposer{{pass}}({
+        potlatchUrl: s3_gis_potlatch_url,
         proxy: s3_gis_proxy_url,
       {{if print_service:}}
         printService: '{{=print_service}}',
@@ -189,6 +192,7 @@
     // Add custom init code here
     s3_gis_app.on('ready', function() {
         // Add a MousePointer to the toolbar
+        this.toolbar.addSeparator();
         this.toolbar.add(
            new GeoExt.Toolbar.ControlDisplay({
                 map: s3_gis_app.mapPanel.map,

@@ -27,11 +27,11 @@ def index():
 
 #==============================================================================
 def req():
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+    resourcename = request.function
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
     output = s3_rest_controller(module,
-                                resource,
+                                resourcename,
                                 rheader=shn_logs_req_rheader)
     return output
 #------------------------------------------------------------------------------
@@ -67,11 +67,11 @@ def shn_logs_req_rheader(r):
 
 #==============================================================================
 def commit():
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+    resourcename = request.function
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
     output = s3_rest_controller(module,
-                                resource,
+                                resourcename,
                                 rheader=shn_logs_commit_rheader)
     return output
 #------------------------------------------------------------------------------
@@ -110,11 +110,11 @@ def shn_logs_commit_rheader(r):
 #=============================================================================
 def recv():
     """ RESTful CRUD controller """
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+    resourcename = request.function
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
     output = s3_rest_controller(module,
-                                resource,
+                                resourcename,
                                 rheader=shn_logs_recv_rheader)
     return output
 #------------------------------------------------------------------------------
@@ -205,8 +205,8 @@ class QUANTITY_ITEM_IN_STORE:
 #------------------------------------------------------------------------------
 def send():
     """ RESTful CRUD controller """
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+    resourcename = request.function
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
     
     #Set Validator for checking against the number of items in the warehouse
@@ -259,7 +259,7 @@ def send():
     response.s3.prep = prep           
         
     output = s3_rest_controller(module,
-                                resource,
+                                resourcename,
                                 rheader=shn_logs_send_rheader)
     return output
 #------------------------------------------------------------------------------

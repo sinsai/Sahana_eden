@@ -10,7 +10,7 @@
     @author: Fran Boon <francisboon[at]gmail.com>
     @author: Timothy Caro-Bruce <tcarobruce[at]gmail.com>
 
-    @copyright: (c) 2010 Sahana Software Foundation
+    @copyright: (c) 2010-2011 Sahana Software Foundation
     @license: MIT
 
     Permission is hereby granted, free of charge, to any person
@@ -272,7 +272,7 @@ class GIS(object):
             min_lat = 90
             max_lon = -180
             max_lat = -90
-    
+
             for feature in features:
 
                 # Skip features without lon, lat.
@@ -533,10 +533,10 @@ class GIS(object):
         lon_max = locations.lon_max
         lat_min = locations.lat_min
         lat_max = locations.lat_max
-        
+
         table = db[tablename]
         deployment_settings = self.deployment_settings
-        
+
         query = (table.location_id == locations.id)
         if "deleted" in table.fields:
             query = query & (table.deleted == False)
@@ -2049,12 +2049,12 @@ OpenLayers.Util.extend( selectPdfControl, {
                 // Read current settings from map
                 var lonlat = map.getCenter();
                 var zoom_current = map.getZoom();
-                if (zoom_current < 14 ) {
+                if ( zoom_current < 14 ) {
                     zoom_current = 14;
                 }
                 // Convert back to LonLat for saving
                 lonlat.transform(map.getProjectionObject(), proj4326);
-                var url = '""" + URL(r=request, f="potlatch2", args="potlatch2.html") + """?lat=' + lonlat.lat + '&lon=' + lonlat.lon + "&zoom=" + zoom_current;
+                var url = '""" + URL(r=request, f="potlatch2", args="potlatch2.html") + """?lat=' + lonlat.lat + '&lon=' + lonlat.lon + '&zoom=' + zoom_current;
                 window.open(url);
             }
         });

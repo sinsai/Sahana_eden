@@ -61,6 +61,7 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
     layerPropertiesText: "Layer Properties",
     zoomToLayerExtentText: "Zoom to Layer Extent",
     legendText: "Legend",
+    geonamesText: "Search Geonames",
     abstractTemplateText: "<p><b>Abstract:</b> {abstract}</p>",
     titleText: "Title",
     idText: "Id",
@@ -381,7 +382,7 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
                 var count = this.mapPanel.layers.queryBy(function(r) {
                     return !(r.get("layer") instanceof OpenLayers.Layer.Vector);
                 }).getCount();
-                if(count > 1) {
+                if (count > 1) {
                     removeLayerAction.enable();
                 } else {
                     removeLayerAction.disable();
@@ -399,6 +400,7 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
         };
 
         var layerTree = new Ext.tree.TreePanel({
+            id: 'layerTree',
             root: treeRoot,
             rootVisible: false,
             border: false,
@@ -411,7 +413,7 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
             }),
             listeners: {
                 contextmenu: function(node, e) {
-                    if(node && node.layer) {
+                    if (node && node.layer) {
                         node.select();
                         var c = node.getOwnerTree().contextMenu;
                         c.contextNode = node;
@@ -420,7 +422,7 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
                 },
                 beforemovenode: function(tree, node, oldParent, newParent, index) {
                     // change the group when moving to a new container
-                    if(oldParent !== newParent) {
+                    if (oldParent !== newParent) {
                         var store = newParent.loader.store;
                         var index = store.findBy(function(r) {
                             return r.getLayer() === node.layer;
@@ -455,9 +457,11 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
         });
         
         var layersContainer = new Ext.Panel({
+            id: 'layersContainer',
             autoScroll: true,
             border: false,
             region: 'center',
+            split: true,
             title: this.layersText,
             items: [layerTree],
             tbar: [
@@ -468,6 +472,7 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
         });
 
         var legendContainer = new GeoExt.LegendPanel({
+            id: 'legendContainer',
             title: this.legendText,
             border: false,
             region: 'south',
@@ -482,7 +487,30 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
             //,items: []
         });        
 
+        // GeoNames search - added here & not in Sahana.js
+        var mapSearch = new GeoExt.ux.GeoNamesSearchCombo({
+            map: this.mapPanel.map,
+            zoom: 12
+        });
+ 
+        var searchCombo = new Ext.Panel({
+            id: 'searchCombo',
+            title: this.geonamesText,
+            border: false,
+            layout: 'border',
+            region: 'north',
+            rootVisible: false,
+            height: 48,
+            lines: false,
+            html: '',
+            items: [{
+                    region: 'center',
+                    items: [ mapSearch ]
+                }]
+        });
+ 
         var westPanel = new Ext.Panel({
+            id: 'westPanel',
             border: true,
             layout: "border",
             region: "west",
@@ -492,7 +520,7 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
             collapseMode: "mini",
             header: false,
             items: [
-                layersContainer, legendContainer
+                layersContainer, searchCombo, legendContainer
             ]
         });
         

@@ -163,7 +163,7 @@ if deployment_settings.has_module(module):
                             logs_req_id(),
                             item_id(),
                             item_packet_id(),
-                            Field("quantity", 
+                            Field("quantity",
                                   "double",
                                   notnull = True),
                             Field("quantity_commit", 
@@ -405,10 +405,10 @@ if deployment_settings.has_module(module):
     resourcename = "recv"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            Field("datetime", 
+                            Field("datetime",
                                   "datetime",
                                   label = "Date Received",
-                                  writable = False, 
+                                  writable = False,
                                   readable = False #unless the record is locked
                                   ),
                             inventory_store_id(label = T("By Warehouse")),
@@ -435,7 +435,7 @@ if deployment_settings.has_module(module):
                             comments(),
                             migrate=migrate, *s3_meta_fields()
                             )
-    
+
     table.status.represent = lambda status: T("Received") if status else T("In Process")
     # -----------------------------------------------------------------------------
     # CRUD strings
@@ -609,7 +609,7 @@ if deployment_settings.has_module(module):
                               .first()
             return SPAN( shn_gis_location_represent( logs_send_row.to_location_id),
                          " - ",
-                        logs_send_row.datetime)            
+                        logs_send_row.datetime)
         else:
             return NONE
 
@@ -645,7 +645,7 @@ if deployment_settings.has_module(module):
     log_sent_item_status = {0: NONE,
                             1: "Invalid Quantity"
                             }
-    
+
     resourcename = "send_item"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
@@ -655,7 +655,7 @@ if deployment_settings.has_module(module):
                             Field("quantity", "double",
                                   notnull = True),
                             comments(),
-                            Field("status", 
+                            Field("status",
                                   "integer",
                                   requires = IS_NULL_OR(IS_IN_SET(log_sent_item_status)),
                                   represent = lambda status: log_sent_item_status[status] if status else log_sent_item_status[0],

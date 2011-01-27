@@ -56,13 +56,15 @@ def define_map(window=False, toolbar=False, config=None):
         This can then be called from both the Index page (embedded) & the Map_Viewing_Client (fullscreen)
     """
 
-    # @ToDo: Make these configurable
     if not config:
         config = gis.get_config()
+
     if not deployment_settings.get_security_map() or s3_has_role("MapAdmin"):
         catalogue_toolbar = True
     else:
         catalogue_toolbar = False
+
+    # @ToDo: Make these configurable
     search = True
     catalogue_overlays = True
 
@@ -1648,7 +1650,9 @@ def geoexplorer():
         Custom View for GeoExplorer: http://projects.opengeo.org/geoext/wiki/GeoExplorer
     """
 
+    _cache = (cache.ram, 60)
     config = gis.get_config()
+    public_url = deployment_settings.get_base_public_url()
 
     # @ToDo: Optimise to a single query of table
     bing_key = gis.get_api_key("bing")
@@ -1663,15 +1667,693 @@ def geoexplorer():
     # 'normal', 'mgrs' or 'off'
     mouse_position = deployment_settings.get_gis_mouse_position()
 
+    # Feature Layers
+    marker_id_default = config.marker_id
+    marker_default = db(db.gis_marker.id == marker_id_default).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1), cache=_cache).first()
+    marker_max_width = deployment_settings.get_gis_marker_max_width()
+    marker_max_height = deployment_settings.get_gis_marker_max_height()
+
+    # Internal Feature Layers
+    layers_features = ""
+    feature_queries = []
+    feature_layers = db(db.gis_layer_feature.enabled == True).select()
+    for layer in feature_layers:
+        if layer.role_required and not auth.s3_has_role(layer.role_required):
+            continue
+        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons)
+        if _layer:
+            feature_queries.append(_layer)
+
+    #if feature_queries or add_feature:
+    if feature_queries:
+
+        import urllib
+
+        if deployment_settings.get_gis_duplicate_features():
+            uuid_from_fid = """
+            var uuid = fid.replace('_', '');
+            """
+        else:
+            uuid_from_fid = """
+            var uuid = fid;
+            """
+
+        layers_features += """
+        function onFeatureSelect(event) {
+            // unselect any previous selections
+            tooltipUnselect(event);
+            var feature = event.feature;
+            var id = 'featureLayerPopup';
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
+            if (feature.cluster) {
+                // Cluster
+                var name, fid, uuid, url;
+                var html = '""" + T("There are multiple records at this location") + """:<ul>';
+                for (var i = 0; i < feature.cluster.length; i++) {
+                    name = feature.cluster[i].attributes.name;
+                    fid = feature.cluster[i].fid;
+                    """ + uuid_from_fid + """
+                    if ( feature.cluster[i].popup_url.match("<id>") != null ) {
+                        url = feature.cluster[i].popup_url.replace("<id>", uuid)
+                    }
+                    else {
+                        url = feature.cluster[i].popup_url + uuid;
+                    }
+                    html += "<li><a href='javascript:loadClusterPopup(" + "\\"" + url + "\\", \\"" + id + "\\"" + ")'>" + name + "</a></li>";
+                }
+                html += '</ul>';
+                html += "<div align='center'><a href='javascript:zoomToSelectedFeature(" + centerPoint.lon + "," + centerPoint.lat + ", 3)'>Zoom in</a></div>";
+                var popup = new OpenLayers.Popup.FramedCloud(
+                    id,
+                    centerPoint,
+                    new OpenLayers.Size(200, 200),
+                    html,
+                    null,
+                    true,
+                    onPopupClose
+                );
+                feature.popup = popup;
+                feature.layer.map.addPopup(popup);
+            } else {
+                // Single Feature
+                var popup_url = feature.popup_url;
+                var popup = new OpenLayers.Popup.FramedCloud(
+                    id,
+                    centerPoint,
+                    new OpenLayers.Size(200, 200),
+                    """ + '"' + T("Loading") + """...<img src='""" + URL(r=request, c="static", f="img", args="ajax-loader.gif") + """' border=0>",
+                    null,
+                    true,
+                    onPopupClose
+                );
+                feature.popup = popup;
+                feature.layer.map.addPopup(popup);
+                // call AJAX to get the contentHTML
+                var fid = feature.fid;
+                """ + uuid_from_fid + """
+                if ( popup_url.match("<id>") != null ) {
+                    popup_url = popup_url.replace("<id>", uuid)
+                }
+                else {
+                    popup_url = popup_url + uuid;
+                }
+                loadDetails(popup_url, id, popup);
+            }
+        }
+        """
+
+    for layer in feature_queries:
+        if "name" in layer:
+            name = str(layer["name"])
+        else:
+            name = "Query" + str(int(random.random()*1000))
+
+        if "marker" in layer:
+            marker = layer["marker"]
+            try:
+                # query
+                marker_id = marker.id
+                markerLayer = marker
+            except:
+                # integer (marker_id)
+                markerLayer = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1), cache=_cache).first()
+        else:
+            markerLayer = ""
+
+        if "popup_url" in layer:
+            _popup_url = urllib.unquote(layer["popup_url"])
+        else:
+            _popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
+
+        if "polygon" in layer and layer.polygon:
+            polygons = True
+        else:
+            polygons = False
+
+        # Generate HTML snippet
+        name_safe = re.sub("\W", "_", name)
+        if "active" in layer and layer["active"]:
+            visibility = "featureLayer" + name_safe + ".setVisibility(true);"
+        else:
+            visibility = "featureLayer" + name_safe + ".setVisibility(false);"
+        layers_features += """
+            features = [];
+            var popup_url = '""" + _popup_url + """';
+            // Needs to be uniquely instantiated
+            var style_cluster = new OpenLayers.Style(style_cluster_style, style_cluster_options);
+            // Define StyleMap, Using 'style_cluster' rule for 'default' styling intent
+            var featureClusterStyleMap = new OpenLayers.StyleMap({
+                                            'default': style_cluster,
+                                            'select': {
+                                                fillColor: '#ffdc33',
+                                                strokeColor: '#ff9933'
+                                            }
+            });
+
+            // Needs to be uniquely instantiated per-layer
+            var strategy_cluster = new OpenLayers.Strategy.Cluster({distance: s3_gis_cluster_distance, threshold: s3_gis_cluster_threshold})
+            var featureLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+                '""" + name + """',
+                {
+                    strategies: [ strategy_cluster ],
+                    styleMap: featureClusterStyleMap
+                }
+            );
+            """ + visibility + """
+            featureLayer""" + name_safe + """.events.on({
+                "featureselected": onFeatureSelect,
+                "featureunselected": onFeatureUnselect
+            });
+            featureLayers.push(featureLayer""" + name_safe + """);
+            """
+        features = layer["query"]
+        for _feature in features:
+            try:
+                _feature.gis_location.id
+                # Query was generated by a Join
+                feature = _feature.gis_location
+            except (AttributeError, KeyError):
+                # Query is a simple select
+                feature = _feature
+            # Should we use Polygons or Points?
+            if polygons:
+                if feature.get("wkt"):
+                    wkt = feature.wkt
+                else:
+                    # Deal with manually-imported Features which are missing WKT
+                    try:
+                        lat = feature.lat
+                        lon = feature.lon
+                        if (lat is None) or (lon is None):
+                            # Zero is allowed but not None
+                            if feature.get("parent"):
+                                # Skip the current record if we can
+                                latlon = gis.get_latlon(feature.parent)
+                            elif feature.get("id"):
+                                latlon = gis.get_latlon(feature.id)
+                            else:
+                                # nothing we can do!
+                                continue
+                            if latlon:
+                                lat = latlon["lat"]
+                                lon = latlon["lon"]
+                            else:
+                                # nothing we can do!
+                                continue
+                    except:
+                        if feature.get("parent"):
+                            # Skip the current record if we can
+                            latlon = gis.get_latlon(feature.parent)
+                        elif feature.get("id"):
+                            latlon = gis.get_latlon(feature.id)
+                        else:
+                            # nothing we can do!
+                            continue
+                        if latlon:
+                            lat = latlon["lat"]
+                            lon = latlon["lon"]
+                        else:
+                            # nothing we can do!
+                            continue
+                    wkt = gis.latlon_to_wkt(lat, lon)
+            else:
+                # Just display Point data, even if we have Polygons
+                # @ToDo: DRY with Polygon
+                try:
+                    lat = feature.lat
+                    lon = feature.lon
+                    if (lat is None) or (lon is None):
+                        # Zero is allowed but not None
+                        if feature.get("parent"):
+                            # Skip the current record if we can
+                            latlon = gis.get_latlon(feature.parent)
+                        elif feature.get("id"):
+                            latlon = gis.get_latlon(feature.id)
+                        else:
+                            # nothing we can do!
+                            continue
+                        if latlon:
+                            lat = latlon["lat"]
+                            lon = latlon["lon"]
+                        else:
+                            # nothing we can do!
+                            continue
+                except:
+                    if feature.get("parent"):
+                        # Skip the current record if we can
+                        latlon = gis.get_latlon(feature.parent)
+                    elif feature.get("id"):
+                        latlon = gis.get_latlon(feature.id)
+                    else:
+                        # nothing we can do!
+                        continue
+                    if latlon:
+                        lat = latlon["lat"]
+                        lon = latlon["lon"]
+                    else:
+                        # nothing we can do!
+                        continue
+                wkt = gis.latlon_to_wkt(lat, lon)
+
+            try:
+                # Has a per-feature Vector Shape been added to the query?
+                graphicName = feature.shape
+                if graphicName not in ["circle", "square", "star", "x", "cross", "triangle"]:
+                    # Default to Circle
+                    graphicName = "circle"
+                try:
+                    pointRadius = feature.size
+                    if not pointRadius:
+                        pointRadius = 12
+                except (AttributeError, KeyError):
+                    pointRadius = 12
+                try:
+                    fillColor = feature.color
+                    if not fillColor:
+                        fillColor = "orange"
+                except (AttributeError, KeyError):
+                    fillColor = "orange"
+                marker_url = ""
+            except (AttributeError, KeyError):
+                # Use a Marker not a Vector Shape
+                try:
+                    # Has a per-feature marker been added to the query?
+                    _marker = feature.marker
+                    if _marker:
+                        marker = _marker
+                    else:
+                        marker = marker_default
+                except (AttributeError, KeyError):
+                    if markerLayer:
+                        marker = markerLayer
+                    else:
+                        marker = marker_default
+                # Faster to bypass the download handler
+                #marker_url = URL(r=request, c="default", f="download", args=[marker.image])
+                marker_url = URL(r=request, c="static", f="img", args=["markers", marker.image])
+
+            try:
+                # Has a per-feature popup_label been added to the query?
+                popup_label = feature.popup_label
+            except (AttributeError, KeyError):
+                popup_label = feature.name
+
+            # Allows map API to be used with Storage instead of Rows
+            if not popup_label:
+                popup_label = feature.name
+            # Deal with apostrophes in Feature Names
+            fname = re.sub("'", "\\'", popup_label)
+
+            if marker_url:
+                layers_features += """
+            styleMarker.iconURL = '""" + marker_url + """';
+            // Need unique names
+            // More reliable & faster to use the height/width calculated on upload
+            var i = new Array();
+            i.height = """ + str(marker.height) + """;
+            i.width = """ + str(marker.width) + """;
+            scaleImage(i);
+            """
+            else:
+                layers_features += """
+            var i = '';
+            styleMarker.iconURL = '';
+            styleMarker.graphicName = '""" + graphicName + """';
+            styleMarker.pointRadius = """ + str(pointRadius) + """;
+            styleMarker.fillColor = '""" + fillColor + """';
+            """
+            layers_features += """
+            geom = parser.read('""" + wkt + """').geometry;
+            featureVec = addFeature('""" + str(feature.id) + """', '""" + fname + """', geom, styleMarker, i, popup_url)
+            features.push(featureVec);
+            """
+            if deployment_settings.get_gis_duplicate_features():
+                # Add an additional Point feature to provide wrapping around the Data Line
+                # lon<0 have a duplicate at lon+360
+                if lon < 0:
+                    lon = lon + 360
+                # lon>0 have a duplicate at lon-360
+                else:
+                    lon = lon - 360
+                wkt = gis.latlon_to_wkt(lat, lon)
+                layers_features += """
+            geom = parser.read('""" + wkt + """').geometry;
+            featureVec = addFeature('_""" + str(feature.id) + """', '""" + fname + """', geom, styleMarker, i, popup_url)
+            features.push(featureVec);
+            """
+        # Append to Features layer
+        layers_features += """
+            featureLayer""" + name_safe + """.addFeatures(features);
+            """
+        # Add to Map
+        layers_features += """
+            this.mapPanel.map.addLayer(featureLayer""" + name_safe + """);
+            """
+
+    # Can we cache downloaded feeds?
+    # Needed for unzipping & filtering as well
+    cachepath = os.path.join(request.folder, "uploads", "gis_cache")
+    if os.access(cachepath, os.W_OK):
+        cacheable = True
+        import urllib2      # for error handling
+        from gluon.tools import fetch
+    else:
+        cacheable = False
+
+    # GeoRSS
+    layers_georss = ""
+    georss_enabled = db(db.gis_layer_georss.enabled == True).select()
+    for layer in georss_enabled:
+        if layer.role_required and not auth.s3_has_role(layer.role_required):
+            continue
+        name = layer["name"]
+        url = layer["url"]
+        visible = layer["visible"]
+        georss_projection = db(db.gis_projection.id == layer["projection_id"]).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
+        if georss_projection == 4326:
+            projection_str = "projection: s3_gis_proj4326,"
+        else:
+            projection_str = "projection: new OpenLayers.Projection('EPSG:" + georss_projection + "'),"
+        marker_id = layer["marker_id"]
+        if marker_id:
+            marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+        else:
+            marker = db(db.gis_marker.id == marker__id_default).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+        marker_url = URL(r=request, c="static", f="img", args=["markers", marker.image])
+        height = marker.height
+        width = marker.width
+
+        if cacheable:
+            # Download file
+            try:
+                file = fetch(url)
+                warning = ""
+            except urllib2.URLError:
+                warning = "URLError"
+            except urllib2.HTTPError:
+                warning = "HTTPError"
+            _name = name.replace(" ", "_")
+            _name = _name.replace(",", "_")
+            filename = "gis_cache.file." + _name + ".rss"
+            filepath = os.path.join(cachepath, filename)
+            f = open(filepath, "w")
+            # Handle errors
+            if "URLError" in warning or "HTTPError" in warning:
+                # URL inaccessible
+                if os.access(filepath, os.R_OK):
+                    # Use cached version
+                    date = db(db.gis_cache.name == name).select(db.gis_cache.modified_on, limitby=(0, 1)).first().modified_on
+                    response.warning += url + " " + T("not accessible - using cached version from") + " " + str(date) + "\n"
+                    url = URL(r=request, c="default", f="download", args=[filename])
+                else:
+                    # No cached version available
+                    response.warning += url + " " + T("not accessible - no cached version available!") + "\n"
+                    # skip layer
+                    continue
+            else:
+                # Download was succesful
+                # Write file to cache
+                f.write(file)
+                f.close()
+                records = db(db.gis_cache.name == name).select()
+                if records:
+                    records[0].update(modified_on=response.utcnow)
+                else:
+                    db.gis_cache.insert(name=name, file=filename)
+                url = URL(r=request, c="default", f="download", args=[filename])
+        else:
+            # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
+            pass
+
+        # Generate HTML snippet
+        name_safe = re.sub("\W", "_", name)
+        if visible:
+            visibility = "georssLayer" + name_safe + ".setVisibility(true);"
+        else:
+            visibility = "georssLayer" + name_safe + ".setVisibility(false);"
+        layers_georss += """
+        iconURL = '""" + marker_url + """';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = iconURL;
+        // Needs to be uniquely instantiated
+        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+        style_marker.graphicOpacity = 1;
+        style_marker.graphicWidth = i.width;
+        style_marker.graphicHeight = i.height;
+        style_marker.graphicXOffset = -(i.width / 2);
+        style_marker.graphicYOffset = -i.height;
+        style_marker.externalGraphic = iconURL;
+        // Needs to be uniquely instantiated per-layer
+        var strategy_cluster = new OpenLayers.Strategy.Cluster({distance: s3_gis_cluster_distance, threshold: s3_gis_cluster_threshold})
+        var georssLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+            '""" + name_safe + """',
+            {
+                """ + projection_str + """
+                strategies: [ new OpenLayers.Strategy.Fixed(), strategy_cluster ],
+                style: style_marker,
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: '""" + url + """',
+                    format: format_georss
+                })
+            }
+        );
+        """ + visibility + """
+        this.mapPanel.map.addLayer(georssLayer""" + name_safe + """);
+        georssLayers.push(georssLayer""" + name_safe + """);
+        georssLayer""" + name_safe + """.events.on({ "featureselected": onGeorssFeatureSelect, "featureunselected": onFeatureUnselect });
+        """
+   
+     # GPX
+    layers_gpx = ""
+    gpx_enabled = db(db.gis_layer_gpx.enabled == True).select()
+    for layer in gpx_enabled:
+        if layer.role_required and not auth.s3_has_role(layer.role_required):
+            continue
+        name = layer["name"]
+        track = db(db.gis_track.id == layer.track_id).select(db.gis_track.track, limitby=(0, 1)).first()
+        if track:
+            url = URL(r=request, c="default", f="download") + "/" + track.track
+        else:
+            url = ""
+        visible = layer["visible"]
+        waypoints = layer["waypoints"]
+        tracks = layer["tracks"]
+        routes = layer["routes"]
+        marker_id = layer["marker_id"]
+        if marker_id:
+            marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
+        else:
+            marker = marker_default.image
+        marker_url = URL(r=request, c="static", f="img", args=["markers", marker])
+
+        # Generate HTML snippet
+        name_safe = re.sub("\W", "_", name)
+        if visible:
+            visibility = "gpxLayer" + name_safe + ".setVisibility(true);"
+        else:
+            visibility = "gpxLayer" + name_safe + ".setVisibility(false);"
+        gpx_format = "extractAttributes:true"
+        if not waypoints:
+            gpx_format += ", extractWaypoints:false"
+            style_marker = """
+        style_marker.externalGraphic = '';
+        """
+        else:
+            style_marker = """
+        style_marker.graphicOpacity = 1;
+        style_marker.graphicWidth = i.width;
+        style_marker.graphicHeight = i.height;
+        style_marker.graphicXOffset = -(i.width / 2);
+        style_marker.graphicYOffset = -i.height;
+        style_marker.externalGraphic = iconURL;
+        """
+        if not tracks:
+            gpx_format += ", extractTracks:false"
+        if not routes:
+            gpx_format += ", extractRoutes:false"
+        layers_gpx += """
+        iconURL = '""" + marker_url + """';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = iconURL;
+        // Needs to be uniquely instantiated
+        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+        """ + style_marker + """
+        style_marker.strokeColor = 'blue';
+        style_marker.strokeWidth = 6;
+        style_marker.strokeOpacity = 0.5;
+        // Needs to be uniquely instantiated per-layer
+        var strategy_cluster = new OpenLayers.Strategy.Cluster({distance: s3_gis_cluster_distance, threshold: s3_gis_cluster_threshold})
+        var gpxLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+            '""" + name_safe + """',
+            {
+                projection: s3_gis_proj4326,
+                strategies: [ new OpenLayers.Strategy.Fixed(), strategy_cluster ],
+                style: style_marker,
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: '""" + url + """',
+                    format: new OpenLayers.Format.GPX({""" + gpx_format + """})
+                })
+            }
+        );
+        """ + visibility + """
+        this.mapPanel.map.addLayer(gpxLayer""" + name_safe + """);
+        gpxLayers.push(gpxLayer""" + name_safe + """);
+        gpxLayer""" + name_safe + """.events.on({ 'featureselected': onGpxFeatureSelect, 'featureunselected': onFeatureUnselect });
+        """
+
+    # KML
+    layers_kml = ""
+    kml_enabled = db(db.gis_layer_kml.enabled == True).select()
+    for layer in kml_enabled:
+        if layer.role_required and not auth.s3_has_role(layer.role_required):
+            continue
+        name = layer["name"]
+        url = layer["url"]
+        visible = layer["visible"]
+        title = layer["title"] or "name"
+        body = layer["body"] or "description"
+        projection_str = "projection: s3_gis_proj4326,"
+        marker_id = layer["marker_id"]
+        if marker_id:
+            marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+        else:
+            marker = marker_default
+        marker_url = URL(r=request, c="static", f="img", args=["markers", marker.image])
+        height = marker.height
+        width = marker.width
+        if cacheable:
+            # Download file
+            file, warning = gis.download_kml(url, public_url)
+            _name = name.replace(" ", "_")
+            _name = _name.replace(",", "_")
+            filename = "gis_cache.file." + _name + ".kml"
+            filepath = os.path.join(cachepath, filename)
+            f = open(filepath, "w")
+            # Handle errors
+            if "URLError" in warning or "HTTPError" in warning:
+                # URL inaccessible
+                if os.access(filepath, os.R_OK):
+                    statinfo = os.stat(filepath)
+                    if statinfo.st_size:
+                        # Use cached version
+                        date = db(db.gis_cache.name == name).select(db.gis_cache.modified_on, limitby=(0, 1)).first().modified_on
+                        response.warning += url + " " + T("not accessible - using cached version from") + " " + str(date) + "\n"
+                        url = URL(r=request, c="default", f="download", args=[filename])
+                    else:
+                        # 0k file is all that is available
+                        response.warning += url + " " + T("not accessible - no cached version available!") + "\n"
+                        # skip layer
+                        continue
+                else:
+                    # No cached version available
+                    response.warning += url + " " + T("not accessible - no cached version available!") + "\n"
+                    # skip layer
+                    continue
+            else:
+                # Download was succesful
+                if "ParseError" in warning:
+                    # @ToDo Parse detail
+                    response.warning += T("Layer") + ": " + name + " " + T("couldn't be parsed so NetworkLinks not followed.") + "\n"
+                if "GroundOverlay" in warning or "ScreenOverlay" in warning:
+                    response.warning += T("Layer") + ": " + name + " " + T("includes a GroundOverlay or ScreenOverlay which aren't supported in OpenLayers yet, so it may not work properly.") + "\n"
+                # Write file to cache
+                f.write(file)
+                f.close()
+                record = db(db.gis_cache.name == name).select().first()
+                if record:
+                    record.update(modified_on=response.utcnow)
+                else:
+                    db.gis_cache.insert(name=name, file=filename)
+                url = URL(r=request, c="default", f="download", args=[filename])
+        else:
+            # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
+            pass
+
+        # Generate HTML snippet
+        name_safe = re.sub("\W", "_", name)
+        layer_name = "kmlLayer" + name_safe
+        if visible:
+            visibility = layer_name + ".setVisibility(true);"
+        else:
+            visibility = layer_name + ".setVisibility(false);"
+        layers_kml += """
+        iconURL = '""" + marker_url + """';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = iconURL;
+        // Needs to be uniquely instantiated
+        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+        style_marker.graphicOpacity = 1;
+        style_marker.graphicWidth = i.width;
+        style_marker.graphicHeight = i.height;
+        style_marker.graphicXOffset = -(i.width / 2);
+        style_marker.graphicYOffset = -i.height;
+        style_marker.externalGraphic = iconURL;
+        // Needs to be uniquely instantiated per-layer
+        var strategy_cluster = new OpenLayers.Strategy.Cluster({distance: s3_gis_cluster_distance, threshold: s3_gis_cluster_threshold})
+        var kmlLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+            '""" + name + """',
+            {
+                """ + projection_str + """
+                strategies: [ new OpenLayers.Strategy.Fixed(), strategy_cluster ],
+                style: style_marker,
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: '""" + url + """',
+                    format: format_kml
+                })
+            }
+        );
+        """ + visibility + """
+        kmlLayer""" + name_safe + """.title = '""" + title + """';
+        kmlLayer""" + name_safe + """.body = '""" + body + """';
+        this.mapPanel.map.addLayer(kmlLayer""" + name_safe + """);
+        kmlLayers.push(kmlLayer""" + name_safe + """);
+        kmlLayer""" + name_safe + """.events.on({ "featureselected": onKmlFeatureSelect, "featureunselected": onFeatureUnselect });
+        """
+
+    # Coordinate Grid
+    layer_coordinategrid = ""
+    coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select(db.gis_layer_coordinate.name, db.gis_layer_coordinate.visible, db.gis_layer_coordinate.role_required)
+    if coordinate_enabled:
+        layer = coordinate_enabled.first()
+        if layer.role_required and not auth.s3_has_role(layer.role_required):
+            pass
+        else:
+            name = layer["name"]
+            # Generate HTML snippet
+            name_safe = re.sub("\W", "_", name)
+            if "visible" in layer and layer["visible"]:
+                visibility = ""
+            else:
+                visibility = ", visibility: false"
+            layer_coordinategrid = """
+        this.mapPanel.map.addLayer(new OpenLayers.Layer.cdauth.CoordinateGrid(null, { name: '""" + name_safe + """', shortName: 'grid' """ + visibility + """ }));
+        """
+            
     response.title = "GeoExplorer"
     return dict(
                 config=config,
+                marker_max_width = marker_max_width,
+                marker_max_height = marker_max_height,
                 bing_key=bing_key,
                 google_key=google_key,
                 yahoo_key=yahoo_key,
                 print_service=print_service,
                 geoserver_url=geoserver_url,
-                mouse_position = mouse_position
+                mouse_position = mouse_position,
+                layers_features = layers_features,
+                layers_georss = layers_georss,
+                layers_gpx = layers_gpx,
+                layers_kml = layers_kml,
+                layer_coordinategrid = layer_coordinategrid
                )
 
 def about():
@@ -1888,6 +2570,14 @@ def potlatch2():
         osm_oauth_consumer_key = deployment_settings.get_osm_oauth_consumer_key()
         osm_oauth_consumer_secret = deployment_settings.get_osm_oauth_consumer_secret()
         if osm_oauth_consumer_key and osm_oauth_consumer_secret:
+            gpx_url = None
+            if "gpx_id" in request.vars:
+                # Pass in a GPX Track
+                # @ToDo: Set the viewport based on the Track, if one is specified
+                track = db(db.gis_track.id == request.vars.gpx_id).select(db.gis_track.track, limitby=(0, 1)).first()
+                if track:
+                    gpx_url = URL(r=request, c="default", f="download") + "/" + track.track
+            
             if "lat" in request.vars:
                 lat = request.vars.lat
                 lon = request.vars.lon
@@ -1903,9 +2593,9 @@ def potlatch2():
                 #zoom = settings.zoom
                 zoom = 14
 
-            response.extra_styles = ["S3/potlatch2.css"]
+            #response.extra_styles = ["S3/potlatch2.css"]
 
-            return dict(lat=lat, lon=lon, zoom=zoom, key=osm_oauth_consumer_key, secret=osm_oauth_consumer_secret)
+            return dict(lat=lat, lon=lon, zoom=zoom, key=osm_oauth_consumer_key, secret=osm_oauth_consumer_secret, gpx_url=gpx_url)
 
         else:
             session.error = T("To edit OpenStreetMap, you need to edit the OpenStreetMap settings in models/000_config.py")
@@ -1915,6 +2605,8 @@ def potlatch2():
         # This is a hack for unconfigured servers.
         # Production instances should configure the server to bypass the Model loads completely
         # (Apache mod_rewrite or Web2Py routes.py)
+        #('.*:/eden/gis/potlatch2/potlatch2.html', '/eden/gis/potlatch2/potlatch2.html'),
+        #('.*:/eden/gis/potlatch2/(?P<file>[\w\./_-]+)', '/eden/static/potlatch2/\g<file>'),
         redirect(URL(a=request.application, c="static", f="potlatch2", args=request.args), how=301)
 
 # -----------------------------------------------------------------------------

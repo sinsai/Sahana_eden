@@ -8,7 +8,7 @@
     @author: Michael Howden <michael[at]aidiq.com>
     @author: Pradnya Kulkarni
 
-    @copyright: (c) 2010 Sahana Software Foundation
+    @copyright: (c) 2010-2011 Sahana Software Foundation
     @license: MIT
 
     Permission is hereby granted, free of charge, to any person

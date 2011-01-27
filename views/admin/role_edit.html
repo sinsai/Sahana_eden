@@ -30,18 +30,30 @@
 {{pass}}
 <script type="text/javascript">//<![CDATA[
 $(document).ready(function(){
-    $('#tacl-tab').click(function() {
+    $('.tacl-tab').click(function() {
         $('#table-acls').show()
+        $('#function-acls').hide()
         $('#controller-acls').hide()
     });
-    $('#cacl-tab').click(function() {
+    $('.facl-tab').click(function() {
+        $('#function-acls').show()
+        $('#controller-acls').hide()
+        $('#table-acls').hide()
+    });
+    $('.cacl-tab').click(function() {
         $('#controller-acls').show()
+        $('#function-acls').hide()
         $('#table-acls').hide()
     });
     {{try:}}
         {{if acl=="table":}}
             $('#table-acls').show()
             $('#controller-acls').hide()
+            $('#function-acls').hide()
+        {{elif acl=="function":}}
+            $('#function-acls').show()
+            $('#controller-acls').hide()
+            $('#table-acls').hide()
         {{pass}}
     {{except:}}
     {{pass}}

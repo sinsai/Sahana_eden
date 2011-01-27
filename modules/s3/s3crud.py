@@ -75,6 +75,7 @@ class S3CRUD(S3Method):
         """
 
         self.settings = self.manager.s3.crud
+        self.data = None
 
         # Pre-populate create-form?
         if r.http == "GET" and not self.record:

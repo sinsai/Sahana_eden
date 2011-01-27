@@ -76,6 +76,9 @@ class S3CRUD(S3Method):
 
         self.settings = self.manager.s3.crud
 
+        # Pre-populate create-form?
+        self.data = attr.pop("data", None)
+
         if r.http == "DELETE" or self.method == "delete":
             output = self.delete(r, **attr)
         elif self.method == "create":
@@ -1044,8 +1047,8 @@ class S3CRUD(S3Method):
 
         if not readonly:
 
-            # Copy from a previous record?
-            if from_table is not None:
+            # Pre-populate from a previous record?
+            if record_id is None and from_table is not None:
                 # Field mapping
                 if map_fields:
                     if isinstance(map_fields, dict):
@@ -1078,13 +1081,21 @@ class S3CRUD(S3Method):
                         record = Storage([(f, row[map_fields[f]]) for f in map_fields])
                     else:
                         record = Storage(row)
-                if data:
-                    missing_fields = Storage()
-                    for f in table.fields:
-                        if f not in record and table[f].writable:
-                            missing_fields[f] = table[f].default
-                    record.update(missing_fields)
-                    record.update(id=None)
+
+            # Pre-populate from call?
+            elif record_id is None and isinstance(self.data, dict):
+                record = Storage([(f, self.data[f])
+                                  for f in self.data
+                                  if f in table.fields and table[f].writable])
+
+            # Add missing fields to pre-populated record
+            if record:
+                missing_fields = Storage()
+                for f in table.fields:
+                    if f not in record and table[f].writable:
+                        missing_fields[f] = table[f].default
+                record.update(missing_fields)
+                record.update(id=None)
 
             # Add asterisk to labels of required fields
             labels = Storage()

@@ -77,11 +77,17 @@ class S3CRUD(S3Method):
         self.settings = self.manager.s3.crud
 
         # Pre-populate create-form?
-        populate = attr.pop("populate", None)
-        if r.http == "GET" and callable(populate):
-            self.data = populate(r, **attr)
-        elif isinstance(populate, dict):
-            self.data = populate
+        if r.http == "GET" and not self.record:
+            populate = attr.pop("populate", None)
+            if callable(populate):
+                try:
+                    self.data = populate(r, **attr)
+                except TypeError:
+                    self.data = None
+                except:
+                    raise
+            elif isinstance(populate, dict):
+                self.data = populate
 
         if r.http == "DELETE" or self.method == "delete":
             output = self.delete(r, **attr)

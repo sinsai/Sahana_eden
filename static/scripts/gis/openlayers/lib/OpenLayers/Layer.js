@@ -1,10 +1,11 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
 
 
 /**
+ * @requires OpenLayers/BaseTypes/Class.js
  * @requires OpenLayers/Map.js
  * @requires OpenLayers/Projection.js
  */
@@ -80,9 +81,15 @@ OpenLayers.Layer = OpenLayers.Class({
      * moveend - Triggered when layer is done moving, object passed as
      *     argument has a zoomChanged boolean property which tells that the
      *     zoom has changed.
+     * added - Triggered after the layer is added to a map.  Listeners will
+     *     receive an object with a *map* property referencing the map and a
+     *     *layer* property referencing the layer.
+     * removed - Triggered after the layer is removed from the map.  Listeners
+     *     will receive an object with a *map* property referencing the map and
+     *     a *layer* property referencing the layer.
      */
     EVENT_TYPES: ["loadstart", "loadend", "loadcancel", "visibilitychanged",
-                  "move", "moveend"],
+                  "move", "moveend", "added", "removed"],
 
     /**
      * Constant: RESOLUTION_PROPERTIES
@@ -267,7 +274,7 @@ OpenLayers.Layer = OpenLayers.Class({
      * {Integer}
      */
     numZoomLevels: null,
-   
+    
     /**
      * Property: restrictedMinZoom
      * {Integer} Restriction of the minimum zoom level. This is used for layers
@@ -279,8 +286,8 @@ OpenLayers.Layer = OpenLayers.Class({
      *     setting the map's zoom to 2.
      */
     restrictedMinZoom: 0,
-    
-     /**
+   
+    /**
      * APIProperty: minScale
      * {Float}
      */
@@ -716,7 +723,9 @@ OpenLayers.Layer = OpenLayers.Class({
 
     /** 
      * APIMethod: display
-     * Hide or show the Layer
+     * Hide or show the Layer. This is designed to be used internally, and 
+     *     is not generally the way to enable or disable the layer. For that,
+     *     use the setVisibility function instead..
      * 
      * Parameters:
      * display - {Boolean}

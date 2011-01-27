@@ -1,5 +1,5 @@
 CreateTestAccount, createTestAccount.CreateTestAccount
 UserManagement, userManagement.UserManagement
 Organisation, organisationTest.OrganisationTest
-CreateLocations, locations.Locations
+Locations, locations.Locations
 DeleteTestAccount, deleteTestAccount.DeleteTestAccount

@@ -28,8 +28,8 @@ Ext.namespace("gxp.plugins");
  */   
 gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
     
-    /** api: ptype = gx_featureeditor */
-    ptype: "gx_featureeditor",
+    /** api: ptype = gxp_featureeditor */
+    ptype: "gxp_featureeditor",
 
     /** api: config[createFeatureActionTip]
      *  ``String``
@@ -173,6 +173,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
             "beforequery": intercept.createDelegate(this, "loadFeatures", 1),
             "beforelayerchange": intercept.createDelegate(this, "setLayer", 1),
             "beforesetpage": intercept.createDelegate(this, "setPage", 1),
+            "beforeclearfeatures": intercept.createDelegate(this, "cleafFeatures", 1),
             scope: this
         });
         
@@ -350,7 +351,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
         var actions = gxp.plugins.FeatureEditor.superclass.addActions.call(this, [new GeoExt.Action({
             tooltip: this.createFeatureActionTip,
             text: this.createFeatureActionText,
-            iconCls: "gx-icon-addfeature",
+            iconCls: "gxp-icon-addfeature",
             disabled: true,
             hidden: this.readOnly,
             toggleGroup: toggleGroup,
@@ -362,7 +363,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
         }), new GeoExt.Action({
             tooltip: this.editFeatureActionTip,
             text: this.editFeatureActionText,
-            iconCls: "gx-icon-editfeature",
+            iconCls: "gxp-icon-editfeature",
             disabled: true,
             toggleGroup: toggleGroup,
             enableToggle: true,
@@ -384,9 +385,9 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
         var evtLL = this.target.mapPanel.map.getLonLatFromPixel(evt.xy);
         var featureManager = this.target.tools[this.featureManager];
         var page = featureManager.page;
-        if (featureManager.paging && page && page.extent.containsLonLat(evtLL)) {
+        if (featureManager.visible() == "all" && featureManager.paging && page && page.extent.containsLonLat(evtLL)) {
             // no need to load a different page if the clicked location is
-            // inside the current page bounds
+            // inside the current page bounds and all features are visible
             return;
         }
 

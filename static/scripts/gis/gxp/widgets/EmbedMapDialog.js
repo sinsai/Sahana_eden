@@ -27,7 +27,7 @@ Ext.namespace("gxp");
  *           width: 380,
  *           autoHeight: true,
  *           items: [{
- *               xtype: "gx_embedmapdialog",
+ *               xtype: "gxp_embedmapdialog",
  *               url: "viewer.html" 
  *           }]
  *       }).show();
@@ -138,7 +138,7 @@ gxp.EmbedMapDialog = Ext.extend(Ext.Container, {
                 xtype: "box"
             },
             items: [
-                {autoEl: {cls: "gx-field-label", html: this.mapSizeLabel}},
+                {autoEl: {cls: "gxp-field-label", html: this.mapSizeLabel}},
                 new Ext.form.ComboBox({
                     editable: false,
                     width: 75,
@@ -164,9 +164,9 @@ gxp.EmbedMapDialog = Ext.extend(Ext.Container, {
                         scope: this
                     }
                 }),
-                {autoEl: {cls: "gx-field-label", html: this.heightLabel}},
+                {autoEl: {cls: "gxp-field-label", html: this.heightLabel}},
                 this.heightField,
-                {autoEl: {cls: "gx-field-label", html: this.widthLabel}},
+                {autoEl: {cls: "gxp-field-label", html: this.widthLabel}},
                 this.widthField
             ]
         });
@@ -175,7 +175,7 @@ gxp.EmbedMapDialog = Ext.extend(Ext.Container, {
             border: false,
             defaults: {
                 border: false,
-                cls: "gx-export-section",
+                cls: "gxp-export-section",
                 xtype: "container",
                 layout: "fit"
             },
@@ -194,9 +194,9 @@ gxp.EmbedMapDialog = Ext.extend(Ext.Container, {
                 "afterrender": this.updateSnippet,
                 scope: this
             }
-        }
+        };
     }
 });
 
 /** api: xtype = gx_embedmapdialog */
-Ext.reg('gx_embedmapdialog', gxp.EmbedMapDialog);
+Ext.reg('gxp_embedmapdialog', gxp.EmbedMapDialog);

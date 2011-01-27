@@ -52,7 +52,7 @@ Ext.namespace("gxp.plugins");
 gxp.plugins.KMLSource = Ext.extend(gxp.plugins.LayerSource, {
     
     /** api: ptype = gx_kmlsource */
-    ptype: "gx_kmlsource",
+    ptype: "gxp_kmlsource",
     
     /** api: property[store]
      *  ``GeoExt.data.LayerStore``.

@@ -23,9 +23,9 @@ Ext.namespace("gxp.plugins");
 /** api: constructor
  *  .. class:: BingSource(config)
  *
- *    Plugin for using OpenStreetMap layers with :class:`gxp.Viewer` instances.
+ *    Plugin for using Bing layers with :class:`gxp.Viewer` instances.
  *
- *    Available layer names are "mapnik" and "osmarender"
+ *    Available layer names are "Road", "Aerial" and "AerialWithLabels"
  */
 /** api: example
  *  The configuration in the ``sources`` property of the :class:`gxp.Viewer` is
@@ -34,7 +34,7 @@ Ext.namespace("gxp.plugins");
  *  .. code-block:: javascript
  *
  *    "bing": {
- *        ptype: "gx_bingsource"
+ *        ptype: "gxp_bingsource"
  *    }
  *
  *  A typical configuration for a layer from this source (in the ``layers``
@@ -51,12 +51,12 @@ Ext.namespace("gxp.plugins");
  */
 gxp.plugins.BingSource = Ext.extend(gxp.plugins.LayerSource, {
     
-    /** api: ptype = gx_bingsource */
-    ptype: "gx_bingsource",
+    /** api: ptype = gxp_bingsource */
+    ptype: "gxp_bingsource",
 
     /** api: property[store]
-     *  ``GeoExt.data.LayerStore``. Will contain records with "mapnik" and
-     *  "osmarender" as name field values.
+     *  ``GeoExt.data.LayerStore``. Will contain records with "Road" and
+     *  "Aerial" as name field values.
      */
     
     /** api: config[title]
@@ -69,13 +69,13 @@ gxp.plugins.BingSource = Ext.extend(gxp.plugins.LayerSource, {
      *  ``String``
      *  A descriptive title for the Road layer (i18n).
      */
-    roadTitle: "Road",
+    roadTitle: "Bing Roads",
 
     /** api: config[aerialTitle]
      *  ``String``
      *  A descriptive title for the Aerial layer (i18n).
      */
-    aerialTitle: "Aerial",
+    aerialTitle: "Bing Aerial",
 
     /** api: config[labeledAerialTitle]
      *  ``String``
@@ -162,7 +162,7 @@ gxp.plugins.BingSource = Ext.extend(gxp.plugins.LayerSource, {
 
             // set visibility from config
             if ("visibility" in config) {
-                layer.visibility = config.visibility
+                layer.visibility = config.visibility;
             }
             
             record.set("selected", config.selected || false);

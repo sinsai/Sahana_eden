@@ -410,12 +410,14 @@ class Locations(SahanaTest):
                               (),
                               ()
                              )
-        # Following save is required because the advanced checkbox has been pressed
-        # see ticket #885 http://eden.sahanafoundation.org/ticket/885
-        self.action.saveForm("Shelter updated")
 
-        # Now update the shelter to have a L0 location
+        self.action.saveForm("Shelter updated")
+        # Load again
         self.openRecord(shelterName)
+        self.action.checkHeading({"Name:" : shelterName,
+                                  "Location:" : "%s (N 51.0 E 1.0)" % L0b,
+                                 })
+
         # Select the L0
         sel.select("gis_location_L0", "label=Haiti")
         self.initFormDetails()
@@ -1271,6 +1273,12 @@ class Locations(SahanaTest):
         # Save the form
         Locations.shelter.append(shelterName)   
         self.action.saveForm("Shelter added")
+        # Load again
+        self.openRecord(shelterName)
+        # Shelter has correct location
+        self.action.checkHeading({"Name:" : shelterName,
+                                  "Location:" : search,
+                                 })
 
         ###############################################################
         # Next Test
@@ -1325,6 +1333,12 @@ class Locations(SahanaTest):
         # Save the form
         Locations.shelter.append(shelterName)   
         self.action.saveForm("Shelter added")
+        # Load again
+        self.openRecord(shelterName)
+        # Shelter has correct location
+        self.action.checkHeading({"Name:" : shelterName,
+                                  "Location:" : search,
+                                 })
 
         ###############################################################
         # Next Test
@@ -1383,6 +1397,12 @@ class Locations(SahanaTest):
         # Save the form
         Locations.shelter.append(shelterName)   
         self.action.saveForm("Shelter added")
+        # Load again
+        self.openRecord(shelterName)
+        # Shelter has correct location
+        self.action.checkHeading({"Name:" : shelterName,
+                                  "Location:" : search,
+                                 })
 
         ###############################################################
         # Next Test
@@ -1441,6 +1461,12 @@ class Locations(SahanaTest):
         # Save the form
         Locations.shelter.append(shelterName)   
         self.action.saveForm("Shelter added")
+        # Load again
+        self.openRecord(shelterName)
+        # Shelter has correct location
+        self.action.checkHeading({"Name:" : shelterName,
+                                  "Location:" : search,
+                                 })
 
         ###############################################################
         # Next Test
@@ -1499,6 +1525,12 @@ class Locations(SahanaTest):
         # Save the form
         Locations.shelter.append(shelterName)   
         self.action.saveForm("Shelter added")
+        # Load again
+        self.openRecord(shelterName)
+        # Shelter has correct location
+        self.action.checkHeading({"Name:" : shelterName,
+                                  "Location:" : search,
+                                 })
 
         ###############################################################
         # Next Test
@@ -1561,6 +1593,12 @@ class Locations(SahanaTest):
         # Save the form
         Locations.shelter.append(shelterName)   
         self.action.saveForm("Shelter added")
+        # Load again
+        self.openRecord(shelterName)
+        # Shelter has correct location
+        self.action.checkHeading({"Name:" : shelterName,
+                                  "Location:" : search,
+                                 })
 
         ###############################################################
         # Next Test
@@ -1623,7 +1661,13 @@ class Locations(SahanaTest):
         # Save the form
         Locations.shelter.append(shelterName)   
         self.action.saveForm("Shelter added")
-        
+        # Load again
+        self.openRecord(shelterName)
+        # Shelter has correct location
+        self.action.checkHeading({"Name:" : shelterName,
+                                  "Location:" : search,
+                                 })
+
         ###############################################################
         # Next Test
         ###############################################################
@@ -1685,7 +1729,12 @@ class Locations(SahanaTest):
         # Save the form
         Locations.shelter.append(shelterName)   
         self.action.saveForm("Shelter added")
-        
+        # Load again
+        self.openRecord(shelterName)
+        # Shelter has correct location
+        self.action.checkHeading({"Name:" : shelterName,
+                                  "Location:" : search,
+                                 })
         
         ###############################################################
         # Next Test
@@ -1748,7 +1797,13 @@ class Locations(SahanaTest):
         # Save the form
         Locations.shelter.append(shelterName)   
         self.action.saveForm("Shelter added")
-        
+        # Load again
+        self.openRecord(shelterName)
+        # Shelter has correct location
+        self.action.checkHeading({"Name:" : shelterName,
+                                  "Location:" : search,
+                                 })
+                                 
         ###############################################################
         # Next Test
         ###############################################################
@@ -1786,10 +1841,7 @@ class Locations(SahanaTest):
         self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L0"))
         self.assertEqual(self.makeNameUnique("L1withNoParent"), sel.get_selected_label("gis_location_L1"))
         self.assertEqual(self.makeNameUnique("L2inL1withNoParent"), sel.get_selected_label("gis_location_L2"))
-# Removed the following test because at the moment it returns
-# No locations registered at this level
-# TODO check with Fran
-#        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L3"))
+        self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_L3"))
         self.assertEqual(search, sel.get_selected_label("gis_location_L4"))
         
         self.initFormDetails()
@@ -1813,6 +1865,12 @@ class Locations(SahanaTest):
         # Save the form
         Locations.shelter.append(shelterName)   
         self.action.saveForm("Shelter added")
+        # Load again
+        self.openRecord(shelterName)
+        # Shelter has correct location
+        self.action.checkHeading({"Name:" : shelterName,
+                                  "Location:" : search,
+                                 })
         
         ###############################################################
         # Next Test
@@ -1851,10 +1909,7 @@ class Locations(SahanaTest):
         self.assertEqual("Haiti", sel.get_selected_label("gis_location_L0"))
         self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L1"))
         self.assertEqual(self.makeNameUnique("L2inL0"), sel.get_selected_label("gis_location_L2"))
-# Removed the following test because at the moment it returns
-# No locations registered at this level
-# TODO check with Fran
-#        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L3"))
+        self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_L3"))
         self.assertEqual(search, sel.get_selected_label("gis_location_L4"))
         
         self.initFormDetails()
@@ -1878,6 +1933,12 @@ class Locations(SahanaTest):
         # Save the form
         Locations.shelter.append(shelterName)   
         self.action.saveForm("Shelter added")
+        # Load again
+        self.openRecord(shelterName)
+        # Shelter has correct location
+        self.action.checkHeading({"Name:" : shelterName,
+                                  "Location:" : search,
+                                 })
         
         ###############################################################
         # Next Test
@@ -1905,7 +1966,7 @@ class Locations(SahanaTest):
         # Select the Result
         sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
         sel.click("css=ul.ui-autocomplete li:first-child a")
-        # wait for the L2 list to be populated
+        # wait for the L4 list to be populated
         for i in range(10):
             try:
                 sel.select("gis_location_L4", "label=%s" % search)
@@ -1916,10 +1977,7 @@ class Locations(SahanaTest):
         self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L0"))
         self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L1"))
         self.assertEqual(self.makeNameUnique("L2withNoParent"), sel.get_selected_label("gis_location_L2"))
-# Removed the following test because at the moment it returns
-# No locations registered at this level
-# TODO check with Fran
-#        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L3"))
+        self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_L3"))
         self.assertEqual(search, sel.get_selected_label("gis_location_L4"))
         
         self.initFormDetails()
@@ -1943,6 +2001,81 @@ class Locations(SahanaTest):
         # Save the form
         Locations.shelter.append(shelterName)   
         self.action.saveForm("Shelter added")
+        # Load again
+        self.openRecord(shelterName)
+        # Shelter has correct location
+        self.action.checkHeading({"Name:" : shelterName,
+                                  "Location:" : search,
+                                 })
+        
+        ###############################################################
+        # Next Test
+        ###############################################################
+        shelterName = self.makeNameUnique("Shelter SpecificNoParent")
+        search = self.makeNameUnique("SpecificNoParent")
+        sel.open("cr/shelter/create")
+        sel.type("cr_shelter_name", shelterName)
+        # Open the Search box
+        sel.click("gis_location_search-btn")
+        # Enter the search String
+        sel.type("gis_location_autocomplete", search)
+        # Trigger the event to get the AJAX to send
+        sel.fire_event("gis_location_autocomplete", "keydown")
+        # Wait for the popup menu
+        for i in range(60):
+            try:
+                if search == sel.get_text("css=ul.ui-autocomplete li:first-child a"):
+                    break
+            except:
+                pass
+            time.sleep(1)
+        else:
+            self.fail("time out")
+        # Select the Result
+        sel.fire_event("css=ul.ui-autocomplete li:first-child a", "mouseover")
+        sel.click("css=ul.ui-autocomplete li:first-child a")
+        # wait for the L4 list to be populated
+        for i in range(10):
+            try:
+                sel.select("gis_location_L4", "label=%s" % search)
+                break
+            except:
+                time.sleep(1)
+
+        self.assertEqual("Select a location...", sel.get_selected_label("gis_location_L0"))
+        # Now hidden, so not loaded
+        #self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_L1"))
+        #self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_L2"))
+        #self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_L3"))
+        #self.assertEqual("No locations registered at this level", sel.get_selected_label("gis_location_L4"))
+        
+        self.initFormDetails()
+        location_id = sel.get_selected_value("gis_location_")
+        Locations.formDetails[0][3] = location_id
+        #Locations.formDetails[5][2] = True
+        #Locations.formDetails[6][2] = True
+        #Locations.formDetails[7][2] = True
+        #Locations.formDetails[8][2] = True
+        #Locations.formDetails[9][2] = True
+        #Locations.formDetails[10][2] = True
+        #Locations.formDetails[11][2] = True
+        #Locations.formDetails[12][2] = True
+        Locations.formDetails[13][2] = True
+        Locations.formDetails[14][2] = True
+        Locations.formDetails[17][2] = True
+        self.action.checkForm(Locations.formDetails,
+                              (),
+                              ()
+                             )
+        # Save the form
+        Locations.shelter.append(shelterName)   
+        self.action.saveForm("Shelter added")
+        # Load again
+        self.openRecord(shelterName)
+        # Shelter has correct location
+        self.action.checkHeading({"Name:" : shelterName,
+                                  "Location:" : search,
+                                 })
         
         
 if __name__ == "__main__":

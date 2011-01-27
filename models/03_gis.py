@@ -409,6 +409,7 @@ feature_class_id = S3ReusableField("feature_class_id", db.gis_feature_class, sor
 
 # -----------------------------------------------------------------------------
 # GIS Locations
+
 gis_feature_type_opts = {
     1:T("Point"),
     2:T("Line"),
@@ -423,6 +424,85 @@ gis_source_opts = {
     "wikipedia":"Wikipedia",
     "yahoo":"Yahoo! GeoPlanet",
     }
+
+# This is used as the represent for IS_ONE_OF, and the "format" for the
+# gis_location table, which web2py uses to construct (e.g.) selection lists
+# for default validators' widgets.
+def shn_gis_location_represent_row(location, showlink=True):
+    """ Represent a location given its row """
+    if location.level:
+        level_name = deployment_settings.get_gis_locations_hierarchy(location.level)
+    if location.level == "L0":
+        # Countries don't have Parents & shouldn't be represented with Lat/Lon
+        text = "%s (%s)" % (location.name, level_name)
+    elif location.level == "L1" and _gis.countries and len(_gis.countries) == 1:
+        # Regions shouldn't show their Parent if the deployment is only for 1 country
+        text = "%s (%s)" % (location.name, level_name)
+    # @ToDo Why is the parent only shown for the higher levels?
+    # Isn't it equally useful (or more useful) for small places that
+    # people are less likely to have heard of, and where the larger
+    # place they belong to is more likely to be recognized?
+    elif location.level in ["L1", "L2", "L3"]:
+        try:
+            # Show the Parent location
+            parent = db(db.gis_location.id == location.parent).select(db.gis_location.name,
+                                                                      cache=(cache.ram, 60),
+                                                                      limitby=(0, 1)).first()
+            text = "%s (%s, %s)" % (location.name, level_name, parent.name)
+        except:
+            text = "%s (%s)" % (location.name, level_name)
+    elif location.level:
+        text = "%s (%s)" % (location.name, level_name)
+    else:
+        # Simple
+        #represent = location.name
+        # Lat/Lon
+        lat = location.lat
+        lon = location.lon
+        if lat and lon:
+            if lat > 0:
+                lat_prefix = "N"
+            else:
+                lat_prefix = "S"
+            if lon > 0:
+                lon_prefix = "E"
+            else:
+                lon_prefix = "W"
+            text = location.name + " (%s %s %s %s)" % (lat_prefix, lat, lon_prefix, lon)
+        else:
+            text = location.name
+    # Simple
+    #represent = text
+    # Hyperlink
+    #represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[id]))
+    # Provide either a link (as might be used on a map popup) or plain text
+    # (for a read-only view of a list of locations).
+    if showlink:
+        represent = A(text, _style="cursor:pointer; cursor:hand", _onclick="s3_viewMap(" + str(id) +");return false")
+    else:
+        represent = text
+    # ToDo: Convert to popup? (HTML again!)
+    return represent
+
+def shn_gis_location_represent(id, showlink=True):
+    """ Represent a location given its id """
+    try:
+        location = db(db.gis_location.id == id).select(db.gis_location.name,
+                                                       db.gis_location.level,
+                                                       db.gis_location.parent,
+                                                       db.gis_location.lat,
+                                                       db.gis_location.lon,
+                                                       cache=(cache.ram, 60),
+                                                       limitby=(0, 1)).first()
+        return shn_gis_location_represent_row(location, showlink)
+    except:
+        try:
+            # "Invalid" => data consistency wrong
+            represent = location.id
+        except:
+            represent = NONE
+    return represent
+
 resourcename = "location"
 tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
@@ -432,6 +512,7 @@ table = db.define_table(tablename,
                         Field("level", length=2),
                         Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
                         Field("path", length=500, readable=False, writable=False),  # Materialised Path
+                        Field("members", "list:reference gis_location"),
                         # Street Address (other address fields come from hierarchy)
                         Field("addr_street", "text"),
                         Field("addr_postcode"),
@@ -452,6 +533,7 @@ table = db.define_table(tablename,
                         Field("source", requires=IS_NULL_OR(IS_IN_SET(gis_source_opts))),
                         comments(),
                         migrate=migrate,
+                        format=shn_gis_location_represent_row,
                         *(s3_authorstamp() + s3_timestamp() + s3_uid() + s3_deletion_status()))
 
 table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % table)
@@ -462,6 +544,8 @@ table.name_dummy.label = T("Local Names")
 table.name_dummy.comment = DIV(_class="tooltip", _title=T("Local Names") + "|" + T("Names can be added in multiple languages"))
 
 table.level.requires = IS_NULL_OR(IS_IN_SET(gis_location_hierarchy))
+table.level.represent = lambda level: \
+    level and deployment_settings.get_gis_locations_hierarchy(level) or NONE
 table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s"))
 table.parent.represent = lambda id: (id and [db(db.gis_location.id == id).select(db.gis_location.name, limitby=(0, 1)).first().name] or [NONE])[0]
 table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts, zero=None)
@@ -497,6 +581,24 @@ table.lon.comment = A(CONVERSION_TOOL,
                       _style="cursor:pointer;",
                       _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."),
                       _id="gis_location_converter-btn")
+
+table.members.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id",
+                                              shn_gis_location_represent_row,
+                                              multiple=True))
+# @ToDo: Location represent strings can be long, so would like to show group
+# members one per line on read-only views.  However, Web2py is treating the
+# text as literal, so <br> is visible.  And...it's squeezing out linefeeds,
+# so "\n" as a separator gets turned into " ".  The element this is in has
+# class="w2p_fw" -- perhaps this one element's style can be tweaked.  Just
+# use a comma-separated list for now.
+table.members.represent = lambda id: \
+    id and s3_represent_multiref(db.gis_location, id,
+                                 represent=lambda mbr_id: \
+                                     shn_gis_location_represent_row(
+                                         mbr_id, showlink=False),
+                                 separator=", ") or NONE
+table.members.comment = DIV(_class="tooltip",
+                            _title=T("Members") + "|" + T("A location group is a set of administrative regions -- member locations are added to a location group here. Location groups are used to restrict what is shown on the map and in search results to only entities in one of the regions in the group. A location group can be used to define the extent of an affected area, if it does not fall iwithin one administrative region. Location groups can be used in the Regions menu."))
 
 s3xrc.model.configure(table, listadd=False)
     #list_fields=["id", "name", "level", "parent", "lat", "lon"])
@@ -818,65 +920,6 @@ def s3_gis_location_parents(r, **attr):
 
 # Plug into REST controller
 s3xrc.model.set_method(module, "location", method="parents", action=s3_gis_location_parents )
-
-# -----------------------------------------------------------------------------
-def shn_gis_location_represent(id):
-    """ Represent a Location """
-    try:
-        location = db(db.gis_location.id == id).select(db.gis_location.name,
-                                                       db.gis_location.level,
-                                                       db.gis_location.parent,
-                                                       db.gis_location.lat,
-                                                       db.gis_location.lon,
-                                                       cache=(cache.ram, 60),
-                                                       limitby=(0, 1)).first()
-        if location.level == "L0":
-            # Countries don't have Parents & shouldn't be represented with Lat/Lon
-            text = location.name
-        elif location.level == "L1" and _gis.countries and len(_gis.countries) == 1:
-            # Regions shouldn't show their Parent if the deployment is only for 1 country
-            text = location.name
-        elif location.level in ["L1", "L2", "L3"]:
-            try:
-                # Show the Parent location
-                parent = db(db.gis_location.id == location.parent).select(db.gis_location.name,
-                                                                          cache=(cache.ram, 60),
-                                                                          limitby=(0, 1)).first()
-                text = "%s (%s)" % (location.name, parent.name)
-            except:
-                text = location.name
-        else:
-            # Simple
-            #represent = location.name
-            # Lat/Lon
-            lat = location.lat
-            lon = location.lon
-            if lat and lon:
-                if lat > 0:
-                    lat_prefix = "N"
-                else:
-                    lat_prefix = "S"
-                if lon > 0:
-                    lon_prefix = "E"
-                else:
-                    lon_prefix = "W"
-                text = location.name + " (%s %s %s %s)" % (lat_prefix, lat, lon_prefix, lon)
-            else:
-                text = location.name
-        # Simple
-        #represent = text
-        # Hyperlink
-        #represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[id]))
-        # Map
-        represent = A(text, _style="cursor:pointer; cursor:hand", _onclick="s3_viewMap(" + str(id) +");return false")
-        # ToDo: Convert to popup? (HTML again!)
-    except:
-        try:
-            # "Invalid" => data consistency wrong
-            represent = location.id
-        except:
-            represent = NONE
-    return represent
 
 # -----------------------------------------------------------------------------
 # Feature Layers

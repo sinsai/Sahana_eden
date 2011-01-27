@@ -107,26 +107,28 @@ class S3Config(Storage):
             return db_string
 
     # GIS (Map) Settings
+
+    # Location hierarchy, or name of a specific level. Serves as represent
+    # for level.
     def get_gis_locations_hierarchy(self, level=None):
-        if level:
-            locations_hierarchy = self.gis.get("locations_hierarchy")
-            if locations_hierarchy:
-                try:
-                    return locations_hierarchy[level]
-                except:
-                    return None
-            else:
-                return None
-        else:
+        locations_hierarchy = self.gis.get("locations_hierarchy")
+        if not locations_hierarchy:
             T = self.T
-            gis_location_hierarchy = {
+            locations_hierarchy = {
                 "L0":T("Country"),
                 "L1":T("Province"),
                 "L2":T("District"),
                 "L3":T("Town"),
                 "L4":T("Village")
             }
-            return self.gis.get("locations_hierarchy", gis_location_hierarchy)
+        if level:
+            try:
+                return locations_hierarchy[level]
+            except:
+                return level
+        else:
+            return locations_hierarchy
+
     def get_gis_max_hierarchy(self):
         location_hierarchy = self.get_gis_locations_hierarchy()
         if "L5" in location_hierarchy:

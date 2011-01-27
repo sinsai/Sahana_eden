@@ -141,7 +141,8 @@ deployment_settings.gis.locations_hierarchy = {
     "L3":T("Town"),
     "L4":T("Village"),
     #"L5":T("Neighbourhood"),   # Currently not supported by testSuite
-    "XX":T("Imported")          # Filtered from view as no detailed information & many duplicates (e.g. coming from Ushahidi)
+    "XX":T("Imported"),         # Filtered from view as no detailed information & many duplicates (e.g. coming from Ushahidi)
+    "GR":T("Location Group"),
 }
 # Should we require locations to follow strict hierarchy?
 deployment_settings.gis.strict_hierarchy = False

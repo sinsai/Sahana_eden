@@ -449,7 +449,7 @@ def shn_represent_file(file_name,
 
 
 # -----------------------------------------------------------------------------
-def s3_represent_multiref(table, opt, represent=None):
+def s3_represent_multiref(table, opt, represent=None, separator=", "):
 
     """ @todo: docstring?? """
 
@@ -471,7 +471,7 @@ def s3_represent_multiref(table, opt, represent=None):
         options = [represent % r for r in records]
 
     if options:
-        return ", ".join(options)
+        return separator.join(map(str, options))
     else:
         return UNKNOWN_OPT
 

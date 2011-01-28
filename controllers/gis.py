@@ -89,7 +89,7 @@ def define_map(window=False, toolbar=False, config=None):
     for layer in feature_layers:
         if layer.role_required and not auth.s3_has_role(layer.role_required):
             continue
-        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons)
+        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons, opacity=layer.opacity)
         if _layer:
             feature_queries.append(_layer)
 
@@ -796,6 +796,28 @@ def layer_feature():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
+    # Pre-processor
+    def prep(r):
+        # Which tables have GIS Locations
+        tables = []
+        for table in db.tables:
+            if "location_id" in db[table]:
+                tables.append(table)
+        db.gis_layer_feature.resource.requires = IS_IN_SET(tables)
+
+        return True
+   
+    response.s3.prep = prep
+
+
+    # Post-processor
+    def postp(r, output):
+        if r.record and r.record.resource:
+            response.s3.feature_resource = "%s_%s" % (r.record.module, r.record.resource)
+        return output
+
+    response.s3.postp = postp
+
     tablename = module + "_" + resourcename
     table = db[tablename]
 
@@ -829,6 +851,7 @@ def layer_feature():
 def feature_layer_query(form):
     """ OnValidation callback to build the simple Query from helpers """
 
+    resource = None
     if "resource" in form.vars:
         resource = form.vars.resource
         # Remove the module from name
@@ -1680,7 +1703,7 @@ def geoexplorer():
     for layer in feature_layers:
         if layer.role_required and not auth.s3_has_role(layer.role_required):
             continue
-        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons)
+        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons, opacity=layer.opacity)
         if _layer:
             feature_queries.append(_layer)
 

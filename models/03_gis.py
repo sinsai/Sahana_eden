@@ -893,6 +893,7 @@ table = db.define_table(tablename,
                         Field("polygons", "boolean", default=False, label=T("Display Polygons?")),
                         Field("enabled", "boolean", default=True, label=T("Available in Viewer?")),
                         Field("visible", "boolean", default=True, label=T("On by default?")),
+                        Field("opacity", "double", default=1.0, requires=IS_FLOAT_IN_RANGE(0, 1), label=T("Opacity (1 for opaque, 0 for fully-transparent)")),
                         # @ToDo Expose the Graphic options
                         # @ToDo Allow defining more complex queries
                         # e.g. L1 for Provinces, L2 for Districts, etc
@@ -908,7 +909,7 @@ table = db.define_table(tablename,
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 table.name.label = T("Name")
 table.resource.label = T("Resource")
-# In zzz_last.py
+# In Controller (to ensure all tables visible)
 #table.resource.requires = IS_IN_SET(db.tables)
 #table.filter_field.label = T("Filter Field")
 #table.filter_value.label = T("Filter Value")

@@ -79,12 +79,24 @@ Ext.namespace("gxp.plugins");
  */
 gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
     
-    /** api: ptype = gx_wmssource */
-    ptype: "gx_wmssource",
+    /** api: ptype = gxp_wmssource */
+    ptype: "gxp_wmssource",
     
     /** api: config[url]
      *  ``String`` WMS service URL for this source
      */
+
+    /** api: baseParams
+     *  ``Object`` Base parameters to use on the WMS GetCapabilities
+     *  request.
+     */
+    baseParams: null,
+
+    /** api: format
+     * ``OpenLayers.Format`` Optional custom format to use on the 
+     * WMSCapabilitiesStore store instead of the default.
+     */
+    format: null,
     
     /** private: property[describeLayerStore]
      *  ``GeoExt.data.WMSDescribeLayerStore`` additional store of layer
@@ -112,7 +124,7 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
      *  Creates a store of layer records.  Fires "ready" when store is loaded.
      */
     createStore: function() {
-        var baseParams = {
+        var baseParams = this.baseParams || {
             SERVICE: "WMS",
             REQUEST: "GetCapabilities"
         };
@@ -122,6 +134,7 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
         this.store = new GeoExt.data.WMSCapabilitiesStore({
             url: this.url,
             baseParams: baseParams,
+            format: this.format,
             autoLoad: true,
             listeners: {
                 load: function() {

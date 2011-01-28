@@ -29,8 +29,8 @@ Ext.namespace("gxp.plugins");
  */
 gxp.plugins.QueryForm = Ext.extend(gxp.plugins.Tool, {
     
-    /** api: ptype = gx_queryform */
-    ptype: "gx_queryform",
+    /** api: ptype = gxp_queryform */
+    ptype: "gxp_queryform",
 
     /** api: config[featureManager]
      *  ``String`` The id of the :class:`gxp.plugins.FeatureManager` to use
@@ -97,7 +97,7 @@ gxp.plugins.QueryForm = Ext.extend(gxp.plugins.Tool, {
             actions: [{
                 text: this.queryActionText,
                 menuText: this.queryMenuText,
-                iconCls: "gx-icon-find",
+                iconCls: "gxp-icon-find",
                 tooltip: this.queryActionTip
             }]
         });
@@ -148,7 +148,7 @@ gxp.plugins.QueryForm = Ext.extend(gxp.plugins.Tool, {
             }],
             bbar: ["->", {
                 text: this.queryActionText,
-                iconCls: "gx-icon-find",
+                iconCls: "gxp-icon-find",
                 handler: function() {
                     var filters = [];
                     if (queryForm.spatialFieldset.collapsed !== true) {
@@ -180,7 +180,7 @@ gxp.plugins.QueryForm = Ext.extend(gxp.plugins.Tool, {
             queryForm.setDisabled(!schema);
             if (schema) {
                 queryForm.attributeFieldset.add({
-                    xtype: "gx_filterbuilder",
+                    xtype: "gxp_filterbuilder",
                     ref: "../filterBuilder",
                     attributes: schema,
                     allowBlank: true,

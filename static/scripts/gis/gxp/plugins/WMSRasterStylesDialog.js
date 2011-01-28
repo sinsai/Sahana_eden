@@ -199,7 +199,7 @@ gxp.plugins.WMSRasterStylesDialog = {
                         }]
                     }]
                 }, {
-                    xtype: "gx_polygonsymbolizer",
+                    xtype: "gxp_polygonsymbolizer",
                     symbolizer: rule.symbolizers[0],
                     bodyStyle: {"padding": "10px"},
                     border: false,
@@ -322,7 +322,7 @@ gxp.plugins.WMSRasterStylesDialog = {
             if (fieldset.items) {
                 rules = fieldset.items.get(0).rules;
                 for (var i=rules.length-1; i>=0; i--) {
-                    quantity = Math.max(quantity, parseFloat(rules[i].name))
+                    quantity = Math.max(quantity, parseFloat(rules[i].name));
                 }            
             }
         }
@@ -355,5 +355,5 @@ gxp.plugins.WMSRasterStylesDialog = {
     
 };
 
-/** api: ptype = gx_wmsrasterstylesdialog */
+/** api: ptype = gxp_wmsrasterstylesdialog */
 Ext.preg("gx_wmsrasterstylesdialog", gxp.plugins.WMSRasterStylesDialog);

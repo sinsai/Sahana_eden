@@ -27,11 +27,11 @@ def index():
 
 #==============================================================================
 def req():
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+    resourcename = request.function
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
     output = s3_rest_controller(module,
-                                resource,
+                                resourcename,
                                 rheader=shn_logs_req_rheader)
     return output
 #------------------------------------------------------------------------------
@@ -65,14 +65,56 @@ def shn_logs_req_rheader(r):
                 return rheader
     return None
 
+#==============================================================================
+def commit():
+    resourcename = request.function
+    tablename = "%s_%s" % (module, resourcename)
+    table = db[tablename]
+    output = s3_rest_controller(module,
+                                resourcename,
+                                rheader=shn_logs_commit_rheader)
+    return output
+#------------------------------------------------------------------------------
+def shn_logs_commit_rheader(r):
+    """ Resource Header for Commitments """
+
+    if r.representation == "html":
+        if r.name == "commit":
+            req_record = r.record
+            if req_record:
+                rheader_tabs = shn_rheader_tabs( r,
+                                                 [(T("Edit Details"), None),
+                                                  (T("Items"), "commit_item"),
+                                                  ]
+                                                 )
+                rheader = DIV( TABLE(
+                                   TR( TH( T("Date") + ": "),
+                                       req_record.date,
+                                       TH( T("Date Avaialble") + ": "),
+                                       req_record.date_available,
+                                      ),
+                                   TR( TH( T("By Warehouse") + ": "),
+                                       shn_inventory_store_represent(req_record.inventory_store_id),
+                                       TH( T("From Warehouse") + ": "),
+                                       shn_inventory_store_represent(req_record.from_inventory_store_id),
+                                      ),
+                                   TR( TH( T("Comments") + ": "),
+                                       TD(req_record.comments, _colspan=3)
+                                      ),
+                                     ),
+                                rheader_tabs
+                                )
+                return rheader
+    return None
+
 #=============================================================================
 def recv():
     """ RESTful CRUD controller """
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+    resourcename = request.function
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
     output = s3_rest_controller(module,
-                                resource,
+                                resourcename,
                                 rheader=shn_logs_recv_rheader)
     return output
 #------------------------------------------------------------------------------
@@ -98,8 +140,7 @@ def shn_logs_recv_rheader(r):
                                      )
                                 )                            
                
-                if not recv_record.status: 
-                    #Shipment not recv
+                if recv_record.status == LOGS_STATUS_IN_PROCESS: 
                     recv_btn = A( T("Receive Items"),
                                   _href = URL(r = request,
                                               c = "logs",
@@ -124,70 +165,7 @@ def shn_logs_recv_rheader(r):
                
                 return rheader
     return None
-#------------------------------------------------------------------------------
-def recv_process():
-    recv_id = request.args[0]
-    recv_record = db.logs_recv[recv_id]
-    inventory_store_id = recv_record.inventory_store_id
 
-    #Get Recv & Store Items to compare
-    recv_items = db( ( db.logs_recv_item.logs_recv_id == recv_id ) & \
-                     ( db.logs_recv_item.item_packet_id == db.supply_item_packet.id) &
-                     ( db.logs_recv_item.deleted == False ) )\
-                 .select(db.logs_recv_item.item_id,
-                         db.logs_recv_item.quantity,
-                         db.logs_recv_item.item_packet_id,
-                         db.supply_item_packet.quantity,
-                         )
-    store_items = db( ( db.inventory_store_item.inventory_store_id == inventory_store_id ) & \
-                      ( db.inventory_store_item.item_packet_id == db.supply_item_packet.id) & \
-                      ( db.inventory_store_item.deleted == False ) )\
-                  .select(db.inventory_store_item.id,
-                          db.inventory_store_item.item_id,
-                          db.inventory_store_item.quantity,
-                          db.supply_item_packet.quantity)
-
-    store_items_dict = store_items.as_dict( key = "inventory_store_item.item_id")
-
-    for recv_item in recv_items:
-        recv_item_id = recv_item.logs_recv_item.item_id
-        if recv_item_id in store_items_dict.keys():
-            #This item already exists in the store, and the quantity must be incremeneted
-            store_item = Storage(store_items_dict[recv_item_id])
-            store_item_id = store_item.inventory_store_item["id"]
-
-            #convert the recv items packet into the store item packet
-            quantity = store_item.inventory_store_item["quantity"] + \
-                       (recv_item.supply_item_packet.quantity / \
-                        store_item.supply_item_packet["quantity"]) * \
-                        recv_item.logs_recv_item.quantity
-            item = dict(quantity = quantity)
-        else:
-            #This item must be added to the store
-            store_item_id = 0
-            item = dict( inventory_store_id = inventory_store_id,
-                         item_id = recv_item.logs_recv_item.item_id,
-                         quantity = recv_item.logs_recv_item.quantity,
-                         item_packet_id = recv_item.logs_recv_item.item_packet_id
-                         )
-            
-        #Update Store Item
-        db.inventory_store_item[store_item_id] = item
-        
-        
-    #Update recv record
-    db.logs_recv[recv_id] = dict(datetime = request.utcnow,
-                                 status = True ) 
-
-    response.confirmation = T("Received Items added to Warehouse Items")
-
-    #Go to the Warehouse which has received these items
-    redirect(URL(r = request,
-                 c = "inventory",
-                 f = "store",
-                 args = [inventory_store_id, "store_item"]
-                 )
-             )
 #==============================================================================
 class QUANTITY_ITEM_IN_STORE:
     def __init__(self, 
@@ -227,8 +205,8 @@ class QUANTITY_ITEM_IN_STORE:
 #------------------------------------------------------------------------------
 def send():
     """ RESTful CRUD controller """
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+    resourcename = request.function
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
     
     #Set Validator for checking against the number of items in the warehouse
@@ -281,9 +259,10 @@ def send():
     response.s3.prep = prep           
         
     output = s3_rest_controller(module,
-                                resource,
+                                resourcename,
                                 rheader=shn_logs_send_rheader)
     return output
+
 #------------------------------------------------------------------------------
 def shn_logs_send_rheader(r):
     """ Resource Header for Out """
@@ -307,8 +286,7 @@ def shn_logs_send_rheader(r):
                                      )                              
                                 )
                 
-                if not send_record.status: 
-                    #Shipment not recv
+                if send_record.status == LOGS_STATUS_IN_PROCESS: 
                     send_btn = A( T("Send Shipment"),
                                   _href = URL(r = request,
                                               c = "logs",
@@ -319,7 +297,7 @@ def shn_logs_send_rheader(r):
                                   _class = "action-btn"
                                   )
                     
-                    send_btn_confirm = SCRIPT("S3ConfirmClick('#send_process','%s')" 
+                    send_btn_confirm = SCRIPT("S3ConfirmClick('#send_process', '%s')" 
                                               % T("Do you want to send this shipment?") )
                     rheader.append(send_btn)
                     rheader.append(send_btn_confirm)     
@@ -332,6 +310,95 @@ def shn_logs_send_rheader(r):
                                )                               
                 return rheader
     return None
+
+#------------------------------------------------------------------------------
+def recv_process():
+    recv_id = request.args[0]
+    recv_record = db.logs_recv[recv_id]
+    inventory_store_id = recv_record.inventory_store_id
+
+    # Get Recv & Store & Req Items to compare
+    recv_items = db( ( db.logs_recv_item.logs_recv_id == recv_id ) & \
+                     ( db.logs_recv_item.item_packet_id == db.supply_item_packet.id) &
+                     ( db.logs_recv_item.deleted == False ) 
+                 ).select(db.logs_recv_item.item_id,
+                         db.logs_recv_item.quantity,
+                         db.logs_recv_item.item_packet_id,
+                         db.supply_item_packet.quantity,
+                         )
+    store_items = db( ( db.inventory_store_item.inventory_store_id == inventory_store_id ) & \
+                      ( db.inventory_store_item.item_packet_id == db.supply_item_packet.id) & \
+                      ( db.inventory_store_item.deleted == False )
+                  ).select(db.inventory_store_item.id,
+                          db.inventory_store_item.item_id,
+                          db.inventory_store_item.quantity,
+                          db.supply_item_packet.quantity)
+    
+    req_items = db( ( db.logs_req.inventory_store_id == inventory_store_id ) & \
+                    ( db.logs_req.id == db.logs_req_item.logs_req_id) & \
+                    ( db.logs_req_item.item_packet_id == db.supply_item_packet.id) & \
+                    ( db.logs_req_item.deleted == False ) 
+                   ).select(db.logs_req_item.id,
+                            db.logs_req_item.req_id,
+                            db.logs_req_item.item_id,
+                            db.logs_req_item.quantity,
+                            db.logs_req_item.quantity_fulfil,
+                            db.supply_item_packet.quantity,
+                            orderby = db.logs_req.date_require | db.logs_req.date,
+                            groupby = db.logs_req_item.item_id 
+                            )    
+
+    store_items_dict = store_items.as_dict( key = "inventory_store_item.item_id")
+    req_items_dict = req_items.as_dict( key = "logs_req_item.item_id")
+
+    for recv_item in recv_items:
+        recv_item_id = recv_item.logs_recv_item.item_id
+        if recv_item_id in store_items_dict.keys():
+            # This item already exists in the store, and the quantity must be incremeneted
+            store_item = Storage(store_items_dict[recv_item_id])
+            store_item_id = store_item.inventory_store_item["id"]
+
+            # Convert the recv items packet into the store item packet
+            quantity = store_item.inventory_store_item["quantity"] + \
+                       (recv_item.supply_item_packet.quantity / \
+                        store_item.supply_item_packet["quantity"]) * \
+                        recv_item.logs_recv_item.quantity
+            item = dict(quantity = quantity)
+        else:
+            # This item must be added to the store
+            store_item_id = 0
+            item = dict( inventory_store_id = inventory_store_id,
+                         item_id = recv_item.logs_recv_item.item_id,
+                         quantity = recv_item.logs_recv_item.quantity,
+                         item_packet_id = recv_item.logs_recv_item.item_packet_id
+                         )            
+        # Update Store Item
+        db.inventory_store_item[store_item_id] = item
+        
+        if recv_item_id in req_items_dict.keys():
+            # This item has been requested by this store
+            
+            # Update the quantity_fulfil 
+            
+            # Update the status_fulfil of the the req 
+            
+            pass
+        
+        
+    # Update recv record
+    db.logs_recv[recv_id] = dict(datetime = request.utcnow,
+                                 status = LOGS_STATUS_RECEIVED ) 
+
+    response.confirmation = T("Received Items added to Warehouse Items")
+
+    # Go to the Warehouse which has received these items
+    redirect(URL(r = request,
+                 c = "inventory",
+                 f = "store",
+                 args = [inventory_store_id, "store_item"]
+                 )
+             )
+
 #------------------------------------------------------------------------------
 def send_process():
     send_id = request.args[0]
@@ -366,14 +433,14 @@ def send_process():
                         send_item.supply_item_packet.quantity
                         
         if send_item_quantity > store_item_quantity:
-            #This shipment is invalid
-            #flag this item
+            # This shipment is invalid
+            # flag this item
             invalid_send_item_ids.append(send_item_id)            
             
-            #Cancel this processing
+            # Cancel this processing
             cancel_send = True
         else:
-            #Update the Store Item Quantity
+            # Update the Store Item Quantity
             new_store_quantity = ( store_item_quantity - send_item_quantity) / \
                                  send_item.inventory_store_item.packet_quantity
             db.inventory_store_item[store_item_id] = dict(quantity = new_store_quantity)
@@ -391,51 +458,57 @@ def send_process():
                      )
                  )      
     else:
-        #Update Send record
+        # Update Send record
         db.logs_send[send_id] = dict(datetime = request.utcnow,
-                                     status = True )        
+                                     status = LOGS_STATUS_SENT )        
         response.confirmation = T("Items Sent from Warehouse")                  
-        #Go to the Warehouse which has sent these items
+        # Go to the Warehouse which has sent these items
         redirect(URL(r = request,
                      c = "inventory",
                      f = "store",
                      args = [inventory_store_id, "store_item"]
                      )
-                 )                    
-#==============================================================================#
+                 )
+
+#------------------------------------------------------------------------------
 def recv_sent():
+
+    """ tbc """
+
     send_id = request.args[0]
-    
+
     r_send = db.logs_send[send_id]
-    
+
     inventory_store_id = r_send.to_inventory_store_id
-    
+
     from_location_id = shn_get_db_field_value(db,
                                               "inventory_store",
                                               "location_id",
                                               r_send.inventory_store_id )
-    #create a new recv record
+
+    # Create a new recv record
     recv_id = db.logs_recv.insert(inventory_store_id = inventory_store_id,
                                   from_location_id = from_location_id)
-    
+
     sent_items = db( (db.logs_send_item.logs_send_id == send_id) & \
                      (db.logs_send_item.store_item_id == db.inventory_store_item.id) & \
                      (db.logs_send_item.deleted == False) 
                      ).select(db.inventory_store_item.item_id,
                               db.logs_send_item.item_packet_id,
                               db.logs_send_item.quantity)   
-    
-    #copy items from send to recv
+
+    # Copy items from send to recv
     for sent_item in sent_items:
         db.logs_recv_item.insert(logs_recv_id = recv_id,
                                  item_id = sent_item.inventory_store_item.item_id,
                                  item_packet_id = sent_item.logs_send_item.item_packet_id,
                                  quantity = sent_item.logs_send_item.quantity)
-    
-    #redirect to rec    
+
+    # Redirect to rec
     redirect(URL(r = request,
                  c = "logs",
                  f = "recv",
                  args = [recv_id]
                  )
-             )     
+             )
+#==============================================================================#

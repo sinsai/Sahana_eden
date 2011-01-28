@@ -35,6 +35,7 @@
         "plugins/LayerSource.js",
         "plugins/BingSource.js",
         "plugins/WMSSource.js",
+        "plugins/WMSCSource.js",
         //"plugins/OSMSource.js",
         "plugins/TMSSource.js",
         "plugins/GoogleSource.js",
@@ -54,13 +55,12 @@
         "plugins/LayerTree.js",
         "plugins/AddLayers.js",
         "plugins/RemoveLayer.js",
-        "plugins/Measure.js",
-        "plugins/Navigation.js",
         "plugins/NavigationHistory.js",
         "plugins/Zoom.js",
-        "plugins/ZoomToExtent.js"
-        "plugins/ZoomToDataExtent.js"
-        "plugins/ZoomToSelectedFeatures.js"
+        "plugins/ZoomToExtent.js",
+        "plugins/ZoomToSelectedFeatures.js",
+        "plugins/Measure.js",
+        "plugins/Navigation.js"
     );
     
     var scripts = document.getElementsByTagName("script");

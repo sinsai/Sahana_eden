@@ -28,8 +28,8 @@ Ext.namespace("gxp.plugins");
  */   
 gxp.plugins.FeatureGrid = Ext.extend(gxp.plugins.Tool, {
     
-    /** api: ptype = gx_featuregrid */
-    ptype: "gx_featuregrid",
+    /** api: ptype = gxp_featuregrid */
+    ptype: "gxp_featuregrid",
 
     /** api: config[featureManager]
      *  ``String`` The id of the :class:`gxp.plugins.FeatureManager` to use
@@ -64,7 +64,7 @@ gxp.plugins.FeatureGrid = Ext.extend(gxp.plugins.Tool, {
         // unselect, won't be added to the map
         var selectControl = new OpenLayers.Control.SelectFeature(featureManager.featureLayer);
         config = Ext.apply({
-            xtype: "gx_featuregrid",
+            xtype: "gxp_featuregrid",
             sm: new GeoExt.grid.FeatureSelectionModel({
                 selectControl: selectControl,
                 singleSelect: false,
@@ -95,7 +95,7 @@ gxp.plugins.FeatureGrid = Ext.extend(gxp.plugins.Tool, {
                     featureManager.previousPage();
                 }
             }, {
-                iconCls: "gx-icon-zoom-to",
+                iconCls: "gxp-icon-zoom-to",
                 ref: "../zoomToPageButton",
                 disabled: true,
                 hidden: featureManager.autoZoomPage,

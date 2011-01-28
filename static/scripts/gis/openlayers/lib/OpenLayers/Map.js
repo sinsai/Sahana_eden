@@ -1,13 +1,15 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
 
 /**
+ * @requires OpenLayers/BaseTypes/Class.js
  * @requires OpenLayers/Util.js
  * @requires OpenLayers/Events.js
  * @requires OpenLayers/Tween.js
  * @requires OpenLayers/Console.js
+ * @requires OpenLayers/Lang.js
  */
 
 /**
@@ -513,7 +515,7 @@ OpenLayers.Map = OpenLayers.Class({
         this.viewPortDiv.appendChild(this.layerContainerDiv);
 
         this.events = new OpenLayers.Events(this, 
-                                            this.div, 
+                                            this.viewPortDiv, 
                                             this.EVENT_TYPES, 
                                             this.fallThrough, 
                                             {includeXY: true});
@@ -610,7 +612,6 @@ OpenLayers.Map = OpenLayers.Class({
     render: function(div) {
         this.div = OpenLayers.Util.getElement(div);
         OpenLayers.Element.addClass(this.div, 'olMap');
-        this.events.attachToElement(this.div);
         this.viewPortDiv.parentNode.removeChild(this.viewPortDiv);
         this.div.appendChild(this.viewPortDiv);
         this.updateSize();
@@ -942,6 +943,7 @@ OpenLayers.Map = OpenLayers.Class({
         }
 
         this.events.triggerEvent("addlayer", {layer: layer});
+		layer.events.triggerEvent("added", {map: this, layer: layer});
         layer.afterAdd();
     },
 
@@ -1016,6 +1018,7 @@ OpenLayers.Map = OpenLayers.Class({
         this.resetLayersZIndex();
 
         this.events.triggerEvent("removelayer", {layer: layer});
+		layer.events.triggerEvent("removed", {map: this, layer: layer})
     },
 
     /**
@@ -1798,7 +1801,7 @@ OpenLayers.Map = OpenLayers.Class({
      */
     isValidZoomLevel: function(zoomLevel) {
         return ( (zoomLevel != null) &&
-                (zoomLevel >= this.getRestrictedMinZoom()) &&
+                (zoomLevel >= this.getRestrictedMinZoom()) && 
                 (zoomLevel < this.getNumZoomLevels()) );
     },
     
@@ -1903,20 +1906,21 @@ OpenLayers.Map = OpenLayers.Class({
     },
     
     /**
-     * Method: getRestrictedMinZoom 
- 	 * 
- 	 * Returns: 
- 	 * {Integer} the minimum zoom level allowed for the current baseLayer. 
- 	 */ 
- 	getRestrictedMinZoom: function() { 
-        var minZoom = null; 
-        if (this.baseLayer != null) { 
-            minZoom = this.baseLayer.restrictedMinZoom; 
-        } 
-        return minZoom; 
- 	}, 
-
- 	/*** APIMethod: getNumZoomLevels
+     * Method: getRestricteMinZoom
+     *
+     * Returns:
+     * {Integer} the minimum zoom level allowed for the current baseLayer.
+     */
+    getRestrictedMinZoom: function() {
+        var minZoom = null;
+        if (this.baseLayer != null) {
+            minZoom = this.baseLayer.restrictedMinZoom;
+        }
+        return minZoom;
+    },
+    
+    /**
+     * APIMethod: getNumZoomLevels
      * 
      * Returns:
      * {Integer} The total number of zoom levels that can be displayed by the 

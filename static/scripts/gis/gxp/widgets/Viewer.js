@@ -30,7 +30,7 @@ Ext.namespace("gxp");
  *      var app = new gxp.Viewer({
  *          sources: {
  *              osm: {
- *                  ptype: "gx_osmsource"
+ *                  ptype: "gxp_osmsource"
  *              }
  *          },
  *          map: {
@@ -115,9 +115,9 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
      
     /** api: config[defaultToolType]
      *  ``String``
-     *  The default tool plugin type. Default is "gx_tool"
+     *  The default tool plugin type. Default is "gxp_tool"
      */
-    defaultToolType: "gx_tool",
+    defaultToolType: "gxp_tool",
 
     /** api: config[tools]
      *  ``Array(`` :class:`gxp.plugins.Tool` ``)``
@@ -297,7 +297,7 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
     },
     
     addLayerSource: function(options) {
-        var id = options.id || Ext.id(null, "gx-source-");
+        var id = options.id || Ext.id(null, "gxp-source-");
         var source;
         try {
             source = Ext.ComponentMgr.createPlugin(

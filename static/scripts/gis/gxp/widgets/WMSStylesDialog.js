@@ -267,7 +267,7 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
             items: {
                 border: false,
                 items: {
-                    xtype: "gx_stylepropertiesdialog",
+                    xtype: "gxp_stylepropertiesdialog",
                     userStyle: userStyle.clone(),
                     // styles that came from the server
                     // have a name that we don't change
@@ -476,7 +476,7 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
             autoHeight: true,
             modal: true,
             items: [{
-                xtype: "gx_rulepanel",
+                xtype: "gxp_rulepanel",
                 symbolType: this.symbolType,
                 rule: rule,
                 attributes: new GeoExt.data.AttributeStore({
@@ -580,7 +580,7 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
                 userStyle = userStyles[i];
                 // remove existing record - this way we replace styles from
                 // userStyles with inline styles.
-                var index = this.stylesStore.find("name", userStyle.name)
+                index = this.stylesStore.find("name", userStyle.name);
                 index !== -1 && this.stylesStore.removeAt(index);
                 record = new this.stylesStore.recordType({
                     "name": userStyle.name,
@@ -838,7 +838,7 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
      *  event. Updates the layer and the rules fieldset.
      */
     changeStyle: function(record, options) {
-        options = options || {}
+        options = options || {};
         var legend = this.items.get(2).items.get(0);
         this.selectedStyle = record;
         this.updateStyleRemoveButton();            
@@ -885,7 +885,7 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
             this.symbolType = typeHierarchy[highest];
         }
         var legend = this.items.get(2).add({
-            xtype: "gx_vectorlegend",
+            xtype: "gxp_vectorlegend",
             showTitle: false,
             rules: rules,
             symbolType: this.symbolType,
@@ -926,5 +926,5 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
     
 });
 
-/** api: xtype = gx_wmsstylesdialog */
-Ext.reg('gx_wmsstylesdialog', gxp.WMSStylesDialog);
+/** api: xtype = gxp_wmsstylesdialog */
+Ext.reg('gxp_wmsstylesdialog', gxp.WMSStylesDialog);

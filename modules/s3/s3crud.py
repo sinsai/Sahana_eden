@@ -77,6 +77,7 @@ class S3CRUD(S3Method):
         self.settings = self.manager.s3.crud
 
         # Pre-populate create-form?
+        self.data = None
         if r.http == "GET" and not self.record:
             populate = attr.pop("populate", None)
             if callable(populate):
@@ -201,6 +202,10 @@ class S3CRUD(S3Method):
                         r.error(404, self.resource.ERROR.BAD_RESOURCE)
                 else:
                     from_table = table
+                try:
+                    from_record = long(from_record)
+                except:
+                    r.error(404, self.resource.ERROR.BAD_RECORD)
                 authorised = self.permit("read",
                                          from_table._tablename,
                                          from_record)

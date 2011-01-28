@@ -3300,7 +3300,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     markerLayer = ""
 
                 if "opacity" in layer:
-                    opacity = layer["popup_url"]
+                    opacity = layer["opacity"]
                 else:
                     opacity = 1
 
@@ -3480,7 +3480,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     if marker_url:
                         layers_features += """
         styleMarker.iconURL = '""" + marker_url + """';
-        styleMarker.opacity = '""" + opacity + """';
+        styleMarker.opacity = '""" + str(opacity) + """';
         // Need unique names
         // More reliable & faster to use the height/width calculated on upload
         var i = new Array();
@@ -3492,7 +3492,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         layers_features += """
         var i = '';
         styleMarker.iconURL = '';
-        styleMarker.opacity = '""" + opacity + """';
+        styleMarker.opacity = '""" + str(opacity) + """';
         styleMarker.graphicName = '""" + graphicName + """';
         styleMarker.pointRadius = """ + str(pointRadius) + """;
         styleMarker.fillColor = '""" + fillColor + """';

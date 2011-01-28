@@ -294,17 +294,17 @@
                 style_marker.graphicName = styleMarker.graphicName;
                 style_marker.pointRadius = styleMarker.pointRadius;
                 style_marker.fillColor = styleMarker.fillColor;
-                style_marker.fillOpacity = 0.5;
+                style_marker.fillOpacity = styleMarker.opacity;
                 style_marker.strokeColor = styleMarker.fillColor;
                 style_marker.strokeWidth = 2;
-                style_marker.strokeOpacity = 1;
+                style_marker.strokeOpacity = styleMarker.opacity;
             } else {
                 // Set icon dims (set in onload)
                 style_marker.graphicWidth = image.width;
                 style_marker.graphicHeight = image.height;
                 style_marker.graphicXOffset = -(image.width / 2);
                 style_marker.graphicYOffset = -image.height;
-                style_marker.graphicOpacity = 1;
+                style_marker.graphicOpacity = styleMarker.opacity;
                 style_marker.externalGraphic = styleMarker.iconURL;
             }
             // Create Feature Vector

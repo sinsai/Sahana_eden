@@ -1803,6 +1803,11 @@ def geoexplorer():
         else:
             markerLayer = ""
 
+        if "opacity" in layer:
+            opacity = layer["opacity"]
+        else:
+            opacity = 1
+
         if "popup_url" in layer:
             _popup_url = urllib.unquote(layer["popup_url"])
         else:
@@ -1990,6 +1995,7 @@ def geoexplorer():
             if marker_url:
                 layers_features += """
             styleMarker.iconURL = '""" + marker_url + """';
+            styleMarker.opacity = '""" + str(opacity) + """';
             // Need unique names
             // More reliable & faster to use the height/width calculated on upload
             var i = new Array();
@@ -2001,6 +2007,7 @@ def geoexplorer():
                 layers_features += """
             var i = '';
             styleMarker.iconURL = '';
+            styleMarker.opacity = '""" + str(opacity) + """';
             styleMarker.graphicName = '""" + graphicName + """';
             styleMarker.pointRadius = """ + str(pointRadius) + """;
             styleMarker.fillColor = '""" + fillColor + """';

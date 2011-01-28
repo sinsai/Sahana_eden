@@ -12,7 +12,7 @@
 
 /** api: (define)
  *  module = gxp.plugins
- *  class = OSMSource
+ *  class = MapQuestSource
  */
 
 /** api: (extends)
@@ -21,11 +21,11 @@
 Ext.namespace("gxp.plugins");
 
 /** api: constructor
- *  .. class:: OSMSource(config)
+ *  .. class:: MapQuestSource(config)
  *
- *    Plugin for using OpenStreetMap layers with :class:`gxp.Viewer` instances.
+ *    Plugin for using MapQuest layers with :class:`gxp.Viewer` instances.
  *
- *    Available layer names are "mapnik" and "osmarender"
+ *    Available layer names are "osm" and "naip"
  */
 /** api: example
  *  The configuration in the ``sources`` property of the :class:`gxp.Viewer` is
@@ -33,8 +33,8 @@ Ext.namespace("gxp.plugins");
  *
  *  .. code-block:: javascript
  *
- *    "osm": {
- *        ptype: "gxp_osmsource"
+ *    "mapquest": {
+ *        ptype: "gxp_mapquestsource"
  *    }
  *
  *  A typical configuration for a layer from this source (in the ``layers``
@@ -43,38 +43,50 @@ Ext.namespace("gxp.plugins");
  *  .. code-block:: javascript
  *
  *    {
- *        source: "osm",
- *        name: "osmarander"
+ *        source: "mapquest",
+ *        name: "osm"
  *    }
  *
  */
-gxp.plugins.OSMSource = Ext.extend(gxp.plugins.LayerSource, {
+gxp.plugins.MapQuestSource = Ext.extend(gxp.plugins.LayerSource, {
     
-    /** api: ptype = gxp_osmsource */
-    ptype: "gxp_osmsource",
+    /** api: ptype = gxp_mapquestsource */
+    ptype: "gxp_mapquestsource",
 
     /** api: property[store]
-     *  ``GeoExt.data.LayerStore``. Will contain records with "mapnik" and
-     *  "osmarender" as name field values.
+     *  ``GeoExt.data.LayerStore``. Will contain records with "osm" and
+     *  "naip" as name field values.
      */
     
     /** api: config[title]
      *  ``String``
      *  A descriptive title for this layer source (i18n).
      */
-    title: "OpenStreetMap Layers",
+    title: "MapQuest Layers",
 
-    /** api: config[mapnikAttribution]
+    /** api: config[osmAttribution]
      *  ``String``
-     *  Attribution string for mapnik generated layer (i18n).
+     *  Attribution string for OSM generated layer (i18n).
      */
-    mapnikAttribution: "Data CC-By-SA by <a href='http://openstreetmap.org/' target='_blank'>OpenStreetMap</a>",
+    osmAttribution: "Tiles Courtesy of <a href='http://open.mapquest.co.uk/' target='_blank'>MapQuest</a> <img src='http://developer.mapquest.com/content/osm/mq_logo.png' border='0'>",
 
-    /** api: config[homeAttribution]
+    /** api: config[osmTitle]
      *  ``String``
-     *  Attribution string for osmarender generated layer (i18n).
+     *  Title for OSM generated layer (i18n).
      */
-    osmarenderAttribution: "Data CC-By-SA by <a href='http://openstreetmap.org/' target='_blank'>OpenStreetMap</a>",
+    osmTitle: "MapQuest OpenStreetMap",
+
+    /** api: config[naipAttribution]
+     *  ``String``
+     *  Attribution string for NAIP generated layer (i18n).
+     */
+    naipAttribution: "Tiles Courtesy of <a href='http://open.mapquest.co.uk/' target='_blank'>MapQuest</a> <img src='http://developer.mapquest.com/content/osm/mq_logo.png' border='0'>",
+
+    /** api: config[naipTitle]
+     *  ``String``
+     *  Title for NAIP generated layer (i18n).
+     */
+    naipTitle: "MapQuest Imagery",
 
     /** api: method[createStore]
      *
@@ -96,27 +108,29 @@ gxp.plugins.OSMSource = Ext.extend(gxp.plugins.LayerSource, {
         
         var layers = [
             new OpenLayers.Layer.OSM(
-                "OpenStreetMap",
+                this.osmTitle,
                 [
-                    "http://a.tile.openstreetmap.org/${z}/${x}/${y}.png",
-                    "http://b.tile.openstreetmap.org/${z}/${x}/${y}.png",
-                    "http://c.tile.openstreetmap.org/${z}/${x}/${y}.png"
+                    "http://otile1.mqcdn.com/tiles/1.0.0/osm/${z}/${x}/${y}.png",
+                    "http://otile2.mqcdn.com/tiles/1.0.0/osm/${z}/${x}/${y}.png",
+                    "http://otile3.mqcdn.com/tiles/1.0.0/osm/${z}/${x}/${y}.png",
+                    "http://otile4.mqcdn.com/tiles/1.0.0/osm/${z}/${x}/${y}.png"
                 ],
                 OpenLayers.Util.applyDefaults({                
-                    attribution: this.mapnikAttribution,
-                    type: "mapnik"
+                    attribution: this.osmAttribution,
+                    type: "osm"
                 }, options)
             ),
             new OpenLayers.Layer.OSM(
-                "Tiles@home",
+                this.naipTitle,
                 [
-                    "http://a.tah.openstreetmap.org/Tiles/tile/${z}/${x}/${y}.png",
-                    "http://b.tah.openstreetmap.org/Tiles/tile/${z}/${x}/${y}.png",
-                    "http://c.tah.openstreetmap.org/Tiles/tile/${z}/${x}/${y}.png"
+                    "http://oatile1.mqcdn.com/naip/${z}/${x}/${y}.png",
+                    "http://oatile2.mqcdn.com/naip/${z}/${x}/${y}.png",
+                    "http://oatile3.mqcdn.com/naip/${z}/${x}/${y}.png",
+                    "http://oatile4.mqcdn.com/naip/${z}/${x}/${y}.png"
                 ],
-                OpenLayers.Util.applyDefaults({                
-                    attribution: this.osmarenderAttribution,
-                    type: "osmarender"
+                OpenLayers.Util.applyDefaults({
+                    attribution: this.naipAttribution,
+                    type: "naip"
                 }, options)
             )
         ];
@@ -185,4 +199,4 @@ gxp.plugins.OSMSource = Ext.extend(gxp.plugins.LayerSource, {
 
 });
 
-Ext.preg(gxp.plugins.OSMSource.prototype.ptype, gxp.plugins.OSMSource);
+Ext.preg(gxp.plugins.MapQuestSource.prototype.ptype, gxp.plugins.MapQuestSource);

@@ -128,6 +128,9 @@
                 url: "http://geo.eden.sahanafoundation.org/geoserver/ows",
                 title: "Remote Sahana GeoServer"
             },
+            mapquest: {
+                ptype: "gxp_mapquestsource"
+            },
             osm: {
                 ptype: 'gxp_tmssource'
             },
@@ -173,6 +176,10 @@
             }, {
                 source: 'osm',
                 name: 'mapnik',
+                group: 'background'
+            }, {
+                source: 'mapquest',
+                name: 'osm',
                 group: 'background'
             }, {
                 source: 'ol',

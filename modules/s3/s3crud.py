@@ -694,11 +694,12 @@ class S3CRUD(S3Method):
             numrows = self.resource.delete(ondelete=ondelete,
                                            format=representation)
             if numrows > 1:
-                response.confirmation = "%s %s" % \
-                                        (numrows, T("records deleted"))
+                message = "%s %s" % (numrows, T("records deleted"))
+            elif numrows == 1:
+                message = self.crud_string(self.tablename, "msg_record_deleted")
             else:
-                response.confirmation = self.crud_string(self.tablename,
-                                                         "msg_record_deleted")
+                r.error(404, self.manager.error)
+            response.confirmation = message
             r.http = "DELETE"
             self.next = delete_next or r.there()
 
@@ -706,7 +707,12 @@ class S3CRUD(S3Method):
             # Delete the records and return a JSON message
             numrows = self.resource.delete(ondelete=ondelete,
                                            format=representation)
-            message = "%s %s" % (numrows, T("records deleted"))
+            if numrows > 1:
+                message = "%s %s" % (numrows, T("records deleted"))
+            elif numrows == 1:
+                message = self.crud_string(self.tablename, "msg_record_deleted")
+            else:
+                r.error(404, self.manager.error)
             item = self.manager.xml.json_message(message=message)
             self.response.view = "xml.html"
             output.update(item=item)

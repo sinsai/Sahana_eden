@@ -415,12 +415,12 @@ class S3Resource(object):
             try:
                 del self.table[row.id]
             except:
-                self.manager.session.error = self.ERROR.INTEGRITY_ERROR
+                self.manager.error = self.ERROR.INTEGRITY_ERROR
             finally:
                 # We don't want to delete yet, so let's rollback
                 self.db.rollback()
 
-            if self.manager.session.error != self.ERROR.INTEGRITY_ERROR:
+            if self.manager.error != self.ERROR.INTEGRITY_ERROR:
                 # Archive record?
                 if archive_not_delete and "deleted" in self.table:
                     self.db(self.table.id == row.id).update(deleted=True)

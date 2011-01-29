@@ -2351,6 +2351,7 @@
 'One-time costs': 'One-time costs',
 'Oops! Something went wrong...': 'Oops! Something went wrong...',
 'Oops! something went wrong on our side.': 'Oops! something went wrong on our side.',
+'Opacity (1 for opaque, 0 for fully-transparent)': 'Opacity (1 for opaque, 0 for fully-transparent)',
 'Open': 'Open',
 'Open area': 'Open area',
 'Open recent': 'Open recent',

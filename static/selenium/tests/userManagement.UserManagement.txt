@@ -1,0 +1,3 @@
+test_addUser, True
+test_checkUser, True
+test_deleteUser, True

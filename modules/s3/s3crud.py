@@ -1203,6 +1203,8 @@ class S3CRUD(S3Method):
 
                 # Store session vars
                 if form.vars.id:
+                    if record_id is None:
+                        self.manager.auth.s3_make_session_owner(table, form.vars.id)
                     self.resource.lastid = str(form.vars.id)
                     self.manager.store_session(prefix, name, form.vars.id)
 

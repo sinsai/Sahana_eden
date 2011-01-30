@@ -1990,7 +1990,7 @@ class S3Request(object):
 
 
     # -------------------------------------------------------------------------
-    def error(self, status, message, tree=None):
+    def error(self, status, message, tree=None, next=None):
         """
         Action upon error
 
@@ -2004,7 +2004,10 @@ class S3Request(object):
 
         if self.representation == "html":
             self.session.error = message
-            redirect(URL(r=self.request, f="index"))
+            if next is not None:
+                redirect(next)
+            else:
+                redirect(URL(r=self.request, f="index"))
         else:
             raise HTTP(status,
                        body=xml.json_message(success=False,

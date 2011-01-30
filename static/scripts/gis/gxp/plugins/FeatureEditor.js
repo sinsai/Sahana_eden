@@ -88,6 +88,14 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
      */
     showSelectedOnly: true,
     
+    /** api: config[fields]
+     *  ``Array``
+     *  List of field config names corresponding to feature attributes.  If
+     *  not provided, fields will be derived from attributes. If provided,
+     *  the field order from this list will be used, and fields missing in the
+     *  list will be excluded.
+     */
+
     /** api: config[excludeFields]
      *  ``Array`` Optional list of field names (case sensitive) that are to be
      *  excluded from the property grid of the FeatureEditPopup.
@@ -150,6 +158,10 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
                         unregisterDoIt.call(this);
                         if (fn === "setLayer") {
                             this.target.selectLayer(fnArgs[0]);
+                        } else if (fn === "clearFeatures") {
+                            // nothing asynchronous involved here, so let's
+                            // finish the caller first before we do anything.
+                            window.setTimeout(function() {mgr[fn].call(mgr);});
                         } else {
                             mgr[fn].apply(mgr, fnArgs);
                         }
@@ -173,7 +185,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
             "beforequery": intercept.createDelegate(this, "loadFeatures", 1),
             "beforelayerchange": intercept.createDelegate(this, "setLayer", 1),
             "beforesetpage": intercept.createDelegate(this, "setPage", 1),
-            "beforeclearfeatures": intercept.createDelegate(this, "cleafFeatures", 1),
+            "beforeclearfeatures": intercept.createDelegate(this, "clearFeatures", 1),
             scope: this
         });
         
@@ -273,6 +285,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
                         feature: feature,
                         vertexRenderIntent: "vertex",
                         readOnly: this.readOnly,
+                        fields: this.fields,
                         excludeFields: this.excludeFields,
                         editing: feature.state === OpenLayers.State.INSERT,
                         schema: this.schema,

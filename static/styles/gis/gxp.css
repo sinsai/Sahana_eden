@@ -65,6 +65,10 @@
     background-image: url(../../img/gis/geosilk/pan.png);
 }
 
+/* gxp_layerproperties */
+.x-btn .gxp-icon-layerproperties, .x-menu-item .gxp-icon-layerproperties {
+    background-image: url(../../img/silk/wrench.png);
+}
 /* gxp_removelayer */
 .x-btn .gxp-icon-removelayers, .x-menu-item .gxp-icon-removelayers {
     background-image: url(../../img/gis/silk/delete.png);
@@ -118,4 +122,12 @@
 /* fixes textarea scrollbar issue in FF on OSX */
 .ext-gecko.ext-mac textarea.x-form-field {
     padding: 1px 2px;
+}
+
+.x-tree-node img.gxp-folder, .x-tree-node-collapsed img.gxp-folder{
+    background: url(../../scripts/ext/resources/images/default/tree/folder.gif);
+}
+
+.x-tree-node-expanded img.gxp-folder {
+    background: url(../../scripts/ext/resources/images/default/tree/folder-open.gif);
 }

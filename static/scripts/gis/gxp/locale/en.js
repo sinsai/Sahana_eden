@@ -3,7 +3,12 @@ GeoExt.Lang.add("en", {
 
     "gxp.plugins.AddLayers.prototype": {
         addMenuText: "Add layers",
-        addActionTip: "Add layers"
+        addActionTip: "Add layers",
+        addServerText: "Add a New Server",
+        untitledText: "Untitled",
+        addLayerSourceErrorText: "Error getting WMS capabilities ({msg}).\nPlease check the url and try again.",
+        availableLayersText: "Available Layers",
+        doneText: "Done"
     },
     
     "gxp.plugins.BingSource.prototype": {
@@ -19,7 +24,12 @@ GeoExt.Lang.add("en", {
     },
     
     "gxp.plugins.FeatureGrid.prototype": {
-        displayFeatureText: "Display on map"
+        displayFeatureText: "Display on map",
+        firstPageTip: "First page",
+        previousPageTip: "Previous page",
+        zoomPageExtentTip: "Zoom to page extent",
+        nextPageTip: "Next page",
+        nextPageTip: "Last page"
     },
     
     "gxp.plugins.GoogleSource.prototype": {
@@ -28,6 +38,11 @@ GeoExt.Lang.add("en", {
         satelliteAbstract: "Show satellite imagery",
         hybridAbstract: "Show imagery with street names",
         terrainAbstract: "Show street map with terrain"
+    },
+
+    "gxp.plugins.LayerProperties.prototype": {
+        menuText: "Layer Properties",
+        toolTip: "Layer Properties"
     },
     
     "gxp.plugins.LayerTree.prototype": {
@@ -58,9 +73,16 @@ GeoExt.Lang.add("en", {
 
     "gxp.plugins.OSMSource.prototype": {
         title: "OpenStreetMap Layers",
-        mapQuestAttribution: "Tiles Courtesy of <a href='http://open.mapquest.co.uk/' target='_blank'>MapQuest</a> <img src='http://developer.mapquest.com/content/osm/mq_logo.png' border='0'>",
         mapnikAttribution: "Data CC-By-SA by <a href='http://openstreetmap.org/'>OpenStreetMap</a>",
         osmarenderAttribution: "Data CC-By-SA by <a href='http://openstreetmap.org/'>OpenStreetMap</a>"
+    },
+
+    "gxp.plugins.MapQuestSource.prototype": {
+        title: "MapQuest Layers",
+        osmAttribution: "Tiles Courtesy of <a href='http://open.mapquest.co.uk/' target='_blank'>MapQuest</a> <img src='http://developer.mapquest.com/content/osm/mq_logo.png' border='0'>",
+        osmTitle: "MapQuest OpenStreetMap",
+        naipAttribution: "Tiles Courtesy of <a href='http://open.mapquest.co.uk/' target='_blank'>MapQuest</a> <img src='http://developer.mapquest.com/content/osm/mq_logo.png' border='0'>",
+        naipTitle: "MapQuest Imagery"
     },
 
     "gxp.plugins.QueryForm.prototype": {
@@ -69,7 +91,11 @@ GeoExt.Lang.add("en", {
         queryActionTip: "Query the selected layer",
         queryByLocationText: "Query by location",
         currentTextText: "Current extent",
-        queryByAttributesText: "Query by attributes"
+        queryByAttributesText: "Query by attributes",
+        queryMsg: "Querying...",
+        cancelButtonText: "Cancel",
+        noFeaturesTitle: "No Match",
+        noFeaturesMessage: "Your query did not return any results."
     },
 
     "gxp.plugins.RemoveLayer.prototype": {
@@ -95,6 +121,11 @@ GeoExt.Lang.add("en", {
     },
     
     "gxp.plugins.ZoomToDataExtent.prototype": {
+        menuText: "Zoom to layer extent",
+        tooltip: "Zoom to layer extent"
+    },
+
+    "gxp.plugins.ZoomToLayerExtent.prototype": {
         menuText: "Zoom to layer extent",
         tooltip: "Zoom to layer extent"
     },

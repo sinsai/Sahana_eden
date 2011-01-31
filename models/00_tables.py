@@ -54,8 +54,12 @@ meta_deletion_status = S3ReusableField("deleted", "boolean",
                                        writable=False,
                                        default=False)
 
+meta_deletion_fk = S3ReusableField("deleted_fk",
+                                   readable=False,
+                                   writable=False)
+
 def s3_deletion_status():
-    return (meta_deletion_status(),)
+    return (meta_deletion_status(), meta_deletion_fk())
 
 meta_created_on = S3ReusableField("created_on", "datetime",
                                   readable=False,
@@ -105,6 +109,7 @@ def s3_meta_fields():
     fields = (meta_uuidstamp(),
               meta_mci(),
               meta_deletion_status(),
+              meta_deletion_fk(),
               meta_created_on(),
               meta_modified_on(),
               meta_created_by(),

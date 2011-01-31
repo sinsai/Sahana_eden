@@ -449,9 +449,9 @@ def shn_represent_file(file_name,
 
 
 # -----------------------------------------------------------------------------
-def s3_represent_multiref(table, opt, represent=None):
+def s3_represent_multiref(table, opt, represent=None, separator=", "):
 
-    """ @todo: docstring?? """
+    """ Produce a representation for a list:reference field. """
 
     if represent is None:
         if "name" in table.fields:
@@ -465,13 +465,27 @@ def s3_represent_multiref(table, opt, represent=None):
         query = query & (table.deleted == False)
 
     records = db(query).select()
-    try:
-        options = [represent(r) for r in records]
-    except TypeError:
-        options = [represent % r for r in records]
 
-    if options:
-        return ", ".join(options)
+    if records:
+        try:
+            first = represent(records[0])
+            rep_function = represent
+        except TypeError:
+            first = represent % records[0]
+            rep_function = lambda r: represent % r
+
+        # NB join only operates on strings, and some callers provide A().
+        results = [first]
+        for record in records[1:len(records)-1]:
+            results.append(separator)
+            results.append(rep_function(record))
+
+        # Wrap in XML to allow showing anchors on read-only pages, else
+        # Web2py will escape the angle brackets, etc. The single-record
+        # location represent produces A() (unless told not to), and we
+        # want to show links if we can.
+        return XML(DIV(*results))
+
     else:
         return UNKNOWN_OPT
 

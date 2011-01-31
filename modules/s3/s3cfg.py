@@ -107,26 +107,54 @@ class S3Config(Storage):
             return db_string
 
     # GIS (Map) Settings
-    def get_gis_locations_hierarchy(self, level=None):
-        if level:
-            locations_hierarchy = self.gis.get("locations_hierarchy")
-            if locations_hierarchy:
-                try:
-                    return locations_hierarchy[level]
-                except:
-                    return None
-            else:
-                return None
-        else:
+
+    # All levels, or name of a specific level. Includes non-hierarchy levels.
+    # Serves as represent for level.
+    def get_gis_all_levels(self, level=None):
+        from gluon.contrib.simplejson.ordered_dict import OrderedDict
+        all_levels = self.gis.get("all_levels")
+        if not all_levels:
             T = self.T
-            gis_location_hierarchy = {
-                "L0":T("Country"),
-                "L1":T("Province"),
-                "L2":T("District"),
-                "L3":T("Town"),
-                "L4":T("Village")
-            }
-            return self.gis.get("locations_hierarchy", gis_location_hierarchy)
+            all_levels = OrderedDict([
+                ("L0", T("Country")),
+                ("L1", T("Province")),
+                ("L2", T("District")),
+                ("L3", T("Town")),
+                ("L4", T("Village")),
+                ("L5", T("Neighbourhood")),
+                ("GR", T("Location Group")),
+                ("XX", T("Imported")),
+            ])
+        if level:
+            try:
+                return all_levels[level]
+            except:
+                return level
+        else:
+            return all_levels
+
+    # Location hierarchy, or name of a specific level.
+    def get_gis_locations_hierarchy(self, level=None):
+        from gluon.contrib.simplejson.ordered_dict import OrderedDict
+        locations_hierarchy = self.gis.get("locations_hierarchy")
+        if not locations_hierarchy:
+            T = self.T
+            locations_hierarchy = OrderedDict([
+                ("L0", T("Country")),
+                ("L1", T("Province")),
+                ("L2", T("District")),
+                ("L3", T("Town")),
+                ("L4", T("Village")),
+                #("L5", T("Neighbourhood")),
+            ])
+        if level:
+            try:
+                return locations_hierarchy[level]
+            except:
+                return level
+        else:
+            return locations_hierarchy
+
     def get_gis_max_hierarchy(self):
         location_hierarchy = self.get_gis_locations_hierarchy()
         if "L5" in location_hierarchy:
@@ -166,6 +194,8 @@ class S3Config(Storage):
         return self.gis.get("edit_L4", True)
     def get_gis_edit_l5(self):
         return self.gis.get("edit_L5", True)
+    def get_gis_edit_group(self):
+        return self.gis.get("edit_GR", False)
     def get_gis_marker_max_height(self):
         return self.gis.get("marker_max_height", 35)
     def get_gis_marker_max_width(self):

@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -253,8 +253,9 @@ OpenLayers.Format.WFST.v1 = OpenLayers.Class(OpenLayers.Format.XML, {
                 
                 // add in geometry
                 if (this.geometryName !== null) {
+                    this.srsName = this.getSrsName(feature);
                     this.writeNode(
-                        "Property", {name: this.geometryName, value: feature}, node
+                        "Property", {name: this.geometryName, value: feature.geometry}, node
                     );
                 }
         
@@ -287,10 +288,9 @@ OpenLayers.Format.WFST.v1 = OpenLayers.Class(OpenLayers.Format.XML, {
             },
             "Value": function(obj) {
                 var node;
-                if(obj instanceof OpenLayers.Feature.Vector) {
+                if(obj instanceof OpenLayers.Geometry) {
                     node = this.createElementNSPlus("wfs:Value");
-                    this.srsName = this.getSrsName(obj);
-                    var geom = this.writeNode("feature:_geometry", obj.geometry).firstChild;
+                    var geom = this.writeNode("feature:_geometry", obj).firstChild;
                     node.appendChild(geom);
                 } else {
                     node = this.createElementNSPlus("wfs:Value", {value: obj});                

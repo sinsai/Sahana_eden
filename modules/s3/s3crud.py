@@ -663,7 +663,7 @@ class S3CRUD(S3Method):
 
         # Check if deletable
         if not deletable:
-            r.error(403, self.manager.ERROR.NOT_PERMITTED)
+            r.error(403, self.manager.ERROR.NOT_PERMITTED, next=r.there())
 
         # Check permission to delete
         authorised = self.permit("delete", self.tablename, record_id)
@@ -675,7 +675,7 @@ class S3CRUD(S3Method):
         if not authorised:
             r.unauthorised()
 
-        elif r.http == "GET" and not record_id:
+        elif r.interactive and r.http == "GET" and not record_id:
             # Provide a confirmation form and a record list
             form = FORM(TABLE(TR(
                         TD(self.settings.confirm_delete,
@@ -688,8 +688,8 @@ class S3CRUD(S3Method):
             output.update(items=items)
             response.view = self._view(r, "delete.html")
 
-        elif r.http == "POST" or \
-             r.http == "GET" and record_id:
+        elif r.interactive and (r.http == "POST" or
+                                r.http == "GET" and record_id):
             # Delete the records, notify success and redirect to the next view
             numrows = self.resource.delete(ondelete=ondelete,
                                            format=representation)
@@ -698,9 +698,9 @@ class S3CRUD(S3Method):
             elif numrows == 1:
                 message = self.crud_string(self.tablename, "msg_record_deleted")
             else:
-                r.error(404, self.manager.error)
+                r.error(404, self.manager.error, next=r.there())
             response.confirmation = message
-            r.http = "DELETE"
+            r.http = "DELETE" # must be set for immediate redirect
             self.next = delete_next or r.there()
 
         elif r.http == "DELETE":
@@ -712,7 +712,7 @@ class S3CRUD(S3Method):
             elif numrows == 1:
                 message = self.crud_string(self.tablename, "msg_record_deleted")
             else:
-                r.error(404, self.manager.error)
+                r.error(404, self.manager.error, next=r.there())
             item = self.manager.xml.json_message(message=message)
             self.response.view = "xml.html"
             output.update(item=item)
@@ -1203,6 +1203,8 @@ class S3CRUD(S3Method):
 
                 # Store session vars
                 if form.vars.id:
+                    if record_id is None:
+                        self.manager.auth.s3_make_session_owner(table, form.vars.id)
                     self.resource.lastid = str(form.vars.id)
                     self.manager.store_session(prefix, name, form.vars.id)
 

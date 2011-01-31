@@ -498,14 +498,15 @@ def shn_gis_location_represent_row(location, showlink=True):
 def shn_gis_location_represent(id, showlink=True):
     """ Represent a location given its id """
     try:
-        location = db(db.gis_location.id == id).select(db.gis_location.name,
+        location = db(db.gis_location.id == id).select(db.gis_location.id,
+                                                       db.gis_location.name,
                                                        db.gis_location.level,
                                                        db.gis_location.parent,
                                                        db.gis_location.lat,
                                                        db.gis_location.lon,
                                                        cache=(cache.ram, 60),
                                                        limitby=(0, 1)).first()
-        return shn_gis_location_represent_row(location, showlink)
+        represent = shn_gis_location_represent_row(location, showlink)
     except:
         try:
             # "Invalid" => data consistency wrong
@@ -1128,7 +1129,7 @@ s3.crud_strings[tablename] = Storage(
 # Reusable field to include in other table definitions
 track_id = S3ReusableField("track_id", db.gis_track, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_track.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.gis_track.id == id).select(db.gis_track.name, limitby=(0, 1)).first().name] or [NONE])[0],
+                represent = lambda id: (id and [db(db.gis_track.id == id).select(db.gis_track.name, limitby=(0, 1)).first().name] or [l])[0],
                 label = T("Track"),
                 comment = DIV(A(ADD_TRACK, _class="colorbox", _href=URL(r=request, c="gis", f="track", args="create", vars=dict(format="popup")), _target="top", _title=ADD_TRACK),
                           DIV( _class="tooltip", _title=T("GPX Track") + "|" + T("A file downloaded from a GPS containing a series of geographic points in XML format."))),

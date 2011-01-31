@@ -2770,6 +2770,8 @@ def proxy():
 
             msg = y.read()
             y.close()
+            # Required for WMS Browser to work in IE
+            response.headers["Content-Type"] = "text/xml"
             return msg
         else:
             # Bad Request

@@ -389,6 +389,8 @@ class TestWindow(Frame):
             java = os.path.join(os.environ["JAVA_HOME"], "bin", "java")
         else:
             java = "java"
+        # http://wiki.openqa.org/display/SIDE/record+and+assert+Ext+JS
+        #args = [java, r"-jar", r"selenium-server.jar", r"-userExtensions", r"user-extensions.js", r"-singlewindow", "-port", "%s" % self.ipPort.get()]
         args = [java, r"-jar", r"selenium-server.jar", r"-singlewindow", "-port", "%s" % self.ipPort.get()]
         if self.radioLog.get() == "File":
             args.append("-log")

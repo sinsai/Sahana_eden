@@ -497,14 +497,16 @@ def shn_gis_location_represent_row(location, showlink=True):
 
 def shn_gis_location_represent(id, showlink=True):
     """ Represent a location given its id """
+    table = db.gis_location
     try:
-        location = db(db.gis_location.id == id).select(db.gis_location.name,
-                                                       db.gis_location.level,
-                                                       db.gis_location.parent,
-                                                       db.gis_location.lat,
-                                                       db.gis_location.lon,
-                                                       cache=(cache.ram, 60),
-                                                       limitby=(0, 1)).first()
+        location = db(db.gis_location.id == id).select(table.id,
+                                                        table.name,
+                                                        table.level,
+                                                        table.parent,
+                                                        table.lat,
+                                                        table.lon,
+                                                        cache=(cache.ram, 60),
+                                                        limitby=(0, 1)).first()
         return shn_gis_location_represent_row(location, showlink)
     except:
         try:

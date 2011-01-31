@@ -202,7 +202,7 @@ deployment_settings.security.archive_not_delete = True
 deployment_settings.modules = OrderedDict([
     ("default", Storage(
             name_nice = T("Home"),
-            restricted = False, # Use ACLs to control access to this module (currently deactivated)
+            restricted = False, # Use ACLs to control access to this module
             access = None,      # All Users (inc Anonymous) can see this module in the default menu & access the controller
             module_type = 0     # This item is always 1st in the menu
         )),
@@ -330,7 +330,7 @@ deployment_settings.modules = OrderedDict([
     ("hms", Storage(
             name_nice = T("Hospitals"),
             description = T("Helps to monitor status of hospitals"),
-            restricted = False,
+            restricted = True,
             module_type = 10,
             resources = Storage(
                 hms_hospital = {"importer" : True}

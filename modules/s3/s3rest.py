@@ -423,7 +423,24 @@ class S3Resource(object):
             if self.manager.error != self.ERROR.INTEGRITY_ERROR:
                 # Archive record?
                 if archive_not_delete and "deleted" in self.table:
-                    self.db(self.table.id == row.id).update(deleted=True)
+                    fields = dict(deleted=True)
+                    if "deleted_fk" in self.table:
+                        # "Park" foreign keys to resolve constraints,
+                        # "un-delete" will have to restore valid FKs from this field!
+                        record = self.table[row.id]
+                        fk = []
+                        for f in self.table.fields:
+                            ftype = str(self.table[f].type)
+                            if record[f] is not None and \
+                               (ftype[:9] == "reference" or \
+                                ftype[:14] == "list:reference"):
+                                fk.append(dict(f=f, k=record[f]))
+                                fields.update({f:None})
+                            else:
+                                continue
+                        if fk:
+                            fields.update(deleted_fk=json.dumps(fk))
+                    self.db(self.table.id == row.id).update(**fields)
                     numrows += 1
                     self.audit("delete", self.prefix, self.name,
                                 record=row.id, representation=format)

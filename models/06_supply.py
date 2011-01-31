@@ -153,11 +153,7 @@ if deployment_settings.has_module("logs"):
                                  _target="top", 
                                  _id = "item_packet_add",
                                  _style = "display: none",
-                                 ),
-                                 IMG(_src = "/" + request.application + "/static/img/ajax-loader.gif",
-                                     _id = "item_packet_loader_img",
-                                     _style = "display:none;"
-                                      ),                                     
+                                 ),                               
                 SCRIPT("""
     function ItemIDChange() {                
         var selSubField = $('[name = "item_packet_id"]');
@@ -166,8 +162,8 @@ if deployment_settings.has_module("logs"):
         $('[id$="item_packet_id__row"]').show();        
         
         /* Show Throbber */
-        selSubField.after('<img src="/eden/static/img/ajax-loader.gif" id="item_packet_loader_img">');
-        selSubField.hide();
+        selSubField.after('<div id="item_packet_ajax_throbber" class="ajax_throbber style="display:inline;"/>')
+                   .hide();
         
         if ($('[name = "item_id"]').length != 0) {
             url = '/eden/supply/item_packet.json?item_packet.item_id=' + $('[name = "item_id"]').val();
@@ -188,9 +184,11 @@ if deployment_settings.has_module("logs"):
                     options += '<option value="' +  data[i].id + '">' + data[i].name + ' (' + data[i].quantity + ')</option>';
                 }                
             }
-            selSubField.html(options);  
-            selSubField.val(1); /* default value */       
-            selSubField.show(); 
+            
+            /* 1 = default value */
+            selSubField.html(options)  
+                       .val(1)        
+                       .show(); 
             
             /* Show "Add" Button & modify link */  
             href = $('#item_packet_add').attr('href') + "&item_id=" + $('[name = "item_id"]').val();
@@ -198,7 +196,7 @@ if deployment_settings.has_module("logs"):
             $('#item_packet_add').show();
             
             /* Hide Throbber */
-            $('#item_packet_loader_img').remove();
+            $('#item_packet_ajax_throbber').hide();
             
             if ( typeof ItemPacketIDChange == "function" ) {
                 ItemPacketIDChange();

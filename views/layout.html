@@ -59,6 +59,9 @@ body { min-width: 800px; }
 {{pass}}
 {{pass}}
 
+<!-- Include specific js scripts -->  
+{{=response.js}}
+
 {{try:}}
   {{if jr.representation == "popup":}}
     {{representation = "popup"}}

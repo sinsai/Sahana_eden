@@ -72,13 +72,10 @@ def store():
                                   multiple=True,
                                   joinby=dict( inventory_store = "to_inventory_store_id" )
                                   )
-        # This would filter warehouses, not shipments:
-        #response.s3.filter = db.logs_send.status == True
-        # Better place it in prep to get the component join into the query:
         def prep(r):
             if r.component_name == "send":
                 response.s3.filter = (db.logs_send.status == True)
-                # Should we hide the Add button for incoming shipments?
+                # Hide the Add button for incoming shipments?
                 s3xrc.model.configure(r.component.table, insertable=False)
             return True
         response.s3.prep = prep
@@ -96,8 +93,7 @@ def store():
         s3.crud_strings["logs_send"].update(
             msg_record_modified = T("Sent Shipment updated"),
             msg_record_deleted = T("Sent Shipment canceled"),
-            msg_list_empty = T("No Sent Shipments"))
-
+            msg_list_empty = T("No Sent Shipments"))       
 
     s3xrc.model.configure(table, create_next=URL(r=request,
                                                  c=module, f=resourcename,

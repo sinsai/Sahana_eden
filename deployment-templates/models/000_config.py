@@ -16,6 +16,9 @@ FINISHED_EDITING_CONFIG_FILE = False # change to True after you finish editing t
 if not FINISHED_EDITING_CONFIG_FILE:
     raise HTTP(501, body="Please edit models/000_config.py first")
 
+from gluon.storage import Storage
+from gluon.contrib.simplejson.ordered_dict import OrderedDict
+
 deployment_settings = s3base.S3Config(T)
 
 # Database settings
@@ -130,20 +133,19 @@ deployment_settings.gis.display_L0 = False
 # Currently unused
 #deployment_settings.gis.display_L1 = True
 # Allow non-MapAdmins to edit Admin locations?
-# (defaults to True, if not set)
+# (Defaults to True, if not set. Permission to edit location groups defaults
+# to false.)
 deployment_settings.gis.edit_L0 = False
 deployment_settings.gis.edit_L1 = True
 #deployment_settings.gis.edit_L2 = True
-deployment_settings.gis.locations_hierarchy = {
-    "L0":T("Country"),
-    "L1":T("Province"),
-    "L2":T("District"),
-    "L3":T("Town"),
-    "L4":T("Village"),
-    #"L5":T("Neighbourhood"),   # Currently not supported by testSuite
-    "XX":T("Imported"),         # Filtered from view as no detailed information & many duplicates (e.g. coming from Ushahidi)
-    "GR":T("Location Group"),
-}
+deployment_settings.gis.locations_hierarchy = OrderedDict([
+    ("L0", T("Country")),
+    ("L1", T("Province")),
+    ("L2", T("District")),
+    ("L3", T("Town")),
+    ("L4", T("Village")),
+    #("L5", T("Neighbourhood")),  # Currently not supported by testSuite
+])
 # Should we require locations to follow strict hierarchy?
 deployment_settings.gis.strict_hierarchy = False
 # Maximum Marker Size
@@ -197,8 +199,6 @@ deployment_settings.security.archive_not_delete = True
 
 # Comment/uncomment modules here to disable/enable them
 # Modules menu is defined in 01_menu.py
-from gluon.storage import Storage
-from gluon.contrib.simplejson.ordered_dict import OrderedDict
 deployment_settings.modules = OrderedDict(
     default = Storage(
             name_nice = T("Home"),

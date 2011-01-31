@@ -146,23 +146,16 @@ def location():
             table.wkt.comment = DIV(_class="stickytip",
                                     _title="WKT|" + T("The" + " <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>" + T("Well-Known Text") + "</a> " + "representation of the Polygon/Line."))
 
-        if not deployment_settings.get_security_map() or s3_has_role("MapAdmin"):
-            table.members.comment = DIV(
-                _class="tooltip",
-                _title=T("Members") + "|" + T("A location group is a set of administrative regions -- member locations are added to a location group here. Location groups are used to restrict what is shown on the map and in search results to only entities in one of the regions in the group. A location group can be used to define the extent of an affected area, if it does not fall iwithin one administrative region. Location groups can be used in the Regions menu."))
-
         if r.method == "update":
-            # Don't allow converting a location group to non-group and vice
-            # versa.  Don't allow taking away all the members of a group.
-            # Note: Non-interactive operations are restricted too.
-            # Note: The "notnull" setting gets the "required" * displayed,
-            # but does not seem to apply during validation, so the field is
-            # checked explicitly in onvalidation.
-            # @ToDo: There seem to be some other settings in the "interactive"
-            # section that might apply to non-interactive requests.
+            # We don't allow converting a location group to non-group and
+            # vice versa. We also don't allow taking away all the members of
+            # a group -- setting "notnull" gets the "required" * displayed.
+            # Groups don't have parents. (This is all checked in onvalidation.)
             location = get_location_info()
             if location.level == "GR":
                 table.level.writable = False
+                table.parent.readable = False
+                table.parent.writable = False
                 table.members.notnull = True
                 # Record that this is a group location. Since we're setting
                 # level to not writable, it won't be in either form.vars or
@@ -172,6 +165,7 @@ def location():
             else:
                 table.members.writable = False
                 table.members.readable = False
+                response.s3.location_is_group = False
 
         # Don't show street address, postcode for hierarchy on read or update.
         if r.method != "create" and r.id:
@@ -262,10 +256,7 @@ def location():
                     try:
                         location
                     except:
-                        location = db(db.gis_location.id == r.id).select(
-                            db.gis_location.lat,
-                            db.gis_location.lon,
-                            db.gis_location.level, limitby=(0, 1)).first()
+                        location = get_location_info()
                     if location and location.lat is not None and location.lon is not None:
                         lat = location.lat
                         lon = location.lon
@@ -289,23 +280,6 @@ def location():
                 vars.update(_map=_map)
         return True
     response.s3.prep = lambda r, vars=vars: prep(r, vars)
-
-    # For location groups, set the level to "GR" if members are present.
-    # If it's already a group, don't allow clearing the members. (In general,
-    # once it's a group, it stays a group, and existing non-group locations
-    # can't be converted to groups. Latter was prevented by making members
-    # not readable or writable for non-group location update.)
-    def onvalidation(form):
-
-        # Set "group" level if the location has members.
-        if "members" in form.vars and form.vars.members:
-            form.vars.level = "GR"
-            return
-
-        # Is this a location group? Make sure no-one takes away all members.
-        if "location_is_group" in response.s3 and \
-           "members" in form.vars and not form.vars.members:
-            form.errors["members"] = T("A location group must have at least one member.")
 
     # Options
     _vars = request.vars
@@ -354,8 +328,6 @@ def location():
     if level:
         # We've been called from the Location Selector widget
         table.addr_street.readable = table.addr_street.writable = False
-
-    s3xrc.model.configure(table, onvalidation=onvalidation)
 
     output = s3_rest_controller(module, resourcename)
 

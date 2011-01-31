@@ -108,19 +108,45 @@ class S3Config(Storage):
 
     # GIS (Map) Settings
 
-    # Location hierarchy, or name of a specific level. Serves as represent
-    # for level.
+    # All levels, or name of a specific level. Includes non-hierarchy levels.
+    # Serves as represent for level.
+    def get_gis_all_levels(self, level=None):
+        from gluon.contrib.simplejson.ordered_dict import OrderedDict
+        all_levels = self.gis.get("all_levels")
+        if not all_levels:
+            T = self.T
+            all_levels = OrderedDict([
+                ("L0", T("Country")),
+                ("L1", T("Province")),
+                ("L2", T("District")),
+                ("L3", T("Town")),
+                ("L4", T("Village")),
+                ("L5", T("Neighbourhood")),
+                ("GR", T("Location Group")),
+                ("XX", T("Imported")),
+            ])
+        if level:
+            try:
+                return all_levels[level]
+            except:
+                return level
+        else:
+            return all_levels
+
+    # Location hierarchy, or name of a specific level.
     def get_gis_locations_hierarchy(self, level=None):
+        from gluon.contrib.simplejson.ordered_dict import OrderedDict
         locations_hierarchy = self.gis.get("locations_hierarchy")
         if not locations_hierarchy:
             T = self.T
-            locations_hierarchy = {
-                "L0":T("Country"),
-                "L1":T("Province"),
-                "L2":T("District"),
-                "L3":T("Town"),
-                "L4":T("Village")
-            }
+            locations_hierarchy = OrderedDict([
+                ("L0", T("Country")),
+                ("L1", T("Province")),
+                ("L2", T("District")),
+                ("L3", T("Town")),
+                ("L4", T("Village")),
+                #("L5", T("Neighbourhood")),
+            ])
         if level:
             try:
                 return locations_hierarchy[level]
@@ -168,6 +194,8 @@ class S3Config(Storage):
         return self.gis.get("edit_L4", True)
     def get_gis_edit_l5(self):
         return self.gis.get("edit_L5", True)
+    def get_gis_edit_group(self):
+        return self.gis.get("edit_GR", False)
     def get_gis_marker_max_height(self):
         return self.gis.get("marker_max_height", 35)
     def get_gis_marker_max_width(self):

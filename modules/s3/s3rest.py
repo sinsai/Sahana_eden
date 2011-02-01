@@ -2,7 +2,7 @@
 
 """ RESTful API (S3XRC)
 
-    @version: 2.3.3
+    @version: 2.3.4
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
@@ -10,7 +10,7 @@
 
     @author: Dominic König <dominic[at]aidiq.com>
 
-    @copyright: 2009-2010 (c) Sahana Software Foundation
+    @copyright: 2009-2011 (c) Sahana Software Foundation
     @license: MIT
 
     Permission is hereby granted, free of charge, to any person
@@ -51,6 +51,7 @@ from gluon.tools import callback
 
 from lxml import etree
 from s3tools import SQLTABLES3
+from s3import import S3Importer
 
 # *****************************************************************************
 class S3Resource(object):
@@ -414,12 +415,12 @@ class S3Resource(object):
             try:
                 del self.table[row.id]
             except:
-                self.manager.session.error = self.ERROR.INTEGRITY_ERROR
+                self.manager.error = self.ERROR.INTEGRITY_ERROR
             finally:
                 # We don't want to delete yet, so let's rollback
                 self.db.rollback()
 
-            if self.manager.session.error != self.ERROR.INTEGRITY_ERROR:
+            if self.manager.error != self.ERROR.INTEGRITY_ERROR:
                 # Archive record?
                 if archive_not_delete and "deleted" in self.table:
                     self.db(self.table.id == row.id).update(deleted=True)
@@ -449,6 +450,8 @@ class S3Resource(object):
 
         @todo: permission check
         @todo: audit
+
+        @status: uncompleted
 
         """
 
@@ -834,10 +837,10 @@ class S3Resource(object):
                 else:
                     model = self.manager.model
                     search_simple = model.get_method(self.prefix, self.name,
-                                                    method="search_simple")
+                                                     method="search_simple")
                     if search_simple:
                         redirect(URL(r=r.request, f=self.name, args="search_simple",
-                                    vars={"_next": r.same()}))
+                                     vars={"_next": r.same()}))
                     else:
                         r.session.error = self.ERROR.BAD_RECORD
                         redirect(URL(r=r.request, c=self.prefix, f=self.name))
@@ -904,11 +907,11 @@ class S3Resource(object):
         if postprocess is not None:
             output = postprocess(r, output)
         if output is not None and isinstance(output, dict):
-            # Put a copy of r into the output for the View to be able to make use of
+            # Put a copy of r into the output for the view to be able to make use of it
             output.update(jr=r)
 
-        # Redirection (makes no sense in GET)
-        if r.next is not None and r.http != "GET":
+        # Redirection
+        if r.next is not None and (r.http != "GET" or r.method == "clear"):
             if isinstance(output, dict):
                 form = output.get("form", None)
                 if form and form.errors:
@@ -932,14 +935,11 @@ class S3Resource(object):
         """
 
         method = r.method
-        #permit = self.permit
-
         model = self.manager.model
 
         tablename = r.component and r.component.tablename or r.tablename
 
         if method is None or method in ("read", "display"):
-            #authorised = permit("read", tablename)
             if self.__transformable(r):
                 method = "export_tree"
             elif r.component:
@@ -963,22 +963,11 @@ class S3Resource(object):
                     method = "list"
 
         elif method in ("create", "update"):
-            #authorised = permit(method, tablename)
-            # @todo 2.3: Add user confirmation here:
             if self.__transformable(r, method="import"):
                 method = "import_tree"
 
-        #elif method == "copy":
-            #authorised = permit("create", tablename)
-
         elif method == "delete":
             return self.__delete(r)
-
-        #elif method in ("options", "fields", "search", "barchart"):
-            #authorised = permit("read", tablename)
-
-        elif method in ("options", "fields", "search", "copy", "barchart"):
-            pass
 
         elif method == "clear" and not r.component:
             self.manager.clear_session(self.prefix, self.name)
@@ -995,14 +984,8 @@ class S3Resource(object):
                              vars=request_vars)
             else:
                 r.next = URL(r=r.request, f=self.name)
-            return None
+            return lambda r, **attr: None
 
-        else:
-            r.error(501, self.ERROR.BAD_METHOD)
-
-        #if not authorised:
-            #r.unauthorised()
-        #else:
         return self.get_handler(method)
 
 
@@ -1015,14 +998,7 @@ class S3Resource(object):
 
         """
 
-        #permit = self.permit
-
         if self.__transformable(r, method="import"):
-            #authorised = permit("create", self.tablename) and \
-                         #permit("update", self.tablename)
-            #if not authorised:
-                #r.unauthorised()
-            #else:
             return self.get_handler("import_tree")
         else:
             r.error(501, self.ERROR.BAD_FORMAT)
@@ -1064,14 +1040,6 @@ class S3Resource(object):
         @param r: the S3Request
 
         """
-
-        #permit = self.permit
-
-        #tablename = r.component and r.component.tablename or r.tablename
-
-        #authorised = permit("delete", tablename)
-        #if not authorised:
-            #r.unauthorised()
 
         return self.get_handler("delete")
 
@@ -1219,28 +1187,25 @@ class S3Resource(object):
         self.files = Storage()
         content_type = r.request.env.get("content_type", None)
 
+        source = []
         if content_type and content_type.startswith("multipart/"):
-
-            # Get all attached files from POST
-            for p in r.request.post_vars.values():
+            ext = ".%s" % r.representation
+            vars = r.request.post_vars
+            for v in vars:
+                p = vars[v]
                 if isinstance(p, cgi.FieldStorage) and p.filename:
                     self.files[p.filename] = p.file
-
-            # Find the source
-            source_name = "%s.%s" % (r.name, r.representation)
-            post_vars = r.request.post_vars
-            source = post_vars.get(source_name, None)
-            if isinstance(source, cgi.FieldStorage):
-                if source.filename:
-                    source = source.file
-                else:
-                    source = source.value
-            if isinstance(source, basestring):
-                source = StringIO.StringIO(source)
+                    if p.filename.endswith(ext):
+                        source.append(tuple(v, p.file))
+                elif v.endswith(ext):
+                    if isinstance(p, cgi.FieldStorage):
+                        source.append(tuple(v, p.value))
+                    elif isinstance(p, basestring):
+                        source.append(tuple(v, StringIO.StringIO(p)))
         else:
-            # Body is source
-            source = r.request.body
-            source.seek(0)
+            s = r.request.body
+            s.seek(0)
+            source.append(s)
 
         return source
 
@@ -1248,77 +1213,110 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def __put_tree(self, r, **attr):
         """
-        Import XML/JSON data
+        Import data using the XML Importer (transformable XML/JSON/CSV formats)
 
         @param r: the S3Request
         @param attr: the request attributes
 
-        @todo: use the importer!
-
         """
 
         xml = self.xml
-        vars = r.request.vars
+        vars = Storage(r.request.vars)
+        auth = self.manager.auth
 
+        # Find all source names in the URL vars
+        def findnames(vars, name):
+            nlist = []
+            if name in vars:
+                names = vars[name]
+                if isinstance(names, (list, tuple)):
+                    names = ",".join(names)
+                names = names.split(",")
+                for n in names:
+                    if n[0] == "(" and ")" in n[1:]:
+                        nlist.append(n[1:].split(")", 1))
+                    else:
+                        nlist.append([None, n])
+            return nlist
+
+        filenames = findnames(vars, "filename")
+        fetchurls = findnames(vars, "fetchurl")
+
+        # Generate sources list
         json_formats = self.manager.json_formats
+        csv_formats = self.manager.csv_formats
 
         # Get the source
-        if r.representation in json_formats:
-            if "filename" in vars:
-                source = open(vars["filename"])
-            elif "fetchurl" in vars:
+        source = []
+        format = r.representation
+        if format in json_formats or \
+           format in csv_formats:
+            if filenames:
+                try:
+                    for f in filenames:
+                        source.append((f[0], open(f[1], "rb")))
+                except:
+                    source = []
+            elif fetchurls:
                 import urllib
-                source = urllib.urlopen(vars["fetchurl"])
+                try:
+                    for u in fetchurls:
+                        source.append((u[0], urllib.urlopen(u[1])))
+                except:
+                    source = []
             else:
                 source = self.__read_body(r)
-            format = r.representation
-            if format == "json":
-                format = None
-            tree = xml.json2tree(source, format=format)
         else:
-            if "filename" in vars:
-                source = vars["filename"]
-            elif "fetchurl" in vars:
-                source = vars["fetchurl"]
+            if filenames:
+                source = filenames
+            elif fetchurls:
+                source = fetchurls
             else:
                 source = self.__read_body(r)
-            tree = xml.parse(source)
-        if not tree:
-            r.error(400, xml.error)
+
+        if not source:
+            r.error(400, "Invalid source")
 
         # Find XSLT stylesheet
-        template = self.stylesheet(r, method="import")
+        stylesheet = self.stylesheet(r, method="import")
 
-        # Transform source
-        if template:
-            tfmt = "%Y-%m-%d %H:%M:%S"
-            args = dict(domain=self.manager.domain,
-                        base_url=self.manager.s3.base_url,
-                        prefix=self.prefix,
-                        name=self.name,
-                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
-            tree = xml.transform(tree, template, **args)
-            if not tree:
-                r.error(400, "XSLT Transformation Error: %s" % self.xml.error)
-
+        # Target IDs
         if r.method == "create":
             id = None
         else:
             id = r.id
+
+        # Skip invalid records?
         if "ignore_errors" in r.request.vars:
             ignore_errors = True
         else:
             ignore_errors = False
 
-        success = self.manager.import_tree(self, id, tree,
-                                             ignore_errors=ignore_errors)
-
-        if success:
-            item = xml.json_message()
+        # Transformation mode?
+        if "xsltmode" in r.request.vars:
+            args = dict(mode=request.vars["xsltmode"])
         else:
-            tree = xml.tree2json(tree)
-            r.error(400, self.manager.error, tree=tree)
-        return item
+            args = dict()
+
+        # Format type?
+        if format in json_formats:
+            format = "json"
+        elif format in csv_formats:
+            format = "csv"
+        else:
+            format = "xml"
+
+        # Import!
+        importer = S3Importer(self.manager)
+        try:
+            return importer.xml(self, source,
+                                id=id,
+                                format=format,
+                                stylesheet=stylesheet,
+                                ignore_errors=ignore_errors,
+                                **args)
+        except IOError:
+            auth.permission.fail()
 
 
     # XML functions ===========================================================

@@ -10,7 +10,7 @@
     @author: Fran Boon <francisboon[at]gmail.com>
     @author: Timothy Caro-Bruce <tcarobruce[at]gmail.com>
 
-    @copyright: (c) 2010 Sahana Software Foundation
+    @copyright: (c) 2010-2011 Sahana Software Foundation
     @license: MIT
 
     Permission is hereby granted, free of charge, to any person
@@ -272,7 +272,7 @@ class GIS(object):
             min_lat = 90
             max_lon = -180
             max_lat = -90
-    
+
             for feature in features:
 
                 # Skip features without lon, lat.
@@ -425,7 +425,7 @@ class GIS(object):
             return None
 
     # -----------------------------------------------------------------------------
-    def get_feature_layer(self, prefix, resourcename, layername, popup_label, config=None, marker_id=None, filter=None, active=True, polygons=False):
+    def get_feature_layer(self, prefix, resourcename, layername, popup_label, config=None, marker_id=None, filter=None, active=True, polygons=False, opacity=1):
         """
         Return a Feature Layer suitable to display on a map
         @param layername: used as the label in the LayerSwitcher
@@ -491,9 +491,9 @@ class GIS(object):
 
             try:
                 marker = db(_markers.id == marker_id).select(_markers.image, _markers.height, _markers.width, _markers.id, limitby=(0, 1), cache=cache).first()
-                layer = {"name":layername, "query":locations, "active":active, "marker":marker, "popup_url": popup_url, "polygons": polygons}
+                layer = {"name":layername, "query":locations, "active":active, "marker":marker, "opacity": opacity, "popup_url": popup_url, "polygons": polygons}
             except:
-                layer = {"name":layername, "query":locations, "active":active, "popup_url": popup_url, "polygons": polygons}
+                layer = {"name":layername, "query":locations, "active":active, "opacity": opacity, "popup_url": popup_url, "polygons": polygons}
 
             return layer
 
@@ -533,10 +533,10 @@ class GIS(object):
         lon_max = locations.lon_max
         lat_min = locations.lat_min
         lat_max = locations.lat_max
-        
+
         table = db[tablename]
         deployment_settings = self.deployment_settings
-        
+
         query = (table.location_id == locations.id)
         if "deleted" in table.fields:
             query = query & (table.deleted == False)
@@ -2049,12 +2049,12 @@ OpenLayers.Util.extend( selectPdfControl, {
                 // Read current settings from map
                 var lonlat = map.getCenter();
                 var zoom_current = map.getZoom();
-                if (zoom_current < 14 ) {
+                if ( zoom_current < 14 ) {
                     zoom_current = 14;
                 }
                 // Convert back to LonLat for saving
                 lonlat.transform(map.getProjectionObject(), proj4326);
-                var url = '""" + URL(r=request, f="potlatch2", args="potlatch2.html") + """?lat=' + lonlat.lat + '&lon=' + lonlat.lon + "&zoom=" + zoom_current;
+                var url = '""" + URL(r=request, f="potlatch2", args="potlatch2.html") + """?lat=' + lonlat.lat + '&lon=' + lonlat.lon + '&zoom=' + zoom_current;
                 window.open(url);
             }
         });
@@ -2630,7 +2630,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     // Size for Unclustered Point
                     var pix = 12;
                     // Size for Clustered Point
-                    if(feature.cluster) {
+                    if (feature.cluster) {
                         pix = Math.min(feature.attributes.count/2, 8) + 12;
                     }
                     return pix;
@@ -2639,7 +2639,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     // fillColor for Unclustered Point
                     var color = '#f5902e';
                     // fillColor for Clustered Point
-                    if(feature.cluster) {
+                    if (feature.cluster) {
                         color = '#8087ff';
                     }
                     return color;
@@ -2648,7 +2648,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     // strokeColor for Unclustered Point
                     var color = '#f5902e';
                     // strokeColor for Clustered Point
-                    if(feature.cluster) {
+                    if (feature.cluster) {
                         color = '#2b2f76';
                     }
                     return color;
@@ -2657,7 +2657,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     // Label For Unclustered Point or Cluster of just 2
                     var label = '';
                     // Label For Clustered Point
-                    if(feature.cluster && feature.attributes.count > 2) {
+                    if (feature.cluster && feature.attributes.count > 2) {
                         label = feature.attributes.count;
                     }
                     return label;
@@ -3144,19 +3144,17 @@ OpenLayers.Util.extend( selectPdfControl, {
                 style_marker.graphicName = styleMarker.graphicName;
                 style_marker.pointRadius = styleMarker.pointRadius;
                 style_marker.fillColor = styleMarker.fillColor;
-                style_marker.fillOpacity = 0.5;
+                style_marker.fillOpacity = styleMarker.opacity;
                 style_marker.strokeColor = styleMarker.fillColor;
                 style_marker.strokeWidth = 2;
-                style_marker.strokeOpacity = 1;
+                style_marker.strokeOpacity = styleMarker.opacity;
             } else {
                 // Set icon dims (set in onload)
-                width = image.width;
-                height = image.height;
-                style_marker.graphicOpacity = 1;
-                style_marker.graphicWidth = width;
-                style_marker.graphicHeight = height;
-                style_marker.graphicXOffset = -(width / 2);
-                style_marker.graphicYOffset = -height;
+                style_marker.graphicWidth = image.width;
+                style_marker.graphicHeight = image.height;
+                style_marker.graphicXOffset = -(image.width / 2);
+                style_marker.graphicYOffset = -image.height;
+                style_marker.graphicOpacity = styleMarker.opacity;
                 style_marker.externalGraphic = styleMarker.iconURL;
             }
             // Create Feature Vector
@@ -3174,7 +3172,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             var feature = event.feature;
             var id = 'featureLayerPopup';
             centerPoint = feature.geometry.getBounds().getCenterLonLat();
-            if(feature.cluster) {
+            if (feature.cluster) {
                 // Cluster
                 var name, fid, uuid, url;
                 var html = '""" + T("There are multiple records at this location") + """:<ul>';
@@ -3210,7 +3208,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     id,
                     centerPoint,
                     new OpenLayers.Size(200, 200),
-                    "Loading...<img src='""" + URL(r=request, c="static", f="img", args="ajax-loader.gif") + """' border=0>",
+                    """ + '"' + T("Loading") + """...<img src='""" + URL(r=request, c="static", f="img", args="ajax-loader.gif") + """' border=0>",
                     null,
                     true,
                     onPopupClose
@@ -3300,6 +3298,11 @@ OpenLayers.Util.extend( selectPdfControl, {
                         markerLayer = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1), cache=cache).first()
                 else:
                     markerLayer = ""
+
+                if "opacity" in layer:
+                    opacity = layer["opacity"]
+                else:
+                    opacity = 1
 
                 if "popup_url" in layer:
                     _popup_url = urllib.unquote(layer["popup_url"])
@@ -3477,6 +3480,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     if marker_url:
                         layers_features += """
         styleMarker.iconURL = '""" + marker_url + """';
+        styleMarker.opacity = '""" + str(opacity) + """';
         // Need unique names
         // More reliable & faster to use the height/width calculated on upload
         var i = new Array();
@@ -3488,6 +3492,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         layers_features += """
         var i = '';
         styleMarker.iconURL = '';
+        styleMarker.opacity = '""" + str(opacity) + """';
         styleMarker.graphicName = '""" + graphicName + """';
         styleMarker.pointRadius = """ + str(pointRadius) + """;
         styleMarker.fillColor = '""" + fillColor + """';
@@ -3515,7 +3520,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 layers_features += """
         featureLayer""" + name_safe + """.addFeatures(features);
         """
-            # Append to Features section
+            # Append to allLayers
             layers_features += """
         allLayers = allLayers.concat(featureLayers);
         """
@@ -3530,8 +3535,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_kml = ""
         if catalogue_overlays:
             # GeoRSS
-            query = (db.gis_layer_georss.enabled == True) # No deletable field
-            georss_enabled = db(query).select()
+            georss_enabled = db(db.gis_layer_georss.enabled == True).select()
             if georss_enabled:
                 layers_georss += """
         var georssLayers = new Array();
@@ -3926,10 +3930,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             # Coordinate Grid
             coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select(db.gis_layer_coordinate.name, db.gis_layer_coordinate.visible, db.gis_layer_coordinate.role_required)
             if coordinate_enabled:
+                layer = coordinate_enabled.first()
                 if layer.role_required and not auth.s3_has_role(layer.role_required):
                     pass
                 else:
-                    layer = coordinate_enabled.first()
                     name = layer["name"]
                     # Generate HTML snippet
                     name_safe = re.sub("\W", "_", name)
@@ -3991,9 +3995,9 @@ OpenLayers.Util.extend( selectPdfControl, {
     function zoomToSelectedFeature(lon, lat, zoomfactor) {
         var lonlat = new OpenLayers.LonLat(lon, lat);
         // Get Current Zoom
-        currZoom = map.getZoom();
+        var currZoom = map.getZoom();
         // New Zoom
-        newZoom = currZoom + zoomfactor;
+        var newZoom = currZoom + zoomfactor;
         // Center and Zoom
         map.setCenter(lonlat, newZoom);
         // Remove Popups
@@ -4096,23 +4100,23 @@ OpenLayers.Util.extend( selectPdfControl, {
     // Supports highlightControl for All Vector Layers
     var lastFeature = null;
     var tooltipPopup = null;
-    function tooltipSelect(event){
+    function tooltipSelect(event) {
         var feature = event.feature;
-        if(feature.cluster) {
+        if (feature.cluster) {
             // Cluster
             // no tooltip
         } else {
             // Single Feature
             var selectedFeature = feature;
             // if there is already an opened details window, don\'t draw the tooltip
-            if(feature.popup != null){
+            if (feature.popup != null) {
                 return;
             }
             // if there are other tooltips active, destroy them
-            if(tooltipPopup != null){
+            if (tooltipPopup != null) {
                 map.removePopup(tooltipPopup);
                 tooltipPopup.destroy();
-                if(lastFeature != null){
+                if (lastFeature != null) {
                     delete lastFeature.popup;
                     tooltipPopup = null;
                 }
@@ -4173,7 +4177,7 @@ OpenLayers.Util.extend( selectPdfControl, {
     }
     function tooltipUnselect(event){
         var feature = event.feature;
-        if(feature != null && feature.popup != null){
+        if (feature != null && feature.popup != null) {
             map.removePopup(feature.popup);
             feature.popup.destroy();
             delete feature.popup;
@@ -4191,7 +4195,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         map.addControl(new OpenLayers.Control.Permalink());
         map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
 
-        // Popups
+        // Popups (add these after the layers)
         // onClick Popup
         popupControl = new OpenLayers.Control.SelectFeature(
             allLayers, {

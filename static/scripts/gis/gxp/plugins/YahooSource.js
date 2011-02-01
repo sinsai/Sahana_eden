@@ -54,7 +54,7 @@ Ext.namespace("gxp.plugins");
 gxp.plugins.YahooSource = Ext.extend(gxp.plugins.LayerSource, {
     
     /** api: ptype = gx_yahoosource */
-    ptype: "gx_yahoosource",
+    ptype: "gxp_yahoosource",
     
     /** config: config[timeout]
      *  ``Number``

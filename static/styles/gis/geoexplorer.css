@@ -35,14 +35,6 @@ div.map-overlay div.overlay-element {
     background-image: url(../../img/silk/help.png);
 }
 
-.x-btn .icon-addlayers {
-    background-image: url(../../img/silk/add.png);
-}
-
-.x-btn .icon-addserver {
-    background-image: url(../../img/silk/map_add.png);
-}
-
 .x-btn .icon-export {
     background-image: url(../../img/silk/map_go.png);
 }
@@ -60,14 +52,6 @@ div.map-overlay div.overlay-element {
 
 .x-btn .icon-layer-switcher {
    background-image: url(../../img/silk/layers.png);
-}
-
-.x-btn .icon-measure {
-    background-image: url(../../img/gis/geosilk/measure.png);
-}
-
-.x-btn .icon-pan { 
-    background-image: url(../../img/gis/geosilk/pan.png);
 }
 
 .x-btn .icon-properties, .x-menu-item .icon-properties {

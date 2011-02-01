@@ -67,6 +67,9 @@ function s3_gis_dropdown_select(level, force) {
         if (( 0 == level ) && ( '' == $('#gis_location_name').val() )) {
             // Clear the real location_id field
             $('#' + s3_gis_location_id).val('');
+            // Clear the Lat/Lon fields to avoid thinking that a new location is being created
+            $('#gis_location_lat').val('');
+            $('#gis_location_lon').val('');
         }
     }
 }
@@ -431,6 +434,8 @@ $(function(){
                     case 'L0':
                         // Set the L0 dropdown to this value
                         $('#gis_location_L0').val( s3_gis_id );
+                        // Populate the real location_id field
+                        $('#' + s3_gis_location_id).val( s3_gis_id );
                         // Open the L1 dropdown filtered to this parent
                         s3_gis_dropdown_select(0);
                         break;
@@ -440,12 +445,22 @@ $(function(){
                             s3_gis_path = s3_gis_path.split('/');
                             if ( s3_gis_path.length == 2 && s3_gis_path[1] == s3_gis_id) {
                                 $('#gis_location_L0').val( s3_gis_path[0] );
+                            } else {
+                                // Open only the relevant dropdowns as we have no hierarchy above that
+                                s3_gis_dropdown_select(0, true);
+                                // Set the dropdown to this value
+                                $('#gis_location_L1').val( s3_gis_id );
+                                // Populate the real location_id field
+                                $('#' + s3_gis_location_id).val( s3_gis_id );
+                                break;
                             }
                         }
                         // Open the L1 dropdown (filtered to this parent, if set)
                         s3_gis_dropdown_select(0, true);
                         // Set the L1 dropdown to this value
                         $('#gis_location_L1').val( s3_gis_id );
+                        // Populate the real location_id field
+                        $('#' + s3_gis_location_id).val( s3_gis_id );
                         // Open the L2 dropdown filtered to this parent
                         s3_gis_dropdown_select(1);
                         break;
@@ -466,6 +481,14 @@ $(function(){
                                     // Parent must be an L1
                                     s3_gis_l1 = s3_gis_path[0];
                                 }
+                            } else {
+                                // Open only the relevant dropdowns as we have no hierarchy above that
+                                s3_gis_dropdown_select(1, true);
+                                // Set the dropdown to this value
+                                $('#gis_location_L2').val( s3_gis_id );
+                                // Populate the real location_id field
+                                $('#' + s3_gis_location_id).val( s3_gis_id );
+                                break;
                             }
                         }
                         // Open the L1 dropdown (filtered to this parent, if set)
@@ -477,6 +500,8 @@ $(function(){
                         s3_gis_dropdown_select(1, true);
                         // Set the L2 dropdown to this value
                         $('#gis_location_L2').val( s3_gis_id );
+                        // Populate the real location_id field
+                        $('#' + s3_gis_location_id).val( s3_gis_id );
                         // Open the L3 dropdown filtered to this parent
                         s3_gis_dropdown_select(2);
                         break;
@@ -511,6 +536,14 @@ $(function(){
                                     // Check again as dropdowns are populated
                                     s3_gis_missing = [ s3_gis_path[0] ];
                                 }
+                            } else {
+                                // Open only the relevant dropdowns as we have no hierarchy above that
+                                s3_gis_dropdown_select(2, true);
+                                // Set the dropdown to this value
+                                $('#gis_location_L3').val( s3_gis_id );
+                                // Populate the real location_id field
+                                $('#' + s3_gis_location_id).val( s3_gis_id );
+                                break;
                             }
                         }
                         // Open the L1 dropdown (filtered to this parent, if set)
@@ -538,6 +571,8 @@ $(function(){
                         s3_gis_dropdown_select(2, true);
                         // Set the L3 dropdown to this value
                         $('#gis_location_L3').val( s3_gis_id );
+                        // Populate the real location_id field
+                        $('#' + s3_gis_location_id).val( s3_gis_id );
                         // Open the L4 dropdown filtered to this parent
                         s3_gis_dropdown_select(3);
                         break;
@@ -573,7 +608,7 @@ $(function(){
                                     // Check again as dropdowns are populated
                                     s3_gis_missing = [ s3_gis_path[0], s3_gis_path[1] ];
                                 }
-                            } else {
+                            } else if ( s3_gis_path.length == 2 && s3_gis_path[1] == s3_gis_id ) {
                                 // We have a single parent
                                 if (undefined != $('#gis_location_L0 option[value=' + s3_gis_path[0] + ']')[0]) {
                                     // Parent is an L0
@@ -582,6 +617,14 @@ $(function(){
                                     // Check again as dropdowns are populated
                                     s3_gis_missing = [ s3_gis_path[0] ];
                                 }
+                            } else {
+                                // Open only the relevant dropdowns as we have no hierarchy above that
+                                s3_gis_dropdown_select(3, true);
+                                // Set the dropdown to this value
+                                $('#gis_location_L4').val( s3_gis_id );
+                                // Populate the real location_id field
+                                $('#' + s3_gis_location_id).val( s3_gis_id );
+                                break;
                             }
                         }
                         // Open the L1 dropdown (filtered to this parent, if set)
@@ -631,6 +674,8 @@ $(function(){
                         s3_gis_dropdown_select(3, true);
                         // Set the L4 dropdown to this value
                         $('#gis_location_L4').val( s3_gis_id );
+                        // Populate the real location_id field
+                        $('#' + s3_gis_location_id).val( s3_gis_id );
                         // Open the Specific dropdown filtered to this parent
                         s3_gis_dropdown_select(4);
                         break;
@@ -682,7 +727,7 @@ $(function(){
                                     // Check again as dropdowns are populated
                                     s3_gis_missing = [ s3_gis_path[0], s3_gis_path[1] ];
                                 }
-                            } else {
+                            } else if ( s3_gis_path.length == 2 && s3_gis_path[1] == s3_gis_id ) {
                                 // We have a single parent
                                 if (undefined != $('#gis_location_L0 option[value=' + s3_gis_path[0] + ']')[0]) {
                                     // Parent is an L0
@@ -691,77 +736,87 @@ $(function(){
                                     // Check again as dropdowns are populated
                                     s3_gis_missing = [ s3_gis_path[0] ];
                                 }
+                            } else {
+                                // Open only the relevant dropdowns as we have no hierarchy above that
+                                s3_gis_dropdown_select(4, true);
+                                // Set the dropdown to this value
+                                $('#gis_location_').val( s3_gis_id );
+                                // Populate the real location_id field
+                                $('#' + s3_gis_location_id).val( s3_gis_id );
+                                break;
                             }
-                        }
-                        // Open the L1 dropdown (filtered to this parent, if set)
-                        s3_gis_dropdown_select(0, true);
-                        // Check to see if Parent is in this select
-                        if ( s3_gis_missing[0] ) {
-                            if (undefined != $('#gis_location_L1 option[value=' + s3_gis_missing[0] + ']')[0]) {
-                                s3_gis_l1 = s3_gis_missing[0];
-                            }
-                        }
-                        // Set the L1 dropdown to the parent (if we have it in the path)
-                        $('#gis_location_L1').val( s3_gis_l1 );
-                        // Open the L2 dropdown (filtered to this parent, if set)
-                        // @ToDo: Filter by grandparent?
-                        s3_gis_dropdown_select(1, true);
-                        // Check to see if Parent is in this select
-                        if ( s3_gis_missing[0] ) {
-                            if (undefined != $('#gis_location_L2 option[value=' + s3_gis_missing[0] + ']')[0]) {
-                                s3_gis_l2 = s3_gis_missing[0];
-                            } else  if ( s3_gis_missing[1] ) {
-                                if (undefined != $('#gis_location_L2 option[value=' + s3_gis_missing[1] + ']')[0]) {
-                                    s3_gis_l2 = s3_gis_missing[1];
+                            // Open the L1 dropdown
+                            s3_gis_dropdown_select(0, true);
+                            // Check to see if Parent is in this select
+                            if ( s3_gis_missing[0] ) {
+                                if (undefined != $('#gis_location_L1 option[value=' + s3_gis_missing[0] + ']')[0]) {
+                                    s3_gis_l1 = s3_gis_missing[0];
                                 }
                             }
-                        }
-                        // Set the L2 dropdown (if we have it in the path)
-                        $('#gis_location_L2').val( s3_gis_l2 );
-                        // Open the L3 dropdown filtered to this parent (if we have it in the path)
-                        s3_gis_dropdown_select(2, true);
-                        // Check to see if Parent is in this select
-                        if ( s3_gis_missing[0] ) {
-                            if (undefined != $('#gis_location_L3 option[value=' + s3_gis_missing[0] + ']')[0]) {
-                                s3_gis_l3 = s3_gis_missing[0];
-                            } else  if ( s3_gis_missing[1] ) {
-                                if (undefined != $('#gis_location_L3 option[value=' + s3_gis_missing[1] + ']')[0]) {
-                                    s3_gis_l3 = s3_gis_missing[1];
-                                } else  if ( s3_gis_missing[2] ) {
-                                    if (undefined != $('#gis_location_L3 option[value=' + s3_gis_missing[2] + ']')[0]) {
-                                        s3_gis_l3 = s3_gis_missing[2];
+                            // Set the L1 dropdown to the parent (if we have it in the path)
+                            $('#gis_location_L1').val( s3_gis_l1 );
+                            // Open the L2 dropdown (filtered to this parent, if set)
+                            // @ToDo: Filter by grandparent?
+                            s3_gis_dropdown_select(1, true);
+                            // Check to see if Parent is in this select
+                            if ( s3_gis_missing[0] ) {
+                                if (undefined != $('#gis_location_L2 option[value=' + s3_gis_missing[0] + ']')[0]) {
+                                    s3_gis_l2 = s3_gis_missing[0];
+                                } else  if ( s3_gis_missing[1] ) {
+                                    if (undefined != $('#gis_location_L2 option[value=' + s3_gis_missing[1] + ']')[0]) {
+                                        s3_gis_l2 = s3_gis_missing[1];
                                     }
                                 }
                             }
-                        }
-                        // Set the L3 dropdown (if we have it in the path)
-                        $('#gis_location_L3').val( s3_gis_l3 );
-                        // Open the L4 dropdown filtered to this parent (if we have it in the path)
-                        s3_gis_dropdown_select(3);
-                        // Check to see if Parent is in this select
-                        if ( s3_gis_missing[0] ) {
-                            if (undefined != $('#gis_location_L4 option[value=' + s3_gis_missing[0] + ']')[0]) {
-                                s3_gis_l4 = s3_gis_missing[0];
-                            } else  if ( s3_gis_missing[1] ) {
-                                if (undefined != $('#gis_location_L4 option[value=' + s3_gis_missing[1] + ']')[0]) {
-                                    s3_gis_l4 = s3_gis_missing[1];
-                                } else  if ( s3_gis_missing[2] ) {
-                                    if (undefined != $('#gis_location_L4 option[value=' + s3_gis_missing[2] + ']')[0]) {
-                                        s3_gis_l4 = s3_gis_missing[2];
-                                    } else  if ( s3_gis_missing[3] ) {
-                                        if (undefined != $('#gis_location_L4 option[value=' + s3_gis_missing[4] + ']')[0]) {
-                                            s3_gis_l4 = s3_gis_missing[3];
+                            // Set the L2 dropdown (if we have it in the path)
+                            $('#gis_location_L2').val( s3_gis_l2 );
+                            // Open the L3 dropdown filtered to this parent (if we have it in the path)
+                            s3_gis_dropdown_select(2, true);
+                            // Check to see if Parent is in this select
+                            if ( s3_gis_missing[0] ) {
+                                if (undefined != $('#gis_location_L3 option[value=' + s3_gis_missing[0] + ']')[0]) {
+                                    s3_gis_l3 = s3_gis_missing[0];
+                                } else  if ( s3_gis_missing[1] ) {
+                                    if (undefined != $('#gis_location_L3 option[value=' + s3_gis_missing[1] + ']')[0]) {
+                                        s3_gis_l3 = s3_gis_missing[1];
+                                    } else  if ( s3_gis_missing[2] ) {
+                                        if (undefined != $('#gis_location_L3 option[value=' + s3_gis_missing[2] + ']')[0]) {
+                                            s3_gis_l3 = s3_gis_missing[2];
                                         }
                                     }
                                 }
                             }
+                            // Set the L3 dropdown (if we have it in the path)
+                            $('#gis_location_L3').val( s3_gis_l3 );
+                            // Open the L4 dropdown filtered to this parent (if we have it in the path)
+                            s3_gis_dropdown_select(3);
+                            // Check to see if Parent is in this select
+                            if ( s3_gis_missing[0] ) {
+                                if (undefined != $('#gis_location_L4 option[value=' + s3_gis_missing[0] + ']')[0]) {
+                                    s3_gis_l4 = s3_gis_missing[0];
+                                } else  if ( s3_gis_missing[1] ) {
+                                    if (undefined != $('#gis_location_L4 option[value=' + s3_gis_missing[1] + ']')[0]) {
+                                        s3_gis_l4 = s3_gis_missing[1];
+                                    } else  if ( s3_gis_missing[2] ) {
+                                        if (undefined != $('#gis_location_L4 option[value=' + s3_gis_missing[2] + ']')[0]) {
+                                            s3_gis_l4 = s3_gis_missing[2];
+                                        } else  if ( s3_gis_missing[3] ) {
+                                            if (undefined != $('#gis_location_L4 option[value=' + s3_gis_missing[4] + ']')[0]) {
+                                                s3_gis_l4 = s3_gis_missing[3];
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            // Set the L4 dropdown (if we have it in the path)
+                            $('#gis_location_L4').val( s3_gis_l4 );
+                            // Open the Specific dropdown filtered to this parent
+                            s3_gis_dropdown_select(4, true);
+                            // Set the Specific dropdown to this value
+                            $('#gis_location_').val( s3_gis_id );
                         }
-                        // Set the L4 dropdown (if we have it in the path)
-                        $('#gis_location_L4').val( s3_gis_l4 );
-                        // Open the Specific dropdown filtered to this parent
-                        s3_gis_dropdown_select(4, true);
-                        // Set the Specific dropdown to this value
-                        $('#gis_location_').val( s3_gis_id );
+                        // Populate the real location_id field
+                        $('#' + s3_gis_location_id).val( s3_gis_id );
                 }
                 // Hide the search box again
                 $('#gis_location_autocomplete_div').hide();
@@ -823,11 +878,18 @@ $(function(){
                     
                     // Should we update the existing location?
                     name = $('#gis_location_ :selected').text();
-                    if ('Loading Locations...' == name) {
+                    if ( s3_gis_loading_locations.replace('<option value="">', '').replace('</option>', '') == name) {
                         // Need to distinguish between details from hierarchy & real details
-                        // @ToDo: Prompt the user for a name? Autopopulate the name?
-                        // Allow the Form's save to continue
-                        return true;
+                        // Prompt the user for a name
+                        $('#gis_location_name').after('<div id="type__error" class="error" style="display: block;">Name field is required!</div>');
+                        // Move focus to this field
+                        $('#gis_location_name').focus();
+                        if (s3_navigate_away_confirm) {
+                            // Reset the Navigation protection
+                            S3SetNavigateAwayConfirm()
+                        }
+                        // Prevent the Form's save from continuing
+                        return false;
                     } else {
                         // Check if any details have changed
                         if ((S3.gis.lat == $('#gis_location_lat').val()) && (S3.gis.lon == $('#gis_location_lon').val()) && (S3.gis.addr_street == $('#gis_location_addr_street').val().replace(/\n/g, '%0d')) && (S3.gis.postcode == $('#gis_location_postcode').val())) {

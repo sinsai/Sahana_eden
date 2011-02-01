@@ -91,7 +91,7 @@
   height: 20px !important;
   width: 20px !important;
 }
-#mappanel .potlatch {
+.x-btn-text.potlatch {
   background-image: url(../../img/gis/openstreetmap.png) !important;
   height: 20px !important;
   width: 20px !important;

@@ -4,10 +4,11 @@
 
     @author: Michael Howden <michael@aidiq.com>
     @author: Fran Boon <fran@aidiq.com>
+    @author: Dominic König <dominic@aidiq.com>
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
 
-    @copyright: 2009-2010 (c) Sahana Software Foundation
+    @copyright: 2009-2011 (c) Sahana Software Foundation
     @license: MIT
 
     Permission is hereby granted, free of charge, to any person
@@ -673,6 +674,12 @@ class S3LocationSelectorWidget(FormWidget):
         # Is full hierarchy mandatory?
         strict = deployment_settings.get_gis_strict_hierarchy()
 
+        # Navigate Away Confirm?
+        if deployment_settings.get_ui_navigate_away_confirm():
+            navigate_away_confirm = "true"
+        else:
+            navigate_away_confirm = "false"
+        
         # Main Input
         default = dict(
                         _type = "text",
@@ -707,7 +714,7 @@ class S3LocationSelectorWidget(FormWidget):
             default[level] = value
             lat = this_location.lat
             lon = this_location.lon
-            addr_street = this_location.addr_street
+            addr_street = this_location.addr_street or ""
             addr_street_encoded = ""
             if addr_street:
                 addr_street_encoded = addr_street.replace("\r\n", "%0d").replace("\r", "%0d").replace("\n", "%0d")
@@ -1043,6 +1050,7 @@ class S3LocationSelectorWidget(FormWidget):
     var s3_gis_no_calculations_error = '%s';
     var s3_gis_fill_lat = '%s';
     var s3_gis_fill_lon = '%s';
+    var s3_navigate_away_confirm = %s;
     """ % (location_id,
            max_hierarchy[1:],
            empty_set,
@@ -1060,6 +1068,7 @@ class S3LocationSelectorWidget(FormWidget):
            no_calculations_error,
            fill_lat,
            fill_lon,
+           navigate_away_confirm
           )
 
         # Labels

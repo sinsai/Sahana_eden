@@ -2,7 +2,7 @@
 
 """ XML Toolkit (S3XML)
 
-    @version: 2.3.3
+    @version: 2.3.4
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
@@ -10,7 +10,7 @@
 
     @author: Dominic König <dominic[at]aidiq.com>
 
-    @copyright: 2009-2010 (c) Sahana Software Foundation
+    @copyright: 2009-2011 (c) Sahana Software Foundation
     @license: MIT
 
     Permission is hereby granted, free of charge, to any person
@@ -38,7 +38,8 @@
 
 __all__ = ["S3XML"]
 
-import sys
+import sys, csv
+from gluon.http import *
 from gluon.storage import Storage
 from gluon.validators import IS_EMPTY_OR
 import gluon.contrib.simplejson as json
@@ -99,7 +100,10 @@ class S3XML(object):
         field="field",
         option="option",
         options="options",
-        fields="fields"
+        fields="fields",
+        table="table",
+        row="row",
+        col="col"
     )
 
     ATTRIBUTE = Storage(
@@ -129,7 +133,8 @@ class S3XML(object):
         type="type",
         readable="readable",
         writable="writable",
-        has_options="has_options"
+        has_options="has_options",
+        tuid="tuid"
     )
 
     ACTION = Storage(
@@ -714,6 +719,10 @@ class S3XML(object):
                 continue
 
             uids = r.get(self.UID, None)
+            attr = self.UID
+            if not uids:
+                uids = r.get(self.ATTRIBUTE.tuid, None)
+                attr = self.ATTRIBUTE.tuid
             if uids and multiple:
                 uids = uids.strip("|").split("|")
             elif uids:
@@ -741,7 +750,7 @@ class S3XML(object):
                         expr = './/%s[@%s="%s" and @%s="%s"]' % (
                                 self.TAG.resource,
                                 self.ATTRIBUTE.name, resource,
-                                self.UID, uid)
+                                attr, uid)
                         e = root.xpath(expr)
                         if e:
                             relements.append(e[0])
@@ -749,16 +758,21 @@ class S3XML(object):
                     else:
                         reference_list.append(Storage(field=field, entry=entry))
 
-                _uids = map(self.import_uid, uids)
-                records = self.db(ktable[self.UID].belongs(_uids)).select(ktable.id, ktable[self.UID])
-                id_map = dict()
-                map(lambda r: id_map.update({r[self.UID]:r.id}), records)
+                if attr == self.UID:
+                    _uids = map(self.import_uid, uids)
+                    records = self.db(ktable[self.UID].belongs(_uids)).select(ktable.id, ktable[self.UID])
+                    id_map = dict()
+                    map(lambda r: id_map.update({r[self.UID]:r.id}), records)
 
             for relement in relements:
 
-                uid = relement.get(self.UID, None)
-                _uid = self.import_uid(uid)
-                id = _uid and id_map and id_map.get(_uid, None) or None
+                uid = relement.get(attr, None)
+                if attr == self.UID:
+                    _uid = self.import_uid(uid)
+                    id = _uid and id_map and id_map.get(_uid, None) or None
+                else:
+                    _uid = None
+                    id = None
 
                 entry = dict(job=None,
                              resource=resource,
@@ -1223,7 +1237,10 @@ class S3XML(object):
 
         """
 
-        root = tree.getroot()
+        if isinstance(tree, etree._ElementTree):
+            root = tree.getroot()
+        else:
+            root = tree
 
         if root.tag == cls.TAG.root:
             native = True
@@ -1240,6 +1257,48 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
+    @classmethod
+    def csv2tree(cls, source,
+                 resourcename=None,
+                 delimiter=",",
+                 quotechar='"'):
+        """
+        Convert a table-form CSV source into an element tree, consisting of
+        <table name="format">, <row> and <col field="fieldname"> elements.
+
+        @param source: the source (file-like object)
+        @param resourcename: the resource name
+        @param delimiter: delimiter for values
+        @param quotechar: quotation character
+
+        """
+
+        root = etree.Element(cls.TAG.table)
+        if resourcename is not None:
+            root.set(cls.ATTRIBUTE.name, resourcename)
+
+        try:
+            reader = csv.DictReader(source,
+                                    delimiter=delimiter,
+                                    quotechar=quotechar)
+
+            for r in reader:
+                row = etree.SubElement(root, cls.TAG.row)
+                for k in r:
+                    col = etree.SubElement(row, cls.TAG.col)
+                    col.set(cls.ATTRIBUTE.field, str(k))
+                    text = str(r[k])
+                    if text.lower() not in ("null", "<null>", "none"):
+                        text = cls.xml_encode(unicode(text.decode("utf-8")))
+                        col.text = text
+        except csv.Error:
+            e = sys.exc_info()[1]
+            raise HTTP(400, body=cls.json_message(False, 400, e))
+
+        return  etree.ElementTree(root)
+
+
+    # -------------------------------------------------------------------------
     @staticmethod
     def json_message(success=True,
                      status_code="200",
@@ -1251,9 +1310,7 @@ class S3XML(object):
         @param success: action succeeded or failed
         @param status_code: the HTTP status code
         @param message: the message text
-        @param tree: result tree to enclose
-
-        @todo 2.3: extend to report number of results/successful imports
+        @param tree: result tree to enclose (as JSON)
 
         """
 

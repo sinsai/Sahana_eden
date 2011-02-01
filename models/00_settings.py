@@ -284,6 +284,7 @@ s3.crud.confirm_delete = T("Do you really want to delete these records?")
 
 s3.crud.archive_not_delete = deployment_settings.get_security_archive_not_delete()
 s3.crud.navigate_away_confirm = deployment_settings.get_ui_navigate_away_confirm()
+#response.s3.navigate_away_confirm = s3.crud.navigate_away_confirm
 
 s3.base_url = "%s/%s" % (deployment_settings.get_base_public_url(),
                          request.application)
@@ -318,6 +319,9 @@ s3xrc.content_type = Storage(
 
 # JSON Formats
 s3xrc.json_formats = ["geojson", "s3json"]
+
+# CSV Formats
+s3xrc.csv_formats = ["hrf"]
 
 s3xrc.ROWSPERPAGE = 20
 

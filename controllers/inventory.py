@@ -23,7 +23,7 @@ def index():
     response.view = "logs/index.html"
     module_name = deployment_settings.modules["logs"].name_nice
     response.title = module_name
-    return dict(module_name=module_name)    
+    return dict(module_name=module_name)
 
     #request.function = "store"
     #request.args = []
@@ -39,24 +39,15 @@ def shn_store_rheader(r):
             rheader_tabs = shn_rheader_tabs(r, tabs = [ (T("Details"), None),
                                                         (T("Items"), "store_item"),
                                                         (T("Request"), "req"),
-                                                        #(T("Incoming"), "incoming"),
-                                                        (T("Received" ), "recv"),
-                                                        (T("Sent"), "send"),
+                                                        (T("Incoming"), "send", dict(select="incoming")),
+                                                        (T("Receive" ), "recv"),
+                                                        (T("Send"), "send", dict(select="sent")),
                                                        ])
-            
+
             rheader = DIV(TABLE(TR(
                                    TH(T("Location") + ": "), shn_gis_location_represent(inventory_store.location_id),
                                    TH(T("Description") + ": "), inventory_store.comments,
                                    ),
-                                TR( A("Incoming Shipments",
-                                      _href = URL( r = request,
-                                                   c = "inventory",
-                                                   f = "store_incoming",
-                                                   args = [r.record.id]
-                                                  ),
-                                      _class = "action-btn"
-                                     )
-                                  ),
                                 ),
                           rheader_tabs
                           )
@@ -67,24 +58,52 @@ def store():
 
     """ RESTful CRUD controller """
 
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+    resourcename = request.function
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # Don't send the locations list to client (pulled by AJAX instead)
     table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
 
-    # Post-processor
-    def postp(r, output):
-        if r.representation in shn_interactive_view_formats \
-            and r.method != "delete" and not r.component:
-                # Redirect to the Items tabs after creation
-                r.next = r.other(method="store_item", record_id=s3xrc.get_session(module, resource))                
-        return output
-    response.s3.postp = postp
+    # Add logs_send as component joinby field according to tab selected
+    if request.get_vars.get("select","sent") == "incoming":
+        s3xrc.model.add_component("logs",
+                                  "send",
+                                  multiple=True,
+                                  joinby=dict( inventory_store = "to_inventory_store_id" )
+                                  )
+        # This would filter warehouses, not shipments:
+        #response.s3.filter = db.logs_send.status == True
+        # Better place it in prep to get the component join into the query:
+        def prep(r):
+            if r.component_name == "send":
+                response.s3.filter = (db.logs_send.status == True)
+                # Should we hide the Add button for incoming shipments?
+                s3xrc.model.configure(r.component.table, insertable=False)
+            return True
+        response.s3.prep = prep
+        # Probably need to adjust some more CRUD strings:
+        s3.crud_strings["logs_send"].update(
+            msg_record_modified = T("Incoming Shipment updated"),
+            msg_record_deleted = T("Incoming Shipment canceled"),
+            msg_list_empty = T("No Incoming Shipments"))
+    else:
+        s3xrc.model.add_component("logs",
+                                  "send",
+                                  multiple=True,
+                                  joinby=dict( inventory_store = "inventory_store_id" )
+                                  )
+        s3.crud_strings["logs_send"].update(
+            msg_record_modified = T("Sent Shipment updated"),
+            msg_record_deleted = T("Sent Shipment canceled"),
+            msg_list_empty = T("No Sent Shipments"))
 
-    output = s3_rest_controller(module, 
-                                resource, 
+
+    s3xrc.model.configure(table, create_next=URL(r=request,
+                                                 c=module, f=resourcename,
+                                                 args=["[id]", "store_item"]))
+
+    output = s3_rest_controller(module, resourcename,
                                 rheader=shn_store_rheader)
     return output
 
@@ -93,33 +112,11 @@ def store_item():
 
     """ RESTful CRUD controller """
 
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+    resourcename = request.function
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
-    return s3_rest_controller(module, resource)
-
-def store_incoming():
-    inventory_store_id = request.args[0]
-    request.args = []
-    response.s3.filter = ( (db.logs_send.to_inventory_store_id == inventory_store_id) & \
-                        (db.logs_send.status == True) 
-                        )
-    output = s3_rest_controller("logs",
-                                "send"
-                                )        
-    response.s3.actions = [dict(url = str(URL(r=request,
-                                              c = "logs",
-                                              f = "recv_sent",
-                                              args = ["[id]"]
-                                              )
-                                          ),
-                                _class = "action-btn",
-                                label = "Receive Shipment"
-                                )
-                           ]
-
-    return output
+    return s3_rest_controller(module, resourcename)
 
 def store_item_quantity():
     response.headers["Content-Type"] = "text/x-json"
@@ -129,11 +126,11 @@ def store_item_quantity():
                           db.supply_item_packet.quantity,
                           limitby=[0,1]).first()#
     return json.dumps(record)
-            
+
 def store_item_packets():
     response.headers["Content-Type"] = "text/x-json"
     return db( (db.inventory_store_item.id == request.args[0]) & \
                (db.inventory_store_item.item_id == db.supply_item_packet.item_id)
               ).select( db.supply_item_packet.id,
                         db.supply_item_packet.name,
-                        db.supply_item_packet.quantity).json()   
+                        db.supply_item_packet.quantity).json()

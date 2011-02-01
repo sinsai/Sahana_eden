@@ -118,8 +118,17 @@ def location():
     # Allow prep to pass vars back to the controller
     vars = {}
 
+    # @ToDo: Clean up what needs to be done only for interactive views,
+    # vs. what needs to be done generally. E.g. some tooltips are defined
+    # for non-interactive.
     # Pre-processor
     def prep(r, vars):
+
+        def get_location_info():
+            return db(db.gis_location.id == r.id).select(
+                db.gis_location.lat,
+                db.gis_location.lon,
+                db.gis_location.level, limitby=(0, 1)).first()
 
         # Override the default Search Method
         r.resource.set_handler("search", s3base.S3LocationSearch())
@@ -136,6 +145,39 @@ def location():
                                      _title=T("Code") + "|" + T("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
             table.wkt.comment = DIV(_class="stickytip",
                                     _title="WKT|" + T("The" + " <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>" + T("Well-Known Text") + "</a> " + "representation of the Polygon/Line."))
+
+        if r.method == "update":
+            # We don't allow converting a location group to non-group and
+            # vice versa. We also don't allow taking away all the members of
+            # a group -- setting "notnull" gets the "required" * displayed.
+            # Groups don't have parents. (This is all checked in onvalidation.)
+            location = get_location_info()
+            if location.level == "GR":
+                table.level.writable = False
+                table.parent.readable = False
+                table.parent.writable = False
+                table.members.notnull = True
+                # Record that this is a group location. Since we're setting
+                # level to not writable, it won't be in either form.vars or
+                # request.vars. Saving it while we have it avoids another
+                # db access.
+                response.s3.location_is_group = True
+            else:
+                table.members.writable = False
+                table.members.readable = False
+                response.s3.location_is_group = False
+
+        # Don't show street address, postcode for hierarchy on read or update.
+        if r.method != "create" and r.id:
+            try:
+                location
+            except:
+                location = get_location_info()
+            if location.level:
+                table.addr_street.writable = False
+                table.addr_street.readable = False
+                table.addr_postcode.writable = False
+                table.addr_postcode.readable = False
 
         if r.http in ("GET", "POST") and r.representation in shn_interactive_view_formats:
             # Options which are only required in interactive HTML views
@@ -211,13 +253,20 @@ def location():
                         add_feature = False
                         add_feature_active = False
 
-                    location = db(db.gis_location.id == r.id).select(db.gis_location.lat, db.gis_location.lon, limitby=(0, 1)).first()
+                    try:
+                        location
+                    except:
+                        location = get_location_info()
                     if location and location.lat is not None and location.lon is not None:
                         lat = location.lat
                         lon = location.lon
                     # Same as a single zoom on a cluster
                     zoom = zoom + 2
 
+                # @ToDo: Does map make sense if the user is updating a group?
+                # If not, maybe leave it out. OTOH, might be nice to select
+                # admin regions to include in the group by clicking on them in
+                # the map. Would involve boundaries...
                 _map = gis.show_map(lat = lat,
                                     lon = lon,
                                     zoom = zoom,
@@ -2721,6 +2770,8 @@ def proxy():
 
             msg = y.read()
             y.close()
+            # Required for WMS Browser to work in IE
+            response.headers["Content-Type"] = "text/xml"
             return msg
         else:
             # Bad Request

@@ -93,7 +93,7 @@ class Locations(SahanaTest):
         # wrap all location names with the holder __TEST__
         # This makes deletion of a unique name possible
         for location in values:
-            name = level = parent = lat = lon = None
+            name = level = parent = parentLevel = grandParent = lat = lon = None
             details = location.split(",")
             if len(details) >= 1:
                 name = details[0].strip()
@@ -102,13 +102,17 @@ class Locations(SahanaTest):
             if len(details) >= 3:
                 parent = details[2].strip()
             if len(details) >= 4:
-                lat = details[3].strip()
+                parentLevel = details[3].strip()
             if len(details) >= 5:
-                lon = details[4].strip()
+                grandParent = details[4].strip()
+            if len(details) >= 6:
+                lat = details[5].strip()
+            if len(details) >= 7:
+                lon = details[6].strip()
             # Load the Create Location page
             sel.open("gis/location")
             if self.action.search(self.makeNameUnique(name), "Showing 0 to 0 of 0 entries"):
-                self.action.addLocation(self.holder, name, level, parent, lat, lon)
+                self.action.addLocation(self.holder, name, level, parent, parentLevel, grandParent, lat, lon)
             Locations.line.append(self.makeNameUnique(name))
             
     def openRecord(self, name):
@@ -192,7 +196,7 @@ class Locations(SahanaTest):
         self.openRecord(shelterName)
         # Check that the location is set
         self.action.checkHeading({"Name:" : shelterName,
-                                  "Location:" : "Haiti",
+                                  "Location:" : "Haiti (Country)",
                                  })
 
         location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
@@ -215,7 +219,7 @@ class Locations(SahanaTest):
         self.openRecord(shelterName)
         # Check that the details are correct
         self.action.checkHeading({"Name:" : shelterName,
-                                  "Location:" : "Haiti",
+                                  "Location:" : "Haiti (Country)",
                                  })
         # Check that the location is currently set
         location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
@@ -526,7 +530,7 @@ class Locations(SahanaTest):
         # Load again
         self.openRecord(shelterName)
         self.action.checkHeading({"Name:" : shelterName,
-                                  "Location:" : "%s (Haiti)" % L1,
+                                  "Location:" : "%s (Province, Haiti)" % L1,
                                  })
         location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
         location_id = location.split("(")[1].split(")")[0]
@@ -628,7 +632,7 @@ class Locations(SahanaTest):
         # Load again
         self.openRecord(shelterName)
         self.action.checkHeading({"Name:" : "%s" % shelterName,
-                                  "Location:" : "%s (%s)" % (L2,L1),
+                                  "Location:" : "%s (District, %s)" % (L2, L1),
                                  })
         location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
         location_id = location.split("(")[1].split(")")[0]
@@ -753,7 +757,7 @@ class Locations(SahanaTest):
         # Load again
         self.openRecord(shelterName)
         self.action.checkHeading({"Name:" : "%s" % shelterName,
-                                  "Location:" : "%s (%s)" % (L3,L2),
+                                  "Location:" : "%s (Town, %s)" % (L3, L2),
                                  })
         location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
         location_id = location.split("(")[1].split(")")[0]

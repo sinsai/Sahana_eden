@@ -328,7 +328,24 @@ class GIS(object):
 
         return dict(min_lon=min_lon, min_lat=min_lat, max_lon=max_lon, max_lat=max_lat)
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
+    def _lookup_parent_path(self, feature_id):
+        """
+        Helper that gets parent and path for a location.
+        """
+
+        db = self.db
+        _locations = db.gis_location
+
+        deleted = (_locations.deleted == False)
+        query = deleted & (_locations.id == feature_id)
+        feature = db(query).select(
+                  _locations.path, _locations.parent,
+                  limitby=(0, 1)).first()
+
+        return feature
+
+    # -------------------------------------------------------------------------
     def get_children(self, parent_id):
         """
         Return a list of all GIS Features which are children of
@@ -339,43 +356,137 @@ class GIS(object):
 
         This has been chosen over Modified Preorder Tree Traversal for greater efficiency:
         http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+
+        Assists lazy update of a database without location paths by calling
+        update_location_tree to get the path.
         """
 
-        db = self.db
-        list = []
-        table = db.gis_location
-        parent_path = db(table.id == parent_id).select(table.path)
-        if(parent_path[0].path == None):
-            path = str(parent_id)
-        else:
-            path = parent_path[0].path
+        parent_row = self._lookup_parent_path(parent_id)
+        path = parent_row.path
+        if parent_row.parent and not path:
+            path = self.update_location_tree(parent_id, feature.parent)
+
         for row in db(table.path.like(path + "/%")).select():
             list.append(row.id)
 
         return list
 
-    # -----------------------------------------------------------------------------
-    def get_parents(self, feature_id):
+    # -------------------------------------------------------------------------
+    def get_parents(self, feature_id, feature=None, ids_only=False):
         """
-            Return a list of all GIS Features which are parents of the requested feature
-            @ ToDo Switch to modified preorder tree traversal:
-            http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+        Returns a list containing ancestors of the requested feature.
+
+        If the caller already has the location row, including path and parent
+        fields, they can supply it via feature to avoid a db lookup.
+
+        If ids_only is false, each element in the list is a gluon.sql.Row
+        containing the gis_location record of an ancestor of the specified
+        location.
+
+        If ids_only is true, just returns a list of ids of the parents.
+        This avoids a db lookup for the parents if the specified feature has
+        a path.
+
+        List elements are in the opposite order as the location path and
+        exclude the specified location itself, i.e. element 0 is the parent
+        and the last element is the most distant ancestor.
+
+        Assists lazy update of a database without location paths by calling
+        update_location_tree to get the path.
         """
+
+        # @ToDo: Determine if the following ToDo is obsolete, since we use
+        # materialized paths, which is another option in the referenced page.
+        # See comment on get_children above. Also, the path is linear, so why
+        # would one use any sort of tree traversal?
+        # @ ToDo Switch to modified preorder tree traversal:
+        # http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+
+        # @ToDo: This is crying out for a unit test.
 
         db = self.db
         _locations = db.gis_location
 
-        deleted = (_locations.deleted == False)
-        query = deleted & (_locations.id == feature_id)
-        feature = db(query).select(_locations.parent, limitby=(0, 1)).first()
-        if feature and feature.parent:
-            parents = db(_locations.id == feature.parent).select(limitby=(0, 1))
-            _parents = self.get_parents(feature.parent)
-            if _parents:
-                parents = parents & _parents
+        if not feature or "path" not in feature or "parent" not in feature:
+            feature = self._lookup_parent_path(feature_id)
+
+        if feature and (feature.path or feature.parent):
+            if feature.path:
+                path = feature.path
+            else:
+                path = self.update_location_tree(feature_id, feature.parent)
+
+            path_list = map(int, path.split("/"))
+            if len(path_list) == 1:
+                # No parents -- path contains only this feature.
+                return None
+
+            # Get path in the desired order, without current feature.
+            reverse_path = path_list[0:len(path_list)-1]
+            reverse_path.reverse()
+
+            # If only ids are wanted, stop here.
+            if ids_only:
+                return reverse_path
+
+            # Retrieve parents -- order in which they're returned is arbitrary.
+            unordered_parents = db(_locations.id.belongs(reverse_path)).select()
+
+            # Reorder parents in order of reversed path.
+            unordered_ids = [row.id for row in unordered_parents]
+            parents = [unordered_parents[unordered_ids.index(path_id)]
+                       for path_id in reverse_path if path_id in unordered_ids]
+
             return parents
+
         else:
             return None
+
+    # -------------------------------------------------------------------------
+    def get_parent_per_level(self, results, feature_id, feature=None):
+        """
+        Adds ancestor of requested feature for each level to supplied dict.
+
+        If the caller already has the location row, including path and parent
+        fields, they can supply it via feature to avoid a db lookup.
+
+        If a dict is not supplied in results, one is created. The results
+        dict is returned in either case.
+
+        For each ancestor, an entry ancestor.level : ancestor.id is added to
+        results.
+        """
+
+        if not results:
+            results = {}
+
+        if not feature or "path" not in feature or "parent" not in feature:
+            feature = self._lookup_parent_path(feature_id)
+
+        if feature and (feature.path or feature.parent):
+            if feature.path:
+                path = feature.path
+            else:
+                path = self.update_location_tree(feature_id, feature.parent)
+
+            # Get ids of ancestors at each level.
+            strict = self.deployment_settings.get_gis_strict_hierarchy()
+            if path and strict:
+                # No need to do a db lookup for parents in this case -- we
+                # know the levels of the parents from their position in path.
+                # Note ids returned from db are ints, not strings, so be
+                # consistent with that.
+                path_ids = map(int, path.split("/"))
+                # This skips the last path element, which is the supplied
+                # location.
+                for (i, id) in enumerate(path_ids[0:len(path_ids)-1]):
+                    results["L%i" % i] = id
+            elif path or parent:
+                ancestors = self.get_parents(feature_id, feature=feature)
+                for ancestor in ancestors:
+                    results[ancestor.level] = ancestor.id
+
+        return results
 
     # -----------------------------------------------------------------------------
     def get_config(self):
@@ -749,105 +860,65 @@ class GIS(object):
             return features
 
     # -----------------------------------------------------------------------------
+    # @ToDo Pick one convention: lon, lat or lat, lon. There are pairs of
+    # values where either order represents a land location. The convention,
+    # seemingly everywhere else in GIS IT, is lon first. Except for us
+    # non-GIS folks, who have always said "latitude and longitude". We are
+    # already confused when you omit the minus sign or the NSEW, so don't
+    # mess with our heads by saying (lat, lon) here. Yes, this returns a
+    # dict (good!) -- I mean the function name and the doc comment.
     def get_latlon(self, feature_id, filter=False):
 
-        """ Returns the Lat/Lon for a Feature (using recursion where necessary)
+        """ Returns the Lat/Lon for a Feature
 
             @param feature_id: the feature ID (int) or UUID (str)
             @param filter: Filter out results based on deployment_settings
-            @ToDo Rewrite to use self.get_parents()
         """
 
         db = self.db
         deployment_settings = self.deployment_settings
-        table_feature = db.gis_location
+        _locations = db.gis_location
 
         if isinstance(feature_id, int):
-            query = (table_feature.id == feature_id)
+            query = (_locations.id == feature_id)
         elif isinstance(feature_id, str):
-            query = (table_feature.uuid == feature_id)
+            query = (_locations.uuid == feature_id)
         else:
             # What else could feature_id be?
             return None
 
-        feature = db(query).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+        feature = db(query).select(
+                      _locations.id, _locations.lat, _locations.lon,
+                      limitby=(0, 1)).first()
 
-        query = (table_feature.deleted == False)
-        if filter and not deployment_settings.get_gis_display_l0():
-            query = query & ((table_feature.level != "L0") | (table_feature.level == None))
+        #query = (_locations.deleted == False)
+        #if filter and not deployment_settings.get_gis_display_l0():
+            # @ToDo This query looks wrong. Does it intend to exclude both
+            # L0 and no level? Because it's actually a no-op. If location is
+            # L0 then first term is false, but there is a level so the 2nd
+            # term is also false, so the combination is false, same as the
+            # 1st term alone. If the level isn't L0, the first term is true,
+            # so the 2nd is irrelevant and probably isn't even evaluated, so
+            # the combination is same as the 1st term alone.
+            # @ToDo And besides, it the L0 lon, lat is all we have, isn't it
+            # better to use that than nothing?
+            #query = query & ((_locations.level != "L0") | (_locations.level == None))
 
-        try:
-            lat = feature.lat
-            lon = feature.lon
-            if (lat is not None) and (lon is not None):
-                # Zero is allowed
-                return dict(lat=lat, lon=lon)
-            else:
-                # Try the Parent (e.g. L5)
-                parent_id = feature.parent
-                if parent_id:
-                    # @ToDo Recursion
-                    #latlon = self.get_latlon(parent_id)
-                    parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
-                    lat = parent.lat
-                    lon = parent.lon
-                    if (lat is not None) and (lon is not None):
-                        # Zero is allowed
-                        return dict(lat=lat, lon=lon)
-                    else:
-                        # Try the Parent (e.g. L4)
-                        parent_id = feature.parent
-                        if parent_id:
-                            parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
-                            lat = parent.lat
-                            lon = parent.lon
-                            if (lat is not None) and (lon is not None):
-                                # Zero is allowed
-                                return dict(lat=lat, lon=lon)
-                            else:
-                                # Try the Parent (e.g. L3)
-                                parent_id = feature.parent
-                                if parent_id:
-                                    parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
-                                    lat = parent.lat
-                                    lon = parent.lon
-                                    if (lat is not None) and (lon is not None):
-                                        # Zero is allowed
-                                        return dict(lat=lat, lon=lon)
-                                    else:
-                                        # Try the Parent (e.g. L2)
-                                        parent_id = feature.parent
-                                        if parent_id:
-                                            parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
-                                            lat = parent.lat
-                                            lon = parent.lon
-                                            if (lat is not None) and (lon is not None):
-                                                # Zero is allowed
-                                                return dict(lat=lat, lon=lon)
-                                            else:
-                                                # Try the Parent (e.g. L1)
-                                                parent_id = feature.parent
-                                                if parent_id:
-                                                    parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
-                                                    lat = parent.lat
-                                                    lon = parent.lon
-                                                    if (lat is not None) and (lon is not None):
-                                                        # Zero is allowed
-                                                        return dict(lat=lat, lon=lon)
-                                                    else:
-                                                        # Try the Parent (e.g. L0)
-                                                        parent_id = feature.parent
-                                                        if parent_id:
-                                                            parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
-                                                            lat = parent.lat
-                                                            lon = parent.lon
-                                                            if (lat is not None) and (lon is not None):
-                                                                # Zero is allowed
-                                                                return dict(lat=lat, lon=lon)
-        except:
-            # Invalid feature_id
-            pass
+        # Zero is an allowed value, hence explicit test for None.
+        if "lon" in feature and "lat" in feature and \
+           (feature.lat is not None) and (feature.lon is not None):
+            return dict(lon=feature.lon, lat=feature.lat)
 
+        else:
+            # Step through ancestors to first with lon, lat.
+            parents = self.get_parents(feature.id)
+            lon = lat = None
+            for row in parents:
+                if "lon" in row and "lat" in row and \
+                   (row.lon is not None) and (row.lat is not None):
+                    return dict(lon=row.lon, lat=row.lat)
+
+        # Invalid feature_id
         return None
 
     # -----------------------------------------------------------------------------
@@ -1356,29 +1427,41 @@ class GIS(object):
         return res
 
     # -----------------------------------------------------------------------------
-    def update_location_tree(self, location_id, parent=None):
+    def update_location_tree(self, location_id, parent_id=None):
         """
             Update the Tree for GIS Locations:
             @author: Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
             @summary: Using Materialized path for each node in the tree
             http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+            Do a lazy update of a database that does not have location paths.
+            For convenience of get_parents, return the path.
         """
 
         db = self.db
         table = db.gis_location
 
-        if parent:
-            path = db(table.id == parent).select(table.path).first()
-            if path and path.path:
-                node_path = "%s/%s" % (str(path.path), str(location_id))
+        if parent_id:
+            parent = db(table.id == parent_id).select(table.parent, table.path).first()
+        # It is Somebody Else's Problem (see Douglas Adams) to assure that
+        # parent_id points to an actual location.  We just protect ourselves
+        # in case they didn't.
+        if parent_id and parent:
+            if parent.path:
+                # Parent has a path.
+                path = "%s/%s" % (str(parent.path), str(location_id))
+            elif parent.parent:
+                parent_path = self.update_location_tree(parent_id, parent.parent)
+                # Ok, *now* the parent has a path.
+                path = "%s/%s" % (str(parent_path), str(location_id))
             else:
-                node_path = "%s/%s" % (str(parent), str(location_id))
+                # Parent has no parent.
+                path = "%s/%s" % (str(parent_id), str(location_id))
         else:
-            node_path = str(location_id)
+            path = str(location_id)
 
-        db(table.id == location_id).update(path=node_path)
+        db(table.id == location_id).update(path=path)
 
-        return
+        return path
 
     # -----------------------------------------------------------------------------
     def wkt_centroid(self, form):

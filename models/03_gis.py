@@ -24,7 +24,7 @@ _gis.countries = Storage()
 # This is needed for onvalidation
 # @ToDo: & Location Selector (old currently, new in future?)
 if s3_has_role("MapAdmin"):
-    _gis.edit_L0 = _gis.edit_L1 = _gis.edit_L2 = _gis.edit_L3 = _gis.edit_L4 = _gis.edit_L5 = True
+    _gis.edit_L0 = _gis.edit_L1 = _gis.edit_L2 = _gis.edit_L3 = _gis.edit_L4 = _gis.edit_L5 = _gis.edit_GR = True
 else:
     _gis.edit_L0 = deployment_settings.get_gis_edit_l0()
     _gis.edit_L1 = deployment_settings.get_gis_edit_l1()
@@ -32,6 +32,7 @@ else:
     _gis.edit_L3 = deployment_settings.get_gis_edit_l3()
     _gis.edit_L4 = deployment_settings.get_gis_edit_l4()
     _gis.edit_L5 = deployment_settings.get_gis_edit_l5()
+    _gis.edit_GR = deployment_settings.get_gis_edit_group()
 
 # -----------------------------------------------------------------------------
 # GIS Markers (Icons)
@@ -409,6 +410,7 @@ feature_class_id = S3ReusableField("feature_class_id", db.gis_feature_class, sor
 
 # -----------------------------------------------------------------------------
 # GIS Locations
+
 gis_feature_type_opts = {
     1:T("Point"),
     2:T("Line"),
@@ -423,6 +425,97 @@ gis_source_opts = {
     "wikipedia":"Wikipedia",
     "yahoo":"Yahoo! GeoPlanet",
     }
+
+# This is used as the represent for IS_ONE_OF, and the "format" for the
+# gis_location table, which web2py uses to construct (e.g.) selection lists
+# for default validators' widgets.
+def shn_gis_location_represent_row(location, showlink=True):
+    """ Represent a location given its row """
+    if location.level:
+        level_name = deployment_settings.get_gis_locations_hierarchy(location.level)
+    if location.level == "L0":
+        # Countries don't have Parents & shouldn't be represented with Lat/Lon
+        text = "%s (%s)" % (location.name, level_name)
+    elif location.level == "L1" and _gis.countries and len(_gis.countries) == 1:
+        # Regions shouldn't show their Parent if the deployment is only for 1 country
+        text = "%s (%s)" % (location.name, level_name)
+    elif location.level in ["L1", "L2", "L3"]:
+        try:
+            # Show the Parent location for larger regions. (For smaller, we show
+            # lon, lat -- parent won't fit.)
+            parent = db(db.gis_location.id == location.parent).select(db.gis_location.name,
+                                                                      cache=(cache.ram, 60),
+                                                                      limitby=(0, 1)).first()
+            text = "%s (%s, %s)" % (location.name, level_name, parent.name)
+        except:
+            text = "%s (%s)" % (location.name, level_name)
+    elif location.level in ["GR", "XX"]:
+        text = "%s (%s)" % (location.name, level_name)
+    else:
+        # Simple
+        #represent = location.name
+        # Lat/Lon (Need level name for hierarchy locations, else defeats
+        # the purpose of helping users select hierarchy locations as
+        # group members.  Even when we have a fancy side-by-side multiple
+        # select widget, we'll still need the level for two reasons:
+        # First, the widget is going to use it to distinguish hierarchy
+        # locations. Second, there are different hierarchy locations with
+        # the same name, e.g. Los Angeles (County) and Los Angeles (City).)
+        lat = location.lat
+        lon = location.lon
+        if lat and lon:
+            if lat > 0:
+                lat_prefix = "N"
+            else:
+                lat_prefix = "S"
+            if lon > 0:
+                lon_prefix = "E"
+            else:
+                lon_prefix = "W"
+            if location.level:
+                start = " (%s, " % level_name
+            else:
+                start = " ("
+            text = location.name + "%s%s %s %s %s)" % (start, lat_prefix, lat, lon_prefix, lon)
+        else:
+            if location.level:
+                text = "%s (%s)" % (location.name, level_name)
+            else:
+                text = location.name
+    # Simple
+    #represent = text
+    # Hyperlink
+    #represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[id]))
+    # Provide either a link (as might be used on a map popup) or plain text
+    # (for a read-only view of a list of locations).
+    if showlink:
+        represent = A(text, _style="cursor:pointer; cursor:hand", _onclick="s3_viewMap(" + str(location.id) +");return false")
+    else:
+        represent = text
+    # ToDo: Convert to popup? (HTML again!)
+    return represent
+
+def shn_gis_location_represent(id, showlink=True):
+    """ Represent a location given its id """
+    table = db.gis_location
+    try:
+        location = db(table.id == id).select(table.id,
+                                             table.name,
+                                             table.level,
+                                             table.parent,
+                                             table.lat,
+                                             table.lon,
+                                             cache=(cache.ram, 60),
+                                             limitby=(0, 1)).first()
+        return shn_gis_location_represent_row(location, showlink)
+    except:
+        try:
+            # "Invalid" => data consistency wrong
+            represent = location.id
+        except:
+            represent = NONE
+    return represent
+
 resourcename = "location"
 tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
@@ -432,6 +525,7 @@ table = db.define_table(tablename,
                         Field("level", length=2),
                         Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
                         Field("path", length=500, readable=False, writable=False),  # Materialised Path
+                        Field("members", "list:reference gis_location"),
                         # Street Address (other address fields come from hierarchy)
                         Field("addr_street", "text"),
                         Field("addr_postcode"),
@@ -452,6 +546,7 @@ table = db.define_table(tablename,
                         Field("source", requires=IS_NULL_OR(IS_IN_SET(gis_source_opts))),
                         comments(),
                         migrate=migrate,
+                        format=shn_gis_location_represent_row,
                         *(s3_authorstamp() + s3_timestamp() + s3_uid() + s3_deletion_status()))
 
 table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % table)
@@ -460,10 +555,13 @@ table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
 table.name.label = T("Primary Name")
 table.name_dummy.label = T("Local Names")
 table.name_dummy.comment = DIV(_class="tooltip", _title=T("Local Names") + "|" + T("Names can be added in multiple languages"))
-
 table.level.requires = IS_NULL_OR(IS_IN_SET(gis_location_hierarchy))
-table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s"))
-table.parent.represent = lambda id: (id and [db(db.gis_location.id == id).select(db.gis_location.name, limitby=(0, 1)).first().name] or [NONE])[0]
+table.level.represent = lambda level: \
+    level and deployment_settings.get_gis_all_levels(level) or NONE
+table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id",
+    shn_gis_location_represent_row,
+    filterby="level", filter_opts=["L0", "L1", "L2", "L3", "L4", "L5"]))
+table.parent.represent = shn_gis_location_represent
 table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts, zero=None)
 table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, UNKNOWN_OPT)
 # Full WKT validation is done in the onvalidation callback
@@ -497,6 +595,26 @@ table.lon.comment = A(CONVERSION_TOOL,
                       _style="cursor:pointer;",
                       _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."),
                       _id="gis_location_converter-btn")
+
+table.members.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id",
+                                              shn_gis_location_represent_row,
+                                              multiple=True))
+# Location represent strings can be long, so show group members one per line
+# on read-only views.
+table.members.represent = lambda id: \
+    id and s3_represent_multiref(db.gis_location, id,
+                                 represent=lambda mbr_row: \
+                                     shn_gis_location_represent_row(mbr_row),
+                                 separator=BR()) or NONE
+# FYI, this is how one would show plain text rather than links:
+#table.members.represent = lambda id: \
+#    id and s3_represent_multiref(db.gis_location, id,
+#                                 represent=lambda mbr_row: \
+#                                     shn_gis_location_represent_row(
+#                                         mbr_row, showlink=False),
+#                                 separator=", ") or NONE
+table.members.comment = DIV(_class="tooltip",
+                            _title=T("Members") + "|" + T("A location group is a set of locations (often, a set of administrative regions representing a combined area). Member locations are added to a location group here. Location groups may be used to filter what is shown on the map and in search results to only entities covered by locations in the group. A location group can be used to define the extent of an affected area, if it does not fall within one administrative region. Location groups can be used in the Regions menu."))
 
 s3xrc.model.configure(table, listadd=False)
     #list_fields=["id", "name", "level", "parent", "lat", "lon"])
@@ -584,14 +702,78 @@ def gis_location_onvalidation(form):
         On Validation for GIS Locations (before DB I/O)
     """
 
+    # If you need more info from the old location record, add it here.
+    # Check if this has already been called and use the existing info.
+    def get_location_info():
+        if "id" in request:
+            return db(db.gis_location.id == request.id).select(
+                db.gis_location.level, limitby=(0, 1)).first()
+        else:
+            return None
+
     record_error = T("Sorry, only users with the MapAdmin role are allowed to edit these locations")
     field_error = T("Please select another level")
 
     # Shortcuts
-    level = form.vars.level
-    parent = form.vars.parent
-    lat = form.vars.lat
-    lon = form.vars.lon
+    level = "level" in form.vars and form.vars.level
+    parent = "parent" in form.vars and form.vars.parent
+    lat = "lat" in form.vars and form.vars.lat
+    lon = "lon" in form.vars and form.vars.lon
+    members = "members" in form.vars and form.vars.members
+
+    # Allowed changes for location groups: Once it's a group, it stays a
+    # group, and existing non-group locations can't be converted to groups.
+    # For a new location, set the level to "GR" if members are present.
+    # If it's already a group, don't allow clearing the members or altering
+    # the level. Don't allow adding members to an existing location that's
+    # not a group. Note: We can't rely on checking form.vars.level to tell
+    # if an existing location was a group, because it might not be available
+    # in either form.vars or request.vars -- for an interactive form, that
+    # field was set to not writable, so it's just plain text in the page.
+    # Note also that many of the errors "available" here are not accessible
+    # via the interactive form. Note further that permission to *edit* a
+    # group does not give one permission to *mess up* a group, so the above
+    # restrictions apply to MapAdmins too.
+    if "id" in request.vars:
+        # Existing location? Check attempts to manipulate group or members.
+        # Note we cannot rely on merely checking form.vars.level -- it might
+        # not be present, or this request might be attempting to change the
+        # level to group.
+        # Is this a location group?
+        # Use the breadcrumb set in prep if available to avoid a db read.
+        if "location_is_group" in response.s3:
+            location_is_group = response.s3.location_is_group
+        else:
+            old_location = get_location_info()
+            location_is_group = location.level == "GR"
+        if location_is_group:
+            if not _gis.edit_GR:
+                response.error = record_error
+                return
+            # Make sure no-one takes away all members.
+            if "members" in form.vars and not form.vars.members:
+                form.errors["members"] = T("A location group must have at least one member.")
+                return
+        else:
+            # Don't allow changing non-group to group.
+            if members:
+                form.errors["members"] = T("Location cannot be converted into a group.")
+                return
+            if level == "GR":
+                form.errors["level"] = T("Location cannot be converted into a group.")
+                return
+    else:
+        # New location -- if the location has members, and if permitted to
+        # make a group, set "group" level. Don't allow also setting a parent.
+        if members:
+            if _gis.edit_GR:
+                if "parent" in form.vars and form.vars.parent:
+                    form.errors["parent"] = T("Location group cannot have a parent.")
+                    return
+                form.vars.level = "GR"
+            else:
+                response.error = T("Sorry, only users with the MapAdmin role are allowed to create location groups.")
+                return
 
     # Check Permissions
     # 'MapAdmin' has all these perms set, no matter what 000_config has
@@ -627,8 +809,15 @@ def gis_location_onvalidation(form):
                                                           db.gis_location.lon_min,
                                                           db.gis_location.lat_max,
                                                           db.gis_location.lon_max,
+                                                          #db.gis_location.level,
                                                           limitby=(0, 1),
                                                           cache=(cache.ram, 3600)).first()
+
+    # Don't allow a group as parent (that way lies madness!).
+    # (Check not needed here -- enforced in requires validator.)
+    #if _parent and _parent.level == "GR":
+    #    form.errors["parent"] = T("Location group cannot be a parent.")
+    #    return
 
     # Check Parents are in sane order
     if level and parent and _parent:
@@ -820,65 +1009,6 @@ def s3_gis_location_parents(r, **attr):
 s3xrc.model.set_method(module, "location", method="parents", action=s3_gis_location_parents )
 
 # -----------------------------------------------------------------------------
-def shn_gis_location_represent(id):
-    """ Represent a Location """
-    try:
-        location = db(db.gis_location.id == id).select(db.gis_location.name,
-                                                       db.gis_location.level,
-                                                       db.gis_location.parent,
-                                                       db.gis_location.lat,
-                                                       db.gis_location.lon,
-                                                       cache=(cache.ram, 60),
-                                                       limitby=(0, 1)).first()
-        if location.level == "L0":
-            # Countries don't have Parents & shouldn't be represented with Lat/Lon
-            text = location.name
-        elif location.level == "L1" and _gis.countries and len(_gis.countries) == 1:
-            # Regions shouldn't show their Parent if the deployment is only for 1 country
-            text = location.name
-        elif location.level in ["L1", "L2", "L3"]:
-            try:
-                # Show the Parent location
-                parent = db(db.gis_location.id == location.parent).select(db.gis_location.name,
-                                                                          cache=(cache.ram, 60),
-                                                                          limitby=(0, 1)).first()
-                text = "%s (%s)" % (location.name, parent.name)
-            except:
-                text = location.name
-        else:
-            # Simple
-            #represent = location.name
-            # Lat/Lon
-            lat = location.lat
-            lon = location.lon
-            if lat and lon:
-                if lat > 0:
-                    lat_prefix = "N"
-                else:
-                    lat_prefix = "S"
-                if lon > 0:
-                    lon_prefix = "E"
-                else:
-                    lon_prefix = "W"
-                text = location.name + " (%s %s %s %s)" % (lat_prefix, lat, lon_prefix, lon)
-            else:
-                text = location.name
-        # Simple
-        #represent = text
-        # Hyperlink
-        #represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[id]))
-        # Map
-        represent = A(text, _style="cursor:pointer; cursor:hand", _onclick="s3_viewMap(" + str(id) +");return false")
-        # ToDo: Convert to popup? (HTML again!)
-    except:
-        try:
-            # "Invalid" => data consistency wrong
-            represent = location.id
-        except:
-            represent = NONE
-    return represent
-
-# -----------------------------------------------------------------------------
 # Feature Layers
 # Used to select a set of Features for either Display or Export
 # (replaces feature_group)
@@ -893,6 +1023,7 @@ table = db.define_table(tablename,
                         Field("polygons", "boolean", default=False, label=T("Display Polygons?")),
                         Field("enabled", "boolean", default=True, label=T("Available in Viewer?")),
                         Field("visible", "boolean", default=True, label=T("On by default?")),
+                        Field("opacity", "double", default=1.0, requires=IS_FLOAT_IN_RANGE(0, 1), label=T("Opacity (1 for opaque, 0 for fully-transparent)")),
                         # @ToDo Expose the Graphic options
                         # @ToDo Allow defining more complex queries
                         # e.g. L1 for Provinces, L2 for Districts, etc
@@ -908,7 +1039,7 @@ table = db.define_table(tablename,
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 table.name.label = T("Name")
 table.resource.label = T("Resource")
-# In zzz_last.py
+# In Controller (to ensure all tables visible)
 #table.resource.requires = IS_IN_SET(db.tables)
 #table.filter_field.label = T("Filter Field")
 #table.filter_value.label = T("Filter Value")

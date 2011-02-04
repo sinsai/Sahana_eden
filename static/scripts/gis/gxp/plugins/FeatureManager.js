@@ -32,8 +32,8 @@ Ext.namespace("gxp.plugins");
  */   
 gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
     
-    /** api: ptype = gx_featuremanager */
-    ptype: "gx_featuremanager",
+    /** api: ptype = gxp_featuremanager */
+    ptype: "gxp_featuremanager",
     
     /** api: config[maxFeatures]
      *  ``Number`` Default is 100
@@ -233,7 +233,29 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
              *  * scope     - ``Object`` the scope argument passed to the
              *    setPage method
              */
-            "setpage"
+            "setpage",
+            
+            /** api: event[beforeclearfeatures]
+             *  Fired when the clearFeatures method is called, before clearing
+             *  the features. This event can be used to abort clearFeatures
+             *  before any action is performed, by having a listener return
+             *  false.
+             *
+             *  Listener arguments:
+             *
+             *  * tool - :class:`gxp.plugins.FeatureManager` this tool
+             */
+            "beforeclearfeatures",
+            
+            /** api: event[clearfeatures]
+             *  Fired when features have been cleared by the clearFeatures
+             *  method.
+             *
+             *  Listener arguments:
+             *
+             *  * tool - :class:`gxp.plugins.FeatureManager` this tool
+             */
+            "clearfeatures"
         );
         
         // change autoSetLayer default if passed a layer config
@@ -408,15 +430,10 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
      *  features and selected features, all features will be shown.
      */
     setLayerDisplay: function() {
-        var show = false;
-        for (var i in this.toolsShowingLayer) {
-            if (show != "all") {
-                show = this.toolsShowingLayer[i];
-            }
-        }
+        var show = this.visible();
         var map = this.target.mapPanel.map;
         if (show) {
-            var style = this.style[show];
+            var style = this.style[show]; // "all" or "selected"
             if (style !== this.featureLayer.styleMap.styles["default"]) {
                 this.featureLayer.styleMap.styles["default"] = style;
                 this.featureLayer.redraw();
@@ -433,6 +450,22 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
                 scope: this
             });
         }
+    },
+    
+    /** api: method[visible]
+     *  :returns: ``mixed`` "all", "selected" or false
+     *
+     *  Are we currently showing all features, selected features only or no
+     *  features?
+     */
+    visible: function() {
+        var show = false;
+        for (var i in this.toolsShowingLayer) {
+            if (show != "all") {
+                show = this.toolsShowingLayer[i];
+            }
+        }
+        return show;
     },
     
     /** private: method[raiseLayer]
@@ -494,7 +527,7 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
                 } else {
                     this.featureStore.load();
                 }
-            };
+            }
         }
     },
     
@@ -504,12 +537,15 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
     clearFeatures: function() {
         var store = this.featureStore;
         if (store) {
-            store.removeAll();
-            // TODO: make abort really work in OpenLayers
-            var proxy = store.proxy;
-            proxy.abortRequest();
-            if (proxy.protocol.response) {
-                proxy.protocol.response.abort();
+            if (this.fireEvent("beforeclearfeatures", this) !== false) {
+                store.removeAll();
+                this.fireEvent("clearfeatures", this);
+                // TODO: make abort really work in OpenLayers
+                var proxy = store.proxy;
+                proxy.abortRequest();
+                if (proxy.protocol.response) {
+                    proxy.protocol.response.abort();
+                }
             }
         }
     },
@@ -750,12 +786,14 @@ gxp.plugins.FeatureManager = Ext.extend(gxp.plugins.Tool, {
                 }
             }
         }
-        var extent = filter && filter.value;
-        return (extent && layer.maxExtent) ?
-            extent.containsBounds(layer.maxExtent) ?
-                layer.maxExtent :
-                extent :
-            (layer.maxExtent || this.target.mapPanel.map[meth]());
+        var extent = filter ? filter.value : this.target.mapPanel.map[meth]();
+        if (extent && layer.maxExtent) {
+            if (extent.containsBounds(layer.maxExtent)) {
+                // take the smaller one of the two
+                extent = layer.maxExtent;
+            }
+        }
+        return extent;
     },
     
     /** private: method[setPageFilter]

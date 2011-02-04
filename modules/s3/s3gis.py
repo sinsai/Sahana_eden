@@ -425,7 +425,7 @@ class GIS(object):
             return None
 
     # -----------------------------------------------------------------------------
-    def get_feature_layer(self, prefix, resourcename, layername, popup_label, config=None, marker_id=None, filter=None, active=True, polygons=False):
+    def get_feature_layer(self, prefix, resourcename, layername, popup_label, config=None, marker_id=None, filter=None, active=True, polygons=False, opacity=1):
         """
         Return a Feature Layer suitable to display on a map
         @param layername: used as the label in the LayerSwitcher
@@ -491,9 +491,9 @@ class GIS(object):
 
             try:
                 marker = db(_markers.id == marker_id).select(_markers.image, _markers.height, _markers.width, _markers.id, limitby=(0, 1), cache=cache).first()
-                layer = {"name":layername, "query":locations, "active":active, "marker":marker, "popup_url": popup_url, "polygons": polygons}
+                layer = {"name":layername, "query":locations, "active":active, "marker":marker, "opacity": opacity, "popup_url": popup_url, "polygons": polygons}
             except:
-                layer = {"name":layername, "query":locations, "active":active, "popup_url": popup_url, "polygons": polygons}
+                layer = {"name":layername, "query":locations, "active":active, "opacity": opacity, "popup_url": popup_url, "polygons": polygons}
 
             return layer
 
@@ -3144,17 +3144,17 @@ OpenLayers.Util.extend( selectPdfControl, {
                 style_marker.graphicName = styleMarker.graphicName;
                 style_marker.pointRadius = styleMarker.pointRadius;
                 style_marker.fillColor = styleMarker.fillColor;
-                style_marker.fillOpacity = 0.5;
+                style_marker.fillOpacity = styleMarker.opacity;
                 style_marker.strokeColor = styleMarker.fillColor;
                 style_marker.strokeWidth = 2;
-                style_marker.strokeOpacity = 1;
+                style_marker.strokeOpacity = styleMarker.opacity;
             } else {
                 // Set icon dims (set in onload)
                 style_marker.graphicWidth = image.width;
                 style_marker.graphicHeight = image.height;
                 style_marker.graphicXOffset = -(image.width / 2);
                 style_marker.graphicYOffset = -image.height;
-                style_marker.graphicOpacity = 1;
+                style_marker.graphicOpacity = styleMarker.opacity;
                 style_marker.externalGraphic = styleMarker.iconURL;
             }
             // Create Feature Vector
@@ -3298,6 +3298,11 @@ OpenLayers.Util.extend( selectPdfControl, {
                         markerLayer = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1), cache=cache).first()
                 else:
                     markerLayer = ""
+
+                if "opacity" in layer:
+                    opacity = layer["opacity"]
+                else:
+                    opacity = 1
 
                 if "popup_url" in layer:
                     _popup_url = urllib.unquote(layer["popup_url"])
@@ -3475,6 +3480,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     if marker_url:
                         layers_features += """
         styleMarker.iconURL = '""" + marker_url + """';
+        styleMarker.opacity = '""" + str(opacity) + """';
         // Need unique names
         // More reliable & faster to use the height/width calculated on upload
         var i = new Array();
@@ -3486,6 +3492,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         layers_features += """
         var i = '';
         styleMarker.iconURL = '';
+        styleMarker.opacity = '""" + str(opacity) + """';
         styleMarker.graphicName = '""" + graphicName + """';
         styleMarker.pointRadius = """ + str(pointRadius) + """;
         styleMarker.fillColor = '""" + fillColor + """';

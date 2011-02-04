@@ -1064,6 +1064,46 @@ class AuthS3(Auth):
         return success
 
 
+    # -------------------------------------------------------------------------
+    def s3_make_session_owner(self, table, record_id):
+        """
+        Makes the current session owner of this record
+
+        """
+
+        if hasattr(table, "_tablename"):
+            table = table._tablename
+
+        if not self.user:
+            session = self.session
+            if "owned_records" not in session:
+                session.owned_records = Storage()
+            records = session.owned_records.get(table, [])
+            record_id = str(record_id)
+            if record_id not in records:
+                records.append(record_id)
+            session.owned_records[table] = records
+
+
+    # -------------------------------------------------------------------------
+    def s3_session_ownes(self, table, record_id):
+        """
+        Checks whether the current session ownes a record
+
+        """
+
+        if hasattr(table, "_tablename"):
+            table = table._tablename
+        if not self.user:
+            try:
+                records = self.session.owned_records.get(table, [])
+            except:
+                records = []
+            if str(record_id) in records:
+                return True
+        return False
+
+
 # =============================================================================
 class S3Permission(object):
 
@@ -1460,6 +1500,12 @@ class S3Permission(object):
             if "owned_by" in table.fields:
                 owner = record.owned_by
 
+            if not user_id:
+                if not creator and self.auth.s3_session_ownes(table, record_id):
+                    return True
+                else:
+                    return False
+
             return not creator and not owner or \
                    creator == user_id or owner in roles
 
@@ -1605,15 +1651,26 @@ class S3Permission(object):
 
         # Generate query
         if ownership_required:
-            query = None
-            if "owned_by" in table:
-                query = (table.owned_by.belongs(roles))
-            if "created_by" in table:
-                q = (table.created_by == user_id)
-                if query is not None:
-                    query = (query | q)
-                else:
-                    query = q
+            if not user_id:
+                query = (table[pkey] == None)
+                if "created_by" in table and pkey == "id":
+                    try:
+                        records = self.session.owned_records.get(table._tablename, None)
+                    except:
+                        pass
+                    else:
+                        if records:
+                            query = (table.id.belongs(records))
+            else:
+                query = None
+                if "owned_by" in table:
+                    query = (table.owned_by.belongs(roles))
+                if "created_by" in table:
+                    q = (table.created_by == user_id)
+                    if query is not None:
+                        query = (query | q)
+                    else:
+                        query = q
 
         return query
 

@@ -289,6 +289,7 @@ def send():
                                 resourcename,
                                 rheader=shn_logs_send_rheader)
     return output
+
 #------------------------------------------------------------------------------
 def shn_logs_send_rheader(r):
     """ Resource Header for Out """
@@ -323,7 +324,7 @@ def shn_logs_send_rheader(r):
                                   _class = "action-btn"
                                   )
                     
-                    send_btn_confirm = SCRIPT("S3ConfirmClick('#send_process','%s')" 
+                    send_btn_confirm = SCRIPT("S3ConfirmClick('#send_process', '%s')" 
                                               % T("Do you want to send this shipment?") )
                     rheader.append(send_btn)
                     rheader.append(send_btn_confirm)     
@@ -336,6 +337,7 @@ def shn_logs_send_rheader(r):
                                )                               
                 return rheader
     return None
+
 #------------------------------------------------------------------------------
 def req_items_for_store(inventory_store_id, quantity_type):
     """
@@ -380,7 +382,7 @@ def recv_process():
     recv_record = db.logs_recv[recv_id]
     inventory_store_id = recv_record.inventory_store_id
 
-    #Get Recv & Store & Req Items to compare
+    # Get Recv & Store & Req Items to compare
     recv_items = db( ( db.logs_recv_item.logs_recv_id == recv_id ) & \
                      ( db.logs_recv_item.item_packet_id == db.supply_item_packet.id) &
                      ( db.logs_recv_item.deleted == False ) 
@@ -418,14 +420,14 @@ def recv_process():
                         recv_item.logs_recv_item.quantity
             item = dict(quantity = quantity)
         else:
-            #This item must be added to the store
+            # This item must be added to the store
             store_item_id = 0
             item = dict( inventory_store_id = inventory_store_id,
                          item_id = item_id,
                          quantity = recv_item.logs_recv_item.quantity,
                          item_packet_id = recv_item.logs_recv_item.item_packet_id
                          )            
-        #Update Store Item
+        # Update Store Item
         db.inventory_store_item[store_item_id] = item
         
         if item_id in req_items_dict.keys():
@@ -459,13 +461,14 @@ def recv_process():
 
     response.confirmation = T("Received Items added to Warehouse Items")
 
-    #Go to the Warehouse which has received these items
+    # Go to the Warehouse which has received these items
     redirect(URL(r = request,
                  c = "inventory",
                  f = "store",
                  args = [inventory_store_id, "store_item"]
                  )
              )
+
 #------------------------------------------------------------------------------
 def send_process():
     send_id = request.args[0]
@@ -505,14 +508,14 @@ def send_process():
                         send_item.supply_item_packet.quantity
                         
         if send_item_quantity > store_item_quantity:
-            #This shipment is invalid
-            #flag this item
+            # This shipment is invalid
+            # flag this item
             invalid_send_item_ids.append(send_item_id)            
             
-            #Cancel this processing
+            # Cancel this processing
             cancel_send = True
         else:
-            #Update the Store Item Quantity
+            # Update the Store Item Quantity
             new_store_quantity = ( store_item_quantity - send_item_quantity) / \
                                  send_item.inventory_store_item.packet_quantity
             db.inventory_store_item[store_item_id] = dict(quantity = new_store_quantity)
@@ -530,11 +533,11 @@ def send_process():
                      )
                  )      
     else:
-        #Update Send record
+        # Update Send record
         db.logs_send[send_id] = dict(datetime = request.utcnow,
                                      status = LOGS_STATUS_SENT )        
         response.confirmation = T("Items Sent from Warehouse")                  
-        #Go to the Warehouse which has sent these items
+        # Go to the Warehouse which has sent these items
         redirect(URL(r = request,
                      c = "inventory",
                      f = "store",
@@ -542,36 +545,39 @@ def send_process():
                      )
                  )                    
 #==============================================================================
-def recv_sent():
+
+    """ tbc """
+
     send_id = request.args[0]
-    
+
     r_send = db.logs_send[send_id]
-    
+
     inventory_store_id = r_send.to_inventory_store_id
-    
+
     from_location_id = shn_get_db_field_value(db,
                                               "inventory_store",
                                               "location_id",
                                               r_send.inventory_store_id )
-    #create a new recv record
+
+    # Create a new recv record
     recv_id = db.logs_recv.insert(inventory_store_id = inventory_store_id,
                                   from_location_id = from_location_id)
-    
+
     sent_items = db( (db.logs_send_item.logs_send_id == send_id) & \
                      (db.logs_send_item.store_item_id == db.inventory_store_item.id) & \
                      (db.logs_send_item.deleted == False) 
                      ).select(db.inventory_store_item.item_id,
                               db.logs_send_item.item_packet_id,
                               db.logs_send_item.quantity)   
-    
-    #copy items from send to recv
+
+    # Copy items from send to recv
     for sent_item in sent_items:
         db.logs_recv_item.insert(logs_recv_id = recv_id,
                                  item_id = sent_item.inventory_store_item.item_id,
                                  item_packet_id = sent_item.logs_send_item.item_packet_id,
                                  quantity = sent_item.logs_send_item.quantity)
-    
-    #redirect to rec    
+
+    # Redirect to rec
     redirect(URL(r = request,
                  c = "logs",
                  f = "recv",

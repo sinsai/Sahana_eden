@@ -51,7 +51,7 @@ Ext.namespace("gxp.plugins");
 gxp.plugins.TMSSource = Ext.extend(gxp.plugins.LayerSource, {
     
     /** api: ptype = gx_tmssource */
-    ptype: "gx_tmssource",
+    ptype: "gxp_tmssource",
 
     /** api: property[store]
      *  ``GeoExt.data.LayerStore``. Will contain records with "mapnik" and

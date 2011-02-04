@@ -116,7 +116,7 @@
             'abstract': 'This is a demonstration of GeoExplorer',
             contact: 'IRC #sahana-eden'
         },
-        defaultSourceType: 'gx_wmssource',
+        defaultSourceType: 'gxp_wmssource',
         sources: {
           {{if geoserver_url:}}
             local: {
@@ -128,31 +128,34 @@
                 url: "http://geo.eden.sahanafoundation.org/geoserver/ows",
                 title: "Remote Sahana GeoServer"
             },
+            mapquest: {
+                ptype: "gxp_mapquestsource"
+            },
             osm: {
-                ptype: 'gx_tmssource'
+                ptype: 'gxp_tmssource'
             },
             google: {
-                ptype: 'gx_googlesource'
+                ptype: 'gxp_googlesource'
             },
           {{if bing_key:}}
             bing: {
-                ptype: 'gx_bingsource',
+                ptype: 'gxp_bingsource',
                 apiKey: '{{=bing_key}}'
             },
           {{pass}}
           {{if yahoo_key:}}
             //yahoo: {
-            //    ptype: 'gx_yahoosource',
+            //    ptype: 'gxp_yahoosource',
             //    apiKey: '{{=yahoo_key}}'
             //},
           {{pass}}
             //kml: {
             //    url: "http://example.com/example.kml",
             //    marker_url: "/{{=request.application}}/static/img/markers/gis_marker.image.marker_red.png",
-            //    type: "gx_kmlsource"
+            //    type: "gxp_kmlsource"
             //},
             ol: {
-                ptype: 'gx_olsource'
+                ptype: 'gxp_olsource'
             }
         },
         map: {
@@ -173,6 +176,10 @@
             }, {
                 source: 'osm',
                 name: 'mapnik',
+                group: 'background'
+            }, {
+                source: 'mapquest',
+                name: 'osm',
                 group: 'background'
             }, {
                 source: 'ol',
@@ -287,17 +294,17 @@
                 style_marker.graphicName = styleMarker.graphicName;
                 style_marker.pointRadius = styleMarker.pointRadius;
                 style_marker.fillColor = styleMarker.fillColor;
-                style_marker.fillOpacity = 0.5;
+                style_marker.fillOpacity = styleMarker.opacity;
                 style_marker.strokeColor = styleMarker.fillColor;
                 style_marker.strokeWidth = 2;
-                style_marker.strokeOpacity = 1;
+                style_marker.strokeOpacity = styleMarker.opacity;
             } else {
                 // Set icon dims (set in onload)
                 style_marker.graphicWidth = image.width;
                 style_marker.graphicHeight = image.height;
                 style_marker.graphicXOffset = -(image.width / 2);
                 style_marker.graphicYOffset = -image.height;
-                style_marker.graphicOpacity = 1;
+                style_marker.graphicOpacity = styleMarker.opacity;
                 style_marker.externalGraphic = styleMarker.iconURL;
             }
             // Create Feature Vector

@@ -119,7 +119,7 @@ gxp.plugins.GeoServerStyleWriter = Ext.extend(gxp.plugins.StyleWriter, {
                         },
                         success: callback,
                         scope: this
-                    })
+                    });
                 } : callback,
                 scope: this
             });
@@ -139,7 +139,7 @@ gxp.plugins.GeoServerStyleWriter = Ext.extend(gxp.plugins.StyleWriter, {
             }
             if (rec.get("name") !== defaultStyle &&
                                 this.deletedStyles.indexOf(rec.id) === -1) {
-                styles.push({"name": rec.get("name")})
+                styles.push({"name": rec.get("name")});
             }
         }, this);
         Ext.Ajax.request({
@@ -178,5 +178,5 @@ gxp.plugins.GeoServerStyleWriter = Ext.extend(gxp.plugins.StyleWriter, {
 
 });
 
-/** api: ptype = gx_geoserverstylewriter */
-Ext.preg("gx_geoserverstylewriter", gxp.plugins.GeoServerStyleWriter);
+/** api: ptype = gxp_geoserverstylewriter */
+Ext.preg("gxp_geoserverstylewriter", gxp.plugins.GeoServerStyleWriter);

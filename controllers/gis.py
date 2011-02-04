@@ -89,7 +89,7 @@ def define_map(window=False, toolbar=False, config=None):
     for layer in feature_layers:
         if layer.role_required and not auth.s3_has_role(layer.role_required):
             continue
-        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons)
+        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons, opacity=layer.opacity)
         if _layer:
             feature_queries.append(_layer)
 
@@ -118,8 +118,17 @@ def location():
     # Allow prep to pass vars back to the controller
     vars = {}
 
+    # @ToDo: Clean up what needs to be done only for interactive views,
+    # vs. what needs to be done generally. E.g. some tooltips are defined
+    # for non-interactive.
     # Pre-processor
     def prep(r, vars):
+
+        def get_location_info():
+            return db(db.gis_location.id == r.id).select(
+                db.gis_location.lat,
+                db.gis_location.lon,
+                db.gis_location.level, limitby=(0, 1)).first()
 
         # Override the default Search Method
         r.resource.set_handler("search", s3base.S3LocationSearch())
@@ -136,6 +145,39 @@ def location():
                                      _title=T("Code") + "|" + T("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
             table.wkt.comment = DIV(_class="stickytip",
                                     _title="WKT|" + T("The" + " <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>" + T("Well-Known Text") + "</a> " + "representation of the Polygon/Line."))
+
+        if r.method == "update":
+            # We don't allow converting a location group to non-group and
+            # vice versa. We also don't allow taking away all the members of
+            # a group -- setting "notnull" gets the "required" * displayed.
+            # Groups don't have parents. (This is all checked in onvalidation.)
+            location = get_location_info()
+            if location.level == "GR":
+                table.level.writable = False
+                table.parent.readable = False
+                table.parent.writable = False
+                table.members.notnull = True
+                # Record that this is a group location. Since we're setting
+                # level to not writable, it won't be in either form.vars or
+                # request.vars. Saving it while we have it avoids another
+                # db access.
+                response.s3.location_is_group = True
+            else:
+                table.members.writable = False
+                table.members.readable = False
+                response.s3.location_is_group = False
+
+        # Don't show street address, postcode for hierarchy on read or update.
+        if r.method != "create" and r.id:
+            try:
+                location
+            except:
+                location = get_location_info()
+            if location.level:
+                table.addr_street.writable = False
+                table.addr_street.readable = False
+                table.addr_postcode.writable = False
+                table.addr_postcode.readable = False
 
         if r.http in ("GET", "POST") and r.representation in shn_interactive_view_formats:
             # Options which are only required in interactive HTML views
@@ -211,13 +253,20 @@ def location():
                         add_feature = False
                         add_feature_active = False
 
-                    location = db(db.gis_location.id == r.id).select(db.gis_location.lat, db.gis_location.lon, limitby=(0, 1)).first()
+                    try:
+                        location
+                    except:
+                        location = get_location_info()
                     if location and location.lat is not None and location.lon is not None:
                         lat = location.lat
                         lon = location.lon
                     # Same as a single zoom on a cluster
                     zoom = zoom + 2
 
+                # @ToDo: Does map make sense if the user is updating a group?
+                # If not, maybe leave it out. OTOH, might be nice to select
+                # admin regions to include in the group by clicking on them in
+                # the map. Would involve boundaries...
                 _map = gis.show_map(lat = lat,
                                     lon = lon,
                                     zoom = zoom,
@@ -796,6 +845,28 @@ def layer_feature():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
+    # Pre-processor
+    def prep(r):
+        # Which tables have GIS Locations
+        tables = []
+        for table in db.tables:
+            if "location_id" in db[table]:
+                tables.append(table)
+        db.gis_layer_feature.resource.requires = IS_IN_SET(tables)
+
+        return True
+   
+    response.s3.prep = prep
+
+
+    # Post-processor
+    def postp(r, output):
+        if r.record and r.record.resource:
+            response.s3.feature_resource = "%s_%s" % (r.record.module, r.record.resource)
+        return output
+
+    response.s3.postp = postp
+
     tablename = module + "_" + resourcename
     table = db[tablename]
 
@@ -829,6 +900,7 @@ def layer_feature():
 def feature_layer_query(form):
     """ OnValidation callback to build the simple Query from helpers """
 
+    resource = None
     if "resource" in form.vars:
         resource = form.vars.resource
         # Remove the module from name
@@ -1680,7 +1752,7 @@ def geoexplorer():
     for layer in feature_layers:
         if layer.role_required and not auth.s3_has_role(layer.role_required):
             continue
-        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons)
+        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons, opacity=layer.opacity)
         if _layer:
             feature_queries.append(_layer)
 
@@ -1779,6 +1851,11 @@ def geoexplorer():
                 markerLayer = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1), cache=_cache).first()
         else:
             markerLayer = ""
+
+        if "opacity" in layer:
+            opacity = layer["opacity"]
+        else:
+            opacity = 1
 
         if "popup_url" in layer:
             _popup_url = urllib.unquote(layer["popup_url"])
@@ -1967,6 +2044,7 @@ def geoexplorer():
             if marker_url:
                 layers_features += """
             styleMarker.iconURL = '""" + marker_url + """';
+            styleMarker.opacity = '""" + str(opacity) + """';
             // Need unique names
             // More reliable & faster to use the height/width calculated on upload
             var i = new Array();
@@ -1978,6 +2056,7 @@ def geoexplorer():
                 layers_features += """
             var i = '';
             styleMarker.iconURL = '';
+            styleMarker.opacity = '""" + str(opacity) + """';
             styleMarker.graphicName = '""" + graphicName + """';
             styleMarker.pointRadius = """ + str(pointRadius) + """;
             styleMarker.fillColor = '""" + fillColor + """';
@@ -2691,6 +2770,8 @@ def proxy():
 
             msg = y.read()
             y.close()
+            # Required for WMS Browser to work in IE
+            response.headers["Content-Type"] = "text/xml"
             return msg
         else:
             # Bad Request

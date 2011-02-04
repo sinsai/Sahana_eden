@@ -17,6 +17,7 @@ class Action(unittest.TestCase):
             self._diag_SearchResults.close()
 
     def login(self, username, password, reveal=True):
+        print "Logging in as user: " + username
         sel = self.sel
         if sel.is_element_present("link=Logout"):
             # Already logged in check the account
@@ -40,7 +41,8 @@ class Action(unittest.TestCase):
         sel = self.sel
         if sel.is_element_present("link=Logout"):
             sel.click("link=Logout")
-            sel.wait_for_page_to_load("30000")
+            self.successMsg("Logged out")
+#            sel.wait_for_page_to_load("30000")
 
     def _performSearch(self, searchString):
         # The search filter is part of the http://datatables.net/ JavaScript getting it to work with Selenium needs a bit of care.
@@ -88,7 +90,7 @@ class Action(unittest.TestCase):
             result = sel.get_text("//div[@id='table-container']")
         except:
             self.fail("No search data found, whilst searching for %s" % searchString)
-        return True
+        return expected in result
 
         
     def searchUnique(self, uniqueName):
@@ -155,25 +157,45 @@ class Action(unittest.TestCase):
         self.search(email, r"No matching records found")
         print "User %s deleted" % (email)
 
-    def addLocation(self, holder, name, level, parent=None, lat=None, lon=None):
+    def addLocation(self, holder, name, level, parent=None, parentLevel=None, grandParent="", lat=None, lon=None):
         sel = self.sel
         name = holder + name + holder
         if parent == None:
             parentHolder = None
         else:
-            parentHolder = holder + parent + holder
+            parentHolder = "%s%s%s" % (holder, parent, holder)
         # Load the Create Location page
         sel.open("gis/location/create")
         # Create the Location
         sel.type("gis_location_name", name)
         if level:
             sel.select("gis_location_level", "value=%s" % level)
+        if grandParent:
+            grandParentHolder = ", %s%s%s" % (holder, grandParent, holder)
+            grandParent = ", %s" % grandParent
+        else:
+            grandParentHolder = ""
+        if parentLevel == "L0":
+            levelLabel = " (Country)"
+        elif parentLevel == "L1":
+            # NB This doesn't work if deploymentSettings are set to only use a single Country!
+            levelLabel = " (Province%s)" % grandParent
+            levelLabelHolder = " (Province%s)" % grandParentHolder
+        elif parentLevel == "L2":
+            levelLabel = " (District%s)" % grandParent
+            levelLabelHolder = " (District%s)" % grandParentHolder
+        else:
+            levelLabel = ""
+            levelLabelHolder = ""
         if parent:
             try:
-                sel.select("gis_location_parent", "label=%s" % parentHolder)
+                try:
+                    sel.select("gis_location_parent", "label=%s%s" % (parentHolder, levelLabelHolder))
+                except:
+                    sel.select("gis_location_parent", "label=%s%s" % (parentHolder, levelLabel))
             except:
                 parentHolder = parent
-                sel.select("gis_location_parent", "label=%s" % parentHolder)
+                sel.select("gis_location_parent", "label=%s%s" % (parentHolder, levelLabel))
         if lat:
             sel.type("gis_location_lat", lat)
         if lon:

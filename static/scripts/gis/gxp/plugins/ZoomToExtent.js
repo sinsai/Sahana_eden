@@ -31,6 +31,10 @@ gxp.plugins.ZoomToExtent = Ext.extend(gxp.plugins.Tool, {
     /** api: ptype = gxp_zoomtoextent */
     ptype: "gxp_zoomtoextent",
     
+    /** api: config[buttonText]
+     *  ``String`` Text to show next to the zoom button
+     */
+     
     /** api: config[menuText]
      *  ``String``
      *  Text for zoom menu item (i18n).
@@ -59,7 +63,7 @@ gxp.plugins.ZoomToExtent = Ext.extend(gxp.plugins.Tool, {
     
     /** private: property[iconCls]
      */
-    iconCls: "gx-icon-zoomtoextent",
+    iconCls: "gxp-icon-zoomtoextent",
     
     /** api: config[closest]
      *  ``Boolean`` Find the zoom level that most closely fits the specified
@@ -81,6 +85,7 @@ gxp.plugins.ZoomToExtent = Ext.extend(gxp.plugins.Tool, {
      */
     addActions: function() {
         return gxp.plugins.ZoomToExtent.superclass.addActions.apply(this, [{
+            text: this.buttonText,
             menuText: this.menuText,
             iconCls: this.iconCls,
             tooltip: this.tooltip,

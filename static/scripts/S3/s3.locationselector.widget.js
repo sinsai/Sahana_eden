@@ -3,6 +3,12 @@
 // Dynamic constants (e.g. Internationalised strings) are set in server-generated script
 
 function s3_gis_dropdown_select(level, force) {
+    // Clear any values in the specific location field
+    $('#gis_location_lat').val('');
+    $('#gis_location_lon').val('');
+    $('#gis_location_addr_street').val('');
+    $('#gis_location_postcode').val('');
+
     // Read the new value of the dropdown
     var new_id = $('#gis_location_L' + level).val();
     if ( new_id || force ) {
@@ -68,8 +74,8 @@ function s3_gis_dropdown_select(level, force) {
             // Clear the real location_id field
             $('#' + s3_gis_location_id).val('');
             // Clear the Lat/Lon fields to avoid thinking that a new location is being created
-            $('#gis_location_lat').val('');
-            $('#gis_location_lon').val('');
+            //$('#gis_location_lat').val('');
+            //$('#gis_location_lon').val('');
         }
     }
 }

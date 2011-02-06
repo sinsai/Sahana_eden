@@ -90,7 +90,6 @@ def address_onvalidation(form):
                                                                     locations.path,
                                                                     limitby=(0, 1)).first()
         if location:
-            strict = deployment_settings.get_gis_strict_hierarchy()
             form.vars.address = location.addr_street
             form.vars.postcode = location.addr_postcode
             if location.level == "L0":
@@ -102,53 +101,9 @@ def address_onvalidation(form):
                     if country:
                         form.vars.L0 = country.name
             else:
-                if location.path:
-                    # Lookup Ancestors
-                    ancestors = location.path.split("/")
-                    numberAncestors = len(ancestors)
-                    if numberAncestors > 1:
-                        del ancestors[numberAncestors - 1]  # Remove self
-                        if strict:
-                            # No need to do a DAL query
-                            for i in range(numberAncestors - 1):
-                                default["L%i" % i] = ancestors[i]
-                        else:
-                            # Do a single SQL query for all ancestors to look up their levels
-                            _ancestors = db(locations.id.belongs(ancestors)).select(locations.name,
-                                                                                    locations.level,
-                                                                                    limitby=(0, numberAncestors - 1))
-                            for ancestor in _ancestors:
-                                form.vars[ancestor.level] = ancestor.name
-                elif location.parent:
-                    # Path not populated, so need to do lookups manually :/
-                    form.vars[location.level] = location.name
-                    _parent = db(locations.id == location.parent).select(locations.name,
-                                                                         locations.level,
-                                                                         locations.parent,
-                                                                         limitby=(0, 1)).first()
-                    if _parent.level:
-                        form.vars[_parent.level] = _parent.name
-                    if _parent.parent:
-                        _grandparent = db(locations.id == _parent.parent).select(locations.name,
-                                                                                 locations.level,
-                                                                                 locations.parent,
-                                                                                 limitby=(0, 1)).first()
-                        if _grandparent.level:
-                            form.vars[_grandparent.level] = _grandparent.name
-                        if _grandparent.parent:
-                            _greatgrandparent = db(locations.id == _grandparent.parent).select(locations.name,
-                                                                                               locations.level,
-                                                                                               locations.parent,
-                                                                                               limitby=(0, 1)).first()
-                            if _greatgrandparent.level:
-                                form.vars[_greatgrandparent.level] = _greatgrandparent.name
-                            if _greatgrandparent.parent:
-                                _greatgreatgrandparent = db(locations.id == _greatgrandparent.parent).select(locations.name,
-                                                                                                             locations.level,
-                                                                                                             locations.parent,
-                                                                                                             limitby=(0, 1)).first()
-                                if _greatgreatgrandparent.level:
-                                    form.vars[_greatgreatgrandparent.level] = _greatgreatgrandparent.name
+                # Get ids of ancestors at each level.
+                gis.get_parent_per_level(form.vars, form.vars.location_id,
+                                         feature=location)
 
 # Addresses as component of person entities
 s3xrc.model.add_component(prefix, resourcename,

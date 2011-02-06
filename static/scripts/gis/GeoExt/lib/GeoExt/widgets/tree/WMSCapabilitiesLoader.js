@@ -72,8 +72,7 @@ Ext.extend(GeoExt.tree.WMSCapabilitiesLoader, Ext.tree.TreeLoader, {
      */
     processResponse : function(response, node, callback, scope){
         var capabilities = new OpenLayers.Format.WMSCapabilities().read(
-            //response.responseXML || response.responseText);
-            response.responseText);
+            response.responseXML || response.responseText);
         this.processLayer(capabilities.capability,
             capabilities.capability.request.getmap.href, node);
         if (typeof callback == "function") {

@@ -65,8 +65,11 @@ Ext.apply = function(o, c, defaults){
         isSafari3 = isSafari && check(/version\/3/),
         isSafari4 = isSafari && check(/version\/4/),
         isIE = !isOpera && check(/msie/),
-        isIE7 = isIE && (check(/msie 7/) || docMode == 7),
-        isIE8 = isIE && (check(/msie 8/) && docMode != 7),
+        /* Fix ExtJS' browser detection: http://www.sencha.com/forum/showthread.php?100792-INFOREQ-1032-IE8-browser-detection-problem-on-intranet */
+        isIE8 = isIE && (check(/msie 8/) || check(/trident/)) && docMode == 8,
+        isIE7 = isIE && !isIE8 && (check(/msie 7/) || docMode == 7),
+        //isIE7 = isIE && (check(/msie 7/) || docMode == 7),
+        //isIE8 = isIE && (check(/msie 8/) && docMode != 7),
         isIE6 = isIE && !isIE7 && !isIE8,
         isGecko = !isWebKit && check(/gecko/),
         isGecko2 = isGecko && check(/rv:1\.8/),

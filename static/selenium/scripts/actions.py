@@ -99,6 +99,29 @@ class Action(unittest.TestCase):
     def clearSearch(self):
         self.search("", r"entries")
         
+    def registerUser(self, first_name, last_name, email, password):
+        first_name = first_name.strip()
+        last_name = last_name.strip()
+        email = email.strip()
+        password = password.strip()
+        
+        sel = self.sel
+        sel.open("default/user/register")
+        sel.type("auth_user_first_name", first_name)
+        sel.type("auth_user_last_name", last_name)
+        sel.select("auth_user_language", "label=English")
+        sel.type("auth_user_email", email)
+        sel.type("auth_user_password", password)
+        sel.type("password_two", password)
+        sel.click("//input[@value='Submit']")
+        sel.wait_for_page_to_load("30000")
+        msg = "Unable to register user %s %s with email %s" % (first_name, last_name, email)
+        self.assertTrue(self.successMsg("Registration successful"), msg)
+        sel.open("admin/user")
+        self.searchUnique(email)
+        self.assertTrue(re.search(r"Showing 1 to 1 of 1 entries", sel.get_text("//div[@class='dataTables_info']")))
+        print "User %s created" % (email)
+
     def addUser(self, first_name, last_name, email, password):
         first_name = first_name.strip()
         last_name = last_name.strip()
@@ -157,25 +180,45 @@ class Action(unittest.TestCase):
         self.search(email, r"No matching records found")
         print "User %s deleted" % (email)
 
-    def addLocation(self, holder, name, level, parent=None, lat=None, lon=None):
+    def addLocation(self, holder, name, level, parent=None, parentLevel=None, grandParent="", lat=None, lon=None):
         sel = self.sel
         name = holder + name + holder
         if parent == None:
             parentHolder = None
         else:
-            parentHolder = holder + parent + holder
+            parentHolder = "%s%s%s" % (holder, parent, holder)
         # Load the Create Location page
         sel.open("gis/location/create")
         # Create the Location
         sel.type("gis_location_name", name)
         if level:
             sel.select("gis_location_level", "value=%s" % level)
+        if grandParent:
+            grandParentHolder = ", %s%s%s" % (holder, grandParent, holder)
+            grandParent = ", %s" % grandParent
+        else:
+            grandParentHolder = ""
+        if parentLevel == "L0":
+            levelLabel = " (Country)"
+        elif parentLevel == "L1":
+            # NB This doesn't work if deploymentSettings are set to only use a single Country!
+            levelLabel = " (Province%s)" % grandParent
+            levelLabelHolder = " (Province%s)" % grandParentHolder
+        elif parentLevel == "L2":
+            levelLabel = " (District%s)" % grandParent
+            levelLabelHolder = " (District%s)" % grandParentHolder
+        else:
+            levelLabel = ""
+            levelLabelHolder = ""
         if parent:
             try:
-                sel.select("gis_location_parent", "label=%s" % parentHolder)
+                try:
+                    sel.select("gis_location_parent", "label=%s%s" % (parentHolder, levelLabelHolder))
+                except:
+                    sel.select("gis_location_parent", "label=%s%s" % (parentHolder, levelLabel))
             except:
                 parentHolder = parent
-                sel.select("gis_location_parent", "label=%s" % parentHolder)
+                sel.select("gis_location_parent", "label=%s%s" % (parentHolder, levelLabel))
         if lat:
             sel.type("gis_location_lat", lat)
         if lon:

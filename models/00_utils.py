@@ -32,6 +32,8 @@ def s3_sessions():
         memberships = db(_memberships.user_id == user_id).select(
                         _memberships.group_id)
         roles = [m.group_id for m in memberships]
+    else:
+        roles = [3] # Anonymous role
     session.s3.roles = roles
     # not used yet:
     if not auth.permission():
@@ -447,9 +449,9 @@ def shn_represent_file(file_name,
 
 
 # -----------------------------------------------------------------------------
-def s3_represent_multiref(table, opt, represent=None):
+def s3_represent_multiref(table, opt, represent=None, separator=", "):
 
-    """ @todo: docstring?? """
+    """ Produce a representation for a list:reference field. """
 
     if represent is None:
         if "name" in table.fields:
@@ -463,13 +465,27 @@ def s3_represent_multiref(table, opt, represent=None):
         query = query & (table.deleted == False)
 
     records = db(query).select()
-    try:
-        options = [represent(r) for r in records]
-    except TypeError:
-        options = [represent % r for r in records]
 
-    if options:
-        return ", ".join(options)
+    if records:
+        try:
+            first = represent(records[0])
+            rep_function = represent
+        except TypeError:
+            first = represent % records[0]
+            rep_function = lambda r: represent % r
+
+        # NB join only operates on strings, and some callers provide A().
+        results = [first]
+        for record in records[1:len(records)-1]:
+            results.append(separator)
+            results.append(rep_function(record))
+
+        # Wrap in XML to allow showing anchors on read-only pages, else
+        # Web2py will escape the angle brackets, etc. The single-record
+        # location represent produces A() (unless told not to), and we
+        # want to show links if we can.
+        return XML(DIV(*results))
+
     else:
         return UNKNOWN_OPT
 
@@ -515,10 +531,16 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
 
     for i in xrange(len(tabs)):
         title, component = tabs[i][:2]
+        vars_in_request = True
         if len(tabs[i]) > 2:
             _vars = tabs[i][2]
+            for k,v in _vars.iteritems():
+                if r.request.vars.get(k) != v:
+                    vars_in_request = False
+                    break
         else:
             _vars = r.request.vars
+
 
         if component and component.find("/") > 0:
             function, component = component.split("/", 1)
@@ -535,7 +557,7 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
             next = tab
 
         if component:
-            if r.component and r.component.name == component or \
+            if r.component and r.component.name == component and vars_in_request or \
                r.custom_action and r.method == component:
                 tab.update(_class = "rheader_tab_here")
                 previous = i and tablist[i-1] or None

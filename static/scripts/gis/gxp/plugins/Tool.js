@@ -23,8 +23,8 @@ Ext.namespace("gxp.plugins");
  */   
 gxp.plugins.Tool = Ext.extend(Ext.util.Observable, {
     
-    /** api: ptype = gx_tool */
-    ptype: "gx_tool",
+    /** api: ptype = gxp_tool */
+    ptype: "gxp_tool",
     
     /** api: config[autoActivate]
      *  ``Boolean`` Set to false if the tool should be initialized without
@@ -95,6 +95,12 @@ gxp.plugins.Tool = Ext.extend(Ext.util.Observable, {
      *  be useful to override the xtype (e.g. "window" instead of "gx_popup"),
      *  or to provide layout configurations when rendering to an
      *  ``outputTarget``.
+     */
+
+    /** api: config[controlOptions]
+     *  ``Object`` If this tool is associated with an ``OpenLayers.Control``
+     *  then this is an optional object to pass to the constructor of the
+     *  associated ``OpenLayers.Control``.
      */
     
     /** private: property[target]

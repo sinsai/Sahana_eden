@@ -2,7 +2,7 @@
 
 """ Extensible Resource Controller (S3XRC)
 
-    @version: 2.3.3
+    @version: 2.3.4
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
@@ -10,7 +10,7 @@
 
     @author: Dominic König <dominic[at]aidiq.com>
 
-    @copyright: 2009-2010 (c) Sahana Software Foundation
+    @copyright: 2009-2011 (c) Sahana Software Foundation
     @license: MIT
 
     Permission is hereby granted, free of charge, to any person
@@ -82,26 +82,6 @@ class S3ResourceController(object):
     # Prefixes of resources that must not be manipulated from remote
     PROTECTED = ("auth", "admin", "s3")
 
-    # Error messages
-    ERROR = Storage(
-        BAD_RECORD = "Record not found",
-        BAD_METHOD = "Unsupported method",
-        BAD_FORMAT = "Unsupported data format",
-        BAD_REQUEST = "Invalid request",
-        BAD_TEMPLATE = "XSLT template not found",
-        BAD_RESOURCE = "Nonexistent or invalid resource",
-        PARSE_ERROR = "XML parse error",
-        TRANSFORMATION_ERROR = "XSLT transformation error",
-        BAD_SOURCE = "Invalid XML source",
-        NO_MATCH = "No matching element found in the data source",
-        VALIDATION_ERROR = "Validation error",
-        DATA_IMPORT_ERROR = "Data import error",
-        NOT_PERMITTED = "Operation not permitted",
-        NOT_IMPLEMENTED = "Not implemented",
-        INTEGRITY_ERROR = "Integrity error" #T("Cannot delete whilst there are linked records. Please delete linked records first.")
-    )
-
-
     # -------------------------------------------------------------------------
     def __init__(self, environment, db):
         """
@@ -123,6 +103,26 @@ class S3ResourceController(object):
         self.request = environment.request
         self.response = environment.response
         self.migrate = environment.migrate
+
+        # Error messages
+        T = self.T
+        self.ERROR = Storage(
+            BAD_RECORD = T("Record not found"),
+            BAD_METHOD = T("Unsupported method"),
+            BAD_FORMAT = T("Unsupported data format"),
+            BAD_REQUEST = T("Invalid request"),
+            BAD_TEMPLATE = T("XSLT stylesheet not found"),
+            BAD_RESOURCE = T("Nonexistent or invalid resource"),
+            PARSE_ERROR = T("XML parse error"),
+            TRANSFORMATION_ERROR = T("XSLT transformation error"),
+            BAD_SOURCE = T("Invalid XML source"),
+            NO_MATCH = T("No matching element found in the data source"),
+            VALIDATION_ERROR = T("Validation error"),
+            DATA_IMPORT_ERROR = T("Data import error"),
+            NOT_PERMITTED = T("Operation not permitted"),
+            NOT_IMPLEMENTED = T("Not implemented"),
+            INTEGRITY_ERROR = T("Integrity error: record can not be deleted while it is referenced by other records")
+        )
 
         # Settings
         self.s3 = environment.s3
@@ -1557,6 +1557,8 @@ class S3QueryBuilder(object):
 
         """
 
+        db = resource.db
+
         c = self.parse_url_context(resource, vars)
         q = Storage(context=c)
 
@@ -1570,7 +1572,7 @@ class S3QueryBuilder(object):
                 elif rname in resource.components:
                     table = resource.components[rname].component.table
                 elif rname in c.keys():
-                    table = self.db.get(c[rname].table, None)
+                    table = db.get(c[rname].table, None)
                     if not table:
                         continue
                 else:
@@ -1815,9 +1817,9 @@ class S3QueryBuilder(object):
 
                     _table = resource.db[context.table]
                     if context.multiple:
-                        join = (rtable[context.field].contains(table.id))
+                        join = (rtable[context.field].contains(_table.id))
                     else:
-                        join = (rtable[context.field] == table.id)
+                        join = (rtable[context.field] == _table.id)
                     if cjoin:
                         join = (cjoin & join)
 

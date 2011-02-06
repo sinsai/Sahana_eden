@@ -49,21 +49,44 @@ if s3_has_role(1):
 module = "logs"
 if deployment_settings.has_module(module):
 
-#==============================================================================
-# Request
+    #==========================================================================
+    # Request
+    REQ_STATUS_NONE       = 0 
+    REQ_STATUS_PARTIAL    = 1
+    REQ_STATUS_COMPLETE   = 2
+    
+    log_req_status_dict = { REQ_STATUS_NONE:       T("None"),
+                            REQ_STATUS_PARTIAL:    T("Partial"),
+                            REQ_STATUS_COMPLETE:   T("Complete")
+                           }
+
+    req_status= S3ReusableField("req_status", 
+                                "integer",
+                                label = T("Request Status"),
+                                requires = IS_NULL_OR(IS_IN_SET(log_req_status_dict)),
+                                represent = lambda status: log_req_status_dict[status],
+                                default = REQ_STATUS_NONE,
+                                )
+
     resourcename = "req"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            Field("request_date",
+                            Field("date",
                                   "date",
                                   label = T("Date Requested")),
-                            Field("require_date",
+                            Field("date_required",
                                   "date",
                                   label = T("Date Required")),
-                            inventory_store_id(label = T("Requested From Warehouse")),
-                            location_id("by_location_id",
-                                        label = T("Requested By Location")),
-                            Field("status", "boolean"),
+                            inventory_store_id(label = T("Requested By Store")),
+                            req_status("commit_status",
+                                       label = T("Commit. Status"),
+                                       ),
+                            req_status("transit_status",
+                                       label = T("Transit Status"),
+                                       ),                                       
+                            req_status("fulfil_status",
+                                       label = T("Fulfil. Status"),
+                                       ),                                  
                             person_id("requester_id",
                                       label = T("Requester") ),
                             comments(),
@@ -87,40 +110,40 @@ if deployment_settings.has_module(module):
         msg_record_created = T("Request Added"),
         msg_record_modified = T("Request Updated"),
         msg_record_deleted = T("Request Canceled"),
-        msg_list_empty = T("No Request Shipments"))
+        msg_list_empty = T("No Requests"))
 
     # -----------------------------------------------------------------------------
     def logs_req_represent(id):
         if id:
             logs_req_row = db(db.logs_req.id == id).\
-                              select(db.logs_req.date,
-                                     db.logs_req.from_location_id,
+                              select(db.logs_req.request_date,
+                                     db.logs_req.inventory_store_id,
                                      limitby=(0, 1))\
                               .first()
-            return "%s - %s" % (shn_gis_location_represent( \
-                                logs_req_row.from_location_id),
-                                logs_req_row.date)
+            return "%s - %s" % (inventory_store_represent( \
+                                logs_req_row.inventory_store_id),
+                                logs_req_row.request_date)
         else:
             return NONE
 
     # -----------------------------------------------------------------------------
     # Reusable Field
-    logs_req_id = S3ReusableField("logs_req_id", db.logs_req, sortby="name",
+    logs_req_id = S3ReusableField("logs_req_id", db.logs_req, sortby="request_date",
                                   requires = IS_NULL_OR( \
                                                  IS_ONE_OF(db,
                                                            "logs_req.id",
                                                            logs_req_represent,
-                                                           orderby="logs_req_id.date",
+                                                           orderby="logs_req.date",
                                                            sort=True)),
-                                 represent = logs_req_represent,
-                                 label = T("Receive Shipment"),
-                                 #comment = DIV(A(ADD_DISTRIBUTION, _class="colorbox", _href=URL(r=request, c="logs", f="distrib", args="create", vars=dict(format="popup")), _target="top", _title=ADD_DISTRIBUTION),
-                                 #          DIV( _class="tooltip", _title=T("Distribution") + "|" + T("Add Distribution."))),
-                                 ondelete = "RESTRICT"
-                                 )
+                                  represent = logs_req_represent,
+                                  label = T("Request"),
+                                  #comment = DIV(A(ADD_DISTRIBUTION, _class="colorbox", _href=URL(r=request, c="logs", f="distrib", args="create", vars=dict(format="popup")), _target="top", _title=ADD_DISTRIBUTION),
+                                  #          DIV( _class="tooltip", _title=T("Distribution") + "|" + T("Add Distribution."))),
+                                  ondelete = "RESTRICT"
+                                  )
 
     #------------------------------------------------------------------------------
-    # Logs In as a component of Inventory Store
+    # Request as a component of Inventory Store
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict( inventory_store = \
@@ -140,11 +163,20 @@ if deployment_settings.has_module(module):
                             logs_req_id(),
                             item_id(),
                             item_packet_id(),
-                            Field("quantity", 
+                            Field("quantity",
                                   "double",
                                   notnull = True),
-                            Field("quantity_fulfilled", 
-                                  "double"),                                  
+                            Field("quantity_commit", 
+                                  "double"),                                    
+                            Field("quantity_transit", 
+                                  "double"),                                                                      
+                            Field("quantity_fulfil", 
+                                  "double"),  
+                            #Field("percent_fulfilled",
+                            #      "double",
+                            #      compute = lambda r: r.quantity_fulfilled/r.quantity,
+                            #      represent = lambda percent: "%.0f%%" % percent,
+                            #      ),                             
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
@@ -166,7 +198,18 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Request Item updated"),
         msg_record_deleted = T("Request Item deleted"),
         msg_list_empty = T("No Request Items currently registered"))
-
+    # -----------------------------------------------------------------------------
+    # Reusable Field
+    logs_req_item_id = S3ReusableField( "logs_req_item_id", db.logs_req_item,
+                                        requires = IS_NULL_OR(IS_ONE_OF(db,
+                                                                        "logs_req_item.id"
+                                                                        )
+                                                              ),
+                                        ondelete = "RESTRICT",
+                                        readable = False,
+                                        writable = False
+                                        )    
+    
     #------------------------------------------------------------------------------
     # Request Items as component of Request
     # Request Items as a component of Items
@@ -175,25 +218,224 @@ if deployment_settings.has_module(module):
                               joinby=dict(logs_req = "logs_req_id",
                                           supply_item = "item_id"))
 
-#==============================================================================
-# Received (In/Receive / Donation / etc)
-#
+    #------------------------------------------------------------------------------
+    # On Accept to update logs_req
+    def logs_req_item_onaccept(form):
+        req_id = form.vars.logs_req_id
+        r_current = db.logs_req[req_id]
+        r_update = {}
+        
+        for status_type in ["commit","transit", "fulfil"]:        
+            #Update Commit Status
+            if form.vars["quantity_%s" % status_type]:
+                if form.vars["quantity_%s" % status_type] < form.vars.quantity:
+                    status = REQ_STATUS_PARTIAL    
+                else: 
+                    status = REQ_STATUS_COMPLETE   
+                if status > r_current.commit_status:
+                   r_update["%s_status" % status_type] = status
+               
+        #Update Transet Status
+        if form.vars.quantity_commit:
+            if form.vars.quantity_commit < form.vars.quantity:
+                status = REQ_STATUS_PARTIAL    
+            else: 
+                status = REQ_STATUS_COMPLETE   
+            if status > r_current.commit_status:
+               r_update["commit_status"] = status
+               
+        #Update Fulfil Status
+        if form.vars.quantity_commit:
+            if form.vars.quantity_commit < form.vars.quantity:
+                status = REQ_STATUS_PARTIAL    
+            else: 
+                status = REQ_STATUS_COMPLETE   
+            if status > r_current.commit_status:
+               r_update["commit_status"] = status
+        
+        
+        if r_update:
+            db.logs_req[req_id] = r_update  
+            
+    s3xrc.model.configure(table, onaccept=logs_req_item_onaccept)
+
+    #==========================================================================
+    # Commit
+    
+    resourcename = "commit"
+    tablename = "%s_%s" % (module, resourcename)
+    table = db.define_table(tablename,
+                            Field("date",
+                                  "date",
+                                  label = T("Date")),
+                            logs_req_id(),                            
+                            Field("date_available",
+                                  "date",
+                                  label = T("Date Available")),
+                            inventory_store_id(label = T("By Store")),
+                            inventory_store_id("for_inventory_store_id",
+                                               label = T("For Store")),                                 
+                            person_id("committer_id",
+                                      label = T("Requester") ),
+                            comments(),
+                            migrate=migrate, *s3_meta_fields())
+
+    # -------------------------------------------------------------------------
+    # CRUD strings
+    ADD_LOGS_COMMIT = T("Make Commitment")
+    LIST_LOGS_COMMIT = T("List Commitments")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_LOGS_COMMIT,
+        title_display = T("Commitment Details"),
+        title_list = LIST_LOGS_COMMIT,
+        title_update = T("Edit Commitment"),
+        title_search = T("Search Commitments"),
+        subtitle_create = ADD_LOGS_COMMIT,
+        subtitle_list = T("Commitments"),
+        label_list_button = LIST_LOGS_COMMIT,
+        label_create_button = ADD_LOGS_COMMIT,
+        label_delete_button = T("Delete Commitment"),
+        msg_record_created = T("Commitment Added"),
+        msg_record_modified = T("Commitment Updated"),
+        msg_record_deleted = T("Commitment Canceled"),
+        msg_list_empty = T("No Commitments"))
+
+    # -----------------------------------------------------------------------------
+    def logs_commit_represent(id):
+        if id:
+            r = db(db.logs_commit.id == id).select(db.logs_commit.date,
+                                                   db.logs_commit.inventory_store_id,
+                                                   limitby=(0, 1)).first()
+            return "%s - %s" % \
+                    ( inventory_store_represent(r.inventory_store_id),
+                      r.date
+                     )
+        else:
+            return NONE
+
+    # -----------------------------------------------------------------------------
+    # Reusable Field
+    logs_commit_id = S3ReusableField("logs_commit_id", db.logs_commit, sortby="date",
+                                  requires = IS_NULL_OR( \
+                                                 IS_ONE_OF(db,
+                                                           "logs_commit.id",
+                                                           logs_commit_represent,
+                                                           orderby="logs_commit.date",
+                                                           sort=True)),
+                                  represent = logs_commit_represent,
+                                  label = T("Commitment"),
+                                  #comment = DIV(A(ADD_DISTRIBUTION, _class="colorbox", _href=URL(r=request, c="logs", f="distrib", args="create", vars=dict(format="popup")), _target="top", _title=ADD_DISTRIBUTION),
+                                  #          DIV( _class="tooltip", _title=T("Distribution") + "|" + T("Add Distribution."))),
+                                  ondelete = "RESTRICT"
+                                  )
+
+    #------------------------------------------------------------------------------
+    # Commitment as a component of Inventory Store
+    s3xrc.model.add_component(module, resourcename,
+                              multiple=True,
+                              joinby=dict( inventory_store = \
+                                               "inventory_store_id" ) )
+
+    #------------------------------------------------------------------------------
+    # Redirect to the Items tabs after creation
+    s3xrc.model.configure(table,
+                          create_next = URL(r=request, c="logs", f="commit", args=["[id]", "commit_item"]))
+
+    #==============================================================================
+    # Commitment Items
+    #
+    resourcename = "commit_item"
+    tablename = "%s_%s" % (module, resourcename)
+    table = db.define_table(tablename,
+                            logs_commit_id(),
+                            item_id(),
+                            item_packet_id(),
+                            Field("quantity", 
+                                  "double",
+                                  notnull = True),                          
+                            comments(),
+                            logs_req_item_id(),
+                            migrate=migrate, *s3_meta_fields())
+
+    # CRUD strings
+    ADD_LOGS_COMMIT_ITEM = T("Commitment Item")
+    LIST_LOGS_COMMIT_ITEM = T("List Commitment Items")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_LOGS_COMMIT_ITEM,
+        title_display = T("Commitment Item Details"),
+        title_list = LIST_LOGS_COMMIT_ITEM,
+        title_update = T("Edit Commitment Item"),
+        title_search = T("Search Commitment Items"),
+        subtitle_create = T("Add New Commitment Item"),
+        subtitle_list = T("Commitment Items"),
+        label_list_button = LIST_LOGS_COMMIT_ITEM,
+        label_create_button = ADD_LOGS_COMMIT_ITEM,
+        label_delete_button = T("Delete Commitment Item"),
+        msg_record_created = T("Commitment Item added"),
+        msg_record_modified = T("Commitment Item updated"),
+        msg_record_deleted = T("Commitment Item deleted"),
+        msg_list_empty = T("No Commitment Items currently registered"))
+    
+    #------------------------------------------------------------------------------
+    # Commitment Items as component of Commitment
+    # Commitment Items as a component of Items
+    s3xrc.model.add_component(module, resourcename,
+                              multiple=True,
+                              joinby=dict(logs_commit = "logs_commit_id",
+                                          supply_item = "item_id"))        
+
+    #==============================================================================
+    # Received (In/Receive / Donation / etc)
+    #
+    
+    logs_recv_type = {0:NONE,
+                      1:"Another Store",
+                      2:"Donation",
+                      3:"Supplier"}
+    
+    LOGS_STATUS_IN_PROCESS = 0
+    LOGS_STATUS_RECEIVED   = 1
+    LOGS_STATUS_SENT       = 2
+    
+    logs_status = { LOGS_STATUS_IN_PROCESS: T("In Process"),
+                    LOGS_STATUS_RECEIVED:   T("Received"),
+                    LOGS_STATUS_SENT:       T("Sent")
+                   }    
+     
     resourcename = "recv"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            Field("datetime", "datetime",
-                                  label = "Date"),
+                            Field("datetime",
+                                  "datetime",
+                                  label = "Date Received",
+                                  writable = False,
+                                  readable = False #unless the record is locked
+                                  ),
                             inventory_store_id(label = T("By Warehouse")),
+                            Field("type",
+                                  "integer",
+                                  requires = IS_NULL_OR(IS_IN_SET(logs_recv_type)),
+                                  represent = lambda type: logs_recv_type[type],
+                                  default = 0,
+                                  ),
+                            organisation_id("from_organisation_id",
+                                            label = T("From Organisation")),
                             location_id("from_location_id",
                                         label = T("From Location")),
-                            Field("status", "boolean",
-                                  writable = False),
+                            Field("from_person"), #Text field, because lookup to pr_person record is unnecessary complex workflow                                              
+                            Field("status", 
+                                  "integer",
+                                  requires = IS_NULL_OR(IS_IN_SET(logs_status)),
+                                  represent = lambda status: logs_status[status],       
+                                  default = LOGS_STATUS_IN_PROCESS,                           
+                                  writable = False,
+                                  ),
                             person_id(name = "recipient_id",
                                       label = T("Received By")),
                             comments(),
                             migrate=migrate, *s3_meta_fields()
                             )
-    
+
     table.status.represent = lambda status: T("Received") if status else T("In Process")
     # -----------------------------------------------------------------------------
     # CRUD strings
@@ -213,7 +455,8 @@ if deployment_settings.has_module(module):
         msg_record_created = T("Shipment Created"),
         msg_record_modified = T("Received Shipment updated"),
         msg_record_deleted = T("Received Shipment canceled"),
-        msg_list_empty = T("No Received Shipments"))
+        msg_list_empty = T("No Received Shipments")
+    )
 
     # -----------------------------------------------------------------------------
     def logs_recv_represent(id):
@@ -266,6 +509,7 @@ if deployment_settings.has_module(module):
                             Field("quantity", "double",
                                   notnull = True),
                             comments(),
+                            logs_req_item_id(),
                             migrate=migrate, *s3_meta_fields())
 
     # CRUD strings
@@ -308,26 +552,33 @@ if deployment_settings.has_module(module):
 
 #==============================================================================
 # Send (Outgoing / Dispatch / etc)
-#
+#    
+    
     resourcename = "send"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            Field("datetime", "datetime",
-                                  label = "Date"),
-                            inventory_store_id(),
-                            location_id("to_location_id",
-                                        label = T("To Location") ),
-                            Field("to_inventory_store_id",
+                            Field( "datetime", "datetime",
+                                   label = "Date"),
+                            inventory_store_id( label = T("From Warehouse")),
+                            location_id( "to_location_id",
+                                         label = T("To Location") ),
+                            inventory_store_id( "to_inventory_store_id",
+                                                label = T("To Warehouse"),
+                                                compute = shn_logs_send_store_id,
+                                                readable = False),                                   
+                            Field("status", 
                                   "integer",
-                                  compute = shn_logs_send_store_id,
-                                  readable = False),
-                            Field("status", "boolean",
-                                  writable = False),
+                                  requires = IS_NULL_OR(IS_IN_SET(logs_status)),
+                                  represent = lambda status: logs_status[status],       
+                                  default = LOGS_STATUS_IN_PROCESS,                           
+                                  writable = False,
+                                  ),
                             person_id(name = "recipient_id"),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
     table.status.represent = lambda status: T("Sent") if status else T("In Process")
+    
     # -----------------------------------------------------------------------------
     # CRUD strings
     ADD_LOGS_OUT = T("Add New Shipment to Send")
@@ -358,34 +609,35 @@ if deployment_settings.has_module(module):
                               .first()
             return SPAN( shn_gis_location_represent( logs_send_row.to_location_id),
                          " - ",
-                        logs_send_row.datetime)            
+                        logs_send_row.datetime)
         else:
             return NONE
 
     # -----------------------------------------------------------------------------
     # Reusable Field
-    logs_send_id = S3ReusableField("logs_send_id", db.logs_send, sortby="datetime",
-                                 requires = IS_NULL_OR(IS_ONE_OF(db,
-                                                                 "logs_send.id",
-                                                                 logs_send_represent,
-                                                                 orderby="logs_send_id.datetime", sort=True)),
-                                 represent = logs_send_represent,
-                                 label = T("Receive Shipment"),
-                                 #comment = DIV(A(ADD_DISTRIBUTION, _class="colorbox", _href=URL(r=request, c="logs", f="distrib", args="create", vars=dict(format="popup")), _target="top", _title=ADD_DISTRIBUTION),
-                                 #          DIV( _class="tooltip", _title=T("Distribution") + "|" + T("Add Distribution."))),
-                                 ondelete = "RESTRICT"
-                                 )
+    logs_send_id = S3ReusableField( "logs_send_id", db.logs_send, sortby="datetime",
+                                    requires = IS_NULL_OR(IS_ONE_OF(db,
+                                                                    "logs_send.id",
+                                                                    logs_send_represent,
+                                                                    orderby="logs_send_id.datetime", sort=True)),
+                                    represent = logs_send_represent,
+                                    label = T("Receive Shipment"),
+                                    #comment = DIV(A(ADD_DISTRIBUTION, _class="colorbox", _href=URL(r=request, c="logs", f="distrib", args="create", vars=dict(format="popup")), _target="top", _title=ADD_DISTRIBUTION),
+                                    #          DIV( _class="tooltip", _title=T("Distribution") + "|" + T("Add Distribution."))),
+                                    ondelete = "RESTRICT"
+                                    )
 
     #------------------------------------------------------------------------------
-    # Logs Send  as a component of Inventory Store
-    s3xrc.model.add_component(module, resourcename,
-                              multiple=True,
-                              joinby=dict( inventory_store ="inventory_store_id" ) )
+    # Logs Send added as a component of Inventory Store in controller
+    # joinby inventory_store_id (send) OR to_inventory_store_id (incoming), depending on component tab
 
     #------------------------------------------------------------------------------
-    # Redirect to the Items tabs after creation
+    # Redirect to the Items tabs after create & update
+    url_logs_send_items = URL(r=request, c="logs", f="send", args=["[id]", "send_item"])
     s3xrc.model.configure(table,
-                          create_next = URL(r=request, c="logs", f="send", args=["[id]", "send_item"]))
+                          create_next = url_logs_send_items,
+                          update_next = url_logs_send_items
+                          )
 
     #==============================================================================
     # Send (Outgoing / Dispatch / etc) Items
@@ -393,7 +645,7 @@ if deployment_settings.has_module(module):
     log_sent_item_status = {0: NONE,
                             1: "Invalid Quantity"
                             }
-    
+
     resourcename = "send_item"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
@@ -403,11 +655,12 @@ if deployment_settings.has_module(module):
                             Field("quantity", "double",
                                   notnull = True),
                             comments(),
-                            Field("status", 
+                            Field("status",
                                   "integer",
                                   requires = IS_NULL_OR(IS_IN_SET(log_sent_item_status)),
                                   represent = lambda status: log_sent_item_status[status] if status else log_sent_item_status[0],
                                   writable = False),
+                            logs_req_item_id(),      
                             migrate=migrate, *s3_meta_fields())
 
     # CRUD strings

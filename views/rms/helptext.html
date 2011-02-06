@@ -17,7 +17,13 @@ $(function() {
             S3ClearNavigateAwayConfirm();
 
             if ($('#rms_req_message').val() == rms_help_msg) {
+                // Provide error message
                 $('#rms_req_message').after('<div id="type__error" class="error" style="display: block;">Message field is required!</div>');
+                // Reset the Navigation protection
+                S3SetNavigateAwayConfirm()
+                // Move focus to this field
+                $('#rms_req_message').focus();
+                // Prevent the Form's save from continuing
                 return false;
             } else {
                 // Allow the Form's save to continue

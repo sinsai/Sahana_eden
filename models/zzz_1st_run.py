@@ -412,7 +412,7 @@ if populate:
             base_unit = "kit",
             comments = "Designed to provide a 1st phase drinking water purification solution at the household level. Contains 600 sachets to provide sufficient drinking water (4l) for 100 people for 30 days."
             )
-        
+
         #enter base_unit as packets
         item_rows = db(table.id > 0).select(table.id, table.base_unit)
         for item_row in item_rows:
@@ -420,7 +420,7 @@ if populate:
                 item_id = item_row.id,
                 name = item_row.base_unit,
                 quantity = 1
-               )             
+               )
 
     # Project Module
     if deployment_settings.has_module("project"):
@@ -1170,10 +1170,15 @@ if populate:
         create_role = auth.s3_create_role
         # Do not remove or change order of these 5 definitions (System Roles):
         create_role("Administrator", "System Administrator - can access & make changes to any data")
-        create_role("Authenticated", "Authenticated - all logged-in users")
-        create_role("Creator", "Creator - dummy role which isn't meant to have users added to it. Used to restrict records to just those created by the user")
+        create_role("Authenticated", "Authenticated - all logged-in users",
+                    dict(c="gis", uacl=acl.ALL, oacl=acl.ALL),
+                    dict(c="gis", f="location", uacl=acl.READ, oacl=acl.ALL))
+        create_role("Anonymous", "Unauthenticated users",
+                    dict(c="gis", uacl=acl.READ, oacl=acl.READ))
         create_role("Editor", "Editor - can access & make changes to any unprotected data")
-        create_role("MapAdmin", description = "MapAdmin - allowed access to edit the MapService Catalogue")
+        create_role("MapAdmin", "MapAdmin - allowed access to edit the MapService Catalogue",
+                    dict(c="gis", uacl=acl.ALL, oacl=acl.ALL),
+                    dict(c="gis", f="location", uacl=acl.ALL, oacl=acl.ALL))
 
         # Additional roles + ACLs
         create_role("DVI", "Role for DVI staff - permission to access the DVI module",
@@ -1185,7 +1190,7 @@ if populate:
 
 
     # Security Defaults for all tables (if using 'full' security policy)
-    if session.s3.security_policy not in (1,2,3,4):
+    if session.s3.security_policy not in (1,2,3,4,5):
         table = auth.settings.table_permission_name
         if not db(db[table].id > 0).count():
             # For performance we only populate this once (at system startup)

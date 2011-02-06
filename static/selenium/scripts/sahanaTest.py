@@ -102,6 +102,10 @@ class SahanaTest(unittest.TestCase):
             return None
 
     @classmethod
+    def setSortList(cls, list):
+        cls._sortList = list
+        
+    @classmethod
     def useSahanaAdminAccount(cls):
         cls._user = "admin@example.com"
         cls._password = "testing"

@@ -2,7 +2,7 @@
 
 """ RESTful CRUD Methods (S3XRC)
 
-    @version: 2.3.3
+    @version: 2.3.4
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
@@ -10,7 +10,7 @@
 
     @author: Dominic König <dominic[at]aidiq.com>
 
-    @copyright: 2009-2010 (c) Sahana Software Foundation
+    @copyright: 2009-2011 (c) Sahana Software Foundation
     @license: MIT
 
     Permission is hereby granted, free of charge, to any person
@@ -75,6 +75,20 @@ class S3CRUD(S3Method):
         """
 
         self.settings = self.manager.s3.crud
+
+        # Pre-populate create-form?
+        self.data = None
+        if r.http == "GET" and not self.record:
+            populate = attr.pop("populate", None)
+            if callable(populate):
+                try:
+                    self.data = populate(r, **attr)
+                except TypeError:
+                    self.data = None
+                except:
+                    raise
+            elif isinstance(populate, dict):
+                self.data = populate
 
         if r.http == "DELETE" or self.method == "delete":
             output = self.delete(r, **attr)
@@ -188,6 +202,10 @@ class S3CRUD(S3Method):
                         r.error(404, self.resource.ERROR.BAD_RESOURCE)
                 else:
                     from_table = table
+                try:
+                    from_record = long(from_record)
+                except:
+                    r.error(404, self.resource.ERROR.BAD_RECORD)
                 authorised = self.permit("read",
                                          from_table._tablename,
                                          from_record)
@@ -645,7 +663,7 @@ class S3CRUD(S3Method):
 
         # Check if deletable
         if not deletable:
-            r.error(403, self.manager.ERROR.NOT_PERMITTED)
+            r.error(403, self.manager.ERROR.NOT_PERMITTED, next=r.there())
 
         # Check permission to delete
         authorised = self.permit("delete", self.tablename, record_id)
@@ -657,7 +675,7 @@ class S3CRUD(S3Method):
         if not authorised:
             r.unauthorised()
 
-        elif r.http == "GET" and not record_id:
+        elif r.interactive and r.http == "GET" and not record_id:
             # Provide a confirmation form and a record list
             form = FORM(TABLE(TR(
                         TD(self.settings.confirm_delete,
@@ -670,25 +688,31 @@ class S3CRUD(S3Method):
             output.update(items=items)
             response.view = self._view(r, "delete.html")
 
-        elif r.http == "POST" or \
-             r.http == "GET" and record_id:
+        elif r.interactive and (r.http == "POST" or
+                                r.http == "GET" and record_id):
             # Delete the records, notify success and redirect to the next view
             numrows = self.resource.delete(ondelete=ondelete,
                                            format=representation)
             if numrows > 1:
-                response.confirmation = "%s %s" % \
-                                        (numrows, T("records deleted"))
+                message = "%s %s" % (numrows, T("records deleted"))
+            elif numrows == 1:
+                message = self.crud_string(self.tablename, "msg_record_deleted")
             else:
-                response.confirmation = self.crud_string(self.tablename,
-                                                         "msg_record_deleted")
-            r.http = "DELETE"
+                r.error(404, self.manager.error, next=r.there())
+            response.confirmation = message
+            r.http = "DELETE" # must be set for immediate redirect
             self.next = delete_next or r.there()
 
         elif r.http == "DELETE":
             # Delete the records and return a JSON message
             numrows = self.resource.delete(ondelete=ondelete,
                                            format=representation)
-            message = "%s %s" % (numrows, T("records deleted"))
+            if numrows > 1:
+                message = "%s %s" % (numrows, T("records deleted"))
+            elif numrows == 1:
+                message = self.crud_string(self.tablename, "msg_record_deleted")
+            else:
+                r.error(404, self.manager.error, next=r.there())
             item = self.manager.xml.json_message(message=message)
             self.response.view = "xml.html"
             output.update(item=item)
@@ -773,7 +797,7 @@ class S3CRUD(S3Method):
 
             # SSPag?
             if not response.s3.no_sspag:
-                limit = 1 
+                limit = 1
                 session.s3.filter = request.get_vars
 
             # Add hidden add-form (do this before retrieving the list!)
@@ -1044,8 +1068,8 @@ class S3CRUD(S3Method):
 
         if not readonly:
 
-            # Copy from a previous record?
-            if from_table is not None:
+            # Pre-populate from a previous record?
+            if record_id is None and from_table is not None:
                 # Field mapping
                 if map_fields:
                     if isinstance(map_fields, dict):
@@ -1078,13 +1102,21 @@ class S3CRUD(S3Method):
                         record = Storage([(f, row[map_fields[f]]) for f in map_fields])
                     else:
                         record = Storage(row)
-                if data:
-                    missing_fields = Storage()
-                    for f in table.fields:
-                        if f not in record and table[f].writable:
-                            missing_fields[f] = table[f].default
-                    record.update(missing_fields)
-                    record.update(id=None)
+
+            # Pre-populate from call?
+            elif record_id is None and isinstance(self.data, dict):
+                record = Storage([(f, self.data[f])
+                                  for f in self.data
+                                  if f in table.fields and table[f].writable])
+
+            # Add missing fields to pre-populated record
+            if record:
+                missing_fields = Storage()
+                for f in table.fields:
+                    if f not in record and table[f].writable:
+                        missing_fields[f] = table[f].default
+                record.update(missing_fields)
+                record.update(id=None)
 
             # Add asterisk to labels of required fields
             labels = Storage()
@@ -1171,6 +1203,8 @@ class S3CRUD(S3Method):
 
                 # Store session vars
                 if form.vars.id:
+                    if record_id is None:
+                        self.manager.auth.s3_make_session_owner(table, form.vars.id)
                     self.resource.lastid = str(form.vars.id)
                     self.manager.store_session(prefix, name, form.vars.id)
 

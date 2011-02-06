@@ -28,8 +28,8 @@ Ext.namespace("gxp.plugins");
  */   
 gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
     
-    /** api: ptype = gx_featureeditor */
-    ptype: "gx_featureeditor",
+    /** api: ptype = gxp_featureeditor */
+    ptype: "gxp_featureeditor",
 
     /** api: config[createFeatureActionTip]
      *  ``String``
@@ -88,6 +88,14 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
      */
     showSelectedOnly: true,
     
+    /** api: config[fields]
+     *  ``Array``
+     *  List of field config names corresponding to feature attributes.  If
+     *  not provided, fields will be derived from attributes. If provided,
+     *  the field order from this list will be used, and fields missing in the
+     *  list will be excluded.
+     */
+
     /** api: config[excludeFields]
      *  ``Array`` Optional list of field names (case sensitive) that are to be
      *  excluded from the property grid of the FeatureEditPopup.
@@ -150,6 +158,10 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
                         unregisterDoIt.call(this);
                         if (fn === "setLayer") {
                             this.target.selectLayer(fnArgs[0]);
+                        } else if (fn === "clearFeatures") {
+                            // nothing asynchronous involved here, so let's
+                            // finish the caller first before we do anything.
+                            window.setTimeout(function() {mgr[fn].call(mgr);});
                         } else {
                             mgr[fn].apply(mgr, fnArgs);
                         }
@@ -173,6 +185,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
             "beforequery": intercept.createDelegate(this, "loadFeatures", 1),
             "beforelayerchange": intercept.createDelegate(this, "setLayer", 1),
             "beforesetpage": intercept.createDelegate(this, "setPage", 1),
+            "beforeclearfeatures": intercept.createDelegate(this, "clearFeatures", 1),
             scope: this
         });
         
@@ -272,6 +285,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
                         feature: feature,
                         vertexRenderIntent: "vertex",
                         readOnly: this.readOnly,
+                        fields: this.fields,
                         excludeFields: this.excludeFields,
                         editing: feature.state === OpenLayers.State.INSERT,
                         schema: this.schema,
@@ -350,7 +364,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
         var actions = gxp.plugins.FeatureEditor.superclass.addActions.call(this, [new GeoExt.Action({
             tooltip: this.createFeatureActionTip,
             text: this.createFeatureActionText,
-            iconCls: "gx-icon-addfeature",
+            iconCls: "gxp-icon-addfeature",
             disabled: true,
             hidden: this.readOnly,
             toggleGroup: toggleGroup,
@@ -362,7 +376,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
         }), new GeoExt.Action({
             tooltip: this.editFeatureActionTip,
             text: this.editFeatureActionText,
-            iconCls: "gx-icon-editfeature",
+            iconCls: "gxp-icon-editfeature",
             disabled: true,
             toggleGroup: toggleGroup,
             enableToggle: true,
@@ -384,9 +398,9 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
         var evtLL = this.target.mapPanel.map.getLonLatFromPixel(evt.xy);
         var featureManager = this.target.tools[this.featureManager];
         var page = featureManager.page;
-        if (featureManager.paging && page && page.extent.containsLonLat(evtLL)) {
+        if (featureManager.visible() == "all" && featureManager.paging && page && page.extent.containsLonLat(evtLL)) {
             // no need to load a different page if the clicked location is
-            // inside the current page bounds
+            // inside the current page bounds and all features are visible
             return;
         }
 

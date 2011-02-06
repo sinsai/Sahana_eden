@@ -8,6 +8,7 @@
 
 /**
  * @requires plugins/Tool.js
+ * @include widgets/FilterBuilder.js
  */
 
 /** api: (define)
@@ -29,8 +30,8 @@ Ext.namespace("gxp.plugins");
  */
 gxp.plugins.QueryForm = Ext.extend(gxp.plugins.Tool, {
     
-    /** api: ptype = gx_queryform */
-    ptype: "gx_queryform",
+    /** api: ptype = gxp_queryform */
+    ptype: "gxp_queryform",
 
     /** api: config[featureManager]
      *  ``String`` The id of the :class:`gxp.plugins.FeatureManager` to use
@@ -38,6 +39,13 @@ gxp.plugins.QueryForm = Ext.extend(gxp.plugins.Tool, {
      */
     featureManager: null,
     
+    /** api: config[autoHide]
+     *  ``Boolean`` Set to true if the output of this tool goes into an
+     *  ``Ext.Window`` that should be hidden when the query result is
+     *  available. Default is false.
+     */
+    autoHide: false,
+
     /** private: property[schema]
      *  ``GeoExt.data.AttributeStore``
      */
@@ -48,6 +56,12 @@ gxp.plugins.QueryForm = Ext.extend(gxp.plugins.Tool, {
      *  Text for query action (i18n).
      */
     queryActionText: "Query",
+    
+    /** api: config[cancelButtonText]
+     *  ``String``
+     *  Text for cancel button (i18n).
+     */
+    cancelButtonText: "Cancel",
 
     /** api: config[queryMenuText]
      *  ``String``
@@ -78,6 +92,24 @@ gxp.plugins.QueryForm = Ext.extend(gxp.plugins.Tool, {
      *  Text for query by attributes (i18n).
      */
     queryByAttributesText: "Query by attributes",
+    
+    /** api: config[queryMsg]
+     *  ``String``
+     *  Text for query load mask (i18n).
+     */
+    queryMsg: "Querying...",
+    
+    /** api: config[noFeaturesTitle]
+     *  ``String``
+     *  Text for no features alert title (i18n)
+     */
+    noFeaturesTitle: "No Match",
+
+    /** api: config[noFeaturesMsg]
+     *  ``String``
+     *  Text for no features alert message (i18n)
+     */
+    noFeaturesMessage: "Your query did not return any results.",
 
     /** api: config[actions]
      *  ``Object`` By default, this tool creates a "Query" action to trigger
@@ -97,13 +129,14 @@ gxp.plugins.QueryForm = Ext.extend(gxp.plugins.Tool, {
             actions: [{
                 text: this.queryActionText,
                 menuText: this.queryMenuText,
-                iconCls: "gx-icon-find",
-                tooltip: this.queryActionTip
+                iconCls: "gxp-icon-find",
+                tooltip: this.queryActionTip,
+                disabled: true,
             }]
         });
         gxp.plugins.QueryForm.superclass.constructor.apply(this, arguments);
     },
-
+    
     /** api: method[addActions]
      */
     addActions: function(actions) {
@@ -147,8 +180,22 @@ gxp.plugins.QueryForm = Ext.extend(gxp.plugins.Tool, {
                 checkboxToggle: true
             }],
             bbar: ["->", {
+                text: this.cancelButtonText,
+                iconCls: "cancel",
+                handler: function() {
+                    var ownerCt = queryForm.ownerCt;
+                    if (ownerCt && ownerCt instanceof Ext.Window) {
+                        ownerCt.hide();
+                    } else {
+                        addAttributeFilter(
+                            featureManager, featureManager.layerRecord,
+                            featureManater.schema
+                        );
+                    }
+                }
+            }, {
                 text: this.queryActionText,
-                iconCls: "gx-icon-find",
+                iconCls: "gxp-icon-find",
                 handler: function() {
                     var filters = [];
                     if (queryForm.spatialFieldset.collapsed !== true) {
@@ -180,7 +227,7 @@ gxp.plugins.QueryForm = Ext.extend(gxp.plugins.Tool, {
             queryForm.setDisabled(!schema);
             if (schema) {
                 queryForm.attributeFieldset.add({
-                    xtype: "gx_filterbuilder",
+                    xtype: "gxp_filterbuilder",
                     ref: "../filterBuilder",
                     attributes: schema,
                     allowBlank: true,
@@ -201,6 +248,27 @@ gxp.plugins.QueryForm = Ext.extend(gxp.plugins.Tool, {
         
         this.target.mapPanel.map.events.register("moveend", this, function() {
             queryForm.extent.setValue(this.getFormattedMapExtent());
+        });
+        
+        featureManager.on({
+            "beforequery": function() {
+                new Ext.LoadMask(queryForm.getEl(), {
+                    store: featureManager.featureStore,
+                    msg: this.queryMsg
+                }).show();
+            },
+            "query": function(tool, store) {
+                if (store) {
+                    store.getCount() || Ext.Msg.show({
+                        title: this.noFeaturesTitle,
+                        msg: this.noFeaturesMessage,
+                        buttons: Ext.Msg.OK,
+                        icon: Ext.Msg.INFO
+                    });
+                    this.autoHide && queryForm.ownerCt && queryForm.ownerCt.hide();
+                }
+            },
+            scope: this
         });
         
         return queryForm;

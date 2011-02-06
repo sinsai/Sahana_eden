@@ -58,7 +58,7 @@ Ext.namespace("gxp.plugins");
  *
  *  .. code-block:: javascript
  *
- *    defaultSourceType: "gx_wmssource",
+ *    defaultSourceType: "gxp_wmssource",
  *    sources: {
  *        "opengeo": {
  *            url: "http://suite.opengeo.org/geoserver/wms"
@@ -79,12 +79,24 @@ Ext.namespace("gxp.plugins");
  */
 gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
     
-    /** api: ptype = gx_wmssource */
-    ptype: "gx_wmssource",
+    /** api: ptype = gxp_wmssource */
+    ptype: "gxp_wmssource",
     
     /** api: config[url]
      *  ``String`` WMS service URL for this source
      */
+
+    /** api: baseParams
+     *  ``Object`` Base parameters to use on the WMS GetCapabilities
+     *  request.
+     */
+    baseParams: null,
+
+    /** api: format
+     * ``OpenLayers.Format`` Optional custom format to use on the 
+     * WMSCapabilitiesStore store instead of the default.
+     */
+    format: null,
     
     /** private: property[describeLayerStore]
      *  ``GeoExt.data.WMSDescribeLayerStore`` additional store of layer
@@ -112,7 +124,7 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
      *  Creates a store of layer records.  Fires "ready" when store is loaded.
      */
     createStore: function() {
-        var baseParams = {
+        var baseParams = this.baseParams || {
             SERVICE: "WMS",
             REQUEST: "GetCapabilities"
         };
@@ -122,6 +134,7 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
         this.store = new GeoExt.data.WMSCapabilitiesStore({
             url: this.url,
             baseParams: baseParams,
+            format: this.format,
             autoLoad: true,
             listeners: {
                 load: function() {
@@ -222,7 +235,7 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
                 title: layer.name,
                 group: config.group,
                 source: config.source,
-                properties: "gx_wmslayerpanel",
+                properties: "gxp_wmslayerpanel",
                 fixed: config.fixed,
                 selected: "selected" in config ? config.selected : false,
                 layer: layer
@@ -319,10 +332,16 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
             var recs = Ext.isArray(arguments[1]) ? arguments[1] : arguments[0];
             var rec;
             for (var i=recs.length-1; i>=0; i--) {
-                rec = recs[i];
-                if (rec.get("layerName") == layerName) {
+                rec = recs[i], name;
+                if ((name = rec.get("layerName")) == layerName) {
+                    this.describeLayerStore.un("load", arguments.callee, this);
+                    this.describedLayers[name] = true;
                     callback.call(scope, rec);
                     return;
+                } else if (typeof this.describedLayers[name] == "function") {
+                    var fn = this.describedLayers[name];
+                    this.describeLayerStore.un("load", fn, this);
+                    fn.apply(this, arguments);
                 }
             }
             // something went wrong (e.g. GeoServer does not return a valid
@@ -333,14 +352,15 @@ gxp.plugins.WMSSource = Ext.extend(gxp.plugins.LayerSource, {
         var describedLayers = this.describedLayers;
         var index;
         if (!describedLayers[layerName]) {
-            describedLayers[layerName] = true;
+            describedLayers[layerName] = cb;
             this.describeLayerStore.load({
                 params: {LAYERS: layerName},
                 add: true,
-                callback: cb
+                callback: cb,
+                scope: this
             });
         } else if ((index = this.describeLayerStore.findExact("layerName", layerName)) == -1) {
-            this.describeLayerStore.on("load", cb, this, {single: true});
+            this.describeLayerStore.on("load", cb, this);
         } else {
             callback.call(scope, this.describeLayerStore.getAt(index));
         }

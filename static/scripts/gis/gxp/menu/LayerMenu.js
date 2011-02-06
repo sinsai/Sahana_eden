@@ -58,29 +58,29 @@ gxp.menu.LayerMenu = Ext.extend(Ext.menu.Menu, {
      */
     onLayerAdd: function() {
         this.removeAll();
-        // this.getEl().addClass("gx-layer-menu");
+        // this.getEl().addClass("gxp-layer-menu");
         // this.getEl().applyStyles({
         //     width: '',
         //     height: ''
         // });
         this.add(
             {
-                iconCls: "gx-layer-visibility",
+                iconCls: "gxp-layer-visibility",
                 text: "Layer",
                 canActivate: false
             },
             "-"
         );
         this.layers.each(function(record) {
-            var layer = record.get("layer");
+            var layer = record.getLayer();
             if(layer.displayInLayerSwitcher) {
                 var item = new Ext.menu.CheckItem({
                     text: record.get("title"),
-                    checked: record.get("layer").getVisibility(),
+                    checked: record.getLayer().getVisibility(),
                     group: record.get("group"),
                     listeners: {
                         checkchange: function(item, checked) {
-                            record.get("layer").setVisibility(checked);
+                            record.getLayer().setVisibility(checked);
                         }
                     }
                 });
@@ -96,4 +96,4 @@ gxp.menu.LayerMenu = Ext.extend(Ext.menu.Menu, {
     
 });
 
-Ext.reg('gx_layermenu', gxp.menu.LayerMenu);
+Ext.reg('gxp_layermenu', gxp.menu.LayerMenu);

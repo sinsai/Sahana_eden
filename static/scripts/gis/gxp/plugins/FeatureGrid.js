@@ -28,8 +28,8 @@ Ext.namespace("gxp.plugins");
  */   
 gxp.plugins.FeatureGrid = Ext.extend(gxp.plugins.Tool, {
     
-    /** api: ptype = gx_featuregrid */
-    ptype: "gx_featuregrid",
+    /** api: ptype = gxp_featuregrid */
+    ptype: "gxp_featuregrid",
 
     /** api: config[featureManager]
      *  ``String`` The id of the :class:`gxp.plugins.FeatureManager` to use
@@ -49,17 +49,63 @@ gxp.plugins.FeatureGrid = Ext.extend(gxp.plugins.Tool, {
      */
     alwaysDisplayOnMap: false,
     
+    /** api: config[autoExpand]
+     *  ``Boolean`` If set to true, and when this tool's output is added to a
+     *  container that can be expanded, it will be expanded when features are
+     *  loaded. Default is false.
+     */
+    autoExpand: false,
+    
+    /** api: config[autoCollapse]
+     *  ``Boolean`` If set to true, and when this tool's output is added to a
+     *  container that can be collapsed, it will be collapsed when no features
+     *  are to be displayed. Default is false.
+     */
+    autoCollapse: false,
+    
+    /** api: config[selectOnMap]
+     *  ``Boolean`` If set to true, features can not only be selected on the
+     *  grid, but also on the map, and multi-selection will be enabled. Only
+     *  set to true when no feature editor or feature info tool is used with
+     *  the underlying feature manager. Default is false.
+     */
+    selectOnMap: false,
+    
     /** api: config[displayFeatureText]
      * ``String``
      * Text for feature display button (i18n).
      */
     displayFeatureText: "Display on map",
 
-    /** api: config[zoomToSelectedText]
-     * ``String``
-     * Text for zoom to selected features button (i18n).
+    /** api: config[zoomFirstPageTip]
+     *  ``String``
+     *  Tooltip string for first page action (i18n).
      */
-    zoomToSelectedText: "Zoom to selected",
+    firstPageTip: "First page",
+
+    /** api: config[previousPageTip]
+     *  ``String``
+     *  Tooltip string for previous page action (i18n).
+     */
+    previousPageTip: "Previous page",
+
+    /** api: config[zoomFirstPageTip]
+     *  ``String``
+     *  Tooltip string for zoom to page extent action (i18n).
+     */
+    zoomPageExtentTip: "Zoom to page extent",
+
+    /** api: config[nextPageTip]
+     *  ``String``
+     *  Tooltip string for next page action (i18n).
+     */
+    nextPageTip: "Next page",
+
+    /** api: config[lastPageTip]
+     *  ``String``
+     *  Tooltip string for last page action (i18n).
+     */
+    nextPageTip: "Last page",
 
     /** api: method[addOutput]
      */
@@ -70,8 +116,8 @@ gxp.plugins.FeatureGrid = Ext.extend(gxp.plugins.Tool, {
         // unselect, won't be added to the map
         var selectControl = new OpenLayers.Control.SelectFeature(featureManager.featureLayer);
         config = Ext.apply({
-            xtype: "gx_featuregrid",
-            sm: new GeoExt.grid.FeatureSelectionModel({
+            xtype: "gxp_featuregrid",
+            sm: new GeoExt.grid.FeatureSelectionModel(this.selectOnMap ? null : {
                 selectControl: selectControl,
                 singleSelect: false,
                 autoActivateControl: false,
@@ -82,11 +128,6 @@ gxp.plugins.FeatureGrid = Ext.extend(gxp.plugins.Tool, {
                         }
                         delete this._selectingFeature;
                     },
-                    "selectionchange": function() {
-                        featureGrid.zoomToSelectedButton.setDisabled(
-                            featureGrid.getSelectionModel().getCount() == 0
-                        );
-                    },
                     scope: this
                 }
             }),
@@ -94,6 +135,7 @@ gxp.plugins.FeatureGrid = Ext.extend(gxp.plugins.Tool, {
             bbar: (featureManager.paging ? [{
                 iconCls: "x-tbar-page-first",
                 ref: "../firstPageButton",
+                tooltip: this.firstPageTip,
                 disabled: true,
                 handler: function() {
                     featureManager.setPage({index: 0});
@@ -101,13 +143,15 @@ gxp.plugins.FeatureGrid = Ext.extend(gxp.plugins.Tool, {
             }, {
                 iconCls: "x-tbar-page-prev",
                 ref: "../prevPageButton",
+                tooltip: this.previousPageTip,
                 disabled: true,
                 handler: function() {
                     featureManager.previousPage();
                 }
             }, {
-                iconCls: "gx-icon-zoom-to",
+                iconCls: "gxp-icon-zoom-to",
                 ref: "../zoomToPageButton",
+                tooltip: this.zoomPageExtentTip,
                 disabled: true,
                 hidden: featureManager.autoZoomPage,
                 handler: function() {
@@ -116,6 +160,7 @@ gxp.plugins.FeatureGrid = Ext.extend(gxp.plugins.Tool, {
             }, {
                 iconCls: "x-tbar-page-next",
                 ref: "../nextPageButton",
+                tooltip: this.nextPageTip,
                 disabled: true,
                 handler: function() {
                     featureManager.nextPage();
@@ -123,6 +168,7 @@ gxp.plugins.FeatureGrid = Ext.extend(gxp.plugins.Tool, {
             }, {
                 iconCls: "x-tbar-page-last",
                 ref: "../lastPageButton",
+                tooltip: this.lastPageTip,
                 disabled: true,
                 handler: function() {
                     featureManager.setPage({index: "last"});
@@ -135,30 +181,27 @@ gxp.plugins.FeatureGrid = Ext.extend(gxp.plugins.Tool, {
                     featureManager[pressed ? "showLayer" : "hideLayer"](this.id);
                 },
                 scope: this
-            }, {
-                text: this.zoomToSelectedText,
-                iconCls: "gx-icon-zoom-to",
-                ref: "../zoomToSelectedButton",
-                disabled: true,
-                handler: function(btn) {
-                    var bounds, geom, extent;
-                    featureGrid.getSelectionModel().each(function(r) {
-                        geom = r.getFeature().geometry;
-                        if(geom) {
-                            extent = geom.getBounds();
-                            if(bounds) {
-                                bounds.extend(extent);
-                            } else {
-                                bounds = extent.clone();
-                            }
-                        }
-                    }, this);
-                    if(bounds) {
-                        this.target.mapPanel.map.zoomToExtent(bounds);
-                    }
+            }]),
+            listeners: {
+                "added": function(cmp, ownerCt) {
+                    var autoCollapse = (function() {
+                        this.autoCollapse && typeof ownerCt.collapse == "function" &&
+                            ownerCt.collapse();
+                    }).bind(this);
+                    var autoExpand = (function() {
+                        this.autoExpand && typeof ownerCt.expand == "function" &&
+                            ownerCt.expand()
+                    }).bind(this);
+                    featureManager.on({
+                        "query": function(tool, store) {
+                            store && store.getCount() ? autoExpand() : autoCollapse();
+                        },
+                        "layerchange": autoCollapse,
+                        "clearfeatures": autoCollapse
+                    });
                 },
-                scope: this                
-            }])
+                scope: this
+            }
         }, config || {});
         var featureGrid = gxp.plugins.FeatureGrid.superclass.addOutput.call(this, config);
         
@@ -174,7 +217,7 @@ gxp.plugins.FeatureGrid = Ext.extend(gxp.plugins.Tool, {
             featureGrid.lastPageButton.setDisabled(!next);
             featureGrid.nextPageButton.setDisabled(!next);
         }, this);
-        
+                
         featureManager.on("layerchange", function(mgr, rec, schema) {
             //TODO use schema instead of store to configure the fields
             var ignoreFields = ["feature", "state", "fid"];
@@ -187,7 +230,7 @@ gxp.plugins.FeatureGrid = Ext.extend(gxp.plugins.Tool, {
         
         return featureGrid;
     }
-        
+            
 });
 
 Ext.preg(gxp.plugins.FeatureGrid.prototype.ptype, gxp.plugins.FeatureGrid);

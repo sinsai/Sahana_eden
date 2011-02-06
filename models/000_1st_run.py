@@ -15,6 +15,8 @@ import os, shutil
 # Import the S3 Framework
 s3base = local_import("s3")
 
+# @ToDo: Other core Imports should be moved here from 000_config.py
+
 template_src = os.path.join("applications", request.application, "deployment-templates")
 template_dst = os.path.join("applications", request.application)
 

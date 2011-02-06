@@ -1,3 +1,4 @@
+<<<<<<< TREE
 loadLocationTestData, True
 test_locationEmpty, False
 test_addL0Location, False
@@ -18,3 +19,25 @@ test_locationSelectSpecific, False
 test_locationSearch, False
 removeShelterTestData, False
 removeLocationTestData, True
+=======
+loadLocationTestData, True
+test_locationEmpty, False
+test_addL0Location, False
+test_removeL0Location, False
+test_locationNoParent, False
+test_locationL0, False
+test_locationInL0, False
+test_locationL1, False
+test_locationInL1, False
+test_locationL2, False
+test_locationInL2, False
+test_locationL3, False
+test_locationInL3, False
+test_locationL4, False
+test_locationInL4, False
+test_updateLocationInL4NewInL3, False
+test_locationSelectSpecific, False
+test_locationSearch, False
+removeShelterTestData, False
+removeLocationTestData, False
+>>>>>>> MERGE-SOURCE

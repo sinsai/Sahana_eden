@@ -99,6 +99,29 @@ class Action(unittest.TestCase):
     def clearSearch(self):
         self.search("", r"entries")
         
+    def registerUser(self, first_name, last_name, email, password):
+        first_name = first_name.strip()
+        last_name = last_name.strip()
+        email = email.strip()
+        password = password.strip()
+        
+        sel = self.sel
+        sel.open("default/user/register")
+        sel.type("auth_user_first_name", first_name)
+        sel.type("auth_user_last_name", last_name)
+        sel.select("auth_user_language", "label=English")
+        sel.type("auth_user_email", email)
+        sel.type("auth_user_password", password)
+        sel.type("password_two", password)
+        sel.click("//input[@value='Submit']")
+        sel.wait_for_page_to_load("30000")
+        msg = "Unable to register user %s %s with email %s" % (first_name, last_name, email)
+        self.assertTrue(self.successMsg("Registration successful"), msg)
+        sel.open("admin/user")
+        self.searchUnique(email)
+        self.assertTrue(re.search(r"Showing 1 to 1 of 1 entries", sel.get_text("//div[@class='dataTables_info']")))
+        print "User %s created" % (email)
+
     def addUser(self, first_name, last_name, email, password):
         first_name = first_name.strip()
         last_name = last_name.strip()

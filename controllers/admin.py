@@ -1214,6 +1214,10 @@ def acl():
         create_next = URL(r=request),
         update_next = URL(r=request))
 
+    if "_next" in request.vars:
+        next = request.vars._next
+        s3xrc.model.configure(table, delete_next=next)
+
     output = s3_rest_controller(prefix, name)
     return output
 

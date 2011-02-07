@@ -8,7 +8,8 @@ GeoExt.Lang.add("es", {
         untitledText: "Sin Título",
         addLayerSourceErrorText: "Error obteniendo capabilities de WMS ({msg}).\nPor favor, compruebe la URL y vuelva a intentarlo.",
         availableLayersText: "Capas disponibles",
-        doneText: "Hecho"
+        doneText: "Hecho",
+        uploadText: "Upload Data"
     },
     
     "gxp.plugins.BingSource.prototype": {
@@ -51,6 +52,11 @@ GeoExt.Lang.add("es", {
         baseNodeText: "Capa de base"
     },
 
+    "gxp.plugins.Legend.prototype": { 
+        menuText: "Leyenda",
+        tooltip: "Leyenda"
+    },
+
     "gxp.plugins.Measure.prototype": {
         lengthMenuText: "Longitud",
         areaMenuText: "Área",
@@ -75,6 +81,14 @@ GeoExt.Lang.add("es", {
         title: "OpenStreetMap Layers",
         mapnikAttribution: "Data CC-By-SA by <a href='http://openstreetmap.org/'>OpenStreetMap</a>",
         osmarenderAttribution: "Data CC-By-SA by <a href='http://openstreetmap.org/'>OpenStreetMap</a>"
+    },
+
+    "gxp.plugins.Print.prototype": {
+        menuText: "Imprimir",
+        tooltip: "Imprimir",
+        previewText: "Vista previa",
+        notAllNotPrintableText: "No se pueden imprimir todas las capas",
+        nonePrintableText: "No se puede imprimir ninguna de las capas del mapa"
     },
 
     "gxp.plugins.MapQuestSource.prototype": {
@@ -221,7 +235,37 @@ GeoExt.Lang.add("es", {
         displayText: "Display",
         opacityText: "Opacity",
         formatText: "Format",
-        transparentText: "Transparent"
+        transparentText: "Transparent",
+        cacheText: "Cache",
+        cacheFieldText: "Use cached version"
+    },
+
+    "gxp.EmbedMapDialog.prototype": {
+        publishMessage: "¡Su mapa ya puede publicarse en otras webs! Simplemente copie el siguiente código HTML en el lugar donde desee incrustarlo:",
+        heightLabel: 'Alto',
+        widthLabel: 'Ancho',
+        mapSizeLabel: 'Tamaño',
+        miniSizeLabel: 'Mínimo',
+        smallSizeLabel: 'Pequeño',
+        premiumSizeLabel: 'Premium',
+        largeSizeLabel: 'Grande'
+    },
+
+    "gxp.LayerUploadPanel.prototype": {
+        titleLabel: "Title",
+        titleEmptyText: "Layer title",
+        abstractLabel: "Description",
+        abstractEmptyText: "Layer description",
+        fileLabel: "Data",
+        fieldEmptyText: "Browse for data archive...",
+        uploadText: "Upload",
+        waitMsgText: "Uploading your data...",
+        invalidFileExtensionText: "File extension must be one of: ",
+        optionsText: "Options",
+        workspaceLabel: "Workspace",
+        workspaceEmptyText: "Default workspace",
+        dataStoreLabel: "Store",
+        dataStoreEmptyText: "Default datastore"
     }
 
 });

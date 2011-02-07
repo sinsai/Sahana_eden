@@ -1,6 +1,7 @@
 {{extend "layout.html"}}
 {{if session.s3.debug:}}
 <link href="/{{=request.application}}/static/styles/gis/gxp.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+<link href="/{{=request.application}}/static/styles/gis/color-picker.ux.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
 <link href="/{{=request.application}}/static/styles/gis/geoexplorer.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
 <link href="/{{=request.application}}/static/styles/gis/ie.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
 <link href="/{{=request.application}}/static/styles/gis/printpreview.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
@@ -25,6 +26,8 @@
 {{pass}}
 
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/rowactions/js/RowExpander.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/GeoExplorer/colorpicker/color-picker.ux.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/GeoExplorer/colorpicker/ColorManager.js"></script>
 {{if session.s3.debug:}}
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/openlayers/lib/OpenLayers.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/gis/GeoExt/lib/GeoExt.js"></script>
@@ -109,6 +112,8 @@
         proxy: s3_gis_proxy_url,
       {{if print_service:}}
         printService: '{{=print_service}}',
+      {{else:}}
+        printService: '',
       {{pass}}
         alignToGrid: true,
         about: {

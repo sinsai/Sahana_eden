@@ -26,6 +26,7 @@ static/scripts/gis/GeoExt/.tests/*
 static/scripts/gis/mapfish/.tests/*
 static/selenium/results/*
 static/selenium/scripts/diagTestResults.txt
+static/selenium/tests/*
 static/*/.svn/*
 static/*test*
 tests/.cherrypy/*

@@ -53,7 +53,7 @@ gxp.EmbedMapDialog = Ext.extend(Ext.Container, {
      *  absolute one.
      */
     url: null,
-    
+
     /* begin i18n */
     /** api: config[publishMessage] ``String`` i18n */
     publishMessage: "Your map is ready to be published to the web! Simply copy the following HTML to embed the map in your website:",
@@ -180,6 +180,8 @@ gxp.EmbedMapDialog = Ext.extend(Ext.Container, {
                 layout: "fit"
             },
             items: [{
+                items: [adjustments]
+            }, {
                 xtype: "box",
                 autoEl: {
                     tag: "p",
@@ -187,8 +189,6 @@ gxp.EmbedMapDialog = Ext.extend(Ext.Container, {
                 }
             }, {
                 items: [this.snippetArea]
-            }, {
-                items: [adjustments]
             }],
             listeners: {
                 "afterrender": this.updateSnippet,

@@ -65,6 +65,7 @@ class SahanaTest(unittest.TestCase):
             Whether a firstRun() method exists in the class (if so it will be called automatically)
             Whether a lastRun() method exists in the class (if so it will be called automatically)
         """
+
         if not cls._classDetailsCollected:
             cls.testcaseStartedCount = 0
             cls.testcaseFinishedCount = 0

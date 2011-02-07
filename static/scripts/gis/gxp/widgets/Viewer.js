@@ -394,7 +394,6 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
                     throw new Error("Could not create tool plugin with ptype: " + this.initialConfig.tools[i].ptype);
                 }
                 tool.init(this);
-                this.tools[tool.id] = tool;
             }
         }
     },
@@ -438,7 +437,7 @@ gxp.Viewer = Ext.extend(Ext.util.Observable, {
     
     addLayers: function() {
         var mapConfig = this.initialConfig.map;
-        if(mapConfig && mapConfig.layers) {
+        if (mapConfig && mapConfig.layers) {
             var conf, source, record, baseRecords = [], overlayRecords = [];
             for (var i=0; i<mapConfig.layers.length; ++i) {
                 conf = mapConfig.layers[i];

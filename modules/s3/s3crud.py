@@ -1383,7 +1383,8 @@ class S3CRUD(S3Method):
             authorised = self.permit("delete", tablename, record_id)
             if authorised and href_delete and deletable:
                 delete_btn = self.crud_button(DELETE, _href=href_delete,
-                                              _id="delete-btn")
+                                              _id="delete-btn",
+                                              _class="delete-btn")
                 output.update(delete_btn=delete_btn)
 
         return output

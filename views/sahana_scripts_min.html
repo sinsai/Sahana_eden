@@ -81,7 +81,7 @@ jQuery(document).ready(function() {
         //showOtherMonths: true, selectOtherMonths: true,
         showOn: 'both', buttonImage: '/{{=request.application}}/static/img/jquery-ui/calendar.gif', buttonImageOnly: true,
         dateFormat: 'yy-mm-dd', isRTL: {{if response.s3.rtl:}}true{{else:}}false{{pass}} });
-    jQuery('a#delete-btn').click(function(event){ if(confirm("{{=T("Sure you want to delete this object?")}}")) {
+    jQuery('a.delete-btn').click(function(event){ if(confirm("{{=T("Sure you want to delete this object?")}}")) {
             return true;
         } else {
             event.preventDefault();

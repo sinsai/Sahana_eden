@@ -16,5 +16,5 @@ test_locationInL4, True
 test_updateLocationInL4NewInL3, True
 test_locationSelectSpecific, True
 test_locationSearch, True
-removeShelterTestData, False
-removeLocationTestData, False
+removeShelterTestData, True
+removeLocationTestData, True

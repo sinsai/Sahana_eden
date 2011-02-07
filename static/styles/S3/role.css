@@ -43,6 +43,12 @@ table.acl-widget td {
     font-weight: bold;
 }
 
+.using-default,
+.new-acl {
+    font-style: italic;
+    color: #888;
+}
+
 #table-acls {
     display: none;
 }

@@ -35,15 +35,15 @@ s3uuid = SQLCustomType(
                 decoder = (lambda x: x)
             )
 
-# Reusable UUID field to include in other table definitions
-meta_uuidstamp = S3ReusableField("uuid",
-                                 type=s3uuid,
-                                 length=128,
-                                 notnull=True,
-                                 unique=True,
-                                 readable=False,
-                                 writable=False,
-                                 default="")
+# Universally unique identifier for a record
+meta_uuid = S3ReusableField("uuid",
+                            type=s3uuid,
+                            length=128,
+                            notnull=True,
+                            unique=True,
+                            readable=False,
+                            writable=False,
+                            default="")
 
 # Master-Copy-Index (for Sync)
 meta_mci = S3ReusableField("mci", "integer",
@@ -52,7 +52,7 @@ meta_mci = S3ReusableField("mci", "integer",
                            writable=False)
 
 def s3_uid():
-    return (meta_uuidstamp(), meta_mci())
+    return (meta_uuid(), meta_mci())
 
 # -----------------------------------------------------------------------------
 # Record soft-deletion meta-fields
@@ -145,7 +145,7 @@ def s3_ownerstamp():
 
 def s3_meta_fields():
 
-    fields = (meta_uuidstamp(),
+    fields = (meta_uuid(),
               meta_mci(),
               meta_deletion_status(),
               meta_deletion_fk(),
@@ -279,7 +279,7 @@ s3_setting_security_policy_opts = {
 resource = "setting"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        meta_uuidstamp(),
+                        meta_uuid(),
                         Field("admin_name"),
                         Field("admin_email"),
                         Field("admin_tel"),

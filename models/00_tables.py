@@ -84,7 +84,7 @@ meta_created_by = S3ReusableField("created_by", db.auth_user,
                                   represent=lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
                                   ondelete="RESTRICT")
 
-meta_administrated_by = S3ReusableField("administrated_by", db.auth_user,
+meta_owned_by_user = S3ReusableField("owned_by_user", db.auth_user,
                                         readable=False, # Enable when needed, not by default
                                         writable=False,
                                         requires=None,
@@ -92,7 +92,7 @@ meta_administrated_by = S3ReusableField("administrated_by", db.auth_user,
                                         represent=lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
                                         ondelete="RESTRICT")
 
-meta_owned_by = S3ReusableField("owned_by", db.auth_group,
+meta_owned_by_role = S3ReusableField("owned_by_role", db.auth_group,
                                 readable=False, # Enable when needed, not by default
                                 writable=False,
                                 requires=None,
@@ -110,7 +110,7 @@ meta_modified_by = S3ReusableField("modified_by", db.auth_user,
                                    ondelete="RESTRICT")
 
 def s3_authorstamp():
-    return (meta_created_by(), meta_administrated_by(), meta_owned_by(), meta_modified_by())
+    return (meta_created_by(), meta_owned_by_user(), meta_owned_by_role(), meta_modified_by())
 
 def s3_meta_fields():
 
@@ -121,8 +121,8 @@ def s3_meta_fields():
               meta_created_on(),
               meta_modified_on(),
               meta_created_by(),
-              meta_administrated_by(),
-              meta_owned_by(),
+              meta_owned_by_user(),
+              meta_owned_by_role(),
               meta_modified_by())
 
     return fields

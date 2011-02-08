@@ -464,6 +464,19 @@ s3xrc.model.configure(table,
                       main="name",
                       extra="description")
 
+# -----------------------------------------------------------------------------
+# Search method
+pr_person_search = s3base.S3PersonSearch(
+    label=T("Name and/or ID"),
+    comment=T("To search for a person, enter any of the first, middle or last names and/or an ID number of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons."),
+    fields=["pe_label",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "identity.value"])
+
+# Set as default search method
+s3xrc.model.configure(db.pr_person, search_method=pr_person_search)
 
 # *****************************************************************************
 # Group membership
@@ -535,21 +548,6 @@ elif request.function == "group":
         msg_record_deleted = T("Membership deleted"),
         msg_list_empty = T("No Members currently registered"))
 
-
-# *****************************************************************************
-# Functions:
-#
-shn_pr_person_search_simple = s3xrc.search_simple(
-    label=T("Name and/or ID"),
-    comment=T("To search for a person, enter any of the first, middle or last names and/or an ID number of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons."),
-    fields=["pe_label",
-            "first_name",
-            "middle_name",
-            "last_name",
-            "identity.value"])
-
-# Plug into REST controller
-s3xrc.model.set_method(prefix, "person", method="search_simple", action=shn_pr_person_search_simple )
 
 # -----------------------------------------------------------------------------
 #

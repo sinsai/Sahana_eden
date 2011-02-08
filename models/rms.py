@@ -251,7 +251,10 @@ if deployment_settings.has_module(module):
     # ---------------------------------------------------------------------
     def shn_rms_req_search_simple(xrequest, **attr):
         """
-            Simple search form for requests
+        Custom search method for requests
+
+        @todo: replace by standard S3Search?
+
         """
 
         if attr is None:

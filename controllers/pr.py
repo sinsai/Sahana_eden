@@ -15,7 +15,7 @@ resourcename = request.function
 def shn_menu():
     response.menu_options = [
         [T("Home"), False, URL(r=request, f="index")],
-        [T("Search for a Person"), False, URL(r=request, f="person", args="search_simple")],
+        [T("Search for a Person"), False, URL(r=request, f="person", args="search")],
         [T("Persons"), False, URL(r=request, f="person"), [
             [T("List"), False, URL(r=request, f="person")],
             [T("Add"), False, URL(r=request, f="person", args="create")],
@@ -66,8 +66,7 @@ def index():
     def prep(r):
         if r.representation == "html":
             if not r.id:
-                r.method = "search_simple"
-                r.custom_action = shn_pr_person_search_simple
+                r.method = "search"
             else:
                redirect(URL(r=request, f="person", args=[r.id]))
         return True
@@ -123,9 +122,6 @@ def person():
     """ RESTful CRUD controller """
 
     def prep(r):
-
-        # Override the default Search MethodHandler
-        r.resource.set_handler("search", s3base.S3PersonSearch())
 
         if r.component_name == "config":
             _config = db.gis_config

@@ -52,7 +52,7 @@ from s3xml import S3XML
 from s3rest import S3Resource, S3Request
 from s3model import S3ResourceModel, S3ResourceLinker
 from s3crud import S3CRUD
-from s3search import S3SearchSimple
+from s3search import S3Search
 from s3export import S3Exporter
 from s3import import S3Importer
 
@@ -143,6 +143,7 @@ class S3ResourceController(object):
         self.model = S3ResourceModel(self.db)
         self.linker = S3ResourceLinker(self)
         self.crud = S3CRUD()
+        self.search = S3Search()
         self.xml = S3XML(self)
         self.exporter = S3Exporter(self)
         self.importer = S3Importer(self)
@@ -1044,28 +1045,6 @@ class S3ResourceController(object):
                         return False
 
         return ignore_errors or not self.error
-
-
-    # -------------------------------------------------------------------------
-    def search_simple(self, label=None, comment=None, fields=[]):
-        """
-        Generate a search_simple method handler
-
-        @param label: the label for the input field in the search form
-        @param comment: help text for the input field in the search form
-        @param fields: the fields to search for the string
-
-        """
-
-        if not label:
-            label = self.T("Enter search text")
-
-        if not fields:
-            fields = ["id"]
-
-        return S3SearchSimple(label=label,
-                              comment=comment,
-                              fields=fields)
 
 
 # *****************************************************************************

@@ -70,6 +70,7 @@ def req():
 
     # Pre-processor
     def prep(r):
+        response.s3.cancel = r.here()
         if r.representation in shn_interactive_view_formats and r.method != "delete":
             # Don't send the locations list to client (pulled by AJAX instead)
             r.table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
@@ -165,17 +166,9 @@ def ritem():
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    #rheader = lambda r: shn_item_rheader(r,
-    #                                      tabs = [(T("Requests for Item"), None),
-    #                                              (T("Inventories with Item"), "location_item"),
-    #                                              (T("Requests for Item"), "req"),
-    #                                             ]
-    #                                     )
+    s3xrc.model.configure(table, insertable=False)
+    return s3_rest_controller(prefix, resourcename)
 
-    s3.crud_strings[tablename].label_create_button = None
-
-    s3xrc.model.configure(table, listadd=False)
-    return s3_rest_controller(prefix, resourcename) #, rheader=rheader)
 
 def store_for_req():
 

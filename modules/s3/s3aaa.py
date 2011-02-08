@@ -734,10 +734,10 @@ class AuthS3(Auth):
             else:
                 # Editor role required for Update/Delete.
                 authorised = self.s3_has_role("Editor")
-                if not authorised and self.user and "created_by" in table:
+                if not authorised and self.user and "administrated_by" in table:
                     # Creator of Record is allowed to Edit
-                    record = db(table.id == record_id).select(table.created_by, limitby=(0, 1)).first()
-                    if record and self.user.id == record.created_by:
+                    record = db(table.id == record_id).select(table.administrated_by, limitby=(0, 1)).first()
+                    if record and self.user.id == record.administrated_by:
                         authorised = True
 
         elif session.s3.security_policy == 3:
@@ -1271,7 +1271,7 @@ class S3Permission(object):
         @param record: the record ID (or the Row if already loaded)
 
         @note: if passing a Row, it must contain all available ownership
-               fields (id, created_by, owned_by), otherwise the record
+               fields (id, administrated_by, owned_by), otherwise the record
                will be re-loaded by this function
 
         """
@@ -1456,7 +1456,7 @@ class S3Permission(object):
         @param record: the record ID (or the Row if already loaded)
 
         @note: if passing a Row, it must contain all available ownership
-               fields (id, created_by, owned_by), otherwise the record
+               fields (id, administrated_by, owned_by), otherwise the record
                will be re-loaded by this function
 
         """
@@ -1475,7 +1475,7 @@ class S3Permission(object):
             return True
         else:
             record_id = None
-            ownership_fields = ("created_by", "owned_by")
+            ownership_fields = ("administrated_by", "owned_by")
             fields = [f for f in ownership_fields if f in table.fields]
             if not fields:
                 return True # Ownership is undefined
@@ -1495,8 +1495,8 @@ class S3Permission(object):
                 return False # Record does not exist
 
             creator = owner = None
-            if "created_by" in table.fields:
-                creator = record.created_by
+            if "administrated_by" in table.fields:
+                creator = record.administrated_by
             if "owned_by" in table.fields:
                 owner = record.owned_by
 
@@ -1646,14 +1646,14 @@ class S3Permission(object):
         ownership_required = False
         if not permitted:
             query = (table[pkey] == None)
-        elif "owned_by" in table or "created_by" in table:
+        elif "owned_by" in table or "administrated_by" in table:
             ownership_required = permitted and acl[1] & racl != racl
 
         # Generate query
         if ownership_required:
             if not user_id:
                 query = (table[pkey] == None)
-                if "created_by" in table and pkey == "id":
+                if "administrated_by" in table and pkey == "id":
                     try:
                         records = self.session.owned_records.get(table._tablename, None)
                     except:
@@ -1665,8 +1665,8 @@ class S3Permission(object):
                 query = None
                 if "owned_by" in table:
                     query = (table.owned_by.belongs(roles))
-                if "created_by" in table:
-                    q = (table.created_by == user_id)
+                if "administrated_by" in table:
+                    q = (table.administrated_by == user_id)
                     if query is not None:
                         query = (query | q)
                     else:
@@ -1715,7 +1715,7 @@ class S3Permission(object):
         if not permitted:
             pkey = table.fields[0]
             query = (table[pkey] == None)
-        elif "owned_by" in table or "created_by" in table:
+        elif "owned_by" in table or "administrated_by" in table:
             ownership_required = permitted and acl[1] & racl != racl
 
         return ownership_required
@@ -1732,7 +1732,7 @@ class S3Permission(object):
                        any of "create", "read", "update", "delete"
 
         @note: when submitting a record, the record ID and the ownership
-               fields (="created_by", "owned_by") must be contained if
+               fields (="administrated_by", "owned_by") must be contained if
                available, otherwise the record will be re-loaded
 
         """

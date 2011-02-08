@@ -872,14 +872,13 @@ def s3_rest_controller(prefix, resourcename, **attr):
     # Parse the request
     resource, r = s3xrc.parse_request(prefix, resourcename)
 
-    resource.set_handler("search", s3base.S3Search())
     resource.set_handler("copy", shn_copy)
     resource.set_handler("barchart", shn_barchart)
 
     # Execute the request
     output = resource.execute_request(r, **attr)
 
-    if isinstance(output, dict) and not r.method or r.method=="search_simple":
+    if isinstance(output, dict) and not r.method or r.method=="search":
         if response.s3.actions is None:
 
             # Add default action buttons

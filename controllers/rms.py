@@ -165,17 +165,9 @@ def ritem():
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    #rheader = lambda r: shn_item_rheader(r,
-    #                                      tabs = [(T("Requests for Item"), None),
-    #                                              (T("Inventories with Item"), "location_item"),
-    #                                              (T("Requests for Item"), "req"),
-    #                                             ]
-    #                                     )
+    s3xrc.model.configure(table, insertable=False)
+    return s3_rest_controller(prefix, resourcename)
 
-    s3.crud_strings[tablename].label_create_button = None
-
-    s3xrc.model.configure(table, listadd=False)
-    return s3_rest_controller(prefix, resourcename) #, rheader=rheader)
 
 def store_for_req():
 

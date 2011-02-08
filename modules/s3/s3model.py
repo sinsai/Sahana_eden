@@ -488,7 +488,7 @@ class S3ResourceModel(object):
                 k = {key:row[key]}
                 self.db(s[key] == row[key]).update(**data)
                 if record[key] != row[key]:
-                    self.db(table.id == id).update(k)
+                    self.db(table.id == id).update(**k)
             else:
                 k = s.insert(**data)
                 if k:

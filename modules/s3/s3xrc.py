@@ -52,7 +52,7 @@ from s3xml import S3XML
 from s3rest import S3Resource, S3Request
 from s3model import S3ResourceModel, S3ResourceLinker
 from s3crud import S3CRUD
-from s3search import S3SearchSimple
+from s3search import S3Search
 from s3export import S3Exporter
 from s3import import S3Importer
 
@@ -1063,9 +1063,7 @@ class S3ResourceController(object):
         if not fields:
             fields = ["id"]
 
-        return S3SearchSimple(label=label,
-                              comment=comment,
-                              fields=fields)
+        return S3Search(label=label, comment=comment, fields=fields)
 
 
 # *****************************************************************************

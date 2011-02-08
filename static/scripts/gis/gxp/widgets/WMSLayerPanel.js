@@ -56,6 +56,9 @@ gxp.WMSLayerPanel = Ext.extend(Ext.TabPanel, {
     opacityText: "Opacity",
     formatText: "Format",
     transparentText: "Transparent",
+    cacheText: "Cache",
+    cacheFieldText: "Use cached version",
+    stylesText: "Styles",
     
     initComponent: function() {
         
@@ -65,13 +68,101 @@ gxp.WMSLayerPanel = Ext.extend(Ext.TabPanel, {
              */
             "change"
         );
-
         this.items = [
             this.createAboutPanel(),
             this.createDisplayPanel()
         ];
 
+        // only add the Cache panel if we know for sure the WMS is GeoServer
+        // which has been integrated with GWC.
+        if (this.layerRecord.get("layer").params.TILED != null) {
+            this.items.push(this.createCachePanel());
+        }
+        
+        // only add the Styles panel if we know for sure that we have styles
+        if (this.layerRecord.get("styles")) {
+            var url = this.layerRecord.getLayer().url.split(
+                "?").shift().replace(/\/(wms|ows)\/?$/, "/rest");
+            this.items.push(this.createStylesPanel(url));
+        }
+
         gxp.WMSLayerPanel.superclass.initComponent.call(this);
+    },
+
+    /** private: createCachePanel
+     *  Creates the Cache panel.
+     */
+    createCachePanel: function() {
+        return {
+            title: this.cacheText,
+            layout: "form",
+            items: [{
+                xtype: "checkbox",
+                fieldLabel: this.cacheFieldText,
+                checked: (this.layerRecord.get("layer").params.TILED === true),
+                listeners: {
+                    check: function(checkbox, checked) {
+                        var layer = this.layerRecord.get("layer");
+                        layer.mergeNewParams({
+                            TILED: checked
+                        });
+                        this.fireEvent("change");
+                    },
+                    scope: this
+                }
+            }]    
+        };
+    },
+    
+    /** private: createStylesPanel
+     *  :arg url: ``String`` url to save styles to
+     *
+     *  Creates the Styles panel.
+     */
+    createStylesPanel: function(url) {
+        var layer = this.layerRecord.getLayer();
+        return {
+            title: this.stylesText,
+            xtype: "gxp_wmsstylesdialog",
+            layerRecord: this.layerRecord,
+            plugins: [{
+                ptype: "gxp_geoserverstylewriter",
+                baseUrl: url
+            }],
+            listeners: {
+                "beforerender": {
+                    fn: function(cmp) {
+                        Ext.Ajax.request({
+                            method: "PUT",
+                            url: url + "/styles",
+                            callback: function(options, success, response) {
+                                // we expect a 405 error code here if we are dealing with
+                                // GeoServer and have write access. Otherwise we will
+                                // create the panel in readonly mode.
+                                cmp.editable = (response.status == 405);
+                                cmp.ownerCt.doLayout();
+                            }
+                        });
+                        return false;
+                    },
+                    single: true
+                },
+                "styleselected": function(cmp, style) {
+                    cmp.modified && layer.mergeNewParams({
+                        styles: style
+                    });
+                },
+                "modified": function(cmp, style) {
+                    cmp.saveStyles();
+                },
+                "saved": function(cmp, style) {
+                    layer.mergeNewParams({
+                        _olSalt: Math.random(),
+                        styles: style
+                    });
+                }
+            }
+        }
     },
     
     /** private: createAboutPanel
@@ -137,7 +228,7 @@ gxp.WMSLayerPanel = Ext.extend(Ext.TabPanel, {
         }
         var formats = [];
         var currentFormat = layer.params["FORMAT"].toLowerCase();
-        Ext.each(this.layerRecord.get("formats"), function(format) {
+        Ext.each(record.get("formats"), function(format) {
             if(this.imageFormats.test(format)) {
                 formats.push(format.toLowerCase());
             }
@@ -147,7 +238,7 @@ gxp.WMSLayerPanel = Ext.extend(Ext.TabPanel, {
         }
         var transparent = layer.params["TRANSPARENT"];
         transparent = (transparent === "true" || transparent === true);
-
+        
         return {
             title: this.displayText,
             style: {"padding": "10px"},

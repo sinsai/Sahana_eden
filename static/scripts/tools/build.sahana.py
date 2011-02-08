@@ -143,6 +143,7 @@ def dojs(dogis = False):
         }
         configDictGxp = {
             "gxp":                      "../gis",
+            "data":                     "../gis/gxp",
             "menu":                     "../gis/gxp",
             "plugins":                  "../gis/gxp",
             "widgets":                  "../gis/gxp"
@@ -268,6 +269,7 @@ def docss():
         "../../styles/gis/style.css",
         "../../styles/gis/ie6-style.css",
         "../../styles/gis/gxp.css",
+        "../../styles/gis/color-picker.ux.css",
         "../../styles/gis/geoexplorer.css",
         "../../styles/gis/ie.css"
     ]

@@ -7,6 +7,7 @@ from subprocess import Popen
 import unittest
 from sahanaTest import SahanaTest
 import HTMLTestRunner
+from xmlrunner import *
 from selenium import selenium
 
 import os
@@ -578,21 +579,32 @@ if __name__ == "__main__":
             testConfig.overrideClassSortList(testModule["class"], testModule["tests"])
         # Invoke TestRunner
         buf = StringIO.StringIO()
-        runner = HTMLTestRunner.HTMLTestRunner(
-                    stream=buf,
-                    title="<Sahana Eden Test>",
-                    description="Suite of regressions tests for Sahana Eden."
-                    )
-        runner.run(suite)
-        # check out the output
-        byte_output = buf.getvalue()
-        # output the main test output for debugging & demo
-        # print byte_output
-        # HTMLTestRunner pumps UTF-8 output
-        output = byte_output.decode("utf-8")
-        self.fileName = "../results/regressionTest-%s-%s.html" % (browser, time.strftime("%Y%m%d-%H%M%S"))
-        file = open(self.fileName, "w")
-        file.write(output)
+        try:
+            report_format = args[2]
+        except:
+            report_format = "html"
+
+        if args[2] == "xml": #Arg 2 is used to general xml output for jenkins
+            runner = XMLTestRunner(file("../results/regressionTest.xml", "w"))
+            runner.run(suite)
+
+        elif args[2] == "html":
+            runner = HTMLTestRunner.HTMLTestRunner(
+                        stream=buf,
+                        title="<Sahana Eden Test>",
+                        description="Suite of regressions tests for Sahana Eden."
+                        )
+            self.fileName = "../results/regressionTest-%s-%s.html" % (browser, time.strftime("%Y%m%d-%H%M%S"))
+        	file = open(self.fileName, "w")
+			runner.run(suite)
+            # check out the output
+            byte_output = buf.getvalue()
+            # output the main test output for debugging & demo
+            # print byte_output
+            # HTMLTestRunner pumps UTF-8 output
+            output = byte_output.decode("utf-8")
+            file.write(output)
+
         SahanaTest.selenium.stop()
     else:
         # No: we should bring up the GUI for interactive control

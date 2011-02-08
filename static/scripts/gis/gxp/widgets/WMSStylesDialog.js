@@ -26,8 +26,55 @@ Ext.namespace("gxp");
  *      means of writing modified styles back to the server. To save styles,
  *      configure the dialog with a :class:`gxp.plugins.StyleWriter` plugin
  *      and call the ``saveStyles`` method.
+ *
+ *      Note: when this component is included in a build,
+ *      ``OpenLayers.Renderer.defaultSymbolizer`` will be set to the SLD
+ *      defaults.
  */
 gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
+    
+    /** api: config[addStyleText] (i18n) */
+     addStyleText: "Add",
+    /** api: config[addStyleTip] (i18n) */
+     addStyleTip: "Add a new style",
+    /** api: config[addStyleText] (i18n) */
+     deleteStyleText: "Remove",
+    /** api: config[addStyleTip] (i18n) */
+     deleteStyleTip: "Delete the selected style",
+    /** api: config[addStyleText] (i18n) */
+     editStyleText: "Edit",
+    /** api: config[addStyleTip] (i18n) */
+     editStyleTip: "Edit the selected style",
+    /** api: config[addStyleText] (i18n) */
+     duplicateStyleText: "Duplicate",
+    /** api: config[addStyleTip] (i18n) */
+     duplicateStyleTip: "Duplicate the selected style",
+    /** api: config[addStyleText] (i18n) */
+     addRuleText: "Add",
+    /** api: config[addStyleTip] (i18n) */
+     addRuleTip: "Add a new rule",
+    /** api: config[addStyleText] (i18n) */
+     deleteRuleText: "Remove",
+    /** api: config[addStyleTip] (i18n) */
+     deleteRuleTip: "Delete the selected rule",
+    /** api: config[addStyleText] (i18n) */
+     editRuleText: "Edit",
+    /** api: config[addStyleTip] (i18n) */
+     editRuleTip: "Edit the selected rule",
+    /** api: config[addStyleText] (i18n) */
+     duplicateRuleText: "Duplicate",
+    /** api: config[addStyleTip] (i18n) */
+     duplicateRuleTip: "Duplicate the selected rule",
+    /** api: config[cancelText] (i18n) */
+     cancelText: "Cancel",
+    /** api: config[stylePropertiesWindowTitle] (i18n) */
+     styleWindowTitle: "User Style: {0}",
+    /** api: config[ruleWindowTitle] (i18n) */
+     ruleWindowTitle: "Style Rule: {0}",
+    /** api: config[stylesFieldsetTitle] (i18n) */
+     stylesFieldsetTitle: "Styles",
+    /** api: config[rulesFieldsetTitle] (i18n) */
+     rulesFieldsetTitle: "Rules",
 
     //TODO create a StylesStore which can read styles using GetStyles. Create
     // subclasses for that store with writing capabilities, e.g.
@@ -100,9 +147,10 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
      */
     
     /** api: property[editable]
-     *  ``Boolean`` Read-only. True if this component could gather enough
-     *  information to allow styles being edited, false otherwise. This is
-     *  not supposed to be used before the  ``ready`` event is fired.
+     *  ``Boolean`` Read-only once the dialog is rendered. True if this
+     *  component could gather enough information to allow styles being edited,
+     *  false otherwise. This is not supposed to be read before the
+     *  ``ready`` event is fired.
      */
     editable: true,
     
@@ -132,8 +180,8 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
             "modified",
             
             /** api: event[styleselected]
-             *  Fires whenever a style is selected from this dialog's Style
-             *  combo box.
+             *  Fires whenever an existing style is selected from this dialog's
+             *  Style combo box.
              *  
              *  Listener arguments:
              *
@@ -155,7 +203,14 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
             "beforesaved",
             
             /** api: event[saved]
-             *  Fires when a style was successfully saved.
+             *  Fires when a style was successfully saved. Applications should
+             *  listen for this event and redraw layers with the currently
+             *  selected style.
+             *
+             *  Listener arguments:
+             *
+             *  * :class:`gxp.WMSStylesDialog` this component
+             *  * ``String`` the name of the currently selected style
              */
             "saved"            
         );
@@ -165,7 +220,7 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
             disabled: true,
             items: [{
                 xtype: "fieldset",
-                title: "Styles",
+                title: this.stylesFieldsetTitle,
                 labelWidth: 85,
                 style: "margin-bottom: 0;"
             }, {
@@ -175,13 +230,15 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
                     {
                         xtype: "button",
                         iconCls: "add",
-                        text: "Add",
+                        text: this.addStyleText,
+                        tooltip: this.addStyleTip,
                         handler: this.addStyle,
                         scope: this
                     }, {
                         xtype: "button",
                         iconCls: "delete",
-                        text: "Remove",
+                        text: this.deleteStyleText,
+                        tooltip: this.deleteStyleTip,
                         handler: function() {
                             this.stylesStore.remove(this.selectedStyle);
                         },
@@ -189,7 +246,8 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
                     }, {
                         xtype: "button",
                         iconCls: "edit",
-                        text: "Edit",
+                        text: this.editStyleText,
+                        tooltip: this.editStyleTip,
                         handler: function() {
                             this.editStyle();
                         },
@@ -197,14 +255,14 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
                     }, {
                         xtype: "button",
                         iconCls: "duplicate",
-                        text: "Duplicate",
+                        text: this.duplicateStyleText,
+                        tooltip: this.duplicateStyleTip,
                         handler: function() {
                             var prevStyle = this.selectedStyle;
                             var newStyle = prevStyle.get(
                                 "userStyle").clone();
                             newStyle.isDefault = false;
-                            newStyle.name = gxp.util.uniqueName(
-                                newStyle.name + "_copy", "_");
+                            newStyle.name = this.newStyleName();
                             var store = this.stylesStore;
                             store.add(new store.recordType({
                                 "name": newStyle.name,
@@ -222,10 +280,17 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
         Ext.applyIf(this, defConfig);
         
         this.createStylesStore();
-                
-        gxp.util.dispatch([this.getStyles, this.describeLayer], function() {
-            this.enable();
-        }, this);
+                        
+        this.on({
+            "beforesaved": function() { this._saving = true; },
+            "saved": function() { delete this._saving; },
+            "render": function() {
+                gxp.util.dispatch([this.getStyles], function() {
+                    this.enable();
+                }, this);
+            },
+            scope: this
+        });
 
         gxp.WMSStylesDialog.superclass.initComponent.apply(this, arguments);
     },
@@ -241,7 +306,7 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
         var prevStyle = this.selectedStyle;
         var store = this.stylesStore;
         var newStyle = new OpenLayers.Style(null, {
-            name: gxp.util.uniqueName("New_Style", "_"),
+            name: this.newStyleName(),
             rules: [this.createRule()]
         });
         store.add(new store.recordType({
@@ -258,8 +323,27 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
      */
     editStyle: function(prevStyle) {
         var userStyle = this.selectedStyle.get("userStyle");
-        var styleProperties = new Ext.Window({
-            title: "User Style: " + userStyle.name,
+        var buttonCfg = prevStyle ? {
+            buttons: [{
+                text: this.cancelText,
+                handler: function() {
+                    styleProperties.close();
+                    if (prevStyle) {
+                        this._cancelling = true;
+                        this.stylesStore.remove(this.selectedStyle);
+                        this.changeStyle(prevStyle, {
+                            updateCombo: true,
+                            markModified: true
+                        });
+                        delete this._cancelling;
+                    }
+                },
+                scope: this
+            }]
+        } : {}
+        var styleProperties = new Ext.Window(Ext.apply(buttonCfg, {
+            title: String.format(this.styleWindowTitle,
+                userStyle.title || userStyle.name),
             bodyBorder: false,
             autoHeight: true,
             width: 300,
@@ -269,38 +353,19 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
                 items: {
                     xtype: "gxp_stylepropertiesdialog",
                     userStyle: userStyle.clone(),
-                    // styles that came from the server
-                    // have a name that we don't change
-                    nameEditable: this.selectedStyle.id !==
-                        this.selectedStyle.get("name"),
+                    nameEditable: false,
                     style: "padding: 10px;"
                 }
             },
-            buttons: [{
-                text: "Cancel",
-                handler: function() {
-                    styleProperties.close();
-                    if (prevStyle) {
-                        this.stylesStore.remove(this.selectedStyle);
-                        this.changeStyle(prevStyle, {
-                            updateCombo: true,
-                            markModified: true
-                        });
-                    }
-                },
-                scope: this
-            }, {
-                text: "Save",
-                handler: function() {
-                    var userStyle = 
+            listeners: {
+                "close": function() {
                     this.selectedStyle.set(
                         "userStyle",
                         styleProperties.items.get(0).items.get(0).userStyle);
-                    styleProperties.close();
                 },
                 scope: this
-            }]
-        });
+            }
+        }));
         styleProperties.show();
     },
     
@@ -381,7 +446,7 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
     addRulesFieldSet: function() {
         var rulesFieldSet = new Ext.form.FieldSet({
             itemId: "rulesfieldset",
-            title: "Rules",
+            title: this.rulesFieldsetTitle,
             autoScroll: true,
             style: "margin-bottom: 0;"
         });
@@ -391,27 +456,35 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
                 {
                     xtype: "button",
                     iconCls: "add",
-                    text: "Add",
+                    text: this.addRuleText,
+                    tooltip: this.addRuleTip,
                     handler: this.addRule,
                     scope: this
                 }, {
                     xtype: "button",
                     iconCls: "delete",
-                    text: "Remove",
+                    text: this.deleteRuleText,
+                    tooltip: this.deleteRuleTip,
                     handler: this.removeRule,
                     scope: this,
                     disabled: true
                 }, {
                     xtype: "button",
                     iconCls: "edit",
-                    text: "Edit",
-                    handler: this.editRule,
+                    text: this.editRuleText,
+                    toolitp: this.editRuleTip,
+                    handler: function() {
+                        this.layerDescription ?
+                            this.editRule() :
+                            this.describeLayer(this.editRule);
+                    },
                     scope: this,
                     disabled: true
                 }, {
                     xtype: "button",
                     iconCls: "duplicate",
-                    text: "Duplicate",
+                    text: this.duplicateRuleText,
+                    tip: this.duplicateRuleTip,
                     handler: this.duplicateRule,
                     scope: this,
                     disabled: true
@@ -449,13 +522,12 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
     duplicateRule: function() {
         var legend = this.items.get(2).items.get(0);
         var newRule = this.selectedRule.clone();
-        newRule.name = gxp.util.uniqueName(
-            (newRule.title || newRule.name) + " (copy)");
-        delete newRule.title;
         this.selectedStyle.get("userStyle").rules.push(
             newRule
         );
         legend.update();
+        // mark the style as modified
+        this.selectedStyle.store.afterEdit(this.selectedStyle);
         this.updateRuleRemoveButton();
     },
     
@@ -464,14 +536,9 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
     editRule: function() {
         var rule = this.selectedRule.clone();
 
-        wfsUrl = Ext.urlAppend(this.layerDescription.owsURL, Ext.urlEncode({
-            "SERVICE": this.layerDescription.owsType,
-            "REQUEST": "DescribeFeatureType",
-            "TYPENAME": this.layerDescription.typeName
-        }));
-        
         var ruleDlg = new Ext.Window({
-            title: "Style Rule: " + (rule.title || rule.name),
+            title: String.format(this.ruleWindowTitle,
+                rule.title || rule.name || "New Rule"),
             width: 340,
             autoHeight: true,
             modal: true,
@@ -480,7 +547,14 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
                 symbolType: this.symbolType,
                 rule: rule,
                 attributes: new GeoExt.data.AttributeStore({
-                    url: wfsUrl
+                    url: this.layerDescription.owsURL,
+                    baseParams: {
+                        "SERVICE": this.layerDescription.owsType,
+                        "REQUEST": "DescribeFeatureType",
+                        "TYPENAME": this.layerDescription.typeName
+                    },
+                    method: "GET",
+                    disableCaching: false
                 }),
                 border: false,
                 defaults: {
@@ -489,6 +563,7 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
                 },
                 listeners: {
                     "change": this.saveRule,
+                    "tabchange": function() {ruleDlg.syncShadow();},
                     scope: this
                 }
             }]
@@ -655,19 +730,23 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
                 combo.setValue(this.selectedStyle.get("name"));
             },
             "remove": function(store, record, index) {
-                var newIndex =  Math.min(index, store.getCount() - 1);
-                this.updateStyleRemoveButton();
-                // update the "Choose style" combo's value
-                var combo = this.items.get(0).items.get(0);
-                this.markModified();
-                combo.fireEvent("select", combo, store.getAt(newIndex), newIndex);
-                combo.setValue(this.selectedStyle.get("name"));
+                if (!this._cancelling) {
+                    this._removing = true;
+                    var newIndex =  Math.min(index, store.getCount() - 1);
+                    this.updateStyleRemoveButton();
+                    // update the "Choose style" combo's value
+                    var combo = this.items.get(0).items.get(0);
+                    this.markModified();
+                    combo.fireEvent("select", combo, store.getAt(newIndex), newIndex);
+                    combo.setValue(this.selectedStyle.get("name"));
+                    delete this._removing;
+                }
             },
             "update": function(store, record) {
                 var userStyle = record.get("userStyle");
                 var data = {
                     "name": userStyle.name,
-                    "title": userStyle.title,
+                    "title": userStyle.title || userStyle.name,
                     "abstract": userStyle.description
                 };
                 Ext.apply(record.data, data);
@@ -694,7 +773,9 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
         if(this.modified === false) {
             this.modified = true;
         }
-        this.fireEvent("modified", this, this.selectedStyle.get("name"));
+        if (!this._saving) {
+            this.fireEvent("modified", this, this.selectedStyle.get("name"));
+        }
     },
     
     /** private: method[createStylesStore]
@@ -710,7 +791,17 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
             // add a userStyle field (not included in styles from
             // GetCapabilities), which will be populated with the userStyle
             // object if GetStyles is supported by the WMS
-            fields: ["name", "title", "abstract", "legend", "userStyle"]
+            fields: ["name", "title", "abstract", "legend", "userStyle"],
+            listeners: {
+                "add": function(store, records) {
+                    for(var rec, i=records.length-1; i>=0; --i) {
+                        rec = records[i];
+                        store.suspendEvents();
+                        rec.get("title") || rec.set("title", rec.get("name"));
+                        store.resumeEvents();
+                    }
+                }
+            }
         });
     },
     
@@ -729,6 +820,8 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
                     "REQUEST": "GetStyles",
                     "LAYERS": [layer.params["LAYERS"]].join(",")
                 },
+                method: "GET",
+                disableCaching: false,
                 success: this.parseSLD,
                 failure: this.setupNonEditable,
                 callback: callback,
@@ -757,6 +850,7 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
                 "REQUEST": "DescribeLayer",
                 "LAYERS": [layer.params["LAYERS"]].join(",")
             },
+            method: "GET",
             disableCaching: false,
             success: function(response) {
                 var result = new OpenLayers.Format.WMSDescribeLayer().read(
@@ -780,9 +874,10 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
             fieldLabel: "Choose style",
             store: store,
             editable: false,
-            displayField: "name",
+            displayField: "title",
+            valueField: "name",
             value: this.selectedStyle ?
-                this.selectedStyle.get("name") :
+                this.selectedStyle.get("title") :
                 this.layerRecord.getLayer().params.STYLES || "default",
             disabled: !store.getCount(),
             mode: "local",
@@ -793,7 +888,9 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
             listeners: {
                 "select": function(combo, record) {
                     this.changeStyle(record);
-                    this.fireEvent("styleselected", this, record.get("name"));
+                    if (!record.phantom && !this._removing) {
+                        this.fireEvent("styleselected", this, record.get("name"));
+                    }
                 },
                 scope: this
             }
@@ -890,6 +987,8 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
         var legend = this.items.get(2).add({
             xtype: "gx_vectorlegend",
             showTitle: false,
+            height: rules.length > 10 ? 250 : undefined,
+            autoScroll: rules.length > 10,
             rules: rules,
             symbolType: this.symbolType,
             selectOnClick: true,
@@ -925,9 +1024,34 @@ gxp.WMSStylesDialog = Ext.extend(Ext.Container, {
         });
         this.doLayout();
         return legend;
+    },
+    
+    newStyleName: function() {
+        var layerName = this.layerRecord.get("name");
+        return layerName.split(":").pop() + "_" +
+            gxp.util.md5(layerName + new Date() + Math.random()).substr(0, 8);
     }
     
 });
+
+(function() {
+    // set SLD defaults for symbolizer
+    OpenLayers.Renderer.defaultSymbolizer = {
+        fillColor: "#808080",
+        fillOpacity: 1,
+        strokeColor: "#000000",
+        strokeOpacity: 1,
+        strokeWidth: 1,
+        strokeDashstyle: "solid",
+        pointRadius: 3,
+        graphicName: "square",
+        fontColor: "#000000",
+        fontSize: 10,
+        haloColor: "#FFFFFF",
+        haloOpacity: 1,
+        haloRadius: 1
+    };
+})();
 
 /** api: xtype = gxp_wmsstylesdialog */
 Ext.reg('gxp_wmsstylesdialog', gxp.WMSStylesDialog);

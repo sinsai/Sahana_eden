@@ -16,15 +16,18 @@ import inspect
 # self.testcaseCount will provide a count of the number of tests within the class that will be run
 
 class SahanaTest(unittest.TestCase):
+
     """ All Sahana Test Case Classes should inherit this class
         The sub classes should not include the setUp() or tearDown() methods rather
         use a method called firstRun() or lastRun() in the sub classes
     """
+
     _seleniumCreated = False
     _classDetailsCollected = False
     _sortList = None
     _user = "user@example.com"
     _password = "testing"
+
     @staticmethod
     def setUpHierarchy(browser = "*chrome", 
                        path = "", 
@@ -39,7 +42,7 @@ class SahanaTest(unittest.TestCase):
             SahanaTest.selenium and SahanaTest.action
         """
 
-        # only run once
+        # Only run once
         if not SahanaTest._seleniumCreated:
             if browser == "*custom":
                 browser += " " + path

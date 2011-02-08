@@ -1,6 +1,6 @@
-loadLocationTestData, True
-test_locationEmpty, False
-test_addL0Location, False
+loadLocationTestData, False
+test_locationEmpty, True
+test_addL0Location, True
 test_removeL0Location, False
 test_locationNoParent, False
 test_locationL0, False
@@ -16,5 +16,5 @@ test_locationInL4, False
 test_updateLocationInL4NewInL3, False
 test_locationSelectSpecific, False
 test_locationSearch, False
-removeShelterTestData, False
-removeLocationTestData, True
+removeShelterTestData, True
+removeLocationTestData, False

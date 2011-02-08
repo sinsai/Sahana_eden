@@ -2162,6 +2162,16 @@ class S3RoleManager(S3Method):
                                                             _class="acl-widget")
             formstyle = crud_settings.formstyle
 
+
+            using_default = SPAN(T("using default"), _class="using-default")
+            delete_acl = lambda _id: _id is not None and \
+                                     A(T("Delete"),
+                                       _href = URL(r=request, c="admin", f="acl",
+                                                   args=[_id, "delete"],
+                                                   vars=dict(_next=r.here())),
+                                       _class = "delete-btn") or using_default
+            new_acl =  SPAN(T("new ACL"), _class="new-acl")
+
             # Role form -------------------------------------------------------
             form_rows = formstyle("role_name", mandatory(T("Role Name") + ":"),
                                   INPUT(value=role_name,
@@ -2206,7 +2216,8 @@ class S3RoleManager(S3Method):
             # Table header
             thead = THEAD(TR(TH(T("Application")),
                              TH(T("All Records")),
-                             TH(T("Owned Records"))))
+                             TH(T("Owned Records")),
+                             TH()))
 
             # Rows for existing ACLs
             form_rows = []
@@ -2234,11 +2245,12 @@ class S3RoleManager(S3Method):
                 if acl.uacl is not None:
                     uacl = acl.uacl
                 _id = acl.id
+                delete_btn = delete_acl(_id)
                 n = "%s_%s_ANY_ANY" % (_id, c)
                 uacl = acl_widget("uacl", "acl_u_%s" % n, uacl)
                 oacl = acl_widget("oacl", "acl_o_%s" % n, oacl)
                 cn = self.controllers[c].name_nice
-                form_rows.append(TR(TD(cn), TD(uacl), TD(oacl), _class=_class))
+                form_rows.append(TR(TD(cn), TD(uacl), TD(oacl), TD(delete_btn), _class=_class))
 
             # Tabs
             tabs = [SPAN(A(CACL), _class="rheader_tab_here")]
@@ -2259,7 +2271,8 @@ class S3RoleManager(S3Method):
                 thead = THEAD(TR(TH(T("Application")),
                                  TH(T("Function")),
                                  TH(T("All Records")),
-                                 TH(T("Owned Records"))))
+                                 TH(T("Owned Records")),
+                                 TH()))
 
                 # Rows for existing ACLs
                 form_rows = []
@@ -2284,11 +2297,12 @@ class S3RoleManager(S3Method):
                         if acl.uacl is not None:
                             uacl = acl.uacl
                         _id = acl.id
+                        delete_btn = delete_acl(_id)
                         n = "%s_%s_%s_ANY" % (_id, c, f)
                         uacl = acl_widget("uacl", "acl_u_%s" % n, uacl)
                         oacl = acl_widget("oacl", "acl_o_%s" % n, oacl)
                         cn = self.controllers[c].name_nice
-                        form_rows.append(TR(TD(cn), TD(f), TD(uacl), TD(oacl), _class=_class))
+                        form_rows.append(TR(TD(cn), TD(f), TD(uacl), TD(oacl), TD(delete_btn), _class=_class))
 
                 # Row to enter a new controller ACL
                 _class = i % 2 and "even" or "odd"
@@ -2300,7 +2314,8 @@ class S3RoleManager(S3Method):
                     TD(c_select),
                     TD(INPUT(_type="text", _name="new_function")),
                     TD(acl_widget("uacl", "new_c_uacl", auth.permission.NONE)),
-                    TD(acl_widget("oacl", "new_c_oacl", auth.permission.NONE)), _class=_class))
+                    TD(acl_widget("oacl", "new_c_oacl", auth.permission.NONE)),
+                    TD(new_acl), _class=_class))
 
                 # Tabs to change to the other view
                 tabs = [SPAN(A(CACL, _class="cacl-tab"), _class="rheader_tab_other"),
@@ -2325,8 +2340,9 @@ class S3RoleManager(S3Method):
 
                 # Table header
                 thead = THEAD(TR(TH(T("Tablename")),
-                                TH(T("All Records")),
-                                TH(T("Owned Records"))))
+                                 TH(T("All Records")),
+                                 TH(T("Owned Records")),
+                                 TH()))
 
                 # Rows for existing table ACLs
                 form_rows = []
@@ -2344,10 +2360,11 @@ class S3RoleManager(S3Method):
                         if acl.oacl is not None:
                             oacl = acl.oacl
                         _id = acl.id
+                    delete_btn = delete_acl(_id)
                     n = "%s_ANY_ANY_%s" % (_id, t)
                     uacl = acl_widget("uacl", "acl_u_%s" % n, uacl)
                     oacl = acl_widget("oacl", "acl_o_%s" % n, oacl)
-                    form_rows.append(TR(TD(t), TD(uacl), TD(oacl), _class=_class))
+                    form_rows.append(TR(TD(t), TD(uacl), TD(oacl), TD(delete_btn), _class=_class))
 
                 # Row to enter a new table ACL
                 _class = i % 2 and "even" or "odd"
@@ -2358,7 +2375,7 @@ class S3RoleManager(S3Method):
                                         error_message=T("Undefined Table"))))),
                     TD(acl_widget("uacl", "new_t_uacl", auth.permission.NONE)),
                     TD(acl_widget("oacl", "new_t_oacl", auth.permission.NONE)),
-                                                                    _class=_class))
+                    TD(new_acl), _class=_class))
 
                 # Tabs
                 tabs = [SPAN(A(CACL, _class="cacl-tab"), _class="rheader_tab_other")]
@@ -2444,7 +2461,7 @@ class S3RoleManager(S3Method):
                         _id = acl.pop("id", None)
                         if _id:
                             db(acl_table.id == _id).update(**acl)
-                        else:
+                        elif acl.oacl or acl.uacl:
                             _id = acl_table.insert(**acl)
 
                 redirect(URL(r=request, f="role", vars=request.get_vars))

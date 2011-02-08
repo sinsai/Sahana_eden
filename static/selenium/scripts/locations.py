@@ -84,6 +84,58 @@ class Locations(SahanaTest):
     def makeNameUnique(self, name):
         return self.holder + name + self.holder
     
+    def addLocation(self, holder, name, level, parent=None, parentLevel=None, grandParent="", lat=None, lon=None):
+        sel = self.selenium
+        name = holder + name + holder
+        if parent == None:
+            parentHolder = None
+        else:
+            parentHolder = "%s%s%s" % (holder, parent, holder)
+        # Load the Create Location page
+        sel.open("gis/location/create")
+        # Create the Location
+        sel.type("gis_location_name", name)
+        if level:
+            sel.select("gis_location_level", "value=%s" % level)
+        if grandParent:
+            grandParentHolder = ", %s%s%s" % (holder, grandParent, holder)
+            grandParent = ", %s" % grandParent
+        else:
+            grandParentHolder = ""
+        if parentLevel == "L0":
+            levelLabel = " (Country)"
+        elif parentLevel == "L1":
+            # NB This doesn't work if deploymentSettings are set to only use a single Country!
+            levelLabel = " (Province%s)" % grandParent
+            levelLabelHolder = " (Province%s)" % grandParentHolder
+        elif parentLevel == "L2":
+            levelLabel = " (District%s)" % grandParent
+            levelLabelHolder = " (District%s)" % grandParentHolder
+        else:
+            levelLabel = ""
+            levelLabelHolder = ""
+        if parent:
+            try:
+                try:
+                    sel.select("gis_location_parent", "label=%s%s" % (parentHolder, levelLabelHolder))
+                except:
+                    sel.select("gis_location_parent", "label=%s%s" % (parentHolder, levelLabel))
+            except:
+                parentHolder = parent
+                sel.select("gis_location_parent", "label=%s%s" % (parentHolder, levelLabel))
+        if lat:
+            sel.type("gis_location_lat", lat)
+        if lon:
+            sel.type("gis_location_lon", lon)
+        # Save the form
+        sel.click("//input[@value='Save']")
+        sel.wait_for_page_to_load("30000")
+        # Location saved
+        msg = "Failed to add location %s level %s with parent %s" % (name , level, parentHolder)
+        self.action.assertTrue(self.action.successMsg("Location added"), msg)
+        print "Location %s level %s with parent %s added" % (name , level, parentHolder)
+
+
     def loadLocations(self):
         """ Create locations for testing the Locations Selector """
         sel = self.selenium
@@ -110,10 +162,14 @@ class Locations(SahanaTest):
             if len(details) >= 7:
                 lon = details[6].strip()
             # Load the Create Location page
+            newLocation = self.makeNameUnique(name)
             sel.open("gis/location")
-            if self.action.search(self.makeNameUnique(name), "Showing 0 to 0 of 0 entries"):
-                self.action.addLocation(self.holder, name, level, parent, parentLevel, grandParent, lat, lon)
-            Locations.line.append(self.makeNameUnique(name))
+            if self.action.search(newLocation, "Showing 0 to 0 of 0 entries"):
+                self.addLocation(self.holder, name, level, parent, parentLevel, grandParent, lat, lon)
+            if parent == None:
+                Locations.line.append(newLocation)
+            else:
+                Locations.line.insert(0,newLocation)
             
     def openRecord(self, name):
         """ Open an existing record """
@@ -135,7 +191,7 @@ class Locations(SahanaTest):
     
     def removeLocationTestData(self):
         for location in Locations.line:
-            self.action.deleteLocation(location)
+            self.action.deleteObject("gis/location", location, "Location")
     
     def removeShelterTestData(self):
         """ Remove all the data added by this test case """

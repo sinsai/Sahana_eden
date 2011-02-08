@@ -709,6 +709,8 @@ class S3LocationSelectorWidget(FormWidget):
                                                              locations.parent,
                                                              locations.path,
                                                              limitby=(0, 1)).first()
+            # @ToDo Is it possible that value does not point to an existing
+            # location?
             uuid = this_location.uuid
             level = this_location.level
             default[level] = value
@@ -721,40 +723,9 @@ class S3LocationSelectorWidget(FormWidget):
             postcode = this_location.addr_postcode
             parent = this_location.parent
             path = this_location.path
-            if path:
-                # Lookup Ancestors
-                ancestors = path.split("/")
-                numberAncestors = len(ancestors)
-                if numberAncestors > 1:
-                    del ancestors[numberAncestors - 1]  # Remove self
-                    if strict:
-                        # No need to do a DAL query
-                        for i in range(numberAncestors - 1):
-                            default["L%i" % i] = ancestors[i]
-                    else:
-                        # Do a single SQL query for all ancestors to look up their levels
-                        _ancestors = db(locations.id.belongs(ancestors)).select(locations.id,
-                                                                                locations.level,
-                                                                                limitby=(0, numberAncestors - 1))
-                        for ancestor in _ancestors:
-                            default[ancestor.level] = ancestor.id
-            elif parent:
-                # Path not populated, so need to do lookups manually :/
-                _parent = db(locations.id == parent).select(locations.level, locations.parent, limitby=(0, 1)).first()
-                if _parent.level:
-                    default[_parent.level] = parent
-                if _parent.parent:
-                    _grandparent = db(locations.id == _parent.parent).select(locations.level, locations.parent, limitby=(0, 1)).first()
-                    if _grandparent.level:
-                        default[_grandparent.level] = _parent.parent
-                    if _grandparent.parent:
-                        _greatgrandparent = db(locations.id == _grandparent.parent).select(locations.level, locations.parent, limitby=(0, 1)).first()
-                        if _greatgrandparent.level:
-                            default[_greatgrandparent.level] = _grandparent.parent
-                        if _greatgrandparent.parent:
-                            _greatgreatgrandparent = db(locations.id == _greatgrandparent.parent).select(locations.level, locations.parent, limitby=(0, 1)).first()
-                            if _greatgreatgrandparent.level:
-                                default[_greatgreatgrandparent.level] = _greatgrandparent.parent
+
+            # Get ids of ancestors at each level.
+            gis.get_parent_per_level(default, value, feature=this_location)
 
             # Provide the representation for the current/default Value
             #text = str(field.represent(default["value"]))

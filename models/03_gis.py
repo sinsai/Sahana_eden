@@ -547,7 +547,7 @@ table = db.define_table(tablename,
                         comments(),
                         migrate=migrate,
                         format=shn_gis_location_represent_row,
-                        *(s3_authorstamp() + s3_timestamp() + s3_uid() + s3_deletion_status()))
+                        *s3_meta_fields())
 
 table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
@@ -1366,7 +1366,7 @@ table = db.define_table(tablename,
                         Field("zoom", "integer"),
                         Field("layer_id", "list:reference gis_wmc_layer", requires=IS_ONE_OF(db, "gis_wmc_layer.id", "%(title)s", multiple=True)),
                         # Metadata tbc
-                        migrate=migrate, *(s3_authorstamp() + s3_timestamp()))
+                        migrate=migrate, *(s3_authorstamp() + s3_ownerstamp() + s3_timestamp()))
 #table.lat.requires = IS_LAT()
 #table.lon.requires = IS_LON()
 table.zoom.requires = IS_INT_IN_RANGE(1, 20)

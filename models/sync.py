@@ -374,7 +374,7 @@ table = db.define_table(tablename,
                         Field("uuid", length=128),
                         Field("type"),
                         migrate=migrate,
-                        *(s3_authorstamp() + s3_timestamp()))
+                        *(s3_authorstamp() + s3_ownerstamp() + s3_timestamp()))
 
 table.created_by.label = T("Requested by")
 table.created_by.readable = True

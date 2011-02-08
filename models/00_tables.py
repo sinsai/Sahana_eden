@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
 """
-    Global tables and re-usable fields
+Global tables and re-usable fields
+
 """
 
-# -----------------------------------------------------------------------------
+# =============================================================================
 # Representations for Auth Users & Groups
 def shn_user_represent(id):
     table = db.auth_user
@@ -20,11 +21,13 @@ def shn_role_represent(id):
         return role.role
     return None
 
-# -----------------------------------------------------------------------------
+# =============================================================================
 # "Reusable" fields for table meta-data
-#
-# Reusable UUID field to include in other table definitions
-# Uses URNs according to http://tools.ietf.org/html/rfc4122
+
+# -----------------------------------------------------------------------------
+# Record identity meta-fields
+
+# Use URNs according to http://tools.ietf.org/html/rfc4122
 s3uuid = SQLCustomType(
                 type = "string",
                 native = "VARCHAR(128)",
@@ -32,6 +35,7 @@ s3uuid = SQLCustomType(
                 decoder = (lambda x: x)
             )
 
+# Reusable UUID field to include in other table definitions
 meta_uuidstamp = S3ReusableField("uuid",
                                  type=s3uuid,
                                  length=128,
@@ -41,7 +45,8 @@ meta_uuidstamp = S3ReusableField("uuid",
                                  writable=False,
                                  default="")
 
-meta_mci = S3ReusableField("mci", "integer", # Master-Copy-Index
+# Master-Copy-Index (for Sync)
+meta_mci = S3ReusableField("mci", "integer",
                            default=0,
                            readable=False,
                            writable=False)
@@ -49,17 +54,26 @@ meta_mci = S3ReusableField("mci", "integer", # Master-Copy-Index
 def s3_uid():
     return (meta_uuidstamp(), meta_mci())
 
+# -----------------------------------------------------------------------------
+# Record soft-deletion meta-fields
+
+# "Deleted"-flag
 meta_deletion_status = S3ReusableField("deleted", "boolean",
                                        readable=False,
                                        writable=False,
                                        default=False)
 
-meta_deletion_fk = S3ReusableField("deleted_fk",
+# Parked foreign keys of a deleted record
+# => to be restored upon "un"-delete
+meta_deletion_fk = S3ReusableField("deleted_fk", #"text",
                                    readable=False,
                                    writable=False)
 
 def s3_deletion_status():
     return (meta_deletion_status(), meta_deletion_fk())
+
+# -----------------------------------------------------------------------------
+# Record timestamp meta-fields
 
 meta_created_on = S3ReusableField("created_on", "datetime",
                                   readable=False,
@@ -75,7 +89,10 @@ meta_modified_on = S3ReusableField("modified_on", "datetime",
 def s3_timestamp():
     return (meta_created_on(), meta_modified_on())
 
-# Reusable Author fields to include in other table definitions
+# -----------------------------------------------------------------------------
+# Record authorship meta-fields
+
+# Author of a record
 meta_created_by = S3ReusableField("created_by", db.auth_user,
                                   readable=False, # Enable when needed, not by default
                                   writable=False,
@@ -84,22 +101,7 @@ meta_created_by = S3ReusableField("created_by", db.auth_user,
                                   represent=lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
                                   ondelete="RESTRICT")
 
-meta_owned_by_user = S3ReusableField("owned_by_user", db.auth_user,
-                                        readable=False, # Enable when needed, not by default
-                                        writable=False,
-                                        requires=None,
-                                        default=session.auth.user.id if auth.is_logged_in() else None,
-                                        represent=lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
-                                        ondelete="RESTRICT")
-
-meta_owned_by_role = S3ReusableField("owned_by_role", db.auth_group,
-                                readable=False, # Enable when needed, not by default
-                                writable=False,
-                                requires=None,
-                                default=None,
-                                represent=lambda id: id and shn_role_represent(id) or UNKNOWN_OPT,
-                                ondelete="RESTRICT")
-
+# Last author of a record
 meta_modified_by = S3ReusableField("modified_by", db.auth_user,
                                    readable=False, # Enable when needed, not by default
                                    writable=False,
@@ -110,7 +112,36 @@ meta_modified_by = S3ReusableField("modified_by", db.auth_user,
                                    ondelete="RESTRICT")
 
 def s3_authorstamp():
-    return (meta_created_by(), meta_owned_by_user(), meta_owned_by_role(), meta_modified_by())
+    return (meta_created_by(),
+            meta_modified_by())
+
+# -----------------------------------------------------------------------------
+# Record ownership meta-fields
+
+# Individual user who owns the record
+meta_owned_by_user = S3ReusableField("owned_by_user", db.auth_user,
+                                     readable=False, # Enable when needed, not by default
+                                     writable=False,
+                                     requires=None,
+                                     default=session.auth.user.id if auth.is_logged_in() else None,
+                                     represent=lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
+                                     ondelete="RESTRICT")
+
+# Role of users who collectively own the record
+meta_owned_by_role = S3ReusableField("owned_by_role", db.auth_group,
+                                     readable=False, # Enable when needed, not by default
+                                     writable=False,
+                                     requires=None,
+                                     default=None,
+                                     represent=lambda id: id and shn_role_represent(id) or UNKNOWN_OPT,
+                                     ondelete="RESTRICT")
+
+def s3_ownerstamp():
+    return (meta_owned_by_user(),
+            meta_owned_by_role())
+
+# -----------------------------------------------------------------------------
+# Common meta-fields
 
 def s3_meta_fields():
 
@@ -121,14 +152,15 @@ def s3_meta_fields():
               meta_created_on(),
               meta_modified_on(),
               meta_created_by(),
+              meta_modified_by(),
               meta_owned_by_user(),
-              meta_owned_by_role(),
-              meta_modified_by())
+              meta_owned_by_role())
 
     return fields
 
-# -----------------------------------------------------------------------------
-# Reusable Roles fields to include in other table definitions
+# =============================================================================
+# Reusable roles fields for map layer permissions management (GIS)
+
 role_required = S3ReusableField("role_required", db.auth_group, sortby="role",
                                 requires = IS_NULL_OR(IS_ONE_OF(db, "auth_group.id", "%(role)s", zero=T("Public"))),
                                 widget = S3AutocompleteWidget(request, "auth", "group", fieldname="role"),
@@ -151,8 +183,11 @@ roles_permitted = S3ReusableField("roles_permitted", db.auth_group, sortby="role
                                                 _title=T("Roles Permitted") + "|" + T("If this record should be restricted then select which role(s) are permitted to access the record here.")),
                                   ondelete = "RESTRICT")
 
+# =============================================================================
+# Other reusable fields
+
 # -----------------------------------------------------------------------------
-# Reusable comments field to include in other table definitions
+# comments field to include in other table definitions
 comments = S3ReusableField("comments", "text",
                            label = T("Comments"),
                            comment = DIV(_class="tooltip",
@@ -173,6 +208,7 @@ currency_type = S3ReusableField("currency_type", "integer",
                                 represent = lambda opt: \
                                     currency_type_opts.get(opt, UNKNOWN_OPT))
 
+# =============================================================================
 # Default CRUD strings
 ADD_RECORD = T("Add Record")
 LIST_RECORDS = T("List Records")
@@ -193,6 +229,11 @@ s3.crud_strings = Storage(
     msg_list_empty = T("No Records currently available"),
     msg_no_match = T("No Records matching the query"))
 
+# =============================================================================
+# Common tables
+
+# -----------------------------------------------------------------------------
+# Theme
 module = "admin"
 resource = "theme"
 tablename = "%s_%s" % (module, resource)
@@ -226,8 +267,9 @@ table.col_border_btn_out.requires = IS_HTML_COLOUR()
 table.col_border_btn_in.requires = IS_HTML_COLOUR()
 table.col_btn_hover.requires = IS_HTML_COLOUR()
 
-module = "s3"
+# -----------------------------------------------------------------------------
 # Settings - systemwide
+module = "s3"
 s3_setting_security_policy_opts = {
     1:T("simple"),
     2:T("editor"),
@@ -263,3 +305,5 @@ s3.crud_strings[resource] = Storage(
     msg_record_modified = T("Setting updated"),
     msg_record_deleted = T("Setting deleted"),
     msg_list_empty = T("No Settings currently defined"))
+
+# =============================================================================

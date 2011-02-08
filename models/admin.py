@@ -23,7 +23,7 @@ table = db.define_table(tablename,
                         Field("column_map", "blob", writable=False, readable=False),
                         Field("failure_reason", "string", writable=False),
                         migrate=migrate,
-                        *(s3_timestamp() + s3_authorstamp()))
+                        *(s3_timestamp() + s3_authorstamp() + s3_ownerstamp()))
 
 table.status.requires = IS_IN_SET(["new", "failed", "processing", "completed"])
 modules_list = []

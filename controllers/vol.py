@@ -55,7 +55,7 @@ def shn_menu():
             menu.extend(menu_teams)
 
     menu_persons = [
-        [T("Volunteers"), False, aURL(r=request, f="person", args=["search_simple"]),[
+        [T("Volunteers"), False, aURL(r=request, f="person", args=["search"]),[
             [T("List"), False, aURL(r=request, f="person")],
             [T("Add"), False, aURL(p="create", r=request, f="person", args="create")],
             # Not ready yet
@@ -130,12 +130,11 @@ def index():
     # Pre-process
     def prep(r):
 
-        """ Redirect to search_simple/person view """
+        """ Redirect to search/person view """
 
         if r.representation == "html":
             if not r.id:
-                r.method = "search_simple"
-                r.custom_action = shn_pr_person_search_simple
+                r.method = "search"
             else:
                redirect(URL(r=request, f=resourcename, args=[r.id]))
         return True
@@ -321,7 +320,7 @@ def showSkillOptions():
         Search for Volunteers by Skill Type
         - A Notification is sent to each matching volunteer
 
-        @ToDo: Make into a normal search_simple? (may need minor modification)
+        @ToDo: Make into a normal search? (may need minor modification)
         @ToDo: Make the Notification into a separate button (may want to search without notifications)
     """
 

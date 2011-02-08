@@ -74,6 +74,9 @@ class S3Search(S3CRUD):
         self.__comment = comment
         self.__fields = fields
 
+        if self.__fields:
+            self.interactive_search = True
+
 
     # -------------------------------------------------------------------------
     def apply_method(self, r, **attr):
@@ -87,14 +90,14 @@ class S3Search(S3CRUD):
 
         format = r.representation
 
-        if r.interactive:
+        if r.interactive and self.__fields:
             return self.search_simple(r, **attr)
-        elif format == "aadata":
+        elif format == "aadata" and self.__fields:
             return self.select(r, **attr)
         elif format == "json":
             return self.search_json(r, **attr)
         else:
-            raise HTTP(501, body=BADFORMAT)
+            raise HTTP(501, body=self.manager.ERROR.BAD_FORMAT)
 
         return dict()
 

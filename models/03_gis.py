@@ -956,7 +956,7 @@ def s3_gis_location_simple(r, **attr):
 # Plug into REST controller
 s3xrc.model.set_method(module, "location", method="simple", action=s3_gis_location_simple )
 
-s3_gis_location_search_simple = s3xrc.search_simple(
+gis_location_search = s3base.S3LocationSearch(
     label=T("Name"),
     comment=T("To search for a location, enter the name. You may use % as wildcard. Press 'Search' without input to list all locations."),
     fields=["name",
@@ -964,8 +964,8 @@ s3_gis_location_search_simple = s3xrc.search_simple(
             #"name_l10n"
             ])
 
-# Plug into REST controller
-s3xrc.model.set_method(module, "location", method="search_simple", action=s3_gis_location_search_simple )
+# Set as default search method
+s3xrc.model.configure(db.gis_location, search_method=gis_location_search)
 
 # -----------------------------------------------------------------------------
 def s3_gis_location_parents(r, **attr):

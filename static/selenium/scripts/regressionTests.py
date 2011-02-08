@@ -21,7 +21,7 @@ class TestConfig(object):
     def __init__(self):
         self.suite = unittest.TestSuite()
 
-    def test_main(self, testList):
+    def test_main(self, testList, browser):
         for testModule in testList: # dotted notation module.class
             self.overrideClassSortList(testModule["class"], testModule["tests"])
 #            self.suite.addTests(unittest.defaultTestLoader.loadTestsFromName(testName))
@@ -39,7 +39,8 @@ class TestConfig(object):
         # print byte_output
         # HTMLTestRunner pumps UTF-8 output
         output = byte_output.decode("utf-8")
-        file = open("../results/regressionTest.html", "w")
+        self.fileName = "../results/regressionTest-%s-%s.html" % (browser, time.strftime("%Y%m%d-%H%M%S"))
+        file = open(self.fileName, "w")
         file.write(output)
 
     def overrideClassSortList(self, className, testList):
@@ -212,8 +213,8 @@ class TestWindow(Frame):
         self.clean = False
         testConfig = TestConfig()
         testModuleList = self.getTestCasesToRun()
-        testConfig.test_main(testModuleList)
-        call(["firefox", os.path.join("..", "results", "regressionTest.html")])
+        testConfig.test_main(testModuleList, self.radioB.get())
+        call(["firefox", os.path.join("..", "results", testConfig.fileName)])
         SahanaTest.selenium.stop() # Debug: Comment out to keep the Selenium window open 
         self.clean = True
 
@@ -557,7 +558,7 @@ if __name__ == "__main__":
     args = sys.argv
     if args[1:]:
         # Yes: we are running the tests from the CLI (e.g. from Hudson)
-        # The 1st argument is taken to be the config file:
+        # Only the 1st argument is meaningful & is taken to be the config file:
         config_filename = args[1]
         exec("from %s import Settings" % config_filename)
         testSettings = Settings()
@@ -593,8 +594,9 @@ if __name__ == "__main__":
                         title="<Sahana Eden Test>",
                         description="Suite of regressions tests for Sahana Eden."
                         )
-            file = open("../results/regressionTest.html", "w")
-            runner.run(suite)
+            self.fileName = "../results/regressionTest-%s-%s.html" % (browser, time.strftime("%Y%m%d-%H%M%S"))
+        	file = open(self.fileName, "w")
+			runner.run(suite)
             # check out the output
             byte_output = buf.getvalue()
             # output the main test output for debugging & demo

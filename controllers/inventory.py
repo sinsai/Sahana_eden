@@ -42,10 +42,11 @@ def shn_store_rheader(r):
                                                         (T("Incoming"), "send", dict(select="incoming")),
                                                         (T("Receive" ), "recv"),
                                                         (T("Send"), "send", dict(select="sent")),
+                                                        (T("Users"), "store_user"),
                                                        ])
 
             rheader = DIV(TABLE(TR(
-                                   TH(T("Location") + ": "), shn_gis_location_represent(inventory_store.location_id),
+                                   TH(T("Location") + ": "), inventory_store_represent(inventory_store.id),
                                    TH(T("Description") + ": "), inventory_store.comments,
                                    ),
                                 ),

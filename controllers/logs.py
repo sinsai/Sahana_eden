@@ -375,49 +375,102 @@ def req_items_for_store(inventory_store_id, quantity_type):
             req_items_dict[req_item.logs_req_item.item_id] = req_item.as_dict()
             req_item_ids.append(req_item.logs_req_item.item_id)    
             
-    return req_items_dict        
+    return req_items_dict      
+
+shipment_to_req_type = dict( recv = "fulfil",
+                             send = "transit",
+                             commit = "commit"
+                             )
+
+def req_item_in_shipment( shipment_item,
+                          shipment_type,
+                          req_items_dict,
+                         ):
+    """
+    Checks if a shipment item is in a request and updates the shipment
+    """    
+  
+    shipment_item_table = "logs_%s_item" % shipment_type
+    try:
+        item_id = shipment_item[shipment_item_table].item_id
+    except:
+        item_id = shipment_item.inventory_store_item.item_id
+    
+    #Check for req_items
+    if item_id in req_items_dict:      
+        quantity_req_type = "quantity_%s" % shipment_to_req_type[shipment_type]
+              
+        #This item has been requested by this store
+        req_item = Storage(req_items_dict[item_id])
+        req_item_id = req_item.logs_req_item["id"]
+        
+        #Update the quantity_fulfil             
+        #convert the shipment items quantity into the req_tem.quantity_fulfil (according to packet)
+        quantity = req_item.logs_req_item[quantity_req_type] + \
+                   (shipment_item.supply_item_packet.quantity / \
+                    req_item.supply_item_packet["quantity"]) * \
+                    shipment_item[shipment_item_table].quantity    
+        quantity = min(quantity, req_item.logs_req_item["quantity"])  #Cap at req. quantity  
+        db.logs_req_item[req_item_id] = {quantity_req_type: quantity}      
+                          
+        #link the shipment_item to the req_item    
+        db[shipment_item_table][shipment_item[shipment_item_table].id] = dict(logs_req_item_id = req_item_id)
+        
+        #Flag req record to update status_fulfil 
+        return req_item.logs_req_item["logs_req_id"]
+    else:
+        return None
+         
 
 def recv_process():
     recv_id = request.args[0]
     recv_record = db.logs_recv[recv_id]
     inventory_store_id = recv_record.inventory_store_id
-
-    # Get Recv & Store & Req Items to compare
+    
+    #Get Recv & Store Items (will include all store items - need to filter out 
     recv_items = db( ( db.logs_recv_item.logs_recv_id == recv_id ) & \
-                     ( db.logs_recv_item.item_packet_id == db.supply_item_packet.id) &
-                     ( db.logs_recv_item.deleted == False ) 
-                 ).select( db.logs_recv_item.id,
-                           db.logs_recv_item.item_id,
-                           db.logs_recv_item.quantity,
-                           db.logs_recv_item.item_packet_id,
-                           db.supply_item_packet.quantity,
-                           )
-    store_items = db( ( db.inventory_store_item.inventory_store_id == inventory_store_id ) & \
-                      ( db.inventory_store_item.item_packet_id == db.supply_item_packet.id) & \
-                      ( db.inventory_store_item.deleted == False )
-                  ).select(db.inventory_store_item.id,
-                          db.inventory_store_item.item_id,
-                          db.inventory_store_item.quantity,
-                          db.supply_item_packet.quantity)
-    
-    store_items_dict = store_items.as_dict( key = "inventory_store_item.item_id")
-    
+                     ( db.logs_recv_item.item_packet_id == db.supply_item_packet.id) & \
+                     ( db.logs_recv_item.deleted == False )  )\
+                 .select(db.logs_recv_item.id,     
+                         db.logs_recv_item.item_id,                    
+                         db.logs_recv_item.quantity,
+                         db.logs_recv_item.item_packet_id,    
+                         db.supply_item_packet.quantity,
+                         db.inventory_store_item.id,
+                         db.inventory_store_item.inventory_store_id,
+                         db.inventory_store_item.item_id,
+                         db.inventory_store_item.quantity,
+                         db.inventory_store_item.packet_quantity,
+                         db.inventory_store_item.deleted,
+                         left=db.inventory_store_item.on(db.logs_recv_item.item_id == db.inventory_store_item.item_id), 
+                         #To ensure that all recv items are selected, even the item isn't in the store.
+                         )     
+                  
+    #Filter for inventory store records (separate due to left-join                   
+    recv_items.exclude(lambda row: row.inventory_store_item.id and \
+                                   ( row.inventory_store_item.inventory_store_id != inventory_store_id or \
+                                     row.inventory_store_item.deleted == True )
+                       )                 
+   
     req_items_dict = req_items_for_store(inventory_store_id, "fulfil")
     
     update_log_req_id = []
 
     for recv_item in recv_items:
         item_id = recv_item.logs_recv_item.item_id
-        if item_id in store_items_dict.keys():
+        if recv_item.inventory_store_item.id:
             #This item already exists in the store, and the quantity must be incremeneted
-            store_item = Storage(store_items_dict[item_id])
-            store_item_id = store_item.inventory_store_item["id"]
+            store_item_id = recv_item.inventory_store_item.id        
+            
+            store_item_quantity = recv_item.inventory_store_item.quantity * \
+                                  recv_item.inventory_store_item.packet_quantity
+            
+            recv_item_quantity = recv_item.logs_recv_item.quantity * \
+                                 recv_item.supply_item_packet.quantity         
 
             #convert the recv items quantity into the store item quantity (according to packet)
-            quantity = store_item.inventory_store_item["quantity"] + \
-                       (recv_item.supply_item_packet.quantity / \
-                        store_item.supply_item_packet["quantity"]) * \
-                        recv_item.logs_recv_item.quantity
+            quantity = (store_item_quantity + recv_item_quantity) / \
+                        recv_item.inventory_store_item.packet_quantity
             item = dict(quantity = quantity)
         else:
             # This item must be added to the store
@@ -426,29 +479,17 @@ def recv_process():
                          item_id = item_id,
                          quantity = recv_item.logs_recv_item.quantity,
                          item_packet_id = recv_item.logs_recv_item.item_packet_id
-                         )            
+                         )    
+                    
         # Update Store Item
         db.inventory_store_item[store_item_id] = item
         
-        if item_id in req_items_dict.keys():
-            #This item has been requested by this store
-            req_item = Storage(req_items_dict[item_id])
-            req_item_id = req_item.logs_req_item["id"]
-            
-            #Update the quantity_fulfil             
-            #convert the recv items quantity into the req_tem.quantity_fulfil (according to packet)
-            quantity = req_item.logs_req_item["quantity_fulfil"] + \
-                       (recv_item.supply_item_packet.quantity / \
-                        req_item.supply_item_packet["quantity"]) * \
-                        recv_item.logs_recv_item.quantity    
-            quantity = min(quantity, req_item.logs_req_item["quantity"])  #Cap at req. quantity  
-            db.logs_req_item[req_item_id] = dict( quantity_fulfil = quantity)      
-                              
-            #link the recv_item to the req_item    
-            db.logs_recv_item[recv_item.logs_recv_item.id] = dict(logs_req_item_id = req_item_id)
-            
-            #Flag req record to update status_fulfil 
-            update_log_req_id.append(req_item.logs_req_item["logs_req_id"])            
+        #Check for req_items (-> fulfil)
+        update_log_req_id.append( req_item_in_shipment(shipment_item = recv_item,
+                                                       shipment_type = "recv",
+                                                       req_items_dict = req_items_dict,
+                                                       )   
+                                 )         
         
     #Update recv record
     db.logs_recv[recv_id] = dict(datetime = request.utcnow,
@@ -456,8 +497,9 @@ def recv_process():
     
     #Update status_fulfil of the req record(s)
     for log_req_id in update_log_req_id:
-        session.rcvars.logs_req = log_req_id
-        logs_req_item_onaccept(None)
+        if log_req_id:
+            session.rcvars.logs_req = log_req_id
+            logs_req_item_onaccept(None)
 
     response.confirmation = T("Received Items added to Warehouse Items")
 
@@ -480,24 +522,31 @@ def send_process():
 
     #Get Send & Store Items
     send_items = db( ( db.logs_send_item.logs_send_id == send_id ) & \
-                     ( db.logs_send_item.store_item_id == db.inventory_store_item.id) & \
                      ( db.logs_send_item.item_packet_id == db.supply_item_packet.id) & \
-                     ( db.logs_send_item.deleted == False ) & \
-                     ( db.inventory_store_item.deleted == False ) )\
-                 .select(db.logs_send_item.id,
-                         db.logs_send_item.item_id,
+                     ( db.logs_send_item.deleted == False ) )\
+                 .select(db.logs_send_item.id,                         
                          db.logs_send_item.quantity,
                          db.supply_item_packet.quantity,
                          db.inventory_store_item.id,
+                         db.inventory_store_item.item_id,
                          db.inventory_store_item.quantity,
                          db.inventory_store_item.packet_quantity,
-                         left=db.inventory_store_item.on(db.logs_send_item.store_item_id == db.inventory_store_item.id), #To ensure that all send items are selected, even if the store item has been deleted.
+                         db.inventory_store_item.deleted,
+                         left=db.inventory_store_item.on(db.logs_send_item.store_item_id == db.inventory_store_item.id),
+                         #To ensure that all send items are selected, even if the store item has been deleted.
                          )   
                  
-    req_items_dict = req_items_for_store(inventory_store_id, "fulfil")                         
+    #Filter for inventory store records (separate due to left-join                   
+    send_items.exclude(lambda row: row.inventory_store_item.id and \
+                                   row.inventory_store_item.deleted == True
+                       )                    
+                 
+    req_items_dict = req_items_for_store(to_inventory_store_id, "transit")       
+    
+    update_log_req_id = []                  
 
     for send_item in send_items:     
-        item_id = send_item.logs_send_item.item_id   
+        item_id = send_item.inventory_store_item.item_id   
         send_item_id = send_item.logs_send_item.id
         store_item_id = send_item.inventory_store_item.id        
         
@@ -519,6 +568,13 @@ def send_process():
             new_store_quantity = ( store_item_quantity - send_item_quantity) / \
                                  send_item.inventory_store_item.packet_quantity
             db.inventory_store_item[store_item_id] = dict(quantity = new_store_quantity)
+        
+        #Check for req_items (-> transit)
+        update_log_req_id.append(req_item_in_shipment(shipment_item = send_item,
+                                                      shipment_type = "send",   
+                                                      req_items_dict = req_items_dict
+                                                      ) 
+                                 )            
             
     if cancel_send:        
         db.rollback()
@@ -536,7 +592,14 @@ def send_process():
         # Update Send record
         db.logs_send[send_id] = dict(datetime = request.utcnow,
                                      status = LOGS_STATUS_SENT )        
-        response.confirmation = T("Items Sent from Warehouse")                  
+        response.confirmation = T("Items Sent from Warehouse")           
+        
+        #Update status_fulfil of the req record(s)
+        for log_req_id in update_log_req_id:
+            if log_req_id:
+                session.rcvars.logs_req = log_req_id
+                logs_req_item_onaccept(None)        
+               
         # Go to the Warehouse which has sent these items
         redirect(URL(r = request,
                      c = "inventory",
@@ -545,8 +608,8 @@ def send_process():
                      )
                  )                    
 #==============================================================================
-
-    """ tbc """
+def recv_sent():
+    """ function to copy data from a shipment which was sent to the warehouse to a recv shipment """
 
     send_id = request.args[0]
 
@@ -577,6 +640,9 @@ def send_process():
                                  item_packet_id = sent_item.logs_send_item.item_packet_id,
                                  quantity = sent_item.logs_send_item.quantity)
 
+    #Flag shipment as received as received 
+    db.logs_send[send_id] = dict(status = LOGS_STATUS_RECEIVED)
+
     # Redirect to rec
     redirect(URL(r = request,
                  c = "logs",
@@ -597,6 +663,24 @@ def recv_item_json():
                            db.logs_recv.datetime,
                            )
     json_str = "[%s,%s" % ( json.dumps(dict(id = str(T("Received")), 
+                                            quantity = "#"
+                                            ) 
+                                        ) , 
+                            records.json()[1:] 
+                           )   
+    return json_str
+#==============================================================================#    
+def send_item_json():
+    response.headers["Content-Type"] = "text/x-json"
+    db.logs_send.datetime.represent = lambda dt: dt[:10]
+    records =  db( (db.logs_send_item.logs_req_item_id == request.args[0]) & \
+                   (db.logs_send.id == db.logs_send_item.logs_send_id) & \
+                   (db.logs_send_item.deleted == False )
+                  ).select(db.logs_send.id,
+                           db.logs_send_item.quantity,
+                           db.logs_send.datetime,
+                           )
+    json_str = "[%s,%s" % ( json.dumps(dict(id = str(T("Sent")), 
                                             quantity = "#"
                                             ) 
                                         ) , 

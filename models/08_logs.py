@@ -91,6 +91,10 @@ if deployment_settings.has_module(module):
                                       label = T("Requester") ),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
+    
+    #@todo: remove 
+    table.commit_status.readable = False
+    table.commit_status.writeable = False
 
     # -------------------------------------------------------------------------
     # CRUD strings
@@ -183,16 +187,23 @@ if deployment_settings.has_module(module):
                             comments(),
                             migrate=migrate, *s3_meta_fields())
     
-    # -----------------------------------------------------------------------------
-    def logs_req_quantity_fulfil_represent(quantity_fulfil):
-        return TAG[""]( quantity_fulfil,
-                        A(DIV(_class = "quantity_fulfil ajax_more collapsed"
-                              ),                                                        
-                            _href = "#",
-                          )
-                        )                 
+    table.quantity_commit.readable = False
+    table.quantity_commit.writeable = False
     
-    table.quantity_fulfil.represent = logs_req_quantity_fulfil_represent    
+    # -----------------------------------------------------------------------------
+    def logs_req_quantity_represent(quantity, type):
+        if quantity:            
+            return TAG[""]( quantity,
+                            A(DIV(_class = "quantity %s ajax_more collapsed" % type
+                                  ),                                                        
+                                _href = "#",
+                              )
+                            ) 
+        else:
+            return quantity                
+    
+    table.quantity_fulfil.represent = lambda quantity_fulfil: logs_req_quantity_represent(quantity_fulfil, "fulfil")    
+    table.quantity_transit.represent = lambda quantity_transit: logs_req_quantity_represent(quantity_transit, "transit")  
 
     # -----------------------------------------------------------------------------
     # CRUD strings
@@ -581,8 +592,9 @@ if deployment_settings.has_module(module):
     resourcename = "send"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            Field( "datetime", "datetime",
-                                   label = "Date"),
+                            Field( "datetime", 
+                                   "datetime",
+                                   label = "Date Sent"),
                             inventory_store_id( label = T("From Warehouse")),
                             location_id( "to_location_id",
                                          label = T("To Location") ),

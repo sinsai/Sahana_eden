@@ -2429,6 +2429,7 @@
 'Parent needs to be set': 'Parent needs to be set',
 'Parent needs to be set for locations of level': 'Parent needs to be set for locations of level',
 'Parents/Caregivers missing children': 'Parents/Caregivers missing children',
+'Partial': 'Partial',
 'Participant': 'Participant',
 'Pashto': 'Pashto',
 'Passport': 'Passport',

@@ -5,7 +5,7 @@
     @date-created: 2011-01-27
 */ 
 $(document).ready(function() {
-	$('.quantity_fulfil.ajax_more').live( 'click', function (e) {		
+	$('.quantity.ajax_more').live( 'click', function (e) {		
 		e.preventDefault();
 		DIV = $(this)
 		if (DIV.hasClass("collapsed")) {
@@ -15,10 +15,13 @@ $(document).ready(function() {
 			
 			//Get the req_item_id
 			UpdateURL = $(".action-btn",DIV.parent().parent().parent()).attr("href");
-			re = /req_item\/(.*)\/update/i;
+			re = /req_item\/(.*)\//i;
 			req_item_id = re.exec(UpdateURL)[1];
-			
-			url = "/eden/logs/recv_item_json/" + req_item_id;
+			if (DIV.hasClass("fulfil")) {
+				url = "/eden/logs/recv_item_json/" + req_item_id;
+			} else if (DIV.hasClass("transit")) {
+				url = "/eden/logs/send_item_json/" + req_item_id;
+			}			
 			$.getJSON(url, function(data) {
 				RecvTable = '<table class="recv_table">'	
 				for(i=0; i<data.length; i++) {
@@ -41,7 +44,7 @@ $(document).ready(function() {
 		} else {			
 			DIV.removeClass("expanded")
 			   .addClass("collapsed");			
-			$('.recv_table', DIV.parent() ).remove()
+			$('.recv_table', DIV.parent().parent() ).remove()
 		}
 			
 	});

@@ -74,11 +74,13 @@ def store():
                                   )
         def prep(r):
             if r.component_name == "send":
-                response.s3.filter = (db.logs_send.status == True)
+                response.s3.filter = (db.logs_send.status == LOGS_STATUS_SENT)              
+
                 # Hide the Add button for incoming shipments?
                 s3xrc.model.configure(r.component.table, insertable=False)
             return True
         response.s3.prep = prep
+                          
         # Probably need to adjust some more CRUD strings:
         s3.crud_strings["logs_send"].update(
             msg_record_modified = T("Incoming Shipment updated"),
@@ -101,6 +103,23 @@ def store():
 
     output = s3_rest_controller(module, resourcename,
                                 rheader=shn_store_rheader)
+    
+    if "send" in request.args and request.get_vars.get("select","sent") == "incoming":
+        recv_sent_action = dict(url = str(URL(r=request,
+                                              c = "logs",
+                                              f = "recv_sent",
+                                              args = ["[id]"]
+                                              )
+                                           ),
+                                _class = "action-btn",
+                                label = "Receive",
+                                )
+        
+        if response.s3.actions:
+            response.s3.actions.append(recv_sent_action)
+        else:
+            response.s3.actions = [recv_sent_action]  
+                                    
     return output
 
 #==============================================================================

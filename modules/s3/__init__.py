@@ -78,3 +78,6 @@ from s3msg import *
 
 # VITA Person Data Toolkit
 from s3vita import *
+
+# OCR functions
+from s3ocr import s3ocr_generate_pdf, s3ocr_get_languages, s3ocr_available_xforms

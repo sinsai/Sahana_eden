@@ -562,7 +562,8 @@ if __name__ == "__main__":
         config_filename = args[1]
         exec("from %s import Settings" % config_filename)
         testSettings = Settings()
-        SahanaTest.setUpHierarchy(testSettings.radioB,
+        browser = testSettings.radioB
+        SahanaTest.setUpHierarchy(browser,
                                   testSettings.browserPath,
                                   testSettings.ipAddr,
                                   testSettings.ipPort,

@@ -39,7 +39,7 @@ class TestConfig(object):
         # print byte_output
         # HTMLTestRunner pumps UTF-8 output
         output = byte_output.decode("utf-8")
-        self.fileName = "../results/regressionTest-%s-%s.html" % (browser, time.strftime("%Y%m%d-%H%M%S"))
+        self.fileName = "../results/regressionTest-%s-%s.html" % (browser.replace("*", ""), time.strftime("%Y%m%d-%H%M%S"))
         file = open(self.fileName, "w")
         file.write(output)
 
@@ -558,7 +558,7 @@ if __name__ == "__main__":
     args = sys.argv
     if args[1:]:
         # Yes: we are running the tests from the CLI (e.g. from Hudson)
-        # Only the 1st argument is meaningful & is taken to be the config file:
+        # The 1st argument is taken to be the config file:
         config_filename = args[1]
         exec("from %s import Settings" % config_filename)
         testSettings = Settings()
@@ -584,8 +584,8 @@ if __name__ == "__main__":
         except:
             report_format = "html"
 
-        if args[2] == "xml": #Arg 2 is used to general xml output for jenkins
-            runner = XMLTestRunner(file("../results/regressionTest.xml", "w"))
+        if args[2] == "xml": # Arg 2 is used to generate xml output for jenkins
+            runner = XMLTestRunner(file("../results/regressionTest-%s.xml" % (browser.replace("*", "")) , "w"))
             runner.run(suite)
 
         elif args[2] == "html":
@@ -594,7 +594,7 @@ if __name__ == "__main__":
                         title="<Sahana Eden Test>",
                         description="Suite of regressions tests for Sahana Eden."
                         )
-            self.fileName = "../results/regressionTest-%s-%s.html" % (browser, time.strftime("%Y%m%d-%H%M%S"))
+            self.fileName = "../results/regressionTest-%s-%s.html" % (browser.replace("*", ""), time.strftime("%Y%m%d-%H%M%S"))
             file = open(self.fileName, "w")
             runner.run(suite)
             # check out the output

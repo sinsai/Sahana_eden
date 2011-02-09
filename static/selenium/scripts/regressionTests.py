@@ -585,7 +585,7 @@ if __name__ == "__main__":
             report_format = "html"
 
         if args[2] == "xml": # Arg 2 is used to generate xml output for jenkins
-            runner = XMLTestRunner(file("../results/regressionTest.xml", "w"))
+            runner = XMLTestRunner(file("../results/regressionTest-%s.xml" % (browser.replace("*", "")) , "w"))
             runner.run(suite)
 
         elif args[2] == "html":

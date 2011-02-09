@@ -277,10 +277,11 @@ class S3CRUD(S3Method):
 
             # Cancel button?
             if response.s3.cancel:
-                form[0][-1][1].append(INPUT(_type="button",
-                                            _value=T("Cancel"),
-                                            _onclick="window.location='%s';" %
-                                                     response.s3.cancel))
+                form[0][-1][0].append(A(T("Cancel"), _href=response.s3.cancel, _class="cancel-btn"))
+                #form[0][-1][0].append(INPUT(_type="button",
+                                            #_value=T("Cancel"),
+                                            #_onclick="window.location='%s';" %
+                                                     #response.s3.cancel))
 
             # Navigate-away confirmation
             if self.settings.navigate_away_confirm:
@@ -583,10 +584,11 @@ class S3CRUD(S3Method):
 
             # Cancel button?
             if response.s3.cancel:
-                form[0][-1][1].append(INPUT(_type="button",
-                                            _value=T("Cancel"),
-                                            _onclick="window.location='%s';" %
-                                                     response.s3.cancel))
+                form[0][-1][0].append(A(T("Cancel"), _href=response.s3.cancel, _class="cancel-btn"))
+                #form[0][-1][0].append(INPUT(_type="button",
+                                            #_value=T("Cancel"),
+                                            #_onclick="window.location='%s';" %
+                                                     #response.s3.cancel))
 
             # Navigate-away confirmation
             if self.settings.navigate_away_confirm:
@@ -1383,7 +1385,8 @@ class S3CRUD(S3Method):
             authorised = self.permit("delete", tablename, record_id)
             if authorised and href_delete and deletable:
                 delete_btn = self.crud_button(DELETE, _href=href_delete,
-                                              _id="delete-btn")
+                                              _id="delete-btn",
+                                              _class="delete-btn")
                 output.update(delete_btn=delete_btn)
 
         return output
@@ -1490,7 +1493,11 @@ class S3CRUD(S3Method):
             if fieldtype.startswith("reference") and \
                hasattr(field, "sortby") and field.sortby:
                 tn = fieldtype[10:]
-                join = [j for j in left if j.first._tablename == tn]
+                try:
+                    join = [j for j in left if j.first._tablename == tn]
+                except:
+                    # Old DAL version?
+                    join = [j for j in left if j.table._tablename == tn]
                 if not join:
                     left.append(self.db[tn].on(field == self.db[tn].id))
                 else:
@@ -1565,11 +1572,19 @@ class S3CRUD(S3Method):
             if fieldtype.startswith("reference") and \
                hasattr(c, "sortby") and c.sortby:
                 tn = fieldtype[10:]
-                join = [j for j in left if j.table._tablename == tn]
+                try:
+                    join = [j for j in left if j.first._tablename == tn]
+                except:
+                    # Old DAL version?
+                    join = [j for j in left if j.table._tablename == tn]
                 if not join:
                     left.append(self.db[tn].on(c == self.db[tn].id))
                 else:
-                    join[0].query = (join[0].query) | (c == self.db[tn].id)
+                    try:
+                        join[0].query = (join[0].second) | (c == self.db[tn].id)
+                    except:
+                        # Old DAL version?
+                        join[0].query = (join[0].query) | (c == self.db[tn].id)
                 if not isinstance(c.sortby, (list, tuple)):
                     orderby.append("%s.%s%s" % (tn, c.sortby, direction(i)))
                 else:

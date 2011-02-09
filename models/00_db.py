@@ -37,7 +37,19 @@ if db_string[0].find("sqlite") != -1:
 else:
     # Tuple (inc pool_size)
     try:
-        db = DAL(db_string[0], pool_size=db_string[1])
+        if db_string[0].find("mysql") != -1:
+            # Use MySQLdb where available (pymysql has given broken pipes)
+            try:
+                import MySQLdb
+                from gluon.dal import MySQLAdapter
+                MySQLAdapter.adapter = MySQLdb
+            except importError:
+                # Fallback to pymysql
+                pass
+            db = DAL(db_string[0], check_reserved=["postgres"], pool_size=db_string[1])
+        else:
+            # PostgreSQL
+            db = DAL(db_string[0], check_reserved=["mysql"], pool_size=db_string[1])
     except:
         db_type = db_string[0].split(":", 1)[0]
         db_location = db_string[0].split("@", 1)[1]

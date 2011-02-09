@@ -8,7 +8,8 @@ GeoExt.Lang.add("en", {
         untitledText: "Untitled",
         addLayerSourceErrorText: "Error getting WMS capabilities ({msg}).\nPlease check the url and try again.",
         availableLayersText: "Available Layers",
-        doneText: "Done"
+        doneText: "Done",
+        uploadText: "Upload Data"
     },
     
     "gxp.plugins.BingSource.prototype": {
@@ -51,6 +52,11 @@ GeoExt.Lang.add("en", {
         baseNodeText: "Base Layers"
     },
 
+    "gxp.plugins.Legend.prototype": {
+        menuText: "Show Legend",
+        tooltip: "Show Legend"
+    },
+
     "gxp.plugins.Measure.prototype": {
         lengthMenuText: "Length",
         areaMenuText: "Area",
@@ -75,6 +81,14 @@ GeoExt.Lang.add("en", {
         title: "OpenStreetMap Layers",
         mapnikAttribution: "Data CC-By-SA by <a href='http://openstreetmap.org/'>OpenStreetMap</a>",
         osmarenderAttribution: "Data CC-By-SA by <a href='http://openstreetmap.org/'>OpenStreetMap</a>"
+    },
+
+    "gxp.plugins.Print.prototype": {
+        menuText: "Print Map",
+        tooltip: "Print Map",
+        previewText: "Print Preview",
+        notAllNotPrintableText: "Not All Layers Can Be Printed",
+        nonePrintableText: "None of your current map layers can be printed"
     },
 
     "gxp.plugins.MapQuestSource.prototype": {
@@ -225,7 +239,62 @@ GeoExt.Lang.add("en", {
         displayText: "Display",
         opacityText: "Opacity",
         formatText: "Format",
-        transparentText: "Transparent"
+        transparentText: "Transparent",
+        cacheText: "Cache",
+        cacheFieldText: "Use cached version",
+        stylesText: "Styles"
+    },
+
+    "gxp.EmbedMapDialog.prototype": {
+        publishMessage: "Your map is ready to be published to the web! Simply copy the following HTML to embed the map in your website:",
+        heightLabel: 'Height',
+        widthLabel: 'Width',
+        mapSizeLabel: 'Map Size',
+        miniSizeLabel: 'Mini',
+        smallSizeLabel: 'Small',
+        premiumSizeLabel: 'Premium',
+        largeSizeLabel: 'Large'
+    },
+    
+    "gxp.WMSStylesDialog.prototype": {
+         addStyleText: "Add",
+         addStyleTip: "Add a new style",
+         deleteStyleText: "Remove",
+         deleteStyleTip: "Delete the selected style",
+         editStyleText: "Edit",
+         editStyleTip: "Edit the selected style",
+         duplicateStyleText: "Duplicate",
+         duplicateStyleTip: "Duplicate the selected style",
+         addRuleText: "Add",
+         addRuleTip: "Add a new rule",
+         deleteRuleText: "Remove",
+         deleteRuleTip: "Delete the selected rule",
+         editRuleText: "Edit",
+         editRuleTip: "Edit the selected rule",
+         duplicateRuleText: "Duplicate",
+         duplicateRuleTip: "Duplicate the selected rule",
+         cancelText: "Cancel",
+         styleWindowTitle: "User Style: {0}",
+         ruleWindowTitle: "Style Rule: {0}",
+         stylesFieldsetTitle: "Styles",
+         rulesFieldsetTitle: "Rules"
+    },
+
+    "gxp.LayerUploadPanel.prototype": {
+        titleLabel: "Title",
+        titleEmptyText: "Layer title",
+        abstractLabel: "Description",
+        abstractEmptyText: "Layer description",
+        fileLabel: "Data",
+        fieldEmptyText: "Browse for data archive...",
+        uploadText: "Upload",
+        waitMsgText: "Uploading your data...",
+        invalidFileExtensionText: "File extension must be one of: ",
+        optionsText: "Options",
+        workspaceLabel: "Workspace",
+        workspaceEmptyText: "Default workspace",
+        dataStoreLabel: "Store",
+        dataStoreEmptyText: "Default datastore"
     }
 
 });

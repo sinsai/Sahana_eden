@@ -734,10 +734,10 @@ class AuthS3(Auth):
             else:
                 # Editor role required for Update/Delete.
                 authorised = self.s3_has_role("Editor")
-                if not authorised and self.user and "created_by" in table:
+                if not authorised and self.user and "owned_by_user" in table:
                     # Creator of Record is allowed to Edit
-                    record = db(table.id == record_id).select(table.created_by, limitby=(0, 1)).first()
-                    if record and self.user.id == record.created_by:
+                    record = db(table.id == record_id).select(table.owned_by_user, limitby=(0, 1)).first()
+                    if record and self.user.id == record.owned_by_user:
                         authorised = True
 
         elif session.s3.security_policy == 3:
@@ -1271,7 +1271,7 @@ class S3Permission(object):
         @param record: the record ID (or the Row if already loaded)
 
         @note: if passing a Row, it must contain all available ownership
-               fields (id, created_by, owned_by), otherwise the record
+               fields (id, owned_by_user, owned_by_role), otherwise the record
                will be re-loaded by this function
 
         """
@@ -1456,7 +1456,7 @@ class S3Permission(object):
         @param record: the record ID (or the Row if already loaded)
 
         @note: if passing a Row, it must contain all available ownership
-               fields (id, created_by, owned_by), otherwise the record
+               fields (id, owned_by_user, owned_by_role), otherwise the record
                will be re-loaded by this function
 
         """
@@ -1475,7 +1475,7 @@ class S3Permission(object):
             return True
         else:
             record_id = None
-            ownership_fields = ("created_by", "owned_by")
+            ownership_fields = ("owned_by_user", "owned_by_role")
             fields = [f for f in ownership_fields if f in table.fields]
             if not fields:
                 return True # Ownership is undefined
@@ -1495,10 +1495,10 @@ class S3Permission(object):
                 return False # Record does not exist
 
             creator = owner = None
-            if "created_by" in table.fields:
-                creator = record.created_by
-            if "owned_by" in table.fields:
-                owner = record.owned_by
+            if "owned_by_user" in table.fields:
+                creator = record.owned_by_user
+            if "owned_by_role" in table.fields:
+                owner = record.owned_by_role
 
             if not user_id:
                 if not creator and self.auth.s3_session_ownes(table, record_id):
@@ -1646,14 +1646,14 @@ class S3Permission(object):
         ownership_required = False
         if not permitted:
             query = (table[pkey] == None)
-        elif "owned_by" in table or "created_by" in table:
+        elif "owned_by_role" in table or "owned_by_user" in table:
             ownership_required = permitted and acl[1] & racl != racl
 
         # Generate query
         if ownership_required:
             if not user_id:
                 query = (table[pkey] == None)
-                if "created_by" in table and pkey == "id":
+                if "owned_by_user" in table and pkey == "id":
                     try:
                         records = self.session.owned_records.get(table._tablename, None)
                     except:
@@ -1663,10 +1663,10 @@ class S3Permission(object):
                             query = (table.id.belongs(records))
             else:
                 query = None
-                if "owned_by" in table:
-                    query = (table.owned_by.belongs(roles))
-                if "created_by" in table:
-                    q = (table.created_by == user_id)
+                if "owned_by_role" in table:
+                    query = (table.owned_by_role.belongs(roles))
+                if "owned_by_user" in table:
+                    q = (table.owned_by_user == user_id)
                     if query is not None:
                         query = (query | q)
                     else:
@@ -1715,7 +1715,7 @@ class S3Permission(object):
         if not permitted:
             pkey = table.fields[0]
             query = (table[pkey] == None)
-        elif "owned_by" in table or "created_by" in table:
+        elif "owned_by_role" in table or "owned_by_user" in table:
             ownership_required = permitted and acl[1] & racl != racl
 
         return ownership_required
@@ -1732,7 +1732,7 @@ class S3Permission(object):
                        any of "create", "read", "update", "delete"
 
         @note: when submitting a record, the record ID and the ownership
-               fields (="created_by", "owned_by") must be contained if
+               fields (="owned_by_user", "owned_by_role") must be contained if
                available, otherwise the record will be re-loaded
 
         """
@@ -2162,6 +2162,16 @@ class S3RoleManager(S3Method):
                                                             _class="acl-widget")
             formstyle = crud_settings.formstyle
 
+
+            using_default = SPAN(T("using default"), _class="using-default")
+            delete_acl = lambda _id: _id is not None and \
+                                     A(T("Delete"),
+                                       _href = URL(r=request, c="admin", f="acl",
+                                                   args=[_id, "delete"],
+                                                   vars=dict(_next=r.here())),
+                                       _class = "delete-btn") or using_default
+            new_acl =  SPAN(T("new ACL"), _class="new-acl")
+
             # Role form -------------------------------------------------------
             form_rows = formstyle("role_name", mandatory(T("Role Name") + ":"),
                                   INPUT(value=role_name,
@@ -2206,7 +2216,8 @@ class S3RoleManager(S3Method):
             # Table header
             thead = THEAD(TR(TH(T("Application")),
                              TH(T("All Records")),
-                             TH(T("Owned Records"))))
+                             TH(T("Owned Records")),
+                             TH()))
 
             # Rows for existing ACLs
             form_rows = []
@@ -2234,11 +2245,12 @@ class S3RoleManager(S3Method):
                 if acl.uacl is not None:
                     uacl = acl.uacl
                 _id = acl.id
+                delete_btn = delete_acl(_id)
                 n = "%s_%s_ANY_ANY" % (_id, c)
                 uacl = acl_widget("uacl", "acl_u_%s" % n, uacl)
                 oacl = acl_widget("oacl", "acl_o_%s" % n, oacl)
                 cn = self.controllers[c].name_nice
-                form_rows.append(TR(TD(cn), TD(uacl), TD(oacl), _class=_class))
+                form_rows.append(TR(TD(cn), TD(uacl), TD(oacl), TD(delete_btn), _class=_class))
 
             # Tabs
             tabs = [SPAN(A(CACL), _class="rheader_tab_here")]
@@ -2259,7 +2271,8 @@ class S3RoleManager(S3Method):
                 thead = THEAD(TR(TH(T("Application")),
                                  TH(T("Function")),
                                  TH(T("All Records")),
-                                 TH(T("Owned Records"))))
+                                 TH(T("Owned Records")),
+                                 TH()))
 
                 # Rows for existing ACLs
                 form_rows = []
@@ -2284,11 +2297,12 @@ class S3RoleManager(S3Method):
                         if acl.uacl is not None:
                             uacl = acl.uacl
                         _id = acl.id
+                        delete_btn = delete_acl(_id)
                         n = "%s_%s_%s_ANY" % (_id, c, f)
                         uacl = acl_widget("uacl", "acl_u_%s" % n, uacl)
                         oacl = acl_widget("oacl", "acl_o_%s" % n, oacl)
                         cn = self.controllers[c].name_nice
-                        form_rows.append(TR(TD(cn), TD(f), TD(uacl), TD(oacl), _class=_class))
+                        form_rows.append(TR(TD(cn), TD(f), TD(uacl), TD(oacl), TD(delete_btn), _class=_class))
 
                 # Row to enter a new controller ACL
                 _class = i % 2 and "even" or "odd"
@@ -2300,7 +2314,8 @@ class S3RoleManager(S3Method):
                     TD(c_select),
                     TD(INPUT(_type="text", _name="new_function")),
                     TD(acl_widget("uacl", "new_c_uacl", auth.permission.NONE)),
-                    TD(acl_widget("oacl", "new_c_oacl", auth.permission.NONE)), _class=_class))
+                    TD(acl_widget("oacl", "new_c_oacl", auth.permission.NONE)),
+                    TD(new_acl), _class=_class))
 
                 # Tabs to change to the other view
                 tabs = [SPAN(A(CACL, _class="cacl-tab"), _class="rheader_tab_other"),
@@ -2325,8 +2340,9 @@ class S3RoleManager(S3Method):
 
                 # Table header
                 thead = THEAD(TR(TH(T("Tablename")),
-                                TH(T("All Records")),
-                                TH(T("Owned Records"))))
+                                 TH(T("All Records")),
+                                 TH(T("Owned Records")),
+                                 TH()))
 
                 # Rows for existing table ACLs
                 form_rows = []
@@ -2344,10 +2360,11 @@ class S3RoleManager(S3Method):
                         if acl.oacl is not None:
                             oacl = acl.oacl
                         _id = acl.id
+                    delete_btn = delete_acl(_id)
                     n = "%s_ANY_ANY_%s" % (_id, t)
                     uacl = acl_widget("uacl", "acl_u_%s" % n, uacl)
                     oacl = acl_widget("oacl", "acl_o_%s" % n, oacl)
-                    form_rows.append(TR(TD(t), TD(uacl), TD(oacl), _class=_class))
+                    form_rows.append(TR(TD(t), TD(uacl), TD(oacl), TD(delete_btn), _class=_class))
 
                 # Row to enter a new table ACL
                 _class = i % 2 and "even" or "odd"
@@ -2358,7 +2375,7 @@ class S3RoleManager(S3Method):
                                         error_message=T("Undefined Table"))))),
                     TD(acl_widget("uacl", "new_t_uacl", auth.permission.NONE)),
                     TD(acl_widget("oacl", "new_t_oacl", auth.permission.NONE)),
-                                                                    _class=_class))
+                    TD(new_acl), _class=_class))
 
                 # Tabs
                 tabs = [SPAN(A(CACL, _class="cacl-tab"), _class="rheader_tab_other")]
@@ -2444,7 +2461,7 @@ class S3RoleManager(S3Method):
                         _id = acl.pop("id", None)
                         if _id:
                             db(acl_table.id == _id).update(**acl)
-                        else:
+                        elif acl.oacl or acl.uacl:
                             _id = acl_table.insert(**acl)
 
                 redirect(URL(r=request, f="role", vars=request.get_vars))

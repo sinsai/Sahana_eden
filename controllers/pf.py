@@ -79,12 +79,11 @@ def index():
     # Pre-process
     def prep(r):
 
-        """ Redirect to search_simple/person view """
+        """ Redirect to search/person view """
 
         if r.representation == "html":
             if not r.id:
-                r.method = "search_simple"
-                r.custom_action = shn_pr_person_search_simple
+                r.method = "search"
             else:
                redirect(URL(r=request, f=resourcename, args=[r.id]))
         return True

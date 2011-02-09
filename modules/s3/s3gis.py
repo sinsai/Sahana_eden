@@ -2154,8 +2154,10 @@ OpenLayers.Util.extend( selectPdfControl, {
 
             if add_feature:
                 pan_depress = "false"
+                pan_active = "pan.deactivate();"
             else:
                 pan_depress = "true"
+                pan_active = ""
 
             toolbar = """
         toolbar = mapPanel.getTopToolbar();
@@ -2324,6 +2326,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         toolbar.add(zoomout);
         toolbar.add(zoomin);
         toolbar.add(pan);
+        """ + pan_active + """
         toolbar.addSeparator();
         // Navigation
         map.addControl(nav);

@@ -74,7 +74,7 @@ class S3XML(object):
     FeatureClass = "feature_class_id"
     #Marker = "marker_id"
 
-    IGNORE_FIELDS = ["deleted", "id", "owned_by"]
+    IGNORE_FIELDS = ["deleted", "id", "owned_by_role", "owned_by_user"]
 
     FIELDS_TO_ATTRIBUTES = [
             "id",

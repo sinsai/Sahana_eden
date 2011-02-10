@@ -554,7 +554,7 @@
 'Available from': 'Available from',
 'Available in Viewer?': 'Available in Viewer?',
 'Available until': 'Available until',
-'Availablity': 'Availablity',
+'Availability': 'Availability',
 'Avalanche': 'Avalanche',
 'Avoid the subject event as per the <instruction>': 'Avoid the subject event as per the <instruction>',
 'B': 'B',

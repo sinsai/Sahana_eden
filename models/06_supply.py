@@ -121,15 +121,15 @@ if deployment_settings.has_module("logs"):
     ADD_ITEM_PACKET = T("Add Item Packet")
     LIST_ITEM_PACKET = T("List Item Packets")
     s3.crud_strings[tablename] = Storage(
-        title_create = ADD_ITEM_CATEGORY,
+        title_create = ADD_ITEM_PACKET,
         title_display = T("Item Packet Details"),
-        title_list = LIST_ITEM_CATEGORIES,
+        title_list = LIST_ITEM_PACKET,
         title_update = T("Edit Item Packet"),
         title_search = T("Search Item Packets"),
         subtitle_create = T("Add New Item Packet"),
         subtitle_list = T("Item Packets"),
-        label_list_button = LIST_ITEM_CATEGORIES,
-        label_create_button = ADD_ITEM_CATEGORY,
+        label_list_button = LIST_ITEM_PACKET,
+        label_create_button = ADD_ITEM_PACKET,
         label_delete_button = T("Delete Item Packet"),
         msg_record_created = T("Item Packet added"),
         msg_record_modified = T("Item Packet updated"),
@@ -210,7 +210,7 @@ if deployment_settings.has_module("logs"):
         $('[id$="item_packet_id__row"]').hide();    
     } else {
         /* Show the item packet input id the item has already been entered (if this is an error or update) */      
-        ItemIDChange();
+        //ItemIDChange();
     }
    
     /* Includes Inventory Item too */

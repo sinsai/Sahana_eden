@@ -63,7 +63,7 @@ def shn_logs_req_rheader(r):
                                        req_record.date_required,
                                       ),
                                    TR( TH( T("Requested By Warehouse") + ": "),
-                                       shn_inventory_store_represent(req_record.inventory_store_id),
+                                       inventory_store_represent(req_record.inventory_store_id),
                                       ),
                                    TR( TH( T("Commit. Status") + ": "),
                                        log_req_status_dict.get(req_record.commit_status),
@@ -110,9 +110,9 @@ def shn_logs_commit_rheader(r):
                                        req_record.date_available,
                                       ),
                                    TR( TH( T("By Warehouse") + ": "),
-                                       shn_inventory_store_represent(req_record.inventory_store_id),
+                                       inventory_store_represent(req_record.inventory_store_id),
                                        TH( T("From Warehouse") + ": "),
-                                       shn_inventory_store_represent(req_record.from_inventory_store_id),
+                                       inventory_store_represent(req_record.from_inventory_store_id),
                                       ),
                                    TR( TH( T("Comments") + ": "),
                                        TD(req_record.comments, _colspan=3)
@@ -146,7 +146,7 @@ def shn_logs_recv_rheader(r):
                                        recv_record.datetime,
                                       ),
                                    TR( TH( T( "By" ) + ": "),
-                                       shn_inventory_store_represent(recv_record.inventory_store_id),
+                                       inventory_store_represent(recv_record.inventory_store_id),
                                        TH( T( "From" ) + ": "),
                                        shn_gis_location_represent(recv_record.from_location_id),
                                       ),
@@ -267,7 +267,7 @@ def send():
                     var StorePacketQuantity = data.supply_item_packet.quantity; 
                     
                     var PacketName = $('[name = "item_packet_id"] option:selected').text();
-                    var re = /\(([0-9])*\)/;
+                    var re = /\(([0-9]*)/;
                     var PacketQuantity = re.exec(PacketName)[1];
                     
                     var Quantity = (StoreQuantity * StorePacketQuantity) / PacketQuantity;
@@ -303,7 +303,7 @@ def shn_logs_send_rheader(r):
                                        send_record.datetime,
                                       ),
                                    TR( TH( T( "From" ) + ": "),
-                                       shn_inventory_store_represent(send_record.inventory_store_id),
+                                       inventory_store_represent(send_record.inventory_store_id),
                                        TH( T( "To" ) + ": "),
                                        shn_gis_location_represent(send_record.to_location_id),
                                       ),
@@ -440,7 +440,7 @@ def recv_process():
                          db.inventory_store_item.inventory_store_id,
                          db.inventory_store_item.item_id,
                          db.inventory_store_item.quantity,
-                         db.inventory_store_item.packet_quantity,
+                         db.inventory_store_item.item_packet_id,
                          db.inventory_store_item.deleted,
                          left=db.inventory_store_item.on(db.logs_recv_item.item_id == db.inventory_store_item.item_id), 
                          #To ensure that all recv items are selected, even the item isn't in the store.
@@ -530,7 +530,7 @@ def send_process():
                          db.inventory_store_item.id,
                          db.inventory_store_item.item_id,
                          db.inventory_store_item.quantity,
-                         db.inventory_store_item.packet_quantity,
+                         db.inventory_store_item.item_packet_id, #required by packet_quantity virtualfield
                          db.inventory_store_item.deleted,
                          left=db.inventory_store_item.on(db.logs_send_item.store_item_id == db.inventory_store_item.id),
                          #To ensure that all send items are selected, even if the store item has been deleted.

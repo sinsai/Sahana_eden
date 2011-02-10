@@ -109,7 +109,7 @@ if deployment_settings.has_module("logs"):
         if not auth.id_group("store_%s" % store_id):
             store_group_id = auth.s3_create_role( "store_%s" % store_id,
                                                   "group for user with authorization for store '%s'" % store_name,
-                                                  dict(c="inventory", uacl=auth.permission.READ, oacl=auth.permission.ALL)
+                                                  dict(c="inventory", uacl=auth.permission.NONE, oacl=auth.permission.ALL)
                                                   )
             db.inventory_store[store_id] = dict(owned_by = store_group_id)
     s3xrc.model.configure(table, onaccept=inventory_store_onaccept)
@@ -126,14 +126,20 @@ if deployment_settings.has_module("logs"):
                             Field("quantity", 
                                   "double",
                                   notnull = True),
-                            Field("packet_quantity",
-                                  "double",
-                                  compute = shn_record_packet_quantity),                               
+                            #Field("packet_quantity",
+                            #      "double",
+                            #      compute = shn_record_packet_quantity),                               
                             comments(),
                             migrate=migrate, *s3_meta_fields())
     
-    
-
+    class inventory_store_item_virtualfields(object):
+            def packet_quantity(self):
+                item_packet = self.inventory_store_item.item_packet_id
+                if item_packet:
+                    return item_packet.quantity 
+                else:
+                    return None
+    db.inventory_store_item.virtualfields.append(inventory_store_item_virtualfields())    
 
     # CRUD strings
     ADD_INVENTORY_ITEM = T("Add Warehouse Item")

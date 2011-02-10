@@ -178,12 +178,7 @@ if deployment_settings.has_module(module):
                                    default = 0),                                                                      
                             Field( "quantity_fulfil", 
                                    "double",
-                                   default = 0),  
-                            #Field("percent_fulfilled",
-                            #      "double",
-                            #      compute = lambda r: r.quantity_fulfilled/r.quantity,
-                            #      represent = lambda percent: "%.0f%%" % percent,
-                            #      ),                             
+                                   default = 0),                            
                             comments(),
                             migrate=migrate, *s3_meta_fields())
     
@@ -471,7 +466,6 @@ if deployment_settings.has_module(module):
                             migrate=migrate, *s3_meta_fields()
                             )
 
-    table.status.represent = lambda status: T("Received") if status else T("In Process")
     # -----------------------------------------------------------------------------
     # CRUD strings
     ADD_LOGS_IN = T("Receive Shipment")
@@ -609,11 +603,10 @@ if deployment_settings.has_module(module):
                                   default = LOGS_STATUS_IN_PROCESS,                           
                                   writable = False,
                                   ),
-                            person_id(name = "recipient_id"),
+                            person_id(name = "recipient_id",
+                                      label = T("To Person")),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
-
-    table.status.represent = lambda status: T("Sent") if status else T("In Process")
     
     # -----------------------------------------------------------------------------
     # CRUD strings

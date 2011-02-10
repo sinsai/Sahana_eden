@@ -2080,6 +2080,7 @@
 "Need a 'url' argument!": "Need a 'url' argument!",
 'Need added': 'Need added',
 'Need deleted': 'Need deleted',
+'Need to be logged-in to be able to submit assessments': 'Need to be logged-in to be able to submit assessments',
 'Need to configure Twitter Authentication': 'Need to configure Twitter Authentication',
 'Need to specify a Budget!': 'Need to specify a Budget!',
 'Need to specify a Kit!': 'Need to specify a Kit!',

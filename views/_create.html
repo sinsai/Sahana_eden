@@ -2,7 +2,7 @@
  {{=H2(title)}}
 {{except:}}
 {{pass}}
-{{=s3ocr_downloadpdf(str(request.controller)+"_"+request.function)}}
+{{=shn_ocr_downloadpdf(jr.target()[3])}}
 <div id='rheader'>
 {{try:}}
  {{=rheader}}

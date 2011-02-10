@@ -180,57 +180,6 @@ class Action(unittest.TestCase):
         self.search(email, r"No matching records found")
         print "User %s deleted" % (email)
 
-    def addLocation(self, holder, name, level, parent=None, parentLevel=None, grandParent="", lat=None, lon=None):
-        sel = self.sel
-        name = holder + name + holder
-        if parent == None:
-            parentHolder = None
-        else:
-            parentHolder = "%s%s%s" % (holder, parent, holder)
-        # Load the Create Location page
-        sel.open("gis/location/create")
-        # Create the Location
-        sel.type("gis_location_name", name)
-        if level:
-            sel.select("gis_location_level", "value=%s" % level)
-        if grandParent:
-            grandParentHolder = ", %s%s%s" % (holder, grandParent, holder)
-            grandParent = ", %s" % grandParent
-        else:
-            grandParentHolder = ""
-        if parentLevel == "L0":
-            levelLabel = " (Country)"
-        elif parentLevel == "L1":
-            # NB This doesn't work if deploymentSettings are set to only use a single Country!
-            levelLabel = " (Province%s)" % grandParent
-            levelLabelHolder = " (Province%s)" % grandParentHolder
-        elif parentLevel == "L2":
-            levelLabel = " (District%s)" % grandParent
-            levelLabelHolder = " (District%s)" % grandParentHolder
-        else:
-            levelLabel = ""
-            levelLabelHolder = ""
-        if parent:
-            try:
-                try:
-                    sel.select("gis_location_parent", "label=%s%s" % (parentHolder, levelLabelHolder))
-                except:
-                    sel.select("gis_location_parent", "label=%s%s" % (parentHolder, levelLabel))
-            except:
-                parentHolder = parent
-                sel.select("gis_location_parent", "label=%s%s" % (parentHolder, levelLabel))
-        if lat:
-            sel.type("gis_location_lat", lat)
-        if lon:
-            sel.type("gis_location_lon", lon)
-        # Save the form
-        sel.click("//input[@value='Save']")
-        sel.wait_for_page_to_load("30000")
-        # Location saved
-        msg = "Failed to add location %s level %s with parent %s" % (name , level, parentHolder)
-        self.assertTrue(self.successMsg("Location added"), msg)
-        print "Location %s level %s with parent %s added" % (name , level, parentHolder)
-
     def deleteObject(self, page, objName, type="Object"):
         sel = self.sel
         # need the following line which reloads the page otherwise the search gets stuck  
@@ -239,13 +188,12 @@ class Action(unittest.TestCase):
             self.searchUnique(objName)
             sel.click("link=Delete")
             self.assertTrue(re.search(r"^Sure you want to delete this object[\s\S]$", sel.get_confirmation()))
-            self.successMsg("%s deleted" % type)
-            print "%s %s deleted" % (type, objName)
+            if self.findResponse("%s deleted" % type, "Integrity error:"):
+                print "%s %s deleted" % (type, objName)
+            else:
+                print "Failed to delete %s %s" % (type, objName)
         except:
             print "Failed to delete %s %s from page %s" % (type, objName, page)
-
-    def deleteLocation(self, name):
-        self.deleteObject("gis/location", name, "Location")
 
     # Method to check the details that are displayed in the heading
     def checkHeading(self, detailMap):
@@ -264,20 +212,26 @@ class Action(unittest.TestCase):
         sel.wait_for_page_to_load("30000")
         if message != None:
             return self.successMsg(message)
+    
+    # Method to check each banner for the desired message
+    def checkBanner(self, message, type):
+        sel = self.sel
+        i = 1
+        while sel.is_element_present('//div[@class="%s"][%s]' % (type, i)):
+            banner = sel.get_text('//div[@class="%s"][%s]' % (type, i))
+            if message in banner:
+                if self._diag:
+                    self._diag_SearchResults.write("%s\tSUCCEEDED\t%s\t\n" % (message, self._diag_sleepTime))
+                return True
+            i += 1
 
     # Method to locate a message in a div with a class given by type
     def findMsg(self, message, type):
         sel = self.sel
         self._diag_sleepTime = 0
         for cnt in range (10):
-            i = 1
-            while sel.is_element_present('//div[@class="%s"][%s]' % (type, i)):
-                banner = sel.get_text('//div[@class="%s"][%s]' % (type, i))
-                if message in banner:
-                    if self._diag:
-                        self._diag_SearchResults.write("%s\tSUCCEEDED\t%s\t\n" % (message, self._diag_sleepTime))
-                    return True
-                i += 1
+            if self.checkBanner(message, type):
+                return True
             time.sleep(1)
             self._diag_sleepTime += 1
         if self._diag:
@@ -292,6 +246,23 @@ class Action(unittest.TestCase):
     def errorMsg(self, message):
         return self.findMsg(message, "error")
 
+    # Method to check on the response of an action by looking at the message
+    def findResponse(self, successMsg, errorMsg):
+        sel = self.sel
+        sType = "confirmation"
+        eType = "error"
+        self._diag_sleepTime = 0
+        for cnt in range (10):
+            if self.checkBanner(successMsg, sType):
+                return True
+            if self.checkBanner(errorMsg, eType):
+                return False
+            time.sleep(1)
+            self._diag_sleepTime += 1
+        if self._diag:
+            self._diag_SearchResults.write("%s\tFAILED\t%s\t\n" % (message, self._diag_sleepTime))
+        raise UserWarning("Response not found")
+        
     # Method to check that form element is present
     # The element parameter is a list of up to 4 elements
     # element[0] the type of HTML tag

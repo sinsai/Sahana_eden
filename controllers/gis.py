@@ -13,7 +13,7 @@ resourcename = request.function
 response.menu_options = [
     [T("Locations"), False, URL(r=request, f="location"), [
         #[T("List"), False, URL(r=request, f="location")],
-        [T("Search"), False, URL(r=request, f="location", args="search_simple")],
+        [T("Search"), False, URL(r=request, f="location", args="search")],
         [T("Add"), False, URL(r=request, f="location", args="create")],
     ]],
     [T("Fullscreen Map"), False, URL(r=request, f="map_viewing_client")],
@@ -131,7 +131,7 @@ def location():
                 db.gis_location.level, limitby=(0, 1)).first()
 
         # Override the default Search Method
-        r.resource.set_handler("search", s3base.S3LocationSearch())
+        #r.resource.set_handler("search", s3base.S3LocationSearch())
 
         # Restrict access to Polygons to just MapAdmins
         if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
@@ -231,7 +231,7 @@ def location():
             if r.method in (None, "list") and r.record is None:
                 # List
                 pass
-            elif r.method in ("delete", "search_simple"):
+            elif r.method in ("delete", "search"):
                 pass
             else:
                 # Add Map to allow locations to be found this way
@@ -855,7 +855,7 @@ def layer_feature():
         db.gis_layer_feature.resource.requires = IS_IN_SET(tables)
 
         return True
-   
+
     response.s3.prep = prep
 
 
@@ -2204,7 +2204,7 @@ def geoexplorer():
         georssLayers.push(georssLayer""" + name_safe + """);
         georssLayer""" + name_safe + """.events.on({ "featureselected": onGeorssFeatureSelect, "featureunselected": onFeatureUnselect });
         """
-   
+
      # GPX
     layers_gpx = ""
     gpx_enabled = db(db.gis_layer_gpx.enabled == True).select()
@@ -2416,7 +2416,7 @@ def geoexplorer():
             layer_coordinategrid = """
         this.mapPanel.map.addLayer(new OpenLayers.Layer.cdauth.CoordinateGrid(null, { name: '""" + name_safe + """', shortName: 'grid' """ + visibility + """ }));
         """
-            
+
     response.title = "GeoExplorer"
     return dict(
                 config=config,
@@ -2656,7 +2656,7 @@ def potlatch2():
                 track = db(db.gis_track.id == request.vars.gpx_id).select(db.gis_track.track, limitby=(0, 1)).first()
                 if track:
                     gpx_url = URL(r=request, c="default", f="download") + "/" + track.track
-            
+
             if "lat" in request.vars:
                 lat = request.vars.lat
                 lon = request.vars.lon

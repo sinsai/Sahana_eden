@@ -161,6 +161,10 @@ class S3Resource(object):
 
         # Store CRUD and other method handlers
         self.crud = self.manager.crud
+        # Get default search method for this resource
+        self.search = model.get_config(self.table, "search_method",
+                                       self.manager.search)
+        # Store internal handlers
         self._handler = Storage(options=self.__get_options,
                                 fields=self.__get_fields,
                                 export_tree=self.__get_tree,
@@ -853,10 +857,8 @@ class S3Resource(object):
                     r.record = self._rows.first()
                 else:
                     model = self.manager.model
-                    search_simple = model.get_method(self.prefix, self.name,
-                                                     method="search_simple")
-                    if search_simple:
-                        redirect(URL(r=r.request, f=self.name, args="search_simple",
+                    if self.search.interactive_search:
+                        redirect(URL(r=r.request, f=self.name, args="search",
                                      vars={"_next": r.same()}))
                     else:
                         r.session.error = self.ERROR.BAD_RECORD
@@ -914,6 +916,8 @@ class S3Resource(object):
             # Invoke the method handler
             if handler is not None:
                 output = handler(r, **attr)
+            elif r.method == "search":
+                output = self.search(r, **attr)
             else:
                 # Fall back to CRUD
                 output = self.crud(r, **attr)
@@ -992,12 +996,10 @@ class S3Resource(object):
                 request_vars = dict(_next=r.request.vars._next)
             else:
                 request_vars = {}
-            search_simple = model.get_method(self.prefix, self.name,
-                                             method="search_simple")
-            if r.representation == "html" and search_simple:
+            if r.representation == "html" and self.search.interactive_search:
                 r.next = URL(r=r.request,
                              f=self.name,
-                             args="search_simple",
+                             args="search",
                              vars=request_vars)
             else:
                 r.next = URL(r=r.request, f=self.name)

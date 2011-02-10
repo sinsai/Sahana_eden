@@ -547,7 +547,7 @@ table = db.define_table(tablename,
                         comments(),
                         migrate=migrate,
                         format=shn_gis_location_represent_row,
-                        *(s3_authorstamp() + s3_timestamp() + s3_uid() + s3_deletion_status()))
+                        *s3_meta_fields())
 
 table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
@@ -956,7 +956,7 @@ def s3_gis_location_simple(r, **attr):
 # Plug into REST controller
 s3xrc.model.set_method(module, "location", method="simple", action=s3_gis_location_simple )
 
-s3_gis_location_search_simple = s3xrc.search_simple(
+gis_location_search = s3base.S3LocationSearch(
     label=T("Name"),
     comment=T("To search for a location, enter the name. You may use % as wildcard. Press 'Search' without input to list all locations."),
     fields=["name",
@@ -964,8 +964,8 @@ s3_gis_location_search_simple = s3xrc.search_simple(
             #"name_l10n"
             ])
 
-# Plug into REST controller
-s3xrc.model.set_method(module, "location", method="search_simple", action=s3_gis_location_search_simple )
+# Set as default search method
+s3xrc.model.configure(db.gis_location, search_method=gis_location_search)
 
 # -----------------------------------------------------------------------------
 def s3_gis_location_parents(r, **attr):
@@ -1366,7 +1366,7 @@ table = db.define_table(tablename,
                         Field("zoom", "integer"),
                         Field("layer_id", "list:reference gis_wmc_layer", requires=IS_ONE_OF(db, "gis_wmc_layer.id", "%(title)s", multiple=True)),
                         # Metadata tbc
-                        migrate=migrate, *(s3_authorstamp() + s3_timestamp()))
+                        migrate=migrate, *(s3_authorstamp() + s3_ownerstamp() + s3_timestamp()))
 #table.lat.requires = IS_LAT()
 #table.lon.requires = IS_LON()
 table.zoom.requires = IS_INT_IN_RANGE(1, 20)

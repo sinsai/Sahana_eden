@@ -1,24 +1,11 @@
 /**
- * Copyright (c) 2009-2010 The Open Planning Project
+ * Copyright (c) 2009-2011 The Open Planning Project
  */
-
-/**
- * Add transforms for EPSG:102113.  This is web mercator to ArcGIS 9.3.
- */
-OpenLayers.Projection.addTransform(
-    "EPSG:4326", "EPSG:102113",
-    OpenLayers.Layer.SphericalMercator.projectForward
-);
-OpenLayers.Projection.addTransform(
-    "EPSG:102113", "EPSG:4326",
-    OpenLayers.Layer.SphericalMercator.projectInverse
-);
-
 
 /**
  * api: (define)
  * module = GeoExplorer
- * extends = Ext.Observable
+ * extends = gxp.Viewer
  */
 
 /** api: constructor
@@ -31,8 +18,6 @@ OpenLayers.Projection.addTransform(
  *     Valid config properties:
  *     map - {Object} Map configuration object.
  *     sources - {Object} An object with properties whose values are WMS endpoint URLs
- *     alignToGrid - {boolean} if true, align tile requests to the grid 
- *         enforced by tile caches such as GeoWebCache or Tilecache
  *
  *     Valid map config properties:
  *         projection - {String} EPSG:xxxx
@@ -53,26 +38,10 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
     loadConfigErrorText: "Trouble reading saved configuration: <br />",
     loadConfigErrorDefaultText: "Server Error.",
     xhrTroubleText: "Communication Trouble: Status ",
-    removeLayerText: "Remove Layer",
     layersText: "Layers",
-    overlaysText: "Overlays",
-    baseLayersText: "Base Layers",
-    layerPropertiesText: "Layer Properties",
-    zoomToLayerExtentText: "Zoom to Layer Extent",
-    legendText: "Legend",
-    geonamesText: "Search Geonames",
     titleText: "Title",
     zoomLevelText: "Zoom level",
-    zoomPreviousText: "Zoom to Previous Extent",
-    zoomNextText: "Zoom to Next Extent",
-    featureInfoText: "Get Feature Info",
     switch3dText: "Switch to 3D Viewer",
-    previewText: "Print Preview",
-    printText: "Print Map",
-    notAllNotPrintableText: "Not All Layers Can Be Printed", 
-    nonePrintableText: "None of your current map layers can be printed",
-    someNotPrintableText: "Some map layers cannot be printed: ",
-    featureInfoText: "Feature Info",
     saveErrorText: "Trouble saving: ",
     bookmarkText: "Bookmark URL",
     permakinkText: 'Permalink',
@@ -89,26 +58,10 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
      * the :class:`GeoExt.MapPanel` instance for the main viewport
      */
     mapPanel: null,
-
-    /**
-     * api: config[alignToGrid]
-     * A boolean indicating whether or not to restrict tile request to tiled
-     * mapping service recommendation.
-     *
-     * True => align to grid 
-     * False => unrestrained tile requests
-     */
-    alignToGrid: false,
     
-    /**
-     * private: property[capGrid]
-     * :class:`Ext.Window` The window containing the CapabilitiesGrid panel to 
-     * use when the user is adding new layers to the map.
-     */
-    capGrid: null,
+    toggleGroup: "toolGroup",
 
     constructor: function(config) {
-
         this.mapItems = [{
             xtype: "gx_zoomslider",
             vertical: true,
@@ -118,36 +71,68 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
             })
         }];
 
-        this.toggleGroup = 'toolGroup';
-
-        config.tools = [
+        // both the Composer and the Viewer need to know about the viewerTools
+        // First row in each object is needed to correctly render a tool in the treeview
+        // of the embed map dialog. TODO: make this more flexible so this is not needed.
+        config.viewerTools = [
             {
-                ptype: "gxp_addlayers",
-                actionTarget: {target: "treetbar", index: 0}
+                leaf: true, 
+                text: gxp.plugins.Navigation.prototype.tooltip, 
+                checked: true, 
+                iconCls: "gxp-icon-pan",
+                ptype: "gxp_navigation", 
+                toggleGroup: this.toggleGroup,
+                actionTarget: {target: "paneltbar", index: 2}
             }, {
-                ptype: "gxp_navigation", toggleGroup: this.toggleGroup,
-                actionTarget: {target: "paneltbar", index: 6}
+                leaf: true, 
+                text: gxp.plugins.WMSGetFeatureInfo.prototype.infoActionTip, 
+                checked: true, 
+                iconCls: "gxp-icon-getfeatureinfo",
+                ptype: "gxp_wmsgetfeatureinfo", 
+                toggleGroup: this.toggleGroup,
+                actionTarget: {target: "paneltbar", index: 3}
             }, {
-                ptype: "gxp_wmsgetfeatureinfo", toggleGroup: this.toggleGroup,
+                leaf: true, 
+                text: gxp.plugins.Measure.prototype.measureTooltip, 
+                checked: true, 
+                iconCls: "gxp-icon-measure-length",
+                ptype: "gxp_measure", 
+                toggleGroup: this.toggleGroup,
+                actionTarget: {target: "paneltbar", index: 4}
+            }, {
+                leaf: true, 
+                text: gxp.plugins.Zoom.prototype.zoomInTooltip + " / " + gxp.plugins.Zoom.prototype.zoomOutTooltip, 
+                checked: true, 
+                iconCls: "gxp-icon-zoom-in",
+                ptype: "gxp_zoom",
+                actionTarget: {target: "paneltbar", index: 5}
+            }, {
+                leaf: true, 
+                text: gxp.plugins.NavigationHistory.prototype.previousTooltip + " / " + gxp.plugins.NavigationHistory.prototype.nextTooltip, 
+                checked: true, 
+                iconCls: "gxp-icon-zoom-previous",
+                ptype: "gxp_navigationhistory",
                 actionTarget: {target: "paneltbar", index: 7}
             }, {
-                ptype: "gxp_measure", toggleGroup: this.toggleGroup,
-                actionTarget: {target: "paneltbar", index: 8}
-            }, {
-                ptype: "gxp_zoom",
+                leaf: true, 
+                text: gxp.plugins.ZoomToExtent.prototype.tooltip, 
+                checked: true, 
+                iconCls: gxp.plugins.ZoomToExtent.prototype.iconCls,
+                ptype: "gxp_zoomtoextent",
                 actionTarget: {target: "paneltbar", index: 9}
             }, {
-                ptype: "gxp_navigationhistory",
-                actionTarget: {target: "paneltbar", index: 11}
-            }, {
-                ptype: "gxp_zoomtoextent",
-                actionTarget: {target: "paneltbar", index: 13}
+                leaf: true, 
+                text: gxp.plugins.Legend.prototype.tooltip, 
+                checked: true, 
+                iconCls: "gxp-icon-legend",
+                ptype: "gxp_legend",
+                actionTarget: {target: "paneltbar", index: 10}
             }
-        ];
-        
+        ]; 
+
         GeoExplorer.superclass.constructor.apply(this, arguments);
     }, 
-    
+
     loadConfig: function(config) {
         
         var mapUrl = window.location.hash.substr(1);
@@ -214,263 +199,6 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
         // TODO: make a proper component out of this
         var mapOverlay = this.createMapOverlay();
         this.mapPanel.add(mapOverlay);
-        
-        var getRecordFromNode = function(node) {
-            if(node && node.layer) {
-                var layer = node.layer;
-                var store = node.layerStore;
-                record = store.getAt(store.findBy(function(r) {
-                    return r.get("layer") === layer;
-                }));
-            }
-            return record;
-        };
-
-        var getSelectedLayerRecord = function() {
-            var node = layerTree.getSelectionModel().getSelectedNode();
-            return getRecordFromNode(node);
-        };
-        
-        var removeLayerAction = new Ext.Action({
-            text: this.removeLayerText,
-            iconCls: "icon-removelayers",
-            disabled: true,
-            tooltip: this.removeLayerText,
-            handler: function() {
-                var record = getSelectedLayerRecord();
-                if(record) {
-                    this.mapPanel.layers.remove(record);
-                    removeLayerAction.disable();
-                }
-            },
-            scope: this
-        });
-
-        var treeRoot = new Ext.tree.TreeNode({
-            text: this.layersText,
-            expanded: true,
-            isTarget: false,
-            allowDrop: false
-        });
-        treeRoot.appendChild(new GeoExt.tree.LayerContainer({
-            text: this.baseLayersText,
-            iconCls: "gx-folder",
-            expanded: true,
-            group: "background",
-            loader: new GeoExt.tree.LayerLoader({
-                baseAttrs: {checkedGroup: "background"},
-                store: this.mapPanel.layers,
-                filter: function(record) {
-                    return record.get("group") === "background" &&
-                        record.get("layer").displayInLayerSwitcher == true;
-                },
-                createNode: function(attr) {
-                    var layer = attr.layer;
-                    var store = attr.layerStore;
-                    if (layer && store) {
-                        var record = store.getAt(store.findBy(function(r) {
-                            return r.get("layer") === layer;
-                        }));
-                        if (record) {
-                            if (!record.get("queryable")) {
-                                attr.iconCls = "gx-tree-rasterlayer-icon";
-                            }
-                            if (record.get("fixed")) {
-                                attr.allowDrag = false;
-                            }
-                        }
-                    }
-                    return GeoExt.tree.LayerLoader.prototype.createNode.apply(this, arguments);
-                }
-            }),
-            singleClickExpand: true,
-            allowDrag: false,
-            listeners: {
-                append: function(tree, node) {
-                    node.expand();
-                }
-            }
-        }));
-        
-        treeRoot.appendChild(new GeoExt.tree.LayerContainer({
-            text: this.overlaysText,
-            iconCls: "gx-folder",
-            expanded: true,
-            loader: new GeoExt.tree.LayerLoader({
-                store: this.mapPanel.layers,
-                filter: function(record) {
-                    return !record.get("group") &&
-                        record.get("layer").displayInLayerSwitcher == true;
-                },
-                createNode: function(attr) {
-                    var layer = attr.layer;
-                    var store = attr.layerStore;
-                    if (layer && store) {
-                        var record = store.getAt(store.findBy(function(r) {
-                            return r.get("layer") === layer;
-                        }));
-                        if (record && !record.get("queryable")) {
-                            attr.iconCls = "gx-tree-rasterlayer-icon";
-                        }
-                    }
-                    return GeoExt.tree.LayerLoader.prototype.createNode.apply(this, [attr]);
-                }
-            }),
-            singleClickExpand: true,
-            allowDrag: false,
-            listeners: {
-                append: function(tree, node) {
-                    node.expand();
-                }
-            }
-        }));
-        
-        this.treeRoot = treeRoot;
-        
-        var layerPropertiesDialog;
-        var showPropertiesAction = new Ext.Action({
-            text: this.layerPropertiesText,
-            iconCls: "icon-properties",
-            disabled: true,
-            tooltip: this.layerPropertiesText,
-            handler: function() {
-                var record = getSelectedLayerRecord();
-                if (record) {
-                    var type = record.get("properties");
-                    if (type) {
-                        if(layerPropertiesDialog) {
-                            layerPropertiesDialog.close();
-                        }
-                        layerPropertiesDialog = new Ext.Window({
-                            title: this.layerPropertiesText + ": " + record.get("title"),
-                            width: 250,
-                            height: 250,
-                            layout: "fit",
-                            items: [{
-                                xtype: type,
-                                layerRecord: record,
-                                defaults: {style: "padding: 10px"}
-                            }]
-                        });
-                        layerPropertiesDialog.show();
-                    }
-                }
-            },
-            scope: this
-        });
-        
-        var updateLayerActions = function(sel, node) {
-            if(node && node.layer) {
-                // allow removal if more than one non-vector layer
-                var count = this.mapPanel.layers.queryBy(function(r) {
-                    return !(r.get("layer") instanceof OpenLayers.Layer.Vector);
-                }).getCount();
-                if (count > 1) {
-                    removeLayerAction.enable();
-                } else {
-                    removeLayerAction.disable();
-                }
-                var record = getRecordFromNode(node);
-                if (record.get("properties")) {
-                    showPropertiesAction.enable();                    
-                } else {
-                    showPropertiesAction.disable();
-                }
-            } else {
-                removeLayerAction.disable();
-                showPropertiesAction.disable();
-            }
-        };
-
-        var layerTree = new Ext.tree.TreePanel({
-            id: 'layerTree',
-            root: treeRoot,
-            rootVisible: false,
-            border: false,
-            enableDD: true,
-            selModel: new Ext.tree.DefaultSelectionModel({
-                listeners: {
-                    beforeselect: updateLayerActions,
-                    scope: this
-                }
-            }),
-            listeners: {
-                contextmenu: function(node, e) {
-                    if (node && node.layer) {
-                        node.select();
-                        var c = node.getOwnerTree().contextMenu;
-                        c.contextNode = node;
-                        c.showAt(e.getXY());
-                    }
-                },
-                beforemovenode: function(tree, node, oldParent, newParent, index) {
-                    // change the group when moving to a new container
-                    if (oldParent !== newParent) {
-                        var store = newParent.loader.store;
-                        var index = store.findBy(function(r) {
-                            return r.getLayer() === node.layer;
-                        });
-                        if (index > -1) {
-                            store.getAt(index).set("group", newParent.attributes.group);
-                        }
-                    }
-                },                
-                scope: this
-            },
-            contextMenu: new Ext.menu.Menu({
-                items: [
-                    {
-                        text: this.zoomToLayerExtentText,
-                        iconCls: "icon-zoom-to",
-                        handler: function() {
-                            var node = layerTree.getSelectionModel().getSelectedNode();
-                            if (node && node.layer) {
-                                var map = this.mapPanel.map;
-                                var layer = node.layer;
-                                var extent = layer.restrictedExtent || layer.maxExtent || map.maxExtent;
-                                map.zoomToExtent(extent, true);
-                            }
-                        },
-                        scope: this
-                    },
-                    removeLayerAction,
-                    showPropertiesAction
-                ]
-            })
-        });
-        
-        var layersContainer = new Ext.Panel({
-            id: 'layersContainer',
-            autoScroll: true,
-            border: false,
-            region: 'center',
-            split: true,
-            title: this.layersText,
-            items: [layerTree],
-            tbar: {
-                id: 'treetbar',
-                items: [
-                    Ext.apply(new Ext.Button(removeLayerAction), {text: ""}),
-                    Ext.apply(new Ext.Button(showPropertiesAction), {text: ""})
-                ]
-            }
-        });
-
-        var legendContainer = new GeoExt.LegendPanel({
-            id: 'legendContainer',
-            title: this.legendText,
-            border: false,
-            region: 'south',
-            height: 200,
-            collapsible: true,
-            split: true,
-            autoScroll: true,
-            ascending: false,
-            map: this.mapPanel.map,
-            defaults: {cls: 'legend-item'}
-            // TODO: remove when http://trac.geoext.org/ticket/305 is fixed
-            //,items: []
-        });        
 
         // GeoNames search - added here & not in Sahana.js
         var mapSearch = new GeoExt.ux.GeoNamesSearchCombo({
@@ -495,8 +223,7 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
         });
  
         var westPanel = new Ext.Panel({
-            id: 'westPanel',
-            border: true,
+            border: false,
             layout: "border",
             region: "west",
             width: 250,
@@ -505,7 +232,9 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
             collapseMode: "mini",
             header: false,
             items: [
-                layersContainer, searchCombo, legendContainer
+                {region: 'center', border: false, id: 'tree', tbar: [], title: this.layersText},
+                searchCombo,
+                {region: 'south', border: false, height: 200, id: 'legend'}
             ]
         });
         
@@ -535,22 +264,17 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
         });
 
         googleEarthPanel.on("show", function() {
-            if (layersContainer.rendered) {
-                layersContainer.getTopToolbar().disable();
+            var layersContainer = Ext.getCmp('layertree');
+            if (layersContainer && layersContainer.getTopToolbar()) {
+                layersContainer.getTopToolbar().setDisabled(true);
             }
-            layerTree.getSelectionModel().un("beforeselect", updateLayerActions, this);
         }, this);
 
         googleEarthPanel.on("hide", function() {
-            if (layersContainer.rendered) {
-                layersContainer.getTopToolbar().enable();
+            var layersContainer = Ext.getCmp('layertree');
+            if (layersContainer && layersContainer.getTopToolbar()) {
+                layersContainer.getTopToolbar().setDisabled(false);
             }
-            var sel = layerTree.getSelectionModel();
-            var node = sel.getSelectedNode();
-            updateLayerActions.apply(this, [sel, node]);
-            sel.on(
-                "beforeselect", updateLayerActions, this
-            );
         }, this);
 
         this.mapPanelContainer = new Ext.Panel({
@@ -561,7 +285,6 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
             },
             items: [
                 this.mapPanel,
-                // This needs commenting out to be able to open with Firebug open
                 googleEarthPanel
             ],
             activeItem: 0
@@ -627,7 +350,7 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
                 this.mapPanel.map.zoomTo(record.data.level);
             },
             scope: this
-        })
+        });
 
         var zoomSelectorWrapper = new Ext.Panel({
             items: [zoomSelector],
@@ -700,7 +423,6 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
         });
     
         var tools = [
-            this.printService && this.createPrintButton() || "-",
             "-",
             enable3DButton
         ];
@@ -708,168 +430,6 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
         return tools;
     },
     
-    /**
-     * Candidate for a shared gxp action.
-     * TODO: push some part of this to gxp (preferably less tangled)
-     */
-    createPrintButton: function() {
-
-        var printProvider = new GeoExt.data.PrintProvider({
-            url: this.printService,
-            listeners: {
-                beforeprint: function() {
-                    // The print module does not like array params.
-                    //TODO Remove when http://trac.geoext.org/ticket/216 is fixed.
-                    printWindow.items.get(0).printMapPanel.layers.each(function(l) {
-                        var params = l.get("layer").params;
-                        for(var p in params) {
-                            if (params[p] instanceof Array) {
-                                params[p] = params[p].join(",");
-                            }
-                        }
-                    })
-                },
-                loadcapabilities: function() {
-                    // TODO: http://trac.geoext.org/ticket/304
-                    // so we don't have to race to define the button
-                    printButton.initialConfig.disabled = false;
-                    printButton.disabled = false;
-                    printButton.enable();
-                },
-                print: function() {
-                    try {
-                        printWindow.close();                        
-                    } catch (err) {
-                        // TODO: improve destroy
-                    }
-                }
-            }
-        });
-        
-        var unsupportedLayers;
-        var printWindow;
-        var someSupportedLayers;
-        
-        function destroyPrintComponents() {
-            if (printWindow) {
-                // TODO: fix this in GeoExt
-                try {
-                    var panel = printWindow.items.first();
-                    panel.printMapPanel.printPage.destroy();
-                    //panel.printMapPanel.destroy();                    
-                } catch (err) {
-                    // TODO: improve destroy
-                }
-                printWindow = null;
-            }
-        }
-
-        function createPrintWindow() {
-            someSupportedLayers = false;
-            unsupportedLayers = [];
-            printWindow = new Ext.Window({
-                title: this.previewText,
-                modal: true,
-                border: false,
-                resizable: false,
-                width: 360,
-                items: [
-                    new GeoExt.ux.PrintPreview({
-                        autoHeight: true,
-                        mapTitle: this.about["title"],
-                        comment: this.about["abstract"],
-                        printMapPanel: {
-                            map: Ext.applyIf({
-                                controls: [
-                                    new OpenLayers.Control.Navigation(),
-                                    new OpenLayers.Control.PanPanel(),
-                                    new OpenLayers.Control.ZoomPanel(),
-                                    new OpenLayers.Control.Attribution()
-                                ],
-                                eventListeners: {
-                                    preaddlayer: function(evt) {
-                                        if (!(evt.layer instanceof OpenLayers.Layer.WMS) && !(evt.layer instanceof OpenLayers.Layer.OSM)) {
-                                            // special treatment for "None" layer
-                                            if (evt.layer.CLASS_NAME !== "OpenLayers.Layer") {
-                                                unsupportedLayers.push(evt.layer.name);
-                                            }
-                                            return false;
-                                        } else {
-                                            someSupportedLayers = true;
-                                        }
-                                    },
-                                    scope: this
-                                }
-                            }, this.mapPanel.initialConfig.map),
-                            items: [{
-                                xtype: "gxp_zoomslider",
-                                vertical: true,
-                                height: 100,
-                                aggressive: true
-                            }]
-                        },
-                        printProvider: printProvider,
-                        includeLegend: false,
-                        sourceMap: this.mapPanel
-                    })
-                ],
-                listeners: {
-                    beforedestroy: destroyPrintComponents
-                }
-            }); 
-        }
-        
-        function showPrintWindow() {
-            printWindow.show();
-            
-            // measure the window content width by it's toolbar
-            printWindow.setWidth(0);
-            var tb = printWindow.items.get(0).items.get(0);
-            var w = 0;
-            tb.items.each(function(item) {
-                if(item.getEl()) {
-                    w += item.getWidth();
-                }
-            });
-            printWindow.setWidth(
-                Math.max(printWindow.items.get(0).printMapPanel.getWidth(),
-                w + 20)
-            );
-            printWindow.center();            
-        }
-
-        var printButton = new Ext.Button({
-            tooltip: this.printText,
-            iconCls: "icon-print",
-            disabled: true,
-            handler: function() {
-                createPrintWindow.call(this);
-                if (!someSupportedLayers) {
-                    Ext.Msg.alert(
-                        this.notAllPrintableText, 
-                        this.nonePrintableText
-                    );
-                    destroyPrintComponents();
-                } else {
-                    if (unsupportedLayers.length) {
-                        Ext.Msg.alert(
-                            this.notAllPrintableText, 
-                            this.someNotPrintableText + "<ul><li>" + unsupportedLayers.join("</li><li>") + "</li></ul>",
-                            showPrintWindow,
-                            this
-                        );                    
-                    } else {
-                        showPrintWindow.call(this);
-                    }                    
-                }
-
-            },
-            scope: this
-        });
-
-        return printButton;      
-    },
-
     /** private: method[save]
      *
      * Saves the map config and displays the URL in a window.
@@ -882,7 +442,7 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
             url = "maps/" + this.id;
         } else {
             method = "POST";
-            url = "maps"
+            url = "maps";
         }
         OpenLayers.Request.issue({
             method: method,
@@ -967,16 +527,16 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
 
         var about = Ext.applyIf(this.about, {
             title: '', 
-            "abstract": '', 
+            'abstract': '', 
             contact: ''
         });
 
         var mapInfo = new Ext.Panel({
             title: this.mapInfoText,
             html: '<div class="gx-info-panel">' +
-                  '<h2>'+this.titleText+'</h2><p>' + about.title +
-                  '</p><h2>'+this.descriptionText+'</h2><p>' + about['abstract'] +
-                  '</p> <h2>'+this.contactText+'</h2><p>' + about.contact +'</p></div>',
+                  '<h2>' + this.titleText + '</h2><p>' + about.title +
+                  '</p><h2>' + this.descriptionText + '</h2><p>' + about['abstract'] +
+                  '</p> <h2>' + this.contactText + '</h2><p>' + about.contact + '</p></div>',
             height: 'auto',
             width: 'auto'
         });
@@ -989,7 +549,7 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
         var win = new Ext.Window({
             title: this.aboutThisMapText,
             modal: true,
-            layout: "fit",
+            layout: 'fit',
             width: 300,
             height: 300,
             items: [tabs]

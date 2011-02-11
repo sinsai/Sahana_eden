@@ -520,7 +520,7 @@
 'Available from': 'Available from',
 'Available in Viewer?': 'ビューワ内で利用可能？',
 'Available until': '有効期間は',
-'Availablity': 'Availablity',
+'Availability': 'Availability',
 'Avalanche': 'Avalanche',
 'Avoid the subject event as per the <instruction>': 'Avoid the subject event as per the <instruction>',
 'Babies who are not being breastfed, what are they being fed on?': '乳児に対して母乳が与えられない場合、どうやって乳幼児の食事を確保しますか？',

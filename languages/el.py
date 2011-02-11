@@ -481,7 +481,7 @@
 'Available from': 'Available from',
 'Available in Viewer?': 'Διαθέσιμο στην απεικόνιση?',
 'Available until': 'Available until',
-'Availablity': 'Availablity',
+'Availability': 'Availability',
 'Avalanche': 'Avalanche',
 'Avoid the subject event as per the <instruction>': 'Avoid the subject event as per the <instruction>',
 'Babies who are not being breastfed, what are they being fed on?': 'Babies who are not being breastfed, what are they being fed on?',

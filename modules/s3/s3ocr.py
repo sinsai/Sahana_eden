@@ -273,6 +273,7 @@ class FormHandler(ContentHandler):
         self.item = 0
         self.model = 0
         self.itext = 0
+        self.hint = 0
         self.translation = 0
         self.translang = ""
         self.translist = []
@@ -295,6 +296,10 @@ class FormHandler(ContentHandler):
         self.pdf = ""
         self.xmls = {}
         self.labelTrans = ""
+        self.customfields = {"location_id":4,\
+                                 "staff_id":2,\
+                                 "staff2_id":2,\
+                                 } # fields having custom sizes
         #self.hiddenfields = ["deleted_fk",\
         #                         "owned_by_role",\
         #                         "owned_by_user",\
@@ -389,6 +394,8 @@ class FormHandler(ContentHandler):
                 self.textid, self.texttype = attrs.get("id").split(":")
         elif name == "model":
             self.model = 1
+        elif name == "hint":
+            self.hint = 1
 
     def characters(self, ch):
         """ Deal with the data """
@@ -431,12 +438,13 @@ class FormHandler(ContentHandler):
             self.multiple = 0
             self.single = 0
             self.read = 0
+            self.form.print_text([" ",])
         elif name == "label":
             if self.input == 1: #and self.protectedfield != 1:
                 for trtuple in self.translist:
                     if trtuple[0] == self.ref and trtuple[1] == "label":
                         self.printtext = trtuple[2]
-                self.form.print_text(["", "", " "+unicode(self.printtext)+" ", ""])
+                self.form.print_text([" ", " "+unicode(self.printtext)+" ", " "])
                 self.child3 = self.doc.createTextNode(str(self.form.lastx)+","+str(self.form.lasty))
                 self.child2.appendChild(self.child3)
                 self.child2.setAttribute("font", str(16))
@@ -450,10 +458,24 @@ class FormHandler(ContentHandler):
                     count = (self.form.width - 2*self.form.marginsides)/32
                     self.form.draw_check_boxes(boxes=1, completeline=1, continuetext=0, gray=0.9, fontsize=16, seek=10)
                     self.child2.setAttribute("boxes", str(count))
-                else:
+                elif self.type == "text":
                     count = (self.form.width - 2*self.form.marginsides)/16
                     self.child2.setAttribute("boxes", str(int(count)))
-                    self.form.draw_check_boxes(boxes=1, completeline=1, continuetext=0, gray=0.9, fontsize=16, seek=10)
+                    self.child2.setAttribute("lines", "4")
+                    for i in xrange(4):
+                        self.form.draw_check_boxes(boxes=1, completeline=1, continuetext=0, gray=0.9, fontsize=16, seek=10)
+                else:
+                    if not str(self.ref).find("/") == -1:
+                        ref = str(self.ref).split("/")[-1]
+                        if ref in self.customfields.keys():
+                            numlines = self.customfields[ref]
+                        else:
+                            numlines = 1
+                    count = (self.form.width - 2*self.form.marginsides)/16
+                    self.child2.setAttribute("boxes", str(int(count)))
+                    self.child2.setAttribute("lines", str(numlines))
+                    for i in xrange(numlines):
+                        self.form.draw_check_boxes(boxes=1, completeline=1, continuetext=0, gray=0.9, fontsize=16, seek=10)
             elif self.item == 1 and self.select == 1:
                 labelid, labeltype = self.labelref.split("'")[1].split("&")[0].split(":")
                 for trtuple in self.translist:
@@ -472,7 +494,7 @@ class FormHandler(ContentHandler):
                 for trtuple in self.translist:
                     if trtuple[0] == labelid and trtuple[1] == labeltype:
                         self.printtext = trtuple[2]
-                self.form.print_text([" "+str(self.printtext)+" ", "", ""])
+                self.form.print_text([" "+str(self.printtext)+" ", " ", " "])
                 self.read = 0
             self.label= 0
             self.labelref = ""
@@ -509,6 +531,13 @@ class FormHandler(ContentHandler):
             self.textid, self.texttype = ["", ""]
         elif name == "model":
             self.model = 0
+        elif name == "hint":
+            for trtuple in self.translist:
+                    if trtuple[0] == self.ref and trtuple[1] == "hint":
+                        self.printtext = trtuple[2]
+            if self.printtext not in ["None", "Unkown"]:
+                self.form.print_text([" "+str(self.printtext)+" "," ", " "], fontsize=10)
+            self.hint = 0
         elif name == "html":
             self.translist = [] # clearing the translation mapping
             #print "End, saving with the filename "+str(self.form.pdfpath)

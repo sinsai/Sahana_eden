@@ -104,6 +104,8 @@ def generate_bindings(table, field, ref):
         _type = "boolean"
     elif table[field].type == "upload": # For images
         _type = "binary"
+    elif table[field].type == "text":
+        _type = "text"
     else:
          # Unknown type
          _type = "string"

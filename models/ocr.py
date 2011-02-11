@@ -61,7 +61,7 @@ def shn_ocr_downloadpdf(tablename):
                                    _class="x-panel")
 
                 # download pdf button / ext x-window -----------------------
-                downloadpdfbtn = DIV(A(IMG(_src="/{{=request.application}}/static/img/pdficon_small.gif",\
+                downloadpdfbtn = DIV(A(IMG(_src="/"+request.application+"/static/img/pdficon_small.gif",\
                                                _alt=T("Download PDF")),\
                                            _id="download-pdf-btn",\
                                            _title=T("Download PDF")),\

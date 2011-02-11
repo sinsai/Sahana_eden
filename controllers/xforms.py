@@ -46,7 +46,7 @@ def create():
             controllers_list.append(controller)
             itext_list.extend(_itext_list)
 
-    bindings_list.append(TAG["itext"](TAG["translation"](itext_list,_lang="eng")))
+    #bindings_list.append(TAG["itext"](TAG["translation"](itext_list,_lang="eng")))
     instance = TAG[title](instance_list, _xmlns="")
     bindings = bindings_list
     controllers = TAG["h:body"](controllers_list)
@@ -54,7 +54,7 @@ def create():
     response.headers["Content-Type"] = "application/xml"
     response.view = "xforms.xml"
 
-    return dict(title=title, instance=instance, bindings=bindings, controllers=controllers)
+    return dict(title=title, instance=instance, bindings=bindings, controllers=controllers, itext_list=itext_list)
 
 def uses_requirement(requirement, field):
     """

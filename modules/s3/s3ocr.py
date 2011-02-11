@@ -177,7 +177,7 @@ class Form:
         if isdate:
             t = c.beginText(self.x, self.y)
             t.setFont(Helvetica, 13)
-            t.setFillGray(gray)
+            t.setFillGray(0)
             t.textOut("   D  D  M  M  Y  Y  Y  Y")
             c.drawText(t)
 	    self.y = self.y - fontsize

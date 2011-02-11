@@ -97,7 +97,7 @@ $(document).ready(function() {
     });
     
     $('.tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
-    var tipCloseText = '<img src="' + S3Ap.concat('/static/img/cross2.png') + '" alt="close" />'
+    var tipCloseText = '<img src="' + S3Ap.concat('/static/img/cross2.png') + '" alt="close" />';
     $('.stickytip').cluetip( { 
     	activation: 'hover', 
     	sticky: true, 
@@ -127,6 +127,8 @@ function s3_tb_remove(){
   modified by flavour
   Strings get set in a localised in views/l10n.js :
 */
+
+
 (function($) {
     jQuery.ajaxS3 = function(s) {
         var options = jQuery.extend( {}, jQuery.ajaxS3Settings, s );
@@ -323,13 +325,12 @@ function s3_hideStatus() {
     }
 }
 
-
 //==============================================================================
-// Code to warn on exit without saving 
-// @author: Michael Howden (michael@sahanafoundation.org)
+//Code to warn on exit without saving 
+//@author: Michael Howden (michael@sahanafoundation.org)
 function S3SetNavigateAwayConfirm() {
 	window.onbeforeunload = function() {
-            return _s3_msg_unsaved_changes;
+          return _s3_msg_unsaved_changes;
 		};	
 };
 
@@ -338,15 +339,15 @@ function S3ClearNavigateAwayConfirm() {
 };
 
 function S3EnableNavigateAwayConfirm() {
-    $(document).ready(function() {
-        if ( $('[class=error]').length > 0 ) {
-            // If there are errors, ensure the unsaved form is still protected
- 	        S3SetNavigateAwayConfirm(); 
- 	    } 
-        $(':input:not(input[id=gis_location_advanced_checkbox])').keypress( S3SetNavigateAwayConfirm );		
-        $(':input:not(input[id=gis_location_advanced_checkbox])').change( S3SetNavigateAwayConfirm );	
-        $('form').submit( S3ClearNavigateAwayConfirm );
-    });
+  $(document).ready(function() {
+      if ( $('[class=error]').length > 0 ) {
+          // If there are errors, ensure the unsaved form is still protected
+	        S3SetNavigateAwayConfirm(); 
+	    } 
+      $(':input:not(input[id=gis_location_advanced_checkbox])').keypress( S3SetNavigateAwayConfirm );		
+      $(':input:not(input[id=gis_location_advanced_checkbox])').change( S3SetNavigateAwayConfirm );	
+      $('form').submit( S3ClearNavigateAwayConfirm );
+  });
 };
 //==============================================================================
 //@author: Michael Howden (michael@sahanafoundation.org)
@@ -362,7 +363,6 @@ function S3ConfirmClick(ElementID, Message) {
 	    }
 	});
 };
-
 //==============================================================================
 function s3_viewMap(feature_id) {
     var url = S3Ap.concat('/gis/display_feature/') + feature_id;
@@ -381,8 +381,8 @@ function s3_viewMap(feature_id) {
 function s3_viewMapMulti(module, resource, instance, jresource) {
     var url = S3Ap.concat('/gis/display_feature//?module=') + module + '&resource=' + resource + '&instance=' + instance + '&jresource=' + jresource;
     var oldhtml = $('#map').html();
-    var iframe = "<iframe width='640' height='480' src='" + url + "'></iframe>";
-    var closelink = $(''<a href=\"#\">' + _close_map + '</a>');
+    var iframe = '<iframe width="640" height="480" src="' + url + '"></iframe>';
+    var closelink = $('<a href=\"#\">' + _close_map + '</a>');
 
     closelink.bind( 'click', function(evt) {
         $('#map').html(oldhtml);

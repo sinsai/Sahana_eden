@@ -125,7 +125,7 @@ def s3_include_debug():
     include = "%s\n <!-- CSS Syles -->" % include            
     f = open("%s/tools/sahana.css.cfg" % scripts_dir_path, 'r')
     files = f.readlines()
-    for file in files:
+    for file in files[:-1]:
         include = '%s\n<link href="/%s/static/styles/%s" rel="stylesheet" type="text/css" charset="utf-8" />' \
             % ( include, 
                 request.application,

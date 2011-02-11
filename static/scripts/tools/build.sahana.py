@@ -247,11 +247,11 @@ def docss():
     """ Compresses the  CSS files """
     listCSS = []
     
-    f = open("sahana.css.cfg" % scripts_dir_path, 'r')
+    f = open("sahana.css.cfg", 'r')
     files = f.readlines()
     f.close()    
-    for file in files:
-        listCSS.append("../../styles/%s" % file)
+    for file in files[:-1]:
+        listCSS.append("../../styles/%s" % file[:-1])
 
     outputFilenameCSS = "sahana.min.css"
 

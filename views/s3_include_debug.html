@@ -1,0 +1,30 @@
+<!--Running in Debug mode, so we want each script to download separately & to use the uncompressed versions-->
+
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/ba-debug.min.js"></script>
+<script type="text/javascript">//<![CDATA[
+function s3_debug(message, value) {
+	if (undefined == value) {
+	    debug.debug('s3_debug: ' + message);
+	} else {
+	    debug.debug('s3_debug: ' + message + ': ' + value);
+	}
+}
+//]]></script>
+
+{{if session.s3.cdn:}}
+<!-- For Sites Hosted on the Public Internet, using Google's version of jQuery will provide better performance -->
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.js" type="text/javascript"></script>
+	<!-- For Sites Hosted on the Public Internet, using Cachefly CDN's version of ExtJS may provide better performance -->
+	<script src="http://extjs.cachefly.net/ext-3.3.1/adapter/jquery/ext-jquery-adapter-debug.js" type="text/javascript"></script>
+	<script src="http://extjs.cachefly.net/ext-3.3.1/ext-all-debug.js" type="text/javascript"></script>
+	<script src="http://extjs.cachefly.net/ext-3.3.1/src/locale/ext-lang-{{=response.s3.language}}.js" type="text/javascript"></script>		
+{{else:}}
+	<script src="/{{=request.application}}/static/scripts/web2py/jquery-1.4.4.js" type="text/javascript"></script> 
+	<script src="/{{=request.application}}/static/scripts/ext/adapter/jquery/ext-jquery-adapter-debug.js" type="text/javascript"></script>
+	<script src="/{{=request.application}}/static/scripts/ext/ext-all-debug.js" type="text/javascript"></script>
+{{pass}}
+
+{{=s3_include_debug()}}
+
+<!-- Can't be in main S3.min.js as it needs to be loaded after Ext @todo: Check if this is still correct -->
+<script src="/{{=request.application}}/static/scripts/S3/s3.locationselector.widget.js" type="text/javascript" charset="utf-8"></script>

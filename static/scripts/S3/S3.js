@@ -1,4 +1,9 @@
 // Custom Javascript functions added as part of the S3 Framework
+
+// Global variable to store all of our variables inside
+var S3 = Object();
+S3.gis = Object();
+
 var popupWin = null;
 
 function openPopup(url) {
@@ -6,7 +11,26 @@ function openPopup(url) {
         popupWin = window.open(url, 'popupWin', 'width=640, height=480');
     } else popupWin.focus();
 }
-$(document).ready(function() {
+$(document).ready(function() {   
+    // T2 Layer
+    try { 
+    	$('.zoom').fancyZoom( { 
+    		scaleImg:true, 
+    		closeOnClick:true, 
+    		directory: S3Ap.concat("/static/media")
+    	}); 
+    } catch(e) {};
+    
+    $('input.date').datepicker({
+        changeMonth: true, changeYear: true,
+        //showOtherMonths: true, selectOtherMonths: true,
+        showOn: 'both', 
+        buttonImage: S3Ap.concat('/static/img/jquery-ui/calendar.gif'), 
+        buttonImageOnly: true,
+        dateFormat: 'yy-mm-dd', 
+        isRTL: S3.rtl 
+     });    
+    
     $('.error').hide().slideDown('slow')
     $('.error').click(function() { $(this).fadeOut('slow'); return false; });
     $('.warning').hide().slideDown('slow')
@@ -15,11 +39,13 @@ $(document).ready(function() {
     $('.information').click(function() { $(this).fadeOut('slow'); return false; });
     $('.confirmation').hide().slideDown('slow')
     $('.confirmation').click(function() { $(this).fadeOut('slow'); return false; });
+    
     // IE6 non anchor hover hack
     $('.hoverable').hover(
         function() { $(this).addClass('hovered'); },
         function() { $(this).removeClass('hovered'); }
     );
+    
     // Menu popups (works in IE6)
     $('#modulenav li').hover(
         function() {
@@ -36,6 +62,7 @@ $(document).ready(function() {
             },
         function() { $('ul', this).css('display', 'none');  }
     );
+    
     $('#subnav li').hover(
         function() {
                 var popup_width = $(this).width()-2;
@@ -46,6 +73,7 @@ $(document).ready(function() {
             },
         function() { $('ul', this).css('display', 'none');  }
     );
+    
     // Colorbox Popups
     $('a.colorbox').attr('href', function(index, attr) {
         // Add the caller to the URL vars so that the popup knows which field to refresh/set
@@ -62,11 +90,30 @@ $(document).ready(function() {
             url_out = attr + '&caller=' + caller;
         }
         return url_out;
-    });
+    });    
     $('.colorbox').click(function(){
         $.fn.colorbox({iframe:true, width:'99%', height:'99%', href:this.href, title:this.title});
         return false;
     });
+    
+    $('.tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
+    var tipCloseText = '<img src="' + S3Ap.concat('/static/img/cross2.png') + '" alt="close" />'
+    $('.stickytip').cluetip( { 
+    	activation: 'hover', 
+    	sticky: true, 
+    	closePosition: 'title', 
+    	closeText: tipCloseText, 
+    	splitTitle: '|'
+    } );
+    $('.ajaxtip').cluetip( { 
+    	activation: 'click', 
+    	sticky: true, 
+    	closePosition: 'title', 
+    	closeText: tipCloseText, 
+    	width: 380
+    } );
+    now = new Date();
+    $('form').append("<input type='hidden' value=" + now.getTimezoneOffset() + " name='_utc_offset'/>");    
 });
 
 function s3_tb_remove(){
@@ -306,7 +353,7 @@ function S3EnableNavigateAwayConfirm() {
 function S3ConfirmClick(ElementID, Message) {
 	//@param ElementID: the ID of the element which will be clicked 
 	//@param Message: the Message displayed in the confirm dialog	
-	jQuery(ElementID).click( function(event) {
+	$(ElementID).click( function(event) {
 	    if(confirm(Message)) {
 	        return true; 
 	    } else {
@@ -315,3 +362,33 @@ function S3ConfirmClick(ElementID, Message) {
 	    }
 	});
 };
+
+//==============================================================================
+function s3_viewMap(feature_id) {
+    var url = S3Ap.concat('/gis/display_feature/') + feature_id;
+    var oldhtml = $('#map').html();
+    var iframe = "<iframe width='640' height='480' src='" + url + "'></iframe>";
+    var closelink = $('<a href=\"#\">' + _close_map + '</a>');
+
+    closelink.bind( "click", function(evt) {
+        $('#map').html(oldhtml);
+        evt.preventDefault();
+    });
+
+    $('#map').html(iframe);
+    $('#map').append($("<div style='margin-bottom: 10px' />").append(closelink));
+}
+function s3_viewMapMulti(module, resource, instance, jresource) {
+    var url = S3Ap.concat('/gis/display_feature//?module=') + module + '&resource=' + resource + '&instance=' + instance + '&jresource=' + jresource;
+    var oldhtml = $('#map').html();
+    var iframe = "<iframe width='640' height='480' src='" + url + "'></iframe>";
+    var closelink = $(''<a href=\"#\">' + _close_map + '</a>');
+
+    closelink.bind( 'click', function(evt) {
+        $('#map').html(oldhtml);
+        evt.preventDefault();
+    });
+
+    $('#map').html(iframe);
+    $('#map').append($("<div style='margin-bottom: 10px' />").append(closelink));
+}

@@ -1,5 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="{{=T.accepted_language or "en"}}" class="no-js"><!-- no-js needed for modernzr -->
+
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame -->
@@ -8,6 +9,7 @@
 {{if response.refresh:}}{{=XML(response.refresh)}}{{pass}}
 <!-- http://dev.w3.org/html5/markup/meta.name.html -->
 <meta name="application-name" content="{{=request.application}}" />	
+
 <!-- Set your site up with Google: http://google.com/webmasters -->
 <meta name="google-site-verification" content="" />
 <!--  Mobile Viewport Fix
@@ -16,12 +18,16 @@
   initial-scale = 1.0 retains dimensions instead of zooming out if page height > device height
   maximum-scale = 1.0 retains dimensions instead of zooming in if page width < device width
   -->
+  
 <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0;">
 <!-- Place favicon.ico and apple-touch-icon.png in the root of your domain and delete these references -->
+
 <link rel="shortcut icon" href="/{{=request.application}}/static/favicon.ico")}}" type="image/x-icon">
 <link rel="apple-touch-icon" href="/{{=request.application}}/static/favicon.png")}}">
+
 <!-- All JavaScript at the bottom, except for Modernizr which enables HTML5 elements & feature detects -->
 <script src="/{{=request.application}}/static/scripts/web2py/modernizr-1.6.min.js")}}"></script>
+
 <style type="text/css">
 {{if response.s3.rtl:}}
     div { direction: rtl; }
@@ -34,24 +40,63 @@ body { min-width: 1024px; }
 body { min-width: 800px; }
 {{ pass }}
 </style>
+
 {{if session.s3.debug:}}
-  {{include "sahana_styles_debug.html"}}
-  {{include "sahana_scripts_debug.html"}}
+	{{include "s3_include_debug.html"}}
+	{{if session.s3.cdn:}}
+		<!-- For Sites Hosted on the Public Internet, using Cachefly CDN's version of ExtJS may provide better performance -->
+		<link href="http://extjs.cachefly.net/ext-3.3.1/resources/css/ext-all.css" rel="stylesheet" type="text/css" charset="utf-8" />
+	{{else:}}
+		<!--Ext Stylesheet would need it's images moving if compressed up & relocated-->
+		<link href="/{{=request.application}}/static/scripts/ext/resources/css/ext-all.css" rel="stylesheet" type="text/css" charset="utf-8" />
+	{{pass}}
 {{else:}}
-  <link href="/{{=request.application}}/static/scripts/ext/resources/css/ext-theme.min.css" rel="stylesheet" type="text/css" charset="utf-8" />
-  <!--<link href="/{{=request.application}}/static/scripts/ext/resources/css/xtheme-gray.css" rel="stylesheet" type="text/css" charset="utf-8" />-->
-  <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" charset="utf-8" />
-  {{include "sahana_scripts_min.html"}}
+	<link href="/{{=request.application}}/static/scripts/ext/resources/css/ext-theme.min.css" rel="stylesheet" type="text/css" charset="utf-8" />	
+	{{include "s3_include_min.html"}}
 {{pass}}
-{{if response.extra_styles:}}{{for sheet in response.extra_styles:}}
-  <link href="/{{=request.application}}/static/styles/{{=sheet}}" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
-{{pass}}
+  {{if response.extra_styles:}}{{for sheet in response.extra_styles:}}
+    <link href="/{{=request.application}}/static/styles/{{=sheet}}" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+  {{pass}}
 {{pass}}
 
-<!-- Include specific js scripts --> 
+<script src="/{{=request.application}}/static/scripts/ext/src/locale/ext-lang-{{=response.s3.language}}.js" type="text/javascript"></script>
+
 {{if response.js:}} 
+	<!-- Include (non global) js scripts --> 
     {{=response.js}}
 {{pass}}
+   
+<!--Scripts which need pre-processing by server must be called in-line-->
+
+<script type="text/javascript">//<![CDATA[
+//Global variable to store all of our variables inside
+var S3 = Object();
+S3Ap = "/{{=request.application}}";
+{{if response.s3.rtl:}}
+	S3.rtl = true;
+{{else:}}
+	S3.rtl = false;
+{{pass}}
+S3.gis = Object();                                          
+                                          
+$(document).ready(function() {	
+	// Translation Strings
+	{{include "l10n.js"}}
+	
+	// Web2Py Layer
+    $("input[type='checkbox'].delete").click(function() { if(this.checked) if(!confirm("{{=T('Sure you want to delete this object?')}}")) this.checked=false; });
+    try { $('input.datetime').focus( function() {Calendar.setup({
+         inputField:this.id, ifFormat:"{{=T('%Y-%m-%d %H:%M:%S')}}", showsTime: true, timeFormat: '24'
+    }); }); } catch(e) {};
+    
+    // S3 Layer
+    $('input.time').timepicker({
+        hourText: '{{=T("Hour")}}',
+        minuteText: '{{=T("Minute")}}'
+    });    
+    S3ConfirmClick('a.delete-btn',"{{=T("Sure you want to delete this object?")}}");
+});    
+//]]></script>
 
 {{try:}}
   {{if jr.representation == "popup":}}
@@ -80,6 +125,7 @@ body { min-width: 800px; }
     {{include}}
 {{else:}}
 </head>
+
 <body>
     <div id='menu_modules'>
         {{=MENUS3(response.menu, _id="modulenav")}}

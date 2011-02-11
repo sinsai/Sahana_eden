@@ -7,3 +7,4 @@ _ajaxS3_get_ = '{{=T("getting")}}';
 _ajaxS3_fmd_ = '{{=T("form data")}}';
 _ajaxS3_rtr_ = '{{=T("retry")}}';
 _s3_msg_unsaved_changes = "{{=T("You have unsaved changes. Click Cancel now, then 'Save' to save them. Click OK now to discard them.")}}";
+_close_map = '{{=T("Close map")}}';

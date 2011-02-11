@@ -117,7 +117,7 @@ class JavascriptMinify(object):
            3   Get the next B. (Delete B).
            action treats a string as a single character. Wow!
            action recognizes a regular expression if it is preceded by ( or , or =.
-        """
+        """        
         if action <= 1:
             self._outA()
 
@@ -130,6 +130,7 @@ class JavascriptMinify(object):
                     if self.theA == self.theB:
                         break
                     if self.theA <= '\n':
+                        print self.theA
                         raise UnterminatedStringLiteral()
                     if self.theA == '\\':
                         self._outA()

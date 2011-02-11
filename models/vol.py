@@ -23,7 +23,7 @@ if deployment_settings.has_module(module):
     tablename = module + "_" + resourcename
     table = db.define_table(tablename,
                             person_id(),
-                            # TODO: A person may volunteer for more than one org.
+                            # @ToDo: A person may volunteer for more than one org.
                             # Remove this -- the org can be inferred from the project
                             # or team in which the person participates.
                             organisation_id(),
@@ -106,7 +106,7 @@ if deployment_settings.has_module(module):
     # vol_resource (Component of pr_person)
     #   describes resources (e.g. vehicles, tools) of a volunteer
 
-    # TODO: Skills are now separate.  Either repurpose "resources" or remove it.
+    # @ToDo: Skills are now separate.  Either repurpose "resources" or remove it.
     vol_resource_type_opts = {
         2:T("Resources"),
         3:T("Restrictions"),
@@ -413,7 +413,7 @@ if deployment_settings.has_module(module):
     # -------------------------------------------------------------------------
 
     # TODO: Rather than the hours a volunteer "has a position" this will likely
-    # become hours the volunteer "works on a task", so vol_postion_id will
+    # become hours the volunteer "works on a task", so vol_position_id will
     # switch to the task id.
     # -------------------------------------------------------------------------
     # vol_hours:

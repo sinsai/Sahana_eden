@@ -393,20 +393,17 @@ pr_group_type = S3ReusableField("group_type", "integer",
                                 represent = lambda opt: \
                                             pr_group_type_opts.get(opt, UNKNOWN_OPT))
 
-
 # -----------------------------------------------------------------------------
 resourcename = "group"
 tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
                         pr_group_type(),
-                        Field("system","boolean",default=False),
+                        Field("system", "boolean", default=False),
                         Field("name"),
                         Field("description"),
                         comments(),
                         migrate=migrate, *s3_meta_fields())
-
-
 
 table.system.readable = False
 table.system.writable = False

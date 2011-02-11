@@ -382,7 +382,11 @@ class FormHandler(ContentHandler):
             self.translang = attrs.get("lang")
         elif name == "text":
             self.text = 1
-            self.textid, self.texttype = attrs.get("id").split(":")
+            if attrs.get("id") == "title":
+                self.textid = "title"
+                self.texttype = "string"
+            else:
+                self.textid, self.texttype = attrs.get("id").split(":")
         elif name == "model":
             self.model = 1
 
@@ -404,11 +408,17 @@ class FormHandler(ContentHandler):
             self.xmlcreate()
         if not str(name).find(":") == -1:
             name = name.split(":")[1]
-        if name == "title":
+        #if name == "title":
+        if name == "head":
             if self.model == 0:
-                self.form.barcode(self.uuid)
-                self.form.set_title(str(self.title))
-                self.form.print_text([str(self.title)], fontsize = 18, style = "center")
+                #self.form.barcode(self.uuid) # not needed till ocr is functional
+                for trtuple in self.translist:
+                    if trtuple[0] == "title":
+                        self.printtext = trtuple[2]
+                self.form.set_title(unicode(self.printtext))
+                #self.form.set_title(str(self.title))
+                self.form.print_text([unicode(self.printtext)], fontsize = 18, style = "center")
+                #self.form.print_text([str(self.title)], fontsize = 18, style = "center")
                 self.form.print_text([str("1. Fill the necessary fields in BLOCK CAPITAL letters."), str("2. Always use one box per letter and leave one box space to seperate words."), str("3. Fill in the circles completely.")], fontsize = 13, gray = 0)
                 self.form.draw_line()
                 # self.form.print_text([str(self.uuid)], fontsize = 10, gray = 0)
@@ -426,7 +436,7 @@ class FormHandler(ContentHandler):
                 for trtuple in self.translist:
                     if trtuple[0] == self.ref and trtuple[1] == "label":
                         self.printtext = trtuple[2]
-                self.form.print_text(["", "", " "+str(self.printtext)+" ", ""])
+                self.form.print_text(["", "", " "+unicode(self.printtext)+" ", ""])
                 self.child3 = self.doc.createTextNode(str(self.form.lastx)+","+str(self.form.lasty))
                 self.child2.appendChild(self.child3)
                 self.child2.setAttribute("font", str(16))

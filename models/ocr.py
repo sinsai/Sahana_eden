@@ -30,6 +30,10 @@ def shn_ocr_downloadpdf(tablename):
         formelementsls = s3base.s3ocr_get_languages(deployment_settings.base.public_url+\
                                                         "/eden/xforms/create/"+\
                                                         tablename)
+        try:
+            formelementsls.remove("eng") # avoid duplicating stuff
+        except(ValueError):
+            pass
         #formelementsls = ["eng","esp"] #for testing
         if len(formelementsls) == 0:
             pdfenable = 0
@@ -38,7 +42,8 @@ def shn_ocr_downloadpdf(tablename):
         if not directprint:
             for eachelement in formelementsls:
                 eachelement = str(eachelement)
-                formelements.append(DIV(LABEL(eachelement,\
+                l10nlang = s3.l10n_languages[eachelement].read()
+                formelements.append(DIV(LABEL(l10nlang,\
                                                   _class="x-form-item-label"),\
                                             DIV(INPUT(_name="pdfLangRadio",\
                                                           _value=eachelement,\
@@ -46,7 +51,7 @@ def shn_ocr_downloadpdf(tablename):
                                                           _class="x-form-text x-form-field"),\
                                                     _class="x-form-element"),
                                         _class="x-form-item",\
-                                            _tabindex="-1"))
+                                            _tabindex="-1", _style="height: 25px;"))
                 htmlform = DIV(DIV(T("Select Language"),\
                                        _id="formheader",\
                                        _class="x-panel-header"),\

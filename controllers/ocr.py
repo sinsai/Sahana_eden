@@ -36,7 +36,7 @@ def getpdf():
         pdfs, xmls = s3base.s3ocr_generate_pdf(deployment_settings.base.public_url+\
                                                    "/eden/xforms/create/"+\
                                                    tablename,\
-                                                   "eng")
+                                                   lang)
     except:
         raise HTTP(404, body="S3 installaton error, reportlab has not been installed")
     for i in pdfs.keys():

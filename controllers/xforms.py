@@ -34,7 +34,8 @@ def create():
 
     for field in table.fields:
         if field in ["id", "created_on", "modified_on", "uuid", "mci", "deleted",
-                     "created_by", "modified_by"] :
+                     "created_by", "modified_by","deleted_fk","owned_by_role",
+                     "owned_by_user"]:
             # This will get added server-side
             pass
         else:
@@ -102,7 +103,7 @@ def generate_bindings(table, field, ref):
     elif table[field].type == "boolean":
         _type = "boolean"
     elif table[field].type == "upload": # For images
-         _type = "binary"
+        _type = "binary"
     else:
          # Unknown type
          _type = "string"
@@ -157,9 +158,10 @@ def generate_controllers(table, field, ref):
         #pass
     elif uses_requirement("IS_IN_SET", table[field]): # Defined below
         if hasattr(table[field].requires, "other"):
-            theset = table[field].requires.other.theset
+            insetrequires = table[field].requires.other
         else:
-            theset = table[field].requires.theset
+            insetrequires = table[field].requires
+        theset = insetrequires.theset
         items_list=[]
         items_list.append(TAG["label"](_ref="jr:itext('" + ref + ":label')"))
         items_list.append(TAG["hint"](_ref="jr:itext('" + ref + ":hint')"))
@@ -170,9 +172,13 @@ def generate_controllers(table, field, ref):
                 option = int(option)
             option_ref = ref + ":option" + str(option_num)
             items_list.append(TAG["item"](TAG["label"](_ref="jr:itext('" + option_ref + "')"), TAG["value"](option)))
-            itext_list.append(TAG["text"](TAG["value"](table[field].represent(option)), _id=option_ref))
+            #itext_list.append(TAG["text"](TAG["value"](table[field].represent(option)), _id=option_ref))
+            itext_list.append(TAG["text"](TAG["value"](insetrequires.labels[theset.index(str(option))]), _id=option_ref))
             option_num += 1
-        controller = TAG["select1"](items_list, _ref=ref)
+        if insetrequires.multiple:
+            controller = TAG["select"](items_list, _ref=ref)
+        else:
+            controller = TAG["select1"](items_list, _ref=ref)
 
     elif table[field].type == "boolean": # Using select1, is there an easier way to do this?
         items_list=[]

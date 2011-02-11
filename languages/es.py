@@ -586,7 +586,7 @@
 'Available from': 'Disponible desde',
 'Available in Viewer?': 'Disponible en Visualizador?',
 'Available until': 'Disponible hasta',
-'Availablity': 'Disponibilidad ',
+'Availability': 'Disponibilidad ',
 'Avalanche': 'Avalanche',
 'Avoid the subject event as per the <instruction>': 'Avoid the subject event as per the <instruction>',
 'Azerbaijan': 'Azerbaiyán',

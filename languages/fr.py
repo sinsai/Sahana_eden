@@ -467,7 +467,7 @@
 'Available from': 'Available from',
 'Available in Viewer?': 'Available in Viewer?',
 'Available until': 'Available until',
-'Availablity': 'Availablity',
+'Availability': 'Availability',
 'Avalanche': 'Avalanche',
 'Avoid the subject event as per the <instruction>': 'Avoid the subject event as per the <instruction>',
 'Baby And Child Care': 'Baby And Child Care',

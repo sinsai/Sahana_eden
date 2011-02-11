@@ -242,7 +242,7 @@ def person():
                                            "group_head",
                                            "description"])
         tabs = [
-                (T("Availablity"), "volunteer"),
+                (T("Availability"), "volunteer"),
                 (T("Teams"), "group_membership"),
                 (T("Skills"), "skill"),
                 # @ToDo: Modernize Resources

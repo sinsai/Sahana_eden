@@ -499,7 +499,7 @@
 'Available from': 'Available from',
 'Available in Viewer?': 'Available in Viewer?',
 'Available until': 'Sẵn sàng cho đến khi',
-'Availablity': 'Availablity',
+'Availability': 'Availability',
 'Avalanche': 'Avalanche',
 'Avoid the subject event as per the <instruction>': 'Avoid the subject event as per the <instruction>',
 'Babies who are not being breastfed, what are they being fed on?': 'Babies who are not being breastfed, what are they being fed on?',

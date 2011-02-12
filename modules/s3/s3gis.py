@@ -3068,7 +3068,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 wms_map = ""
             wms_layers = layer.layers
             try:
-                format = "type: '" + layer.format + "',"
+                format = "type: '" + layer.img_format + "',"
             except:
                 format = ""
             if layer.transparent:
@@ -3116,7 +3116,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             url = layer.url
             tms_layers = layer.layers
             try:
-                format = "type: '" + layer.format + "'"
+                format = "type: '" + layer.img_format + "'"
             except:
                 format = ""
 

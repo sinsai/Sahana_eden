@@ -1244,7 +1244,7 @@ for layertype in gis_layer_types:
                      Field("url", label=T("Location"), requires = IS_NOT_EMPTY(),
                            comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
                      Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
-                     Field("format", label=T("Format"))
+                     Field("img_format", label=T("Format"))
                     )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "wfs":
@@ -1276,7 +1276,7 @@ for layertype in gis_layer_types:
                      Field("transparent", "boolean", default=False, label=T("Transparent?")),
                      Field("map", label=T("Map")),
                      Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
-                     Field("format", label=T("Format"), requires = IS_NULL_OR(IS_IN_SET(gis_layer_wms_img_formats))),
+                     Field("img_format", label=T("Format"), requires = IS_NULL_OR(IS_IN_SET(gis_layer_wms_img_formats))),
                      Field("buffer", "integer", label=T("Buffer"), default=0, requires=IS_INT_IN_RANGE(0, 10), comment=DIV( _class="tooltip", _title=T("Buffer") + "|" + T("The number of tiles around the visible map to download. Zero means that the 1st page loads faster, higher numbers mean subsequent panning is faster."))),
                      #Field("queryable", "boolean", default=False, label=T("Queryable?")),
                      #Field("legend_url", label=T("legend URL")),
@@ -1342,7 +1342,7 @@ table = db.define_table(tablename,
                         Field("type_"),
                         # Handle this as a special case for 'None' layer ('ol' source)
                         #"args":["None",{"visibility":false}]
-                        Field("format"),
+                        Field("img_format"),
                         Field("styles"),
                         Field("transparent", "boolean"),
                         migrate=migrate, *s3_timestamp())

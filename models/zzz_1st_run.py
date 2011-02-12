@@ -1135,7 +1135,7 @@ if populate:
                 title = "L3: Tehsils",
                 visibility = False,
                 opacity = 0.74,
-                format = "image/png",
+                img_format = "image/png",
                 styles = "",
                 transparent = True
             )
@@ -1145,7 +1145,7 @@ if populate:
                 title = "Flood Extent - 17 August",
                 visibility = False,
                 opacity = 0.45,
-                format = "image/png",
+                img_format = "image/png",
                 styles = "",
                 transparent = True
             )

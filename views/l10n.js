@@ -1,10 +1,11 @@
 // These are messages which are translatable & can then be available to Static JavaScript
-_ajaxS3_wht_ = '{{=T("We have tried")}}';
-_ajaxS3_gvn_ = '{{=T("times and it is still not working. We give in. Sorry.")}}';
-_ajaxS3_500_ = '{{=T("Sorry - the server has a problem, please try again later.")}}';
-_ajaxS3_dwn_ = '{{=T("There was a problem, sorry, please try again later.")}}';
-_ajaxS3_get_ = '{{=T("getting")}}';
-_ajaxS3_fmd_ = '{{=T("form data")}}';
-_ajaxS3_rtr_ = '{{=T("retry")}}';
-_s3_msg_unsaved_changes = "{{=T("You have unsaved changes. Click Cancel now, then 'Save' to save them. Click OK now to discard them.")}}";
-_close_map = '{{=T("Close map")}}';
+S3.i18n = Object();
+S3.i18n.ajax_wht = '{{=T("We have tried")}}';
+S3.i18n.ajax_gvn = '{{=T("times and it is still not working. We give in. Sorry.")}}';
+S3.i18n.ajax_500 = '{{=T("Sorry - the server has a problem, please try again later.")}}';	
+S3.i18n.ajax_dwn = '{{=T("There was a problem, sorry, please try again later.")}}';
+S3.i18n.ajax_get = '{{=T("getting")}}';
+S3.i18n.ajax_fmd = '{{=T("form data")}}';
+S3.i18n.ajax_rtr = '{{=T("retry")}}';	
+S3.i18n.unsaved_changes = "{{=T("You have unsaved changes. Click Cancel now, then 'Save' to save them. Click OK now to discard them.")}}";			
+S3.i18n.close_map = '{{=T("Close map")}}';	

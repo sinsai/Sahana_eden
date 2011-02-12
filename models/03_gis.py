@@ -489,7 +489,7 @@ def shn_gis_location_represent_row(location, showlink=True):
     # Provide either a link (as might be used on a map popup) or plain text
     # (for a read-only view of a list of locations).
     if showlink:
-        represent = A(text, _style="cursor:pointer; cursor:hand", _onclick="s3_viewMap(" + str(location.id) +");return false")
+        represent = A(text, _style="cursor:pointer; cursor:hand", _onclick="s3_viewMap(%i);return false" % location.id)
     else:
         represent = text
     # ToDo: Convert to popup? (HTML again!)

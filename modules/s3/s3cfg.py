@@ -36,6 +36,7 @@ __all__ = ["S3Config"]
 
 from gluon.http import HTTP
 from gluon.storage import Storage
+from gluon.contrib.simplejson.ordered_dict import OrderedDict
 
 class S3Config(Storage):
 
@@ -111,7 +112,6 @@ class S3Config(Storage):
     # All levels, or name of a specific level. Includes non-hierarchy levels.
     # Serves as represent for level.
     def get_gis_all_levels(self, level=None):
-        from gluon.contrib.simplejson.ordered_dict import OrderedDict
         all_levels = self.gis.get("all_levels")
         if not all_levels:
             T = self.T

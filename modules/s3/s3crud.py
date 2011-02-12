@@ -454,6 +454,12 @@ class S3CRUD(S3Method):
                 output.update(buttons)
 
         elif representation == "plain":
+            # Hide empty fields from popups on map
+            for field in table:
+                if field.readable:
+                    if self.resource._rows.records[0][tablename][field.name] is None:
+                        field.readable = False
+
             item = self.sqlform(record_id=record_id,
                                 readonly=True,
                                 format=representation)
@@ -1044,8 +1050,7 @@ class S3CRUD(S3Method):
                 message="Record created/updated",
                 format=None):
         """
-        DRY helper function for SQLFORMs in CRUD
-
+            DRY helper function for SQLFORMs in CRUD
         """
 
         # Environment

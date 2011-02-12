@@ -432,6 +432,7 @@ gis_source_opts = {
 def shn_gis_location_represent_row(location, showlink=True):
     """ Represent a location given its row """
     if location.level:
+        # @ToDo: Worth caching these?
         level_name = deployment_settings.get_gis_locations_hierarchy(location.level)
     if location.level == "L0":
         # Countries don't have Parents & shouldn't be represented with Lat/Lon

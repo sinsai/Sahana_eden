@@ -562,7 +562,8 @@ if __name__ == "__main__":
         config_filename = args[1]
         exec("from %s import Settings" % config_filename)
         testSettings = Settings()
-        SahanaTest.setUpHierarchy(testSettings.radioB,
+        browser = testSettings.radioB
+        SahanaTest.setUpHierarchy(browser,
                                   testSettings.browserPath,
                                   testSettings.ipAddr,
                                   testSettings.ipPort,
@@ -585,7 +586,7 @@ if __name__ == "__main__":
             report_format = "html"
 
         if args[2] == "xml": # Arg 2 is used to generate xml output for jenkins
-            runner = XMLTestRunner(file("../results/regressionTest.xml", "w"))
+            runner = XMLTestRunner(file("../results/regressionTest-%s.xml" % (browser.replace("*", "")) , "w"))
             runner.run(suite)
 
         elif args[2] == "html":

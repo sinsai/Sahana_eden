@@ -30,11 +30,12 @@ def create():
     instance_list = []
     bindings_list = []
     controllers_list = []
-    itext_list = []
+    itext_list = [TAG["text"](TAG["value"](s3.crud_strings[_table].subtitle_list), _id="title"),]
 
     for field in table.fields:
         if field in ["id", "created_on", "modified_on", "uuid", "mci", "deleted",
-                     "created_by", "modified_by"] :
+                     "created_by", "modified_by", "deleted_fk", "owned_by_role",
+                     "owned_by_user"]:
             # This will get added server-side
             pass
         else:
@@ -45,7 +46,7 @@ def create():
             controllers_list.append(controller)
             itext_list.extend(_itext_list)
 
-    bindings_list.append(TAG["itext"](TAG["translation"](itext_list,_lang="eng")))
+    #bindings_list.append(TAG["itext"](TAG["translation"](itext_list,_lang="eng")))
     instance = TAG[title](instance_list, _xmlns="")
     bindings = bindings_list
     controllers = TAG["h:body"](controllers_list)
@@ -53,7 +54,7 @@ def create():
     response.headers["Content-Type"] = "application/xml"
     response.view = "xforms.xml"
 
-    return dict(title=title, instance=instance, bindings=bindings, controllers=controllers)
+    return dict(title=title, instance=instance, bindings=bindings, controllers=controllers, itext_list=itext_list)
 
 def uses_requirement(requirement, field):
     """
@@ -102,7 +103,9 @@ def generate_bindings(table, field, ref):
     elif table[field].type == "boolean":
         _type = "boolean"
     elif table[field].type == "upload": # For images
-         _type = "binary"
+        _type = "binary"
+    elif table[field].type == "text":
+        _type = "text"
     else:
          # Unknown type
          _type = "string"
@@ -157,9 +160,10 @@ def generate_controllers(table, field, ref):
         #pass
     elif uses_requirement("IS_IN_SET", table[field]): # Defined below
         if hasattr(table[field].requires, "other"):
-            theset = table[field].requires.other.theset
+            insetrequires = table[field].requires.other
         else:
-            theset = table[field].requires.theset
+            insetrequires = table[field].requires
+        theset = insetrequires.theset
         items_list=[]
         items_list.append(TAG["label"](_ref="jr:itext('" + ref + ":label')"))
         items_list.append(TAG["hint"](_ref="jr:itext('" + ref + ":hint')"))
@@ -170,9 +174,13 @@ def generate_controllers(table, field, ref):
                 option = int(option)
             option_ref = ref + ":option" + str(option_num)
             items_list.append(TAG["item"](TAG["label"](_ref="jr:itext('" + option_ref + "')"), TAG["value"](option)))
-            itext_list.append(TAG["text"](TAG["value"](table[field].represent(option)), _id=option_ref))
+            #itext_list.append(TAG["text"](TAG["value"](table[field].represent(option)), _id=option_ref))
+            itext_list.append(TAG["text"](TAG["value"](insetrequires.labels[theset.index(str(option))]), _id=option_ref))
             option_num += 1
-        controller = TAG["select1"](items_list, _ref=ref)
+        if insetrequires.multiple:
+            controller = TAG["select"](items_list, _ref=ref)
+        else:
+            controller = TAG["select1"](items_list, _ref=ref)
 
     elif table[field].type == "boolean": # Using select1, is there an easier way to do this?
         items_list=[]
@@ -202,7 +210,7 @@ def generate_controllers(table, field, ref):
 
 def csvdata(nodelist):
     """
-    Returns the data in the given node as a comma seperated string
+    Returns the data in the given node as a comma separated string
     """
 
     data = ""
@@ -335,7 +343,7 @@ def formList():
 
 def get_name(name):
     """
-    Generates a pretty(er) name from a database table name.
+        Generates a pretty(er) name from a database table name.
     """
     return name[name.find("_") + 1:].replace("_", " ").capitalize()
 

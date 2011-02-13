@@ -375,21 +375,21 @@ deployment_settings.modules = OrderedDict([
     #        module_type = 10,
     #    )),
     #("flood", Storage(
-            #name_nice = T("Flood Alerts"),
-            #description = T("Flood Alerts show water levels in various parts of the country"),
-            #restricted = False,
-            #module_type = 10
-        #)),
+    #        name_nice = T("Flood Alerts"),
+    #        description = T("Flood Alerts show water levels in various parts of the country"),
+    #        restricted = False,
+    #        module_type = 10
+    #    )),
     #("ticket", Storage(
-            #name_nice = T("Ticketing Module"),
-            #description = T("Master Message Log to process incoming reports & requests"),
-            #restricted = False,
-            #module_type = 10,
-        #)),
+    #        name_nice = T("Ticketing Module"),
+    #        description = T("Master Message Log to process incoming reports & requests"),
+    #        restricted = False,
+    #        module_type = 10,
+    #    )),
     #("lms", Storage(
-            #name_nice = T("Logistics Management System"),
-            #description = T("An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities."),
-            #restricted = False,
-            #module_type = 10
-        #)),
+    #        name_nice = T("Logistics Management System"),
+    #        description = T("An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities."),
+    #        restricted = False,
+    #        module_type = 10
+    #    )),
 ])

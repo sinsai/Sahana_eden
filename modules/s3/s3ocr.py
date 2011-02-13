@@ -35,20 +35,20 @@
 
 __all__ = ["s3ocr_generate_pdf", "s3ocr_get_languages"]
 
-#Generic stuff
+# Generic stuff
 import os
 import sys
 import uuid
 from StringIO import StringIO
 
 
-#Importing the xml stuff
+# Importing the xml stuff
 from xml.sax.handler import ContentHandler
 from xml.sax import make_parser
 from xml.dom.minidom import Document
 
 
-#Importing reportlab stuff
+# Importing reportlab stuff
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.graphics.barcode import code128
@@ -71,7 +71,8 @@ class Form:
     """ Form class to use reportlab to generate pdf """
 
     def __init__(self, pdfname="ocrform.pdf", margintop=50, marginsides=50, **kw):
-	""" Form initialization """
+        """ Form initialization """
+
         self.pdfpath = kw.get("pdfpath", pdfname)
         self.verbose = kw.get("verbose", 0)
         self.font = kw.get("typeface", Courier)
@@ -89,6 +90,7 @@ class Form:
 
     def barcode(self, uuid):
         """ Generate barcode of uuid """
+
         barcode = code128.Code128(str(uuid), barWidth=1, barHeight=20)
         barcode.drawOn(self.canvas, self.lastx, self.lasty)
         self.lasty = self.lasty - 20
@@ -96,6 +98,7 @@ class Form:
 
     def decorate(self):
         """ Decorates the the form with the markers needed to align the form later """
+
         c = self.canvas
         c.rect(20, 20, 20, 20, fill=1)
         c.rect(self.width - 40, 20, 20, 20, fill=1)
@@ -106,7 +109,8 @@ class Form:
         c.rect(self.width - 40, self.height/2 - 10, 20, 20, fill=1)
 
     def print_text(self, lines, fontsize=12, gray=0, seek=0, continuetext=0, style="default"):
-	""" Give the lines to be printed as a list, set the font and grey level """
+        """ Give the lines to be printed as a list, set the font and grey level """
+
         c = self.canvas
         self.fontsize = fontsize
         if style == "center":
@@ -141,7 +145,8 @@ class Form:
         self.x = self.marginsides
 
     def draw_check_boxes(self, boxes=1, completeline=0, lines=0, seek=0, continuetext=0, fontsize=0, gray=0, style="", isdate=0):
-	""" Function to draw check boxes default no of boxes = 1 """
+        """ Function to draw check boxes default no of boxes = 1 """
+
         c = self.canvas
         c.setLineWidth(0.90)
         c.setStrokeGray(gray)
@@ -189,6 +194,7 @@ class Form:
 
     def draw_circle(self, boxes=1, completeline=0, lines=0, seek=0, continuetext=0, fontsize=0, gray=0, style=""):
         """ Draw circles on the form """
+
         c = self.canvas
         c.setLineWidth(0.90)
         c.setStrokeGray(gray)
@@ -223,7 +229,8 @@ class Form:
         self.y = self.y - self.fontsize
 
     def draw_line(self, gray=0):
-	""" Function to draw a straight line """
+        """ Function to draw a straight line """
+
         c = self.canvas
         c.setStrokeGray(gray)
         c.setLineWidth(0.40)
@@ -250,10 +257,12 @@ class Form:
 
     def set_title(self, title = "FORM"):
         """ Sets the title of the pdf. """
+
         c = self.canvas.setTitle(title)
 
     def save(self):
         """ Saves the form """
+
         self.canvas.save()
         pdf = self.IObuffer.getvalue()
         self.IObuffer.close()
@@ -266,6 +275,7 @@ class FormHandler(ContentHandler):
 
     def __init__(self, form, uid, lang="eng"):
         """ Form initialization and preparation """
+
         self.form = form
         self.input = 0
         self.select = 0
@@ -305,8 +315,9 @@ class FormHandler(ContentHandler):
 
     def xmlcreate(self):
         """ Creates the xml """
+
         self.doc = Document()
-        self.xmltitle = str(self.uuid) + "_" + self.lang + "_" + str(self.page) + ".xml"
+        self.xmltitle = "%s_%s_%s.xml" % (str(self.uuid), self.lang, str(self.page))
         self.root = self.doc.createElement("guide")
         self.doc.appendChild(self.root)
         if self.initial == 0:
@@ -324,10 +335,12 @@ class FormHandler(ContentHandler):
 
     def xmlsave(self):
         """ Save the xml """
+
         self.xmls[self.xmltitle] = self.doc.toprettyxml(indent = "    ")
 
     def startElement(self, name, attrs):
         """ Parses the starting element and then check what to read """
+
         self.element = name
         self.title = ""
         self.value_ch = ""
@@ -396,6 +409,7 @@ class FormHandler(ContentHandler):
 
     def characters(self, ch):
         """ Deal with the data """
+
         if self.item == 1 and self.value == 1 and self.select == 1:
             self.value_ch += ch
         elif self.itext == 1 and self.translation == 1 and self.text == 1:
@@ -405,6 +419,7 @@ class FormHandler(ContentHandler):
 
     def endElement(self, name):
         """ It specifies the operations to do on closing the element """
+
         if self.form.lasty < 100:
             self.form.set_new_page()
             self.xmlsave()
@@ -442,7 +457,7 @@ class FormHandler(ContentHandler):
                     if trtuple[0] == self.ref and trtuple[1] == "label":
                         self.printtext = trtuple[2]
                 self.form.print_text([" ", " " + unicode(self.printtext) + " ", " "])
-                self.child3 = self.doc.createTextNode(str(self.form.lastx) + "," + str(self.form.lasty))
+                self.child3 = self.doc.createTextNode("%s,%s" % (str(self.form.lastx), str(self.form.lasty)))
                 self.child2.appendChild(self.child3)
                 self.child2.setAttribute("font", str(16))
                 if self.ref == "age":
@@ -479,7 +494,7 @@ class FormHandler(ContentHandler):
                     if trtuple[0] == labelid and trtuple[1] == labeltype:
                         self.printtext = trtuple[2]
                 if self.printtext != "None" and self.printtext != "Unknown":
-                    self.form.print_text(["     " + self.printtext], continuetext = 1)
+                    self.form.print_text(["     %s" % self.printtext], continuetext = 1)
                     x = self.form.lastx
                     y = self.form.lasty
                     self.form.draw_circle(boxes=1, continuetext=1, gray=0.9, fontsize=12, seek=10)
@@ -491,7 +506,7 @@ class FormHandler(ContentHandler):
                 for trtuple in self.translist:
                     if trtuple[0] == labelid and trtuple[1] == labeltype:
                         self.printtext = trtuple[2]
-                self.form.print_text([" " + str(self.printtext) + " ", " ", " "])
+                self.form.print_text([" %s " % str(self.printtext), " ", " "])
                 self.read = 0
             self.label= 0
             self.labelref = ""
@@ -501,7 +516,7 @@ class FormHandler(ContentHandler):
         elif name == "value":
             self.value = 0
             if self.select == 1:
-                self.child3 = self.doc.createTextNode(str(self.form.lastx - 12) + "," + str(self.form.lasty))
+                self.child3 = self.doc.createTextNode("%s,%s" % (str(self.form.lastx - 12), str(self.form.lasty)))
                 self.child2.appendChild(self.child3)
                 self.child2.setAttribute("value", str(self.value_ch))
                 self.child2.setAttribute("font", str(12))
@@ -533,7 +548,7 @@ class FormHandler(ContentHandler):
                     if trtuple[0] == self.ref and trtuple[1] == "hint":
                         self.printtext = trtuple[2]
             if self.printtext not in ["None", "Unkown"]:
-                self.form.print_text([" " + str(self.printtext) + " ", " ", " "], fontsize=10)
+                self.form.print_text([" %s " % str(self.printtext), " ", " "], fontsize=10)
             self.hint = 0
         elif name == "html":
             self.translist = [] # clearing the translation mapping
@@ -554,12 +569,14 @@ class LangHandler(ContentHandler):
 
     def __init__(self):
         """ Form initialization and preparation"""
+
         self.itext = 0
         self.translation = 0
         self.lang = []
 
     def startElement(self, name, attrs):
         """ Parses the starting element and then check what to read """
+
         if not str(name).find(":") == -1:
             name = name.split(":")[1]
         if name == "translation":
@@ -571,6 +588,7 @@ class LangHandler(ContentHandler):
 
     def endElement(self, name):
         """ It specifies the operations to do on closing the element """
+
         if not str(name).find(":") == -1:
             name = name.split(":")[1]
         if name == "translation":
@@ -580,11 +598,13 @@ class LangHandler(ContentHandler):
 
     def get_lang(self):
         """ Return list of available languages in the xform """
+
         return self.lang
 
 
 def _open_anything(source):
     """ Read anything link/file/string """
+
     import urllib
     try:
         return urllib.urlopen(source)
@@ -603,22 +623,24 @@ def _open_anything(source):
 
 def s3ocr_generate_pdf(xform, pdflang):
     """ Generates pdf/xml files out of xform with language support """
+
     uid = uuid.uuid1()
     pdfs = {}
     xmls = {}
-    form = Form(pdfname = str(uid) + ".pdf")
+    form = Form(pdfname = "%s.pdf" % str(uid))
     formhandler = FormHandler(form, uid, pdflang)
     saxparser = make_parser()
     saxparser.setContentHandler(formhandler)
     datasource = _open_anything(xform)
     saxparser.parse(datasource)
     pdf, xmls = formhandler.get_files()
-    pdfs[str(uid) + "_" + str(pdflang) + ".pdf"] = pdf
+    pdfs["%s_%s/pdf" % (str(uid), str(pdflang))] = pdf
     return pdfs, xmls
 
 
 def s3ocr_get_languages(xform):
     """ Shows the languages supported by given xform """
+
     formhandler = LangHandler()
     saxparser = make_parser()
     saxparser.setContentHandler(formhandler)
@@ -629,8 +651,10 @@ def s3ocr_get_languages(xform):
 
 
 if __name__ == "__main__":
+
     if len(sys.argv) == 1:
         sys.exit("Usage: python xforms2pdf.py filename.xml language")
+
     xform = sys.argv[1]
     if len(sys.argv) < 3:
         lang = "eng"

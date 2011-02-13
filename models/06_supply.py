@@ -121,15 +121,15 @@ if deployment_settings.has_module("logs"):
     ADD_ITEM_PACKET = T("Add Item Packet")
     LIST_ITEM_PACKET = T("List Item Packets")
     s3.crud_strings[tablename] = Storage(
-        title_create = ADD_ITEM_CATEGORY,
+        title_create = ADD_ITEM_PACKET,
         title_display = T("Item Packet Details"),
-        title_list = LIST_ITEM_CATEGORIES,
+        title_list = LIST_ITEM_PACKET,
         title_update = T("Edit Item Packet"),
         title_search = T("Search Item Packets"),
         subtitle_create = T("Add New Item Packet"),
         subtitle_list = T("Item Packets"),
-        label_list_button = LIST_ITEM_CATEGORIES,
-        label_create_button = ADD_ITEM_CATEGORY,
+        label_list_button = LIST_ITEM_PACKET,
+        label_create_button = ADD_ITEM_PACKET,
         label_delete_button = T("Delete Item Packet"),
         msg_record_created = T("Item Packet added"),
         msg_record_modified = T("Item Packet updated"),
@@ -153,11 +153,7 @@ if deployment_settings.has_module("logs"):
                                  _target="top", 
                                  _id = "item_packet_add",
                                  _style = "display: none",
-                                 ),
-                                 IMG(_src = "/" + request.application + "/static/img/ajax-loader.gif",
-                                     _id = "item_packet_loader_img",
-                                     _style = "display:none;"
-                                      ),                                     
+                                 ),                               
                 SCRIPT("""
     function ItemIDChange() {                
         var selSubField = $('[name = "item_packet_id"]');
@@ -166,8 +162,8 @@ if deployment_settings.has_module("logs"):
         $('[id$="item_packet_id__row"]').show();        
         
         /* Show Throbber */
-        selSubField.after('<img src="/eden/static/img/ajax-loader.gif" id="item_packet_loader_img">');
-        selSubField.hide();
+        selSubField.after('<div id="item_packet_ajax_throbber" class="ajax_throbber style="display:inline;"/>')
+                   .hide();
         
         if ($('[name = "item_id"]').length != 0) {
             url = '/eden/supply/item_packet.json?item_packet.item_id=' + $('[name = "item_id"]').val();
@@ -188,9 +184,11 @@ if deployment_settings.has_module("logs"):
                     options += '<option value="' +  data[i].id + '">' + data[i].name + ' (' + data[i].quantity + ')</option>';
                 }                
             }
-            selSubField.html(options);  
-            selSubField.val(1); /* default value */       
-            selSubField.show(); 
+            
+            /* 1 = default value */
+            selSubField.html(options)  
+                       .val(1)        
+                       .show(); 
             
             /* Show "Add" Button & modify link */  
             href = $('#item_packet_add').attr('href') + "&item_id=" + $('[name = "item_id"]').val();
@@ -198,7 +196,7 @@ if deployment_settings.has_module("logs"):
             $('#item_packet_add').show();
             
             /* Hide Throbber */
-            $('#item_packet_loader_img').remove();
+            $('#item_packet_ajax_throbber').hide();
             
             if ( typeof ItemPacketIDChange == "function" ) {
                 ItemPacketIDChange();
@@ -212,7 +210,7 @@ if deployment_settings.has_module("logs"):
         $('[id$="item_packet_id__row"]').hide();    
     } else {
         /* Show the item packet input id the item has already been entered (if this is an error or update) */      
-        ItemIDChange();
+        //ItemIDChange();
     }
    
     /* Includes Inventory Item too */

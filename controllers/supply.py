@@ -48,9 +48,8 @@ def shn_item_rheader(r, tabs=[]):
             rheader_tabs = shn_rheader_tabs(r, tabs)
             category = db(db.supply_item_category.id == item.item_category_id).select(db.supply_item_category.name,
                                                                                       limitby=(0, 1)).first().name
-            rheader = DIV(TABLE(TR(
-                                   TH(T("Category") + ": "),   category,
-                                   TH(T("Name") + ": "), item.name,
+            rheader = DIV(TABLE(TR( TH(T("Name") + ": "), item.name,
+                                    TH(T("Category") + ": "),   category,
                                   ),
                                ),
                           rheader_tabs
@@ -69,12 +68,12 @@ def item():
 
     tabs = [
             (T("Edit Details"), None),
+            (T("Packets"), "item_packet"),
             (T("In Inventories"), "store_item"),
-            (T("Requested"), "ritem"),
+            (T("Requested"), "ritem")            
            ]
 
     rheader = lambda r: shn_item_rheader(r, tabs)
     return s3_rest_controller(prefix, resourcename, rheader=rheader)
-
 
 #==============================================================================

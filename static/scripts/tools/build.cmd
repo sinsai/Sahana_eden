@@ -3,3 +3,4 @@ python build.sahana.py
 ) ELSE (
 python build.sahana.py %1
 )
+PAUSE

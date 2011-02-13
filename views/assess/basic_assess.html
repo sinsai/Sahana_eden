@@ -8,7 +8,8 @@
 {{except:}}
 {{pass}}
 {{if location:}}
-{{=P(T("For:"), B(location))}} 
+  {{=P(T("For"), ": ", B(location))}} 
+  <div id='map'></div>
 {{pass}}
 <div class='form-container'>
 {{try:}}

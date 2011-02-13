@@ -620,7 +620,6 @@ class S3LocationSelectorWidget(FormWidget):
 
     @author: Fran Boon (fran@aidiq.com)
 
-    @todo: This is a work-in-progress
     @see: http://eden.sahanafoundation.org/wiki/BluePrintGISLocationSelector
 
     """

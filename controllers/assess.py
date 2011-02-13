@@ -260,7 +260,6 @@ def shn_rat_rheader(r, tabs=[]):
 # Flexible Impact Assessments
 #==============================================================================
 def shn_assess_rheader(r, tabs=[]):
-
     """ Resource Headers for Flexible Impact Assessments """
 
     if r.representation == "html":
@@ -282,10 +281,8 @@ def shn_assess_rheader(r, tabs=[]):
 
     return None
 
-
-#==============================================================================
+# -----------------------------------------------------------------------------
 def assess():
-
     """ RESTful CRUD controller """
 
     tablename = "%s_%s" % (prefix, resourcename)
@@ -314,10 +311,8 @@ def assess():
 
     return s3_rest_controller(prefix, resourcename, rheader=rheader)
 
-
-#==============================================================================
+# -----------------------------------------------------------------------------
 def impact_type():
-
     """ RESTful CRUD controller """
 
     prefix = "impact"
@@ -328,10 +323,8 @@ def impact_type():
 
     return s3_rest_controller(prefix, resourcename)
 
-
-#==============================================================================
+# -----------------------------------------------------------------------------
 def baseline_type():
-
     """ RESTful CRUD controller """
 
     tablename = "%s_%s" % (prefix, resourcename)
@@ -339,10 +332,8 @@ def baseline_type():
 
     return s3_rest_controller(prefix, resourcename)
 
-
-#==============================================================================
+# -----------------------------------------------------------------------------
 def baseline():
-
     """ RESTful CRUD controller """
 
     tablename = "%s_%s" % (prefix, resourcename)
@@ -350,73 +341,85 @@ def baseline():
 
     return s3_rest_controller(prefix, resourcename)
 
-
-#==============================================================================
+# -----------------------------------------------------------------------------
 def summary():
-
     """ RESTful CRUD controller """
 
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     return s3_rest_controller(prefix, resourcename)
-
 
 #==============================================================================
 def basic_assess():
+    """ Custom page to hide the complexity of the Assessments/Impacts/Summary model: PC Browser version """
+
+    if not auth.is_logged_in():
+        session.error = T("Need to be logged-in to be able to submit assessments")
+        redirect(URL(r=request, c="default", f="user", args=["login"]))
+
+    # See if we've been created from an Incident
     ireport_id = request.vars.get("ireport_id")
-    location = None
-    if incident_id:
+    if ireport_id:
+        # Location is the same as the calling Incident
         irs_location_id = shn_get_db_field_value(db = db,
                                                  table = "irs_ireport",
                                                  field = "location_id",
                                                  look_up = ireport_id
-                                                 )
+                                                )
         location = shn_gis_location_represent(irs_location_id)
         custom_assess_fields = (
-                           ("impact", 1),
-                           ("impact", 2),
-                           ("impact", 3),
-                           ("impact", 4),
-                           ("impact", 5),
-                           ("impact", 6),
-                           ("impact", 7),
-                           ("assess", "comments"),
-                           )
-        form, form_accepted, assess_id = custom_assess(custom_assess_fields, location_id = irs_location_id)
+                                ("impact", 1),
+                                ("impact", 2),
+                                ("impact", 3),
+                                ("impact", 4),
+                                ("impact", 5),
+                                ("impact", 6),
+                                ("impact", 7),
+                                ("assess", "comments"),
+                            )
+        form, form_accepted, assess_id = custom_assess(custom_assess_fields, location_id=irs_location_id)
     else:
-        custom_assess_fields = (("assess", "location_id", "selector"),
-                           ("impact", 1),
-                           ("impact", 2),
-                           ("impact", 3),
-                           ("impact", 4),
-                           ("impact", 5),
-                           ("impact", 6),
-                           ("impact", 7),
-                           ("assess", "comments"),
-                           )
+        location = None
+        custom_assess_fields = (
+                                ("assess", "location_id", "selector"),
+                                ("impact", 1),
+                                ("impact", 2),
+                                ("impact", 3),
+                                ("impact", 4),
+                                ("impact", 5),
+                                ("impact", 6),
+                                ("impact", 7),
+                                ("assess", "comments"),
+                            )
         form, form_accepted, assess_id = custom_assess(custom_assess_fields)
 
-
-
     if form_accepted:
-         response.confirmation = T("Basic Assessment Reported")
-         redirect(URL(r = request, f = "assess", args = [assess_id, "impact"]))
+        session.confirmation = T("Basic Assessment Reported")
+        redirect(URL(r=request, f="assess", args=[assess_id, "impact"]))
+
     return dict(title = T("Basic Assessment"),
                 location = location,
                 form = form)
 
+# -----------------------------------------------------------------------------
 def mobile_basic_assess():
-    custom_assess_fields = (("assess", "location_id", "auto"),
-                       ("impact", 1),
-                       ("impact", 2),
-                       ("impact", 3),
-                       ("impact", 4),
-                       ("impact", 5),
-                       ("impact", 6),
-                       ("impact", 7),
-                       ("assess", "comments"),
-                       )
+    """ Custom page to hide the complexity of the Assessments/Impacts/Summary model: Mobile device version """
+
+    if not auth.is_logged_in():
+        redirect(URL(r=request, c="default", f="index"))
+
+    custom_assess_fields = (
+                            ("assess", "location_id", "auto"),
+                            ("impact", 1),
+                            ("impact", 2),
+                            ("impact", 3),
+                            ("impact", 4),
+                            ("impact", 5),
+                            ("impact", 6),
+                            ("impact", 7),
+                            ("assess", "comments"),
+                        )
 
     form, form_accepted, assess_id = custom_assess(custom_assess_fields)
 
@@ -429,36 +432,42 @@ def mobile_basic_assess():
                       ),
                     _class = "mobile",
                     )
+
     return dict(form = form)
 
+# -----------------------------------------------------------------------------
 def color_code_severity_widget(widget, name):
+    """ Utility function to colour-code Severity options """
+
     for option, color in zip(widget, ["green", "yellow", "orange", "red"]):
         option[0].__setitem__("_style", "background-color:%s;" % color)
         option[0][0].__setitem__("_name", name)
+
     return widget
 
-def custom_assess(custom_assess_fields, location_id = None):
-    """ Custom page to hide the complexity of the Assessments/Impacts/Summary model for a Mobile device """
+# -----------------------------------------------------------------------------
+def custom_assess(custom_assess_fields, location_id=None):
+    """ Build a custom page to hide the complexity of the Assessments/Impacts/Summary model """
+
     form_row = []
     comment = ""
     for field in custom_assess_fields:
         name = "custom_%s_%s" % (field[0], field[1])
-        id = name
         if field[0] == "assess":
             if field[1] == "comments":
                 label = "%s:" % db.assess_assess[ field[1] ].label
                 #widget = db.assess_assess[ field[1] ].widget
-                widget = TEXTAREA(_name = id,
+                widget = TEXTAREA(_name = name,
                                   _class = "double",
                                   _type = "text")
 
             elif field[1] == "location_id":
                 if field[2] == "auto":
-                    #HTML5 Geo-Locate
+                    # HTML5 Geolocate
                     label = "Location:"
                     #widget = db.assess_assess[ field[1] ].widget
-                    widget = DIV(INPUT(_name = id,
-                                   _type = "text"),
+                    widget = DIV(INPUT(_name = name,
+                                       _type = "text"),
                              INPUT(_name = "gis_location_lat",
                                    _id = "gis_location_lat",
                                    _type = "text"),
@@ -466,19 +475,22 @@ def custom_assess(custom_assess_fields, location_id = None):
                                    _id = "gis_location_lon",
                                    _type = "text"))
                 else:
-                    #Locaton Selector
+                    # Locaton Selector
                     label = "Location:"
-                    widget = SELECT(_id = id,
-                                    _class = "reference gis_location",
-                                    _name = "location_id")
-                    response.s3.gis.location_id = "custom_assess_location_id"
+                    #widget = SELECT(_id = name,
+                    #                _class = "reference gis_location",
+                    #                _name = "location_id")
+                    #response.s3.gis.location_id = "custom_assess_location_id"
+                    widget = db.assess_assess.location_id.widget(field=db.assess_assess.location_id,
+                                                                 value="")
+
         elif field[0] == "baseline":
             label = shn_get_db_field_value(db = db,
                                            table = "assess_baseline_type",
                                            field = "name",
                                            look_up = field[1]
                                            )
-            widget = INPUT(_name = id,
+            widget = INPUT(_name = name,
                            _class = "double",
                            _type = "text")
 
@@ -488,34 +500,34 @@ def custom_assess(custom_assess_fields, location_id = None):
                                                    field = "name",
                                                    look_up = field[1]
                                                    )
-            value_widget = INPUT(_name = id,
-                           _class = "double",
-                           _type = "text")
+            value_widget = INPUT(_name = name,
+                                 _class = "double",
+                                 _type = "text")
             severity_widget = db.assess_summary.value.widget(db.impact_impact.severity,
-                                                       0,
-                                                       _name = name + "_severity"
-                                                       )
-            severity_widget = color_code_severity_widget(severity_widget, name + "_severity")
+                                                             0,
+                                                             _name = "%s_severity" % name
+                                                            )
+            severity_widget = color_code_severity_widget(severity_widget,
+                                                         "%s_severity" % name)
 
             widget = DIV(value_widget,
                          DIV(T("Severity:")),
                          severity_widget,
                          XML("&nbsp"))
 
-
         elif field[0] == "summary":
             label = "%s:" % shn_org_cluster_subsector_represent( field[1] )
             widget = db.assess_summary.value.widget(db.assess_summary.value,
-                                                       0,
-                                                       _name = name
-                                                       )
+                                                    0,
+                                                    _name = name
+                                                   )
             widget = color_code_severity_widget(widget)
 
-        #Add the field components to the form_rows
+        # Add the field components to the form_rows
         if field[0] == "title":
             form_row.append(TR(H3( field[1] )))
         else:
-            form_row = form_row + list( s3_formstyle(id + "__row", label, widget, comment) )
+            form_row = form_row + list( s3_formstyle("%s__row" % name, label, widget, comment) )
 
     form = FORM(TABLE(*form_row),
                 INPUT(_value = T("Save"),
@@ -523,267 +535,106 @@ def custom_assess(custom_assess_fields, location_id = None):
                       ),
                 )
     assess_id = None
-    if auth.is_logged_in():
-        form_accepted = form.accepts(request.vars, session)
-        if form_accepted:
-            record_dict = {"organisation_id" : session.s3.organisation_id}
+    
+    form_accepted = form.accepts(request.vars, session)
+    if form_accepted:
+        record_dict = {"organisation_id" : session.s3.organisation_id}
 
-            #Add Assess (must happen first)
-            for field in custom_assess_fields:
-                if field[0] != "assess" or field[1] == "location":
-                    continue
-                name = "custom__assess_%s" % field[1]
-                if name in request.vars:
-                    record_dict[field[1]] = request.vars[name]
-            if "custom_assess_location_id" in request.vars:
-                #Auto
-                if "gis_location_lat" in request.vars:
-                    location_dict = {}
-                    location_dict["lat"] = request.vars["gis_location_lat"]
-                if "gis_location_lon" in request.vars:
-                    location_dict["lon"] = request.vars["gis_location_lon"]
-                location_dict["name"] = request.vars["custom_assess_location_id"]
-                record_dict["location_id"] = db.gis_location.insert(**location_dict)
-            if "location_id" in request.vars:
-                #Location Select
-                record_dict["location_id"] = request.vars["location_id"]
+        # Add Assessment (must happen first)
+        for field in custom_assess_fields:
+            if field[0] != "assess" or field[1] == "location":
+                continue
+            name = "custom__assess_%s" % field[1]
+            if name in request.vars:
+                record_dict[field[1]] = request.vars[name]
 
-            if location_id:
-                #Location_id was passed to function
-                record_dict["location_id"] =location_id
+        if "custom_assess_location_id" in request.vars:
+            # Auto
+            location_dict = {}
+            if "gis_location_lat" in request.vars:
+                location_dict["lat"] = request.vars["gis_location_lat"]
+            if "gis_location_lon" in request.vars:
+                location_dict["lon"] = request.vars["gis_location_lon"]
+            location_dict["name"] = request.vars["custom_assess_location_id"]
+            record_dict["location_id"] = db.gis_location.insert(**location_dict)
 
-            assess_id = db.assess_assess.insert(**record_dict)
+        if "location_id" in request.vars:
+            # Location Selector
+            record_dict["location_id"] = request.vars["location_id"]
 
-            fk_dict = dict(baseline = "baseline_type_id",
-                           impact = "impact_type_id",
-                           summary = "cluster_subsector_id"
-                           )
+        if location_id:
+            # Location_id was passed to function
+            record_dict["location_id"] = location_id
 
-            component_dict = dict(baseline = "assess_baseline",
-                           impact = "impact_impact",
-                           summary = "assess_summary"
-                           )
+        assess_id = db.assess_assess.insert(**record_dict)
 
-            # Add Assess Components
-            cluster_summary = {}
-            for field in custom_assess_fields:
-                if field[0] == "assess":
-                    continue
-                record_dict = {}
-                name = "custom_%s_%s" % (field[0], field[1])
-                if name in request.vars:
-                    record_dict["assess_id"] = assess_id
-                    record_dict[fk_dict[ field[0] ] ] = field[1]
-                    record_dict["value"] = request.vars[name]
-                    if field[0] == "impact":
-                        severity = int(request.vars[name + "_severity"])
-                        record_dict["severity"] = severity
+        fk_dict = dict(baseline = "baseline_type_id",
+                       impact = "impact_type_id",
+                       summary = "cluster_subsector_id"
+                      )
 
-                        if not record_dict["value"] and not record_dict["severity"]:
-                            #Do not record impact if there is no data for it.
-                            #Should we still average severity though? Now not doing this
-                            continue
+        component_dict = dict(baseline = "assess_baseline",
+                              impact = "impact_impact",
+                              summary = "assess_summary"
+                            )
 
-                        #record the Severity per cluster
-                        cluster_id = \
-                            shn_get_db_field_value(db = db,
-                                                   table = "impact_type",
-                                                   field = "cluster_id",
-                                                   look_up = field[1])
-                        if cluster_id in cluster_summary.keys():
-                            cluster_summary[cluster_id].append(severity)
-                        elif cluster_id:
-                            cluster_summary[cluster_id] = [severity]
+        # Add Assessment Components
+        cluster_summary = {}
+        for field in custom_assess_fields:
+            if field[0] == "assess":
+                continue
+            record_dict = {}
+            name = "custom_%s_%s" % (field[0], field[1])
+            if name in request.vars:
+                record_dict["assess_id"] = assess_id
+                record_dict[fk_dict[ field[0] ] ] = field[1]
+                record_dict["value"] = request.vars[name]
 
-                    db[component_dict[ field[0] ] ].insert(**record_dict)
+                if field[0] == "impact":
+                    severity = int(request.vars[name + "_severity"])
+                    record_dict["severity"] = severity
 
-            #Add cluster summaries @TODO - make sure that this doesn't happen if there are clusters in the assess
-            for cluster_id in cluster_summary.keys():
-                severity_values = cluster_summary[cluster_id]
-                db.assess_summary.insert(assess_id = assess_id,
-                                         cluster_id = cluster_id,
-                                         #Average severity
-                                         value =sum(severity_values)/len(severity_values)
-                                         )
+                    if not record_dict["value"] and not record_dict["severity"]:
+                        # Do not record impact if there is no data for it.
+                        # Should we still average severity though? Now not doing this
+                        continue
 
-            # Send Out Notification SMS
-            #message = "Sahana: " + T("New Assessment reported from") + " %s by %s %s" % ( location_dict["name"],
-            #                                                         session.auth.user.first_name,
-            #                                                         session.auth.user.last_name
-            #                                                         )
-            # Hard coded notification message for Demo
-            #msg.send_by_pe_id(    3,
-            #                      subject="",
-            #                      message=message,
-            #                      sender_pe_id = None,
-            #                      pr_message_method = 2,
-            #                      sender="",
-            #                      fromaddress="")
+                    # Record the Severity per cluster
+                    cluster_id = \
+                        shn_get_db_field_value(db = db,
+                                               table = "impact_type",
+                                               field = "cluster_id",
+                                               look_up = field[1])
+                    if cluster_id in cluster_summary.keys():
+                        cluster_summary[cluster_id].append(severity)
+                    elif cluster_id:
+                        cluster_summary[cluster_id] = [severity]
 
-    else:
-         redirect(URL(r=request, c = "default", f = "index"))
+                db[component_dict[ field[0] ] ].insert(**record_dict)
+
+        # Add Cluster summaries @TODO - make sure that this doesn't happen if there are clusters in the assess
+        for cluster_id in cluster_summary.keys():
+            severity_values = cluster_summary[cluster_id]
+            db.assess_summary.insert(assess_id = assess_id,
+                                     cluster_id = cluster_id,
+                                     # Average severity
+                                     value =sum(severity_values)/len(severity_values)
+                                     )
+
+        # Send Out Notification SMS
+        #message = "Sahana: " + T("New Assessment reported from") + " %s by %s %s" % ( location_dict["name"],
+        #                                                         session.auth.user.first_name,
+        #                                                         session.auth.user.last_name
+        #                                                         )
+        # Hard coded notification message for Demo
+        #msg.send_by_pe_id(    3,
+        #                      subject="",
+        #                      message=message,
+        #                      sender_pe_id = None,
+        #                      pr_message_method = 2,
+        #                      sender="",
+        #                      fromaddress="")
 
     return form, form_accepted, assess_id
-
-#==============================================================================
-def assess_short_mobile():
-
-    """ Custom page to hide the complexity of the Assessments/Impacts/Summary model for a Mobile device """
-
-    assess_short_fields = (("assess", "location"),
-                           ("baseline", 1),
-                           ("baseline", 2),
-                           ("baseline", 4),
-                           ("baseline", 3),
-                           ("impact", 3),
-                           ("impact", 4),
-                           ("title", "Cluster Indicators:"),
-                           ("summary", 4),
-                           ("summary", 3),
-                           ("summary", 10),
-                           ("summary", 11),
-                           ("summary", 9),
-                           ("assess", "comments"),
-                           )
-    form_row = []
-    comment = ""
-    for field in assess_short_fields:
-        name = "assess_short_%s_%s" % (field[0], field[1])
-        id = name
-        if field[0] == "assess":
-            if field[1] == "comments":
-                label = "%s:" % db.assess_assess[ field[1] ].label
-                #widget = db.assess_assess[ field[1] ].widget
-                widget = TEXTAREA(_name = id,
-                                  _class = "double",
-                                  _type = "text")
-
-            elif field[1] == "location":
-                label = "Location:"
-                #widget = db.assess_assess[ field[1] ].widget
-                widget = DIV(INPUT(_name = id,
-                               _type = "text"),
-                         INPUT(_name = "gis_location_lat",
-                               _id = "gis_location_lat",
-                               _type = "text"),
-                         INPUT(_name = "gis_location_lon",
-                               _id = "gis_location_lon",
-                               _type = "text"))
-
-        elif field[0] == "baseline":
-            label = shn_get_db_field_value(db = db,
-                                           table = "assess_baseline_type",
-                                           field = "name",
-                                           look_up = field[1]
-                                           )
-            widget = INPUT(_name = id,
-                           _class = "double",
-                           _type = "text")
-
-        elif field[0] == "impact":
-            label = "%s:" % shn_get_db_field_value(db = db,
-                                                   table = "impact_type",
-                                                   field = "name",
-                                                   look_up = field[1]
-                                                   )
-            widget = INPUT(_name = id,
-                           _class = "double",
-                           _type = "text")
-
-        elif field[0] == "summary":
-            label = "%s:" % shn_org_cluster_subsector_represent( field[1] )
-            widget = db.assess_summary.value.widget(db.assess_summary.value,
-                                                       0,
-                                                       _name = name
-                                                       )
-            for option, color in zip(widget, ["green", "yellow", "orange", "red"]):
-                option[0].__setitem__("_style", "background-color:%s;" % color)
-                option[0][0].__setitem__("_name", name)
-
-        #Add the field components to the form_rows
-        if field[0] == "title":
-            form_row.append(TR(H3( field[1] )))
-        else:
-            form_row = form_row + list( s3_formstyle(id, label, widget, comment) )
-
-    form = FORM(H1("Sahana Eden"),
-                H2(T("Short Assessment")),
-                TABLE(*form_row),
-                INPUT(_value = T("Save"),
-                      _type = "submit"
-                      ),
-                _class = "mobile",
-                )
-
-    if auth.is_logged_in():
-        if form.accepts(request.vars, session):
-            record_dict = {}
-
-            #Add Assess (must happen first)
-            for field in assess_short_fields:
-                if field[0] != "assess" or field[1] == "location":
-                    continue
-                name = "assess_short_assess_%s" % field[1]
-                if name in request.vars:
-                    record_dict[field[1]] = request.vars[name]
-            if "assess_short_assess_location" in request.vars:
-                location_dict = {}
-                location_dict["name"] = request.vars["assess_short_assess_location"]
-                if "gis_location_lat" in request.vars:
-                    location_dict["lat"] = request.vars["gis_location_lat"]
-                if "gis_location_lon" in request.vars:
-                    location_dict["lon"] = request.vars["gis_location_lon"]
-                location_id = db.gis_location.insert(**location_dict)
-                record_dict["location_id"] = location_id
-            assess_id = db.assess_assess.insert(**record_dict)
-
-            fk_dict = dict(baseline = "baseline_type_id",
-                           impact = "impact_type_id",
-                           summary = "cluster_subsector_id"
-                           )
-
-            component_dict = dict(baseline = "assess_baseline",
-                           impact = "impact_impact",
-                           summary = "assess_summary"
-                           )
-
-            # Add Assess Components
-            for field in assess_short_fields:
-                if field[0] == "assess":
-                    continue
-                record_dict = {}
-                name = "assess_short_%s_%s" % (field[0], field[1])
-                if name in request.vars:
-                    record_dict["assess_id"] = assess_id
-                    record_dict[fk_dict[ field[0] ] ] = field[1]
-                    record_dict["value"] = request.vars[name]
-                    db[component_dict[ field[0] ] ].insert(**record_dict)
-
-            # Send Out Notification SMS
-            message = "Sahana: " + T("New Assessment reported from") + " %s by %s %s" % ( location_dict["name"],
-                                                                     session.auth.user.first_name,
-                                                                     session.auth.user.last_name
-                                                                     )
-            # Hard coded notification message for Demo
-            #msg.send_by_pe_id(    3,
-            #                      subject="",
-            #                      message=message,
-            #                      sender_pe_id = None,
-            #                      pr_message_method = 2,
-            #                      sender="",
-            #                      fromaddress="")
-
-            form = FORM(H1("Sahana Eden"),
-                        H2(T("Short Assessment")),
-                        P(T("Assessment Reported")),
-                        A(T("Report Another Assessment..."),
-                          _href = URL(r=request)
-                          ),
-                        _class = "mobile",
-                        )
-    else:
-         redirect(URL(r=request, c = "default", f = "index"))
-
-    return dict(form = form)
 
 #==============================================================================

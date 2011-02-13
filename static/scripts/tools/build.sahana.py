@@ -245,35 +245,13 @@ def dojs(dogis = False):
 
 def docss():
     """ Compresses the  CSS files """
-    listCSS = [
-        "../../styles/S3/sahana.css",
-        "../../styles/S3/colorbox.css",
-        "../../styles/S3/jquery.autocomplete.css",
-        "../../styles/S3/jquery.cluetip.css",
-        "../../styles/S3/jquery.dataTables.css",
-        "../../styles/S3/jquery.ui.core.css",
-        "../../styles/S3/jquery.ui.autocomplete.css",
-        "../../styles/S3/jquery.ui.datepicker.css",
-        "../../styles/S3/jquery.ui.timepicker.css",
-        "../../styles/S3/jquery.ui.theme.css",
-        "../../styles/S3/ajaxS3.css",
-        "../../styles/T2/t2.css",
-        "../../styles/web2py/calendar.css",
-        "../../styles/S3/s3.multiselect.widget.css",
-        "../../styles/S3/jquery.multiSelect.css",
-        "../../styles/gis/gis.css",
-        "../../styles/gis/cdauth.css",
-        "../../styles/gis/popup.css",
-        "../../styles/gis/layerlegend.css",
-        "../../styles/gis/printpreview.css",
-        "../../styles/gis/google.css",
-        "../../styles/gis/style.css",
-        "../../styles/gis/ie6-style.css",
-        "../../styles/gis/gxp.css",
-        "../../styles/gis/color-picker.ux.css",
-        "../../styles/gis/geoexplorer.css",
-        "../../styles/gis/ie.css"
-    ]
+    listCSS = []
+    
+    f = open("sahana.css.cfg", 'r')
+    files = f.readlines()
+    f.close()    
+    for file in files[:-1]:
+        listCSS.append("../../styles/%s" % file[:-1])
 
     outputFilenameCSS = "sahana.min.css"
 

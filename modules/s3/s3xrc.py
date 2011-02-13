@@ -1915,11 +1915,11 @@ class S3QueryBuilder(object):
                                 continue
                             mquery = mquery & query
 
-            # Filter
-            if filter:
-                mquery = mquery & filter
-            if url_rlinks:
-                mquery = mquery & url_rlinks
+        # Filter
+        if filter:
+            mquery = mquery & filter
+        if url_rlinks:
+            mquery = mquery & url_rlinks
 
         resource._query = mquery
         return mquery

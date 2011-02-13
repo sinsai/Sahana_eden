@@ -79,6 +79,7 @@ class AuthS3(Auth):
             s3_accessible_query()
             s3_register() callback
             s3_link_to_person()
+            s3_group_members()
 
         - language
 
@@ -692,7 +693,15 @@ class AuthS3(Auth):
             return True
         else:
             return False
-
+    # -------------------------------------------------------------------------
+    def s3_group_members(self, group_id):        
+        """
+        returns a list of the user_ids for members of a group
+        """
+        membership = self.settings.table_membership
+        members = self.db( membership.group_id == group_id 
+                          ).select(membership.user_id)
+        return [member.user_id for member in members]                          
 
     # -------------------------------------------------------------------------
     def s3_has_permission(self, method, table, record_id = 0):
@@ -1022,7 +1031,8 @@ class AuthS3(Auth):
         if role_id:
             for acl in acls:
                 self.s3_update_acl(role_id, **acl)
-
+        
+        return role_id
 
     # -------------------------------------------------------------------------
     def s3_update_acl(self, role, c=None, f=None, t=None, oacl=None, uacl=None):

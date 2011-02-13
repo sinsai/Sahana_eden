@@ -1,4 +1,9 @@
 // Custom Javascript functions added as part of the S3 Framework
+
+// Global variable to store all of our variables inside
+var S3 = Object();
+S3.gis = Object();
+
 var popupWin = null;
 
 function openPopup(url) {
@@ -6,7 +11,26 @@ function openPopup(url) {
         popupWin = window.open(url, 'popupWin', 'width=640, height=480');
     } else popupWin.focus();
 }
-$(document).ready(function() {
+$(document).ready(function() {   
+    // T2 Layer
+    try { 
+    	$('.zoom').fancyZoom( { 
+    		scaleImg:true, 
+    		closeOnClick:true, 
+    		directory: S3.Ap.concat("/static/media")
+    	}); 
+    } catch(e) {};
+    
+    $('input.date').datepicker({
+        changeMonth: true, changeYear: true,
+        //showOtherMonths: true, selectOtherMonths: true,
+        showOn: 'both', 
+        buttonImage: S3.Ap.concat('/static/img/jquery-ui/calendar.gif'), 
+        buttonImageOnly: true,
+        dateFormat: 'yy-mm-dd', 
+        isRTL: S3.rtl 
+     });    
+    
     $('.error').hide().slideDown('slow')
     $('.error').click(function() { $(this).fadeOut('slow'); return false; });
     $('.warning').hide().slideDown('slow')
@@ -15,11 +39,13 @@ $(document).ready(function() {
     $('.information').click(function() { $(this).fadeOut('slow'); return false; });
     $('.confirmation').hide().slideDown('slow')
     $('.confirmation').click(function() { $(this).fadeOut('slow'); return false; });
+    
     // IE6 non anchor hover hack
     $('.hoverable').hover(
         function() { $(this).addClass('hovered'); },
         function() { $(this).removeClass('hovered'); }
     );
+    
     // Menu popups (works in IE6)
     $('#modulenav li').hover(
         function() {
@@ -36,6 +62,7 @@ $(document).ready(function() {
             },
         function() { $('ul', this).css('display', 'none');  }
     );
+    
     $('#subnav li').hover(
         function() {
                 var popup_width = $(this).width()-2;
@@ -46,6 +73,7 @@ $(document).ready(function() {
             },
         function() { $('ul', this).css('display', 'none');  }
     );
+    
     // Colorbox Popups
     $('a.colorbox').attr('href', function(index, attr) {
         // Add the caller to the URL vars so that the popup knows which field to refresh/set
@@ -62,11 +90,30 @@ $(document).ready(function() {
             url_out = attr + '&caller=' + caller;
         }
         return url_out;
-    });
+    });    
     $('.colorbox').click(function(){
         $.fn.colorbox({iframe:true, width:'99%', height:'99%', href:this.href, title:this.title});
         return false;
     });
+    
+    $('.tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
+    var tipCloseText = '<img src="' + S3.Ap.concat('/static/img/cross2.png') + '" alt="close" />';
+    $('.stickytip').cluetip( { 
+    	activation: 'hover', 
+    	sticky: true, 
+    	closePosition: 'title', 
+    	closeText: tipCloseText, 
+    	splitTitle: '|'
+    } );
+    $('.ajaxtip').cluetip( { 
+    	activation: 'click', 
+    	sticky: true, 
+    	closePosition: 'title', 
+    	closeText: tipCloseText, 
+    	width: 380
+    } );
+    now = new Date();
+    $('form').append("<input type='hidden' value=" + now.getTimezoneOffset() + " name='_utc_offset'/>");    
 });
 
 function s3_tb_remove(){
@@ -80,12 +127,14 @@ function s3_tb_remove(){
   modified by flavour
   Strings get set in a localised in views/l10n.js :
 */
+
+
 (function($) {
     jQuery.ajaxS3 = function(s) {
         var options = jQuery.extend( {}, jQuery.ajaxS3Settings, s );
         options.tryCount = 0;
         if (s.message) {
-            s3_showStatus(_ajaxS3_get_ + ' ' + (s.message ? s.message : _ajaxS3_fmd_) + '...', this.ajaxS3Settings.msgTimeout);
+            s3_showStatus(S3.i18n.ajax_get + ' ' + (s.message ? s.message : S3.i18n.ajax_fmd) + '...', this.ajaxS3Settings.msgTimeout);
         }
         options.success = function(data, status) {
             s3_hideStatus();
@@ -97,19 +146,19 @@ function s3_tb_remove(){
                 this.tryCount++;
                 if (this.tryCount <= this.retryLimit) {
                     // try again
-                    s3_showStatus(_ajaxS3_get_ + ' ' + (s.message ? s.message : _ajaxS3_fmd_) + '... ' + _ajaxS3_rtr_ + ' ' + this.tryCount,
+                    s3_showStatus(S3.i18n.ajax_get + ' ' + (s.message ? s.message : S3.i18n.ajax_fmd) + '... ' + S3.i18n.ajax_rtr + ' ' + this.tryCount,
                         $.ajaxS3Settings.msgTimeout);
                     $.ajax(this);
                     return;
                 }
-                s3_showStatus(_ajaxS3_wht_ + ' ' + (this.retryLimit + 1) + ' ' + _ajaxS3_gvn_,
+                s3_showStatus(S3.i18n.ajax_wht + ' ' + (this.retryLimit + 1) + ' ' + S3.i18n.ajax_gvn,
                     $.ajaxS3Settings.msgTimeout, false, true);
                 return;
             }
             if (xhr.status == 500) {
-                s3_showStatus(_ajaxS3_500_, $.ajaxS3Settings.msgTimeout, false, true);
+                s3_showStatus(S3.i18n.ajax_500, $.ajaxS3Settings.msgTimeout, false, true);
             } else {
-                s3_showStatus(_ajaxS3_dwn_, $.ajaxS3Settings.msgTimeout, false, true);
+                s3_showStatus(S3.i18n.ajax_dwn, $.ajaxS3Settings.msgTimeout, false, true);
             }
         };
         jQuery.ajax(options);
@@ -276,13 +325,12 @@ function s3_hideStatus() {
     }
 }
 
-
 //==============================================================================
-// Code to warn on exit without saving 
-// @author: Michael Howden (michael@sahanafoundation.org)
+//Code to warn on exit without saving 
+//@author: Michael Howden (michael@sahanafoundation.org)
 function S3SetNavigateAwayConfirm() {
 	window.onbeforeunload = function() {
-            return _s3_msg_unsaved_changes;
+          return S3.i18n.unsaved_changes;
 		};	
 };
 
@@ -291,22 +339,22 @@ function S3ClearNavigateAwayConfirm() {
 };
 
 function S3EnableNavigateAwayConfirm() {
-    $(document).ready(function() {
-        if ( $('[class=error]').length > 0 ) {
-            // If there are errors, ensure the unsaved form is still protected
- 	        S3SetNavigateAwayConfirm(); 
- 	    } 
-        $(':input:not(input[id=gis_location_advanced_checkbox])').keypress( S3SetNavigateAwayConfirm );		
-        $(':input:not(input[id=gis_location_advanced_checkbox])').change( S3SetNavigateAwayConfirm );	
-        $('form').submit( S3ClearNavigateAwayConfirm );
-    });
+  $(document).ready(function() {
+      if ( $('[class=error]').length > 0 ) {
+          // If there are errors, ensure the unsaved form is still protected
+	        S3SetNavigateAwayConfirm(); 
+	    } 
+      $(':input:not(input[id=gis_location_advanced_checkbox])').keypress( S3SetNavigateAwayConfirm );		
+      $(':input:not(input[id=gis_location_advanced_checkbox])').change( S3SetNavigateAwayConfirm );	
+      $('form').submit( S3ClearNavigateAwayConfirm );
+  });
 };
 //==============================================================================
 //@author: Michael Howden (michael@sahanafoundation.org)
 function S3ConfirmClick(ElementID, Message) {
 	//@param ElementID: the ID of the element which will be clicked 
 	//@param Message: the Message displayed in the confirm dialog	
-	jQuery(ElementID).click( function(event) {
+	$(ElementID).click( function(event) {
 	    if(confirm(Message)) {
 	        return true; 
 	    } else {
@@ -315,3 +363,32 @@ function S3ConfirmClick(ElementID, Message) {
 	    }
 	});
 };
+//==============================================================================
+function s3_viewMap(feature_id) {
+    var url = S3.Ap.concat('/gis/display_feature/') + feature_id;
+    var oldhtml = $('#map').html();
+    var iframe = "<iframe width='640' height='480' src='" + url + "'></iframe>";
+    var closelink = $('<a href=\"#\">' + S3.i18n.close_map + '</a>');
+
+    closelink.bind( "click", function(evt) {
+        $('#map').html(oldhtml);
+        evt.preventDefault();
+    });
+
+    $('#map').html(iframe);
+    $('#map').append($("<div style='margin-bottom: 10px' />").append(closelink));
+}
+function s3_viewMapMulti(module, resource, instance, jresource) {
+    var url = S3.Ap.concat('/gis/display_feature//?module=') + module + '&resource=' + resource + '&instance=' + instance + '&jresource=' + jresource;
+    var oldhtml = $('#map').html();
+    var iframe = '<iframe width="640" height="480" src="' + url + '"></iframe>';
+    var closelink = $('<a href=\"#\">' + S3.i18n.close_map + '</a>');
+
+    closelink.bind( 'click', function(evt) {
+        $('#map').html(oldhtml);
+        evt.preventDefault();
+    });
+
+    $('#map').html(iframe);
+    $('#map').append($("<div style='margin-bottom: 10px' />").append(closelink));
+}

@@ -122,11 +122,9 @@ def staff():
         # the update forms are not ready. when they will - uncomment this and comment the next one
         #if r.method in ("create", "update"):
         if r.method == "create":
-            # person_id mandatory for a staff!
-            table.person_id.requires = IS_ONE_OF_EMPTY(db, "pr_person.id")
-            #table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_organisation.id"))
+            # person_id mandatory for a staff? We should allow room for vacant positions
+            #table.person_id.requires = IS_ONE_OF_EMPTY(db, "pr_person.id")
             table.organisation_id.widget = S3AutocompleteWidget(request, "org", "organisation", post_process="load_offices(false);")
-            #table.office_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_office.id"))
         return True
     response.s3.prep = prep
 

@@ -254,6 +254,7 @@ def docss():
         "../../styles/S3/jquery.ui.core.css",
         "../../styles/S3/jquery.ui.autocomplete.css",
         "../../styles/S3/jquery.ui.datepicker.css",
+        "../../styles/S3/jquery.ui.timepicker.css",
         "../../styles/S3/jquery.ui.theme.css",
         "../../styles/S3/ajaxS3.css",
         "../../styles/T2/t2.css",

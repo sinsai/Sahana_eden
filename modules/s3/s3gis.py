@@ -395,15 +395,6 @@ class GIS(object):
         update_location_tree to get the path.
         """
 
-        # @ToDo: Determine if the following ToDo is obsolete, since we use
-        # materialized paths, which is another option in the referenced page.
-        # See comment on get_children above. Also, the path is linear, so why
-        # would one use any sort of tree traversal?
-        # @ ToDo Switch to modified preorder tree traversal:
-        # http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
-
-        # @ToDo: This is crying out for a unit test.
-
         db = self.db
         _locations = db.gis_location
 

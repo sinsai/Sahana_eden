@@ -73,15 +73,11 @@ def store():
                                   multiple=True,
                                   joinby=dict( inventory_store = "to_inventory_store_id" )
                                   )
-        def prep(r):
-            if r.component_name == "send":
-                response.s3.filter = (db.logs_send.status == LOGS_STATUS_SENT)              
-
-                # Hide the Add button for incoming shipments?
-                s3xrc.model.configure(r.component.table, insertable=False)
-            return True
-        response.s3.prep = prep
-                          
+        response.s3.filter = (db.logs_send.status == LOGS_STATUS_SENT)
+        
+        # Hide the Add button for incoming shipments
+        s3xrc.model.configure(db.logs_send, insertable=False)
+        
         # Probably need to adjust some more CRUD strings:
         s3.crud_strings["logs_send"].update(
             msg_record_modified = T("Incoming Shipment updated"),

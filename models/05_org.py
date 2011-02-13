@@ -445,6 +445,7 @@ donor_id = S3ReusableField("donor_id", db.org_organisation, sortby="name",
 # -----------------------------------------------------------------------------
 # Staff
 # Many-to-Many Persons to Offices & Projects with also the Title & Manager that the person has in this context
+# @ToDo: Handle Shifts (e.g. Red Cross: 06:00-18:00 & 18:00-06:00)
 # @ToDo: Build an Organigram out of this data
 #
 resourcename = "staff"

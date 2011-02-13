@@ -904,11 +904,12 @@ class GIS(object):
         else:
             # Step through ancestors to first with lon, lat.
             parents = self.get_parents(feature.id)
-            lon = lat = None
-            for row in parents:
-                if "lon" in row and "lat" in row and \
-                   (row.lon is not None) and (row.lat is not None):
-                    return dict(lon=row.lon, lat=row.lat)
+            if parents:
+                lon = lat = None
+                for row in parents:
+                    if "lon" in row and "lat" in row and \
+                       (row.lon is not None) and (row.lat is not None):
+                        return dict(lon=row.lon, lat=row.lat)
 
         # Invalid feature_id
         return None
@@ -3067,7 +3068,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 wms_map = ""
             wms_layers = layer.layers
             try:
-                format = "type: '" + layer.format + "',"
+                format = "type: '" + layer.img_format + "',"
             except:
                 format = ""
             if layer.transparent:
@@ -3115,7 +3116,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             url = layer.url
             tms_layers = layer.layers
             try:
-                format = "type: '" + layer.format + "'"
+                format = "type: '" + layer.img_format + "'"
             except:
                 format = ""
 

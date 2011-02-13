@@ -129,7 +129,7 @@ def s3_include_debug():
         include = '%s\n<link href="/%s/static/styles/%s" rel="stylesheet" type="text/css" charset="utf-8" />' \
             % ( include, 
                 request.application,
-                file
+                file[:-1]
                )
     f.close()
 

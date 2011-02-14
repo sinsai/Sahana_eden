@@ -1726,6 +1726,8 @@ class S3QueryBuilder(object):
                 join = parent.table[pkey] == table[fkey]
                 if str(mquery).find(str(join)) == -1:
                     mquery = mquery & (join)
+                if component.filter is not None:
+                    mquery = mquery & (component.filter)
 
         # Primary Resource Query
         else:
@@ -1915,11 +1917,11 @@ class S3QueryBuilder(object):
                                 continue
                             mquery = mquery & query
 
-        # Filter
-        if filter:
-            mquery = mquery & filter
-        if url_rlinks:
-            mquery = mquery & url_rlinks
+            # Filter
+            if filter:
+                mquery = mquery & filter
+            if url_rlinks:
+                mquery = mquery & url_rlinks
 
         resource._query = mquery
         return mquery

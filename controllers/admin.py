@@ -295,6 +295,8 @@ def user():
             # (=moved from 'pending' to 'blank'(i.e. enabled))
             s3xrc.model.configure(table,
                                   onvalidation = lambda form: user_approve(form))
+        if jr.http == "GET" and not jr.method:
+            session.s3.cancel = jr.here()
         return True
     response.s3.prep = user_prep
 

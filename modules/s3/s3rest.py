@@ -154,7 +154,8 @@ class S3Resource(object):
                 self.components[c.name] = Storage(component=c,
                                                   pkey=pkey,
                                                   fkey=fkey,
-                                                  resource=resource)
+                                                  resource=resource,
+                                                  filter=None)
 
             # Build query
             self.build_query(id=id, uid=uid, filter=filter, vars=vars)
@@ -260,6 +261,25 @@ class S3Resource(object):
             else:
                 self.build_query(filter=filter)
         return self._query
+
+
+    # -------------------------------------------------------------------------
+    def add_component_filter(self, name, filter=None):
+        """
+        Extend the filter query of a particular component
+
+        @param name: the name of the component
+        @param filter: a web2py Query object
+
+        """
+
+        component = self.components.get(name, None)
+        if component is not None:
+            if component.filter is not None:
+                component.filter = (component.filter) & (filter)
+            else:
+                component.filter = filter
+            print component.filter
 
 
     # -------------------------------------------------------------------------

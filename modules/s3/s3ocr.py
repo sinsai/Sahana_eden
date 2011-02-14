@@ -49,9 +49,12 @@ from xml.dom.minidom import Document
 
 
 # Importing reportlab stuff
-from reportlab.pdfgen.canvas import Canvas
-from reportlab.lib.pagesizes import A4
-from reportlab.graphics.barcode import code128
+try:
+    from reportlab.pdfgen.canvas import Canvas
+    from reportlab.lib.pagesizes import A4
+    from reportlab.graphics.barcode import code128
+except(ImportError):
+    print >>sys.stderr, "S3 Debug: WARNING: S3OCR: reportlab has not been installed."
 
 
 # Fonts

@@ -395,15 +395,6 @@ class GIS(object):
         update_location_tree to get the path.
         """
 
-        # @ToDo: Determine if the following ToDo is obsolete, since we use
-        # materialized paths, which is another option in the referenced page.
-        # See comment on get_children above. Also, the path is linear, so why
-        # would one use any sort of tree traversal?
-        # @ ToDo Switch to modified preorder tree traversal:
-        # http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
-
-        # @ToDo: This is crying out for a unit test.
-
         db = self.db
         _locations = db.gis_location
 
@@ -913,11 +904,12 @@ class GIS(object):
         else:
             # Step through ancestors to first with lon, lat.
             parents = self.get_parents(feature.id)
-            lon = lat = None
-            for row in parents:
-                if "lon" in row and "lat" in row and \
-                   (row.lon is not None) and (row.lat is not None):
-                    return dict(lon=row.lon, lat=row.lat)
+            if parents:
+                lon = lat = None
+                for row in parents:
+                    if "lon" in row and "lat" in row and \
+                       (row.lon is not None) and (row.lat is not None):
+                        return dict(lon=row.lon, lat=row.lat)
 
         # Invalid feature_id
         return None
@@ -2154,10 +2146,8 @@ OpenLayers.Util.extend( selectPdfControl, {
 
             if add_feature:
                 pan_depress = "false"
-                pan_active = "pan.deactivate();"
             else:
                 pan_depress = "true"
-                pan_active = ""
 
             toolbar = """
         toolbar = mapPanel.getTopToolbar();
@@ -2326,7 +2316,6 @@ OpenLayers.Util.extend( selectPdfControl, {
         toolbar.add(zoomout);
         toolbar.add(zoomin);
         toolbar.add(pan);
-        """ + pan_active + """
         toolbar.addSeparator();
         // Navigation
         map.addControl(nav);
@@ -3076,7 +3065,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 wms_map = ""
             wms_layers = layer.layers
             try:
-                format = "type: '" + layer.format + "',"
+                format = "type: '" + layer.img_format + "',"
             except:
                 format = ""
             if layer.transparent:
@@ -3124,7 +3113,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             url = layer.url
             tms_layers = layer.layers
             try:
-                format = "type: '" + layer.format + "'"
+                format = "type: '" + layer.img_format + "'"
             except:
                 format = ""
 

@@ -139,8 +139,21 @@ def shn_as_local_time(value):
 
 # -----------------------------------------------------------------------------
 # Phone number requires
-# @ToDo Support ',' & '/' to separate multiple phone numbers
-shn_phone_requires = IS_NULL_OR(IS_MATCH('\+?\s*[\s\-\.\(\)\d]+(?:(?: x| ext)\s?\d{1,5})?$'))
+# Multiple phone numbers can be separated by comma, slash, semi-colon.
+# (Semi-colon appears in Brazil OSM data.)
+# @ToDo: Need to beware of separators used inside phone numbers
+# (e.g. 555-1212, ext 9), so may need fancier validation if we see that.
+# @ToDo: Add tooltip giving list syntax, and warning against above.
+# (Current use is in importing OSM files, so isn't interactive.)
+# @ToDo: Code that should only have a single # should use
+# shn_single_phone_requires. Check what messaging assumes.
+phone_number_pattern = "\+?\s*[\s\-\.\(\)\d]+(?:(?: x| ext)\s?\d{1,5})?"
+single_phone_number_pattern = phone_number_pattern + "$"
+multiple_phone_number_pattern = \
+    phone_number_pattern + \
+    "(\s*(,|/|;)\s*" + phone_number_pattern + ")*$"
+shn_single_phone_requires = IS_NULL_OR(IS_MATCH(single_phone_number_pattern))
+shn_phone_requires = IS_NULL_OR(IS_MATCH(multiple_phone_number_pattern))
 
 
 # -----------------------------------------------------------------------------

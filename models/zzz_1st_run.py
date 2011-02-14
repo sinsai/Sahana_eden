@@ -413,7 +413,7 @@ if populate:
             comments = "Designed to provide a 1st phase drinking water purification solution at the household level. Contains 600 sachets to provide sufficient drinking water (4l) for 100 people for 30 days."
             )
 
-        #enter base_unit as packets
+        # enter base_unit as packets
         item_rows = db(table.id > 0).select(table.id, table.base_unit)
         for item_row in item_rows:
             db.supply_item_packet.insert(
@@ -1135,7 +1135,7 @@ if populate:
                 title = "L3: Tehsils",
                 visibility = False,
                 opacity = 0.74,
-                format = "image/png",
+                img_format = "image/png",
                 styles = "",
                 transparent = True
             )
@@ -1145,7 +1145,7 @@ if populate:
                 title = "Flood Extent - 17 August",
                 visibility = False,
                 opacity = 0.45,
-                format = "image/png",
+                img_format = "image/png",
                 styles = "",
                 transparent = True
             )

@@ -132,7 +132,7 @@ class S3SearchSimple(S3SearchWidget):
 
 
 # *****************************************************************************
-class S3SearchMatch(S3SearchWidget):
+class S3SearchMatchWidget(S3SearchWidget):
     """
     String-search widget
 

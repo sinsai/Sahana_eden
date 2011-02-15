@@ -40,18 +40,254 @@ from s3rest import S3Method
 from s3crud import S3CRUD
 
 __all__ = ["S3SearchOption",
+           "S3Find",
            "S3Search",
            "S3LocationSearch",
            "S3PersonSearch"]
 
 # *****************************************************************************
-class S3SearchOption(object):
+class S3SearchWidget(object):
     """
-    Search Option for S3Search
+    Search Widget for interactive search (base class)
 
     """
 
-    def __init__(self):
+    def __init__(self, field, **attr):
+        """
+        Configures the search option
+
+        @param field: name(s) of the fields to search in
+
+        @keyword label: a label for the search widget
+        @keyword comment: a comment for the search widget
+
+        """
+
+        self.other = None
+
+        self.fields = fields
+        self.attr = Storage(attr)
+
+
+    def widget(self, table, vars, **attr):
+        """
+        Returns the widget
+
+        @param table: the table to search in
+        @param vars: the URL GET variables as dict
+        @param attr: HTML attributes for the widget container
+
+        """
+        raise NotImplementedError
+
+
+    def query(self, table, value):
+        """
+        Returns a sub-query for this search option
+
+        @param table: the table to search in
+        @param value: the value returned from the widget
+
+        """
+        raise NotImplementedError
+
+
+    def __and__(self, other):
+
+        raise NotImplementedError
+
+    def __or__(self, other):
+
+        raise NotImplementedError
+
+
+# *****************************************************************************
+class S3SearchSimple(S3SearchWidget):
+    """
+    Simple full-text search widget
+
+    """
+
+    def widget(self, table, vars, **attr):
+        """
+        Returns a widget for this search option
+
+        @param table: the table to search in
+        @param vars: the URL GET variables as dict
+        @param attr: HTML attributes for the widget container
+
+        """
+        raise NotImplementedError
+
+
+    def query(self, table, value):
+        """
+        Returns a sub-query for this search option
+
+        @param table: the table to search in
+        @param value: the value returned from the widget
+
+        """
+        raise NotImplementedError
+
+
+# *****************************************************************************
+class S3SearchMatch(S3SearchWidget):
+    """
+    String-search widget
+
+    """
+
+    def widget(self, table, vars, **attr):
+        """
+        Returns a widget for this search option
+
+        @param table: the table to search in
+        @param vars: the URL GET variables as dict
+        @param attr: HTML attributes for the widget container
+
+        """
+        raise NotImplementedError
+
+
+    def query(self, table, value):
+        """
+        Returns a sub-query for this search option
+
+        @param table: the table to search in
+        @param value: the value returned from the widget
+
+        """
+        raise NotImplementedError
+
+
+# *****************************************************************************
+class S3SearchMinMaxWidget(S3SearchWidget):
+    """
+    Min/Max search widget for numeric fields
+
+    """
+
+    def widget(self, table, vars, **attr):
+        """
+        Returns a widget for this search option
+
+        @param table: the table to search in
+        @param vars: the URL GET variables as dict
+        @param attr: HTML attributes for the widget container
+
+        """
+        raise NotImplementedError
+
+
+    def query(self, table, value):
+        """
+        Returns a sub-query for this search option
+
+        @param table: the table to search in
+        @param value: the value returned from the widget
+
+        """
+        raise NotImplementedError
+
+
+# *****************************************************************************
+class S3SearchSelectWidget(S3SearchWidget):
+    """
+    Option select widget for option or boolean fields
+
+    """
+
+    def widget(self, table, vars, **attr):
+        """
+        Returns a widget for this search option
+
+        @param table: the table to search in
+        @param vars: the URL GET variables as dict
+        @param attr: HTML attributes for the widget container
+
+        """
+        raise NotImplementedError
+
+
+    def query(self, table, value):
+        """
+        Returns a sub-query for this search option
+
+        @param table: the table to search in
+        @param value: the value returned from the widget
+
+        """
+        raise NotImplementedError
+
+
+# *****************************************************************************
+class S3SearchLocationWidget(S3SearchWidget):
+    """
+    Interactive location search widget
+
+    """
+
+    def widget(self, table, vars, **attr):
+        """
+        Returns a widget for this search option
+
+        @param table: the table to search in
+        @param vars: the URL GET variables as dict
+        @param attr: HTML attributes for the widget container
+
+        """
+        raise NotImplementedError
+
+
+    def query(self, table, value):
+        """
+        Returns a sub-query for this search option
+
+        @param table: the table to search in
+        @param value: the value returned from the widget
+
+        """
+        raise NotImplementedError
+
+
+# *****************************************************************************
+class S3Find(S3CRUD):
+    """
+    RESTful Search Method for S3Resources
+
+    """
+
+    def __init__(self, simple=None, advanced=None, any=False):
+        """
+        Constructor
+
+        @param simple: the widgets for the simple search form as list
+        @param advanced: the widgets for the advanced search form as list
+        @param any: match "any of" (True) or "all of" (False) the options
+                    in advanced search
+
+        """
+
+        S3CRUD.__init__(self)
+        self.__simple = simple
+        self.__advanced = advanced
+        self.__any = any
+
+        if self.__simple or self.__advanced:
+            self.__interactive = True
+        else:
+            self.__interactive = False
+
+
+    def apply_method(self, r, **attr):
+        """
+        Entry point to apply search method to S3Requests
+
+        @param r: the S3Request
+        @param attr: request attributes
+
+        """
 
         raise NotImplementedError
 
@@ -76,6 +312,8 @@ class S3Search(S3CRUD):
 
         if self.__fields:
             self.interactive_search = True
+        else:
+            self.interactive_search = False
 
 
     # -------------------------------------------------------------------------

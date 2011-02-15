@@ -10,16 +10,10 @@
 {{pass}}
 </style>
 {{if session.s3.debug:}}
-  {{include "sahana_styles_debug.html"}}
-  {{include "sahana_scripts_debug.html"}}
+  {{include "s3_include_debug.html"}}
 {{else:}}
-  <link href="/{{=request.application}}/static/scripts/ext/resources/css/ext-all.min.css" rel="stylesheet" type="text/css" charset="utf-8" />
-  <link href="/{{=request.application}}/static/scripts/ext/resources/css/xtheme-gray.css" rel="stylesheet" type="text/css" charset="utf-8" />
-  <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" charset="utf-8" />
-  {{include "sahana_scripts_min.html"}}
+  {{include "s3_include_min.html"}}
 {{pass}}
-{{pass}}
-
 </head>
 
 <body>

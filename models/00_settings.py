@@ -77,66 +77,6 @@ def s3_populate_browser_compatibility(request):
 
     return browser
 
-#==============================================================================
-
-def s3_include_debug():
-    """
-    Generates html to include the js scripts listed in ../static/scripts/tools/sahana.js.cfg
-    """
-    #Disable printing
-    class dummyStream:
-        """ dummyStream behaves like a stream but does nothing. """
-        def __init__(self): pass
-        def write(self,data): pass
-        def read(self,data): pass
-        def flush(self): pass
-        def close(self): pass
-    save_stdout = sys.stdout    
-    # redirect all print deals
-    sys.stdout = dummyStream()
-    
-    scripts_dir_path = "applications/%s/static/scripts" % request.application
-
-    #Get list of script files
-    #import sys
-    sys.path.append( "%s/tools" % scripts_dir_path)    
-    sys.path.append( "%s/tools" % scripts_dir_path)   
-    import mergejs    
-
-    configDictCore = {
-        "web2py": scripts_dir_path,
-        "T2":     scripts_dir_path,
-        "S3":     scripts_dir_path
-    }
-    configFilename = "%s/tools/sahana.js.cfg"  % scripts_dir_path
-    (fs, files) = mergejs.getFiles(configDictCore, configFilename)
-    
-    #Enable print
-    sys.stdout = save_stdout
-    
-    include = ""
-    for file in files:
-        include = '%s\n<script src="/%s/static/scripts/%s" type="text/javascript" charset="utf-8"></script>' \
-            % ( include,
-                request.application,
-                file
-                )
-            
-    include = "%s\n <!-- CSS Syles -->" % include            
-    f = open("%s/tools/sahana.css.cfg" % scripts_dir_path, 'r')
-    files = f.readlines()
-    for file in files[:-1]:
-        include = '%s\n<link href="/%s/static/styles/%s" rel="stylesheet" type="text/css" charset="utf-8" />' \
-            % ( include, 
-                request.application,
-                file[:-1]
-               )
-    f.close()
-
-    return XML(include)
-
-#==============================================================================
-
 # Store in session
 # - commented-out until we make use of it
 #if session.s3.browser is None:

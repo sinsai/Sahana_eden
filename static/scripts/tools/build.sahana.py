@@ -81,16 +81,14 @@ def compressCSS(inputFilename, outputFilename):
     file(outputFilename, "w").write(_output)
     return
 
-mfbase = "../../mfbase"
-
 def dojs(dogis = False):
     """ Minifies the js """
     # Define which files we want to include
     # also need to amend sahana.js.cfg
     configDictCore = {
-        "web2py":                       "..",
-        "T2":                           "..",
-        "S3":                           ".."
+        "web2py":           "..",
+        "T2":               "..",
+        "S3":               ".."
     }
 
     configFilename = "sahana.js.cfg"
@@ -128,7 +126,7 @@ def dojs(dogis = False):
 
         # also need to amend sahana.js.gis.cfg
         configDictGIS = {
-            "gis":                          ".."
+            "gis":                      ".."
         }
         configDictOpenLayers = {
             "OpenLayers.js":            "../gis/openlayers/lib",
@@ -247,7 +245,7 @@ def docss():
     """ Compresses the  CSS files """
     listCSS = []
     
-    f = open("sahana.css.cfg", 'r')
+    f = open("sahana.css.cfg", "r")
     files = f.readlines()
     f.close()    
     for file in files[:-1]:

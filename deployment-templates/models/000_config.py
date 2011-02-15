@@ -178,6 +178,7 @@ deployment_settings.osm.oauth_consumer_secret = ""
 # Lock-down access to Map Editing
 #deployment_settings.security.map = True
 # Security Policy (defaults to 1 = Simple)
+# http://eden.sahanafoundation.org/wiki/S3AAA#System-widePolicy
 #deployment_settings.security.policy = 2 # Editor
 # Should users be allowed to register themselves?
 deployment_settings.security.self_registration = True

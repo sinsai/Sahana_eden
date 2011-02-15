@@ -560,8 +560,11 @@ table.level.requires = IS_NULL_OR(IS_IN_SET(gis_location_hierarchy))
 table.level.represent = lambda level: \
     level and deployment_settings.get_gis_all_levels(level) or NONE
 table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id",
-    shn_gis_location_represent_row,
-    filterby="level", filter_opts=["L0", "L1", "L2", "L3", "L4", "L5"]))
+                                             shn_gis_location_represent_row,
+                                             filterby="level",
+                                             filter_opts=["L0", "L1", "L2", "L3", "L4", "L5"],
+                                             orderby="gis_location.name")) # Ignored since filterby over-rides
+    
 table.parent.represent = shn_gis_location_represent
 table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts, zero=None)
 table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, UNKNOWN_OPT)

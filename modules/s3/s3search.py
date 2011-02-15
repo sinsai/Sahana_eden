@@ -264,18 +264,6 @@ class S3Search(S3CRUD):
         response.view = "search.html"
         return output
 
-    # -------------------------------------------------------------------------
-    def search_advanced(self, r, **attr):
-        """
-        Advanced interactive search method
-
-        @param r: the S3Request
-        @param attr: request attributes
-
-        """
-
-        raise NotImplementedError
-
 
 # *****************************************************************************
 class S3LocationSearch(S3Search):

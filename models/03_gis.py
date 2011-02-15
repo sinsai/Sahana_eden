@@ -599,7 +599,7 @@ table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id",
                                              shn_gis_location_represent_row,
                                              filterby="level",
                                              filter_opts=["L0", "L1", "L2", "L3", "L4", "L5"],
-                                             orderby="gis_location.name")) # Ignored since filterby over-rides
+                                             orderby="gis_location.name"))
     
 table.parent.represent = shn_gis_location_represent
 table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts, zero=None)

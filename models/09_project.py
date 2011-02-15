@@ -45,7 +45,8 @@ if deployment_settings.has_module("project"):
         if auth.has_membership(auth.id_group("'Administrator'")):
             return DIV(A(ADD_BASELINE_TYPE,
                          _class="colorbox",
-                         _href=URL(r=request, c="project", f="need_type", args="create", vars=dict(format="popup")),
+                         _href=URL(r=request, c="project", f="need_type", args="create",
+                                   vars=dict(format="popup")),
                          _target="top",
                          _title=ADD_BASELINE_TYPE
                          )
@@ -54,7 +55,8 @@ if deployment_settings.has_module("project"):
             return None
 
     need_type_id = S3ReusableField("need_type_id", db.project_need_type, sortby="name",
-                                       requires = IS_NULL_OR(IS_ONE_OF(db, "project_need_type.id","%(name)s", sort=True)),
+                                       requires = IS_NULL_OR(IS_ONE_OF(db, "project_need_type.id",
+                                                                       "%(name)s", sort=True)),
                                        represent = lambda id: shn_get_db_field_value(db = db,
                                                                                      table = "project_need_type",
                                                                                      field = "name",
@@ -122,7 +124,7 @@ if deployment_settings.has_module("project"):
         99: T("inactive")
         }
     resourcename = "project"
-    tablename = application + "_" + resourcename
+    tablename = "%s_%s" % (application, resourcename)
     table = db.define_table(tablename,
                             Field("code"),
                             Field("name"),
@@ -135,7 +137,7 @@ if deployment_settings.has_module("project"):
                                     label = T("Project Status"),
                                     represent = lambda opt: project_project_status_opts.get(opt, UNKNOWN_OPT)),
                             Field("description", "text"),
-                            Field("beneficiaries", "integer"), #@todo: change this field name to total_bnf
+                            Field("beneficiaries", "integer"), # @ToDo: change this field name to total_bnf
                             Field("start_date", "date"),
                             Field("end_date", "date"),
                             Field("funded", "boolean"),
@@ -148,7 +150,7 @@ if deployment_settings.has_module("project"):
 
     # Field settings
     table.code.requires = [IS_NOT_EMPTY(error_message=T("Please fill this!")),
-                             IS_NOT_ONE_OF(db, "project_project.code")]
+                           IS_NOT_ONE_OF(db, "project_project.code")]
     table.start_date.requires = IS_NULL_OR(IS_DATE())
     table.end_date.requires = IS_NULL_OR(IS_DATE())
     table.budgeted_cost.requires = IS_NULL_OR(IS_FLOAT_IN_RANGE(0, 999999999))
@@ -185,8 +187,15 @@ if deployment_settings.has_module("project"):
     project_id = S3ReusableField("project_id", db.project_project, sortby="name",
                             requires = IS_NULL_OR(IS_ONE_OF(db, "project_project.id", "%(code)s")),
                             represent = lambda id: (id and [db.project_project[id].code] or [NONE])[0],
-                            comment = DIV(A(ADD_PROJECT, _class="colorbox", _href=URL(r=request, c="project", f="project", args="create", vars=dict(format="popup")), _target="top", _title=ADD_PROJECT),
-                                      DIV( _class="tooltip", _title=ADD_PROJECT + "|" + T("Add new project."))),
+                            comment = DIV(A(ADD_PROJECT,
+                                            _class="colorbox",
+                                            _href=URL(r=request, c="project", f="project", args="create",
+                                                      vars=dict(format="popup")),
+                                            _target="top",
+                                            _title=ADD_PROJECT),
+                                      DIV( _class="tooltip",
+                                           _title="%s|%s" % (ADD_PROJECT,
+                                                             T("Add new project.")))),
                             label = "Project",
                             ondelete = "RESTRICT"
                             )
@@ -222,7 +231,8 @@ if deployment_settings.has_module("project"):
 
         if not s3_has_permission("read", db.project_project):
             session.error = UNAUTHORISED
-            redirect(URL(r=request, c="default", f="user", args="login", vars={"_next":URL(r=request, args="search_location", vars=request.vars)}))
+            redirect(URL(r=request, c="default", f="user", args="login",
+                         vars={"_next":URL(r=request, args="search_location", vars=request.vars)}))
 
         if xrequest.representation == "html":
             # Check for redirection
@@ -241,10 +251,12 @@ if deployment_settings.has_module("project"):
             # Select form:
             l_opts = [OPTION(_value="")]
             l_opts += [OPTION(location.name, _value=location.id)
-                    for location in db(db.gis_location.deleted == False).select(db.gis_location.ALL, cache=(cache.ram, 3600))]
+                    for location in db(db.gis_location.deleted == False).select(db.gis_location.ALL,
+                                                                                cache=(cache.ram, 3600))]
             form = FORM(TABLE(
                     TR(T("Location: "),
-                    SELECT(_name="location", *l_opts, **dict(name="location", requires=IS_NULL_OR(IS_IN_DB(db, "gis_location.id"))))),
+                    SELECT(_name="location", *l_opts, **dict(name="location",
+                                                             requires=IS_NULL_OR(IS_IN_DB(db, "gis_location.id"))))),
                     TR("", INPUT(_type="submit", _value=T("Search")))
                     ))
 
@@ -266,7 +278,7 @@ if deployment_settings.has_module("project"):
                 if results and len(results):
                     records = []
                     for result in results:
-                        href = next.replace("%5bid%5d", "%s" % result.id)
+                        href = next.replace("%5bid%5d", result.id)
                         records.append(TR(
                             A(result.name, _href=href),
                             result.start_date or NONE,
@@ -294,7 +306,9 @@ if deployment_settings.has_module("project"):
             except:
                 label_create_button = s3.crud_strings.label_create_button
 
-            add_btn = A(label_create_button, _href=URL(r=request, f="project", args="create"), _class="action-btn")
+            add_btn = A(label_create_button,
+                        _href=URL(r=request, f="project", args="create"),
+                        _class="action-btn")
 
             output.update(dict(items=items, add_btn=add_btn))
 
@@ -328,24 +342,25 @@ if deployment_settings.has_module("project"):
                         # @ToDo: Fix for list: type
                         _sectors = re.split("\|", project.cluster_id)[1:-1]
                         for sector in _sectors:
-                            sectors.append(TR(db(db.org_cluster.id == sector).select(db.org_cluster.name, limitby=(0, 1)).first().name))
+                            sectors.append(TR(db(db.org_cluster.id == sector).select(db.org_cluster.name,
+                                                                                     limitby=(0, 1)).first().name))
 
                     rheader = DIV(TABLE(
                         TR(
-                            TH(T("Code") + ": "),
+                            TH("%s: " % T("Code")),
                             project.code,
                             TH(""),
                             ),
                         TR(
-                            TH(T("Name") + ": "),
+                            TH("%s: " % T("Name")),
                             project.name,
-                            TH(T("Location") + ": "),
+                            TH("%s: " % T("Location")),
                             table.location_id.represent(project.location_id),
                             ),
                         TR(
-                            TH(T("Status") + ": "),
-                            "%s" % project_project_status_opts[project.status],
-                            TH(T("Cluster(s)") + ": "),
+                            TH("%s: " % T("Status")),
+                            project_project_status_opts[project.status],
+                            TH("%s: " % T("Cluster(s)")),
                             sectors,
                             #TH(A(T("Edit Project"),
                             #    _href=URL(r=request, f="project", args=[r.id, "update"], vars={"_next": _next})))
@@ -512,7 +527,7 @@ if deployment_settings.has_module("project"):
     }
 
     resourcename = "task"
-    tablename = application + "_" + resourcename
+    tablename = "%s_%s" % (application, resourcename)
     table = db.define_table(tablename,
                             Field("urgent", "boolean", label=T("Urgent")),
                             Field("priority", "integer",

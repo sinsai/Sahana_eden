@@ -57,10 +57,17 @@ table.image.label = T("Image")
 ADD_MARKER = T("Add") + " " + MARKER
 marker_id = S3ReusableField("marker_id", db.gis_marker, sortby="name",
                              requires = IS_NULL_OR(IS_ONE_OF(db, "gis_marker.id", "%(name)s", zero=T("Use default"))),
-                             represent = lambda id: (id and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=db(db.gis_marker.id == id).select(db.gis_marker.image, limitby=(0, 1)).first().image), _height=40))] or [""])[0],
+                             represent = lambda id: (id and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=db(db.gis_marker.id == id).select(db.gis_marker.image,
+                                                                                                                                                           limitby=(0, 1)).first().image), _height=40))] or [""])[0],
                              label = T("Marker"),
-                             comment = DIV(A(ADD_MARKER, _class="colorbox", _href=URL(r=request, c="gis", f="marker", args="create", vars=dict(format="popup")), _target="top", _title=ADD_MARKER),
-                                       DIV( _class="tooltip", _title=MARKER + "|" + T("Defines the icon used for display of features on interactive map & KML exports. A Marker assigned to an individual Location is set if there is a need to override the Marker assigned to the Feature Class. If neither are defined, then the Default Marker is used."))),
+                             comment = DIV(A(ADD_MARKER,
+                                             _class="colorbox",
+                                             _href=URL(r=request, c="gis", f="marker", args="create", vars=dict(format="popup")),
+                                             _target="top",
+                                             _title=ADD_MARKER),
+                                       DIV( _class="tooltip",
+                                            _title="%s|%s" % (MARKER,
+                                                             T("Defines the icon used for display of features on interactive map & KML exports. A Marker assigned to an individual Location is set if there is a need to override the Marker assigned to the Feature Class. If neither are defined, then the Default Marker is used.")))),
                              ondelete = "RESTRICT"
                             )
 
@@ -110,7 +117,8 @@ table.units.label = T("Units")
 # Reusable field to include in other table definitions
 projection_id = S3ReusableField("projection_id", db.gis_projection, sortby="name",
                                  requires = IS_NULL_OR(IS_ONE_OF(db, "gis_projection.id", "%(name)s")),
-                                 represent = lambda id: (id and [db(db.gis_projection.id == id).select(db.gis_projection.name, limitby=(0, 1)).first().name] or [NONE])[0],
+                                 represent = lambda id: (id and [db(db.gis_projection.id == id).select(db.gis_projection.name,
+                                                                                                       limitby=(0, 1)).first().name] or [NONE])[0],
                                  label = T("Projection"),
                                  comment = "",
                                  ondelete = "RESTRICT"
@@ -129,7 +137,8 @@ table = db.define_table(tablename,
 # Reusable field to include in other table definitions
 symbology_id = S3ReusableField("symbology_id", db.gis_symbology, sortby="name",
                                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_symbology.id", "%(name)s")),
-                                represent = lambda id: (id and [db(db.gis_symbology.id == id).select(db.gis_symbology.name, limitby=(0, 1)).first().name] or [NONE])[0],
+                                represent = lambda id: (id and [db(db.gis_symbology.id == id).select(db.gis_symbology.name,
+                                                                                                     limitby=(0, 1)).first().name] or [NONE])[0],
                                 label = T("Symbology"),
                                 comment = "",
                                 ondelete = "RESTRICT"
@@ -205,15 +214,33 @@ table.cluster_threshold.label = T("Cluster Threshold")
 table.wmsbrowser_name.label = T("WMS Browser Name")
 table.wmsbrowser_url.label =  T("WMS Browser URL")
 # Defined here since Component
-table.lat.comment = DIV( _class="tooltip", _title=T("Latitude") + "|" + T("Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere."))
-table.lon.comment = DIV( _class="tooltip", _title=T("Longitude") + "|" + T("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas."))
-table.zoom.comment = DIV( _class="tooltip", _title=T("Zoom") + "|" + T("How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail."))
-table.bbox_min_size.comment = DIV( _class="tooltip", _title=T("Minimum Bounding Box") + "|" + T("When a map is displayed that focuses on a collection of points, the map is zoomed to show just the region bounding the points. This value gives a minimum width and height in degrees for the region shown. Without this, a map showing a single point would not show any extent around that point. After the map is displayed, it can be zoomed as desired."))
-table.bbox_inset.comment = DIV( _class="tooltip", _title=T("Bounding Box Insets") + "|" + T("When a map is displayed that focuses on a collection of points, the map is zoomed to show just the region bounding the points. This value adds a small mount of distance outside the points. Without this, the outermost points would be on the bounding box, and might not be visible."))
-table.map_height.comment = DIV( _class="tooltip", _title=T("Height") + "|" + T("Default Height of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here."))
-table.map_width.comment = DIV( _class="tooltip", _title=T("Width") + "|" + T("Default Width of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here."))
-table.wmsbrowser_name.comment = DIV( _class="tooltip", _title=T("WMS Browser Name") + "|" + T("The title of the WMS Browser panel in the Tools panel."))
-table.wmsbrowser_url.comment = DIV( _class="tooltip", _title=T("WMS Browser URL") + "|" + T("The URL for the GetCapabilities of a WMS Service whose layers you want accessible via the Map."))
+table.lat.comment = DIV( _class="tooltip",
+                         _title="%s|%s" % (T("Latitude"),
+                                           T("Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+table.lon.comment = DIV( _class="tooltip",
+                         _title="%s|%s" % (T("Longitude"),
+                                           T("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
+table.zoom.comment = DIV( _class="tooltip",
+                          _title="%s|%s" % (T("Zoom"),
+                                            T("How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
+table.bbox_min_size.comment = DIV( _class="tooltip",
+                                   _title="%s|%s" % (T("Minimum Bounding Box"),
+                                                     T("When a map is displayed that focuses on a collection of points, the map is zoomed to show just the region bounding the points. This value gives a minimum width and height in degrees for the region shown. Without this, a map showing a single point would not show any extent around that point. After the map is displayed, it can be zoomed as desired.")))
+table.bbox_inset.comment = DIV( _class="tooltip",
+                                _title="%s|%s" % (T("Bounding Box Insets"),
+                                                  T("When a map is displayed that focuses on a collection of points, the map is zoomed to show just the region bounding the points. This value adds a small mount of distance outside the points. Without this, the outermost points would be on the bounding box, and might not be visible.")))
+table.map_height.comment = DIV( _class="tooltip",
+                                _title="%s|%s" % (T("Height"),
+                                                  T("Default Height of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
+table.map_width.comment = DIV( _class="tooltip",
+                               _title="%s|%s" % (T("Width"),
+                                                 T("Default Width of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
+table.wmsbrowser_name.comment = DIV( _class="tooltip",
+                                     _title="%s|%s" % (T("WMS Browser Name"),
+                                                       T("The title of the WMS Browser panel in the Tools panel.")))
+table.wmsbrowser_url.comment = DIV( _class="tooltip",
+                                    _title="%s|%s" % (T("WMS Browser URL"),
+                                                      T("The URL for the GetCapabilities of a WMS Service whose layers you want accessible via the Map.")))
 ADD_CONFIG = T("Add Config")
 LIST_CONFIGS = T("List Configs")
 s3.crud_strings[tablename] = Storage(
@@ -401,10 +428,17 @@ table.category.label = T("Category")
 ADD_FEATURE_CLASS = T("Add Feature Class")
 feature_class_id = S3ReusableField("feature_class_id", db.gis_feature_class, sortby="name",
                                     requires = IS_NULL_OR(IS_ONE_OF(db, "gis_feature_class.id", "%(name)s")),
-                                    represent = lambda id: (id and [db(db.gis_feature_class.id == id).select(db.gis_feature_class.name, limitby=(0, 1)).first().name] or [NONE])[0],
+                                    represent = lambda id: (id and [db(db.gis_feature_class.id == id).select(db.gis_feature_class.name,
+                                                                                                             limitby=(0, 1)).first().name] or [NONE])[0],
                                     label = T("Feature Class"),
-                                    comment = DIV(A(ADD_FEATURE_CLASS, _class="colorbox", _href=URL(r=request, c="gis", f="feature_class", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_CLASS),
-                                              DIV( _class="tooltip", _title=T("Feature Class") + "|" + T("Defines the marker used for display & the attributes visible in the popup."))),
+                                    comment = DIV(A(ADD_FEATURE_CLASS,
+                                                    _class="colorbox",
+                                                    _href=URL(r=request, c="gis", f="feature_class", args="create", vars=dict(format="popup")),
+                                                    _target="top",
+                                                    _title=ADD_FEATURE_CLASS),
+                                              DIV( _class="tooltip",
+                                                   _title="%s|%s" % (T("Feature Class"),
+                                                                     T("Defines the marker used for display & the attributes visible in the popup.")))),
                                     ondelete = "RESTRICT"
                                     )
 
@@ -555,7 +589,9 @@ table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
 
 table.name.label = T("Primary Name")
 table.name_dummy.label = T("Local Names")
-table.name_dummy.comment = DIV(_class="tooltip", _title=T("Local Names") + "|" + T("Names can be added in multiple languages"))
+table.name_dummy.comment = DIV(_class="tooltip",
+                               _title="%s|%s" % (T("Local Names"),
+                                                 T("Names can be added in multiple languages")))
 table.level.requires = IS_NULL_OR(IS_IN_SET(gis_location_hierarchy))
 table.level.represent = lambda level: \
     level and deployment_settings.get_gis_all_levels(level) or NONE
@@ -586,7 +622,7 @@ table.addr_postcode.label = T("Postcode")
 table.gis_feature_type.label = T("Feature Type")
 table.lat.label = T("Latitude")
 table.lon.label = T("Longitude")
-table.wkt.label = "WKT (" + T("Well-Known Text") + ")"
+table.wkt.label = "WKT (%s)" % T("Well-Known Text")
 table.url.label = "URL"
 table.geonames_id.label = "Geonames ID"
 table.osm_id.label = "OpenStreetMap ID"
@@ -594,7 +630,8 @@ table.osm_id.label = "OpenStreetMap ID"
 CONVERSION_TOOL = T("Conversion Tool")
 table.lat.comment = DIV(_class="tooltip",
                         _id="gis_location_lat_tooltip",
-                        _title=T("Latitude & Longitude") + "|" + T("Longitude is West - East (sideways). Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  These need to be added in Decimal Degrees."))
+                        _title="%s|%s" % (T("Latitude & Longitude"),
+                                          T("Longitude is West - East (sideways). Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  These need to be added in Decimal Degrees.")))
 table.lon.comment = A(CONVERSION_TOOL,
                       _style="cursor:pointer;",
                       _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."),
@@ -618,7 +655,8 @@ table.members.represent = lambda id: \
 #                                         mbr_row, showlink=False),
 #                                 separator=", ") or NONE
 table.members.comment = DIV(_class="tooltip",
-                            _title=T("Members") + "|" + T("A location group is a set of locations (often, a set of administrative regions representing a combined area). Member locations are added to a location group here. Location groups may be used to filter what is shown on the map and in search results to only entities covered by locations in the group. A location group can be used to define the extent of an affected area, if it does not fall within one administrative region. Location groups can be used in the Regions menu."))
+                            _title="%s|%s" % (T("Members"),
+                                              T("A location group is a set of locations (often, a set of administrative regions representing a combined area). Member locations are added to a location group here. Location groups may be used to filter what is shown on the map and in search results to only entities covered by locations in the group. A location group can be used to define the extent of an affected area, if it does not fall within one administrative region. Location groups can be used in the Regions menu.")))
 
 s3xrc.model.configure(table, listadd=False)
     #list_fields=["id", "name", "level", "parent", "lat", "lon"])
@@ -639,7 +677,10 @@ location_id = S3ReusableField("location_id", db.gis_location,
 # This is needed for Location represents & Location Selector
 # Definition needs to be below the gis_location table definition
 if response.s3.countries:
-    countries = db(table.code.belongs(response.s3.countries)).select(table.id, table.code, table.name, limitby=(0, len(response.s3.countries)))
+    countries = db(table.code.belongs(response.s3.countries)).select(table.id,
+                                                                     table.code,
+                                                                     table.name,
+                                                                     limitby=(0, len(response.s3.countries)))
     for country in countries:
         _gis.countries[country.code] = Storage(name=country.name, id=country.id)
 
@@ -827,7 +868,8 @@ def gis_location_onvalidation(form):
     if level and parent and _parent:
         # Check that parent is of a higher level (http://eden.sahanafoundation.org/ticket/450)
         if level[1:] < _parent.level[1:]:
-            response.error = T("Parent level should be higher than this record's level. Parent level is") + ": %s" % gis_location_hierarchy[_parent.level]
+            response.error = "%s: %s" % (T("Parent level should be higher than this record's level. Parent level is"),
+                                         gis_location_hierarchy[_parent.level])
             form.errors["level"] = T("Level is higher than parent's")
             return
     strict = deployment_settings.get_gis_strict_hierarchy()
@@ -841,20 +883,23 @@ def gis_location_onvalidation(form):
             parent = ""
         elif not parent:
             # Parent is mandatory
-            response.error = T("Parent needs to be set for locations of level") + ": %s" % gis_location_hierarchy[level]
+            response.error = "%s: %s" % (T("Parent needs to be set for locations of level"),
+                                         gis_location_hierarchy[level])
             form.errors["parent"] = T("Parent needs to be set")
             return
         elif not level:
             # Parents needs to be of level max_hierarchy
             max_hierarchy = deployment_settings.get_gis_max_hierarchy()
             if _parent.level != max_hierarchy:
-                response.error = T("Specific locations need to have a parent of level") + ": %s" % gis_location_hierarchy[max_hierarchy]
+                response.error = "%s: %s" % (T("Specific locations need to have a parent of level"),
+                                             gis_location_hierarchy[max_hierarchy])
                 form.errors["parent"] = T("Parent needs to be of the correct level")
                 return
         else:
             # Check that parent is of exactly next higher order
             if (int(level[1:]) - 1) != int(_parent.level[1:]):
-                response.error = T("Locations of this level need to have a parent of level") + ": %s" % gis_location_hierarchy["L%i" % (int(level[1:]) - 1)]
+                response.error = "%s: %s" % (T("Locations of this level need to have a parent of level"),
+                                             gis_location_hierarchy["L%i" % (int(level[1:]) - 1)])
                 form.errors["parent"] = T("Parent needs to be of the correct level")
                 return
 
@@ -872,8 +917,8 @@ def gis_location_onvalidation(form):
                 max_lat = _parent.lat_max
                 max_lon = _parent.lon_max
                 base_error = T("Sorry that location appears to be outside the area of the Parent.")
-                lat_error =  T("Latitude should be between") + ": " + str(min_lat) + " & " + str(max_lat)
-                lon_error = T("Longitude should be between") + ": " + str(min_lon) + " & " + str(max_lon)
+                lat_error =  "%s: %s & %s" % (T("Latitude should be between"), str(min_lat), str(max_lat))
+                lon_error = "%s: %s & %s" % (T("Longitude should be between"), str(min_lon), str(max_lon))
                 if (lat > max_lat) or (lat < min_lat):
                     response.error = base_error
                     form.errors["lat"] = lat_error
@@ -894,8 +939,8 @@ def gis_location_onvalidation(form):
                 max_lat = config.max_lat
                 max_lon = config.max_lon
                 base_error = T("Sorry that location appears to be outside the area supported by this deployment.")
-                lat_error =  T("Latitude should be between") + ": " + str(min_lat) + " & " + str(max_lat)
-                lon_error = T("Longitude should be between") + ": " + str(min_lon) + " & " + str(max_lon)
+                lat_error =  "%s: %s & %s" % (T("Latitude should be between"), str(min_lat), str(max_lat))
+                lon_error = "%s: %s & %s" % (T("Longitude should be between"), str(min_lon), str(max_lon))
                 if (lat > max_lat) or (lat < min_lat):
                     response.error = base_error
                     form.errors["lat"] = lat_error
@@ -1080,6 +1125,7 @@ table = db.define_table(tablename,
                         location_id(),
                         migrate=migrate,
                         *s3_meta_fields())
+
 table.name.label = T("Name")
 table.description.label = T("Description")
 table.category.label = T("Category")
@@ -1114,7 +1160,9 @@ table.name.label = T("Name")
 table.track.requires = IS_UPLOAD_FILENAME(extension="gpx")
 table.track.description = T("Description")
 table.track.label = T("GPS Track File")
-table.track.comment = DIV( _class="tooltip", _title=T("GPS Track") + "|" + T("A file in GPX format taken from a GPS whose timestamps can be correlated with the timestamps on the photos to locate them on the map."))
+table.track.comment = DIV( _class="tooltip",
+                           _title="%s|%s" % (T("GPS Track"),
+                                             T("A file in GPX format taken from a GPS whose timestamps can be correlated with the timestamps on the photos to locate them on the map.")))
 ADD_TRACK = T("Upload Track")
 LIST_TRACKS = T("List Tracks")
 s3.crud_strings[tablename] = Storage(
@@ -1134,10 +1182,17 @@ s3.crud_strings[tablename] = Storage(
 # Reusable field to include in other table definitions
 track_id = S3ReusableField("track_id", db.gis_track, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_track.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.gis_track.id == id).select(db.gis_track.name, limitby=(0, 1)).first().name] or [NONE])[0],
+                represent = lambda id: (id and [db(db.gis_track.id == id).select(db.gis_track.name,
+                                                                                 limitby=(0, 1)).first().name] or [NONE])[0],
                 label = T("Track"),
-                comment = DIV(A(ADD_TRACK, _class="colorbox", _href=URL(r=request, c="gis", f="track", args="create", vars=dict(format="popup")), _target="top", _title=ADD_TRACK),
-                          DIV( _class="tooltip", _title=T("GPX Track") + "|" + T("A file downloaded from a GPS containing a series of geographic points in XML format."))),
+                comment = DIV(A(ADD_TRACK,
+                                _class="colorbox",
+                                _href=URL(r=request, c="gis", f="track", args="create", vars=dict(format="popup")),
+                                _target="top",
+                                _title=ADD_TRACK),
+                          DIV( _class="tooltip",
+                               _title="%s|%s" % (T("GPX Track"),
+                                                 T("A file downloaded from a GPS containing a series of geographic points in XML format.")))),
                 ondelete = "RESTRICT"
                 )
 
@@ -1169,15 +1224,19 @@ for layertype in gis_layer_types:
     if layertype == "coordinate":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("visible", "boolean", default=False, label=T("On by default?")),
+                     Field("visible", "boolean", default=False,
+                           label=T("On by default?")),
                     )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "openstreetmap":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("visible", "boolean", default=True, label=T("On by default? (only applicable to Overlays)")),
+                     Field("visible", "boolean", default=True,
+                           label=T("On by default? (only applicable to Overlays)")),
                      Field("url1", label=T("Location"), requires = IS_NOT_EMPTY(),
-                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
+                           comment=DIV( _class="tooltip",
+                                        _title="%s|%s" % (T("Location"),
+                                                          T("The URL to access the service.")))),
                      Field("url2", label=T("Secondary Server (Optional)")),
                      Field("url3", label=T("Tertiary Server (Optional)")),
                      Field("base", "boolean", default=True, label=T("Base Layer?")),
@@ -1198,7 +1257,8 @@ for layertype in gis_layer_types:
     elif layertype == "google":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_google_subtypes, zero=None))
+                     Field("subtype", label=T("Sub-type"),
+                           requires=IS_IN_SET(gis_layer_google_subtypes, zero=None))
                     )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "gpx":
@@ -1206,7 +1266,7 @@ for layertype in gis_layer_types:
                      gis_layer,
                      Field("visible", "boolean", default=False, label=T("On by default?")),
                      #Field("url", label=T("Location"),
-                           #comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
+                           #comment=DIV( _class="tooltip", _title="%s|%s" % (T("Location", T("The URL to access the service.")))),
                      track_id(), # @ToDo remove this layer of complexity: Inlcude the upload field within the Layer
                      Field("waypoints", "boolean", default=True, label=T("Display Waypoints?")),
                      Field("tracks", "boolean", default=True, label=T("Display Tracks?")),
@@ -1219,7 +1279,9 @@ for layertype in gis_layer_types:
                      gis_layer,
                      Field("visible", "boolean", default=False, label=T("On by default?")),
                      Field("url", label=T("Location"), requires=IS_NOT_EMPTY(),
-                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
+                           comment=DIV( _class="tooltip",
+                                        _title="%s|%s" % (T("Location"),
+                                                          T("The URL to access the service.")))),
                      Field("title", label=T("Title"), default="name",
                            comment=T("The attribute within the KML which is used for the title of popups.")),
                      Field("body", label=T("Body"), default="description",
@@ -1238,14 +1300,18 @@ for layertype in gis_layer_types:
         t = db.Table(db, table,
                      gis_layer,
                      Field("url", label=T("Location"),
-                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
+                           comment=DIV( _class="tooltip",
+                                        _title="%s|%s" % (T("Location"),
+                                                          T("The URL to access the service.")))),
                     )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "tms":
         t = db.Table(db, table,
                      gis_layer,
                      Field("url", label=T("Location"), requires = IS_NOT_EMPTY(),
-                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
+                           comment=DIV( _class="tooltip",
+                                        _title="%s|%s" % (T("Location"),
+                                                          T("The URL to access the service.")))),
                      Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
                      Field("img_format", label=T("Format"))
                     )
@@ -1255,14 +1321,23 @@ for layertype in gis_layer_types:
                      gis_layer,
                      Field("visible", "boolean", default=False, label=T("On by default?")),
                      Field("url", label=T("Location"), requires = IS_NOT_EMPTY(),
-                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("Mandatory. The URL to access the service."))),
-                     Field("version", label=T("Version"), default="1.1.0", requires = IS_IN_SET(["1.0.0", "1.1.0"], zero=None)),
+                           comment=DIV( _class="tooltip",
+                                        _title="%s|%s" % (T("Location"),
+                                                          T("Mandatory. The URL to access the service.")))),
+                     Field("version", label=T("Version"), default="1.1.0",
+                           requires=IS_IN_SET(["1.0.0", "1.1.0"], zero=None)),
                      Field("featureNS", label=T("Feature Namespace"),
-                           comment=DIV( _class="tooltip", _title="Feature Namespace" + "|" + T("Optional. In GeoServer, this is the Workspace Namespace URI. Within the WFS getCapabilities, this is the FeatureType Name part before the colon(:)."))),
+                           comment=DIV( _class="tooltip",
+                                        _title="%s|%s" % ("Feature Namespace",
+                                                          T("Optional. In GeoServer, this is the Workspace Namespace URI. Within the WFS getCapabilities, this is the FeatureType Name part before the colon(:).")))),
                      Field("featureType", label=T("Feature Type"), requires = IS_NOT_EMPTY(),
-                           comment=DIV( _class="tooltip", _title=T("Feature Type") + "|" + T("Mandatory. In GeoServer, this is the Layer Name. Within the WFS getCapabilities, this is the FeatureType Name part after the colon(:)."))),
+                           comment=DIV( _class="tooltip",
+                                        _title="%s|%s" % (T("Feature Type"),
+                                                          T("Mandatory. In GeoServer, this is the Layer Name. Within the WFS getCapabilities, this is the FeatureType Name part after the colon(:).")))),
                      Field("geometryName", label=T("Geometry Name"), default = "the_geom",
-                           comment=DIV( _class="tooltip", _title=T("Geometry Name") + "|" + T("Optional. The name of the geometry column. In PostGIS this defaults to 'the_geom'."))),
+                           comment=DIV( _class="tooltip",
+                                        _title="%s|%s" % (T("Geometry Name"),
+                                                          T("Optional. The name of the geometry column. In PostGIS this defaults to 'the_geom'.")))),
                      projection_id(),
                      #Field("editable", "boolean", default=False, label=T("Editable?")),
                     )
@@ -1273,14 +1348,21 @@ for layertype in gis_layer_types:
                      gis_layer,
                      Field("visible", "boolean", default=False, label=T("On by default?")),
                      Field("url", label=T("Location"), requires = IS_NOT_EMPTY(),
-                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
-                     Field("version", label=T("Version"), default="1.1.1", requires = IS_IN_SET(["1.1.1", "1.3.0"], zero=None)),
+                           comment=DIV( _class="tooltip",
+                                        _title="%s|%s" % (T("Location"),
+                                                          T("The URL to access the service.")))),
+                     Field("version", label=T("Version"), default="1.1.1",
+                           requires=IS_IN_SET(["1.1.1", "1.3.0"], zero=None)),
                      Field("base", "boolean", default=True, label=T("Base Layer?")),
                      Field("transparent", "boolean", default=False, label=T("Transparent?")),
                      Field("map", label=T("Map")),
                      Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
-                     Field("img_format", label=T("Format"), requires = IS_NULL_OR(IS_IN_SET(gis_layer_wms_img_formats))),
-                     Field("buffer", "integer", label=T("Buffer"), default=0, requires=IS_INT_IN_RANGE(0, 10), comment=DIV( _class="tooltip", _title=T("Buffer") + "|" + T("The number of tiles around the visible map to download. Zero means that the 1st page loads faster, higher numbers mean subsequent panning is faster."))),
+                     Field("img_format", label=T("Format"),
+                           requires=IS_NULL_OR(IS_IN_SET(gis_layer_wms_img_formats))),
+                     Field("buffer", "integer", label=T("Buffer"), default=0, requires=IS_INT_IN_RANGE(0, 10),
+                           comment=DIV( _class="tooltip",
+                                        _title="%s|%s" % (T("Buffer"),
+                                                          T("The number of tiles around the visible map to download. Zero means that the 1st page loads faster, higher numbers mean subsequent panning is faster.")))),
                      #Field("queryable", "boolean", default=False, label=T("Queryable?")),
                      #Field("legend_url", label=T("legend URL")),
                      #Field("legend_format", label=T("Legend Format"), requires = IS_NULL_OR(IS_IN_SET(gis_layer_wms_img_formats))),
@@ -1291,10 +1373,13 @@ for layertype in gis_layer_types:
         t = db.Table(db, table,
                      gis_layer,
                      Field("url", label=T("Location"), requires = IS_NOT_EMPTY(),
-                           comment=DIV( _class="tooltip", _title=T("Location") + "|" + T("The URL to access the service."))),
+                           comment=DIV( _class="tooltip",
+                                        _title="%s|%s" % (T("Location"),
+                                                          T("The URL to access the service.")))),
                      Field("base", "boolean", default=True, label=T("Base Layer?")),
                      Field("sphericalMercator", "boolean", default=False, label=T("Spherical Mercator?")),
-                     Field("transitionEffect", requires=IS_NULL_OR(IS_IN_SET(["resize"])), label=T("Transition Effect")),
+                     Field("transitionEffect", requires=IS_NULL_OR(IS_IN_SET(["resize"])),
+                           label=T("Transition Effect")),
                      Field("numZoomLevels", "integer", label=T("num Zoom Levels")),
                      Field("transparent", "boolean", default=False, label=T("Transparent?")),
                      Field("visible", "boolean", default=True, label=T("Visible?")),
@@ -1304,13 +1389,15 @@ for layertype in gis_layer_types:
     elif layertype == "yahoo":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_yahoo_subtypes, zero=None))
+                     Field("subtype", label=T("Sub-type"),
+                           requires = IS_IN_SET(gis_layer_yahoo_subtypes, zero=None))
                     )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "bing":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_bing_subtypes, zero=None))
+                     Field("subtype", label=T("Sub-type"),
+                           requires = IS_IN_SET(gis_layer_bing_subtypes, zero=None))
                     )
         table = db.define_table(tablename, t, migrate=migrate)
 
@@ -1320,9 +1407,9 @@ for layertype in gis_layer_types:
 resourcename = "cache"
 tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
-                Field("name", length=128, notnull=True, unique=True),
-                Field("file", "upload", autodelete = True),
-                migrate=migrate, *s3_timestamp())
+                        Field("name", length=128, notnull=True, unique=True),
+                        Field("file", "upload", autodelete = True),
+                        migrate=migrate, *s3_timestamp())
 # upload folder needs to be visible to the download() function as well as the upload
 table.file.uploadfolder = os.path.join(request.folder, "uploads/gis_cache")
 
@@ -1368,7 +1455,8 @@ table = db.define_table(tablename,
                         Field("lat", "double"), # This is currently 'x' not 'lat'
                         Field("lon", "double"), # This is currently 'y' not 'lon'
                         Field("zoom", "integer"),
-                        Field("layer_id", "list:reference gis_wmc_layer", requires=IS_ONE_OF(db, "gis_wmc_layer.id", "%(title)s", multiple=True)),
+                        Field("layer_id", "list:reference gis_wmc_layer",
+                              requires=IS_ONE_OF(db, "gis_wmc_layer.id", "%(title)s", multiple=True)),
                         # Metadata tbc
                         migrate=migrate, *(s3_authorstamp() + s3_ownerstamp() + s3_timestamp()))
 #table.lat.requires = IS_LAT()

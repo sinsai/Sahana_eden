@@ -206,7 +206,8 @@ if deployment_settings.has_module(module):
 
     def shn_assess_severity_represent(value):        
         if value:
-            return IMG( _src="/%s/static/img/%s_circle_16px.png" % (request.application, assess_colour_opts[value]),
+            return IMG( _src="/%s/static/img/%s_circle_16px.png" % (request.application,
+                                                                    assess_colour_opts[value]),
                         _alt= value,
                         _align="middle"
                         )
@@ -465,10 +466,16 @@ if deployment_settings.has_module(module):
     # -------------------------------------------------------------------------
     # re-usable field
     assessment_id = S3ReusableField("assessment_id", table,
-                                    requires = IS_NULL_OR(IS_ONE_OF(db, "assess_rat.id", shn_rat_represent, orderby="assess_rat.id")),
+                                    requires = IS_NULL_OR(IS_ONE_OF(db, "assess_rat.id",
+                                                                    shn_rat_represent,
+                                                                    orderby="assess_rat.id")),
                                     represent = lambda id: shn_rat_represent(id),
                                     label = T("Rapid Assessment"),
-                                    comment = A(ADD_ASSESSMENT, _class="colorbox", _href=URL(r=request, c="assess", f="rat", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ASSESSMENT),
+                                    comment = A(ADD_ASSESSMENT,
+                                                _class="colorbox",
+                                                _href=URL(r=request, c="assess", f="rat", args="create", vars=dict(format="popup")),
+                                                _target="top",
+                                                _title=ADD_ASSESSMENT),
                                     ondelete = "RESTRICT")
 
     # Assessment as component of doc_document and cr_shelter.
@@ -1828,7 +1835,7 @@ if deployment_settings.has_module(module):
 
     # Population Statistics
     resourcename = "population"
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             location_id(),
                             Field("population", "double"),

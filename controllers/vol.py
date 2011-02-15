@@ -49,7 +49,7 @@ def shn_menu():
                 ["%s %s" % (T("Team") + ":", team_name), False, aURL(r=request, f="group", args=[group_id, "read"]),[
                     [T("View On Map"), False, aURL(r=request, f="view_team_map", args=[group_id])],
                     [T("Send Notification"), False, aURL(r=request, f="compose_group", vars={"group_id":group_id})],
-                    [T("Find Volunteers"), False, aURL(r=request, f="showSkillOptions")],
+                    #[T("Find Volunteers"), False, aURL(r=request, f="skillSearch")],
                 ]],
             ]
             menu.extend(menu_teams)
@@ -58,8 +58,7 @@ def shn_menu():
         [T("Volunteers"), False, aURL(r=request, f="person", args=["search"]),[
             [T("List"), False, aURL(r=request, f="person")],
             [T("Add"), False, aURL(p="create", r=request, f="person", args="create")],
-            # Not ready yet
-            #[T("Search by Skill Types"), False, URL(r=request, f="showSkillOptions")],
+            #[T("Find Volunteers"), False, aURL(r=request, f="skillSearch")],
         ]]
     ]
     menu.extend(menu_persons)
@@ -83,7 +82,7 @@ def shn_menu():
             ]
             menu.extend(menu_person)
     menu_skills = [
-        [T("Skill Types"), False, aURL(r=request, f="skill_types")],
+        [T("Skills"), False, aURL(r=request, f="skill")],
     ]
     menu.extend(menu_skills)
     if auth.user is not None:
@@ -196,6 +195,132 @@ def index():
 # -----------------------------------------------------------------------------
 # People
 # -----------------------------------------------------------------------------
+def register():
+    """
+        Custom page to allow people to register as a Volunteer whilst hiding the complexity of the data model.
+    """
+
+    # Fields that we want in our custom Form
+    # Dicts of tablename/fieldname
+    fields = [
+              {
+                "tablename" : "pr_person",
+                "fieldname" : "first_name",
+                "required" : True
+              },
+              {
+                "tablename" : "pr_person",
+                "fieldname" : "last_name"
+              },
+              {
+                "tablename" : "pr_pe_contact",
+                "fieldname" : "value",
+                "formfieldname" : "telephone",
+                "label" : T("Telephone"),
+                "comment" : DIV(_class="tooltip",
+                                _title="%s|%s" % (T("Telephone"),
+                                                  T("Please sign-up with your Cell Phone as this allows us to send you Text messages. Please include full Area code.")))
+
+              },
+              {
+                "tablename" : "pr_pe_contact",
+                "fieldname" : "value",
+                "formfieldname" : "email",
+                "label" : T("Email Address"),
+                "required" : True
+              },
+              {
+                "tablename" : "vol_credential",
+                "fieldname" : "skill_id",
+                #"label":T("My Current function")
+              },
+              {
+                "tablename" : "vol_volunteer",
+                "fieldname" : "location_id",
+                #"label" : T("I am available in the following area(s)"),
+              },
+             ]
+
+    # Forms
+    forms = Storage()
+    forms["pr_person"] = SQLFORM(db.pr_person)
+    forms["pr_pe_contact1"] = SQLFORM(db.pr_pe_contact)
+    forms["pr_pe_contact2"] = SQLFORM(db.pr_pe_contact)
+    forms["vol_credential"] = SQLFORM(db.vol_credential)
+    forms["vol_volunteer"] = SQLFORM(db.vol_volunteer)
+    
+    form_rows = []
+    required = SPAN(" *", _class="req")
+
+    for field in fields:
+        tablename = field["tablename"]
+        fieldname = field["fieldname"]
+
+        # Label
+        try:
+            label = "%s:" % field["label"]
+        except:
+            label = "%s:" % db[tablename][fieldname].label
+        try:
+            if field["required"]:
+                label = DIV(label, required)
+        except:
+            pass
+        label = TD(label, _class="w2p_fl")
+        
+        # Widget
+        try:
+            if field["formfieldname"] == "telephone":
+                widget = forms["%s1" % tablename].custom.widget[fieldname]
+            elif field["formfieldname"] == "email":
+                widget = forms["%s2" % tablename].custom.widget[fieldname]
+            widget.attributes["_id"] = field["formfieldname"]
+            widget.attributes["_name"] = field["formfieldname"]
+        except:
+            widget = forms[tablename].custom.widget[fieldname]
+
+        # Comment
+        try:
+            comment = field["comment"]
+        except:
+            comment = db[tablename][fieldname].comment or ""
+
+        form_rows.append(TR(label))
+        form_rows.append(TR(widget, comment))
+    
+    form = FORM(TABLE(*form_rows),
+                INPUT(_value = T("Save"),
+                      _type = "submit"))
+
+    if form.accepts(request.vars, session):
+        # Insert Person Record
+        person_id = db.pr_person.insert(first_name=request.vars.first_name,
+                                        last_name=request.vars.last_name)
+        # Update Super-Entity
+        record = Storage(id=person_id)
+        s3xrc.model.update_super(db.pr_person, record)
+        # Register as Volunteer
+        # @ToDo: Handle Available Times (which needs reworking anyway)
+        db.vol_volunteer.insert(person_id=person_id,
+                                location_id=request.vars.location_id,
+                                status=1)   # Active
+        # Insert Credential
+        db.vol_credential.insert(person_id=person_id,
+                                 skill_id=request.vars.skill_id,
+                                 status=1)  # Pending
+
+        pe_id = db(db.pr_person.id == person_id).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
+        # Insert Email
+        db.pr_pe_contact.insert(pe_id=pe_id, contact_method=1, value=request.vars.email)
+        # Insert Telephone
+        db.pr_pe_contact.insert(pe_id=pe_id, contact_method=2, value=request.vars.telephone)
+        
+        
+        response.confirmation = T("Sign-up succesful - you should hear from us soon!")
+
+    return dict(form=form)
+
+# -----------------------------------------------------------------------------
 def person():
 
     """
@@ -231,9 +356,6 @@ def person():
                 (T("Contact Data"), "pe_contact"),
                 (T("Presence Log"), "presence")]
     else:
-        # If using jquery.multiselect widget
-        #response.files.append(URL(r=request, c="static/scripts/S3", f="jquery.multiSelect.js"))
-        #response.files.append(URL(r=request, c="static/styles/S3", f="jquery.multiSelect.css"))
         db.pr_group_membership.group_id.label = T("Team Id")
         db.pr_group_membership.group_head.label = T("Team Leader")
         s3xrc.model.configure(db.pr_group_membership,
@@ -244,9 +366,7 @@ def person():
         tabs = [
                 (T("Availability"), "volunteer"),
                 (T("Teams"), "group_membership"),
-                (T("Skills"), "skill"),
-                # @ToDo: Modernize Resources
-                #(T("Resources"), "resource"),
+                (T("Skills"), "credential"),
                ]
 
     # Pre-process
@@ -298,97 +418,79 @@ def person():
     shn_menu()
     return output
 
-def skillsearch():
-
-    """ tbc """
-
-    item = []
-    table1 = db.vol_skill
-    table2 = db.vol_skill_types
-    table3 = db.pr_person
-    vol_id = db((table2.id == table1.skill_types_id) & \
-                (table2.name == "medical")).select(table1.person_id, limitby=(0, 1)).first()
-    person_details = db((table3.id == vol_id.person_id)).select(table3.first_name, table3.last_name, limitby=(0,1)).first()
-
-    html = DIV(LABEL(vita.fullname(person_details)), DIV(T("Skills") + ": "), UL(skillset), _id="table-container")
-    person_data = "<div>%s</div>" % (person_details)
-    return dict(html=person_data)
-
-def showSkillOptions():
+# -----------------------------------------------------------------------------
+# Skills
+# -----------------------------------------------------------------------------
+def skill():
 
     """
-        Search for Volunteers by Skill Type
+        RESTful CRUD Controller
+        Lookup list of skill types
+    """
+
+    return s3_rest_controller(prefix, "skill")
+
+# -----------------------------------------------------------------------------
+def credential():
+
+    """
+        RESTful CRUD Controller
+        Select skills a volunteer has & validate them
+    """
+
+    return s3_rest_controller(prefix, "skill_types")
+
+# -----------------------------------------------------------------------------
+def skillSearch():
+
+    """
+        Search for Volunteers by Skill
         - A Notification is sent to each matching volunteer
 
-        @ToDo: Make into a normal search? (may need minor modification)
+        @ToDo: Make into a normal S3Search? (may need minor modification)
         @ToDo: Make the Notification into a separate button (may want to search without notifications)
     """
 
     from gluon.sqlhtml import CheckboxesWidget
-    vol_skill_type_widget = CheckboxesWidget().widget(db.vol_skill.skill_types_id, None)
+    vol_skill_widget = CheckboxesWidget().widget(db.vol_credential.skill_id, None)
     search_btn = INPUT(_value = "search", _type = "submit")
-    search_form = FORM(vol_skill_type_widget, search_btn)
+    search_form = FORM(vol_skill_widget, search_btn)
     output = dict(search_form = search_form)
 
     output["table"] = ""
     if search_form.accepts(request.vars, session, keepvalues=True):
-        search_skill_ids =  request.vars.skill_types_id
+        search_skill_ids =  request.vars.skill_id
 
-        table1 = db.vol_skill
-        table2 = db.vol_skill_types
+        table1 = db.vol_credential
+        table2 = db.vol_skill
         table3 = db.pr_person
         #person_details = []
         # Print a list of volunteers with their skills status.
         # @ToDo: selects for only one skills right now. add displaying of skill name
-        vol_id = db((table2.id == table1.skill_types_id) & \
+        vol_id = db((table2.id == table1.skill_id) & \
                     (table2.id == search_skill_ids)).select(table1.person_id)
 
         vol_idset = []
-        html = DIV(DIV(B(T("List of Volunteers for this skills set"))))
+        html = DIV(DIV(B(T("List of Volunteers for this skill set"))))
         for id in vol_id:
             vol_idset.append(id.person_id)
-
 
         for pe_id in vol_idset:
             person_details = db((table3.id == pe_id)).select(table3.first_name, table3.middle_name, table3.last_name).first()
             skillset = db(table1.person_id == pe_id).select(table1.status).first()
             html.append(DIV(LABEL(vita.fullname(person_details)),DIV(T("Skill Status") + ": "), UL(skillset.status)))
             # @ToDo: Make the notification message configurable
-            msg.send_by_pe_id(pe_id, "CERT: Please Report for Duty", "We ask you to report for duty if you are available", 1, 1)
+            #msg.send_by_pe_id(pe_id, "CERT: Please Report for Duty", "We ask you to report for duty if you are available", 1, 1)
 
         html.append(DIV(B(T("Volunteers were notified!"))))
     #for one_pr in person_details:
         #skillset = "approved"
         #html += DIV(LABEL(vita.fullname(one_pr)),DIV(T("Skill Status") + ": "), UL(skillset), _id="table-container")
-        #person_data="<div>"+str(person_details)+"</div>"
+        #person_data="<div>%s</div>" % str(person_details)
         html2 = DIV(html, _id="table-container")
         output["table"] = html2
 
     return output
-
-# -----------------------------------------------------------------------------
-def skill_types():
-
-    """ Allow user to define new skill types. """
-
-    return s3_rest_controller(prefix, "skill_types")
-
-
-# -----------------------------------------------------------------------------
-def skill():
-
-    """ Select skills a volunteer has. """
-
-    return s3_rest_controller(prefix, "skill")
-
-
-# -----------------------------------------------------------------------------
-# TODO: Is resource a bad name, due to possible confusion with other usage?
-def resource():
-
-    """ Select resources a volunteer has """
-
-    return s3_rest_controller(prefix, "resource")
 
 # -----------------------------------------------------------------------------
 # Teams

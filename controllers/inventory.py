@@ -73,7 +73,9 @@ def store():
                                   multiple=True,
                                   joinby=dict( inventory_store = "to_inventory_store_id" )
                                   )
-        response.s3.filter = (db.logs_send.status == LOGS_STATUS_SENT)
+        response.s3.filter = ( (db.logs_send.id != None) & 
+                               (db.logs_send.status == LOGS_STATUS_SENT)
+                               )
         
         # Hide the Add button for incoming shipments
         s3xrc.model.configure(db.logs_send, insertable=False)

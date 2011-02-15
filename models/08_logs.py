@@ -157,7 +157,13 @@ if deployment_settings.has_module(module):
     # Redirect to the Items tabs after creation
     s3xrc.model.configure(table,
                           create_next = URL(r=request, c="logs", f="req", args=["[id]", "req_item"]))
-
+    
+    #------------------------------------------------------------------------------
+    # Update owned_by_role to the store's owned_by_role    
+    s3xrc.model.configure(
+        table, 
+        onaccept = lambda form, tablename = tablename : store_resource_onaccept(form, tablename)
+    )    
     #==============================================================================
     # Request Items
     #
@@ -238,7 +244,7 @@ if deployment_settings.has_module(module):
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(logs_req = "logs_req_id",
-                                          supply_item = "item_id"))
+                                          supply_item = "item_id")) 
 
     #------------------------------------------------------------------------------
     # On Accept to update logs_req
@@ -370,6 +376,13 @@ if deployment_settings.has_module(module):
     # Redirect to the Items tabs after creation
     s3xrc.model.configure(table,
                           create_next = URL(r=request, c="logs", f="commit", args=["[id]", "commit_item"]))
+    
+    #------------------------------------------------------------------------------
+    # Update owned_by_role to the store's owned_by_role    
+    s3xrc.model.configure(
+        table, 
+        onaccept = lambda form, tablename = tablename : store_resource_onaccept(form, tablename)
+    )      
 
     #==============================================================================
     # Commitment Items
@@ -458,7 +471,7 @@ if deployment_settings.has_module(module):
                                   requires = IS_NULL_OR(IS_IN_SET(logs_status)),
                                   represent = lambda status: logs_status[status],       
                                   default = LOGS_STATUS_IN_PROCESS,                           
-                                  writable = False,
+                                 # writable = False,
                                   ),
                             person_id(name = "recipient_id",
                                       label = T("Received By")),
@@ -525,6 +538,13 @@ if deployment_settings.has_module(module):
     # Redirect to the Items tabs after creation
     s3xrc.model.configure(table,
                           create_next = URL(r=request, c="logs", f="recv", args=["[id]", "recv_item"]))
+    
+    #------------------------------------------------------------------------------
+    # Update owned_by_role to the store's owned_by_role    
+    s3xrc.model.configure(
+        table, 
+        onaccept = lambda form, tablename = tablename : store_resource_onaccept(form, tablename)
+    )      
 
     #==============================================================================
     # In (Receive / Donation / etc) Items
@@ -566,9 +586,9 @@ if deployment_settings.has_module(module):
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(logs_recv = "logs_recv_id",
-                                          supply_item = "item_id"))
+                                          supply_item = "item_id")) 
 
-#==============================================================================
+    #==============================================================================
     def shn_logs_send_store_id(r):
         if r.to_location_id:
             return shn_get_db_field_value(db,
@@ -577,12 +597,11 @@ if deployment_settings.has_module(module):
                                           r.to_location_id,
                                           "location_id")
         else:
-            return None
+            return None        
 
-#==============================================================================
-# Send (Outgoing / Dispatch / etc)
-#    
-    
+    #==============================================================================
+    # Send (Outgoing / Dispatch / etc)
+    #        
     resourcename = "send"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
@@ -667,7 +686,14 @@ if deployment_settings.has_module(module):
                           create_next = url_logs_send_items,
                           update_next = url_logs_send_items
                           )
-
+    
+    #------------------------------------------------------------------------------
+    # Update owned_by_role to the store's owned_by_role    
+    s3xrc.model.configure(
+        table, 
+        onaccept = lambda form, tablename = tablename : store_resource_onaccept(form, tablename)
+    )  
+    
     #==============================================================================
     # Send (Outgoing / Dispatch / etc) Items
     #

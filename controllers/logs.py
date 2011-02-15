@@ -491,9 +491,12 @@ def recv_process():
                                                        )   
                                  )         
         
-    #Update recv record
+    #Update recv record & lock for editing 
     db.logs_recv[recv_id] = dict(datetime = request.utcnow,
-                                 status = LOGS_STATUS_RECEIVED ) 
+                                 status = LOGS_STATUS_RECEIVED,
+                                 owned_by_user = ADMIN,   
+                                 owned_by_role = ADMIN                                
+                                 ) 
     
     #Update status_fulfil of the req record(s)
     for log_req_id in update_log_req_id:
@@ -589,9 +592,12 @@ def send_process():
                      )
                  )      
     else:
-        # Update Send record
+        # Update Send record & lock for editing 
         db.logs_send[send_id] = dict(datetime = request.utcnow,
-                                     status = LOGS_STATUS_SENT )        
+                                     status = LOGS_STATUS_SENT,
+                                     owned_by_user = ADMIN,   
+                                     owned_by_role = ADMIN                                      
+                                     )          
         response.confirmation = T("Items Sent from Warehouse")           
         
         #Update status_fulfil of the req record(s)
@@ -640,7 +646,7 @@ def recv_sent():
                                  item_packet_id = sent_item.logs_send_item.item_packet_id,
                                  quantity = sent_item.logs_send_item.quantity)
 
-    #Flag shipment as received as received 
+    #Flag shipment as received as received
     db.logs_send[send_id] = dict(status = LOGS_STATUS_RECEIVED)
 
     # Redirect to rec

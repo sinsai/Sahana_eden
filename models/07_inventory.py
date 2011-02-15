@@ -107,11 +107,10 @@ if deployment_settings.has_module("logs"):
         store_id = session.rcvars.inventory_store
         store_name = inventory_store_represent(store_id, link = False)
         if not auth.id_group("store_%s" % store_id):
-            store_group_id = auth.s3_create_role( "store_%s" % store_id,
-                                                  "group for user with authorization for store '%s'" % store_name,
-                                                  dict(c="inventory", uacl=auth.permission.NONE, oacl=auth.permission.ALL)
+            store_role_id = auth.s3_create_role( "store_%s" % store_id,
+                                                  "Role for user with authorization for store '%s'" % store_name
                                                   )
-            db.inventory_store[store_id] = dict(owned_by = store_group_id)
+            db.inventory_store[store_id] = dict(owned_by_role = store_role_id)
     s3xrc.model.configure(table, onaccept=inventory_store_onaccept)
 
     #==============================================================================
@@ -193,6 +192,26 @@ if deployment_settings.has_module("logs"):
                               multiple=False,
                               joinby=dict(supply_item="item_id")
                               )     
+    # -----------------------------------------------------------------------------    
+    def store_resource_onaccept(form, tablename):
+        """ 
+        Generic onaccept function to update a store component's "owned_by_role" 
+        to the stores "owned_by_role" 
+        """
+        inventory_store_id = session.rcvars.inventory_store
+        record_id = session.rcvars[tablename]
+        store_role_id = shn_get_db_field_value(db,
+                                                "inventory_store",
+                                                "owned_by_role",
+                                                inventory_store_id )    
+        db[tablename][record_id] = dict(owned_by_role = store_role_id)    
+    
+    # -----------------------------------------------------------------------------
+    # Update owned_by_role to the store's owned_by_role    
+    s3xrc.model.configure(
+        table, 
+        onaccept = lambda form, tablename = tablename : store_resource_onaccept(form, tablename)
+    )       
     #==============================================================================
     # Inventory Store User
     #
@@ -237,7 +256,7 @@ if deployment_settings.has_module("logs"):
         inventory_store_id = session.rcvars.inventory_store
         store_group_id = shn_get_db_field_value(db,
                                                 "inventory_store",
-                                                "owned_by",
+                                                "owned_by_role",
                                                 inventory_store_id )
         group_members = auth.s3_group_members(store_group_id)
         store_users = [ store_user.user_id for store_user in 

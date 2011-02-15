@@ -1173,7 +1173,9 @@ if populate:
         create_role("Authenticated", "Authenticated - all logged-in users",
                     dict(c="gis", uacl=acl.ALL, oacl=acl.ALL),
                     dict(c="gis", f="location", uacl=acl.READ, oacl=acl.ALL),
-                    dict(c="inventory", uacl=acl.READ, oacl=acl.NONE))
+                    dict(c="inventory", uacl=acl.READ, oacl=acl.ALL),
+                    dict(c="logs", uacl=acl.READ, oacl=acl.ALL)
+                    )
         create_role("Anonymous", "Unauthenticated users",
                     dict(c="gis", uacl=acl.READ, oacl=acl.READ))
         create_role("Editor", "Editor - can access & make changes to any unprotected data")

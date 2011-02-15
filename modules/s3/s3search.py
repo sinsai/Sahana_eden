@@ -65,15 +65,15 @@ class S3SearchWidget(object):
 
         self.other = None
 
-        self.fields = fields
+        self.field = field
         self.attr = Storage(attr)
 
 
-    def widget(self, table, vars, **attr):
+    def widget(self, resource, vars, **attr):
         """
         Returns the widget
 
-        @param table: the table to search in
+        @param resource: the resource to search in
         @param vars: the URL GET variables as dict
         @param attr: HTML attributes for the widget container
 
@@ -81,11 +81,11 @@ class S3SearchWidget(object):
         raise NotImplementedError
 
 
-    def query(self, table, value):
+    def query(self, resource, value):
         """
         Returns a sub-query for this search option
 
-        @param table: the table to search in
+        @param resource: the resource to search in
         @param value: the value returned from the widget
 
         """
@@ -108,11 +108,11 @@ class S3SearchSimple(S3SearchWidget):
 
     """
 
-    def widget(self, table, vars, **attr):
+    def widget(self, resource, vars, **attr):
         """
-        Returns a widget for this search option
+        Returns the widget
 
-        @param table: the table to search in
+        @param resource: the resource to search in
         @param vars: the URL GET variables as dict
         @param attr: HTML attributes for the widget container
 
@@ -120,11 +120,11 @@ class S3SearchSimple(S3SearchWidget):
         raise NotImplementedError
 
 
-    def query(self, table, value):
+    def query(self, resource, value):
         """
         Returns a sub-query for this search option
 
-        @param table: the table to search in
+        @param resource: the resource to search in
         @param value: the value returned from the widget
 
         """
@@ -138,11 +138,11 @@ class S3SearchMatchWidget(S3SearchWidget):
 
     """
 
-    def widget(self, table, vars, **attr):
+    def widget(self, resource, vars, **attr):
         """
-        Returns a widget for this search option
+        Returns the widget
 
-        @param table: the table to search in
+        @param resource: the resource to search in
         @param vars: the URL GET variables as dict
         @param attr: HTML attributes for the widget container
 
@@ -150,11 +150,11 @@ class S3SearchMatchWidget(S3SearchWidget):
         raise NotImplementedError
 
 
-    def query(self, table, value):
+    def query(self, resource, value):
         """
         Returns a sub-query for this search option
 
-        @param table: the table to search in
+        @param resource: the resource to search in
         @param value: the value returned from the widget
 
         """
@@ -168,11 +168,11 @@ class S3SearchMinMaxWidget(S3SearchWidget):
 
     """
 
-    def widget(self, table, vars, **attr):
+    def widget(self, resource, vars, **attr):
         """
-        Returns a widget for this search option
+        Returns the widget
 
-        @param table: the table to search in
+        @param resource: the resource to search in
         @param vars: the URL GET variables as dict
         @param attr: HTML attributes for the widget container
 
@@ -180,11 +180,11 @@ class S3SearchMinMaxWidget(S3SearchWidget):
         raise NotImplementedError
 
 
-    def query(self, table, value):
+    def query(self, resource, value):
         """
         Returns a sub-query for this search option
 
-        @param table: the table to search in
+        @param resource: the resource to search in
         @param value: the value returned from the widget
 
         """
@@ -198,11 +198,11 @@ class S3SearchSelectWidget(S3SearchWidget):
 
     """
 
-    def widget(self, table, vars, **attr):
+    def widget(self, resource, vars, **attr):
         """
-        Returns a widget for this search option
+        Returns the widget
 
-        @param table: the table to search in
+        @param resource: the resource to search in
         @param vars: the URL GET variables as dict
         @param attr: HTML attributes for the widget container
 
@@ -210,11 +210,11 @@ class S3SearchSelectWidget(S3SearchWidget):
         raise NotImplementedError
 
 
-    def query(self, table, value):
+    def query(self, resource, value):
         """
         Returns a sub-query for this search option
 
-        @param table: the table to search in
+        @param resource: the resource to search in
         @param value: the value returned from the widget
 
         """
@@ -228,11 +228,11 @@ class S3SearchLocationWidget(S3SearchWidget):
 
     """
 
-    def widget(self, table, vars, **attr):
+    def widget(self, resource, vars, **attr):
         """
-        Returns a widget for this search option
+        Returns the widget
 
-        @param table: the table to search in
+        @param resource: the resource to search in
         @param vars: the URL GET variables as dict
         @param attr: HTML attributes for the widget container
 
@@ -240,11 +240,11 @@ class S3SearchLocationWidget(S3SearchWidget):
         raise NotImplementedError
 
 
-    def query(self, table, value):
+    def query(self, resource, value):
         """
         Returns a sub-query for this search option
 
-        @param table: the table to search in
+        @param resource: the resource to search in
         @param value: the value returned from the widget
 
         """

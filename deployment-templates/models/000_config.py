@@ -179,7 +179,7 @@ deployment_settings.osm.oauth_consumer_secret = ""
 #deployment_settings.security.map = True
 # Security Policy (defaults to 1 = Simple)
 # http://eden.sahanafoundation.org/wiki/S3AAA#System-widePolicy
-#deployment_settings.security.policy = 2 # Editor
+#deployment_settings.security.policy = 3 # Controller-ACLs
 # Should users be allowed to register themselves?
 deployment_settings.security.self_registration = True
 # Use 'soft' deletes

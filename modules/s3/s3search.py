@@ -91,7 +91,7 @@ class S3Search(S3CRUD):
         format = r.representation
 
         if r.interactive and self.__fields:
-            return self.search_simple(r, **attr)
+            return self.search_interactive(r, **attr)
         elif format == "aadata" and self.__fields:
             return self.select(r, **attr)
         elif format == "json":
@@ -177,7 +177,7 @@ class S3Search(S3CRUD):
 
 
     # -------------------------------------------------------------------------
-    def search_simple(self, r, **attr):
+    def search_interactive(self, r, **attr):
         """
         Simple full-text search method
 
@@ -222,8 +222,8 @@ class S3Search(S3CRUD):
             if form.vars.label == "":
                 form.vars.label = "%"
             results = resource.search_simple(fields=self.__fields,
-                                                label=form.vars.label,
-                                                filterby=response.s3.filter)
+                                             label=form.vars.label,
+                                             filterby=response.s3.filter)
             if results:
                 linkto = self._linkto(r)
                 if not list_fields:
@@ -237,10 +237,10 @@ class S3Search(S3CRUD):
                     fields.insert(0, table[table.fields[0]])
                 resource.build_query(id=results)
                 items = self.sqltable(fields=fields,
-                                        orderby=orderby,
-                                        linkto=linkto,
-                                        download_url=self.download_url,
-                                        format=representation)
+                                      orderby=orderby,
+                                      linkto=linkto,
+                                      download_url=self.download_url,
+                                      format=representation)
                 if request.post_vars.label:
                     session.s3.filter = {"%s.id" % resource.name:
                                         ",".join(map(str,results))}
@@ -261,7 +261,7 @@ class S3Search(S3CRUD):
         output.update(title=title, subtitle=subtitle)
 
         # View
-        response.view = "search_simple.html"
+        response.view = "search.html"
         return output
 
     # -------------------------------------------------------------------------

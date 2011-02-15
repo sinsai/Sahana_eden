@@ -81,7 +81,4 @@ from s3msg import *
 from s3vita import *
 
 # OCR functions
-try:
-    from s3ocr import s3ocr_generate_pdf, s3ocr_get_languages
-except(ImportError):
-    print >>sys.stderr, "S3 Debug: WARNING: S3OCR: reportlab has not been installed."
+from s3ocr import *

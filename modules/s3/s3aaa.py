@@ -694,14 +694,14 @@ class AuthS3(Auth):
         else:
             return False
     # -------------------------------------------------------------------------
-    def s3_group_members(self, group_id):        
+    def s3_group_members(self, group_id):
         """
         returns a list of the user_ids for members of a group
         """
         membership = self.settings.table_membership
-        members = self.db( membership.group_id == group_id 
+        members = self.db( membership.group_id == group_id
                           ).select(membership.user_id)
-        return [member.user_id for member in members]                          
+        return [member.user_id for member in members]
 
     # -------------------------------------------------------------------------
     def s3_has_permission(self, method, table, record_id = 0):
@@ -1031,7 +1031,7 @@ class AuthS3(Auth):
         if role_id:
             for acl in acls:
                 self.s3_update_acl(role_id, **acl)
-        
+
         return role_id
 
     # -------------------------------------------------------------------------
@@ -1956,6 +1956,8 @@ class S3RoleManager(S3Method):
         else:
             r.error(501, self.manager.ERROR.BAD_METHOD)
 
+        if r.http == "GET" and method not in ("create", "update", "delete"):
+            self.session.s3.cancel = r.here()
         return output
 
 
@@ -2143,6 +2145,8 @@ class S3RoleManager(S3Method):
         CACL = T("Application Permissions")
         FACL = T("Function Permissions")
         TACL = T("Table Permissions")
+
+        CANCEL = T("Cancel")
 
         auth = self.manager.auth
         model = self.manager.model
@@ -2399,10 +2403,12 @@ class S3RoleManager(S3Method):
             acl_form = DIV(acl_forms, _id="table-container")
 
             # Action row
-            action_row = DIV(INPUT(_type="submit", _value="Save"),
-                             A(T("Cancel"),
-                               _href=URL(r=request, c="admin", f="role", vars=request.get_vars)),
-                               _id="action-row")
+            if session.s3.cancel:
+                cancel = session.s3.cancel
+            else:
+                cancel = URL(r=request, c="admin", f="role", vars=request.get_vars)
+            action_row = DIV(INPUT(_type="submit", _value=T("Save")),
+                             A(CANCEL, _href=cancel), _id="action-row")
 
             # Complete form
             form = FORM(role_form, acl_form, action_row)
@@ -2545,6 +2551,8 @@ class S3RoleManager(S3Method):
         db = self.db
         T = self.T
 
+        CANCEL = T("Cancel")
+
         session = self.session
         request = self.request
         crud_settings = self.manager.s3.crud
@@ -2568,10 +2576,14 @@ class S3RoleManager(S3Method):
                                 requires = IS_IN_SET(roles, multiple=True))
                 widget = CheckboxesWidget.widget(field, memberships.keys())
 
+                if session.s3.cancel:
+                    cancel = session.s3.cancel
+                else:
+                    cancel = r.there()
                 form = FORM(TABLE(
                             TR(TD(widget)),
                             TR(TD(INPUT(_type="submit", _value=T("Save")),
-                                  A(T("Cancel"), _href=r.there(), _style="padding-left:10px")))))
+                                  A(CANCEL, _href=cancel, _style="padding-left:10px")))))
 
                 if form.accepts(request.post_vars, session):
                     assign = form.vars.roles

@@ -39,9 +39,11 @@ def shn_store_rheader(r):
             rheader_tabs = shn_rheader_tabs(r, tabs = [ (T("Details"), None),
                                                         (T("Items"), "store_item"),
                                                         (T("Request"), "req"),
+                                                        #(T("Match Requests"), "match_req"),
                                                         (T("Incoming"), "send", dict(select="incoming")),
                                                         (T("Receive" ), "recv"),
                                                         (T("Send"), "send", dict(select="sent")),
+                                                        (T("Commit"), "commit"),
                                                         (T("Users"), "store_user"),
                                                        ])
 
@@ -73,9 +75,6 @@ def store():
                                   multiple=True,
                                   joinby=dict( inventory_store = "to_inventory_store_id" )
                                   )
-        response.s3.filter = ( (db.logs_send.id != None) & 
-                               (db.logs_send.status == LOGS_STATUS_SENT)
-                               )
         
         # Hide the Add button for incoming shipments
         s3xrc.model.configure(db.logs_send, insertable=False)
@@ -85,6 +84,12 @@ def store():
             msg_record_modified = T("Incoming Shipment updated"),
             msg_record_deleted = T("Incoming Shipment canceled"),
             msg_list_empty = T("No Incoming Shipments"))
+        
+        def prep(r):         
+            filter = (db.logs_send.status == LOGS_STATUS_SENT)
+            r.resource.add_component_filter("send", filter)
+            return True
+        response.s3.prep = prep             
     else:
         s3xrc.model.add_component("logs",
                                   "send",

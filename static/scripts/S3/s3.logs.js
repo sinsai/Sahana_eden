@@ -13,6 +13,8 @@ $(document).ready(function() {
 				ShipmentType = "recv"
 			} else if (DIV.hasClass("transit")) {
 				ShipmentType = "send"
+			} else if (DIV.hasClass("commit")) {
+				ShipmentType = "commit"
 			}	
 			DIV.after('<div class="ajax_throbber quantity_req_ajax_throbber"/>')
 			   .removeClass("collapsed")
@@ -20,7 +22,7 @@ $(document).ready(function() {
 			
 			//Get the req_item_id
 			UpdateURL = $(".action-btn",DIV.parent().parent().parent()).attr("href");
-			re = /req_item\/(.*)\//i;
+			re = /req_item\/(.*)/i;
 			req_item_id = re.exec(UpdateURL)[1];
 			url = "/eden/logs/" + ShipmentType + "_item_json/" + req_item_id;						
 			$.ajax( { 

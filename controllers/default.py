@@ -89,9 +89,9 @@ def index():
         admin_tel = settings.admin_tel
     else:
         # db empty and prepopulate is false
-        admin_name = T("Sahana Administrator"),
+        admin_name = T("Sahana Administrator").xml(),
         admin_email = "support@Not Set",
-        admin_tel = T("Not Set"),
+        admin_tel = T("Not Set").xml(),
 
     self_registration = deployment_settings.get_security_self_registration()
 

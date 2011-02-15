@@ -2241,6 +2241,7 @@
 'No location known for this team': 'No location known for this team',
 'No locations found for members of this team': 'No locations found for members of this team',
 'No log entries matching the query': 'No log entries matching the query',
+'No matching records found.': 'No matching records found.',
 'No messages in the system': 'No messages in the system',
 'No notes available': 'No notes available',
 'No peers currently registered': 'No peers currently registered',

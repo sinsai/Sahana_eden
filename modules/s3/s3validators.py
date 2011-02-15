@@ -166,7 +166,7 @@ class IS_ONE_OF_EMPTY(Validator):
         dbset,
         field,
         label=None,
-        filterby=None,      # Overrides orderby
+        filterby=None,
         filter_opts=None,
         error_message="invalid value!",
         orderby=None,
@@ -238,7 +238,8 @@ class IS_ONE_OF_EMPTY(Validator):
                 if self.filterby and self.filterby in _table:
                     if self.filter_opts:
                         query = query & (_table[self.filterby].belongs(self.filter_opts))
-                    dd.update(orderby=_table[self.filterby])
+                    if not self.orderby:
+                        dd.update(orderby=_table[self.filterby])
                 records = self.dbset(query).select(*self.fields, **dd)
             else:
                 import contrib.gql

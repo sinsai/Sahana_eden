@@ -977,7 +977,8 @@ class AuthS3(Auth):
                 person = db(query).select(ptable.uuid).first()
                 if person:
                     if not db(utable.person_uuid == person.uuid).count():
-                        db(utable.id == user.id).update(person_uuid=person.uuid)
+                        db(utable.id == user.id).update(person_uuid=person.uuid,
+                                                        owned_by_user=user.id)
                         if self.user and self.user.id == user.id:
                             self.user.person_uuid = person.uuid
                         continue
@@ -987,18 +988,20 @@ class AuthS3(Auth):
                     new_id = ptable.insert(
                         pe_id = pe_id,
                         first_name = user.first_name,
-                        last_name = user.last_name)
+                        last_name = user.last_name,
+                        owned_by_user = user.id
+                        )
                     if new_id:
                         person_uuid = ptable[new_id].uuid
                         db(utable.id == user.id).update(person_uuid=person_uuid)
                         db(etable.id == pe_id).update(uuid=person_uuid)
-                        # The following adds the email to pr_pe_contact
+                        # Add the email to pr_pe_contact
                         ctable.insert(
                                 pe_id = pe_id,
                                 contact_method = 1,
                                 priority = 1,
                                 value = email)
-                        # The following adds the mobile to pr_pe_contact
+                        # Add the mobile to pr_pe_contact
                         mobile = self.environment.request.vars.get("mobile", None)
                         if mobile:
                             ctable.insert(

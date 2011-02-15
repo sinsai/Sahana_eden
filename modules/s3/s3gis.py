@@ -434,7 +434,7 @@ class GIS(object):
             return None
 
     # -------------------------------------------------------------------------
-    def get_parent_per_level(self, results, feature_id, feature=None):
+    def get_parent_per_level(self, results, feature_id, feature=None, names=False):
         """
         Adds ancestor of requested feature for each level to supplied dict.
 
@@ -444,6 +444,11 @@ class GIS(object):
         If a dict is not supplied in results, one is created. The results
         dict is returned in either case.
 
+        If names=True (used by address_onvalidation) then:
+        For each ancestor, an entry ancestor.level : ancestor.name is added to
+        results.
+
+        If names=False (used by S3LocationSelectorWidget) then:
         For each ancestor, an entry ancestor.level : ancestor.id is added to
         results.
         """
@@ -462,7 +467,7 @@ class GIS(object):
 
             # Get ids of ancestors at each level.
             strict = self.deployment_settings.get_gis_strict_hierarchy()
-            if path and strict:
+            if path and strict and not names:
                 # No need to do a db lookup for parents in this case -- we
                 # know the levels of the parents from their position in path.
                 # Note ids returned from db are ints, not strings, so be
@@ -476,7 +481,10 @@ class GIS(object):
                 ancestors = self.get_parents(feature_id, feature=feature)
                 if ancestors:
                     for ancestor in ancestors:
-                        results[ancestor.level] = ancestor.id
+                        if names:
+                            results[ancestor.level] = ancestor.name
+                        else:
+                            results[ancestor.level] = ancestor.id
 
         return results
 

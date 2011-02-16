@@ -449,7 +449,7 @@ def color_code_severity_widget(widget, name):
 def custom_assess(custom_assess_fields, location_id=None):
     """ Build a custom page to hide the complexity of the Assessments/Impacts/Summary model """
 
-    form_row = []
+    form_rows = []
     comment = ""
     for field in custom_assess_fields:
         name = "custom_%s_%s" % (field[0], field[1])
@@ -525,22 +525,20 @@ def custom_assess(custom_assess_fields, location_id=None):
 
         # Add the field components to the form_rows
         if field[0] == "title":
-            form_row.append(TR(H3( field[1] )))
+            form_rows.append(TR(H3( field[1] )))
         else:
-            form_row = form_row + list( s3_formstyle("%s__row" % name, label, widget, comment) )
+            form_rows = form_rows + list( s3_formstyle("%s__row" % name, label, widget, comment) )
 
-    form = FORM(TABLE(*form_row),
+    form = FORM(TABLE(*form_rows),
                 INPUT(_value = T("Save"),
-                      _type = "submit"
-                      ),
-                )
+                      _type = "submit"),
+               )
     assess_id = None
     
     form_accepted = form.accepts(request.vars, session)
     if form_accepted:
         record_dict = {"organisation_id" : session.s3.organisation_id}
 
-        # Add Assessment (must happen first)
         for field in custom_assess_fields:
             if field[0] != "assess" or field[1] == "location":
                 continue
@@ -548,6 +546,7 @@ def custom_assess(custom_assess_fields, location_id=None):
             if name in request.vars:
                 record_dict[field[1]] = request.vars[name]
 
+        # Add Location (must happen first)
         if "custom_assess_location_id" in request.vars:
             # Auto
             location_dict = {}
@@ -566,6 +565,7 @@ def custom_assess(custom_assess_fields, location_id=None):
             # Location_id was passed to function
             record_dict["location_id"] = location_id
 
+        # Add Assessment
         assess_id = db.assess_assess.insert(**record_dict)
 
         fk_dict = dict(baseline = "baseline_type_id",

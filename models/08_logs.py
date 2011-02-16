@@ -11,6 +11,11 @@
 #==============================================================================
 logs_menu = [
             [T("Home"), False, URL(r=request, c="logs", f="index")],
+            [T("Catalog Items"), False, URL(r=request, c="supply", f="item"),
+            [
+                [T("List"), False, URL(r=request, c="supply", f="item")],
+                [T("Add"), False, URL(r=request, c="supply", f="item", args="create")],
+            ]],            
             [T("Warehouses"), False, URL(r=request, c="inventory", f="store"),
             [
                 [T("List"), False, URL(r=request, c="inventory", f="store")],
@@ -31,11 +36,6 @@ logs_menu = [
            #     [T("List"), False, URL(r=request, c="logs", f="send")],
            #     [T("Add"), False, URL(r=request, c="logs", f="send", args="create")],
            # ]],
-            [T("Catalog Items"), False, URL(r=request, c="supply", f="item"),
-            [
-                [T("List"), False, URL(r=request, c="supply", f="item")],
-                [T("Add"), False, URL(r=request, c="supply", f="item", args="create")],
-            ]],
             ]
 if s3_has_role(1):
     logs_menu.append(
@@ -66,6 +66,7 @@ if deployment_settings.has_module(module):
                                                                 zero = None)),
                                 represent = lambda status: log_req_status_dict[status] if status else T("None"),
                                 default = REQ_STATUS_NONE,
+                                writable = False,
                                 )
 
     resourcename = "req"
@@ -91,10 +92,6 @@ if deployment_settings.has_module(module):
                                       label = T("Requester") ),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
-    
-    #@todo: remove 
-    table.commit_status.readable = False
-    table.commit_status.writeable = False
 
     # -------------------------------------------------------------------------
     # CRUD strings
@@ -117,7 +114,7 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Requests"))
 
     # -----------------------------------------------------------------------------
-    def logs_req_represent(id):
+    def logs_req_represent(id, link = True):
         if id:
             logs_req_row = db(db.logs_req.id == id).\
                               select(db.logs_req.date,
@@ -125,8 +122,11 @@ if deployment_settings.has_module(module):
                                      limitby=(0, 1))\
                               .first()
             return "%s - %s" % (inventory_store_represent( \
-                                logs_req_row.inventory_store_id),
-                                logs_req_row.date)
+                                    logs_req_row.inventory_store_id,
+                                    link
+                                    ),
+                                logs_req_row.date
+                                )
         else:
             return NONE
 
@@ -136,7 +136,9 @@ if deployment_settings.has_module(module):
                                   requires = IS_NULL_OR( \
                                                  IS_ONE_OF(db,
                                                            "logs_req.id",
-                                                           logs_req_represent,
+                                                           lambda id: logs_req_represent(id,
+                                                                                         False
+                                                                                         ),
                                                            orderby="logs_req.date",
                                                            sort=True)),
                                   represent = logs_req_represent,
@@ -157,7 +159,13 @@ if deployment_settings.has_module(module):
     # Redirect to the Items tabs after creation
     s3xrc.model.configure(table,
                           create_next = URL(r=request, c="logs", f="req", args=["[id]", "req_item"]))
-
+    
+    #------------------------------------------------------------------------------
+    # Update owned_by_role to the store's owned_by_role    
+    s3xrc.model.configure(
+        table, 
+        onaccept = lambda form, tablename = tablename : store_resource_onaccept(form, tablename)
+    )    
     #==============================================================================
     # Request Items
     #
@@ -172,18 +180,21 @@ if deployment_settings.has_module(module):
                                    notnull = True),
                             Field( "quantity_commit", 
                                    "double",
-                                   default = 0),                                    
+                                   default = 0,
+                                   writable = False),                                    
                             Field( "quantity_transit", 
                                    "double",
-                                   default = 0),                                                                      
+                                   default = 0,
+                                   writable = False),                                                                      
                             Field( "quantity_fulfil", 
                                    "double",
-                                   default = 0),                            
+                                   default = 0,
+                                   writable = False),                            
                             comments(),
                             migrate=migrate, *s3_meta_fields())
     
-    table.quantity_commit.readable = False
-    table.quantity_commit.writeable = False
+    #packet_quantity virtual field
+    table.virtualfields.append(item_packet_virtualfields(tablename = tablename))   
     
     # -----------------------------------------------------------------------------
     def logs_req_quantity_represent(quantity, type):
@@ -197,6 +208,7 @@ if deployment_settings.has_module(module):
         else:
             return quantity                
     
+    table.quantity_commit.represent = lambda quantity_commit: logs_req_quantity_represent(quantity_commit, "commit")  
     table.quantity_fulfil.represent = lambda quantity_fulfil: logs_req_quantity_represent(quantity_fulfil, "fulfil")    
     table.quantity_transit.represent = lambda quantity_transit: logs_req_quantity_represent(quantity_transit, "transit")  
 
@@ -222,14 +234,29 @@ if deployment_settings.has_module(module):
     
     # -----------------------------------------------------------------------------
     # Reusable Field
-    logs_req_item_id = S3ReusableField( "logs_req_item_id", db.logs_req_item,
-                                        requires = IS_NULL_OR(IS_ONE_OF(db,
-                                                                        "logs_req_item.id"
-                                                                        )
+    def shn_logs_req_item_represent (id):
+        record = db( (db.logs_req_item.id == id) & \
+                     (db.logs_req_item.item_id == db.supply_item.id) 
+                    ).select( db.supply_item.name,
+                              limitby = [0,1]).first()
+        if record:
+            return record.name
+        else:
+            return None  
+
+    # Reusable Field
+    logs_req_item_id = S3ReusableField( "logs_req_item_id", 
+                                        db.logs_req_item,
+                                        requires = IS_NULL_OR(IS_ONE_OF(db, 
+                                                                        "logs_req_item.id", 
+                                                                        shn_logs_req_item_represent, 
+                                                                        orderby="logs_req_item.id", 
+                                                                        sort=True),
                                                               ),
-                                        ondelete = "RESTRICT",
-                                        readable = False,
-                                        writable = False
+                                        represent = shn_logs_req_item_represent,
+                                        label = T("Request Item"),
+                                        comment = DIV( _class="tooltip", _title=T("Request Item") + "|" + T("Select Items from the Request")),
+                                        ondelete = "RESTRICT"
                                         )    
     
     #------------------------------------------------------------------------------
@@ -238,7 +265,7 @@ if deployment_settings.has_module(module):
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(logs_req = "logs_req_id",
-                                          supply_item = "item_id"))
+                                          supply_item = "item_id")) 
 
     #------------------------------------------------------------------------------
     # On Accept to update logs_req
@@ -295,8 +322,8 @@ if deployment_settings.has_module(module):
     resourcename = "commit"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            Field("date",
-                                  "date",
+                            Field("datetime",
+                                  "datetime",
                                   label = T("Date")),
                             logs_req_id(),                            
                             Field("date_available",
@@ -333,12 +360,12 @@ if deployment_settings.has_module(module):
     # -----------------------------------------------------------------------------
     def logs_commit_represent(id):
         if id:
-            r = db(db.logs_commit.id == id).select(db.logs_commit.date,
+            r = db(db.logs_commit.id == id).select(db.logs_commit.datetime,
                                                    db.logs_commit.inventory_store_id,
                                                    limitby=(0, 1)).first()
             return "%s - %s" % \
                     ( inventory_store_represent(r.inventory_store_id),
-                      r.date
+                      r.datetime
                      )
         else:
             return NONE
@@ -370,6 +397,13 @@ if deployment_settings.has_module(module):
     # Redirect to the Items tabs after creation
     s3xrc.model.configure(table,
                           create_next = URL(r=request, c="logs", f="commit", args=["[id]", "commit_item"]))
+    
+    #------------------------------------------------------------------------------
+    # Update owned_by_role to the store's owned_by_role    
+    s3xrc.model.configure(
+        table, 
+        onaccept = lambda form, tablename = tablename : store_resource_onaccept(form, tablename)
+    )      
 
     #==============================================================================
     # Commitment Items
@@ -378,14 +412,17 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             logs_commit_id(),
-                            item_id(),
+                            #item_id(),
+                            logs_req_item_id(),
                             item_packet_id(),
                             Field("quantity", 
                                   "double",
                                   notnull = True),                          
                             comments(),
-                            logs_req_item_id(),
                             migrate=migrate, *s3_meta_fields())
+    
+    #packet_quantity virtual field
+    table.virtualfields.append(item_packet_virtualfields(tablename = tablename))    
 
     # CRUD strings
     ADD_LOGS_COMMIT_ITEM = T("Commitment Item")
@@ -411,8 +448,40 @@ if deployment_settings.has_module(module):
     # Commitment Items as a component of Items
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(logs_commit = "logs_commit_id",
-                                          supply_item = "item_id"))        
+                              joinby=dict( logs_commit = "logs_commit_id" ) 
+                              )       
+    
+    #------------------------------------------------------------------------------
+    def logs_commit_item_onaccept(form):
+        # try to get req_item_id from the form
+        req_item_id = 0
+        if form:
+            req_item_id = form.vars.get("req_item_id")  
+        if not req_item_id:
+            commit_item_id = session.rcvars.logs_commit_item
+            r_commit_item = db.logs_commit_item[commit_item_id]
+        
+            req_item_id = r_commit_item.logs_req_item_id
+        
+        commit_items =  db( (db.logs_commit_item.logs_req_item_id == req_item_id) & \
+                            (db.logs_commit_item.deleted == False) 
+                            ).select(db.logs_commit_item.quantity ,
+                                     db.logs_commit_item.item_packet_id 
+                                     )
+        quantity_commit = 0
+        for commit_item in commit_items:
+            quantity_commit += commit_item.quantity * commit_item.packet_quantity
+        
+        r_req_item = db.logs_req_item[req_item_id]
+        quantity_commit = quantity_commit / r_req_item.packet_quantity
+        db.logs_req_item[req_item_id] = dict(quantity_commit = quantity_commit)
+        
+        #Update status_commit of the req record
+        session.rcvars.logs_req = r_req_item.logs_req_id
+        logs_req_item_onaccept(None)             
+        
+     
+    s3xrc.model.configure(table, onaccept = logs_commit_item_onaccept )          
 
     #==============================================================================
     # Received (In/Receive / Donation / etc)
@@ -456,9 +525,9 @@ if deployment_settings.has_module(module):
                             Field("status", 
                                   "integer",
                                   requires = IS_NULL_OR(IS_IN_SET(logs_status)),
-                                  represent = lambda status: logs_status[status],       
+                                  represent = lambda status: logs_status.get(status),       
                                   default = LOGS_STATUS_IN_PROCESS,                           
-                                  writable = False,
+                                 # writable = False,
                                   ),
                             person_id(name = "recipient_id",
                                       label = T("Received By")),
@@ -525,6 +594,13 @@ if deployment_settings.has_module(module):
     # Redirect to the Items tabs after creation
     s3xrc.model.configure(table,
                           create_next = URL(r=request, c="logs", f="recv", args=["[id]", "recv_item"]))
+    
+    #------------------------------------------------------------------------------
+    # Update owned_by_role to the store's owned_by_role    
+    s3xrc.model.configure(
+        table, 
+        onaccept = lambda form, tablename = tablename : store_resource_onaccept(form, tablename)
+    )      
 
     #==============================================================================
     # In (Receive / Donation / etc) Items
@@ -538,8 +614,12 @@ if deployment_settings.has_module(module):
                             Field("quantity", "double",
                                   notnull = True),
                             comments(),
-                            logs_req_item_id(),
+                            logs_req_item_id(readable = False,
+                                             writable = False),
                             migrate=migrate, *s3_meta_fields())
+        
+    #packet_quantity virtual field
+    table.virtualfields.append(item_packet_virtualfields(tablename = tablename))      
 
     # CRUD strings
     ADD_LOGS_IN_ITEM = T("Add Item to Shipment")
@@ -566,9 +646,9 @@ if deployment_settings.has_module(module):
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(logs_recv = "logs_recv_id",
-                                          supply_item = "item_id"))
+                                          supply_item = "item_id")) 
 
-#==============================================================================
+    #==============================================================================
     def shn_logs_send_store_id(r):
         if r.to_location_id:
             return shn_get_db_field_value(db,
@@ -577,12 +657,11 @@ if deployment_settings.has_module(module):
                                           r.to_location_id,
                                           "location_id")
         else:
-            return None
+            return None        
 
-#==============================================================================
-# Send (Outgoing / Dispatch / etc)
-#    
-    
+    #==============================================================================
+    # Send (Outgoing / Dispatch / etc)
+    #        
     resourcename = "send"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
@@ -599,7 +678,7 @@ if deployment_settings.has_module(module):
                             Field("status", 
                                   "integer",
                                   requires = IS_NULL_OR(IS_IN_SET(logs_status)),
-                                  represent = lambda status: logs_status[status],       
+                                  represent = lambda status: logs_status.get(status),       
                                   default = LOGS_STATUS_IN_PROCESS,                           
                                   writable = False,
                                   ),
@@ -650,7 +729,7 @@ if deployment_settings.has_module(module):
                                                                     logs_send_represent,
                                                                     orderby="logs_send_id.datetime", sort=True)),
                                     represent = logs_send_represent,
-                                    label = T("Receive Shipment"),
+                                    label = T("Send Shipment"),
                                     #comment = DIV(A(ADD_DISTRIBUTION, _class="colorbox", _href=URL(r=request, c="logs", f="distrib", args="create", vars=dict(format="popup")), _target="top", _title=ADD_DISTRIBUTION),
                                     #          DIV( _class="tooltip", _title=T("Distribution") + "|" + T("Add Distribution."))),
                                     ondelete = "RESTRICT"
@@ -667,7 +746,14 @@ if deployment_settings.has_module(module):
                           create_next = url_logs_send_items,
                           update_next = url_logs_send_items
                           )
-
+    
+    #------------------------------------------------------------------------------
+    # Update owned_by_role to the store's owned_by_role    
+    s3xrc.model.configure(
+        table, 
+        onaccept = lambda form, tablename = tablename : store_resource_onaccept(form, tablename)
+    )  
+    
     #==============================================================================
     # Send (Outgoing / Dispatch / etc) Items
     #
@@ -689,8 +775,12 @@ if deployment_settings.has_module(module):
                                   requires = IS_NULL_OR(IS_IN_SET(log_sent_item_status)),
                                   represent = lambda status: log_sent_item_status[status] if status else log_sent_item_status[0],
                                   writable = False),
-                            logs_req_item_id(),      
+                            logs_req_item_id(readable = False,
+                                             writable = False),      
                             migrate=migrate, *s3_meta_fields())
+    
+    #packet_quantity virtual field
+    table.virtualfields.append(item_packet_virtualfields(tablename = tablename))       
 
     # CRUD strings
     ADD_LOGS_OUT_ITEM = T("Add Item to Shipment")

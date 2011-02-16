@@ -13,7 +13,7 @@ if deployment_settings.has_module(module):
     # -------------------------------------------------------------------------
     # Shelter types
     resourcename = "shelter_type"
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("name", notnull=True),
                             comments(),
@@ -42,14 +42,18 @@ if deployment_settings.has_module(module):
     shelter_type_id = S3ReusableField("shelter_type_id", db.cr_shelter_type,
                                       requires = IS_NULL_OR(IS_ONE_OF(db, "cr_shelter_type.id", "%(name)s")),
                                       represent = lambda id: (id and [db.cr_shelter_type[id].name] or ["None"])[0],
-                                      comment = A(ADD_SHELTER_TYPE, _class="colorbox", _href=URL(r=request, c="cr", f="shelter_type", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SHELTER_TYPE),
+                                      comment = A(ADD_SHELTER_TYPE,
+                                                  _class="colorbox",
+                                                  _href=URL(r=request, c="cr", f="shelter_type", args="create", vars=dict(format="popup")),
+                                                  _target="top",
+                                                  _title=ADD_SHELTER_TYPE),
                                       ondelete = "RESTRICT",
                                       label = T("Shelter Type")
                                      )
 
     # -------------------------------------------------------------------------
     resourcename = "shelter_service"
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("name", notnull=True),
                             comments(),
@@ -79,21 +83,26 @@ if deployment_settings.has_module(module):
             shelter_services = db(db.cr_shelter_service.id.belongs(shelter_service_ids)).select(db.cr_shelter_service.name)
             return ", ".join([s.name for s in shelter_services])
         else:
-            shelter_service = db(db.cr_shelter_service.id == shelter_service_ids).select(db.cr_shelter_service.name, limitby=(0, 1)).first()
+            shelter_service = db(db.cr_shelter_service.id == shelter_service_ids).select(db.cr_shelter_service.name,
+                                                                                         limitby=(0, 1)).first()
             return shelter_service and shelter_service.name or NONE
 
     shelter_service_id = S3ReusableField("shelter_service_id", "list:reference cr_shelter_service", sortby="name",
                                           requires = IS_NULL_OR(IS_ONE_OF(db, "cr_shelter_service.id", "%(name)s", multiple=True)),
                                           represent = shn_shelter_service_represent,
                                           label = T("Shelter Service"),
-                                          comment = A(ADD_SHELTER_SERVICE, _class="colorbox", _href=URL(r=request, c="cr", f="shelter_service", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SHELTER_SERVICE),
+                                          comment = A(ADD_SHELTER_SERVICE,
+                                                      _class="colorbox",
+                                                      _href=URL(r=request, c="cr", f="shelter_service", args="create", vars=dict(format="popup")),
+                                                      _target="top",
+                                                      _title=ADD_SHELTER_SERVICE),
                                           ondelete = "RESTRICT",
                                           #widget = SQLFORM.widgets.checkboxes.widget
                                          )
 
     # -------------------------------------------------------------------------
     resourcename = "shelter"
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # If the HMS module is enabled, we include a hospital_id field, so if the
     # shelter is co-located with a hospital, the hospital can be identified.
@@ -182,8 +191,14 @@ if deployment_settings.has_module(module):
                                  requires = IS_NULL_OR(IS_ONE_OF(db, "cr_shelter.id", "%(name)s", sort=True)),
                                  represent = lambda id: (id and [db.cr_shelter[id].name] or ["None"])[0],
                                  ondelete = "RESTRICT",
-                                 comment = DIV(A(ADD_SHELTER, _class="colorbox", _href=URL(r=request, c="cr", f="shelter", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SHELTER),
-                                           DIV( _class="tooltip", _title=T("Shelter") + "|" + T("The Shelter this Request is from (optional)."))),
+                                 comment = DIV(A(ADD_SHELTER,
+                                                 _class="colorbox",
+                                                 _href=URL(r=request, c="cr", f="shelter", args="create", vars=dict(format="popup")),
+                                                 _target="top",
+                                                 _title=ADD_SHELTER),
+                                           DIV( _class="tooltip",
+                                                _title="%s|%s" % (T("Shelter"),
+                                                                  T("The Shelter this Request is from (optional).")))),
                                  label = T("Shelter"),
                                  widget = S3AutocompleteWidget(request, module, resourcename)
                                 )
@@ -212,8 +227,14 @@ if deployment_settings.has_module(module):
     table.shelter_id.requires = IS_NULL_OR(IS_ONE_OF(db, "cr_shelter.id", "%(name)s", sort=True))
     table.shelter_id.represent = lambda id: (id and [db.cr_shelter[id].name] or ["None"])[0]
     table.shelter_id.ondelete = "RESTRICT"
-    table.shelter_id.comment = DIV(A(ADD_SHELTER, _class="colorbox", _href=URL(r=request, c="cr", f="shelter", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SHELTER),
-                                   DIV( _class="tooltip", _title=T("Shelter") + "|" + T("The Shelter this Request is from (optional).")))
+    table.shelter_id.comment = DIV(A(ADD_SHELTER,
+                                     _class="colorbox",
+                                     _href=URL(r=request, c="cr", f="shelter", args="create", vars=dict(format="popup")),
+                                     _target="top",
+                                     _title=ADD_SHELTER),
+                                   DIV( _class="tooltip",
+                                        _title="%s|%s" % (T("Shelter"),
+                                                          T("The Shelter this Request is from (optional)."))))
     table.shelter_id.label = T("Shelter")
     table.shelter_id.readable = True
     table.shelter_id.writable = True
@@ -221,3 +242,4 @@ if deployment_settings.has_module(module):
     s3xrc.model.add_component("pr", "presence",
         multiple=True,
         joinby=dict(cr_shelter="shelter_id"))
+# -----------------------------------------------------------------------------

@@ -11,6 +11,11 @@
 #==============================================================================
 logs_menu = [
             [T("Home"), False, URL(r=request, c="logs", f="index")],
+            [T("Catalog Items"), False, URL(r=request, c="supply", f="item"),
+            [
+                [T("List"), False, URL(r=request, c="supply", f="item")],
+                [T("Add"), False, URL(r=request, c="supply", f="item", args="create")],
+            ]],            
             [T("Warehouses"), False, URL(r=request, c="inventory", f="store"),
             [
                 [T("List"), False, URL(r=request, c="inventory", f="store")],
@@ -31,11 +36,6 @@ logs_menu = [
            #     [T("List"), False, URL(r=request, c="logs", f="send")],
            #     [T("Add"), False, URL(r=request, c="logs", f="send", args="create")],
            # ]],
-            [T("Catalog Items"), False, URL(r=request, c="supply", f="item"),
-            [
-                [T("List"), False, URL(r=request, c="supply", f="item")],
-                [T("Add"), False, URL(r=request, c="supply", f="item", args="create")],
-            ]],
             ]
 if s3_has_role(1):
     logs_menu.append(

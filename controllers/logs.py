@@ -540,7 +540,7 @@ def recv_process():
     #Update recv record & lock for editing 
     db.logs_recv[recv_id] = dict(datetime = request.utcnow,
                                  status = LOGS_STATUS_RECEIVED,
-                                 owned_by_user = ADMIN,   
+                                 owned_by_user = None,   
                                  owned_by_role = ADMIN                                
                                  ) 
     
@@ -640,7 +640,7 @@ def send_process():
         # Update Send record & lock for editing 
         db.logs_send[send_id] = dict(datetime = request.utcnow,
                                      status = LOGS_STATUS_SENT,
-                                     owned_by_user = ADMIN,   
+                                     owned_by_user = None,   
                                      owned_by_role = ADMIN                                      
                                      )          
         response.confirmation = T("Items Sent from Warehouse")           

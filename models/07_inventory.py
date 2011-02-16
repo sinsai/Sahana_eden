@@ -172,7 +172,9 @@ if deployment_settings.has_module("logs"):
                                   notnull = True),
                             #Field("packet_quantity",
                             #      "double",
-                            #      compute = shn_record_packet_quantity),                               
+                            #      compute = shn_record_packet_quantity),   
+                            Field("expiry_date",
+                                  "date"),                            
                             comments(),
                             migrate=migrate, *s3_meta_fields())
     

@@ -3005,6 +3005,7 @@
 'Security Status': 'Security Status',
 'Security problems': 'Security problems',
 'Seen': 'Seen',
+'Select Items from the Request': 'Select Items from the Request',
 'Select Items from this Warehouse': 'Select Items from this Warehouse',
 "Select a person in charge for status 'assigned'": "Select a person in charge for status 'assigned'",
 'Select a question from the list': 'Select a question from the list',

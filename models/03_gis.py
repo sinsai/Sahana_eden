@@ -1358,7 +1358,9 @@ for layertype in gis_layer_types:
                      Field("map", label=T("Map")),
                      Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
                      Field("img_format", label=T("Format"),
-                           requires=IS_NULL_OR(IS_IN_SET(gis_layer_wms_img_formats))),
+                           requires=IS_NULL_OR(IS_IN_SET(gis_layer_wms_img_formats)),
+                           default="img/png"
+                           ),
                      Field("buffer", "integer", label=T("Buffer"), default=0, requires=IS_INT_IN_RANGE(0, 10),
                            comment=DIV( _class="tooltip",
                                         _title="%s|%s" % (T("Buffer"),

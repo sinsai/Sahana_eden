@@ -107,13 +107,57 @@ if deployment_settings.has_module("logs"):
         store_id = session.rcvars.inventory_store
         store_name = inventory_store_represent(store_id, link = False)
         if not auth.id_group("store_%s" % store_id):
-            store_group_id = auth.s3_create_role( "store_%s" % store_id,
-                                                  "group for user with authorization for store '%s'" % store_name,
-                                                  dict(c="inventory", uacl=auth.permission.NONE, oacl=auth.permission.ALL)
-                                                  )
-            db.inventory_store[store_id] = dict(owned_by = store_group_id)
+            store_role_id = auth.s3_create_role( "store_%s" % store_id,
+                                                  "Role for user with authorization for store '%s'" % store_name
+                                                 )
+            db.inventory_store[store_id] = dict(owned_by_role = store_role_id)
+            
+            #Add user to the group
+            auth.add_membership(store_role_id)
+            #Add user to store users
+            db.inventory_store_user.insert(inventory_store_id = store_id,
+                                           user_id = auth.user_id)
+            
     s3xrc.model.configure(table, onaccept=inventory_store_onaccept)
+    
+    # -----------------------------------------------------------------------------
+    def inventory_store_match_request(r, **attr):
+        """
+        Doesn't work!!!
+        """    
+        r.resource.clear_query()
+        output = s3_rest_controller( "logs",
+                                     "req",
+                                     method = "list") 
+        #output = dict(test = "test")
+        req_actions = [dict(url = str(URL(r=request,
+                                              c = "logs",
+                                              f = "rep",
+                                              args = ["[id]","req_item"]
+                                              )
+                                           ),
+                                _class = "action-btn",
+                                label = T("Items"),
+                                ),
+                        dict(url = str(URL(r=request,
+                                              c = "logs",
+                                              f = "commit_req",
+                                              args = ["[id]"]
+                                              )
+                                           ),
+                                _class = "action-btn",
+                                label = T("Commit"),
+                                ),
+                        ]
+        
+        #if response.s3.actions:
+        #    response.s3.actions.append(req_actions)
+        #else:
+        #    response.s3.actions = req_actions          
+        
+        return output               
 
+    #s3xrc.model.set_method(module, resourcename, method='match_req', action=inventory_store_match_request ) 
     #==============================================================================
     # Inventory Item
     #
@@ -128,18 +172,35 @@ if deployment_settings.has_module("logs"):
                                   notnull = True),
                             #Field("packet_quantity",
                             #      "double",
-                            #      compute = shn_record_packet_quantity),                               
+                            #      compute = shn_record_packet_quantity),   
+                            Field("expiry_date",
+                                  "date"),                            
                             comments(),
                             migrate=migrate, *s3_meta_fields())
     
-    class inventory_store_item_virtualfields(object):
-            def packet_quantity(self):
+    #@todo Move to 06_supply.py
+    class item_packet_virtualfields(dict, object):
+        def __init__(self,
+                     tablename):
+            self.tablename = tablename
+        def packet_quantity(self):
+            if self.tablename == "inventory_store_item":
                 item_packet = self.inventory_store_item.item_packet_id
-                if item_packet:
-                    return item_packet.quantity 
-                else:
-                    return None
-    db.inventory_store_item.virtualfields.append(inventory_store_item_virtualfields())    
+            elif self.tablename == "logs_req_item":
+                item_packet = self.logs_req_item.item_packet_id
+            elif self.tablename == "logs_commit_item":
+                item_packet = self.logs_commit_item.item_packet_id       
+            elif self.tablename == "logs_recv_item":
+                item_packet = self.logs_recv_item.item_packet_id     
+            elif self.tablename == "logs_send_item":
+                item_packet = self.logs_send_item.item_packet_id                                                           
+            else:
+                item_packet = None
+            if item_packet:
+                return item_packet.quantity 
+            else:
+                return None
+    db.inventory_store_item.virtualfields.append(item_packet_virtualfields(tablename = "inventory_store_item"))    
 
     # CRUD strings
     ADD_INVENTORY_ITEM = T("Add Warehouse Item")
@@ -172,16 +233,16 @@ if deployment_settings.has_module("logs"):
 
     # Reusable Field
     store_item_id = S3ReusableField("store_item_id", db.inventory_store_item,
-                requires = IS_ONE_OF(db, 
-                                     "inventory_store_item.id", 
-                                     shn_inventory_store_item_represent, 
-                                     orderby="inventory_store_item.id", 
-                                     sort=True),
-                represent = shn_inventory_store_item_represent,
-                label = T("Warehouse Item"),
-                comment = DIV( _class="tooltip", _title=T("Warehouse Item") + "|" + T("Select Items from this Warehouse")),
-                ondelete = "RESTRICT"
-                )    
+                                    requires = IS_ONE_OF(db, 
+                                                         "inventory_store_item.id", 
+                                                         shn_inventory_store_item_represent, 
+                                                         orderby="inventory_store_item.id", 
+                                                         sort=True),
+                                    represent = shn_inventory_store_item_represent,
+                                    label = T("Warehouse Item"),
+                                    comment = DIV( _class="tooltip", _title=T("Warehouse Item") + "|" + T("Select Items from this Warehouse")),
+                                    ondelete = "RESTRICT"
+                                    )    
 
     # Items as component of Stores
     s3xrc.model.add_component(module, resourcename,
@@ -193,6 +254,26 @@ if deployment_settings.has_module("logs"):
                               multiple=False,
                               joinby=dict(supply_item="item_id")
                               )     
+    # -----------------------------------------------------------------------------    
+    def store_resource_onaccept(form, tablename):
+        """ 
+        Generic onaccept function to update a store component's "owned_by_role" 
+        to the stores "owned_by_role" 
+        """
+        inventory_store_id = session.rcvars.inventory_store
+        record_id = session.rcvars[tablename]
+        store_role_id = shn_get_db_field_value(db,
+                                                "inventory_store",
+                                                "owned_by_role",
+                                                inventory_store_id )    
+        db[tablename][record_id] = dict(owned_by_role = store_role_id)    
+    
+    # -----------------------------------------------------------------------------
+    # Update owned_by_role to the store's owned_by_role    
+    s3xrc.model.configure(
+        table, 
+        onaccept = lambda form, tablename = tablename : store_resource_onaccept(form, tablename)
+    )       
     #==============================================================================
     # Inventory Store User
     #
@@ -204,7 +285,8 @@ if deployment_settings.has_module("logs"):
                                   auth.settings.table_user,
                                   requires = IS_IN_DB(db, "%s.id" %
                                                       auth.settings.table_user._tablename,
-                                                      "%(id)s: %(first_name)s %(last_name)s")
+                                                      "%(id)s: %(first_name)s %(last_name)s"),
+                                  represent = shn_user_represent
                                   ),
                             migrate=migrate, *s3_meta_fields())
     # CRUD strings
@@ -237,7 +319,7 @@ if deployment_settings.has_module("logs"):
         inventory_store_id = session.rcvars.inventory_store
         store_group_id = shn_get_db_field_value(db,
                                                 "inventory_store",
-                                                "owned_by",
+                                                "owned_by_role",
                                                 inventory_store_id )
         group_members = auth.s3_group_members(store_group_id)
         store_users = [ store_user.user_id for store_user in 

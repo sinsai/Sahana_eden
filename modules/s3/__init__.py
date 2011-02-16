@@ -69,7 +69,7 @@ from s3rest import S3Resource, S3Method
 
 # RESTful Methods
 from s3crud import S3CRUD
-from s3search import S3Search, S3LocationSearch, S3PersonSearch
+from s3search import *
 
 # GIS Mapping
 from s3gis import *

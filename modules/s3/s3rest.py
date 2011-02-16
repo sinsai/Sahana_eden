@@ -1720,14 +1720,20 @@ class S3Resource(object):
 
         """
 
+        fkey = None
         table = self.table
+
+        if self.parent:
+            component = self.parent.components.get(self.name, None)
+            if component:
+                fkey = component.fkey
 
         if subset:
             return [table[f] for f in subset
-                    if f in table.fields and table[f].readable]
+                    if f in table.fields and table[f].readable and f != fkey]
         else:
             return [table[f] for f in table.fields
-                    if table[f].readable]
+                    if table[f].readable and f != fkey]
 
 
     # -------------------------------------------------------------------------

@@ -860,13 +860,6 @@ class GIS(object):
             return features
 
     # -----------------------------------------------------------------------------
-    # @ToDo Pick one convention: lon, lat or lat, lon. There are pairs of
-    # values where either order represents a land location. The convention,
-    # seemingly everywhere else in GIS IT, is lon first. Except for us
-    # non-GIS folks, who have always said "latitude and longitude". We are
-    # already confused when you omit the minus sign or the NSEW, so don't
-    # mess with our heads by saying (lat, lon) here. Yes, this returns a
-    # dict (good!) -- I mean the function name and the doc comment.
     def get_latlon(self, feature_id, filter=False):
 
         """ Returns the Lat/Lon for a Feature
@@ -884,7 +877,7 @@ class GIS(object):
         elif isinstance(feature_id, str):
             query = (_locations.uuid == feature_id)
         else:
-            # What else could feature_id be?
+            # Bail out
             return None
 
         feature = db(query).select(
@@ -893,7 +886,7 @@ class GIS(object):
 
         #query = (_locations.deleted == False)
         #if filter and not deployment_settings.get_gis_display_l0():
-            # @ToDo This query looks wrong. Does it intend to exclude both
+            # @ToDo: This query looks wrong. Does it intend to exclude both
             # L0 and no level? Because it's actually a no-op. If location is
             # L0 then first term is false, but there is a level so the 2nd
             # term is also false, so the combination is false, same as the

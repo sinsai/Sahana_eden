@@ -115,7 +115,7 @@ def tablestruct(db):
     tablestruct = {}
     tables = tablelist(db)
     for table in tables:
-        db.query("describe " + table + ";")
+        db.query("describe %s;" % table)
         r = db.store_result()
         structure = []
         for row in r.fetch_row(100):
@@ -150,7 +150,7 @@ print fields_to_delete
 
 for table in tables_to_delete:
     db2.query("SET FOREIGN_KEY_CHECKS = 0;")
-    db2.query("drop table " + table + ";")
+    db2.query("DROP TABLE %s;" % table)
     db2.query("SET FOREIGN_KEY_CHECKS = 1;")
 
 problems = ""
@@ -162,9 +162,9 @@ for table in fields_to_delete:
         try:
             db2.query("ALTER TABLE `" + table + "` DROP  `" + field + "` ;")
         except:
-            print "Table " + table + " has a field " + field + " with a FK constraint"
+            print "Table %s has a field %s with a FK constraint" % (table, field)
             # Try to resolve any FK constraint issues automatically
-            cmd = 'mysql -e "show innodb status;" > ' + filename
+            cmd = "mysql -e 'show innodb status;' > %s" % filename
             subprocess.call(cmd, shell=True)
             if os.access(filename, os.R_OK):
                 f = open(filename, "r")

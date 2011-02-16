@@ -1,62 +1,65 @@
-from __future__ import with_statement
-from fabric.api import *
-from fabric.colors import red, green
-import os
-import pexpect
-
 #
-# http://eden.sahanafoundation.org/wiki/PakistanDeploymentCycle
+# http://eden.sahanafoundation.org/wiki/SysAdmin
 #
 # Assumptions:
-# - /root/.my.cnf is configured to allow root access to MySQL without password
-# - root on Prod/Demo can SSH to Test without password
+# - for MySQL, /root/.my.cnf is configured to allow root access to MySQL without password
+# - root on Prod can SSH to Test without password
 #
 # Usage:
 # fab [test|demo|prod] deploy
 #
 
-# This site updates to current Trunk (refreshing Data from Prod)
-test_host = "test.eden.sahanafoundation.org"
-prod_host = "pakistan.sahanafoundation.org"
-all_hosts = [prod_host, test_host, "demo.eden.sahanafoundation.org", "eden.sahanafoundation.org", "humanityroad.sahanafoundation.org", "geo.eden.sahanafoundation.org", "camp.eden.sahanafoundation.org"]
-env.key_filename = ["/root/.ssh/sahana_release"]
+from __future__ import with_statement
+from fabric.api import *
+from fabric.colors import red, green
+import os
+from datetime import date
+import pexpect
 
-# Definitions for 'Live' infrastructure
+# Database
+# - default to MySQL currently
+# - PostgreSQL support is incomplete!
+env.database = "mysql"
+
+# Definitions for 'Demo' infrastructure
 # (updates from Trunk)
 env.tested = False
+def demo():
+    env.user = "root"
+    env.hosts = ["demo.eden.sahanafoundation.org"]
+
+def larc():
+    env.user = "root"
+    env.database = "postgresql"
+    env.hosts = ["larc.sahanafoundation.org"]
+
 def colombia():
-    """ List of server(s) for Live infrastructure """
     env.user = "root"
     env.hosts = ["colombia.sahanafoundation.org"]
 
 def taiwan():
-    """ List of server(s) for Live infrastructure """
     env.user = "root"
     env.hosts = ["taiwan.sahanafoundation.org"]
 
+# Definitions for 'Test' infrastructure
+# (updates from Trunk after copying data from Prod)
+test_host = "test.eden.sahanafoundation.org"
+def test():
+    env.user = "root"
+    env.hosts = [test_host]
+
 # Definitions for 'Production' infrastructure
-# (updates from test)
+# (updates from version currently on Test)
+# NB Script needs reworking to be able to support multiple concurrent instances
+prod_host = "pakistan.sahanafoundation.org"
 def pakistan():
-    """ List of server(s) for Production infrastructure """
     env.user = "root"
     env.tested = True
     env.hosts = [prod_host]
 
-# Definitions for 'Demo' infrastructure
-# (updates from Trunk)
-def demo():
-    """ List of server(s) for Demo infrastructure """
-    env.user = "root"
-    env.hosts = ["demo.eden.sahanafoundation.org"]
-
-# Definitions for 'Test' infrastructure
-# (updates from Trunk)
-def test():
-    """ List of server(s) for Test infrastructure """
-    env.user = "root"
-    env.hosts = [test_host]
-
 # Definitions for 'All' infrastructure
+# used for OS updates
+all_hosts = ["eden.sahanafoundation.org", "demo.eden.sahanafoundation.org", "ci.eden.sahanafoundation.org", "humanityroad.sahanafoundation.org", "geo.eden.sahanafoundation.org"]
 def all():
     """ List of server(s) for All infrastructure """
     env.user = "root"
@@ -64,6 +67,7 @@ def all():
 
 
 # Key distribution and management
+env.key_filename = ["/root/.ssh/sahana_release"]
 def generate_keys():
     """ Generate an SSH key to be used for password-less control """
     local("ssh-keygen -N '' -q -t rsa -f ~/.ssh/sahana_release")
@@ -71,6 +75,7 @@ def generate_keys():
 def distribute_keys():
     """ Distribute keys to servers - requires preceding with 'test' or 'prod' """
     local("ssh-copy-id -i ~/.ssh/sahana_release.pub %s@%s" % (env.user, env.host))
+
 #
 # Deployment, Maintenance and Migrations
 #
@@ -115,10 +120,22 @@ def backup():
         run("bzr diff views >> /root/custom.diff", pty=True)
         env.warn_only = False
         # Backup database
-        run("mysqldump sahana > /root/backup.sql", pty=True)
-        # Backup databases folder
+        if env.database == "mysql":
+            run("mysqldump sahana > /root/backup.sql", pty=True)
+        elif env.database == "postgresql":
+            run("sudo -H -u postgres pg_dump -c sahana > /root/backup.sql", pty=True)
+        # Backup databases folder (includes sqlite db if used)
         run("rm -rf /root/databases", pty=True)
         run("cp -ar /home/web2py/applications/eden/databases /root", pty=True)
+        # Backup uploads folder
+        run("rm -rf /root/uploads", pty=True)
+        run("cp -ar /home/web2py/applications/eden/uploads /root", pty=True)
+        # Tar it all up
+        filename = "/root/%s-%s.tar" % (env.host, str(date.today()))
+        run("tar cf %s /root/VERSION /root/backup.sql /root/custom.diff /root/databases/ /root/uploads/" % filename, pty=True)
+        run("gzip -9 %s" % filename, pty=True)
+        # scp it offsite
+        # tbc
 
 def cleanup():
     """
@@ -145,8 +162,8 @@ def cleanup():
 def db_upgrade():
     """
         Upgrade the Database
-        - this assumes that /root/.my.cnf is configured on both Test & Prod to allow root to have access to the MySQL DB
-          without needing '-u root -p'
+        - For MySQL, this assumes that /root/.my.cnf is configured on both Test & Prod
+        to allow root to have access to the MySQL DB without needing '-u root -p'
     """
     print(green("%s: Upgrading Database" % env.host))
     # See dbstruct.py

@@ -141,6 +141,9 @@ def backup():
         # Tar it all up
         filename = "/root/%s-%s.tar" % (env.host, str(date.today()))
         run("tar cf %s /root/VERSION /root/backup.sql /root/custom.diff /root/databases/ /root/uploads/" % filename, pty=True)
+        env.warn_only = True
+        run("rm -f %s.gz" % filename, pty=True)
+        env.warn_only = False
         run("gzip -9 %s" % filename, pty=True)
         # scp it offsite
         # tbc
@@ -220,7 +223,7 @@ def db_upgrade_():
             run("mysql old < backup.sql", pty=True)
         elif env.database == "postgresql":
             run("sudo -H -u postgres createdb -E UTF8 old", pty=True)
-            run("sudo -H -u postgres psql -d old -f backup.sql", pty=True)
+            run("sudo -H -u postgres psql -q -d old -f backup.sql", pty=True)
     # Step 7: Run the script: python dbstruct_mysql.py
     # use pexpect to allow us to jump in to do manual fixes
     print(green("%s: Fixing Database Structure" % env.host))
@@ -405,12 +408,16 @@ def rollback():
         # Restore database
         print(green("%s: Restoring Database" % env.host))
         if env.database == "mysql":
+            env.warn_only = True
             run("mysqladmin -f drop sahana", pty=True)
+            env.warn_only = False
             run("mysqladmin create sahana", pty=True)
             run("mysql sahana < backup.sql", pty=True)
         elif env.database == "postgresql":
+            env.warn_only = True
             run("pkill -f 'postgres: postgres sahana'", pty=True)
             run("sudo -H -u postgres dropdb sahana", pty=True)
+            env.warn_only = False
             run("sudo -H -u postgres createdb -O sahana -E UTF8 sahana", pty=True)
             run("sudo -H -u postgres psql -d sahana -f backup.sql", pty=True)
         # Restore databases folder

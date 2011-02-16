@@ -12,12 +12,28 @@
 
 tablename = "pr_person"
 field = "first_name"
-db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
+try:
+    db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
+except:
+    # Index already present
+    pass
 field = "middle_name"
-db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
+try:
+    db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
+except:
+    # Index already present
+    pass
 field = "last_name"
-db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
+try:
+    db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
+except:
+    # Index already present
+    pass
 
 tablename = "gis_location"
 field = "name"
-db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
+try:
+    db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
+except:
+    # Index already present
+    pass

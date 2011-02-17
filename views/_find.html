@@ -1,0 +1,51 @@
+{{try:}}
+ {{=H2(title)}}
+{{except:}}
+{{pass}}
+<div id='rheader'>
+{{try:}}
+ {{=XML(rheader)}}
+{{except:}}
+ {{pass}}
+</div>
+<div id='map'></div>
+<div class='form-container'>
+{{try:}}
+ {{=simple_form}}
+{{except:}}
+{{pass}}
+</div>
+<div><br /></div>
+<div id='table-container'>
+{{try:}}
+ {{=H3(subtitle)}}
+{{except:}}
+{{pass}}
+<div id='list_formats'>
+{{try:}}
+{{if isinstance(items, DIV):}}
+<a href="{{=jr.there(representation="pdf", vars=session.s3.filter)}}" title="{{=T("Export in PDF format")}}"><img src="/{{=request.application}}/static/img/pdficon_small.gif"/></a>
+<a href="{{=jr.there(representation="xls", vars=session.s3.filter)}}" title="{{=T("Export in XLS format")}}"><img src="/{{=request.application}}/static/img/icon-xls.png"/></a>
+<a href="{{=jr.there(representation="rss", vars=session.s3.filter)}}" title="{{=T("Export in RSS format")}}"><img src="/{{=request.application}}/static/img/RSS_16.png"/></a>
+{{try:}}
+  {{test = jr.target()[2].location_id}}
+  <a href="{{=jr.there(representation="kml", vars=session.s3.filter)}}" title="{{=T("Export in KML format")}}"><img src="/{{=request.application}}/static/img/kml_icon.png"/></a>
+{{except:}}
+{{pass}}
+{{pass}}
+{{except:}}
+{{pass}}
+</div>
+{{try:}}
+ {{=items}}
+{{except:}}
+{{pass}}
+</div>
+<p>&nbsp;</p>
+{{include "pagenav.html"}}
+{{include "searchbox.html"}}
+{{try:}}
+ {{=add_btn}}
+{{except:}}
+{{pass}}
+{{include "dataTables.html"}}

@@ -3432,6 +3432,7 @@
 'The title of the WMS Browser panel in the Tools panel.': 'The title of the WMS Browser panel in the Tools panel.',
 'The token associated with this application on': 'The token associated with this application on',
 'The unique identifier which identifies this instance to other instances.': 'The unique identifier which identifies this instance to other instances.',
+'The way in which an item is normally distributed': 'The way in which an item is normally distributed',
 'The weight in kg.': 'The weight in kg.',
 'Theme': 'Theme',
 'Theme Details': 'Theme Details',

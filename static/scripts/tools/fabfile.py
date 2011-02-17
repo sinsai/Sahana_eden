@@ -2,6 +2,7 @@
 # http://eden.sahanafoundation.org/wiki/SysAdmin
 #
 # Assumptions:
+# - for PostgreSQL, running Debian Squeeze's version of PostGIS
 # - for MySQL, /root/.my.cnf is configured to allow root access to MySQL without password
 # - root on Prod can SSH to Test without password
 #
@@ -20,11 +21,20 @@ import pexpect
 # - default to MySQL currently
 env.database = "mysql"
 
+# For PostGIS
+# Debian Squeeze
+env.postgis_path = "/usr/share/postgresql/8.4/contrib/postgis-1.5/postgis.sql"
+env.postgis_spatial_ref_path = "/usr/share/postgresql/8.4/contrib/postgis-1.5/spatial_ref_sys.sql"
+# Ubuntu Lucid: copy these lines into the host definition
+#env.postgis_path = "/usr/share/postgresql/8.4/contrib/postgis.sql"
+#env.postgis_spatial_ref_path = "/usr/share/postgresql/8.4/contrib/spatial_ref_sys.sql"
+
 # Definitions for 'Demo' infrastructure
 # (updates from Trunk)
 env.tested = False
 def demo():
     env.user = "root"
+    env.database = "postgresql"
     env.hosts = ["demo.eden.sahanafoundation.org"]
 
 def larc():
@@ -179,6 +189,7 @@ def db_upgrade():
     print(green("%s: Upgrading Database" % env.host))
     # See dbstruct_mysql.py
     with cd("/home/web2py/applications/eden/"):
+
         # Step 0: Drop old database 'sahana'
         print(green("%s: Dropping old Database" % env.host))
         # If database doesn't exist, we don't want to stop
@@ -191,15 +202,20 @@ def db_upgrade():
         env.warn_only = False
         print(green("%s: Cleaning databases folder" % env.host))
         run("rm -rf databases/*", pty=True)
+
         # Step 1: Create a new, empty database 'sahana' as-normal
         print(green("%s: Creating new Database" % env.host))
         if env.database == "mysql":
             run("mysqladmin create sahana", pty=True)
         elif env.database == "postgresql":
             run("sudo -H -u postgres createdb -O sahana -E UTF8 sahana", pty=True)
+            run("sudo -H -u postgres createlang plpgsql -d sahana", pty=True)
+            run("sudo -H -u postgres psql -d sahana -f %s" % env.postgis_path, pty=True)
+            run("sudo -H -u postgres psql -d sahana -f %s" % env.postgis_spatial_ref_path, pty=True)
+            
         # Step 2: set deployment_settings.base.prepopulate = False in models/000_config.py
         print(green("%s: Disabling prepopulate" % env.host))
-        run("sed -i 's/deployment_settings.base.prepopulate = True/deployment_settings.base.prepopulate = False/g' models/000_config.py", pty=True)
+        run("sed -i 's/deployment_settings.base.prepopulate = True/deployment_settings.base.prepopulate = False/' models/000_config.py", pty=True)
 
 def db_upgrade_():
     """
@@ -208,6 +224,7 @@ def db_upgrade_():
           to allow root to have access to the DB without needing '-u root -p'
     """
     with cd("/root/"):
+
         # Step 5: Use the backup to populate a new table 'old'
         print(green("%s: Restoring backup to 'old'" % env.host))
         # If database doesn't exist, we don't want to stop
@@ -224,6 +241,7 @@ def db_upgrade_():
         elif env.database == "postgresql":
             run("sudo -H -u postgres createdb -E UTF8 old", pty=True)
             run("sudo -H -u postgres psql -q -d old -f backup.sql", pty=True)
+
     # Step 7: Run the script: python dbstruct_mysql.py
     # use pexpect to allow us to jump in to do manual fixes
     print(green("%s: Fixing Database Structure" % env.host))
@@ -239,22 +257,27 @@ def db_upgrade_():
     child.expect(":/home/web2py/applications/eden/static/scripts/tools#")
     child.sendline("exit")
     #print child.before
+
     # Step 8: Fixup manually anything which couldn't be done automatically
     #print (green("Need to exit the SSH session once you have fixed anything which needs fixing"))
     #child.interact()     # Give control of the child to the user.
     with cd("/root/"):
+
         # Step 9: Take a dump of the fixed data (no structure, full inserts)
         print(green("%s: Dumping fixed data" % env.host))
         if env.database == "mysql":
             run("mysqldump -tc old > old.sql", pty=True)
         elif env.database == "postgresql":
             run("sudo -H -u postgres pg_dump -a --column-inserts old > old.sql", pty=True)
+
         # Step 10: Import it into the empty database
         print(green("%s: Importing fixed data" % env.host))
         if env.database == "mysql":
             run("mysql sahana < old.sql", pty=True)
         elif env.database == "postgresql":
             run("sudo -H -u postgres psql -d sahana -f old.sql", pty=True)
+            # Re-apply the PostGIS link
+            run("sudo -H -u postgres ~web2py/applications/eden/static/scripts/tools/postgis.sh", pty=True)
 
 def db_sync():
     """
@@ -269,6 +292,7 @@ def db_sync():
         print(green("%s: Synchronising Database" % env.host))
         # See dbstruct_mysql.py
         with cd("/home/web2py/applications/eden/"):
+
             # Step 0: Drop old database 'sahana'
             print(green("%s: Dropping old Database" % env.host))
             # If database doesn't exist, we don't want to stop
@@ -277,14 +301,18 @@ def db_sync():
             env.warn_only = False
             print(green("%s: Cleaning databases folder" % env.host))
             run("rm -rf databases/*", pty=True)
+
             # Step 1: Create a new, empty MySQL database 'sahana' as-normal
             print(green("%s: Creating new Database" % env.host))
             run("mysqladmin create sahana", pty=True)
+
             # Step 2: set deployment_settings.base.prepopulate = False in models/000_config.py
             print(green("%s: Disabling prepopulate" % env.host))
-            run("sed -i 's/deployment_settings.base.prepopulate = True/deployment_settings.base.prepopulate = False/g' models/000_config.py", pty=True)
+            run("sed -i 's/deployment_settings.base.prepopulate = True/deployment_settings.base.prepopulate = False/' models/000_config.py", pty=True)
+
         # Step 3: Allow web2py to run the Eden model to configure the Database structure
         migrate()
+
         # Step 4: Export the Live database from the Live server (including structure)
         child = pexpect.spawn("ssh -i /root/.ssh/sahana_release %s@%s" % (env.user, prod_host))
         child.expect(":~#")
@@ -296,6 +324,7 @@ def db_sync():
         child.expect(":~#")
         child.sendline("exit")
         with cd("/root/"):
+
             # Step 5: Use this to populate a new table 'old'
             print(green("%s: Restoring live to 'old'" % env.host))
             # If database doesn't exist, we don't want to stop
@@ -304,6 +333,7 @@ def db_sync():
             env.warn_only = False
             run("mysqladmin create old", pty=True)
             run("mysql old < live.sql", pty=True)
+
         # Step 7: Run the script: python dbstruct_mysql.py
         # use pexpect to allow us to jump in to do manual fixes
         child = pexpect.spawn("ssh -i /root/.ssh/sahana_release %s@%s" % (env.user, env.host))
@@ -315,13 +345,16 @@ def db_sync():
         child.expect(":/home/web2py/applications/eden/static/scripts/tools#")
         child.sendline("exit")
         #print child.before
+
         # Step 8: Fixup manually anything which couldn't be done automatically
         #print (green("Need to exit the SSH session once you have fixed anything which needs fixing"))
         #child.interact()     # Give control of the child to the user.
         with cd("/root/"):
+
             # Step 9: Take a dump of the fixed data (no structure, full inserts)
             print(green("%s: Dumping fixed data" % env.host))
             run("mysqldump -tc old > old.sql", pty=True)
+
             # Step 10: Import it into the empty database
             print(green("%s: Importing fixed data" % env.host))
             run("mysql sahana < old.sql", pty=True)
@@ -329,7 +362,9 @@ def db_sync():
 def maintenance_on():
     """ Enable maintenance mode """
     print(green("%s: Enabling Maintenance Mode" % env.host))
-    # ToDo Disable Cron
+    # Disable Cron
+    run("sed -i 's|0-59/1 * * * * web2py|#0-59/1 * * * * web2py|' /etc/crontab", pty=True)
+    # Apply temporary Apache config
     run("a2dissite %s" % env.host, pty=True)
     run("a2ensite maintenance", pty=True)
     reload()
@@ -337,7 +372,9 @@ def maintenance_on():
 def maintenance_off():
     """ Disable maintenance mode """
     print(green("%s: Disabling Maintenance Mode" % env.host))
-    # ToDo Enable Cron
+    # Enable Cron
+    run("sed -i 's|#0-59/1 * * * * web2py|0-59/1 * * * * web2py|' /etc/crontab", pty=True)
+    # Restore main Apache config
     run("a2dissite maintenance", pty=True)
     run("a2ensite %s" % env.host, pty=True)
     reload()
@@ -346,7 +383,7 @@ def migrate_on():
     """ Enabling migrations """
     print(green("%s: Enabling Migrations" % env.host))
     with cd("/home/web2py/applications/eden/models/"):
-        run("sed -i 's/deployment_settings.base.migrate = False/deployment_settings.base.migrate = True/g' 000_config.py", pty=True)
+        run("sed -i 's/deployment_settings.base.migrate = False/deployment_settings.base.migrate = True/' 000_config.py", pty=True)
 
 def migrate():
     """ Perform a Migration """
@@ -358,7 +395,7 @@ def migrate_off():
     """ Disabling migrations """
     print(green("%s: Disabling Migrations" % env.host))
     with cd("/home/web2py/applications/eden/models/"):
-        run("sed -i 's/deployment_settings.base.migrate = True/deployment_settings.base.migrate = False/g' 000_config.py", pty=True)
+        run("sed -i 's/deployment_settings.base.migrate = True/deployment_settings.base.migrate = False/' 000_config.py", pty=True)
 
 def optimise():
     """ Apply Optimisation """

@@ -89,18 +89,17 @@ print fields_to_delete
 
 for table in tables_to_delete:
     # http://stackoverflow.com/questions/139884/how-do-i-disable-referential-integrity-in-postgres-8-2
-    # psgsql 9: ALTER TABLE mytable DISABLE TRIGGER USER;
-    cursor2.execute("ALTER TABLE %s DISABLE TRIGGERS;", (table,))
-    cursor2.execute("DROP TABLE %s;", (table,))
-    cursor2.execute("ALTER TABLE %s ENABLE TRIGGERS;", (table,))
+    cursor2.execute("ALTER TABLE %s DISABLE TRIGGER USER;" % table)
+    cursor2.execute("DROP TABLE %s;" % table)
+    cursor2.execute("ALTER TABLE %s ENABLE TRIGGER USER;" % table)
 
 problems = ""
 for table in fields_to_delete:
-    cursor2.execute("ALTER TABLE %s DISABLE TRIGGERS;", (table,))
+    cursor2.execute("ALTER TABLE %s DISABLE TRIGGER USER;" % table)
     for field in fields_to_delete[table]:
         print "ALTER TABLE `%s` DROP `%s`;" % (table, field)
         try:
-            cursor2.execute("ALTER TABLE %s DROP %s;", (table, field))
+            cursor2.execute("ALTER TABLE %s DROP %s;" % (table, field))
         except (psycopg2.IntegrityError,):
             e = sys.exc_info()[1]
             if psycopg2.errorcodes.lookup(e.pgcode) == "FOREIGN_KEY_VIOLATION":
@@ -109,7 +108,7 @@ for table in fields_to_delete:
                 fk = e[0].split("violates foreign key constraint \"")[1].split("\" on table")[0].strip()
                 print "ALTER TABLE `%s` DROP CONSTRAINT `%s`;" % (table, fk)
                 try:
-                    cursor2.execute("ALTER TABLE %s DROP CONSTRAINT %s;", (table, fk))
+                    cursor2.execute("ALTER TABLE %s DROP CONSTRAINT %s;" % (table, fk))
                 except:
                     e = sys.exc_info()[1]
                     print "Failed to remove FK %s from table %s" % (fk, table)
@@ -117,7 +116,7 @@ for table in fields_to_delete:
                 # Try again now that FK constraint has been removed
                 print "ALTER TABLE `%s` DROP `%s`;" % (table, field)
                 try:
-                    cursor2.execute("ALTER TABLE %s DROP %s;", (table, field))
+                    cursor2.execute("ALTER TABLE %s DROP %s;" % (table, field))
                 except (psycopg2.IntegrityError,):
                     e = sys.exc_info()[1]
                     message = "Failed to drop field %s from table %s" % (field, table)
@@ -128,7 +127,7 @@ for table in fields_to_delete:
                 problems = "%s\n%s" % (problems, e[0])
                 continue
                 
-    cursor2.execute("ALTER TABLE %s ENABLE TRIGGERS;", (table,))
+    cursor2.execute("ALTER TABLE %s ENABLE TRIGGER USER;" % (table))
 
 # Close the database
 cursor2.close()

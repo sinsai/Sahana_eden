@@ -141,7 +141,7 @@ def backup():
         if env.database == "mysql":
             run("mysqldump sahana > /root/backup.sql", pty=True)
         elif env.database == "postgresql":
-            run("sudo -H -u postgres pg_dump -C sahana > /root/backup.sql", pty=True)
+            run("sudo -H -u postgres pg_dump --disable-triggers -T spatial_ref_sys sahana > /root/backup.sql", pty=True)
         # Backup databases folder (includes sqlite db if used)
         run("rm -rf /root/databases", pty=True)
         run("cp -ar /home/web2py/applications/eden/databases /root", pty=True)
@@ -210,8 +210,8 @@ def db_upgrade():
         elif env.database == "postgresql":
             run("sudo -H -u postgres createdb -O sahana -E UTF8 sahana", pty=True)
             run("sudo -H -u postgres createlang plpgsql -d sahana", pty=True)
-            run("sudo -H -u postgres psql -d sahana -f %s" % env.postgis_path, pty=True)
-            run("sudo -H -u postgres psql -d sahana -f %s" % env.postgis_spatial_ref_path, pty=True)
+            run("sudo -H -u postgres psql -q -d sahana -f %s" % env.postgis_path, pty=True)
+            run("sudo -H -u postgres psql -q -d sahana -f %s" % env.postgis_spatial_ref_path, pty=True)
             
         # Step 2: set deployment_settings.base.prepopulate = False in models/000_config.py
         print(green("%s: Disabling prepopulate" % env.host))
@@ -268,16 +268,16 @@ def db_upgrade_():
         if env.database == "mysql":
             run("mysqldump -tc old > old.sql", pty=True)
         elif env.database == "postgresql":
-            run("sudo -H -u postgres pg_dump -a --column-inserts old > old.sql", pty=True)
+            run("sudo -H -u postgres pg_dump --disable-triggers -a --column-inserts old > old.sql", pty=True)
 
         # Step 10: Import it into the empty database
         print(green("%s: Importing fixed data" % env.host))
         if env.database == "mysql":
             run("mysql sahana < old.sql", pty=True)
         elif env.database == "postgresql":
-            run("sudo -H -u postgres psql -d sahana -f old.sql", pty=True)
             # Re-apply the PostGIS link
-            run("sudo -H -u postgres ~web2py/applications/eden/static/scripts/tools/postgis.sh", pty=True)
+            run("sudo -H -u postgres sh ~web2py/applications/eden/static/scripts/tools/postgis.sh", pty=True)
+            run("sudo -H -u postgres psql -q -d sahana -f old.sql", pty=True)
 
 def db_sync():
     """
@@ -456,7 +456,7 @@ def rollback():
             run("sudo -H -u postgres dropdb sahana", pty=True)
             env.warn_only = False
             run("sudo -H -u postgres createdb -O sahana -E UTF8 sahana", pty=True)
-            run("sudo -H -u postgres psql -d sahana -f backup.sql", pty=True)
+            run("sudo -H -u postgres psql -q -d sahana -f backup.sql", pty=True)
         # Restore databases folder
         run("rm -rf databases/*", pty=True)
         run("cp -ar /root/databases/* databases", pty=True)

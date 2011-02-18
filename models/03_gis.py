@@ -464,7 +464,9 @@ gis_source_opts = {
 # gis_location table, which web2py uses to construct (e.g.) selection lists
 # for default validators' widgets.
 def shn_gis_location_represent_row(location, showlink=True):
+
     """ Represent a location given its row """
+
     if location.level:
         # @ToDo: Worth caching these?
         level_name = deployment_settings.get_gis_locations_hierarchy(location.level)
@@ -487,8 +489,6 @@ def shn_gis_location_represent_row(location, showlink=True):
     elif location.level in ["GR", "XX"]:
         text = "%s (%s)" % (location.name, level_name)
     else:
-        # Simple
-        #represent = location.name
         # Lat/Lon (Need level name for hierarchy locations, else defeats
         # the purpose of helping users select hierarchy locations as
         # group members.  Even when we have a fancy side-by-side multiple
@@ -508,26 +508,23 @@ def shn_gis_location_represent_row(location, showlink=True):
             else:
                 lon_prefix = "W"
             if location.level:
-                start = " (%s, " % level_name
+                start = "(%s, " % level_name
             else:
-                start = " ("
-            text = location.name + "%s%s %s %s %s)" % (start, lat_prefix, lat, lon_prefix, lon)
+                start = "("
+            text = "%s %s%s %s %s %s)" % (location.name, start, lat_prefix, lat, lon_prefix, lon)
         else:
             if location.level:
                 text = "%s (%s)" % (location.name, level_name)
             else:
                 text = location.name
-    # Simple
-    #represent = text
-    # Hyperlink
-    #represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[id]))
-    # Provide either a link (as might be used on a map popup) or plain text
-    # (for a read-only view of a list of locations).
+    if request.raw_args == "read.plain":
+       # Map popups don't support iframes (& meaningless anyway)
+       showlink = False
     if showlink:
+        # ToDo: Convert to popup? (HTML again!)
         represent = A(text, _style="cursor:pointer; cursor:hand", _onclick="s3_viewMap(%i);return false" % location.id)
     else:
         represent = text
-    # ToDo: Convert to popup? (HTML again!)
     return represent
 
 def shn_gis_location_represent(id, showlink=True):

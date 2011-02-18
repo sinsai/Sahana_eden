@@ -52,7 +52,7 @@ from s3xml import S3XML
 from s3rest import S3Resource, S3Request
 from s3model import S3ResourceModel, S3ResourceLinker
 from s3crud import S3CRUD
-from s3search import S3Search
+from s3find import S3Find, S3Search
 from s3export import S3Exporter
 from s3import import S3Importer
 

@@ -36,6 +36,7 @@
 from gluon.storage import Storage
 from gluon.http import HTTP
 from gluon.html import *
+from gluon.serializers import json
 
 from s3rest import S3Method
 from s3crud import S3CRUD
@@ -58,7 +59,7 @@ class S3SearchWidget(object):
 
     """
 
-    def __init__(self, field=None, **attr):
+    def __init__(self, field=None, name=None, **attr):
         """
         Configures the search option
 
@@ -76,6 +77,8 @@ class S3SearchWidget(object):
             raise SyntaxError("No search field specified.")
 
         self.attr = Storage(attr)
+        if name is not None:
+            self.attr["_name"] = name
 
 
     def widget(self, resource, vars, **attr):
@@ -496,6 +499,8 @@ class S3Find(S3CRUD):
         tablename = self.tablename
         T = self.manager.T
 
+        vars = request.get_vars
+
         # Get representation
         representation = r.representation
 
@@ -507,8 +512,9 @@ class S3Find(S3CRUD):
         orderby = self._config("orderby", None)
         list_fields = self._config("list_fields")
 
-        # GET vars
-        vars = request.get_vars
+        # Build the form
+        form = DIV(_id="search_form")
+
         if self.__simple:
             trows = []
             for name, widget in self.__simple:
@@ -526,18 +532,91 @@ class S3Find(S3CRUD):
                 trows.append(tr)
             trows.append(TR("", INPUT(_type="submit", _value=T("Search"))))
             simple_form = FORM(TABLE(trows), _id="search_simple")
-            output.update(simple_form=simple_form)
+            form.append(simple_form)
+
+        if self.__advanced:
+            pass # not implemented yet
+
+        output.update(form=form)
+
+        query = None
 
         # Process the simple search form:
         if simple_form.accepts(request.vars, session,
                                formname="search_simple",
                                keepvalues=True):
-            #for name, widget in self.__simple:
-                #if name in simple_form.vars:
-                    #print "%s=%s" % (name, simple_form.vars[name])
-                    #print widget.query(resource, simple_form.vars[name])
-            items = T("No matching records found.")
+            for name, widget in self.__simple:
+                if name in simple_form.vars:
+                    value = simple_form.vars[name]
+                    q = widget.query(resource, value)
+                    if q is not None:
+                        if query is None:
+                            query = q
+                        else:
+                            query = query & q
+
+        if query is not None:
+            # Build query
+            resource.add_filter(query)
+
+            # Build session filter (for SSPag)
+            if not response.s3.no_sspag:
+                limit = 1
+                ids = resource.get_id()
+                if ids:
+                    if not isinstance(ids, list):
+                        ids = str(ids)
+                    else:
+                        ids = ",".join([str(i) for i in ids])
+                    session.s3.filter = {"%s.id" % resource.name: ids}
+            else:
+                limit = None
+
+            # Linkto and list_fields
+            linkto = self._linkto(r)
+            if not list_fields:
+                fields = resource.readable_fields()
+            else:
+                fields = [table[f]
+                          for f in list_fields if f in table.fields]
+            if not fields:
+                fields = []
+            if fields[0].name != table.fields[0]:
+                fields.insert(0, table[table.fields[0]])
+                
+            # Get the result table
+            items = self.sqltable(fields=fields,
+                                  limit=limit,
+                                  orderby=orderby,
+                                  linkto=linkto,
+                                  download_url=self.download_url,
+                                  format=representation)
+
+            if items and not response.s3.no_sspag:
+                totalrows = self.resource.count()
+                if totalrows:
+                    aadata = dict(aaData = self.sqltable(fields=fields,
+                                                         start=0,
+                                                         limit=20,
+                                                         orderby=orderby,
+                                                         linkto=linkto,
+                                                         download_url=self.download_url,
+                                                         as_page=True,
+                                                         format=representation) or [])
+                    aadata.update(iTotalRecords=totalrows, iTotalDisplayRecords=totalrows)
+                    response.aadata = json(aadata)
+                    response.s3.start = 0
+                    response.s3.limit = 20
+
+            elif not items:
+                items = T("No matching records found.")
+
             output.update(items=items, sortby=sortby)
+
+            # Add-button
+            buttons = self.insert_buttons(r, "add")
+            if buttons:
+                output.update(buttons)
 
         # Title and subtitle
         title = self.crud_string(tablename, "title_search")
@@ -968,7 +1047,7 @@ class S3LocationSearch(S3Search):
 
 
 # *****************************************************************************
-class S3PersonSearch(S3Search):
+class S3PersonSearch(S3Find):
     """
     Search method with specifics for person records (full name search)
 

@@ -471,14 +471,27 @@ s3xrc.model.configure(table,
 
 # -----------------------------------------------------------------------------
 # Search method
+#pr_person_search = s3base.S3PersonSearch(
+    #label=T("Name and/or ID"),
+    #comment=T("To search for a person, enter any of the first, middle or last names and/or an ID number of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons."),
+    #fields=["pe_label",
+            #"first_name",
+            #"middle_name",
+            #"last_name",
+            #"identity.value"])
+
 pr_person_search = s3base.S3PersonSearch(
-    label=T("Name and/or ID"),
-    comment=T("To search for a person, enter any of the first, middle or last names and/or an ID number of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons."),
-    fields=["pe_label",
-            "first_name",
-            "middle_name",
-            "last_name",
-            "identity.value"])
+    simple=s3base.S3SearchSimpleWidget(
+            name="person_search_simple",
+            label=T("Name and/or ID"),
+            comment=T("To search for a person, enter any of the first, middle or last names and/or an ID number of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons."),
+            field=["pe_label",
+                   "first_name",
+                   "middle_name",
+                   "last_name",
+                   "identity.value"]
+            )
+    )
 
 # Set as default search method
 s3xrc.model.configure(db.pr_person, search_method=pr_person_search)

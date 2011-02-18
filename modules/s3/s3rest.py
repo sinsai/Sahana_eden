@@ -782,12 +782,12 @@ class S3Resource(object):
         else:
             fields = (self.table.id,)
 
-        set = self.db(self._query).select(*fields)
+        rows = self.db(self._query).select(*fields)
 
-        self._ids = [row.id for row in set]
+        self._ids = [row.id for row in rows]
 
         if uid in self.table.fields:
-            self._uids = [row[uid] for row in set]
+            self._uids = [row[uid] for row in rows]
 
 
     # Representation ==========================================================

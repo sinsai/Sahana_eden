@@ -201,8 +201,8 @@ class AuthS3(Auth):
             table = self.settings.table_user
             table.first_name.requires = \
                 IS_NOT_EMPTY(error_message=self.messages.is_empty)
-            table.last_name.requires = \
-                IS_NOT_EMPTY(error_message=self.messages.is_empty)
+            #table.last_name.requires = \
+                #IS_NOT_EMPTY(error_message=self.messages.is_empty)
             table.utc_offset.label = "UTC Offset"
             table.utc_offset.comment = A(SPAN("[Help]"), _class="tooltip", _title="UTC Offset|The time difference between UTC and your timezone, specify as +HHMM for eastern or -HHMM for western timezones.")
             try:
@@ -553,7 +553,7 @@ class AuthS3(Auth):
             item = row[1][0]
             if isinstance(item, INPUT) and item["_name"] == passfield:
                 form[0].insert(i + 1, TR(
-                        LABEL(self.messages.verify_password + ":"),
+                        TD(LABEL(self.messages.verify_password + ":"), _class="w2p_fl"),
                         INPUT(_name="password_two",
                               _type="password",
                               requires=IS_EXPR("value==%s" % \

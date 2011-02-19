@@ -884,8 +884,8 @@ $(function(){
                     
                     // Should we update the existing location?
                     name = $('#gis_location_ :selected').text();
-                    if ( s3_gis_loading_locations.replace('<option value="">', '').replace('</option>', '') == name) {
-                        // Need to distinguish between details from hierarchy & real details
+                    if ( s3_gis_loading_locations.search(name)) {
+                        // @ToDo: Need to distinguish between details from hierarchy & real details
                         // Prompt the user for a name
                         $('#gis_location_name').after('<div id="type__error" class="error" style="display: block;">Name field is required!</div>');
                         // Move focus to this field

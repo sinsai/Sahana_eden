@@ -199,7 +199,7 @@ def s3_include_debug():
     
     include = ""
     for file in files:
-        include = '%s\n<script src="/%s/static/scripts/%s" type="text/javascript" charset="utf-8"></script>' \
+        include = '%s\n<script src="/%s/static/scripts/%s" type="text/javascript"></script>' \
             % ( include,
                 request.application,
                 file)
@@ -208,7 +208,7 @@ def s3_include_debug():
     f = open("%s/tools/sahana.css.cfg" % scripts_dir_path, "r")
     files = f.readlines()
     for file in files[:-1]:
-        include = '%s\n<link href="/%s/static/styles/%s" rel="stylesheet" type="text/css" charset="utf-8" />' \
+        include = '%s\n<link href="/%s/static/styles/%s" rel="stylesheet" type="text/css" />' \
             % ( include, 
                 request.application,
                 file[:-1]

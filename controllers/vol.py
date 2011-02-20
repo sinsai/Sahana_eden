@@ -132,10 +132,10 @@ def index():
         """ Redirect to search/person view """
 
         if r.representation == "html":
-            if not r.id:
+            if not r.id and not r.method:
                 r.method = "search"
             else:
-               redirect(URL(r=request, f=resourcename, args=[r.id]))
+               redirect(URL(r=request, f=resourcename, args=request.args))
         return True
 
 
@@ -173,17 +173,9 @@ def index():
     response.s3.prep = prep
     response.s3.postp = postp
 
-    if auth.s3_logged_in():
-        add_btn = A(T("Add Person"),
-                    _class="action-btn",
-                    _href=URL(r=request, f="person", args="create"))
-    else:
-        add_btn = None
-
     # REST controllerperson
     output = s3_rest_controller(_prefix, resourcename,
-                                module_name=module_name,
-                                add_btn=add_btn)
+                                module_name=module_name)
 
     # Set view, update menu and return output
     response.view = "vol/index.html"
@@ -248,7 +240,7 @@ def register():
     forms["pr_pe_contact2"] = SQLFORM(db.pr_pe_contact)
     forms["vol_credential"] = SQLFORM(db.vol_credential)
     forms["vol_volunteer"] = SQLFORM(db.vol_volunteer)
-    
+
     form_rows = []
     required = SPAN(" *", _class="req")
 
@@ -267,7 +259,7 @@ def register():
         except:
             pass
         label = TD(label, _class="w2p_fl")
-        
+
         # Widget
         try:
             if field["formfieldname"] == "telephone":
@@ -287,7 +279,7 @@ def register():
 
         form_rows.append(TR(label))
         form_rows.append(TR(widget, comment))
-    
+
     form = FORM(TABLE(*form_rows),
                 INPUT(_value = T("Save"),
                       _type = "submit"))
@@ -314,8 +306,8 @@ def register():
         db.pr_pe_contact.insert(pe_id=pe_id, contact_method=1, value=request.vars.email)
         # Insert Telephone
         db.pr_pe_contact.insert(pe_id=pe_id, contact_method=2, value=request.vars.telephone)
-        
-        
+
+
         response.confirmation = T("Sign-up succesful - you should hear from us soon!")
 
     return dict(form=form)

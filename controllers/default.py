@@ -254,3 +254,7 @@ def contact():
     response.title = T("Contact us")
     return dict()
 
+def bug():
+    "Custom View"
+    response.title = T("Report a Bug")
+    return dict()

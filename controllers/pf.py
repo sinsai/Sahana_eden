@@ -20,11 +20,12 @@ def shn_menu():
     """ Options menu """
 
     response.menu_options = [
-        [T("Search for a Person"), False, aURL(r=request, f="index")],
-        [T("Missing Persons"), False, aURL(r=request, f="person"), [
-            [T("List"), False, aURL(r=request, f="person")],
-            [T("Add"), False, aURL(p="create", r=request, f="person", args="create")],
-        ]]]
+        [T("Missing Persons"), False, aURL(r=request, f="index"), [
+            [T("Add or Update"), False, aURL(r=request, f="index")],
+            [T("List All Reports"), False, aURL(r=request, f="person")],
+        ]],
+        #[T("Help"), False, URL(r=request, f="guide")],
+    ]
 
     menu_selected = []
     if session.rcvars and "pr_person" in session.rcvars:
@@ -82,10 +83,10 @@ def index():
         """ Redirect to search/person view """
 
         if r.representation == "html":
-            if not r.id:
+            if not r.id and not r.method:
                 r.method = "search"
             else:
-               redirect(URL(r=request, f=resourcename, args=[r.id]))
+               redirect(URL(r=request, f=resourcename, args=request.args))
         return True
 
 
@@ -147,17 +148,9 @@ def index():
     response.s3.prep = prep
     response.s3.postp = postp
 
-    if auth.s3_logged_in():
-        add_btn = A(T("Add Person"),
-                    _class="action-btn",
-                    _href=URL(r=request, f="person", args="create"))
-    else:
-        add_btn = None
-
     # REST controllerperson
     output = s3_rest_controller("pr", "person",
-                                module_name=module_name,
-                                add_btn=add_btn)
+                                module_name=module_name)
 
     # Set view, update menu and return output
     response.view = "pf/index.html"
@@ -305,6 +298,10 @@ def person():
     shn_menu()
     return output
 
+
+# -----------------------------------------------------------------------------
+def guide():
+    return dict()
 
 # -----------------------------------------------------------------------------
 def download():

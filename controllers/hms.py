@@ -17,9 +17,9 @@ if module not in deployment_settings.modules:
 def shn_menu():
     public_url = deployment_settings.base.public_url
     response.menu_options = [
-        [T("Hospital"), False, None, [
+        [T("Hospital"), False, aURL(r=request, f="hospital", args="search"), [
             [T("New"), False, aURL(p="create", r=request, f="hospital", args="create")],
-            [T("Find"), False, aURL(r=request, f="hospital", args="search")],
+            [T("Open"), False, aURL(r=request, f="hospital", args="search")],
             [T("List All"), False, aURL(r=request, f="hospital")],
             #[T("----"), False, None],
             #[T("Show Map"), False, URL(r=request, c="gis", f="map_viewing_client",
@@ -27,9 +27,9 @@ def shn_menu():
                                              #(public_url, request.application),
                                              #"kml_name" : "Hospitals_"})],
         ]],
-        [T("Requests"), False, None, [
+        [T("Requests"), False, aURL(r=request, c="rms", f="req"), [
             [T("New"), False, aURL(p="create", r=request, c="rms", f="req", args="create")],
-            [T("Manage"), False, aURL(r=request, c="rms", f="req", args="create")],
+            [T("Manage"), False, aURL(r=request, c="rms", f="req")],
         ]],
         [T("Help"), False, URL(r=request, f="index")],
     ]
@@ -106,7 +106,7 @@ def hospital():
                 title_display = T("Hospital Details"),
                 title_list = LIST_HOSPITALS,
                 title_update = T("Edit Hospital"),
-                title_search = T("Search Hospitals"),
+                title_search = T("Find Hospital"),
                 subtitle_create = T("Add New Hospital"),
                 subtitle_list = T("Hospitals"),
                 label_list_button = LIST_HOSPITALS,

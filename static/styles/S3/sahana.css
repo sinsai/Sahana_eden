@@ -683,6 +683,9 @@ div#rheader_tabs span.rheader_tab_here a { color: #006699;
 .delphi_post_text {	display: none; }
 .delphi_post_dbtitle { font-weight: bold;}
 
+.action-lnk { font-size: 85%;
+              padding-left: 15px; }
+
 .delete-btn,
 .action-btn { text-decoration: none;
               color: #006699;

@@ -522,9 +522,19 @@ class S3Find(S3CRUD):
         sortby = self._config("sortby", [[1,'asc']])
         orderby = self._config("orderby", None)
         list_fields = self._config("list_fields")
+        insertable = self._config("insertable", True)
 
         # Build the form
-        form = DIV(_id="search_form")
+        form = DIV(_id="search_form", _class="form-container")
+
+        # Add Link
+        ADD = self.crud_string(tablename, "label_create_button")
+        href_add = r.other(method="create", representation=representation)
+        authorised = self.permit("create", tablename)
+        if authorised and insertable:
+            add_link = self.crud_button(ADD, _href=href_add, _id="add-btn", _class="action-lnk")
+        else:
+            add_link = ""
 
         if self.__simple:
             trows = []
@@ -536,12 +546,12 @@ class S3Find(S3CRUD):
                 if hasattr(widget, "attr"):
                     label = widget.attr.get("label", label)
                     comment = widget.attr.get("comment", comment)
-                tr = TR("%s: " % label,
+                tr = TR(TD("%s: " % label, _class="w2p_fl"),
                         widget.widget(resource, vars))
                 if comment:
                     tr.append(DIV(DIV(_class="tooltip", _title="%s|%s" % (label, comment))))
                 trows.append(tr)
-            trows.append(TR("", INPUT(_type="submit", _value=T("Search"))))
+            trows.append(TR("", TD(INPUT(_type="submit", _value=T("Search")), add_link)))
             simple_form = FORM(TABLE(trows), _id="search_simple")
             form.append(simple_form)
 
@@ -624,10 +634,10 @@ class S3Find(S3CRUD):
 
             output.update(items=items, sortby=sortby)
 
-            # Add-button
-            buttons = self.insert_buttons(r, "add")
-            if buttons:
-                output.update(buttons)
+            ## Add-button
+            #buttons = self.insert_buttons(r, "add")
+            #if buttons:
+                #output.update(buttons)
 
         # Title and subtitle
         title = self.crud_string(tablename, "title_search")

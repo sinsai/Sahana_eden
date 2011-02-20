@@ -289,6 +289,9 @@ table { border-collapse: collapse }
 #subnav li:hover ul,
 #subnav li.over ul { display: block; }
 
+.menu_separator hr { width: 90%;
+                     height: 1px; }
+
 /* Column container */
 .colmask {
     position: relative;  /* This fixes the IE7 overflow hidden bug */

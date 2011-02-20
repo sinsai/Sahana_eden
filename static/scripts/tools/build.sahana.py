@@ -161,7 +161,7 @@ def dojs(dogis = False):
         outputFilenameGeoExt = "GeoExt.js"
         outputFilenameGxp = "gxp.js"
         outputFilenameGeoExplorer = "GeoExplorer.js"
-        
+
         # Merge GIS JS Files
         print "Merging GIS libraries."
         (files, order) = mergejs.getFiles(configDictGlobalGIS, configFilenameGIS)
@@ -216,7 +216,7 @@ def dojs(dogis = False):
             pass
         print "Moving new GIS JS files"
         shutil.move("OpenLayers.js", "../gis")
-        
+
         print "Deleting %s." % outputFilenameGeoExt
         try:
             os.remove("../gis/%s" % outputFilenameGeoExt)
@@ -232,7 +232,7 @@ def dojs(dogis = False):
             pass
         print "Moving new gxp JS files"
         shutil.move("gxp.js", "../gis")
-        
+
         print "Deleting %s." % outputFilenameGeoExplorer
         try:
             os.remove("../gis/%s" % outputFilenameGeoExplorer)
@@ -244,12 +244,14 @@ def dojs(dogis = False):
 def docss():
     """ Compresses the  CSS files """
     listCSS = []
-    
+
     f = open("sahana.css.cfg", "r")
     files = f.readlines()
-    f.close()    
+    f.close()
     for file in files[:-1]:
-        listCSS.append("../../styles/%s" % file[:-1])
+        p = re.compile("(\n|\r|\t|\f|\v)+")
+        file = p.sub("", file)
+        listCSS.append("../../styles/%s" % file)
 
     outputFilenameCSS = "sahana.min.css"
 

@@ -48,7 +48,6 @@ __all__ = ["S3SearchWidget",
            "S3SearchSelectWidget",
            "S3SearchLocationWidget",
            "S3Find",
-           "S3Search",
            "S3LocationSearch",
            "S3PersonSearch"]
 
@@ -413,7 +412,7 @@ class S3Find(S3CRUD):
 
     """
 
-    def __init__(self, simple=None, advanced=None, any=False):
+    def __init__(self, simple=None, advanced=None, any=False, **args):
         """
         Constructor
 
@@ -425,6 +424,18 @@ class S3Find(S3CRUD):
         """
 
         S3CRUD.__init__(self)
+
+        args = Storage(args)
+        if simple is None:
+            if "field" in args:
+                if "name" in args:
+                    name = args.name
+                elif "_name" in args:
+                    name = args._name
+                else:
+                    name = "search_simple"
+                simple = S3SearchSimpleWidget(field=args.field, name=name,
+                                              label=args.label, comment=args.comment)
 
         names = []
         self.__simple = []
@@ -583,7 +594,7 @@ class S3Find(S3CRUD):
                 fields = []
             if fields[0].name != table.fields[0]:
                 fields.insert(0, table[table.fields[0]])
-                
+
             # Get the result table
             items = self.sqltable(fields=fields,
                                   limit=limit,
@@ -703,218 +714,7 @@ class S3Find(S3CRUD):
 
 
 # *****************************************************************************
-class S3Search(S3CRUD):
-    """
-    RESTful Search Method for S3Resources
-
-    """
-
-    def __init__(self, label=None, comment=None, fields=None):
-        """
-        Constructor
-
-        """
-
-        S3CRUD.__init__(self)
-        self.__label = label
-        self.__comment = comment
-        self.__fields = fields
-
-        if self.__fields:
-            self.interactive_search = True
-        else:
-            self.interactive_search = False
-
-
-    # -------------------------------------------------------------------------
-    def apply_method(self, r, **attr):
-        """
-        Entry point to apply search method to S3Requests
-
-        @param r: the S3Request
-        @param attr: request attributes
-
-        """
-
-        format = r.representation
-
-        if r.interactive and self.__fields:
-            return self.search_interactive(r, **attr)
-        elif format == "aadata" and self.__fields:
-            return self.select(r, **attr)
-        elif format == "json":
-            return self.search_json(r, **attr)
-        else:
-            raise HTTP(501, body=self.manager.ERROR.BAD_FORMAT)
-
-        return dict()
-
-
-    # -------------------------------------------------------------------------
-    def search_json(self, r, **attr):
-        """
-        Legacy JSON search method (for autocomplete-widgets)
-
-        @param r: the S3Request
-        @param attr: request attributes
-
-        """
-
-        xml = self.manager.xml
-
-        request = self.request
-        response = self.response
-
-        resource = self.resource
-        table = self.table
-
-        _vars = request.vars
-
-        output = None
-
-        # JQueryUI Autocomplete uses "term" instead of "value"
-        # (old JQuery Autocomplete uses "q" instead of "value")
-        value = _vars.value or _vars.term or _vars.q or None
-
-        # We want to do case-insensitive searches
-        # (default anyway on MySQL/SQLite, but not PostgreSQL)
-        value = value.lower()
-
-        limit = int(_vars.limit or 0)
-
-        if _vars.field and _vars.filter and value:
-            fieldname = str.lower(_vars.field)
-            field = table[fieldname]
-
-            # Default fields to return
-            fields = [table.id, field]
-
-            filter = _vars.filter
-            if filter == "~":
-                # Normal single-field Autocomplete
-                query = (field.lower().like("%" + value + "%"))
-
-            elif filter == "=":
-                if field.type.split(" ")[0] in ["reference", "id", "float", "integer"]:
-                    # Numeric, e.g. Organisations' offices_by_org
-                    query = (field == value)
-                else:
-                    # Text
-                    query = (field.lower() == value)
-
-            elif filter == "<":
-                query = (field < value)
-
-            elif filter == ">":
-                query = (field > value)
-
-            else:
-                output = xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
-                raise HTTP(400, body=output)
-
-            resource.add_filter(query)
-            output = resource.exporter.json(resource, start=0, limit=limit,
-                                            fields=fields, orderby=field)
-            response.headers["Content-Type"] = "text/json"
-
-        else:
-            output = xml.json_message(False, 400, "Missing options! Require: field, filter & value")
-            raise HTTP(400, body=output)
-
-        return output
-
-
-    # -------------------------------------------------------------------------
-    def search_interactive(self, r, **attr):
-        """
-        Simple full-text search method
-
-        @param r: the S3Request
-        @param attr: request attributes
-
-        """
-
-        # Get environment
-        session = self.session
-        request = self.request
-        response = self.response
-        resource = self.resource
-        table = self.table
-        tablename = self.tablename
-        T = self.manager.T
-
-        # Get representation
-        representation = r.representation
-
-        # Initialize output
-        output = dict()
-
-        # Get table-specific parameters
-        sortby = self._config("sortby", [[1,'asc']])
-        orderby = self._config("orderby", None)
-        list_fields = self._config("list_fields")
-
-        # GET vars
-        vars = request.get_vars
-
-        form = FORM(TABLE(TR("%s: " % self.__label,
-                                INPUT(_type="text", _name="label", _size="40"),
-                                DIV(DIV(_class="tooltip",
-                                        _title="%s|%s" % (self.__label,
-                                                        self.__comment)))),
-                            TR("", INPUT(_type="submit",
-                                        _value=T("Search")))))
-        output.update(form=form)
-
-        if form.accepts(request.vars, session, keepvalues=True):
-            if form.vars.label == "":
-                form.vars.label = "%"
-            results = resource.search_simple(fields=self.__fields,
-                                             label=form.vars.label,
-                                             filterby=response.s3.filter)
-            if results:
-                linkto = self._linkto(r)
-                if not list_fields:
-                    fields = resource.readable_fields()
-                else:
-                    fields = [table[f]
-                                for f in list_fields if f in table.fields]
-                if not fields:
-                    fields = []
-                if fields[0].name != table.fields[0]:
-                    fields.insert(0, table[table.fields[0]])
-                resource.build_query(id=results)
-                items = self.sqltable(fields=fields,
-                                      orderby=orderby,
-                                      linkto=linkto,
-                                      download_url=self.download_url,
-                                      format=representation)
-                if request.post_vars.label:
-                    session.s3.filter = {"%s.id" % resource.name:
-                                        ",".join(map(str,results))}
-                else:
-                    session.s3.filter = None
-            else:
-                items = T("No matching records found.")
-            output.update(items=items, sortby=sortby)
-
-            # Add-button
-            buttons = self.insert_buttons(r, "add")
-            if buttons:
-                output.update(buttons)
-
-        # Title and subtitle
-        title = self.crud_string(tablename, "title_search")
-        subtitle = T("Matching Records")
-        output.update(title=title, subtitle=subtitle)
-
-        # View
-        response.view = "search.html"
-        return output
-
-
-# *****************************************************************************
-class S3LocationSearch(S3Search):
+class S3LocationSearch(S3Find):
     """
     Search method with specifics for location records (hierarchy search)
 

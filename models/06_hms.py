@@ -847,10 +847,11 @@ if deployment_settings.has_module(module):
     # -----------------------------------------------------------------------------
     # Hospital Search by Name
     #
-    hms_hospital_search = s3base.S3Search(
+    hms_hospital_search = s3base.S3Find(
+        name="hospital_search_simple",
         label=T("Name and/or ID"),
         comment=T("To search for a hospital, enter any of the names or IDs of the hospital, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all hospitals."),
-        fields=["gov_uuid", "name", "aka1", "aka2"])
+        field=["gov_uuid", "name", "aka1", "aka2"])
 
     # Set as standard search method for hospitals
     s3xrc.model.configure(db.hms_hospital, search_method=hms_hospital_search)

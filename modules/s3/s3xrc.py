@@ -52,7 +52,7 @@ from s3xml import S3XML
 from s3rest import S3Resource, S3Request
 from s3model import S3ResourceModel, S3ResourceLinker
 from s3crud import S3CRUD
-from s3find import S3Find, S3Search
+from s3find import S3Find
 from s3export import S3Exporter
 from s3import import S3Importer
 
@@ -143,7 +143,7 @@ class S3ResourceController(object):
         self.model = S3ResourceModel(self.db)
         self.linker = S3ResourceLinker(self)
         self.crud = S3CRUD()
-        self.search = S3Search()
+        self.search = S3Find()
         self.xml = S3XML(self)
         self.exporter = S3Exporter(self)
         self.importer = S3Importer(self)

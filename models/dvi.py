@@ -182,10 +182,11 @@ if deployment_settings.has_module(module):
                                        "date_of_recovery",
                                        "location_id"])
 
-    dvi_body_search = s3base.S3Search(
+    dvi_body_search = s3base.S3Find(
+            name = "body_search_simple",
             label = T("ID Tag"),
             comment = T("To search for a body, enter the ID tag number of the body. You may use % as wildcard. Press 'Search' without input to list all bodies."),
-            fields = ["pe_label"])
+            field = ["pe_label"])
 
     # Set as standard search method
     s3xrc.model.configure(db.dvi_body, search_method=dvi_body_search)

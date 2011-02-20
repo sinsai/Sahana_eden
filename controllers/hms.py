@@ -15,15 +15,23 @@ if module not in deployment_settings.modules:
 
 # -----------------------------------------------------------------------------
 def shn_menu():
+    public_url = deployment_settings.base.public_url
     response.menu_options = [
-        [T("Home"), False, URL(r=request, f="index")],
-        [T("Hospitals"), False, aURL(r=request, f="hospital"), [
+        [T("Hospital"), False, None, [
+            [T("New"), False, aURL(p="create", r=request, f="hospital", args="create")],
+            [T("Find"), False, aURL(r=request, f="hospital", args="search")],
             [T("List All"), False, aURL(r=request, f="hospital")],
-            [T("Find by Name"), False, aURL(r=request, f="hospital", args="search")],
-            [T("Add Hospital"), False, aURL(p="create", r=request, f="hospital", args="create")]
+            #[T("----"), False, None],
+            #[T("Show Map"), False, URL(r=request, c="gis", f="map_viewing_client",
+                                       #vars={"kml_feed" : "%s/%s/hms/hospital.kml" %
+                                             #(public_url, request.application),
+                                             #"kml_name" : "Hospitals_"})],
         ]],
-        [T("Requests"), False, aURL(r=request, c="rms", f="req")],
-        #[T("Pledges"), False, aURL(r=request, c="rms", f="pledge")],
+        [T("Requests"), False, None, [
+            [T("New"), False, aURL(p="create", r=request, c="rms", f="req", args="create")],
+            [T("Manage"), False, aURL(r=request, c="rms", f="req", args="create")],
+        ]],
+        [T("Help"), False, URL(r=request, f="index")],
     ]
     menu_selected = []
     if session.rcvars and "hms_hospital" in session.rcvars:

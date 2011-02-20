@@ -16,6 +16,13 @@ if module not in deployment_settings.modules:
 # -----------------------------------------------------------------------------
 def shn_menu():
     public_url = deployment_settings.base.public_url
+    if len(request.args) > 0 and request.args[0].isdigit():
+        newreq = dict(from_record="hms_hospital.%s" % request.args[0],
+                      from_fields="hospital_id$id")
+        selreq = {"req.hospital_id":request.args[0]}
+    else:
+        newreq = dict()
+        selreq = {"req.hospital_id__ne":"NONE"}
     response.menu_options = [
         [T("Hospital"), False, aURL(r=request, f="hospital", args="search"), [
             [T("New"), False, aURL(p="create", r=request, f="hospital", args="create")],
@@ -27,9 +34,12 @@ def shn_menu():
                                              #(public_url, request.application),
                                              #"kml_name" : "Hospitals_"})],
         ]],
-        [T("Requests"), False, aURL(r=request, c="rms", f="req"), [
-            [T("New"), False, aURL(p="create", r=request, c="rms", f="req", args="create")],
-            [T("Manage"), False, aURL(r=request, c="rms", f="req")],
+        [T("Requests"), False, aURL(r=request, c="rms", f="req",
+                                    vars=selreq), [
+            [T("New"), False, aURL(p="create", r=request, c="rms", f="req",
+                                   args="create", vars=newreq)],
+            [T("Manage"), False, aURL(r=request, c="rms", f="req",
+                                      vars=selreq)],
         ]],
         [T("Help"), False, URL(r=request, f="index")],
     ]

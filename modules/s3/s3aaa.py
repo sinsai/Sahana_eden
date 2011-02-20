@@ -1593,7 +1593,7 @@ class S3Permission(object):
 
         acl = self.page_acl(c=c, f=f)
         acl = (acl[0] | acl[1]) & permission
-        if acl == permission:
+        if acl == permission or self.policy not in (3, 4, 5):
             return URL(a=a,
                        c=c,
                        f=f,

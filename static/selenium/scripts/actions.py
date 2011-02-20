@@ -5,12 +5,12 @@ class Action(unittest.TestCase):
     def __init__ (self, selenium):
         self.sel = selenium
         self._diag = False # make True for profiling diagnostics
-        
+
     def openReport(self):
         if self._diag:
             self._diag_SearchResults = open('diagTestResults.txt', 'a')
             self._diag_SearchResults.write(time.strftime('New Search run %d %b %Y (%H:%M:%S)\n'))
-    
+
     def closeReport(self, msg):
         if self._diag:
             self._diag_SearchResults.write(msg)
@@ -31,7 +31,7 @@ class Action(unittest.TestCase):
         sel.click("auth_user_email")
         sel.type("auth_user_email", username)
         sel.type("auth_user_password", password)
-        sel.click("//input[@value='Submit']")
+        sel.click("//input[@value='Login']")
         msg = "Unable to log in as " + username
         if reveal:
             msg += " with password " + password
@@ -92,19 +92,19 @@ class Action(unittest.TestCase):
             self.fail("No search data found, whilst searching for %s" % searchString)
         return expected in result
 
-        
+
     def searchUnique(self, uniqueName):
         self.search(uniqueName, r"1 entries")
-        
+
     def clearSearch(self):
         self.search("", r"entries")
-        
+
     def registerUser(self, first_name, last_name, email, password):
         first_name = first_name.strip()
         last_name = last_name.strip()
         email = email.strip()
         password = password.strip()
-        
+
         sel = self.sel
         sel.open("default/user/register")
         sel.type("auth_user_first_name", first_name)
@@ -113,7 +113,7 @@ class Action(unittest.TestCase):
         sel.type("auth_user_email", email)
         sel.type("auth_user_password", password)
         sel.type("password_two", password)
-        sel.click("//input[@value='Submit']")
+        sel.click("//input[@value='Register']")
         sel.wait_for_page_to_load("30000")
         msg = "Unable to register user %s %s with email %s" % (first_name, last_name, email)
         self.assertTrue(self.successMsg("Registration successful"), msg)
@@ -127,7 +127,7 @@ class Action(unittest.TestCase):
         last_name = last_name.strip()
         email = email.strip()
         password = password.strip()
-        
+
         sel = self.sel
         # TODO only open this page if on another page
         sel.open("admin/user")
@@ -151,7 +151,7 @@ class Action(unittest.TestCase):
         email = email.strip()
         roles = roles.strip()
         roleList = roles.split(" ")
-        
+
         sel = self.sel
         self.searchUnique(email)
         self.assertEqual("Roles", sel.get_text("//table[@id='list']/tbody/tr[1]/td[1]/a[2]"))
@@ -182,7 +182,7 @@ class Action(unittest.TestCase):
 
     def deleteObject(self, page, objName, type="Object"):
         sel = self.sel
-        # need the following line which reloads the page otherwise the search gets stuck  
+        # need the following line which reloads the page otherwise the search gets stuck
         sel.open(page)
         try:
             self.searchUnique(objName)
@@ -212,7 +212,7 @@ class Action(unittest.TestCase):
         sel.wait_for_page_to_load("30000")
         if message != None:
             return self.successMsg(message)
-    
+
     # Method to check each banner for the desired message
     def checkBanner(self, message, type):
         sel = self.sel
@@ -237,7 +237,7 @@ class Action(unittest.TestCase):
         if self._diag:
             self._diag_SearchResults.write("%s\tFAILED\t%s\t\n" % (message, self._diag_sleepTime))
         return False
-    
+
     # Method used to check for confirmation messages
     def successMsg(self, message):
         return self.findMsg(message, "confirmation")
@@ -262,7 +262,7 @@ class Action(unittest.TestCase):
         if self._diag:
             self._diag_SearchResults.write("%s\tFAILED\t%s\t\n" % (message, self._diag_sleepTime))
         raise UserWarning("Response not found")
-        
+
     # Method to check that form element is present
     # The element parameter is a list of up to 4 elements
     # element[0] the type of HTML tag
@@ -274,11 +274,11 @@ class Action(unittest.TestCase):
         type = element[0]
         id = element[1]
         if (len(element) >= 3):
-            visible = element[2] 
+            visible = element[2]
         else:
             visible = True
         if (len(element) >= 4):
-            value = element[3] 
+            value = element[3]
         else:
             value = None
         element = '//%s[@id="%s"]' % (type, id)
@@ -290,14 +290,14 @@ class Action(unittest.TestCase):
             msg = "expected %s for element %s doesn't equal the actual value of %s" % (value, id, actual)
             if value != actual: return msg
         return True
-                
+
     # Method to click on a tab
     def clickTab(self, name):
         sel = self.sel
         element = "//div[@id='rheader_tabs']/span/a[text()='%s']" % (name)
         sel.click(element)
         sel.wait_for_page_to_load("30000")
-        
+
     # Method to check button link
     def btnLink(self, id, name):
         sel = self.sel
@@ -306,7 +306,7 @@ class Action(unittest.TestCase):
         self.assertTrue(sel.is_element_present(element), errMsg)
         self.assertTrue(sel.get_text(element),errMsg)
         print "%s button is present" % (name)
-        
+
     # Method to check button link is not present
     def noBtnLink(self, id, name):
         sel = self.sel
@@ -323,7 +323,7 @@ class Action(unittest.TestCase):
         errmsg = "%s button is missing" % (name)
         self.assertTrue(sel.is_element_present(element), errmsg)
         print "%s button is present" % (name)
-        
+
     # Method to check that the help message is displayed
     def helpBallon(self, helpTitle):
         sel = self.sel

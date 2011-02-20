@@ -15,15 +15,33 @@ if module not in deployment_settings.modules:
 
 # -----------------------------------------------------------------------------
 def shn_menu():
+    public_url = deployment_settings.base.public_url
+    if len(request.args) > 0 and request.args[0].isdigit():
+        newreq = dict(from_record="hms_hospital.%s" % request.args[0],
+                      from_fields="hospital_id$id")
+        selreq = {"req.hospital_id":request.args[0]}
+    else:
+        newreq = dict()
+        selreq = {"req.hospital_id__ne":"NONE"}
     response.menu_options = [
-        [T("Home"), False, URL(r=request, f="index")],
-        [T("Hospitals"), False, aURL(r=request, f="hospital"), [
+        [T("Hospital"), False, aURL(r=request, f="hospital", args="search"), [
+            [T("New"), False, aURL(p="create", r=request, f="hospital", args="create")],
+            [T("Open"), False, aURL(r=request, f="hospital", args="search")],
             [T("List All"), False, aURL(r=request, f="hospital")],
-            [T("Find by Name"), False, aURL(r=request, f="hospital", args="search")],
-            [T("Add Hospital"), False, aURL(p="create", r=request, f="hospital", args="create")]
+            #[T("----"), False, None],
+            #[T("Show Map"), False, URL(r=request, c="gis", f="map_viewing_client",
+                                       #vars={"kml_feed" : "%s/%s/hms/hospital.kml" %
+                                             #(public_url, request.application),
+                                             #"kml_name" : "Hospitals_"})],
         ]],
-        [T("Requests"), False, aURL(r=request, c="rms", f="req")],
-        #[T("Pledges"), False, aURL(r=request, c="rms", f="pledge")],
+        [T("Requests"), False, aURL(r=request, c="rms", f="req",
+                                    vars=selreq), [
+            [T("New"), False, aURL(p="create", r=request, c="rms", f="req",
+                                   args="create", vars=newreq)],
+            [T("Manage"), False, aURL(r=request, c="rms", f="req",
+                                      vars=selreq)],
+        ]],
+        [T("Help"), False, URL(r=request, f="index")],
     ]
     menu_selected = []
     if session.rcvars and "hms_hospital" in session.rcvars:
@@ -98,7 +116,7 @@ def hospital():
                 title_display = T("Hospital Details"),
                 title_list = LIST_HOSPITALS,
                 title_update = T("Edit Hospital"),
-                title_search = T("Search Hospitals"),
+                title_search = T("Find Hospital"),
                 subtitle_create = T("Add New Hospital"),
                 subtitle_list = T("Hospitals"),
                 label_list_button = LIST_HOSPITALS,

@@ -2411,7 +2411,8 @@ class S3RoleManager(S3Method):
             else:
                 cancel = URL(r=request, c="admin", f="role", vars=request.get_vars)
             action_row = DIV(INPUT(_type="submit", _value=T("Save")),
-                             A(CANCEL, _href=cancel), _id="action-row")
+                             A(CANCEL, _href=cancel, _class="action-lnk"),
+                             _id="action-row")
 
             # Complete form
             form = FORM(role_form, acl_form, action_row)
@@ -2586,7 +2587,7 @@ class S3RoleManager(S3Method):
                 form = FORM(TABLE(
                             TR(TD(widget)),
                             TR(TD(INPUT(_type="submit", _value=T("Save")),
-                                  A(CANCEL, _href=cancel, _style="padding-left:10px")))))
+                                  A(CANCEL, _href=cancel, _class="action-lnk")))))
 
                 if form.accepts(request.post_vars, session):
                     assign = form.vars.roles

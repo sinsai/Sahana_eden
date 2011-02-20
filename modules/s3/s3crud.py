@@ -277,11 +277,9 @@ class S3CRUD(S3Method):
 
             # Cancel button?
             if response.s3.cancel:
-                form[0][-1][0].append(A(T("Cancel"), _href=response.s3.cancel, _class="cancel-btn"))
-                #form[0][-1][0].append(INPUT(_type="button",
-                                            #_value=T("Cancel"),
-                                            #_onclick="window.location='%s';" %
-                                                     #response.s3.cancel))
+                form[0][-1][0].append(A(T("Cancel"),
+                                      _href=response.s3.cancel,
+                                      _class="action-lnk"))
 
             # Navigate-away confirmation
             if self.settings.navigate_away_confirm:
@@ -607,7 +605,7 @@ class S3CRUD(S3Method):
             if response.s3.cancel:
                 form[0][-1][0].append(A(T("Cancel"),
                                         _href=response.s3.cancel,
-                                        _class="cancel-btn"))
+                                        _class="action-lnk"))
 
             # Navigate-away confirmation
             if self.settings.navigate_away_confirm:

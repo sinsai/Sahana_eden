@@ -289,6 +289,9 @@ table { border-collapse: collapse }
 #subnav li:hover ul,
 #subnav li.over ul { display: block; }
 
+.menu_separator hr { width: 90%;
+                     height: 1px; }
+
 /* Column container */
 .colmask {
     position: relative;  /* This fixes the IE7 overflow hidden bug */
@@ -679,6 +682,9 @@ div#rheader_tabs span.rheader_tab_here a { color: #006699;
 .delphi_q6 { border-left: 4px solid #75507b; padding-left: 60px; color: #888a85; }
 .delphi_post_text {	display: none; }
 .delphi_post_dbtitle { font-weight: bold;}
+
+.action-lnk { font-size: 85%;
+              padding-left: 15px; }
 
 .delete-btn,
 .action-btn { text-decoration: none;

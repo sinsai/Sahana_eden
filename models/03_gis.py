@@ -597,7 +597,7 @@ table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id",
                                              filterby="level",
                                              filter_opts=["L0", "L1", "L2", "L3", "L4", "L5"],
                                              orderby="gis_location.name"))
-    
+
 table.parent.represent = shn_gis_location_represent
 table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts, zero=None)
 table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, UNKNOWN_OPT)
@@ -1003,12 +1003,10 @@ def s3_gis_location_simple(r, **attr):
 s3xrc.model.set_method(module, "location", method="simple", action=s3_gis_location_simple )
 
 gis_location_search = s3base.S3LocationSearch(
+    name="location_search_simple",
     label=T("Name"),
     comment=T("To search for a location, enter the name. You may use % as wildcard. Press 'Search' without input to list all locations."),
-    fields=["name",
-            # @ToDo: http://eden.sahanafoundation.org/wiki/S3XRC_Roadmap#Version2.1
-            #"name_l10n"
-            ])
+    field=["name"])
 
 # Set as default search method
 s3xrc.model.configure(db.gis_location, search_method=gis_location_search)

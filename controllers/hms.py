@@ -19,14 +19,14 @@ def shn_menu():
     if len(request.args) > 0 and request.args[0].isdigit():
         newreq = dict(from_record="hms_hospital.%s" % request.args[0],
                       from_fields="hospital_id$id")
-        selreq = {"req.hospital_id":request.args[0]}
+        #selreq = {"req.hospital_id":request.args[0]}
     else:
         newreq = dict()
-        selreq = {"req.hospital_id__ne":"NONE"}
+    selreq = {"req.hospital_id__ne":"NONE"}
     response.menu_options = [
         [T("Hospital"), False, aURL(r=request, f="hospital", args="search"), [
             [T("New"), False, aURL(p="create", r=request, f="hospital", args="create")],
-            [T("Open"), False, aURL(r=request, f="hospital", args="search")],
+            [T("Search"), False, aURL(r=request, f="hospital", args="search")],
             [T("List All"), False, aURL(r=request, f="hospital")],
             #[T("----"), False, None],
             #[T("Show Map"), False, URL(r=request, c="gis", f="map_viewing_client",

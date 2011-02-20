@@ -1,9 +1,7 @@
-{{=login_form}}
 {{if self_registration:}}
-  <p>
-    <a id='register-btn' class='action-btn' href='{{=URL(r=request, f="user", args="register")}}'>{{=T("Register")}}</a>
-  </p>
+{{login_form[0][-1][1].append(A(T("Sign-up for Account"), _href=URL(r=request, f="user", args="register"), _id="register-btn", _style="padding-left:15px; font-size:85%;"))}}
 {{pass}}
-<p>
-  <a class='action-btn' href='{{=URL(r=request, f="user", args="retrieve_password")}}'>{{=T("Lost Password")}}</a>
-</p>
+{{login_form[0][-1][1].append(A(T("Lost Password"), _href=URL(r=request, f="user", args="retrieve_password"), _style="padding-left:15px; font-size:85%;"))}}
+<div class="form-container">
+{{=login_form}}
+</div>

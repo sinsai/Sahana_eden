@@ -20,8 +20,10 @@
   {{pass}}
  {{pass}}
 {{elif request.args(0) == "profile":}}
- {{=H2(T("Profile"))}}
+ {{=H2(T("User Profile"))}}
+ <div class="form-container">
  {{=form}}
+ </div>
 {{elif request.args(0) == "change_password":}}
  {{=H2(T("Change Password"))}}
  {{=form}}
@@ -33,9 +35,13 @@ $(function() {
 </script>
 {{elif request.args(0) == "reset_password":}}
  {{=H2(T("Reset Password"))}}
+<div class="form-container">
  {{=form}}
+</div>
 {{elif request.args(0) == "retrieve_password":}}
  {{=H2(T("Retrieve Password"))}}
+ <div class="form-container">
  {{=form}}
+ </div>
 {{pass}}
 </div>

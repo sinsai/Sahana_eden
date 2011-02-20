@@ -30,7 +30,7 @@ _table_user = auth.settings.table_user
 _table_user.first_name.label = T("First Name")
 _table_user.first_name.comment = SPAN("*", _class="req")
 _table_user.last_name.label = T("Last Name")
-_table_user.last_name.comment = SPAN("*", _class="req")
+#_table_user.last_name.comment = SPAN("*", _class="req")
 _table_user.email.label = T("E-mail")
 _table_user.email.comment = SPAN("*", _class="req")
 _table_user.password.comment = SPAN("*", _class="req")
@@ -102,11 +102,13 @@ def index():
     if not auth.is_logged_in():
         # Provide a login box on front page
         request.args = ["login"]
+        auth.messages.submit_button = T("Login")
         login_form = auth()
 
         # Download the registration box on front page ready to unhide without a server-side call
         if self_registration:
             request.args = ["register"]
+            auth.messages.submit_button = T("Register")
             register_form = auth()
 
     response.title = title
@@ -137,15 +139,17 @@ def user():
         _table_user.utc_offset.readable = True
         _table_user.utc_offset.writable = True
 
-    form = auth()
+    login_form = register_form = None
     if request.args and request.args(0) == "login":
+        auth.messages.submit_button = T("Login")
+        form = auth()
         login_form = form
-    else:
-        login_form = None
-    if request.args and request.args(0) == "register":
+    elif request.args and request.args(0) == "register":
+        auth.messages.submit_button = T("Register")
+        form = auth()
         register_form = form
     else:
-        register_form = None
+        form = auth()
 
     if request.args and request.args(0) == "profile" and deployment_settings.get_auth_openid():
         form = DIV(form, openid_login_form.list_user_openids())

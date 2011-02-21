@@ -68,7 +68,7 @@
                 <type>Feature</type>
                 <geometry>
                     <type>
-                        <xsl:value-of select="data[@field='gis_feature_type']"/>
+                        <xsl:text>Point</xsl:text>
                     </type>
                     <coordinates>
                         <xsl:value-of select="data[@field='lon']"/>
@@ -84,6 +84,9 @@
                     <name>
                         <xsl:value-of select="data[@field='name']"/>
                     </name>
+                    <marker>
+                        <xsl:value-of select="@marker"/>
+                    </marker>
                 </properties>
             </xsl:when>
             <xsl:otherwise>

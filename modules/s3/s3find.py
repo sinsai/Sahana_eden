@@ -160,7 +160,7 @@ class S3SearchSimpleWidget(S3SearchWidget):
 
         DEFAULT = (table.id == None)
 
-        mq = Storage() # Master queries
+        mq = Storage()
         search_fields = Storage()
 
         fields = self.field
@@ -169,34 +169,34 @@ class S3SearchSimpleWidget(S3SearchWidget):
 
         # Find the tables, joins and fields to search in
         for f in fields:
-            _table = None
+            ktable = None
             rtable = None
             component = None
             reference = None
             multiple = False
+
             if f.find(".") != -1: # Component
                 cname, f = f.split(".", 1)
                 component = resource.components.get(cname, None)
                 if not component:
                     continue
-                _table = component.resource.table
+                ktable = component.resource.table
                 tablename = component.resource.tablename
                 pkey = component.pkey
                 fkey = component.fkey
-                # Do not add queries for empty component tables
-                if not db(_table.id>0).select(_table.id, limitby=(0,1)).first():
+                # Do not add queries for empty tables
+                if not db(ktable.id>0).select(ktable.id,
+                                              limitby=(0, 1)).first():
                     continue
-
             else: # this resource
-                _table = table
-                tablename = table._tablename
+                ktable = table
+                ktablename = table._tablename
 
-            if f.find("$") != -1: # Reference
-
+            if f.find("$") != -1: # Referenced object
                 rkey, f = f.split("$", 1)
-                if not rkey in _table.fields:
+                if not rkey in ktable.fields:
                     continue
-                ftype = str(_table[rkey].type)
+                ftype = str(ktable[rkey].type)
                 if ftype[:9] == "reference":
                     reference = ftype[10:]
                 elif ftype[:14] == "list:reference":
@@ -204,32 +204,33 @@ class S3SearchSimpleWidget(S3SearchWidget):
                     multiple = True
                 else:
                     continue
-                rtable = _table # the referencing table
-                rtablename = tablename
-                _table = db[reference]
-                tablename = reference
-                # Do not add queries for empty reference tables
-                if not db(_table.id>0).select(_table.id, limitby=(0,1)).first():
+                rtable = ktable
+                rtablename = ktablename
+                ktable = db[reference]
+                ktablename = reference
+                # Do not add queries for empty tables
+                if not db(ktable.id>0).select(ktable.id,
+                                              limitby=(0, 1)).first():
                     continue
 
             # Master queries
-            if _table and tablename not in mq:
-                query = (resource.accessible_query("read", _table))
-                if "deleted" in _table.fields:
-                    query = (query & (_table.deleted == "False"))
+            if ktable and ktablename not in mq:
+                query = (resource.accessible_query("read", ktable))
+                if "deleted" in ktable.fields:
+                    query = (query & (ktable.deleted == "False"))
                 join = None
                 if reference:
-                    if tablename != rtablename:
+                    if ktablename != rtablename:
                         q = (resource.accessible_query("read", rtable))
                         if "deleted" in rtable.fields:
                             q = (q & (rtable.deleted == "False"))
                     else:
                         q = None
                     if multiple:
-                        j = (rtable[rkey].contains(_table.id))
+                        j = (rtable[rkey].contains(ktable.id))
                     else:
-                        j = (rtable[rkey] == _table.id)
-                    if q:
+                        j = (rtable[rkey] == ktable.id)
+                    if q is not None:
                         join = q & j
                     else:
                         join = j
@@ -241,21 +242,21 @@ class S3SearchSimpleWidget(S3SearchWidget):
                             q = (q & (table.deleted == "False"))
                         j = (q & (table[pkey] == rtable[fkey]))
                     else:
-                        j = (table[pkey] == _table[fkey])
-                if j and join:
+                        j = (table[pkey] == ktable[fkey])
+                if j is not None and join is not None:
                     join = (join & j)
                 elif j:
                     join = j
-                if join:
+                if join is not None:
                     query = (query & join)
-                mq[_table._tablename] = query
+                mq[ktable._tablename] = query
 
             # Search fields
-            if _table and f in _table.fields:
-                if _table._tablename not in search_fields:
-                    search_fields[tablename] = [_table[f]]
+            if ktable and f in ktable.fields:
+                if ktable._tablename not in search_fields:
+                    search_fields[ktablename] = [ktable[f]]
                 else:
-                    search_fields[tablename].append(_table[f])
+                    search_fields[ktablename].append(ktable[f])
 
         # No search fields?
         if not search_fields:
@@ -459,9 +460,10 @@ class S3Find(S3CRUD):
                     name = args._name
                 else:
                     name = "search_simple"
-                simple = S3SearchSimpleWidget(field=args.field, name=name,
-                                              label=args.label, comment=args.comment)
-
+                simple = S3SearchSimpleWidget(field=args.field,
+                                              name=name,
+                                              label=args.label,
+                                              comment=args.comment)
         names = []
         self.__simple = []
         if not isinstance(simple, (list, tuple)):
@@ -558,7 +560,8 @@ class S3Find(S3CRUD):
         href_add = r.other(method="create", representation=representation)
         authorised = self.permit("create", tablename)
         if authorised and insertable:
-            add_link = self.crud_button(ADD, _href=href_add, _id="add-btn", _class="action-lnk")
+            add_link = self.crud_button(ADD, _href=href_add,
+                                        _id="add-btn", _class="action-lnk")
         else:
             add_link = ""
 
@@ -576,7 +579,8 @@ class S3Find(S3CRUD):
                 tr = TR(TD("%s: " % label, _class="w2p_fl"),
                         widget.widget(resource, vars))
                 if comment:
-                    tr.append(DIV(DIV(_class="tooltip", _title="%s|%s" % (label, comment))))
+                    tr.append(DIV(DIV(_class="tooltip",
+                                      _title="%s|%s" % (label, comment))))
                 trows.append(tr)
             if self.__advanced:
                 switch_link = A(T("Advanced Search"), _href="#",
@@ -601,7 +605,8 @@ class S3Find(S3CRUD):
                 tr = TR(TD("%s: " % label, _class="w2p_fl"),
                         widget.widget(resource, vars))
                 if comment:
-                    tr.append(DIV(DIV(_class="tooltip", _title="%s|%s" % (label, comment))))
+                    tr.append(DIV(DIV(_class="tooltip",
+                                      _title="%s|%s" % (label, comment))))
                 trows.append(tr)
             if self.__simple:
                 switch_link = A(T("Simple Search"), _href="#",
@@ -694,15 +699,17 @@ class S3Find(S3CRUD):
             if items and not response.s3.no_sspag:
                 totalrows = self.resource.count()
                 if totalrows:
-                    aadata = dict(aaData = self.sqltable(fields=fields,
-                                                         start=0,
-                                                         limit=20,
-                                                         orderby=orderby,
-                                                         linkto=linkto,
-                                                         download_url=self.download_url,
-                                                         as_page=True,
-                                                         format=representation) or [])
-                    aadata.update(iTotalRecords=totalrows, iTotalDisplayRecords=totalrows)
+                    aadata = dict(aaData =
+                                self.sqltable(fields=fields,
+                                              start=0,
+                                              limit=20,
+                                              orderby=orderby,
+                                              linkto=linkto,
+                                              download_url=self.download_url,
+                                              as_page=True,
+                                              format=representation) or [])
+                    aadata.update(iTotalRecords=totalrows,
+                                  iTotalDisplayRecords=totalrows)
                     response.aadata = json(aadata)
                     response.s3.start = 0
                     response.s3.limit = 20
@@ -711,11 +718,6 @@ class S3Find(S3CRUD):
                 items = T("No matching records found.")
 
             output.update(items=items, sortby=sortby)
-
-            ## Add-button
-            #buttons = self.insert_buttons(r, "add")
-            #if buttons:
-                #output.update(buttons)
 
         # Title and subtitle
         title = self.crud_string(tablename, "title_search")
@@ -772,7 +774,8 @@ class S3Find(S3CRUD):
                 query = (field.lower().like("%" + value + "%"))
 
             elif filter == "=":
-                if field.type.split(" ")[0] in ["reference", "id", "float", "integer"]:
+                if field.type.split(" ")[0] in \
+                    ["reference", "id", "float", "integer"]:
                     # Numeric, e.g. Organisations' offices_by_org
                     query = (field == value)
                 else:
@@ -870,12 +873,15 @@ class S3LocationSearch(S3Find):
             if filter == "~":
                 if parent:
                     # gis_location hierarchical search
-                    # NB Currently not used - we allow people to search freely across all the hierarchy
+                    # NB Currently not used - we allow people to search
+                    # freely across all the hierarchy,
                     # SQL Filter is immediate children only so need slow lookup
-                    #query = query & (table.parent == parent) & \
-                    #                (field.like("%" + value + "%"))
-                    children = gis.get_children(parent) # does not check for deletion_status!
-                    children = children.find(lambda row: value in str.lower(row.name))
+                    # query = query & (table.parent == parent) & \
+                    #                 (field.like("%" + value + "%"))
+                    # @todo: does currently not check deletion_status!
+                    children = gis.get_children(parent)
+                    children = children.find(lambda row: \
+                                             value in str.lower(row.name))
                     output = children.json()
                     response.headers["Content-Type"] = "text/json"
                     return output
@@ -885,14 +891,15 @@ class S3LocationSearch(S3Find):
                     # Filter out poor-quality data, such as from Ushahidi
                     query = (field.lower().like("%" + value + "%")) & \
                             ((table[exclude_field].lower() != exclude_value) | \
-                                (table[exclude_field] == None))
+                             (table[exclude_field] == None))
 
                 else:
                     # Normal single-field
                     query = (field.lower().like("%" + value + "%"))
 
             elif filter == "=":
-                if field.type.split(" ")[0] in ["reference", "id", "float", "integer"]:
+                if field.type.split(" ")[0] in \
+                   ["reference", "id", "float", "integer"]:
                     # Numeric, e.g. Organisations' offices_by_org
                     query = (field == value)
                 else:

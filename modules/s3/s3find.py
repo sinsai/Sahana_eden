@@ -189,9 +189,9 @@ class S3SearchSimpleWidget(S3SearchWidget):
             elif f.find("$") != -1: # Reference
 
                 fkey, f = f.split("$", 1)
-                if not fk in table.fields:
+                if not fkey in table.fields:
                     continue
-                ftype = str(table[fk].type)
+                ftype = str(table[fkey].type)
                 if ftype[:9] == "reference":
                     reference = ftype[10:]
                 elif ftype[:14] == "list:reference":
@@ -517,6 +517,7 @@ class S3Find(S3CRUD):
 
         # Initialize output
         output = dict()
+        simple = False
 
         # Get table-specific parameters
         sortby = self._config("sortby", [[1,'asc']])
@@ -537,6 +538,7 @@ class S3Find(S3CRUD):
             add_link = ""
 
         if self.__simple:
+            simple = True
             trows = []
             for name, widget in self.__simple:
                 label = widget.field
@@ -551,19 +553,48 @@ class S3Find(S3CRUD):
                 if comment:
                     tr.append(DIV(DIV(_class="tooltip", _title="%s|%s" % (label, comment))))
                 trows.append(tr)
-            trows.append(TR("", TD(INPUT(_type="submit", _value=T("Search")), add_link)))
-            simple_form = FORM(TABLE(trows), _id="search_simple")
+            if self.__advanced:
+                switch_link = A(T("Advanced Search"), _href="#",
+                                _class="action-lnk", _id="advanced-lnk")
+            else:
+                switch_link = ""
+            trows.append(TR("", TD(INPUT(_type="submit", _value=T("Search")),
+                                   switch_link, add_link)))
+            simple_form = FORM(TABLE(trows), _id="simple-form")
             form.append(simple_form)
 
         if self.__advanced:
-            pass # not implemented yet
+            trows = []
+            for name, widget in self.__advanced:
+                label = widget.field
+                if isinstance(label, (list, tuple)) and len(label):
+                    label = label[0]
+                comment = ""
+                if hasattr(widget, "attr"):
+                    label = widget.attr.get("label", label)
+                    comment = widget.attr.get("comment", comment)
+                tr = TR(TD("%s: " % label, _class="w2p_fl"),
+                        widget.widget(resource, vars))
+                if comment:
+                    tr.append(DIV(DIV(_class="tooltip", _title="%s|%s" % (label, comment))))
+                trows.append(tr)
+            if self.__simple:
+                switch_link = A(T("Simple Search"), _href="#",
+                                _class="action-lnk", _id="simple-lnk")
+            else:
+                switch_link = ""
+            trows.append(TR("", TD(INPUT(_type="submit", _value=T("Search")),
+                                   switch_link, add_link)))
+            advanced_form = FORM(TABLE(trows), _id="advanced-form")
+            form.append(advanced_form)
 
         output.update(form=form)
 
         query = None
 
         # Process the simple search form:
-        if simple_form.accepts(request.vars, session,
+        if self.__simple and \
+           simple_form.accepts(request.vars, session,
                                formname="search_simple",
                                keepvalues=True):
             for name, widget in self.__simple:
@@ -575,6 +606,28 @@ class S3Find(S3CRUD):
                             query = q
                         else:
                             query = query & q
+
+        # Process the simple search form:
+        if self.__advanced and \
+           advanced_form.accepts(request.vars, session,
+                                 formname="search_advanced",
+                                 keepvalues=True):
+            simple = False
+            for name, widget in self.__advanced:
+                if name in advanced_form.vars:
+                    value = advanced_form.vars[name]
+                    q = widget.query(resource, value)
+                    if q is not None:
+                        if query is None:
+                            query = q
+                        elif self.__any:
+                            query = query | q
+                        else:
+                            query = query & q
+        elif advanced_form.errors:
+            simple = False
+
+        output.update(simple=simple)
 
         if query is not None:
             # Build query

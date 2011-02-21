@@ -170,6 +170,7 @@ class S3SearchSimpleWidget(S3SearchWidget):
         # Find the tables, joins and fields to search in
         for f in fields:
             _table = None
+            rtable = None
             component = None
             reference = None
             multiple = False
@@ -186,12 +187,16 @@ class S3SearchSimpleWidget(S3SearchWidget):
                 if not db(_table.id>0).select(_table.id, limitby=(0,1)).first():
                     continue
 
-            elif f.find("$") != -1: # Reference
+            else: # this resource
+                _table = table
+                tablename = table._tablename
 
-                fkey, f = f.split("$", 1)
-                if not fkey in table.fields:
+            if f.find("$") != -1: # Reference
+
+                rkey, f = f.split("$", 1)
+                if not rkey in _table.fields:
                     continue
-                ftype = str(table[fkey].type)
+                ftype = str(_table[rkey].type)
                 if ftype[:9] == "reference":
                     reference = ftype[10:]
                 elif ftype[:14] == "list:reference":
@@ -199,15 +204,13 @@ class S3SearchSimpleWidget(S3SearchWidget):
                     multiple = True
                 else:
                     continue
+                rtable = _table # the referencing table
+                rtablename = tablename
                 _table = db[reference]
                 tablename = reference
                 # Do not add queries for empty reference tables
                 if not db(_table.id>0).select(_table.id, limitby=(0,1)).first():
                     continue
-
-            else: # this resource
-                _table = table
-                tablename = table._tablename
 
             # Master queries
             if _table and tablename not in mq:
@@ -215,12 +218,34 @@ class S3SearchSimpleWidget(S3SearchWidget):
                 if "deleted" in _table.fields:
                     query = (query & (_table.deleted == "False"))
                 join = None
+                if reference:
+                    if tablename != rtablename:
+                        q = (resource.accessible_query("read", rtable))
+                        if "deleted" in rtable.fields:
+                            q = (q & (rtable.deleted == "False"))
+                    else:
+                        q = None
+                    if multiple:
+                        j = (rtable[rkey].contains(_table.id))
+                    else:
+                        j = (rtable[rkey] == _table.id)
+                    if q:
+                        join = q & j
+                    else:
+                        join = j
+                j = None
                 if component:
-                    join = (table[pkey] == _table[fkey])
-                elif reference and multiple:
-                    join = (table[fkey].contains(_table.id))
-                elif reference and not multiple:
-                    join = (table[fkey] == _table.id)
+                    if reference:
+                        q = (resource.accessible_query("read", table))
+                        if "deleted" in table.fields:
+                            q = (q & (table.deleted == "False"))
+                        j = (q & (table[pkey] == rtable[fkey]))
+                    else:
+                        j = (table[pkey] == _table[fkey])
+                if j and join:
+                    join = (join & j)
+                elif j:
+                    join = j
                 if join:
                     query = (query & join)
                 mq[_table._tablename] = query

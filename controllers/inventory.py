@@ -138,7 +138,7 @@ def store_item():
     return s3_rest_controller(module, resourcename)
 
 def store_item_quantity():
-    response.headers["Content-Type"] = "text/x-json"
+    response.headers["Content-Type"] = "application/json"
     record =  db( (db.inventory_store_item.id == request.args[0]) & \
                   (db.inventory_store_item.item_packet_id == db.supply_item_packet.id)
                  ).select(db.inventory_store_item.quantity,
@@ -153,3 +153,4 @@ def store_item_packets():
               ).select( db.supply_item_packet.id,
                         db.supply_item_packet.name,
                         db.supply_item_packet.quantity).json()
+#==============================================================================

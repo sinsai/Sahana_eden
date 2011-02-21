@@ -1139,11 +1139,15 @@ class S3Resource(object):
         if r.representation in json_formats:
             as_json = True # convert the output into JSON
             r.response.headers["Content-Type"] = \
-                content_type.get(r.representation, "text/x-json")
+                content_type.get(r.representation, "application/json")
+        elif r.representation == "rss":
+            as_json = False
+            r.response.headers["Content-Type"] = \
+                content_type.get(r.representation, "application/rss+xml")
         else:
             as_json = False
             r.response.headers["Content-Type"] = \
-                content_type.get(r.representation, "application/xml")
+                content_type.get(r.representation, "text/xml")
 
         # Export the resource
         exporter = self.exporter.xml

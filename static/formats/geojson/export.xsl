@@ -66,21 +66,25 @@
         <xsl:choose>
             <xsl:when test="@name='gis_location'">
                 <type>Feature</type>
-                <id>
-                    <xsl:value-of select="@uuid"/>
-                </id>
                 <geometry>
                     <type>
                         <xsl:value-of select="data[@field='gis_feature_type']"/>
                     </type>
                     <coordinates>
-                        <xsl:text>[</xsl:text>
                         <xsl:value-of select="data[@field='lon']"/>
-                        <xsl:text>,</xsl:text>
+                    </coordinates>
+                    <coordinates>
                         <xsl:value-of select="data[@field='lat']"/>
-                        <xsl:text>]</xsl:text>
                     </coordinates>
                 </geometry>
+                <properties>
+                    <id>
+                        <xsl:value-of select="@uuid"/>
+                    </id>
+                    <name>
+                        <xsl:value-of select="data[@field='name']"/>
+                    </name>
+                </properties>
             </xsl:when>
             <xsl:otherwise>
                 <xsl:apply-templates select="./reference[@resource='gis_location']"/>

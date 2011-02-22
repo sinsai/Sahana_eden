@@ -654,7 +654,8 @@ class S3Find(S3CRUD):
                             query = query | q
                         else:
                             query = query & q
-        elif advanced_form.errors:
+        elif self.__advanced and \
+             advanced_form.errors:
             simple = False
 
         output.update(simple=simple)

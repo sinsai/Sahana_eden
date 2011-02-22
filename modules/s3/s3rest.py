@@ -1360,6 +1360,9 @@ class S3Resource(object):
                                 **args)
         except IOError:
             auth.permission.fail()
+        except SyntaxError:
+            e = sys.exc_info()[1]
+            r.error(400, e)
 
 
     # XML functions ===========================================================

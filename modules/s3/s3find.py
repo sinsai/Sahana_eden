@@ -795,7 +795,7 @@ class S3Find(S3CRUD):
             resource.add_filter(query)
             output = resource.exporter.json(resource, start=0, limit=limit,
                                             fields=fields, orderby=field)
-            response.headers["Content-Type"] = "text/json"
+            response.headers["Content-Type"] = "application/json"
 
         else:
             output = xml.json_message(False, 400, "Missing options! Require: field, filter & value")
@@ -883,7 +883,7 @@ class S3LocationSearch(S3Find):
                     children = children.find(lambda row: \
                                              value in str.lower(row.name))
                     output = children.json()
-                    response.headers["Content-Type"] = "text/json"
+                    response.headers["Content-Type"] = "application/json"
                     return output
 
                 elif exclude_field and exclude_value:
@@ -937,7 +937,7 @@ class S3LocationSearch(S3Find):
             output = resource.exporter.json(resource,
                                             fields=fields, orderby=field)
 
-        response.headers["Content-Type"] = "text/json"
+        response.headers["Content-Type"] = "application/json"
         return output
 
 
@@ -1011,7 +1011,7 @@ class S3PersonSearch(S3Find):
         output = resource.exporter.json(resource, start=0, limit=limit,
                                         fields=fields, orderby=field)
 
-        response.headers["Content-Type"] = "text/json"
+        response.headers["Content-Type"] = "application/json"
         return output
 
 

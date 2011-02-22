@@ -2487,7 +2487,7 @@ def maps():
         output = json.dumps(output)
 
         # Output to browser
-        response.headers["Content-Type"] = "text/json"
+        response.headers["Content-Type"] = "application/json"
         return output
 
     elif request.env.request_method == "POST":
@@ -2711,6 +2711,7 @@ def proxy():
     #allowedHosts = ["www.openlayers.org", "demo.opengeo.org"]
 
     allowed_content_types = (
+        "application/json", "text/json", "text/x-json",
         "application/xml", "text/xml",
         "application/vnd.ogc.se_xml",           # OGC Service Exception
         "application/vnd.ogc.se+xml",           # OGC Service Exception
@@ -2770,9 +2771,11 @@ def proxy():
 
             msg = y.read()
             y.close()
-            # Required for WMS Browser to work in IE
-            response.headers["Content-Type"] = "text/xml"
+
+            # Maintain the incoming Content-Type
+            response.headers["Content-Type"] = ct
             return msg
+
         else:
             # Bad Request
             raise(HTTP(400))
@@ -2825,4 +2828,5 @@ def test():
 
 def test2():
     " Test new OpenLayers functionality in a RAD environment "
+    
     return dict()

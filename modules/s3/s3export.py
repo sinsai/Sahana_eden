@@ -119,13 +119,13 @@ class S3Exporter(object):
 
         # Export as element tree
         tree = self.manager.export_tree(resource,
-                                          audit=self.manager.audit,
-                                          start=start,
-                                          limit=limit,
-                                          marker=marker,
-                                          msince=msince,
-                                          show_urls=show_urls,
-                                          dereference=dereference)
+                                        audit=self.manager.audit,
+                                        start=start,
+                                        limit=limit,
+                                        marker=marker,
+                                        msince=msince,
+                                        show_urls=show_urls,
+                                        dereference=dereference)
 
         # XSLT transformation
         if tree and template is not None:
@@ -140,6 +140,7 @@ class S3Exporter(object):
             tree = xml.transform(tree, template, **args)
 
         # Convert into string
+        # (Content Headers are set by the calling function)
         if tree:
             if as_json:
                 output = xml.tree2json(tree, pretty_print=pretty_print)
@@ -147,7 +148,6 @@ class S3Exporter(object):
                 output = xml.tostring(tree, pretty_print=pretty_print)
 
         return output
-
 
     # -------------------------------------------------------------------------
     def csv(self, resource):
@@ -446,7 +446,7 @@ class S3Exporter(object):
         rows = resource.select(*fields, **attributes)
 
         if response:
-            response.headers["Content-Type"] = "text/x-json"
+            response.headers["Content-Type"] = "application/json"
 
         return rows.json()
 

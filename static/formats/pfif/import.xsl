@@ -102,23 +102,32 @@
                             <xsl:value-of select="concat($uuid, '_address')"/>
                         </xsl:attribute>
                         <data field="type" value="1">Home Address</data>
-                        <data field="address">
-                            <xsl:value-of select="./pfif:home_street/text()"/>
-                        </data>
-                        <data field="L3">
-                            <xsl:value-of select="./pfif:home_city/text()"/>
-                        </data>
-                        <data field="L1">
-                            <xsl:value-of select="./pfif:home_state/text()"/>
-                        </data>
-                        <data field="L0">
-                            <xsl:call-template name="iso2countryname">
-                                <xsl:with-param name="country" select="./pfif:home_country/text()"/>
-                            </xsl:call-template>
-                        </data>
-                        <data field="postcode">
-                            <xsl:value-of select="./pfif:home_postal_code/text()"/>
-                        </data>
+                        <reference field="location_id" resource="gis_location">
+                            <resource name="gis_location">
+                                <data field="name">
+                                    <xsl:value-of select="./pfif:first_name/text()"/>
+                                    <xsl:text> </xsl:text>
+                                    <xsl:value-of select="./pfif:last_name/text()"/>
+                                </data>
+                                <data field="address">
+                                    <xsl:value-of select="./pfif:home_street/text()"/>
+                                </data>
+                                <data field="L3">
+                                    <xsl:value-of select="./pfif:home_city/text()"/>
+                                </data>
+                                <data field="L1">
+                                    <xsl:value-of select="./pfif:home_state/text()"/>
+                                </data>
+                                <data field="L0">
+                                    <xsl:call-template name="iso2countryname">
+                                        <xsl:with-param name="country" select="./pfif:home_country/text()"/>
+                                    </xsl:call-template>
+                                </data>
+                                <data field="postcode">
+                                    <xsl:value-of select="./pfif:home_postal_code/text()"/>
+                                </data>
+                            </resource>
+                        </reference>
                     </resource>
                 </xsl:if>
 
@@ -165,8 +174,8 @@
                 </xsl:when>
                 <xsl:otherwise>
                     <data field="presence_condition">
-                        <xsl:attribute name="value">12</xsl:attribute>
-                        <xsl:text>Found</xsl:text>
+                        <xsl:attribute name="value">1</xsl:attribute>
+                        <xsl:text>Seen</xsl:text>
                     </data>
                 </xsl:otherwise>
             </xsl:choose>

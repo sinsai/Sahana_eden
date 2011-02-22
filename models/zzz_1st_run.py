@@ -80,9 +80,9 @@ if populate:
     db.commit()
     if not db(table.id > 0).count():
         table.insert(
-            admin_name = T("Sahana Administrator"),
+            admin_name = T("Sahana Administrator").xml(),
             admin_email = "support@Not Set",
-            admin_tel = T("Not Set"),
+            admin_tel = T("Not Set").xml(),
             theme = 1
         )
 
@@ -413,7 +413,7 @@ if populate:
             comments = "Designed to provide a 1st phase drinking water purification solution at the household level. Contains 600 sachets to provide sufficient drinking water (4l) for 100 people for 30 days."
             )
 
-        #enter base_unit as packets
+        # enter base_unit as packets
         item_rows = db(table.id > 0).select(table.id, table.base_unit)
         for item_row in item_rows:
             db.supply_item_packet.insert(
@@ -1135,7 +1135,7 @@ if populate:
                 title = "L3: Tehsils",
                 visibility = False,
                 opacity = 0.74,
-                format = "image/png",
+                img_format = "image/png",
                 styles = "",
                 transparent = True
             )
@@ -1145,7 +1145,7 @@ if populate:
                 title = "Flood Extent - 17 August",
                 visibility = False,
                 opacity = 0.45,
-                format = "image/png",
+                img_format = "image/png",
                 styles = "",
                 transparent = True
             )
@@ -1172,7 +1172,10 @@ if populate:
         create_role("Administrator", "System Administrator - can access & make changes to any data")
         create_role("Authenticated", "Authenticated - all logged-in users",
                     dict(c="gis", uacl=acl.ALL, oacl=acl.ALL),
-                    dict(c="gis", f="location", uacl=acl.READ, oacl=acl.ALL))
+                    dict(c="gis", f="location", uacl=acl.READ, oacl=acl.ALL),
+                    dict(c="inventory", uacl=acl.READ, oacl=acl.ALL),
+                    dict(c="logs", uacl=acl.READ, oacl=acl.ALL)
+                    )
         create_role("Anonymous", "Unauthenticated users",
                     dict(c="gis", uacl=acl.READ, oacl=acl.READ))
         create_role("Editor", "Editor - can access & make changes to any unprotected data")
@@ -1189,8 +1192,8 @@ if populate:
                     dict(c="hms", uacl=acl.ALL, oacl=acl.ALL))
 
 
-    # Security Defaults for all tables (if using 'full' security policy)
-    if session.s3.security_policy not in (1,2,3,4,5):
+    # Security Defaults for all tables (if using 'full' security policy: i.e. native Web2Py)
+    if session.s3.security_policy not in (1, 2, 3, 4, 5):
         table = auth.settings.table_permission_name
         if not db(db[table].id > 0).count():
             # For performance we only populate this once (at system startup)

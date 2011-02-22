@@ -154,13 +154,18 @@ class S3Resource(object):
                 self.components[c.name] = Storage(component=c,
                                                   pkey=pkey,
                                                   fkey=fkey,
-                                                  resource=resource)
+                                                  resource=resource,
+                                                  filter=None)
 
             # Build query
             self.build_query(id=id, uid=uid, filter=filter, vars=vars)
 
         # Store CRUD and other method handlers
         self.crud = self.manager.crud
+        # Get default search method for this resource
+        self.search = model.get_config(self.table, "search_method",
+                                       self.manager.search)
+        # Store internal handlers
         self._handler = Storage(options=self.__get_options,
                                 fields=self.__get_fields,
                                 export_tree=self.__get_tree,
@@ -256,6 +261,25 @@ class S3Resource(object):
             else:
                 self.build_query(filter=filter)
         return self._query
+
+
+    # -------------------------------------------------------------------------
+    def add_component_filter(self, name, filter=None):
+        """
+        Extend the filter query of a particular component
+
+        @param name: the name of the component
+        @param filter: a web2py Query object
+
+        """
+
+        component = self.components.get(name, None)
+        if component is not None:
+            if component.filter is not None:
+                component.filter = (component.filter) & (filter)
+            else:
+                component.filter = filter
+            print component.filter
 
 
     # -------------------------------------------------------------------------
@@ -758,12 +782,12 @@ class S3Resource(object):
         else:
             fields = (self.table.id,)
 
-        set = self.db(self._query).select(*fields)
+        rows = self.db(self._query).select(*fields)
 
-        self._ids = [row.id for row in set]
+        self._ids = [row.id for row in rows]
 
         if uid in self.table.fields:
-            self._uids = [row[uid] for row in set]
+            self._uids = [row[uid] for row in rows]
 
 
     # Representation ==========================================================
@@ -853,10 +877,8 @@ class S3Resource(object):
                     r.record = self._rows.first()
                 else:
                     model = self.manager.model
-                    search_simple = model.get_method(self.prefix, self.name,
-                                                     method="search_simple")
-                    if search_simple:
-                        redirect(URL(r=r.request, f=self.name, args="search_simple",
+                    if self.search.interactive_search:
+                        redirect(URL(r=r.request, f=self.name, args="search",
                                      vars={"_next": r.same()}))
                     else:
                         r.session.error = self.ERROR.BAD_RECORD
@@ -914,6 +936,8 @@ class S3Resource(object):
             # Invoke the method handler
             if handler is not None:
                 output = handler(r, **attr)
+            elif r.method == "search":
+                output = self.search(r, **attr)
             else:
                 # Fall back to CRUD
                 output = self.crud(r, **attr)
@@ -992,12 +1016,10 @@ class S3Resource(object):
                 request_vars = dict(_next=r.request.vars._next)
             else:
                 request_vars = {}
-            search_simple = model.get_method(self.prefix, self.name,
-                                             method="search_simple")
-            if r.representation == "html" and search_simple:
+            if r.representation == "html" and self.search.interactive_search:
                 r.next = URL(r=r.request,
                              f=self.name,
-                             args="search_simple",
+                             args="search",
                              vars=request_vars)
             else:
                 r.next = URL(r=r.request, f=self.name)
@@ -1117,11 +1139,15 @@ class S3Resource(object):
         if r.representation in json_formats:
             as_json = True # convert the output into JSON
             r.response.headers["Content-Type"] = \
-                content_type.get(r.representation, "text/x-json")
+                content_type.get(r.representation, "application/json")
+        elif r.representation == "rss":
+            as_json = False
+            r.response.headers["Content-Type"] = \
+                content_type.get(r.representation, "application/rss+xml")
         else:
             as_json = False
             r.response.headers["Content-Type"] = \
-                content_type.get(r.representation, "application/xml")
+                content_type.get(r.representation, "text/xml")
 
         # Export the resource
         exporter = self.exporter.xml
@@ -1334,6 +1360,9 @@ class S3Resource(object):
                                 **args)
         except IOError:
             auth.permission.fail()
+        except SyntaxError:
+            e = sys.exc_info()[1]
+            r.error(400, e)
 
 
     # XML functions ===========================================================
@@ -1698,14 +1727,20 @@ class S3Resource(object):
 
         """
 
+        fkey = None
         table = self.table
+
+        if self.parent:
+            component = self.parent.components.get(self.name, None)
+            if component:
+                fkey = component.fkey
 
         if subset:
             return [table[f] for f in subset
-                    if f in table.fields and table[f].readable]
+                    if f in table.fields and table[f].readable and f != fkey]
         else:
             return [table[f] for f in table.fields
-                    if table[f].readable]
+                    if table[f].readable and f != fkey]
 
 
     # -------------------------------------------------------------------------

@@ -64,11 +64,11 @@
         <resource name="gis_location">
 
             <xsl:attribute name="uuid">
-                <xsl:value-of select="./id/text()"/>
+                <xsl:value-of select="./properties/id/text()"/>
             </xsl:attribute>
 
             <data field="name">
-                <xsl:value-of select="./id/text()"/>
+                <xsl:value-of select="./properties/name/text()"/>
             </data>
 
             <xsl:choose>

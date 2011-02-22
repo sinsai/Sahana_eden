@@ -3,7 +3,7 @@
 {{=H2(module_name)}}
 {{if auth.s3_logged_in():}}
 <div>
-{{=H5(T("Search here for a person in order to:"))}}
+{{=H5(T("Search here for a person record in order to:"))}}
 <ul style="margin-left: 40px;">
     <li>{{=T("Report them missing")}}</li>
     <li>{{=T("Report them as found")}}</li>
@@ -31,7 +31,7 @@
 {{pass}}
 <div style="margin:20px auto; width:96%; max-width:1000px;" >
     <div style="width:100%; float:left;">
-        {{=H4(T("Search for a Person"))}}
+        {{=H4(T("Find Person Record"))}}
         {{try:}}{{=form}}{{except:pass}}
         <div><br /></div>
         <div id='table-container'>
@@ -40,15 +40,6 @@
             {{except:}}
             {{pass}}
         </div>
-{{try:}}
-{{if add_btn:}}
-<p>&nbsp;</p>
-<p>{{=T("If you cannot find the person you want to report missing, you can add them by clicking 'Add Person' below:")}}</p>
-<p>&nbsp;</p>
-{{=add_btn}}
-{{pass}}
-{{except:}}
-{{pass}}
         {{include "dataTables.html"}}
     </div>
 </div>

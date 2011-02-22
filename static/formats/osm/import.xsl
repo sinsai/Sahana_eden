@@ -16,6 +16,9 @@
     -->
 
     <xsl:output method="xml"/>
+    <!-- @ToDo: Could this be called something else besides name, which is
+                a keyword?
+    -->
     <xsl:param name="name"/>
 
     <xsl:template match="/">
@@ -28,14 +31,13 @@
 
                 <!-- Hospitals -->
                 <xsl:when test="$name='hospital'">
-                    <!--
-                        @ToDo: Catch:
-                            Clinics (http://wiki.openstreetmap.org/wiki/Proposed_features/Clinic_%28Medical%29)
-                            & Pharmacies (http://wiki.openstreetmap.org/wiki/Tag:amenity%3Dpharmacy)
-                    -->
-                    <xsl:apply-templates select="node[./tag[@k='amenity' and @v='hospital']]|way[./tag[@k='amenity' and @v='hospital']]"/>
+                    <xsl:apply-templates select="node[./tag[@k='amenity' and @v='hospital']]|way[./tag[@k='amenity' and @v='hospital']]|node[./tag[@k='amenity' and @v='clinic']]|way[./tag[@k='amenity' and @v='clinic']]"/>
                 </xsl:when>
 
+                <!--
+                    @ToDo: Catch:
+                        Pharmacies (http://wiki.openstreetmap.org/wiki/Tag:amenity%3Dpharmacy)
+                -->
                 <xsl:otherwise>
                     <xsl:apply-templates select="node|way"/>
                     <!-- @ToDo: Handle Relations (minority case): lookup all linked ways, & hence nodes, create WKT & pull in as polygon or multipolygon -->
@@ -143,7 +145,7 @@
                 </xsl:if>
             </xsl:for-each>
 
-            <xsl:for-each select="./tag[@k='contact:phone'][1]">
+            <xsl:for-each select="./tag[@k='contact:phone' or @k='phone'][1]">
                 <data field="phone_exchange">
                     <xsl:value-of select="@v"/>
                 </data>
@@ -196,6 +198,36 @@
             <data field="osm_id">
                 <xsl:value-of select="@id"/>
             </data>
+
+            <!-- @ToDo: Is there a way of combining housenumber with street
+                        name that will be recognizable across countries?
+                        What does the Universal Postal Union prescribe?
+                        http://www.upu.int/en/activities/addressing/postal-addressing-systems-in-member-countries.html
+                        http://www.columbia.edu/kermit/postal.html
+                 @ToDo: Is there a better way to conditionally include
+                        punctuation? Also, if none of these elements exist
+                        in the node, would rather not include the field, but
+                        would rather have a null.
+            -->
+            <data field="addr_street">
+                <xsl:for-each select="./tag[@k='addr:housenumber'][1]">
+                    <xsl:value-of select="@v"/>
+                    <xsl:text> </xsl:text>
+                </xsl:for-each>
+                <xsl:for-each select="./tag[@k='addr:street'][1]">
+                    <xsl:value-of select="@v"/>
+                    <xsl:text>, </xsl:text>
+                </xsl:for-each>
+                <xsl:for-each select="./tag[@k='addr:city'][1]">
+                    <xsl:value-of select="@v"/>
+                </xsl:for-each>
+            </data>
+
+            <xsl:for-each select="./tag[@k='addr:postcode'][1]">
+                <data field="addr_postcode">
+                    <xsl:value-of select="@v"/>
+                </data>
+            </xsl:for-each>
 
             <!-- @ToDo: Handle Source
             e.g.

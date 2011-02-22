@@ -139,14 +139,83 @@ def shn_as_local_time(value):
 
 # -----------------------------------------------------------------------------
 # Phone number requires
-# @ToDo Support ',' & '/' to separate multiple phone numbers
-shn_phone_requires = IS_NULL_OR(IS_MATCH('\+?\s*[\s\-\.\(\)\d]+(?:(?: x| ext)\s?\d{1,5})?$'))
+# Multiple phone numbers can be separated by comma, slash, semi-colon.
+# (Semi-colon appears in Brazil OSM data.)
+# @ToDo: Need to beware of separators used inside phone numbers
+# (e.g. 555-1212, ext 9), so may need fancier validation if we see that.
+# @ToDo: Add tooltip giving list syntax, and warning against above.
+# (Current use is in importing OSM files, so isn't interactive.)
+# @ToDo: Code that should only have a single # should use
+# shn_single_phone_requires. Check what messaging assumes.
+phone_number_pattern = "\+?\s*[\s\-\.\(\)\d]+(?:(?: x| ext)\s?\d{1,5})?"
+single_phone_number_pattern = phone_number_pattern + "$"
+multiple_phone_number_pattern = \
+    phone_number_pattern + \
+    "(\s*(,|/|;)\s*" + phone_number_pattern + ")*$"
+shn_single_phone_requires = IS_NULL_OR(IS_MATCH(single_phone_number_pattern))
+shn_phone_requires = IS_NULL_OR(IS_MATCH(multiple_phone_number_pattern))
 
 
 # -----------------------------------------------------------------------------
 # Make URLs clickable
 shn_url_represent = lambda url: (url and [A(url, _href=url, _target="blank")] or [""])[0]
 
+
+# -----------------------------------------------------------------------------
+def s3_include_debug():
+    """
+    Generates html to include:
+        the js scripts listed in ../static/scripts/tools/sahana.js.cfg
+        the css listed in ../static/scripts/tools/sahana.css.cfg
+    """
+    # Disable printing
+    class dummyStream:
+        """ dummyStream behaves like a stream but does nothing. """
+        def __init__(self): pass
+        def write(self,data): pass
+        def read(self,data): pass
+        def flush(self): pass
+        def close(self): pass
+    save_stdout = sys.stdout    
+    # redirect all print deals
+    sys.stdout = dummyStream()
+    
+    scripts_dir_path = "applications/%s/static/scripts" % request.application
+
+    # Get list of script files
+    sys.path.append( "%s/tools" % scripts_dir_path)    
+    import mergejs    
+
+    configDictCore = {
+        "web2py": scripts_dir_path,
+        "T2":     scripts_dir_path,
+        "S3":     scripts_dir_path
+    }
+    configFilename = "%s/tools/sahana.js.cfg"  % scripts_dir_path
+    (fs, files) = mergejs.getFiles(configDictCore, configFilename)
+    
+    # Enable print
+    sys.stdout = save_stdout
+    
+    include = ""
+    for file in files:
+        include = '%s\n<script src="/%s/static/scripts/%s" type="text/javascript"></script>' \
+            % ( include,
+                request.application,
+                file)
+
+    include = "%s\n <!-- CSS Syles -->" % include            
+    f = open("%s/tools/sahana.css.cfg" % scripts_dir_path, "r")
+    files = f.readlines()
+    for file in files[:-1]:
+        include = '%s\n<link href="/%s/static/styles/%s" rel="stylesheet" type="text/css" />' \
+            % ( include, 
+                request.application,
+                file[:-1]
+               )
+    f.close()
+
+    return XML(include)
 
 # -----------------------------------------------------------------------------
 #def myname(user_id):
@@ -872,14 +941,13 @@ def s3_rest_controller(prefix, resourcename, **attr):
     # Parse the request
     resource, r = s3xrc.parse_request(prefix, resourcename)
 
-    resource.set_handler("search", s3base.S3Search())
     resource.set_handler("copy", shn_copy)
     resource.set_handler("barchart", shn_barchart)
 
     # Execute the request
     output = resource.execute_request(r, **attr)
 
-    if isinstance(output, dict) and not r.method or r.method=="search_simple":
+    if isinstance(output, dict) and not r.method or r.method=="search":
         if response.s3.actions is None:
 
             # Add default action buttons

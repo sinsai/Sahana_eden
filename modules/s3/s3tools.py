@@ -282,7 +282,11 @@ class MENUS3(DIV):
                 (name, right, link) = item[:3]
                 if link == False:
                     continue
-                li = LI(A(name, _href=link))
+                if name == "----":
+                    # Horizontal line as separator
+                    li = LI(HR(), _class="menu_separator")
+                else:
+                    li = LI(A(name, _href=link))
                 div.append(li)
         return div
 

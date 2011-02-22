@@ -37,7 +37,7 @@ def shn_menu():
             [T("List all"), False, aURL(r=request, f="body")],
             [T("List unidentified"), False, aURL(r=request, f="body", vars=dict(status="unidentified"))],
             [T("New Report"), False, aURL(p="create", r=request, f="body", args="create")],
-            [T("Search by ID Tag"), False, aURL(r=request, f="body", args="search_simple")]
+            [T("Search by ID Tag"), False, aURL(r=request, f="body", args="search")]
         ]],
         [T("Missing Persons"), False, aURL(r=request, f="person")]
     ]

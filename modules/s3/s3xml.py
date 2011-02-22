@@ -74,7 +74,7 @@ class S3XML(object):
     FeatureClass = "feature_class_id"
     #Marker = "marker_id"
 
-    IGNORE_FIELDS = ["deleted", "id", "owned_by"]
+    IGNORE_FIELDS = ["deleted", "id", "owned_by_role", "owned_by_user"]
 
     FIELDS_TO_ATTRIBUTES = [
             "id",
@@ -556,7 +556,8 @@ class S3XML(object):
                         marker = self.gis.get_marker(resource.tablename)
                         marker_url = "%s/%s" % (download_url, marker.image)
                     r.element.set(self.ATTRIBUTE.marker, marker_url)
-                    symbol = "White Dot"
+                    # Lookup GPS Marker (Symbol)
+                    symbol = self.gis.get_gps_marker(resource.tablename)
                     r.element.set(self.ATTRIBUTE.sym, symbol)
 
 

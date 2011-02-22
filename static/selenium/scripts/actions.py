@@ -44,7 +44,7 @@ class Action(unittest.TestCase):
         sel.click("auth_user_email")
         sel.type("auth_user_email", username)
         sel.type("auth_user_password", password)
-        sel.click("//input[@value='Submit']")
+        sel.click("//input[@value='Login']")
         msg = "Unable to log in as " + username
         if reveal:
             msg += " with password " + password
@@ -316,7 +316,7 @@ class Action(unittest.TestCase):
         sel.type("auth_user_email", email)
         sel.type("auth_user_password", password)
         sel.type("password_two", password)
-        sel.click("//input[@value='Submit']")
+        sel.click("//input[@value='Register']")
         sel.wait_for_page_to_load("30000")
         msg = "Unable to register user %s %s with email %s" % (first_name, last_name, email)
         self.assertTrue(self.successMsg("Registration successful"), msg)

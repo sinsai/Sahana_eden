@@ -15,7 +15,7 @@ resourcename = request.function
 def shn_menu():
     response.menu_options = [
         [T("Home"), False, URL(r=request, f="index")],
-        [T("Search for a Person"), False, URL(r=request, f="person", args="search_simple")],
+        [T("Search for a Person"), False, URL(r=request, f="person", args="search")],
         [T("Persons"), False, URL(r=request, f="person"), [
             [T("List"), False, URL(r=request, f="person")],
             [T("Add"), False, URL(r=request, f="person", args="create")],
@@ -23,7 +23,9 @@ def shn_menu():
         [T("Groups"), False, URL(r=request, f="group"), [
             [T("List"), False, URL(r=request, f="group")],
             [T("Add"), False, URL(r=request, f="group", args="create")],
-        ]]]
+        ]],
+        #[T("Help"), False, URL(r=request, f="guide")],
+    ]
 
     #De-activating until fixed:
     #if s3_has_role(1):
@@ -65,11 +67,10 @@ def index():
 
     def prep(r):
         if r.representation == "html":
-            if not r.id:
-                r.method = "search_simple"
-                r.custom_action = shn_pr_person_search_simple
+            if not r.id and not r.method:
+                r.method = "search"
             else:
-               redirect(URL(r=request, f="person", args=[r.id]))
+               redirect(URL(r=request, f="person", args=request.args))
         return True
     response.s3.prep = prep
 
@@ -102,15 +103,7 @@ def index():
         return output
     response.s3.postp = postp
 
-    if auth.s3_logged_in():
-        add_btn = A(T("Add Person"),
-                    _class="action-btn",
-                    _href=URL(r=request, f="person", args="create"))
-    else:
-        add_btn = None
-
-    output = s3_rest_controller("pr", "person",
-                                add_btn=add_btn)
+    output = s3_rest_controller("pr", "person")
     response.view = "pr/index.html"
     response.title = module_name
     shn_menu()
@@ -123,9 +116,6 @@ def person():
     """ RESTful CRUD controller """
 
     def prep(r):
-
-        # Override the default Search MethodHandler
-        r.resource.set_handler("search", s3base.S3PersonSearch())
 
         if r.component_name == "config":
             _config = db.gis_config
@@ -256,7 +246,11 @@ def tooltip():
         response.view = "pr/ajaxtips/%s.html" % request.vars.formfield
     return dict()
 
-#------------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+def guide():
+    return dict()
+
+#------------------------------------------------------------------------------
 def person_duplicates():
 
     """ Handle De-duplication of People

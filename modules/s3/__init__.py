@@ -42,6 +42,7 @@
 
 # Import all names from the S3 modules that shall be accessible
 # under the s3base namespace:
+import sys
 
 # Basic Tools
 from s3tools import *
@@ -68,7 +69,7 @@ from s3rest import S3Resource, S3Method
 
 # RESTful Methods
 from s3crud import S3CRUD
-from s3search import S3Search, S3LocationSearch, S3PersonSearch, S3SearchSimple
+from s3find import *
 
 # GIS Mapping
 from s3gis import *
@@ -78,3 +79,6 @@ from s3msg import *
 
 # VITA Person Data Toolkit
 from s3vita import *
+
+# OCR functions
+from s3ocr import *

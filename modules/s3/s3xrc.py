@@ -52,7 +52,7 @@ from s3xml import S3XML
 from s3rest import S3Resource, S3Request
 from s3model import S3ResourceModel, S3ResourceLinker
 from s3crud import S3CRUD
-from s3search import S3SearchSimple
+from s3find import S3Find
 from s3export import S3Exporter
 from s3import import S3Importer
 
@@ -143,6 +143,7 @@ class S3ResourceController(object):
         self.model = S3ResourceModel(self.db)
         self.linker = S3ResourceLinker(self)
         self.crud = S3CRUD()
+        self.search = S3Find()
         self.xml = S3XML(self)
         self.exporter = S3Exporter(self)
         self.importer = S3Importer(self)
@@ -1046,28 +1047,6 @@ class S3ResourceController(object):
         return ignore_errors or not self.error
 
 
-    # -------------------------------------------------------------------------
-    def search_simple(self, label=None, comment=None, fields=[]):
-        """
-        Generate a search_simple method handler
-
-        @param label: the label for the input field in the search form
-        @param comment: help text for the input field in the search form
-        @param fields: the fields to search for the string
-
-        """
-
-        if not label:
-            label = self.T("Enter search text")
-
-        if not fields:
-            fields = ["id"]
-
-        return S3SearchSimple(label=label,
-                              comment=comment,
-                              fields=fields)
-
-
 # *****************************************************************************
 class S3ImportJob(object):
 
@@ -1589,7 +1568,8 @@ class S3QueryBuilder(object):
                     ftype = str(table[field].type)
                     values = vars[k]
                     if op in ("lt", "le", "gt", "ge"):
-                        if ftype not in ("integer",
+                        if ftype not in ("id",
+                                         "integer",
                                          "double",
                                          "date",
                                          "time",
@@ -1635,6 +1615,12 @@ class S3QueryBuilder(object):
                         continue
                     vlist = []
                     for v in values:
+                        value = v
+                        if op in ("eq", "ne") and v == "NONE":
+                            if ftype == "boolean":
+                                value = None
+                            vlist.append(value)
+                            continue
                         if ftype == "boolean":
                             if v in ("true", "True"):
                                 value = True
@@ -1672,10 +1658,8 @@ class S3QueryBuilder(object):
                                 value = datetime.datetime(y,m,d,hh,mm,ss)
                             except ValueError:
                                 continue
-                        else:
-                            value = v
-
                         vlist.append(value)
+
                     values = vlist
                     if values:
                         if rname not in q:
@@ -1747,6 +1731,8 @@ class S3QueryBuilder(object):
                 join = parent.table[pkey] == table[fkey]
                 if str(mquery).find(str(join)) == -1:
                     mquery = mquery & (join)
+                if component.filter is not None:
+                    mquery = mquery & (component.filter)
 
         # Primary Resource Query
         else:
@@ -1858,8 +1844,6 @@ class S3QueryBuilder(object):
                                 if len(values) == 1:
                                     if values[0] == "NONE":
                                         query = (f == None)
-                                    elif values[0] == "EMPTY":
-                                        query = ((f == None) | (f == ""))
                                     else:
                                         query = (f == values[0])
                                 elif len(values):
@@ -1868,8 +1852,6 @@ class S3QueryBuilder(object):
                                 if len(values) == 1:
                                     if values[0] == "NONE":
                                         query = (f != None)
-                                    elif values[0] == "EMPTY":
-                                        query = ((f != None) & (f != ""))
                                     else:
                                         query = ((f != values[0]) | (f == None))
                                 elif len(values):

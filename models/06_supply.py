@@ -43,12 +43,14 @@ if deployment_settings.has_module("logs"):
 
     # Reusable Field
     item_category_id = S3ReusableField("item_category_id", db.supply_item_category, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item_category.id", "%(name)s", sort=True)),
+                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item_category.id",
+                                                "%(name)s",
+                                                sort=True)),
                 represent = lambda id: shn_get_db_field_value(db=db, table="supply_item_category", field="name", look_up=id),
                 label = T("Category"),
-                comment = DIV( _class="tooltip", _title=T("Item Category") + "|" + T("The list of Item categories are maintained by the Administrators.")),
-                #comment = DIV(A(ADD_ITEM_CATEGORY, _class="colorbox", _href=URL(r=request, c="supply", f="item_category", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ITEM_CATEGORY),
-                #          DIV( _class="tooltip", _title=T("Item Category") + "|" + T("The category of the Item."))),
+                comment = DIV( _class="tooltip",
+                               _title="%s|%s" % (T("Item Category"),
+                                                 T("The list of Item categories are maintained by the Administrators."))),
                 ondelete = "RESTRICT"
                 )
 
@@ -102,8 +104,14 @@ if deployment_settings.has_module("logs"):
                 requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item.id", "%(name)s", sort=True)),
                 represent = shn_item_represent,
                 label = T("Item"),
-                comment = DIV(A(ADD_ITEM, _class="colorbox", _href=URL(r=request, c="supply", f="item", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ITEM),
-                          DIV( _class="tooltip", _title=T("Catalog Item") + "|" + ADD_ITEM)),
+                comment = DIV(A(ADD_ITEM,
+                                _class="colorbox",
+                                _href=URL(r=request, c="supply", f="item", args="create", vars=dict(format="popup")),
+                                _target="top",
+                                _title=ADD_ITEM),
+                          DIV( _class="tooltip",
+                               _title="%s|%s" % (T("Catalog Item"),
+                                                 ADD_ITEM))),
                 ondelete = "RESTRICT"
                 )    
     #==============================================================================
@@ -113,7 +121,7 @@ if deployment_settings.has_module("logs"):
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             item_id(notnull=True),
-                            Field("name", length=128, notnull=True), #Ideally this would reference another table for normalising Packet names
+                            Field("name", length=128, notnull=True), # Ideally this would reference another table for normalising Packet names
                             Field("quantity", "double", notnull=True),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
@@ -121,15 +129,15 @@ if deployment_settings.has_module("logs"):
     ADD_ITEM_PACKET = T("Add Item Packet")
     LIST_ITEM_PACKET = T("List Item Packets")
     s3.crud_strings[tablename] = Storage(
-        title_create = ADD_ITEM_CATEGORY,
+        title_create = ADD_ITEM_PACKET,
         title_display = T("Item Packet Details"),
-        title_list = LIST_ITEM_CATEGORIES,
+        title_list = LIST_ITEM_PACKET,
         title_update = T("Edit Item Packet"),
         title_search = T("Search Item Packets"),
         subtitle_create = T("Add New Item Packet"),
         subtitle_list = T("Item Packets"),
-        label_list_button = LIST_ITEM_CATEGORIES,
-        label_create_button = ADD_ITEM_CATEGORY,
+        label_list_button = LIST_ITEM_PACKET,
+        label_create_button = ADD_ITEM_PACKET,
         label_delete_button = T("Delete Item Packet"),
         msg_record_created = T("Item Packet added"),
         msg_record_modified = T("Item Packet updated"),
@@ -138,10 +146,14 @@ if deployment_settings.has_module("logs"):
 
     # Reusable Field
     item_packet_id = S3ReusableField("item_packet_id", db.supply_item_packet, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item_packet.id", "%(name)s", sort=True)),
+                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item_packet.id",
+                                                "%(name)s",
+                                                sort=True)),
                 represent = lambda id: shn_get_db_field_value(db=db, table="supply_item_packet", field="name", look_up=id),
                 label = T("Packet"),    
-                comment = DIV(DIV( _class="tooltip", _title=T("Item Packets") + "|" + T("Needs elaboration!!!")),
+                comment = DIV(DIV( _class="tooltip",
+                                   _title="%s|%s" % (T("Item Packets"),
+                                                     T("The way in which an item is normally distributed"))),
                               A( ADD_ITEM_PACKET, 
                                  _class="colorbox", 
                                  _href=URL(r=request, 
@@ -153,11 +165,7 @@ if deployment_settings.has_module("logs"):
                                  _target="top", 
                                  _id = "item_packet_add",
                                  _style = "display: none",
-                                 ),
-                                 IMG(_src = "/" + request.application + "/static/img/ajax-loader.gif",
-                                     _id = "item_packet_loader_img",
-                                     _style = "display:none;"
-                                      ),                                     
+                                 ),                               
                 SCRIPT("""
     function ItemIDChange() {                
         var selSubField = $('[name = "item_packet_id"]');
@@ -166,8 +174,8 @@ if deployment_settings.has_module("logs"):
         $('[id$="item_packet_id__row"]').show();        
         
         /* Show Throbber */
-        selSubField.after('<img src="/eden/static/img/ajax-loader.gif" id="item_packet_loader_img">');
-        selSubField.hide();
+        selSubField.after('<div id="item_packet_ajax_throbber" class="ajax_throbber style="display:inline;"/>')
+                   .hide();
         
         if ($('[name = "item_id"]').length != 0) {
             url = '/eden/supply/item_packet.json?item_packet.item_id=' + $('[name = "item_id"]').val();
@@ -188,9 +196,11 @@ if deployment_settings.has_module("logs"):
                     options += '<option value="' +  data[i].id + '">' + data[i].name + ' (' + data[i].quantity + ')</option>';
                 }                
             }
-            selSubField.html(options);  
-            selSubField.val(1); /* default value */       
-            selSubField.show(); 
+            
+            /* 1 = default value */
+            selSubField.html(options)  
+                       .val(1)        
+                       .show(); 
             
             /* Show "Add" Button & modify link */  
             href = $('#item_packet_add').attr('href') + "&item_id=" + $('[name = "item_id"]').val();
@@ -198,7 +208,7 @@ if deployment_settings.has_module("logs"):
             $('#item_packet_add').show();
             
             /* Hide Throbber */
-            $('#item_packet_loader_img').remove();
+            $('#item_packet_ajax_throbber').hide();
             
             if ( typeof ItemPacketIDChange == "function" ) {
                 ItemPacketIDChange();
@@ -212,7 +222,7 @@ if deployment_settings.has_module("logs"):
         $('[id$="item_packet_id__row"]').hide();    
     } else {
         /* Show the item packet input id the item has already been entered (if this is an error or update) */      
-        ItemIDChange();
+        //ItemIDChange();
     }
    
     /* Includes Inventory Item too */
@@ -223,7 +233,7 @@ if deployment_settings.has_module("logs"):
                 )    
     
     def shn_record_packet_quantity(r):
-        item_packet_id = r.get("item_packet_id",None)
+        item_packet_id = r.get("item_packet_id", None)
         if item_packet_id:
             return shn_get_db_field_value(db,
                                           "supply_item_packet",

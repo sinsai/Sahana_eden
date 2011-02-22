@@ -36,6 +36,7 @@ __all__ = ["S3Config"]
 
 from gluon.http import HTTP
 from gluon.storage import Storage
+from gluon.contrib.simplejson.ordered_dict import OrderedDict
 
 class S3Config(Storage):
 
@@ -111,16 +112,20 @@ class S3Config(Storage):
     # All levels, or name of a specific level. Includes non-hierarchy levels.
     # Serves as represent for level.
     def get_gis_all_levels(self, level=None):
-        from gluon.contrib.simplejson.ordered_dict import OrderedDict
         all_levels = self.gis.get("all_levels")
         if not all_levels:
+            L0 = self.get_gis_locations_hierarchy("L0")
+            L1 = self.get_gis_locations_hierarchy("L1")
+            L2 = self.get_gis_locations_hierarchy("L2")
+            L3 = self.get_gis_locations_hierarchy("L3")
+            L4 = self.get_gis_locations_hierarchy("L4")
             T = self.T
             all_levels = OrderedDict([
-                ("L0", T("Country")),
-                ("L1", T("Province")),
-                ("L2", T("District")),
-                ("L3", T("Town")),
-                ("L4", T("Village")),
+                ("L0", L0),
+                ("L1", L1),
+                ("L2", L2),
+                ("L3", L3),
+                ("L4", L4),
                 ("L5", T("Neighbourhood")),
                 ("GR", T("Location Group")),
                 ("XX", T("Imported")),
@@ -135,7 +140,6 @@ class S3Config(Storage):
 
     # Location hierarchy, or name of a specific level.
     def get_gis_locations_hierarchy(self, level=None):
-        from gluon.contrib.simplejson.ordered_dict import OrderedDict
         locations_hierarchy = self.gis.get("locations_hierarchy")
         if not locations_hierarchy:
             T = self.T

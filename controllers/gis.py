@@ -13,7 +13,7 @@ resourcename = request.function
 response.menu_options = [
     [T("Locations"), False, URL(r=request, f="location"), [
         #[T("List"), False, URL(r=request, f="location")],
-        [T("Search"), False, URL(r=request, f="location", args="search_simple")],
+        [T("Search"), False, URL(r=request, f="location", args="search")],
         [T("Add"), False, URL(r=request, f="location", args="create")],
     ]],
     [T("Fullscreen Map"), False, URL(r=request, f="map_viewing_client")],
@@ -83,7 +83,7 @@ def define_map(window=False, toolbar=False, config=None):
     else:
         print_tool = {}
 
-    # Custom Feature Layers
+    # Internal Feature Layers
     feature_queries = []
     feature_layers = db(db.gis_layer_feature.enabled == True).select()
     for layer in feature_layers:
@@ -131,7 +131,7 @@ def location():
                 db.gis_location.level, limitby=(0, 1)).first()
 
         # Override the default Search Method
-        r.resource.set_handler("search", s3base.S3LocationSearch())
+        #r.resource.set_handler("search", s3base.S3LocationSearch())
 
         # Restrict access to Polygons to just MapAdmins
         if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
@@ -231,7 +231,7 @@ def location():
             if r.method in (None, "list") and r.record is None:
                 # List
                 pass
-            elif r.method in ("delete", "search_simple"):
+            elif r.method in ("delete", "search"):
                 pass
             else:
                 # Add Map to allow locations to be found this way
@@ -855,7 +855,7 @@ def layer_feature():
         db.gis_layer_feature.resource.requires = IS_IN_SET(tables)
 
         return True
-   
+
     response.s3.prep = prep
 
 
@@ -2204,7 +2204,7 @@ def geoexplorer():
         georssLayers.push(georssLayer""" + name_safe + """);
         georssLayer""" + name_safe + """.events.on({ "featureselected": onGeorssFeatureSelect, "featureunselected": onFeatureUnselect });
         """
-   
+
      # GPX
     layers_gpx = ""
     gpx_enabled = db(db.gis_layer_gpx.enabled == True).select()
@@ -2416,7 +2416,7 @@ def geoexplorer():
             layer_coordinategrid = """
         this.mapPanel.map.addLayer(new OpenLayers.Layer.cdauth.CoordinateGrid(null, { name: '""" + name_safe + """', shortName: 'grid' """ + visibility + """ }));
         """
-            
+
     response.title = "GeoExplorer"
     return dict(
                 config=config,
@@ -2477,9 +2477,9 @@ def maps():
             layer = db(db.gis_wmc_layer.id == _layer).select(limitby=(0, 1)).first()
             if layer.type_ == "OpenLayers.Layer":
                 # Add args
-                map["layers"].append(dict(source=layer.source, title=layer.title, name=layer.name, group=layer.group_, type=layer.type_, format=layer.format, visibility=layer.visibility, transparent=layer.transparent, opacity=layer.opacity, fixed=layer.fixed, args=[ "None", {"visibility":False} ]))
+                map["layers"].append(dict(source=layer.source, title=layer.title, name=layer.name, group=layer.group_, type=layer.type_, format=layer.img_format, visibility=layer.visibility, transparent=layer.transparent, opacity=layer.opacity, fixed=layer.fixed, args=[ "None", {"visibility":False} ]))
             else:
-                map["layers"].append(dict(source=layer.source, title=layer.title, name=layer.name, group=layer.group_, type=layer.type_, format=layer.format, visibility=layer.visibility, transparent=layer.transparent, opacity=layer.opacity, fixed=layer.fixed))
+                map["layers"].append(dict(source=layer.source, title=layer.title, name=layer.name, group=layer.group_, type=layer.type_, format=layer.img_format, visibility=layer.visibility, transparent=layer.transparent, opacity=layer.opacity, fixed=layer.fixed))
 
         # @ToDo: Read Metadata (no way of editing this yet)
 
@@ -2487,7 +2487,7 @@ def maps():
         output = json.dumps(output)
 
         # Output to browser
-        response.headers["Content-Type"] = "text/json"
+        response.headers["Content-Type"] = "application/json"
         return output
 
     elif request.env.request_method == "POST":
@@ -2548,7 +2548,7 @@ def maps():
                 except:
                     transparent = None
                 # Add a new record to the gis_wmc_layer table
-                _layer = db.gis_wmc_layer.insert(source=layer["source"], name=name, visibility=layer["visibility"], opacity=opacity, type_=type_, title=layer["title"], group_=group_, fixed=fixed, transparent=transparent, format=format)
+                _layer = db.gis_wmc_layer.insert(source=layer["source"], name=name, visibility=layer["visibility"], opacity=opacity, type_=type_, title=layer["title"], group_=group_, fixed=fixed, transparent=transparent, img_format=format)
                 layers.append(_layer)
 
         # @ToDo: Metadata (no way of editing this yet)
@@ -2623,7 +2623,7 @@ def maps():
                 except:
                     transparent = None
                 # Add a new record to the gis_wmc_layer table
-                _layer = db.gis_wmc_layer.insert(source=layer["source"], name=name, visibility=layer["visibility"], opacity=opacity, type_=type_, title=layer["title"], group_=group_, fixed=fixed, transparent=transparent, format=format)
+                _layer = db.gis_wmc_layer.insert(source=layer["source"], name=name, visibility=layer["visibility"], opacity=opacity, type_=type_, title=layer["title"], group_=group_, fixed=fixed, transparent=transparent, img_format=format)
                 layers.append(_layer)
 
         # @ToDo: Metadata (no way of editing this yet)
@@ -2656,7 +2656,7 @@ def potlatch2():
                 track = db(db.gis_track.id == request.vars.gpx_id).select(db.gis_track.track, limitby=(0, 1)).first()
                 if track:
                     gpx_url = URL(r=request, c="default", f="download") + "/" + track.track
-            
+
             if "lat" in request.vars:
                 lat = request.vars.lat
                 lon = request.vars.lon
@@ -2711,6 +2711,7 @@ def proxy():
     #allowedHosts = ["www.openlayers.org", "demo.opengeo.org"]
 
     allowed_content_types = (
+        "application/json", "text/json", "text/x-json",
         "application/xml", "text/xml",
         "application/vnd.ogc.se_xml",           # OGC Service Exception
         "application/vnd.ogc.se+xml",           # OGC Service Exception
@@ -2770,9 +2771,11 @@ def proxy():
 
             msg = y.read()
             y.close()
-            # Required for WMS Browser to work in IE
-            response.headers["Content-Type"] = "text/xml"
+
+            # Maintain the incoming Content-Type
+            response.headers["Content-Type"] = ct
             return msg
+
         else:
             # Bad Request
             raise(HTTP(400))
@@ -2824,5 +2827,26 @@ def test():
     return dict(map=html)
 
 def test2():
-    " Test new OpenLayers functionality in a RAD environment "
-    return dict()
+    """
+        Test new OpenLayers functionality in a RAD environment
+        - currently being used to trial using GeoJSON for internal feature layers
+    """
+
+    # Internal Feature Layers
+    feature_queries = []
+    feature_layers = db(db.gis_layer_feature.resource == "office").select()
+    for layer in feature_layers:
+        if layer.role_required and not auth.s3_has_role(layer.role_required):
+            continue
+        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons, opacity=layer.opacity)
+        if _layer:
+            # Add a URL for downloading the GeoJSON
+            # @ToDO: add to gis.get_feature_layer
+            _layer["url"] = "%s.geojson" % URL(r=request, c=layer.module, f=layer.resource)
+            marker = db(db.gis_marker.id == _layer["marker"]).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+            _layer["marker"] = marker
+            feature_queries.append(_layer)
+
+    return dict(feature_queries=feature_queries)
+
+# -----------------------------------------------------------------------------

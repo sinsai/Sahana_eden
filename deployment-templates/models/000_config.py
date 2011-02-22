@@ -178,7 +178,8 @@ deployment_settings.osm.oauth_consumer_secret = ""
 # Lock-down access to Map Editing
 #deployment_settings.security.map = True
 # Security Policy (defaults to 1 = Simple)
-#deployment_settings.security.policy = 2 # Editor
+# http://eden.sahanafoundation.org/wiki/S3AAA#System-widePolicy
+#deployment_settings.security.policy = 3 # Controller-ACLs
 # Should users be allowed to register themselves?
 deployment_settings.security.self_registration = True
 # Use 'soft' deletes
@@ -284,6 +285,7 @@ deployment_settings.modules = OrderedDict([
                 org_staff = {"importer" : True}
             )
         )),
+    # NB Project module depends on Assess Module
     ("project", Storage(
             name_nice = T("Project Tracking"),
             description = T("Tracking of Projects, Activities and Tasks"),
@@ -307,6 +309,12 @@ deployment_settings.modules = OrderedDict([
             description = T("Managing, Storing and Distributing Items"),
             restricted = False,
             module_type = 10
+        )),
+    ("vol", Storage(
+            name_nice = T("Volunteers"),
+            description = T("Manage volunteers by capturing their skills, availability and allocation"),
+            restricted = False,
+            module_type = 10,
         )),
     # NB RMS module depends on HMS, CR & Project
     ("rms", Storage(
@@ -336,59 +344,53 @@ deployment_settings.modules = OrderedDict([
                 hms_hospital = {"importer" : True}
             )
         )),
-    ("vol", Storage(
-            name_nice = T("Volunteers"),
-            description = T("Manage volunteers by capturing their skills, availability and allocation"),
-            restricted = False,
-            module_type = 10,
-        )),
     ("irs", Storage(
             name_nice = T("Incident Reporting"),
             description = T("Incident Reporting System"),
             restricted = False,
             module_type = 10
         )),
-    # Assess currently depends on IRS
+    # Assess currently depends on CR & IRS
     ("assess", Storage(
             name_nice = "Assessments",
             description = "Rapid Assessments & Flexible Impact Assessments",
             restricted = False,
             module_type = 2,
         )),
-    ("survey", Storage(
-            name_nice = "Survey Module",
-            description = "Create, enter, and manage surveys.",
-            restricted = False,
-            module_type = 10,
-        )),
-    ("delphi", Storage(
-            name_nice = T("Delphi Decision Maker"),
-            description = T("Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list."),
-            restricted = False,
-            module_type = 10,
-        )),
-    ("importer", Storage(
-            name_nice = "Spreadsheet Importer",
-            description = "Used to import data from spreadsheets into the database",
-            restricted = False,
-            module_type = 10,
-        )),
+    #("delphi", Storage(
+    #        name_nice = T("Delphi Decision Maker"),
+    #        description = T("Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list."),
+    #        restricted = False,
+    #        module_type = 10,
+    #    )),
+    #("survey", Storage(
+    #        name_nice = "Survey Module",
+    #        description = "Create, enter, and manage surveys.",
+    #        restricted = False,
+    #        module_type = 10,
+    #    )),
+    #("importer", Storage(
+    #        name_nice = "Spreadsheet Importer",
+    #        description = "Used to import data from spreadsheets into the database",
+    #        restricted = False,
+    #        module_type = 10,
+    #    )),
     #("flood", Storage(
-            #name_nice = T("Flood Alerts"),
-            #description = T("Flood Alerts show water levels in various parts of the country"),
-            #restricted = False,
-            #module_type = 10
-        #)),
+    #        name_nice = T("Flood Alerts"),
+    #        description = T("Flood Alerts show water levels in various parts of the country"),
+    #        restricted = False,
+    #        module_type = 10
+    #    )),
     #("ticket", Storage(
-            #name_nice = T("Ticketing Module"),
-            #description = T("Master Message Log to process incoming reports & requests"),
-            #restricted = False,
-            #module_type = 10,
-        #)),
+    #        name_nice = T("Ticketing Module"),
+    #        description = T("Master Message Log to process incoming reports & requests"),
+    #        restricted = False,
+    #        module_type = 10,
+    #    )),
     #("lms", Storage(
-            #name_nice = T("Logistics Management System"),
-            #description = T("An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities."),
-            #restricted = False,
-            #module_type = 10
-        #)),
+    #        name_nice = T("Logistics Management System"),
+    #        description = T("An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities."),
+    #        restricted = False,
+    #        module_type = 10
+    #    )),
 ])

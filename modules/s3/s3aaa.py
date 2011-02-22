@@ -79,6 +79,7 @@ class AuthS3(Auth):
             s3_accessible_query()
             s3_register() callback
             s3_link_to_person()
+            s3_group_members()
 
         - language
 
@@ -200,8 +201,8 @@ class AuthS3(Auth):
             table = self.settings.table_user
             table.first_name.requires = \
                 IS_NOT_EMPTY(error_message=self.messages.is_empty)
-            table.last_name.requires = \
-                IS_NOT_EMPTY(error_message=self.messages.is_empty)
+            #table.last_name.requires = \
+                #IS_NOT_EMPTY(error_message=self.messages.is_empty)
             table.utc_offset.label = "UTC Offset"
             table.utc_offset.comment = A(SPAN("[Help]"), _class="tooltip", _title="UTC Offset|The time difference between UTC and your timezone, specify as +HHMM for eastern or -HHMM for western timezones.")
             try:
@@ -552,7 +553,7 @@ class AuthS3(Auth):
             item = row[1][0]
             if isinstance(item, INPUT) and item["_name"] == passfield:
                 form[0].insert(i + 1, TR(
-                        LABEL(self.messages.verify_password + ":"),
+                        TD(LABEL(self.messages.verify_password + ":"), _class="w2p_fl"),
                         INPUT(_name="password_two",
                               _type="password",
                               requires=IS_EXPR("value==%s" % \
@@ -692,7 +693,15 @@ class AuthS3(Auth):
             return True
         else:
             return False
-
+    # -------------------------------------------------------------------------
+    def s3_group_members(self, group_id):
+        """
+        returns a list of the user_ids for members of a group
+        """
+        membership = self.settings.table_membership
+        members = self.db( membership.group_id == group_id
+                          ).select(membership.user_id)
+        return [member.user_id for member in members]
 
     # -------------------------------------------------------------------------
     def s3_has_permission(self, method, table, record_id = 0):
@@ -734,10 +743,10 @@ class AuthS3(Auth):
             else:
                 # Editor role required for Update/Delete.
                 authorised = self.s3_has_role("Editor")
-                if not authorised and self.user and "created_by" in table:
+                if not authorised and self.user and "owned_by_user" in table:
                     # Creator of Record is allowed to Edit
-                    record = db(table.id == record_id).select(table.created_by, limitby=(0, 1)).first()
-                    if record and self.user.id == record.created_by:
+                    record = db(table.id == record_id).select(table.owned_by_user, limitby=(0, 1)).first()
+                    if record and self.user.id == record.owned_by_user:
                         authorised = True
 
         elif session.s3.security_policy == 3:
@@ -968,7 +977,8 @@ class AuthS3(Auth):
                 person = db(query).select(ptable.uuid).first()
                 if person:
                     if not db(utable.person_uuid == person.uuid).count():
-                        db(utable.id == user.id).update(person_uuid=person.uuid)
+                        db(utable.id == user.id).update(person_uuid=person.uuid,
+                                                        owned_by_user=user.id)
                         if self.user and self.user.id == user.id:
                             self.user.person_uuid = person.uuid
                         continue
@@ -978,18 +988,20 @@ class AuthS3(Auth):
                     new_id = ptable.insert(
                         pe_id = pe_id,
                         first_name = user.first_name,
-                        last_name = user.last_name)
+                        last_name = user.last_name,
+                        owned_by_user = user.id
+                        )
                     if new_id:
                         person_uuid = ptable[new_id].uuid
                         db(utable.id == user.id).update(person_uuid=person_uuid)
                         db(etable.id == pe_id).update(uuid=person_uuid)
-                        # The following adds the email to pr_pe_contact
+                        # Add the email to pr_pe_contact
                         ctable.insert(
                                 pe_id = pe_id,
                                 contact_method = 1,
                                 priority = 1,
                                 value = email)
-                        # The following adds the mobile to pr_pe_contact
+                        # Add the mobile to pr_pe_contact
                         mobile = self.environment.request.vars.get("mobile", None)
                         if mobile:
                             ctable.insert(
@@ -1023,6 +1035,7 @@ class AuthS3(Auth):
             for acl in acls:
                 self.s3_update_acl(role_id, **acl)
 
+        return role_id
 
     # -------------------------------------------------------------------------
     def s3_update_acl(self, role, c=None, f=None, t=None, oacl=None, uacl=None):
@@ -1271,7 +1284,7 @@ class S3Permission(object):
         @param record: the record ID (or the Row if already loaded)
 
         @note: if passing a Row, it must contain all available ownership
-               fields (id, created_by, owned_by), otherwise the record
+               fields (id, owned_by_user, owned_by_role), otherwise the record
                will be re-loaded by this function
 
         """
@@ -1456,7 +1469,7 @@ class S3Permission(object):
         @param record: the record ID (or the Row if already loaded)
 
         @note: if passing a Row, it must contain all available ownership
-               fields (id, created_by, owned_by), otherwise the record
+               fields (id, owned_by_user, owned_by_role), otherwise the record
                will be re-loaded by this function
 
         """
@@ -1475,7 +1488,7 @@ class S3Permission(object):
             return True
         else:
             record_id = None
-            ownership_fields = ("created_by", "owned_by")
+            ownership_fields = ("owned_by_user", "owned_by_role")
             fields = [f for f in ownership_fields if f in table.fields]
             if not fields:
                 return True # Ownership is undefined
@@ -1495,10 +1508,10 @@ class S3Permission(object):
                 return False # Record does not exist
 
             creator = owner = None
-            if "created_by" in table.fields:
-                creator = record.created_by
-            if "owned_by" in table.fields:
-                owner = record.owned_by
+            if "owned_by_user" in table.fields:
+                creator = record.owned_by_user
+            if "owned_by_role" in table.fields:
+                owner = record.owned_by_role
 
             if not user_id:
                 if not creator and self.auth.s3_session_ownes(table, record_id):
@@ -1580,7 +1593,7 @@ class S3Permission(object):
 
         acl = self.page_acl(c=c, f=f)
         acl = (acl[0] | acl[1]) & permission
-        if acl == permission:
+        if acl == permission or self.policy not in (3, 4, 5):
             return URL(a=a,
                        c=c,
                        f=f,
@@ -1646,14 +1659,14 @@ class S3Permission(object):
         ownership_required = False
         if not permitted:
             query = (table[pkey] == None)
-        elif "owned_by" in table or "created_by" in table:
+        elif "owned_by_role" in table or "owned_by_user" in table:
             ownership_required = permitted and acl[1] & racl != racl
 
         # Generate query
         if ownership_required:
             if not user_id:
                 query = (table[pkey] == None)
-                if "created_by" in table and pkey == "id":
+                if "owned_by_user" in table and pkey == "id":
                     try:
                         records = self.session.owned_records.get(table._tablename, None)
                     except:
@@ -1663,10 +1676,10 @@ class S3Permission(object):
                             query = (table.id.belongs(records))
             else:
                 query = None
-                if "owned_by" in table:
-                    query = (table.owned_by.belongs(roles))
-                if "created_by" in table:
-                    q = (table.created_by == user_id)
+                if "owned_by_role" in table:
+                    query = (table.owned_by_role.belongs(roles))
+                if "owned_by_user" in table:
+                    q = (table.owned_by_user == user_id)
                     if query is not None:
                         query = (query | q)
                     else:
@@ -1715,7 +1728,7 @@ class S3Permission(object):
         if not permitted:
             pkey = table.fields[0]
             query = (table[pkey] == None)
-        elif "owned_by" in table or "created_by" in table:
+        elif "owned_by_role" in table or "owned_by_user" in table:
             ownership_required = permitted and acl[1] & racl != racl
 
         return ownership_required
@@ -1732,7 +1745,7 @@ class S3Permission(object):
                        any of "create", "read", "update", "delete"
 
         @note: when submitting a record, the record ID and the ownership
-               fields (="created_by", "owned_by") must be contained if
+               fields (="owned_by_user", "owned_by_role") must be contained if
                available, otherwise the record will be re-loaded
 
         """
@@ -1946,6 +1959,8 @@ class S3RoleManager(S3Method):
         else:
             r.error(501, self.manager.ERROR.BAD_METHOD)
 
+        if r.http == "GET" and method not in ("create", "update", "delete"):
+            self.session.s3.cancel = r.here()
         return output
 
 
@@ -2133,6 +2148,8 @@ class S3RoleManager(S3Method):
         CACL = T("Application Permissions")
         FACL = T("Function Permissions")
         TACL = T("Table Permissions")
+
+        CANCEL = T("Cancel")
 
         auth = self.manager.auth
         model = self.manager.model
@@ -2389,10 +2406,13 @@ class S3RoleManager(S3Method):
             acl_form = DIV(acl_forms, _id="table-container")
 
             # Action row
-            action_row = DIV(INPUT(_type="submit", _value="Save"),
-                             A(T("Cancel"),
-                               _href=URL(r=request, c="admin", f="role", vars=request.get_vars)),
-                               _id="action-row")
+            if session.s3.cancel:
+                cancel = session.s3.cancel
+            else:
+                cancel = URL(r=request, c="admin", f="role", vars=request.get_vars)
+            action_row = DIV(INPUT(_type="submit", _value=T("Save")),
+                             A(CANCEL, _href=cancel, _class="action-lnk"),
+                             _id="action-row")
 
             # Complete form
             form = FORM(role_form, acl_form, action_row)
@@ -2535,6 +2555,8 @@ class S3RoleManager(S3Method):
         db = self.db
         T = self.T
 
+        CANCEL = T("Cancel")
+
         session = self.session
         request = self.request
         crud_settings = self.manager.s3.crud
@@ -2558,10 +2580,14 @@ class S3RoleManager(S3Method):
                                 requires = IS_IN_SET(roles, multiple=True))
                 widget = CheckboxesWidget.widget(field, memberships.keys())
 
+                if session.s3.cancel:
+                    cancel = session.s3.cancel
+                else:
+                    cancel = r.there()
                 form = FORM(TABLE(
                             TR(TD(widget)),
                             TR(TD(INPUT(_type="submit", _value=T("Save")),
-                                  A(T("Cancel"), _href=r.there(), _style="padding-left:10px")))))
+                                  A(CANCEL, _href=cancel, _class="action-lnk")))))
 
                 if form.accepts(request.post_vars, session):
                     assign = form.vars.roles

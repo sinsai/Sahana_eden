@@ -773,7 +773,7 @@ def search():
         items = person_search(value)
         # Encode in JSON
         item = json.dumps(items)
-        response.headers["Content-Type"] = "text/json"
+        response.headers["Content-Type"] = "application/json"
         return item
     return
 

@@ -39,13 +39,16 @@ def shn_store_rheader(r):
             rheader_tabs = shn_rheader_tabs(r, tabs = [ (T("Details"), None),
                                                         (T("Items"), "store_item"),
                                                         (T("Request"), "req"),
+                                                        #(T("Match Requests"), "match_req"),
                                                         (T("Incoming"), "send", dict(select="incoming")),
                                                         (T("Receive" ), "recv"),
                                                         (T("Send"), "send", dict(select="sent")),
+                                                        (T("Commit"), "commit"),
+                                                        (T("Users"), "store_user"),
                                                        ])
 
             rheader = DIV(TABLE(TR(
-                                   TH(T("Location") + ": "), shn_gis_location_represent(inventory_store.location_id),
+                                   TH(T("Location") + ": "), inventory_store_represent(inventory_store.id),
                                    TH(T("Description") + ": "), inventory_store.comments,
                                    ),
                                 ),
@@ -72,21 +75,21 @@ def store():
                                   multiple=True,
                                   joinby=dict( inventory_store = "to_inventory_store_id" )
                                   )
-        # This would filter warehouses, not shipments:
-        #response.s3.filter = db.logs_send.status == True
-        # Better place it in prep to get the component join into the query:
-        def prep(r):
-            if r.component_name == "send":
-                response.s3.filter = (db.logs_send.status == True)
-                # Should we hide the Add button for incoming shipments?
-                s3xrc.model.configure(r.component.table, insertable=False)
-            return True
-        response.s3.prep = prep
+        
+        # Hide the Add button for incoming shipments
+        s3xrc.model.configure(db.logs_send, insertable=False)
+        
         # Probably need to adjust some more CRUD strings:
         s3.crud_strings["logs_send"].update(
             msg_record_modified = T("Incoming Shipment updated"),
             msg_record_deleted = T("Incoming Shipment canceled"),
             msg_list_empty = T("No Incoming Shipments"))
+        
+        def prep(r):         
+            filter = (db.logs_send.status == LOGS_STATUS_SENT)
+            r.resource.add_component_filter("send", filter)
+            return True
+        response.s3.prep = prep             
     else:
         s3xrc.model.add_component("logs",
                                   "send",
@@ -96,8 +99,7 @@ def store():
         s3.crud_strings["logs_send"].update(
             msg_record_modified = T("Sent Shipment updated"),
             msg_record_deleted = T("Sent Shipment canceled"),
-            msg_list_empty = T("No Sent Shipments"))
-
+            msg_list_empty = T("No Sent Shipments"))       
 
     s3xrc.model.configure(table, create_next=URL(r=request,
                                                  c=module, f=resourcename,
@@ -105,6 +107,23 @@ def store():
 
     output = s3_rest_controller(module, resourcename,
                                 rheader=shn_store_rheader)
+    
+    if "send" in request.args and request.get_vars.get("select","sent") == "incoming":
+        recv_sent_action = dict(url = str(URL(r=request,
+                                              c = "logs",
+                                              f = "recv_sent",
+                                              args = ["[id]"]
+                                              )
+                                           ),
+                                _class = "action-btn",
+                                label = "Receive",
+                                )
+        
+        if response.s3.actions:
+            response.s3.actions.append(recv_sent_action)
+        else:
+            response.s3.actions = [recv_sent_action]  
+                                    
     return output
 
 #==============================================================================
@@ -119,7 +138,7 @@ def store_item():
     return s3_rest_controller(module, resourcename)
 
 def store_item_quantity():
-    response.headers["Content-Type"] = "text/x-json"
+    response.headers["Content-Type"] = "application/json"
     record =  db( (db.inventory_store_item.id == request.args[0]) & \
                   (db.inventory_store_item.item_packet_id == db.supply_item_packet.id)
                  ).select(db.inventory_store_item.quantity,
@@ -134,3 +153,4 @@ def store_item_packets():
               ).select( db.supply_item_packet.id,
                         db.supply_item_packet.name,
                         db.supply_item_packet.quantity).json()
+#==============================================================================

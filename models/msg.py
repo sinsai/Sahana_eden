@@ -15,7 +15,7 @@ if deployment_settings.has_module(module):
                             #Field("default_country_code", "integer", default=44),
                             migrate=migrate)
 
-    table.outgoing_sms_handler.requires = IS_IN_SET(["Modem","Gateway","Tropo"], zero=None)
+    table.outgoing_sms_handler.requires = IS_IN_SET(["Modem", "Gateway", "Tropo"], zero=None)
 
     #------------------------------------------------------------------------
     resourcename = "email_settings"
@@ -50,8 +50,10 @@ if deployment_settings.has_module(module):
     resourcename = "gateway_settings"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            Field("url", default = "https://api.clickatell.com/http/sendmsg"),
-                            Field("parameters", default = "user=yourusername&password=yourpassword&api_id=yourapiid"),
+                            Field("url",
+                                  default = "https://api.clickatell.com/http/sendmsg"),
+                            Field("parameters",
+                                  default="user=yourusername&password=yourpassword&api_id=yourapiid"),
                             Field("message_variable", "string", default = "text"),
                             Field("to_variable", "string", default = "to"),
                             Field("enabled", "boolean", default = False),
@@ -171,7 +173,8 @@ if deployment_settings.has_module(module):
     message_id = S3ReusableField("message_id", db.msg_log,
                                  requires = IS_NULL_OR(IS_ONE_OF(db, "msg_log.id")),
                                  # FIXME: Subject works for Email but not SMS
-                                 represent = lambda id: db(db.msg_log.id == id).select(db.msg_log.subject, limitby=(0, 1)).first().subject,
+                                 represent = lambda id: db(db.msg_log.id == id).select(db.msg_log.subject,
+                                                                                       limitby=(0, 1)).first().subject,
                                  ondelete = "RESTRICT"
                                 )
 
@@ -457,14 +460,16 @@ def shn_msg_compose( redirect_module = "msg",
     table2.pe_id.writable = table2.pe_id.readable = True
     table2.pe_id.label = T("Recipients")
     table2.pe_id.comment = DIV(_class="tooltip",
-                               _title=T("Recipients") + "|" + T("Please enter the first few letters of the Person/Group for the autocomplete."))
+                               _title="%s|%s" % (T("Recipients"),
+                                                 T("Please enter the first few letters of the Person/Group for the autocomplete.")))
 
     def compose_onvalidation(form):
         """ Set the sender and use msg.send_by_pe_id to route the message """
         if not request.vars.pe_id:
             session.error = T("Please enter the recipient")
             redirect(URL(r=request,c=redirect_module, f=redirect_function, vars=redirect_vars))
-        sender_pe_id = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
+        sender_pe_id = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id,
+                                                                             limitby=(0, 1)).first().pe_id
         if msg.send_by_pe_id(request.vars.pe_id,
                              request.vars.subject,
                              request.vars.message,

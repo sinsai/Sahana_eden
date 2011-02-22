@@ -70,6 +70,7 @@ def req():
 
     # Pre-processor
     def prep(r):
+        response.s3.cancel = r.here()
         if r.representation in shn_interactive_view_formats and r.method != "delete":
             # Don't send the locations list to client (pulled by AJAX instead)
             r.table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))

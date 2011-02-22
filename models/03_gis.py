@@ -942,7 +942,7 @@ table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("module"),
                         Field("resource"),
-                        Field("popup_label"),       # @ToDo Replace with s3.crud_strings[tablename]
+                        Field("popup_label"),       # @ToDo: Replace with s3.crud_strings[tablename]
                         marker_id(),                # Optional Marker to over-ride the values from the Feature Classes
                         Field("polygons", "boolean", default=False, label=T("Display Polygons?")),
                         Field("enabled", "boolean", default=True, label=T("Available in Viewer?")),

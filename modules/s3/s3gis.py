@@ -2099,32 +2099,6 @@ OpenLayers.Util.extend( selectPdfControl, {
             else:
                 draw_depress = "false"
             draw_feature = """
-        // Controls for Draft Features
-        // - interferes with popupControl which is active on allLayers
-        //var selectControl = new OpenLayers.Control.SelectFeature(draftLayer, {
-        //    onSelect: onFeatureSelect,
-        //    onUnselect: onFeatureUnselect,
-        //    multiple: false,
-        //    clickout: true,
-        //    isDefault: true
-        //});
-
-        //var removeControl = new OpenLayers.Control.RemoveFeature(draftLayer, {
-        //    onDone: function(feature) {
-        //        console.log(feature)
-        //    }
-        //});
-
-        //var selectButton = new GeoExt.Action({
-            //control: selectControl,
-        //    map: map,
-        //    iconCls: 'searchclick',
-            // button options
-        //    tooltip: '""" + T("Query Feature") + """',
-        //    toggleGroup: 'controls',
-        //    enableToggle: true
-        //});
-
         pointButton = new GeoExt.Action({
             control: new OpenLayers.Control.DrawFeature(draftLayer, OpenLayers.Handler.Point, {
                 // custom Callback
@@ -2157,6 +2131,36 @@ OpenLayers.Util.extend( selectPdfControl, {
             enableToggle: true,
             pressed: """ + draw_depress + """
         });
+        """
+
+        
+            if None:
+                draw_feature += """
+        // Controls for Draft Features
+        // - interferes with popupControl which is active on allLayers
+        //var selectControl = new OpenLayers.Control.SelectFeature(draftLayer, {
+        //    onSelect: onFeatureSelect,
+        //    onUnselect: onFeatureUnselect,
+        //    multiple: false,
+        //    clickout: true,
+        //    isDefault: true
+        //});
+
+        //var removeControl = new OpenLayers.Control.RemoveFeature(draftLayer, {
+        //    onDone: function(feature) {
+        //        console.log(feature)
+        //    }
+        //});
+
+        //var selectButton = new GeoExt.Action({
+            //control: selectControl,
+        //    map: map,
+        //    iconCls: 'searchclick',
+            // button options
+        //    tooltip: '""" + T("Query Feature") + """',
+        //    toggleGroup: 'controls',
+        //    enableToggle: true
+        //});
 
         //var lineButton = new GeoExt.Action({
         //    control: new OpenLayers.Control.DrawFeature(draftLayer, OpenLayers.Handler.Path),
@@ -2214,6 +2218,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    toggleGroup: 'controls'
         //});
         """
+            
             draw_feature2 = """
         // Draw Controls
         //toolbar.add(selectButton);
@@ -3415,9 +3420,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                     fid = feature.cluster[i].fid;
                     """ + uuid_from_fid + """
                     if ( feature.cluster[i].popup_url.match("<id>") != null ) {
-                        url = feature.cluster[i].popup_url.replace("<id>", uuid)
-                    }
-                    else {
+                        url = feature.cluster[i].popup_url.replace("<id>", uuid);
+                    } else {
                         url = feature.cluster[i].popup_url + uuid;
                     }
                     html += "<li><a href='javascript:loadClusterPopup(" + "\\"" + url + "\\", \\"" + id + "\\"" + ")'>" + name + "</a></li>";
@@ -3463,7 +3467,6 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
 
         function loadDetails(url, id, popup) {
-            //$.getS3(
             $.get(
                     url,
                     function(data) {
@@ -3490,6 +3493,10 @@ OpenLayers.Util.extend( selectPdfControl, {
         );
         draftLayer.setVisibility(true);
         map.addLayer(draftLayer);
+        """
+
+            if None:
+                layers_features += """
         //draftLayer.events.on({
         //    "featureselected": onFeatureSelect,
         //    "featureunselected": onFeatureUnselect
@@ -4214,7 +4221,6 @@ OpenLayers.Util.extend( selectPdfControl, {
 
     // Replace Cluster Popup contents with selected Feature Popup
     function loadClusterPopup(url, id) {
-        //$.getS3(
         $.get(
                 url,
                 function(data) {
@@ -4282,9 +4288,6 @@ OpenLayers.Util.extend( selectPdfControl, {
         var iconURL;
 
         var scaleImage = function(){
-            //s3_debug('image', i.src);
-            //s3_debug('initial height', i.height);
-            //s3_debug('initial width', i.width);
             var scaleRatio = i.height/i.width;
             var w = Math.min(i.width, max_w);
             var h = w * scaleRatio;
@@ -4295,8 +4298,6 @@ OpenLayers.Util.extend( selectPdfControl, {
                 }
             i.height = h;
             i.width = w;
-            //s3_debug('post height', i.height);
-            //s3_debug('post width', i.width);
         }
 
         // Features
@@ -4327,7 +4328,6 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
     }
     function onPopupClose(evt) {
-        //currentFeature.popup.hide();
         popupControl.unselectAll();
     }
 

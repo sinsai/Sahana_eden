@@ -92,7 +92,7 @@ def shn_atc20_rheader(r, tabs=[]):
         if r.name == "atc20":
             assess = r.record
             if assess:
-                rheader_tabs = shn_rheader_tabs(r, tabs, paging=True)
+                rheader_tabs = shn_rheader_tabs(r, tabs)
                 location = assess.location_id
                 if location:
                     location = shn_gis_location_represent(location)

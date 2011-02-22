@@ -16,11 +16,13 @@ function LoadDynamicFeedControl() {
     },
     {title: 'Twitter',
      url: 'http://twitter.com/statuses/user_timeline/22644942.rss'
+     //url: 'http://search.twitter.com/search.atom?q=%23eqnz'
     }
     ];
   var options = {
     // milliseconds before feed is reloaded (5 minutes)
     feedCycleTime : 300000,
+    numResults : 5,
     stacked : true,
     horizontal : false,
     title : '{{=T("News")}}'

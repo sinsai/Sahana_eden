@@ -594,9 +594,9 @@ if __name__ == "__main__":
                         title="<Sahana Eden Test>",
                         description="Suite of regressions tests for Sahana Eden."
                         )
-            self.fileName = "../results/regressionTest-%s-%s.html" % (browser, time.strftime("%Y%m%d-%H%M%S"))
-        	file = open(self.fileName, "w")
-			runner.run(suite)
+            fileName = "../results/regressionTest-%s-%s.html" % (browser, time.strftime("%Y%m%d-%H%M%S"))
+            file = open(fileName, "w")
+            runner.run(suite)
             # check out the output
             byte_output = buf.getvalue()
             # output the main test output for debugging & demo

@@ -34,7 +34,7 @@ if deployment_settings.has_module(module):
         2:T("Exterior Only")
     }
 
-    atc20_construction_types = {
+    building_construction_types = {
         1:T("Timber frame"), # Wood frame
         2:T("Steel frame"),
         3:T("Tilt-up concrete"),
@@ -46,7 +46,7 @@ if deployment_settings.has_module(module):
         99:T("Other")
     }
     
-    atc20_primary_occupancy_opts = {
+    building_primary_occupancy_opts = {
         1:T("Dwelling"),
         2:T("Other residential"),
         3:T("Public assembly"),
@@ -81,8 +81,8 @@ if deployment_settings.has_module(module):
         3:"%s (%s)" % (T("Unsafe"), T("Red")),
     }
 
-    # ATC-20 Rapid Evaluation Safety Assessment Form --------------------------
-    resourcename = "atc20"
+    # NZSEE Level 1 (~ATC-20 Rapid Evaluation) Safety Assessment Form ---------
+    resourcename = "nzseel1"
     tablename = "%s_%s" % (module, resourcename)
 
     table = db.define_table(tablename,
@@ -111,12 +111,12 @@ if deployment_settings.has_module(module):
                             #      label=T("Number of residential units not habitable")),
                             Field("photo", "boolean", label=T("Photo Taken?")),
                             Field("construction_type", "integer", label=T("Type of Construction"),
-                                  requires=IS_NULL_OR(IS_IN_SET(atc20_construction_types)),
-                                  represent=lambda opt: atc20_construction_types.get(opt, UNKNOWN_OPT)),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_construction_types)),
+                                  represent=lambda opt: building_construction_types.get(opt, UNKNOWN_OPT)),
                             Field("construction_type_other", label="(%s)" % T("specify")),
                             Field("primary_occupancy", "integer", label=T("Primary Occupancy"),
-                                  requires=IS_NULL_OR(IS_IN_SET(atc20_primary_occupancy_opts)),
-                                  represent=lambda opt: atc20_primary_occupancy_opts.get(opt, UNKNOWN_OPT)),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_primary_occupancy_opts)),
+                                  represent=lambda opt: building_primary_occupancy_opts.get(opt, UNKNOWN_OPT)),
                             Field("primary_occupancy_other", label="(%s)" % T("specify")),
                             Field("collapse", "integer",
                                   label=T("Collapse, partial collapse, off foundation"),
@@ -173,21 +173,21 @@ if deployment_settings.has_module(module):
                             migrate=migrate, *s3_meta_fields())
 
     # CRUD strings
-    ADD_ASSESSMENT = T("Add ATC-20 Rapid Assessment")
-    LIST_ASSESSMENTS = T("List ATC-20 Rapid Assessments")
+    ADD_ASSESSMENT = T("Add NZEE Level 1 Assessment")
+    LIST_ASSESSMENTS = T("List NZEE Level 1 Assessments")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_ASSESSMENT,
-        title_display = T("ATC-20 Rapid Assessment Details"),
+        title_display = T("NZEE Level 1 Assessment Details"),
         title_list = LIST_ASSESSMENTS,
-        title_update = T("Edit ATC-20 Rapid Assessment"),
-        title_search = T("Search ATC-20 Rapid Assessments"),
-        subtitle_create = T("Add New ATC-20 Rapid Assessment"),
-        subtitle_list = T("ATC-20 Rapid Assessments"),
+        title_update = T("Edit NZEE Level 1 Assessment"),
+        title_search = T("Search NZEE Level 1 Assessments"),
+        subtitle_create = T("Add New NZEE Level 1 Assessment"),
+        subtitle_list = T("NZEE Level 1 Assessments"),
         label_list_button = LIST_ASSESSMENTS,
         label_create_button = ADD_ASSESSMENT,
-        label_delete_button = T("Delete ATC-20 Rapid Assessment"),
-        msg_record_created = T("ATC-20 Rapid Assessment added"),
-        msg_record_modified = T("ATC-20 Rapid Assessment updated"),
-        msg_record_deleted = T("ATC-20 Rapid Assessment deleted"),
-        msg_list_empty = T("No ATC-20 Rapid Assessments currently registered"))
+        label_delete_button = T("Delete NZEE Level 1 Assessment"),
+        msg_record_created = T("NZEE Level 1 Assessment added"),
+        msg_record_modified = T("NZEE Level 1 Assessment updated"),
+        msg_record_deleted = T("NZEE Level 1 Assessment deleted"),
+        msg_list_empty = T("No NZEE Level 1 Assessments currently registered"))
     # -------------------------------------------------------------------------

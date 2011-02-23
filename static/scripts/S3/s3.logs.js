@@ -53,8 +53,8 @@ $(document).ready(function() {
             }; 
         });   
     }
-                
-    if ($('[name $= "item_id"]').val() == '') {
+    var ItemID = $('[name $= "item_id"]').val();            
+    if (ItemID == '' | ItemID == undefined) {
         /* Hide the item packet input if the item hasn't been entered */
         $('[id$="item_packet_id__row1"]').hide();
         $('[id$="item_packet_id__row"]').hide();    

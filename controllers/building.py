@@ -59,9 +59,6 @@ def atc20():
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
 
-    # ID field should be readable
-    table.id.readable = True
-
     # Pre-populate Inspector ID
     if auth.is_logged_in():
         person_id = db((db.pr_person.uuid == session.auth.user.person_uuid)).select(db.pr_person.id,
@@ -121,12 +118,8 @@ def shn_atc20_rheader(r, tabs=[]):
                                     TH("%s: " % T("Mobile")), mobile
                                   ),
                                 TR(
-                                    TH("%s: " % T("Building")), assess.name,
-                                    TH("%s: " % T("Date")), assess.date
+                                    TH("%s: " % T("Location")), location,TH("%s: " % T("Date")), assess.date
                                   ),
-                                TR(
-                                    TH("%s: " % T("Location")), location,
-                                  )
                                 ),
                               rheader_tabs)
 

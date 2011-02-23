@@ -23,18 +23,15 @@ $(document).ready(function() {
     // Set the L1 to Christchurch
     //$('#gis_location_L1').val(247);
     // Hide the Search button
-    //$('#gis_location_search-btn').hide();
+    $('#gis_location_search-btn').hide();
 
     // Open up the 'Add New Location' form
     $('#gis_location_add-btn').click();
     // Hide the Cancel button
-    //$('#gis_location_cancel-btn').hide();
+    $('#gis_location_cancel-btn').hide();
 
-    // Hide the name field & pre-populate
-    //$('#gis_location_name_label').hide();
-    //$('#gis_location_name').hide();
-    //var randomnumber = Math.floor(Math.random()*99999999)
-    //$('#gis_location_name').val('building' + randomnumber);
+    // Change the label of the Name field
+    $('#gis_location_name_label > label').html('{{=T("Building Name")}}: ');
 
     // Open up the GPS coordinates fields
     //$('#gis_location_advanced_checkbox').attr('checked', true);

@@ -97,11 +97,9 @@ if deployment_settings.has_module(module):
                             Field("area", "integer", label=T("Areas inspected"),
                                   requires=IS_NULL_OR(IS_IN_SET(building_area_inspected)),
                                   represent=lambda opt: building_area_inspected.get(opt, UNKNOWN_OPT)),
-                            Field("name", label=T("Building Name"), requires=IS_NOT_EMPTY()),
-                            Field("name_short", label=T("Short Name")),
+                            #Field("name", label=T("Building Name"), requires=IS_NOT_EMPTY()), # Included in location_id
                             location_id(empty=False),
-                            Field("prupi", label=T("Property reference in the council system")), # Christchurch-specific
-                            Field("gisratingid", label=T("Polygon reference of the rating unit")), # Christchurch-specific
+                            Field("name_short", label=T("Building Short Name")),
                             Field("contact_name", label=T("Contact Name"), requires=IS_NOT_EMPTY()),
                             Field("contact_phone", label=T("Contact Phone"), requires=IS_NOT_EMPTY()),
                             Field("stories_above", "integer", label=T("Storeys at and above ground level")), # Number of stories above ground
@@ -159,7 +157,6 @@ if deployment_settings.has_module(module):
                                   label=T("(state location)")),
                             Field("detailed_evaluation", "boolean",
                                   label=T("Level 2 or detailed engineering evaluation recommended")),
-                            # @ToDo: Hide these fields in JS until parent ticked
                             Field("detailed_structural", "boolean",
                                   label=T("Structural")),
                             Field("detailed_geotechnical", "boolean",

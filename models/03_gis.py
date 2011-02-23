@@ -437,6 +437,8 @@ table = db.define_table(tablename,
                         Field("name", notnull=True),    # Primary name
                         Field("name_dummy"),            # Dummy field to provide Widget (real data is stored in the separate table which links back to this one)
                         Field("code"),
+                        #Field("prupi", label=T("Property reference in the council system")), # Christchurch-specific
+                        #Field("gisratingid", label=T("Polygon reference of the rating unit")), # Christchurch-specific
                         Field("level", length=2),
                         Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
                         Field("path", length=500, readable=False, writable=False),  # Materialised Path

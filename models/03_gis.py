@@ -1099,7 +1099,7 @@ s3xrc.model.configure(table, deletable=False)
 # -----------------------------------------------------------------------------
 # GIS Layers
 #gis_layer_types = ["shapefile", "scan"]
-gis_layer_types = ["bing", "coordinate", "openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wfs", "wms", "xyz", "yahoo"]
+gis_layer_types = ["bing", "coordinate", "openstreetmap", "geojson", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wfs", "wms", "xyz", "yahoo"]
 gis_layer_google_subtypes = gis.layer_subtypes("google")
 gis_layer_yahoo_subtypes = gis.layer_subtypes("yahoo")
 gis_layer_bing_subtypes = gis.layer_subtypes("bing")
@@ -1141,17 +1141,26 @@ for layertype in gis_layer_types:
                      Field("attribution", label=T("Attribution")),
                     )
         table = db.define_table(tablename, t, migrate=migrate)
+    elif layertype == "geojson":
+        t = db.Table(db, table,
+                     gis_layer,
+                     Field("visible", "boolean", default=False, label=T("On by default?")),
+                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     projection_id(default=2,
+                                   requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")),
+                     marker_id()
+                    )
+        table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "georss":
         t = db.Table(db, table,
                      gis_layer,
                      Field("visible", "boolean", default=False, label=T("On by default?")),
                      Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
-                     projection_id(),
+                     projection_id(default=2,
+                                   requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")),
                      marker_id()
                     )
         table = db.define_table(tablename, t, migrate=migrate)
-        table.projection_id.requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")
-        table.projection_id.default = 2
     elif layertype == "google":
         t = db.Table(db, table,
                      gis_layer,

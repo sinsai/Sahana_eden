@@ -704,7 +704,7 @@ def apikey():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # Pre-processor
@@ -746,7 +746,7 @@ def config():
 
     """ RESTful CRUD controller """
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # Pre-processor
@@ -788,7 +788,7 @@ def feature_class():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # Model options
@@ -846,7 +846,7 @@ def layer_feature():
 
     response.s3.postp = postp
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # CRUD Strings
@@ -914,7 +914,7 @@ def marker():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # CRUD Strings
@@ -949,7 +949,7 @@ def projection():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # CRUD Strings
@@ -982,7 +982,7 @@ def waypoint():
 
     """ RESTful CRUD controller for GPS Waypoints """
 
-    table = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     return s3_rest_controller(module, resourcename)
 
@@ -999,7 +999,7 @@ def trackpoint():
 
     """ RESTful CRUD controller for GPS Track points """
 
-    table = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     return s3_rest_controller(module, resourcename)
 
@@ -1010,7 +1010,7 @@ def track():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    table = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # Model options
     # used in multiple controllers, so defined in model
@@ -1045,7 +1045,7 @@ def layer_openstreetmap():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # CRUD Strings
     type = "OpenStreetMap"
@@ -1080,7 +1080,7 @@ def layer_google():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # Model options
@@ -1119,7 +1119,7 @@ def layer_yahoo():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # CRUD Strings
@@ -1156,7 +1156,7 @@ def layer_mgrs():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # CRUD Strings
@@ -1193,7 +1193,7 @@ def layer_bing():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # CRUD Strings
@@ -1225,12 +1225,49 @@ def layer_bing():
 
     return output
 
+def layer_geojson():
+    """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
+        unauthorised()
+
+    tablename = "%s_%s" % (module, resourcename)
+
+    # CRUD Strings
+    type = "GeoJSON"
+    LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    s3.crud_strings[tablename] = Storage(
+        title_create=ADD_LAYER,
+        title_display=LAYER_DETAILS,
+        title_list=LAYERS,
+        title_update=EDIT_LAYER,
+        title_search=SEARCH_LAYERS,
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_LAYERS,
+        label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
+        msg_record_created=LAYER_ADDED,
+        msg_record_modified=LAYER_UPDATED,
+        msg_record_deleted=LAYER_DELETED,
+        msg_list_empty=NO_LAYERS)
+
+    output = s3_rest_controller(module, resourcename)
+
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+
+    return output
+
 def layer_georss():
     """ RESTful CRUD controller """
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # CRUD Strings
     type = "GeoRSS"
@@ -1267,7 +1304,7 @@ def layer_gpx():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # Model options
     # Needed in multiple controllers, so defined in Model
@@ -1307,7 +1344,7 @@ def layer_kml():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # CRUD Strings
     type = "KML"
@@ -1350,7 +1387,7 @@ def layer_tms():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # CRUD Strings
     type = "TMS"
@@ -1387,7 +1424,7 @@ def layer_wfs():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # CRUD Strings
     type = "WFS"
@@ -1424,7 +1461,7 @@ def layer_wms():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # CRUD Strings
     type = "WMS"
@@ -1460,7 +1497,7 @@ def layer_wms():
 def layer_js():
     """ RESTful CRUD controller """
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # CRUD Strings
     type = "JS"
@@ -1497,7 +1534,7 @@ def layer_xyz():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # CRUD Strings
     type = "XYZ"

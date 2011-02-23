@@ -16,9 +16,9 @@ $(document).ready(function() {
                    .hide();
         
         if ($('[name = "item_id"]').length != 0) {
-            url = '/eden/supply/item_packet.json?item_packet.item_id=' + $('[name = "item_id"]').val();
+            url = S3.Ap.concat('/supply/item_packet.json?item_packet.item_id=', $('[name = "item_id"]').val());
         } else {
-            url = '/eden/supply/item_packet.json?store_item.id=' + $('[name $= "item_id"]').val();
+            url = S3.Ap.concat('/inventory/store_item_packets/',$('[name $= "item_id"]').val());
         }
                                 
         $.getJSON(url, function(data) {
@@ -85,7 +85,7 @@ $(document).ready(function() {
 			UpdateURL = $(".action-btn",DIV.parent().parent().parent()).attr("href");
 			re = /req_item\/(.*)/i;
 			req_item_id = re.exec(UpdateURL)[1];
-			url = "/eden/logs/" + ShipmentType + "_item_json/" + req_item_id;						
+			url = S3.Ap.concat("/logs/", ShipmentType, "_item_json/", req_item_id);						
 			$.ajax( { 
 				url: url,
 				dataType: 'json',
@@ -99,7 +99,7 @@ $(document).ready(function() {
 							RecvTable += data[0].id
 							
 						} else {
-							RecvURL = "/eden/logs/" + ShipmentType + "/" +  data[i].id;
+							RecvURL = S3.Ap.concat("/logs/", ShipmentType, "/",  data[i].id);
 							RecvTable += "<a href = '" + RecvURL + "'>"; 
 							RecvTable += data[i].datetime.substring(0,10) + "</a>"; 						
 						}

@@ -10,6 +10,8 @@
 
     Postearthquake Safety Evaluation of Buildings: ATC-20
     http://www.atcouncil.org/pdfs/rapid.pdf
+    This is actually based on the New Zealand variant:
+    http://eden.sahanafoundation.org/wiki/BluePrintBuildingAssessments
     
     @ToDo: add other forms
 """
@@ -74,16 +76,17 @@ def atc20():
         return output
     response.s3.postp = postp
 
-    # Over-ride the listadd since we're not a component here
-    s3xrc.model.configure(table, create_next="", listadd=True)
+    # Subheadings in forms:
+    s3xrc.model.configure(table,
+        subheadings = {
+            ".": "name", # Description in ATC-20
+            "%s / %s" % (T("Overall Hazards"), T("Damage")): "collapse",
+            ".": "posting",
+            "%s:" % T("Further Action Recommended"): "barricades",
+            ".": "estimated_damage",
+            })
 
-    rheader = lambda r: shn_atc20_rheader(r,
-                                          tabs = [(T("Inspection"), None),
-                                                  (T("Building Description"), "atc20_description"),
-                                                  (T("Evaluation"), "atc20_evaluation"),
-                                                  (T("Posting"), "atc20_posting"),
-                                                  (T("Further Actions"), "atc20_actions"),
-                                                ])
+    rheader = lambda r: shn_atc20_rheader(r)
 
     output = s3_rest_controller(module, resource,
                                 rheader=rheader)
@@ -98,9 +101,9 @@ def shn_atc20_rheader(r, tabs=[]):
             assess = r.record
             if assess:
                 rheader_tabs = shn_rheader_tabs(r, tabs)
-                #location = assess.location_id
-                #if location:
-                #    location = shn_gis_location_represent(location)
+                location = assess.location_id
+                if location:
+                    location = shn_gis_location_represent(location)
                 person = assess.person_id
                 if person:
                     pe_id = db(db.pr_person.id == person).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
@@ -111,12 +114,15 @@ def shn_atc20_rheader(r, tabs=[]):
                     person = vita.fullname(person)
                 rheader = DIV(TABLE(
                                 TR(
-                                    #TH("%s: " % T("Location")), location,
                                     TH("%s: " % T("Person")), person,
                                     TH("%s: " % T("Mobile")), mobile
                                   ),
                                 TR(
+                                    TH("%s: " % T("Building")), assess.name,
                                     TH("%s: " % T("Date")), assess.date
+                                  ),
+                                TR(
+                                    TH("%s: " % T("Location")), location,
                                   )
                                 ),
                               rheader_tabs)

@@ -31,6 +31,7 @@ def shn_menu():
         [T("NZSEE Level 1"), False, aURL(r=request, f="nzseel1"), [
             [T("List"), False, aURL(r=request, f="nzseel1")],
             [T("Add"), False, aURL(p="create", r=request, f="nzseel1", args="create")],
+            [T("Add Triage"), False, aURL(p="create", r=request, f="nzseel1", args="create", vars={"triage":1})],
             #[T("Search"), False, URL(r=request, f="nzseel1", args="search")],
         ]],
         [T("Report"), False, aURL(r=request, f="report")]

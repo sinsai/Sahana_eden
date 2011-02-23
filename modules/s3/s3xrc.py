@@ -208,7 +208,7 @@ class S3ResourceController(object):
 
         self.error = None
         try:
-            req = S3Request(self, prefix, name)
+            req = S3Request(self, prefix, name) # Goes to s3rest.py
         except SyntaxError:
             raise HTTP(400, body=self.xml.json_message(False, 400, message=self.error))
         except KeyError:

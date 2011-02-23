@@ -100,6 +100,8 @@ if deployment_settings.has_module(module):
                             Field("name", label=T("Building Name"), requires=IS_NOT_EMPTY()),
                             Field("name_short", label=T("Short Name")),
                             location_id(empty=False),
+                            Field("prupi", label=T("Property reference in the council system")), # Christchurch-specific
+                            Field("gisratingid", label=T("Polygon reference of the rating unit")), # Christchurch-specific
                             Field("contact_name", label=T("Contact Name"), requires=IS_NOT_EMPTY()),
                             Field("contact_phone", label=T("Contact Phone"), requires=IS_NOT_EMPTY()),
                             Field("stories_above", "integer", label=T("Storeys at and above ground level")), # Number of stories above ground

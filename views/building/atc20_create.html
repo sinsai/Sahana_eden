@@ -19,7 +19,31 @@ $(document).ready(function() {
     $("#building_atc20_detailed_other__row").hide();
     $("#building_atc20_detailed_other_details__row1").hide();
     $("#building_atc20_detailed_other_details__row").hide();
-    
+
+    // Set the L1 to Christchurch
+    //$('#gis_location_L1').val(247);
+    // Hide the Search button
+    //$('#gis_location_search-btn').hide();
+
+    // Open up the 'Add New Location' form
+    $('#gis_location_add-btn').click();
+    // Hide the Cancel button
+    //$('#gis_location_cancel-btn').hide();
+
+    // Hide the name field & pre-populate
+    //$('#gis_location_name_label').hide();
+    //$('#gis_location_name').hide();
+    //var randomnumber = Math.floor(Math.random()*99999999)
+    //$('#gis_location_name').val('building' + randomnumber);
+
+    // Open up the GPS coordinates fields
+    //$('#gis_location_advanced_checkbox').attr('checked', true);
+    $('#gis_location_advanced_div').hide();
+    $('#gis_location_lat_label').removeClass('hidden').show();
+    $('#gis_location_lat_row').removeClass('hidden').show();
+    $('#gis_location_lon_label').removeClass('hidden').show();
+    $('#gis_location_lon_row').removeClass('hidden').show();
+
     // Triage form
     var triage_checkbox = 'Triage form?<br><input type="checkbox" value="on" id="triage" class="boolean"> (Hides optional fields)';
     $('#rheader').after(triage_checkbox);
@@ -30,6 +54,10 @@ $(document).ready(function() {
             $("#building_atc20_organisation_id__row").hide();
             $("#building_atc20_area__row1").hide();
             $("#building_atc20_area__row").hide();
+            $("#building_atc20_prupi__row1").hide();
+            $("#building_atc20_prupi__row").hide();
+            $("#building_atc20_gisratingid__row1").hide();
+            $("#building_atc20_gisratingid__row").hide();
             $("#building_atc20_stories_above__row1").hide();
             $("#building_atc20_stories_above__row").hide();
             $("#building_atc20_stories_below__row1").hide();
@@ -70,12 +98,22 @@ $(document).ready(function() {
             $("#building_atc20_action_comments__row").hide();
             $("#building_atc20_restrictions__row1").hide();
             $("#building_atc20_restrictions__row").hide();
+            $('#gis_location_postcode_label').hide();
+            $('#gis_location_postcode_row').hide();
+            $('#gis_location_lat_label').hide();
+            $('#gis_location_lat_row').hide();
+            $('#gis_location_lon_label').hide();
+            $('#gis_location_lon_row').hide();
         } else {
             // Unchecked: show the optional fields
             $("#building_atc20_organisation_id__row1").show();
             $("#building_atc20_organisation_id__row").show();
             $("#building_atc20_area__row1").show();
             $("#building_atc20_area__row").show();
+            $("#building_atc20_prupi__row1").show();
+            $("#building_atc20_prupi__row").show();
+            $("#building_atc20_gisratingid__row1").show();
+            $("#building_atc20_gisratingid__row").show();
             $("#building_atc20_stories_above__row1").show();
             $("#building_atc20_stories_above__row").show();
             $("#building_atc20_stories_below__row1").show();
@@ -116,6 +154,12 @@ $(document).ready(function() {
             $("#building_atc20_action_comments__row").show();
             $("#building_atc20_restrictions__row1").show();
             $("#building_atc20_restrictions__row").show();
+            $('#gis_location_postcode_label').show();
+            $('#gis_location_postcode_row').show();
+            $('#gis_location_lat_label').show();
+            $('#gis_location_lat_row').show();
+            $('#gis_location_lon_label').show();
+            $('#gis_location_lon_row').show();
         }
 	})
     

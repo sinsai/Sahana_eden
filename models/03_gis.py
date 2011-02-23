@@ -378,7 +378,7 @@ def shn_gis_location_represent_row(location, showlink=True):
         # the same name, e.g. Los Angeles (County) and Los Angeles (City).)
         lat = location.lat
         lon = location.lon
-        if lat and lon:
+        if lat is not None and lon is not None:
             if lat > 0:
                 lat_prefix = "N"
             else:
@@ -397,6 +397,9 @@ def shn_gis_location_represent_row(location, showlink=True):
                 text = "%s (%s)" % (location.name, level_name)
             else:
                 text = location.name
+            if not location.parent:
+                # No way to show on a map
+                showlink = False
     if request.raw_args == "read.plain":
        # Map popups don't support iframes (& meaningless anyway)
        showlink = False

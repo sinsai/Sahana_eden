@@ -51,6 +51,11 @@ def atc20():
     """
 
     resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+
+    # ID field should be readable
+    table.id.readable = True
 
     # Pre-populate Inspector ID
     if auth.is_logged_in():
@@ -93,16 +98,22 @@ def shn_atc20_rheader(r, tabs=[]):
             assess = r.record
             if assess:
                 rheader_tabs = shn_rheader_tabs(r, tabs)
-                location = assess.location_id
-                if location:
-                    location = shn_gis_location_represent(location)
+                #location = assess.location_id
+                #if location:
+                #    location = shn_gis_location_represent(location)
                 person = assess.person_id
                 if person:
+                    pe_id = db(db.pr_person.id == person).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
+                    query = (db.pr_pe_contact.pe_id == pe_id) & (db.pr_pe_contact.contact_method == 2)
+                    mobile = db(query).select(db.pr_pe_contact.value, limitby=(0, 1)).first()
+                    if mobile:
+                        mobile = mobile.value
                     person = vita.fullname(person)
                 rheader = DIV(TABLE(
                                 TR(
-                                    TH("%s: " % T("Location")), location,
-                                    TH("%s: " % T("Person")), person
+                                    #TH("%s: " % T("Location")), location,
+                                    TH("%s: " % T("Person")), person,
+                                    TH("%s: " % T("Mobile")), mobile
                                   ),
                                 TR(
                                     TH("%s: " % T("Date")), assess.date

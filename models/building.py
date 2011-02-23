@@ -51,13 +51,14 @@ if deployment_settings.has_module(module):
     }
 
     atc20_construction_types = {
-        1:T("Wood frame"),
+        1:T("Timber frame"), # Wood frame
         2:T("Steel frame"),
         3:T("Tilt-up concrete"),
         4:T("Concrete frame"),
         5:T("Concrete shear wall"),
         6:T("Unreinforced masonry"),
         7:T("Reinforced masonry"),
+        8:T("RC frame with masonry infill"),
         99:T("Other")
     }
     
@@ -65,13 +66,12 @@ if deployment_settings.has_module(module):
         1:T("Dwelling"),
         2:T("Other residential"),
         3:T("Public assembly"),
-        4:T("Emergency services"),
-        5:T("Commercial"),
-        6:T("Offices"),
+        4:T("School"),
+        5:T("Religious"),
+        6:T("Commercial/Offices"),
         7:T("Industrial"),
         8:T("Government"),
-        9:T("Historic"),
-        10:T("School"),
+        9:T("Heritage Listed"), # Historic
         99:T("Other")
     }
     
@@ -92,9 +92,9 @@ if deployment_settings.has_module(module):
     }
 
     building_posting_state = {
-        1:T("Inspected (Green placard"),
-        2:T("Restricted Use (Yellow placard)"),
-        3:T("Unsafe (Red placard")
+        1:T("INSPECTED (GREEN"),
+        2:T("RESTRICTED USE (YELLOW)"),
+        3:T("UNSAFE (RED")
     }
 
     # ATC-20 Rapid Evaluation Safety Assessment Form --------------------------
@@ -103,8 +103,7 @@ if deployment_settings.has_module(module):
 
     table = db.define_table(tablename,
                             person_id(label=T("Inspector ID"), empty=False), # pre-populated in Controller
-                            organisation_id(label=T("Affiliation")), #, empty=False
-                            location_id(),
+                            organisation_id(label=T("Territorial Authority")), # Affiliation in ATC20 terminology
                             Field("date", "date", default=request.now,
                                   label=T("Inspection date")),
                             Field("daytime", "integer", label=T("Inspection time"),
@@ -200,11 +199,15 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename,
                             atc20_id(),
                             Field("name", label=T("Building Name")),
-                            Field("address", "text"), # @ToDo: merge with location_id?
-                            Field("contact", label=T("Building contact/phone")),
-                            Field("stories_above", "integer", label=T("Number of stories above ground")),
-                            Field("stories_below", "integer", label=T("Number of stories below ground")),
-                            Field("footprint", "integer", label=T("Approx. 'Footprint area' (square meters)")),
+                            Field("name_short", label=T("Short Name")),
+                            location_id(),
+                            #Field("address", "text"), # inside location_id?
+                            Field("contact_name", label=T("Contact name")),
+                            Field("contact_phone", label=T("Contact phone")),
+                            Field("stories_above", "integer", label=T("Storeys at and above ground level")), # Number of stories above ground
+                            Field("stories_below", "integer", label=T("Below ground level")), # Number of stories below ground
+                            Field("footprint", "integer", label=T("Total gross floor area (square meters)")),
+                            Field("year_built", "integer", label=T("Year built")),
                             Field("residential_units", "integer", label=T("Number of residential units")),
                             Field("residential_units_not_habitable", "integer",
                                   label=T("Number of residential units not habitable")),
@@ -235,27 +238,31 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename,
                             atc20_id(), # @ToDo: Represents for below
                             Field("estimated_damage", "integer",
-                                  label=T("Estimated Building Damage"),
-                                  comment=T("excluding contents"),
+                                  label=T("Estimated Overall Building Damage"),
+                                  comment="(%s)" % T("Exclude contents"),
                                   requires=IS_IN_SET(building_estimated_damage),
                                   represent=lambda opt: building_estimated_damage.get(opt, UNKNOWN_OPT)),
                             Field("collapse", "integer",
-                                  label=T("Collapse, partial collapse, or building off foundation"),
+                                  label=T("Collapse, partial collapse, off foundation"),
                                   requires=IS_IN_SET(building_evaluation_condition),
                                   represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
-                            Field("leaning", "integer", label=T("Building or story leaning"),
+                            Field("leaning", "integer", label=T("Building or storey leaning"),
                                   requires=IS_IN_SET(building_evaluation_condition),
                                   represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
                             Field("structural", "integer",
-                                  label=T("Racking damage to walls, other structural damage"),
+                                  label=T("Wall or other structural damage"),
                                   requires=IS_IN_SET(building_evaluation_condition),
                                   represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
                             Field("falling", "integer",
-                                  label=T("Chimney, parapet, or other falling hazard"),
+                                  label=T("Overhead falling hazard"),
                                   requires=IS_IN_SET(building_evaluation_condition),
                                   represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
-                            Field("cracking", "integer",
-                                  label=T("Ground slope movement or cracking"),
+                            Field("slips", "integer",
+                                  label=T("Ground movement, settlement, slips"),
+                                  requires=IS_IN_SET(building_evaluation_condition),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("neighbour", "integer",
+                                  label=T("Neighbouring building hazard"),
                                   requires=IS_IN_SET(building_evaluation_condition),
                                   represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
                             Field("other", "integer", label=T("Other"),
@@ -284,7 +291,7 @@ if deployment_settings.has_module(module):
                             Field("posting", "integer",
                                   requires=IS_IN_SET(building_posting_state),
                                   represent=lambda opt: building_posting_state.get(opt, UNKNOWN_OPT)),
-                            comments(label=T("Record any use and entry restrictions exactly as written on placard")),
+                            Field("restrictions", "text", label=T("Record any restriction on use or entry")),
                             migrate=migrate
                             )
     # CRUD strings
@@ -304,11 +311,11 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename,
                             atc20_id(),
                             Field("barricades", "boolean",
-                                  label=T("Barricades needed")),
+                                  label=T("Barricades are needed")),
                             Field("barricades_details", "text",
-                                  label=T("in the following areas")),
+                                  label=T("(state location)")),
                             Field("detailed_evaluation", "boolean",
-                                  label=T("Detailed Evaluation recommended")),
+                                  label=T("Level 2 or detailed engineering evaluation recommended")),
                             # @ToDo: Hide these fields in JS until parent ticked
                             Field("structural", "boolean",
                                   label=T("Structural")),

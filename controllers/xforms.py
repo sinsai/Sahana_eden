@@ -51,7 +51,7 @@ def create():
     bindings = bindings_list
     controllers = TAG["h:body"](controllers_list)
 
-    response.headers["Content-Type"] = "application/xml"
+    response.headers["Content-Type"] = "text/xml"
     response.view = "xforms.xml"
 
     return dict(title=title, instance=instance, bindings=bindings, controllers=controllers, itext_list=itext_list)

@@ -991,10 +991,12 @@ class S3LocationSelectorWidget(FormWidget):
         else:
             visible = False
         if visible:
-            button = A(T("Location Details"), _style="cursor:pointer; cursor:hand",
+            button = A(T("Location Details"),
+                       _style="cursor:pointer; cursor:hand",
                        _id="gis_location_details-btn")
         else:
-            button = A(T("Location Details"), _style="cursor:pointer; cursor:hand",
+            button = A(T("Location Details"),
+                       _style="cursor:pointer; cursor:hand",
                        _id="gis_location_details-btn",
                        _class="hidden")
         dropdowns.append(level_dropdown(_level, visible=visible, current=value, button=button))
@@ -1042,11 +1044,11 @@ class S3LocationSelectorWidget(FormWidget):
           )
 
         # Labels
-        name_label = DIV(LABEL(T("Name") + ":"), SPAN("*", _class="req"), _id="gis_location_name_label", _class="hidden")
-        street_label = LABEL(T("Street Address") + ":", _id="gis_location_addr_street_label", _class="hidden")
-        postcode_label = LABEL(T("Postcode") + ":", _id="gis_location_postcode_label", _class="hidden")
-        lat_label = LABEL(T("Latitude") + ":", _id="gis_location_lat_label", _class="hidden")
-        lon_label = LABEL(T("Longitude") + ":", _id="gis_location_lon_label", _class="hidden")
+        name_label = DIV(LABEL("%s:" % T("Name")), SPAN("*", _class="req"), _id="gis_location_name_label", _class="hidden")
+        street_label = LABEL("%s:" % T("Street Address"), _id="gis_location_addr_street_label", _class="hidden")
+        postcode_label = LABEL("%s:" % T("Postcode"), _id="gis_location_postcode_label", _class="hidden")
+        lat_label = LABEL("%s:" % T("Latitude"), _id="gis_location_lat_label", _class="hidden")
+        lon_label = LABEL("%s:" % T("Longitude"), _id="gis_location_lon_label", _class="hidden")
 
         # Form Fields
         street_widget = TEXTAREA(addr_street, _id="gis_location_addr_street")
@@ -1054,37 +1056,50 @@ class S3LocationSelectorWidget(FormWidget):
         lat_widget = INPUT(_id="gis_location_lat", _value=lat)
         lon_widget = INPUT(_id="gis_location_lon", _value=lon)
 
-        autocomplete = DIV(LABEL(T("Search") + ":"), BR(), INPUT(_id="gis_location_autocomplete"), _id="gis_location_autocomplete_div", _class="hidden")
+        autocomplete = DIV(LABEL("%s:" % T("Search")),
+                           BR(),
+                           INPUT(_id="gis_location_autocomplete"),
+                           _id="gis_location_autocomplete_div",
+                           _class="hidden")
 
         # Buttons
-        search_button = A(T("Search Locations"), _style="cursor:pointer; cursor:hand",
+        search_button = A(T("Search Locations"),
+                          _style="cursor:pointer; cursor:hand",
                           _id="gis_location_search-btn")
 
-        add_button = A(T("Add New Location"), _style="cursor:pointer; cursor:hand",
+        add_button = A(T("Add New Location"),
+                       _style="cursor:pointer; cursor:hand",
                        _id="gis_location_add-btn")
 
-        cancel_button = A(T("Cancel Add"), _style="cursor:pointer; cursor:hand",
+        cancel_button = A(T("Cancel Add"),
+                          _style="cursor:pointer; cursor:hand",
                           _id="gis_location_cancel-btn",
                           _class="hidden")
 
-        geolocate_button = A(T("Use Current Location"), _style="cursor:pointer; cursor:hand",
+        geolocate_button = A(T("Use Current Location"),
+                             _style="cursor:pointer; cursor:hand",
                              _id="gis_location_geolocate-btn",
                              _class="hidden")
 
         if map_selector:
-            map_button = A(T("Show Map"), _style="cursor:pointer; cursor:hand",
+            map_button = A(T("Show Map"),
+                           _style="cursor:pointer; cursor:hand",
                            _id="gis_location_map-btn",
                            _class="hidden")
         else:
             map_button = ""
 
-        geocoder_button = A(T("Lookup Address"), _style="cursor:pointer; cursor:hand",
+        geocoder_button = A(T("Lookup Address"),
+                            _style="cursor:pointer; cursor:hand",
                             _id="gis_location_geocoder-btn")
 
         latlon_help = locations.lat.comment
         converter_button = locations.lon.comment
 
-        advanced_checkbox = DIV(T("Advanced") + ":", INPUT(_type="checkbox", _id="gis_location_advanced_checkbox", value=""), _id="gis_location_advanced_div", _class="hidden")
+        advanced_checkbox = DIV("%s:" % T("Advanced"),
+                                INPUT(_type="checkbox", _id="gis_location_advanced_checkbox", value=""),
+                                _id="gis_location_advanced_div",
+                                _class="hidden")
 
         # @ToDo: Replace with simple alternate input forms: Radio button defaults to decimal degrees (real inputs), but can select GPS or DDMMSS
         gps_converter_popup = DIV(
@@ -1095,14 +1110,14 @@ class S3LocationSelectorWidget(FormWidget):
                         TABLE(
                             TR(
                                 TD(
-                                    B(T("Enter a GPS Coordinate") + ":"),
+                                    B("%s:" % T("Enter a GPS Coordinate")),
                                     INPUT(_type="text", _size="3", _id="gps_deg"), "deg",
                                     INPUT(_type="text", _size="6", _id="gps_min"), "min",
                                 ),
                             ),
                             TR(
                                 TD(
-                                    B(T("Decimal Degrees") + ":"),
+                                    B("%s:" % T("Decimal Degrees")),
                                     INPUT(_type="text", _size="8", _id="gps_dec"),
                                 ),
                             ),
@@ -1123,7 +1138,7 @@ class S3LocationSelectorWidget(FormWidget):
                         TABLE(
                             TR(
                                 TD(
-                                    B(T("Enter Coordinates") + ":"),
+                                    B("%s:" % T("Enter Coordinates")),
                                     INPUT(_type="text", _size="3", _id="DDMMSS_deg"), "Deg",
                                     INPUT(_type="text", _size="2", _id="DDMMSS_min"), "Min",
                                     INPUT(_type="text", _size="2", _id="DDMMSS_sec"), "Sec",
@@ -1131,7 +1146,7 @@ class S3LocationSelectorWidget(FormWidget):
                             ),
                             TR(
                                 TD(
-                                    B(T("Decimal Degrees") + ":"),
+                                    B("%s:" % T("Decimal Degrees")),
                                     INPUT(_type="text", _size="8", _id="DDMMSS_dec"),
                                 ),
                             ),
@@ -1211,7 +1226,7 @@ class S3CheckboxesWidget(OptionsWidget):
     :param options: list - optional -
     value,text pairs for the Checkboxs -
     If options = None,  use options from self.requires.options().
-    This arguement is useful for displaying a sub-set of the self.requires.options()
+    This argument is useful for displaying a sub-set of the self.requires.options()
 
     :param num_column: int -
 

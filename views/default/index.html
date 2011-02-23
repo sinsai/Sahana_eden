@@ -11,10 +11,11 @@
 </div>
 {{if 2 not in session.s3.roles:}}
   <div id='login_form'>
+<p>&nbsp;</p>
+    {{=H3(T("Login"))}}
     <p>
     {{=XML(T("Registered users can") + " <b>" + T("login") + "</b> " + T("to access the system"))}}:
     </p>
-    {{=H3(T("Login"))}}
     {{include "auth/_login.html"}}
   </div>
   {{if self_registration:}}
@@ -24,10 +25,11 @@
     <script src="/{{=request.application}}/static/scripts/S3/jquery.validate.pack.js" type="text/javascript"></script>
    {{pass}}
     <div id='register_form' class='hide'>
+<p>&nbsp;</p>
+      {{=H3(T("Register"))}}
       <p>
       {{=XML(T("If you would like to help, then please") + " <b>" + T("sign-up now") + "</b>")}}:
       </p>
-      {{=H3(T("Register"))}}
       {{include "auth/_register.html"}}
     </div>
    {{pass}}
@@ -62,15 +64,17 @@ $(document).ready(function() {
 //]]></script>
 {{pass}}
 <div>
-    <p class = "menu_text">
-    {{=T("For more details on the Sahana Eden system, see the")}} <a href="http://eden.sahanafoundation.org" target="_blank">{{=T("Sahana Eden Website")}}</a>
-    <br/>{{=T("For live help from the Sahana community on using this application, go to")}} <a href="http://eden.sahanafoundation.org/wiki/Chat" target="_blank">{{=T("Sahana Community Chat")}}</a>
-    </p>
+    <p class="menu_text">&nbsp;</p>
     <p>
     {{=T("Administrator")}}: {{=admin_name}}
     <br/>{{=T("Email")}}: {{=admin_email}}
     <br/>{{=T("Telephone")}}: {{=admin_tel}}
     </p>
+    <p class="menu_text">
+    {{=T("For more details on the Sahana Eden system, see the")}} <a href="http://eden.sahanafoundation.org" target="_blank">{{=T("Sahana Eden Website")}}</a>
+    <br/>{{=T("For live help from the Sahana community on using this application, go to")}} <a href="http://eden.sahanafoundation.org/wiki/Chat" target="_blank">{{=T("Sahana Community Chat")}}</a>
+    </p>
+    <p>&nbsp;</p>
 </div>
 {{include "rssviewer.html"}}
 </div>

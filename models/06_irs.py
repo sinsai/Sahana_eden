@@ -3,7 +3,7 @@
 """ Incident Reporting System - Model
 
     @author: Sahana Taiwan Team
-
+    @author: Fran Boon
 """
 
 module = "irs"
@@ -211,13 +211,15 @@ if deployment_settings.has_module(module):
 
     table.person_id.label = T("Reporter Name")
     table.person_id.comment = (T("At/Visited Location (not virtual)"),
-                               shn_person_comment(T("Reporter Name"), T("The person at the location who is reporting this incident (optional)")))
+                               shn_person_comment(T("Reporter Name"),
+                               T("The person at the location who is reporting this incident (optional)")))
 
     table.contact.label = T("Contact Details")
 
     table.datetime.label = T("Date/Time")
     table.datetime.requires = [IS_NOT_EMPTY(),
-                               IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)]
+                               IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
+                               allow_future=False)]
 
     organisation_id.label = T("Assign to Org.")
 
@@ -348,7 +350,8 @@ if deployment_settings.has_module(module):
                          _href=r.other(method="", vars=None),
                          _class="action-btn")
 
-            rheader = DIV(P(T("API is documented here") + ": http://wiki.ushahidi.com/doku.php?id=ushahidi_api"), P(T("Example") + " URL: http://ushahidi.my.domain/api?task=incidents&by=all&resp=xml&limit=1000"))
+            rheader = DIV(P("%s: http://wiki.ushahidi.com/doku.php?id=ushahidi_api" % T("API is documented here")),
+                          P("%s URL: http://ushahidi.my.domain/api?task=incidents&by=all&resp=xml&limit=1000" % T("Example")))
 
             output = dict(title=title, form=form, subtitle=subtitle, list_btn=list_btn, rheader=rheader)
 
@@ -369,7 +372,9 @@ if deployment_settings.has_module(module):
 
                 if os.path.exists(template) and ushahidi:
                     try:
-                        success = ireports.import_xml(ushahidi, template=template, ignore_errors=ignore_errors)
+                        success = ireports.import_xml(ushahidi,
+                                                      template=template,
+                                                      ignore_errors=ignore_errors)
                     except:
                         import sys
                         e = sys.exc_info()[1]
@@ -378,7 +383,8 @@ if deployment_settings.has_module(module):
                         if success:
                             count = import_count[0]
                             if count:
-                                response.flash = "%s %s" % (import_count[0], T("reports successfully imported."))
+                                response.flash = "%s %s" % (import_count[0],
+                                                            T("reports successfully imported."))
                             else:
                                 response.flash = T("No reports available.")
                         else:

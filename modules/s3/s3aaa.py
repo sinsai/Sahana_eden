@@ -201,8 +201,8 @@ class AuthS3(Auth):
             table = self.settings.table_user
             table.first_name.requires = \
                 IS_NOT_EMPTY(error_message=self.messages.is_empty)
-            table.last_name.requires = \
-                IS_NOT_EMPTY(error_message=self.messages.is_empty)
+            #table.last_name.requires = \
+                #IS_NOT_EMPTY(error_message=self.messages.is_empty)
             table.utc_offset.label = "UTC Offset"
             table.utc_offset.comment = A(SPAN("[Help]"), _class="tooltip", _title="UTC Offset|The time difference between UTC and your timezone, specify as +HHMM for eastern or -HHMM for western timezones.")
             try:
@@ -553,7 +553,7 @@ class AuthS3(Auth):
             item = row[1][0]
             if isinstance(item, INPUT) and item["_name"] == passfield:
                 form[0].insert(i + 1, TR(
-                        LABEL(self.messages.verify_password + ":"),
+                        TD(LABEL(self.messages.verify_password + ":"), _class="w2p_fl"),
                         INPUT(_name="password_two",
                               _type="password",
                               requires=IS_EXPR("value==%s" % \
@@ -977,7 +977,8 @@ class AuthS3(Auth):
                 person = db(query).select(ptable.uuid).first()
                 if person:
                     if not db(utable.person_uuid == person.uuid).count():
-                        db(utable.id == user.id).update(person_uuid=person.uuid)
+                        db(utable.id == user.id).update(person_uuid=person.uuid,
+                                                        owned_by_user=user.id)
                         if self.user and self.user.id == user.id:
                             self.user.person_uuid = person.uuid
                         continue
@@ -987,18 +988,20 @@ class AuthS3(Auth):
                     new_id = ptable.insert(
                         pe_id = pe_id,
                         first_name = user.first_name,
-                        last_name = user.last_name)
+                        last_name = user.last_name,
+                        owned_by_user = user.id
+                        )
                     if new_id:
                         person_uuid = ptable[new_id].uuid
                         db(utable.id == user.id).update(person_uuid=person_uuid)
                         db(etable.id == pe_id).update(uuid=person_uuid)
-                        # The following adds the email to pr_pe_contact
+                        # Add the email to pr_pe_contact
                         ctable.insert(
                                 pe_id = pe_id,
                                 contact_method = 1,
                                 priority = 1,
                                 value = email)
-                        # The following adds the mobile to pr_pe_contact
+                        # Add the mobile to pr_pe_contact
                         mobile = self.environment.request.vars.get("mobile", None)
                         if mobile:
                             ctable.insert(
@@ -1590,7 +1593,7 @@ class S3Permission(object):
 
         acl = self.page_acl(c=c, f=f)
         acl = (acl[0] | acl[1]) & permission
-        if acl == permission:
+        if acl == permission or self.policy not in (3, 4, 5):
             return URL(a=a,
                        c=c,
                        f=f,
@@ -2408,7 +2411,8 @@ class S3RoleManager(S3Method):
             else:
                 cancel = URL(r=request, c="admin", f="role", vars=request.get_vars)
             action_row = DIV(INPUT(_type="submit", _value=T("Save")),
-                             A(CANCEL, _href=cancel), _id="action-row")
+                             A(CANCEL, _href=cancel, _class="action-lnk"),
+                             _id="action-row")
 
             # Complete form
             form = FORM(role_form, acl_form, action_row)
@@ -2583,7 +2587,7 @@ class S3RoleManager(S3Method):
                 form = FORM(TABLE(
                             TR(TD(widget)),
                             TR(TD(INPUT(_type="submit", _value=T("Save")),
-                                  A(CANCEL, _href=cancel, _style="padding-left:10px")))))
+                                  A(CANCEL, _href=cancel, _class="action-lnk")))))
 
                 if form.accepts(request.post_vars, session):
                     assign = form.vars.roles

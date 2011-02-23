@@ -585,18 +585,18 @@ if __name__ == "__main__":
         except:
             report_format = "html"
 
-        if args[2] == "xml": # Arg 2 is used to generate xml output for jenkins
+        if report_format == "xml": # Arg 2 is used to generate xml output for jenkins
             runner = XMLTestRunner(file("../results/regressionTest-%s.xml" % (browser.replace("*", "")) , "w"))
             runner.run(suite)
 
-        elif args[2] == "html":
+        elif report_format == "html":
             runner = HTMLTestRunner.HTMLTestRunner(
                         stream=buf,
                         title="<Sahana Eden Test>",
                         description="Suite of regressions tests for Sahana Eden."
                         )
-            self.fileName = "../results/regressionTest-%s-%s.html" % (browser.replace("*", ""), time.strftime("%Y%m%d-%H%M%S"))
-            file = open(self.fileName, "w")
+            fileName = "../results/regressionTest-%s-%s.html" % (browser.replace("*", ""), time.strftime("%Y%m%d-%H%M%S"))
+            file = open(fileName, "w")
             runner.run(suite)
             # check out the output
             byte_output = buf.getvalue()

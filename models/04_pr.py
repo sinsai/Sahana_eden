@@ -102,8 +102,10 @@ def address_onvalidation(form):
                         form.vars.L0 = country.name
             else:
                 # Get ids of ancestors at each level.
-                gis.get_parent_per_level(form.vars, form.vars.location_id,
-                                         feature=location)
+                gis.get_parent_per_level(form.vars,
+                                         form.vars.location_id,
+                                         feature=location,
+                                         names=True)
 
 # Addresses as component of person entities
 s3xrc.model.add_component(prefix, resourcename,

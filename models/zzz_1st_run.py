@@ -80,9 +80,9 @@ if populate:
     db.commit()
     if not db(table.id > 0).count():
         table.insert(
-            admin_name = T("Sahana Administrator"),
+            admin_name = T("Sahana Administrator").xml(),
             admin_email = "support@Not Set",
-            admin_tel = T("Not Set"),
+            admin_tel = T("Not Set").xml(),
             theme = 1
         )
 
@@ -1192,8 +1192,8 @@ if populate:
                     dict(c="hms", uacl=acl.ALL, oacl=acl.ALL))
 
 
-    # Security Defaults for all tables (if using 'full' security policy)
-    if session.s3.security_policy not in (1,2,3,4,5):
+    # Security Defaults for all tables (if using 'full' security policy: i.e. native Web2Py)
+    if session.s3.security_policy not in (1, 2, 3, 4, 5):
         table = auth.settings.table_permission_name
         if not db(db[table].id > 0).count():
             # For performance we only populate this once (at system startup)

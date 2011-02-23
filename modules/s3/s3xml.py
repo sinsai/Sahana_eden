@@ -556,7 +556,8 @@ class S3XML(object):
                         marker = self.gis.get_marker(resource.tablename)
                         marker_url = "%s/%s" % (download_url, marker.image)
                     r.element.set(self.ATTRIBUTE.marker, marker_url)
-                    symbol = "White Dot"
+                    # Lookup GPS Marker (Symbol)
+                    symbol = self.gis.get_gps_marker(resource.tablename)
                     r.element.set(self.ATTRIBUTE.sym, symbol)
 
 

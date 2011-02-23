@@ -104,6 +104,130 @@ GEOM_TYPES = {
 # km
 RADIUS_EARTH = 6371.01
 
+# Garmin GPS Symbols
+GPS_SYMBOLS = [
+    "Airport",
+    "Amusement Park"
+    "Ball Park",
+    "Bank",
+    "Bar",
+    "Beach",
+    "Bell",
+    "Boat Ramp",
+    "Bowling",
+    "Bridge",
+    "Building",
+    "Campground",
+    "Car",
+    "Car Rental",
+    "Car Repair",
+    "Cemetery",
+    "Church",
+    "Circle with X",
+    "City (Capitol)",
+    "City (Large)",
+    "City (Medium)",
+    "City (Small)",
+    "Civil",
+    "Controlled Area",
+    "Convenience Store",
+    "Crossing",
+    "Dam",
+    "Danger Area",
+    "Department Store",
+    "Diver Down Flag 1",
+    "Diver Down Flag 2",
+    "Drinking Water",
+    "Exit",
+    "Fast Food",
+    "Fishing Area",
+    "Fitness Center",
+    "Flag",
+    "Forest",
+    "Gas Station",
+    "Geocache",
+    "Geocache Found",
+    "Ghost Town",
+    "Glider Area",
+    "Golf Course",
+    "Green Diamond",
+    "Green Square",
+    "Heliport",
+    "Horn",
+    "Hunting Area",
+    "Information",
+    "Levee",
+    "Light",
+    "Live Theater",
+    "Lodging",
+    "Man Overboard",
+    "Marina",
+    "Medical Facility",
+    "Mile Marker",
+    "Military",
+    "Mine",
+    "Movie Theater",
+    "Museum",
+    "Navaid, Amber",
+    "Navaid, Black",
+    "Navaid, Blue",
+    "Navaid, Green",
+    "Navaid, Green/Red",
+    "Navaid, Green/White",
+    "Navaid, Orange",
+    "Navaid, Red",
+    "Navaid, Red/Green",
+    "Navaid, Red/White",
+    "Navaid, Violet",
+    "Navaid, White",
+    "Navaid, White/Green",
+    "Navaid, White/Red",
+    "Oil Field",
+    "Parachute Area",
+    "Park",
+    "Parking Area",
+    "Pharmacy",
+    "Picnic Area",
+    "Pizza",
+    "Post Office",
+    "Private Field",
+    "Radio Beacon",
+    "Red Diamond",
+    "Red Square",
+    "Residence",
+    "Restaurant",
+    "Restricted Area",
+    "Restroom",
+    "RV Park",
+    "Scales",
+    "Scenic Area",
+    "School",
+    "Seaplane Base",
+    "Shipwreck",
+    "Shopping Center",
+    "Short Tower",
+    "Shower",
+    "Skiing Area",
+    "Skull and Crossbones",
+    "Soft Field",
+    "Stadium",
+    "Summit",
+    "Swimming Area",
+    "Tall Tower",
+    "Telephone",
+    "Toll Booth",
+    "TracBack Point",
+    "Trail Head",
+    "Truck Stop",
+    "Tunnel",
+    "Ultralight Area",
+    "Water Hydrant",
+    "Waypoint",
+    "White Buoy",
+    "White Dot",
+    "Zoo"
+    ]
+
 # -----------------------------------------------------------------------------
 class GIS(object):
     """ GIS functions """
@@ -132,6 +256,7 @@ class GIS(object):
         self.messages.unknown_parent = "Invalid: %(parent_id)s is not a known Location"
         self.messages["T"] = self.T
         self.messages.lock_keys = True
+        self.gps_symbols = GPS_SYMBOLS
 
     # -----------------------------------------------------------------------------
     def abbreviate_wkt(self, wkt, max_length=30):
@@ -434,7 +559,7 @@ class GIS(object):
             return None
 
     # -------------------------------------------------------------------------
-    def get_parent_per_level(self, results, feature_id, feature=None):
+    def get_parent_per_level(self, results, feature_id, feature=None, names=False):
         """
         Adds ancestor of requested feature for each level to supplied dict.
 
@@ -444,6 +569,11 @@ class GIS(object):
         If a dict is not supplied in results, one is created. The results
         dict is returned in either case.
 
+        If names=True (used by address_onvalidation) then:
+        For each ancestor, an entry ancestor.level : ancestor.name is added to
+        results.
+
+        If names=False (used by S3LocationSelectorWidget) then:
         For each ancestor, an entry ancestor.level : ancestor.id is added to
         results.
         """
@@ -462,7 +592,7 @@ class GIS(object):
 
             # Get ids of ancestors at each level.
             strict = self.deployment_settings.get_gis_strict_hierarchy()
-            if path and strict:
+            if path and strict and not names:
                 # No need to do a db lookup for parents in this case -- we
                 # know the levels of the parents from their position in path.
                 # Note ids returned from db are ints, not strings, so be
@@ -476,7 +606,10 @@ class GIS(object):
                 ancestors = self.get_parents(feature_id, feature=feature)
                 if ancestors:
                     for ancestor in ancestors:
-                        results[ancestor.level] = ancestor.id
+                        if names:
+                            results[ancestor.level] = ancestor.name
+                        else:
+                            results[ancestor.level] = ancestor.id
 
         return results
 
@@ -575,7 +708,7 @@ class GIS(object):
             if resourcename in gis_categorised_resources:
                 for i in range(0, len(locations)):
                     locations[i].popup_label = "%s-%s" % (locations[i].name, popup_label)
-                    locations[i].marker = self.get_marker(resourcename, locations[i][tablename].category)
+                    locations[i].marker = self.get_marker(tablename, locations[i][tablename].category)
             else:
                 for i in range(0, len(locations)):
                     locations[i].popup_label = "%s-%s" % (locations[i].name, popup_label)
@@ -852,13 +985,6 @@ class GIS(object):
             return features
 
     # -----------------------------------------------------------------------------
-    # @ToDo Pick one convention: lon, lat or lat, lon. There are pairs of
-    # values where either order represents a land location. The convention,
-    # seemingly everywhere else in GIS IT, is lon first. Except for us
-    # non-GIS folks, who have always said "latitude and longitude". We are
-    # already confused when you omit the minus sign or the NSEW, so don't
-    # mess with our heads by saying (lat, lon) here. Yes, this returns a
-    # dict (good!) -- I mean the function name and the doc comment.
     def get_latlon(self, feature_id, filter=False):
 
         """ Returns the Lat/Lon for a Feature
@@ -876,7 +1002,7 @@ class GIS(object):
         elif isinstance(feature_id, str):
             query = (_locations.uuid == feature_id)
         else:
-            # What else could feature_id be?
+            # Bail out
             return None
 
         feature = db(query).select(
@@ -885,7 +1011,7 @@ class GIS(object):
 
         #query = (_locations.deleted == False)
         #if filter and not deployment_settings.get_gis_display_l0():
-            # @ToDo This query looks wrong. Does it intend to exclude both
+            # @ToDo: This query looks wrong. Does it intend to exclude both
             # L0 and no level? Because it's actually a no-op. If location is
             # L0 then first term is false, but there is a level so the 2nd
             # term is also false, so the combination is false, same as the
@@ -915,7 +1041,7 @@ class GIS(object):
         return None
 
     # -----------------------------------------------------------------------------
-    def get_marker(self, resource, category=None):
+    def get_marker(self, tablename, category=None):
 
         """
             Returns the Marker for a Feature
@@ -925,7 +1051,7 @@ class GIS(object):
 
             Used by s3xrc for Feeds export and by get_feature_layer for Categorised Resources
 
-            @param resource
+            @param tablename
             @param category
         """
 
@@ -940,7 +1066,7 @@ class GIS(object):
         query = None
 
         # 1st choice for a Marker is the Feature Class's
-        query = (table_fclass.resource == resource) & (table_fclass.symbology_id == symbology)
+        query = (table_fclass.resource == tablename) & (table_fclass.symbology_id == symbology)
         if category:
             query = query & (table_fclass.category == category)
         marker_id = db(query).select(table_fclass.marker_id, limitby=(0, 1), cache=cache).first()
@@ -963,6 +1089,38 @@ class GIS(object):
             return marker
         else:
             return ""
+
+    # -----------------------------------------------------------------------------
+    def get_gps_marker(self, tablename, category=None):
+
+        """
+            Returns the GPS Marker (Symbol) for a Feature
+
+            Used by s3xrc for Feeds export
+
+            @param tablename
+            @param category
+        """
+
+        cache = self.cache
+        db = self.db
+        table_fclass = db.gis_feature_class
+
+        config = self.get_config()
+
+        query = None
+
+        # 1st choice for a Marker is the Feature Class's
+        query = (table_fclass.resource == tablename)
+        if category:
+            query = query & (table_fclass.category == category)
+        marker = db(query).select(table_fclass.gps_marker, limitby=(0, 1), cache=cache).first()
+        if marker and marker.gps_marker:
+            return marker.gps_marker
+
+        # 2nd choice for a Marker is the default
+        marker = "White Dot"
+        return marker
 
     # -----------------------------------------------------------------------------
     def greatCircleDistance(self, lat1, lon1, lat2, lon2, quick=True):
@@ -1941,32 +2099,6 @@ OpenLayers.Util.extend( selectPdfControl, {
             else:
                 draw_depress = "false"
             draw_feature = """
-        // Controls for Draft Features
-        // - interferes with popupControl which is active on allLayers
-        //var selectControl = new OpenLayers.Control.SelectFeature(draftLayer, {
-        //    onSelect: onFeatureSelect,
-        //    onUnselect: onFeatureUnselect,
-        //    multiple: false,
-        //    clickout: true,
-        //    isDefault: true
-        //});
-
-        //var removeControl = new OpenLayers.Control.RemoveFeature(draftLayer, {
-        //    onDone: function(feature) {
-        //        console.log(feature)
-        //    }
-        //});
-
-        //var selectButton = new GeoExt.Action({
-            //control: selectControl,
-        //    map: map,
-        //    iconCls: 'searchclick',
-            // button options
-        //    tooltip: '""" + T("Query Feature") + """',
-        //    toggleGroup: 'controls',
-        //    enableToggle: true
-        //});
-
         pointButton = new GeoExt.Action({
             control: new OpenLayers.Control.DrawFeature(draftLayer, OpenLayers.Handler.Point, {
                 // custom Callback
@@ -1999,6 +2131,36 @@ OpenLayers.Util.extend( selectPdfControl, {
             enableToggle: true,
             pressed: """ + draw_depress + """
         });
+        """
+
+        
+            if None:
+                draw_feature += """
+        // Controls for Draft Features
+        // - interferes with popupControl which is active on allLayers
+        //var selectControl = new OpenLayers.Control.SelectFeature(draftLayer, {
+        //    onSelect: onFeatureSelect,
+        //    onUnselect: onFeatureUnselect,
+        //    multiple: false,
+        //    clickout: true,
+        //    isDefault: true
+        //});
+
+        //var removeControl = new OpenLayers.Control.RemoveFeature(draftLayer, {
+        //    onDone: function(feature) {
+        //        console.log(feature)
+        //    }
+        //});
+
+        //var selectButton = new GeoExt.Action({
+            //control: selectControl,
+        //    map: map,
+        //    iconCls: 'searchclick',
+            // button options
+        //    tooltip: '""" + T("Query Feature") + """',
+        //    toggleGroup: 'controls',
+        //    enableToggle: true
+        //});
 
         //var lineButton = new GeoExt.Action({
         //    control: new OpenLayers.Control.DrawFeature(draftLayer, OpenLayers.Handler.Path),
@@ -2056,6 +2218,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    toggleGroup: 'controls'
         //});
         """
+            
             draw_feature2 = """
         // Draw Controls
         //toolbar.add(selectButton);
@@ -3257,9 +3420,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                     fid = feature.cluster[i].fid;
                     """ + uuid_from_fid + """
                     if ( feature.cluster[i].popup_url.match("<id>") != null ) {
-                        url = feature.cluster[i].popup_url.replace("<id>", uuid)
-                    }
-                    else {
+                        url = feature.cluster[i].popup_url.replace("<id>", uuid);
+                    } else {
                         url = feature.cluster[i].popup_url + uuid;
                     }
                     html += "<li><a href='javascript:loadClusterPopup(" + "\\"" + url + "\\", \\"" + id + "\\"" + ")'>" + name + "</a></li>";
@@ -3305,7 +3467,6 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
 
         function loadDetails(url, id, popup) {
-            //$.getS3(
             $.get(
                     url,
                     function(data) {
@@ -3332,6 +3493,10 @@ OpenLayers.Util.extend( selectPdfControl, {
         );
         draftLayer.setVisibility(true);
         map.addLayer(draftLayer);
+        """
+
+            if None:
+                layers_features += """
         //draftLayer.events.on({
         //    "featureselected": onFeatureSelect,
         //    "featureunselected": onFeatureUnselect
@@ -4056,7 +4221,6 @@ OpenLayers.Util.extend( selectPdfControl, {
 
     // Replace Cluster Popup contents with selected Feature Popup
     function loadClusterPopup(url, id) {
-        //$.getS3(
         $.get(
                 url,
                 function(data) {
@@ -4124,9 +4288,6 @@ OpenLayers.Util.extend( selectPdfControl, {
         var iconURL;
 
         var scaleImage = function(){
-            //s3_debug('image', i.src);
-            //s3_debug('initial height', i.height);
-            //s3_debug('initial width', i.width);
             var scaleRatio = i.height/i.width;
             var w = Math.min(i.width, max_w);
             var h = w * scaleRatio;
@@ -4137,8 +4298,6 @@ OpenLayers.Util.extend( selectPdfControl, {
                 }
             i.height = h;
             i.width = w;
-            //s3_debug('post height', i.height);
-            //s3_debug('post width', i.width);
         }
 
         // Features
@@ -4169,7 +4328,6 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
     }
     function onPopupClose(evt) {
-        //currentFeature.popup.hide();
         popupControl.unselectAll();
     }
 

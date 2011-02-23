@@ -782,12 +782,12 @@ class S3Resource(object):
         else:
             fields = (self.table.id,)
 
-        set = self.db(self._query).select(*fields)
+        rows = self.db(self._query).select(*fields)
 
-        self._ids = [row.id for row in set]
+        self._ids = [row.id for row in rows]
 
         if uid in self.table.fields:
-            self._uids = [row[uid] for row in set]
+            self._uids = [row[uid] for row in rows]
 
 
     # Representation ==========================================================
@@ -1139,11 +1139,15 @@ class S3Resource(object):
         if r.representation in json_formats:
             as_json = True # convert the output into JSON
             r.response.headers["Content-Type"] = \
-                content_type.get(r.representation, "text/x-json")
+                content_type.get(r.representation, "application/json")
+        elif r.representation == "rss":
+            as_json = False
+            r.response.headers["Content-Type"] = \
+                content_type.get(r.representation, "application/rss+xml")
         else:
             as_json = False
             r.response.headers["Content-Type"] = \
-                content_type.get(r.representation, "application/xml")
+                content_type.get(r.representation, "text/xml")
 
         # Export the resource
         exporter = self.exporter.xml
@@ -1356,6 +1360,9 @@ class S3Resource(object):
                                 **args)
         except IOError:
             auth.permission.fail()
+        except SyntaxError:
+            e = sys.exc_info()[1]
+            r.error(400, e)
 
 
     # XML functions ===========================================================
@@ -1720,14 +1727,20 @@ class S3Resource(object):
 
         """
 
+        fkey = None
         table = self.table
+
+        if self.parent:
+            component = self.parent.components.get(self.name, None)
+            if component:
+                fkey = component.fkey
 
         if subset:
             return [table[f] for f in subset
-                    if f in table.fields and table[f].readable]
+                    if f in table.fields and table[f].readable and f != fkey]
         else:
             return [table[f] for f in table.fields
-                    if table[f].readable]
+                    if table[f].readable and f != fkey]
 
 
     # -------------------------------------------------------------------------

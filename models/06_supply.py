@@ -43,12 +43,14 @@ if deployment_settings.has_module("logs"):
 
     # Reusable Field
     item_category_id = S3ReusableField("item_category_id", db.supply_item_category, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item_category.id", "%(name)s", sort=True)),
+                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item_category.id",
+                                                "%(name)s",
+                                                sort=True)),
                 represent = lambda id: shn_get_db_field_value(db=db, table="supply_item_category", field="name", look_up=id),
                 label = T("Category"),
-                comment = DIV( _class="tooltip", _title=T("Item Category") + "|" + T("The list of Item categories are maintained by the Administrators.")),
-                #comment = DIV(A(ADD_ITEM_CATEGORY, _class="colorbox", _href=URL(r=request, c="supply", f="item_category", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ITEM_CATEGORY),
-                #          DIV( _class="tooltip", _title=T("Item Category") + "|" + T("The category of the Item."))),
+                comment = DIV( _class="tooltip",
+                               _title="%s|%s" % (T("Item Category"),
+                                                 T("The list of Item categories are maintained by the Administrators."))),
                 ondelete = "RESTRICT"
                 )
 
@@ -102,8 +104,14 @@ if deployment_settings.has_module("logs"):
                 requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item.id", "%(name)s", sort=True)),
                 represent = shn_item_represent,
                 label = T("Item"),
-                comment = DIV(A(ADD_ITEM, _class="colorbox", _href=URL(r=request, c="supply", f="item", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ITEM),
-                          DIV( _class="tooltip", _title=T("Catalog Item") + "|" + ADD_ITEM)),
+                comment = DIV(A(ADD_ITEM,
+                                _class="colorbox",
+                                _href=URL(r=request, c="supply", f="item", args="create", vars=dict(format="popup")),
+                                _target="top",
+                                _title=ADD_ITEM),
+                          DIV( _class="tooltip",
+                               _title="%s|%s" % (T("Catalog Item"),
+                                                 ADD_ITEM))),
                 ondelete = "RESTRICT"
                 )    
     #==============================================================================
@@ -113,7 +121,7 @@ if deployment_settings.has_module("logs"):
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             item_id(notnull=True),
-                            Field("name", length=128, notnull=True), #Ideally this would reference another table for normalising Packet names
+                            Field("name", length=128, notnull=True), # Ideally this would reference another table for normalising Packet names
                             Field("quantity", "double", notnull=True),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
@@ -138,10 +146,14 @@ if deployment_settings.has_module("logs"):
 
     # Reusable Field
     item_packet_id = S3ReusableField("item_packet_id", db.supply_item_packet, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item_packet.id", "%(name)s", sort=True)),
+                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item_packet.id",
+                                                "%(name)s",
+                                                sort=True)),
                 represent = lambda id: shn_get_db_field_value(db=db, table="supply_item_packet", field="name", look_up=id),
                 label = T("Packet"),    
-                comment = DIV(DIV( _class="tooltip", _title=T("Item Packets") + "|" + T("Needs elaboration!!!")),
+                comment = DIV(DIV( _class="tooltip",
+                                   _title="%s|%s" % (T("Item Packets"),
+                                                     T("The way in which an item is normally distributed"))),
                               A( ADD_ITEM_PACKET, 
                                  _class="colorbox", 
                                  _href=URL(r=request, 
@@ -159,7 +171,7 @@ if deployment_settings.has_module("logs"):
                 )    
     
     def shn_record_packet_quantity(r):
-        item_packet_id = r.get("item_packet_id",None)
+        item_packet_id = r.get("item_packet_id", None)
         if item_packet_id:
             return shn_get_db_field_value(db,
                                           "supply_item_packet",

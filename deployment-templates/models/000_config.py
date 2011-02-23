@@ -178,7 +178,8 @@ deployment_settings.osm.oauth_consumer_secret = ""
 # Lock-down access to Map Editing
 #deployment_settings.security.map = True
 # Security Policy (defaults to 1 = Simple)
-#deployment_settings.security.policy = 2 # Editor
+# http://eden.sahanafoundation.org/wiki/S3AAA#System-widePolicy
+#deployment_settings.security.policy = 3 # Controller-ACLs
 # Should users be allowed to register themselves?
 deployment_settings.security.self_registration = True
 # Use 'soft' deletes
@@ -355,6 +356,12 @@ deployment_settings.modules = OrderedDict([
             description = "Rapid Assessments & Flexible Impact Assessments",
             restricted = False,
             module_type = 2,
+        )),
+    ("building", Storage(
+            name_nice = "Building Assessments",
+            description = "Building Safety Assessments",
+            restricted = False,
+            module_type = 10,
         )),
     #("delphi", Storage(
     #        name_nice = T("Delphi Decision Maker"),

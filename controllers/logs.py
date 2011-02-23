@@ -805,7 +805,7 @@ def send_commit():
              )       
 #==============================================================================#    
 def recv_item_json():
-    response.headers["Content-Type"] = "text/x-json"
+    response.headers["Content-Type"] = "application/json"
     db.logs_recv.datetime.represent = lambda dt: dt[:10]
     records =  db( (db.logs_recv_item.logs_req_item_id == request.args[0]) & \
                    (db.logs_recv.id == db.logs_recv_item.logs_recv_id) & \
@@ -823,7 +823,7 @@ def recv_item_json():
     return json_str
 #==============================================================================#    
 def send_item_json():
-    response.headers["Content-Type"] = "text/x-json"
+    response.headers["Content-Type"] = "application/json"
     db.logs_send.datetime.represent = lambda dt: dt[:10]
     records =  db( (db.logs_send_item.logs_req_item_id == request.args[0]) & \
                    (db.logs_send.id == db.logs_send_item.logs_send_id) & \
@@ -841,7 +841,7 @@ def send_item_json():
     return json_str
 #==============================================================================#    
 def commit_item_json():
-    response.headers["Content-Type"] = "text/x-json"
+    response.headers["Content-Type"] = "application/json"
     db.logs_commit.datetime.represent = lambda dt: dt[:10]
     records =  db( (db.logs_commit_item.logs_req_item_id == request.args[0]) & \
                    (db.logs_commit.id == db.logs_commit_item.logs_commit_id) & \

@@ -26,7 +26,6 @@ if deployment_settings.has_module("logs"):
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
-
     table.location_id.requires = IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True)
 
     table.contact_person_id.label = T("Contact Person")
@@ -82,11 +81,20 @@ if deployment_settings.has_module("logs"):
        
     # Reusable Field
     inventory_store_id = S3ReusableField("inventory_store_id", db.inventory_store,
-                requires = IS_NULL_OR(IS_ONE_OF(db, "inventory_store.id", inventory_store_represent, orderby="inventory_store.id", sort=True)),
+                requires = IS_NULL_OR(IS_ONE_OF(db, "inventory_store.id",
+                                                inventory_store_represent,
+                                                orderby="inventory_store.id",
+                                                sort=True)),
                 represent = inventory_store_represent,
                 label = T("Warehouse"),
-                comment = DIV(A(ADD_INVENTORY_STORE, _class="colorbox", _href=URL(r=request, c="inventory", f="store", args="create", vars=dict(format="popup")), _target="top", _title=ADD_INVENTORY_STORE),
-                          DIV( _class="tooltip", _title=T("Warehouse") + "|" + T("A Warehouse is a physical place to store items."))),
+                comment = DIV(A(ADD_INVENTORY_STORE,
+                                _class="colorbox",
+                                _href=URL(r=request, c="inventory", f="store", args="create", vars=dict(format="popup")),
+                                _target="top",
+                                _title=ADD_INVENTORY_STORE),
+                          DIV( _class="tooltip",
+                               _title="%s|%s" % (T("Warehouse"),
+                                                 T("A Warehouse is a physical place to store items.")))),
                 ondelete = "RESTRICT"
                 )
 
@@ -178,7 +186,7 @@ if deployment_settings.has_module("logs"):
                             comments(),
                             migrate=migrate, *s3_meta_fields())
     
-    #@todo Move to 06_supply.py
+    # @ToDo Move to 06_supply.py
     class item_packet_virtualfields(dict, object):
         def __init__(self,
                      tablename):
@@ -240,7 +248,9 @@ if deployment_settings.has_module("logs"):
                                                          sort=True),
                                     represent = shn_inventory_store_item_represent,
                                     label = T("Warehouse Item"),
-                                    comment = DIV( _class="tooltip", _title=T("Warehouse Item") + "|" + T("Select Items from this Warehouse")),
+                                    comment = DIV( _class="tooltip",
+                                                   _title="%s|%s" % (T("Warehouse Item"),
+                                                                     T("Select Items from this Warehouse"))),
                                     ondelete = "RESTRICT"
                                     )    
 
@@ -322,7 +332,7 @@ if deployment_settings.has_module("logs"):
                               )
     # -----------------------------------------------------------------------------
     def store_user_onaccept(form):
-        #Updates the membership of the store group
+        # Updates the membership of the store group
         inventory_store_id = session.rcvars.inventory_store
         store_group_id = shn_get_db_field_value(db,
                                                 "inventory_store",
@@ -336,14 +346,16 @@ if deployment_settings.has_module("logs"):
                            ).select(db.inventory_store_user.user_id)
                        ]
         
-        #Add store users to group not currently in group
+        # Add store users to group not currently in group
         for store_user in store_users:
             if store_user not in group_members:
                 auth.add_membership(group_id = store_group_id,
                                     user_id = store_user)
-        #Delete members from group who are no longer store users
+        # Delete members from group who are no longer store users
         for group_member in group_members:
             if group_member not in store_users:
                 auth.del_membership(group_id = store_group_id,
                                     user_id = store_user)                
-    s3xrc.model.configure(table, onaccept = store_user_onaccept)    
+    s3xrc.model.configure(table, onaccept = store_user_onaccept)
+
+    # -----------------------------------------------------------------------------

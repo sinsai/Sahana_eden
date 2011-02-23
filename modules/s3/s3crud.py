@@ -277,11 +277,9 @@ class S3CRUD(S3Method):
 
             # Cancel button?
             if response.s3.cancel:
-                form[0][-1][0].append(A(T("Cancel"), _href=response.s3.cancel, _class="cancel-btn"))
-                #form[0][-1][0].append(INPUT(_type="button",
-                                            #_value=T("Cancel"),
-                                            #_onclick="window.location='%s';" %
-                                                     #response.s3.cancel))
+                form[0][-1][0].append(A(T("Cancel"),
+                                      _href=response.s3.cancel,
+                                      _class="action-lnk"))
 
             # Navigate-away confirmation
             if self.settings.navigate_away_confirm:
@@ -376,6 +374,8 @@ class S3CRUD(S3Method):
         table = self.table
         tablename = self.tablename
 
+        T = self.manager.T
+
         representation = r.representation
 
         output = dict()
@@ -448,7 +448,7 @@ class S3CRUD(S3Method):
                 output.update(form=item, caller=caller)
 
             # Buttons
-            buttons = self.insert_buttons(r, "update", "delete", "list",
+            buttons = self.insert_buttons(r, "edit", "delete", "list",
                                           record_id=record_id)
             if buttons:
                 output.update(buttons)
@@ -457,14 +457,27 @@ class S3CRUD(S3Method):
             # Hide empty fields from popups on map
             for field in table:
                 if field.readable:
-                    if self.resource._rows.records[0][tablename][field.name] is None:
+                    value = self.resource._rows.records[0][tablename][field.name]
+                    if value is None or value == "" or value == []:
                         field.readable = False
 
+            # Form
             item = self.sqlform(record_id=record_id,
                                 readonly=True,
                                 format=representation)
-            response.view = "plain.html"
             output.update(item=item)
+
+            # Edit Link
+            EDIT = T("Edit")
+            authorised = self.permit("update", tablename, record_id)
+            if authorised and editable:
+                href_edit = r.other(method="update", representation="html")
+                if href_edit:
+                    edit_btn = A(EDIT, _href=href_edit,
+                                 _id="edit-btn", _target="_blank")
+                    output.update(edit_btn=edit_btn)
+
+            response.view = "plain.html"
 
         elif representation == "csv":
             exporter = self.resource.exporter.csv
@@ -590,11 +603,9 @@ class S3CRUD(S3Method):
 
             # Cancel button?
             if response.s3.cancel:
-                form[0][-1][0].append(A(T("Cancel"), _href=response.s3.cancel, _class="cancel-btn"))
-                #form[0][-1][0].append(INPUT(_type="button",
-                                            #_value=T("Cancel"),
-                                            #_onclick="window.location='%s';" %
-                                                     #response.s3.cancel))
+                form[0][-1][0].append(A(T("Cancel"),
+                                        _href=response.s3.cancel,
+                                        _class="action-lnk"))
 
             # Navigate-away confirmation
             if self.settings.navigate_away_confirm:
@@ -1103,7 +1114,8 @@ class S3CRUD(S3Method):
                 prefix, name = from_table._tablename.split("_", 1)
                 audit("read", prefix, name, record=from_record, representation=format)
                 # Get original record
-                row = self.db(from_table.id == from_record).select(limitby=(0,1), *fields).first()
+                row = self.db(from_table.id == from_record).select(limitby=(0, 1),
+                                                                   *fields).first()
                 if row:
                     if isinstance(map_fields, dict):
                         record = Storage([(f, row[map_fields[f]]) for f in map_fields])
@@ -1150,10 +1162,17 @@ class S3CRUD(S3Method):
                                 break
                     if required:
                         response.s3.has_required = True
-                        labels[field.name] = DIV("%s:" % field.label, SPAN(" *", _class="req"))
+                        labels[field.name] = DIV("%s:" % field.label,
+                                                 SPAN(" *", _class="req"))
 
         if record is None:
             record = record_id
+
+        if format == "plain":
+            # Default formstyle works best when we have no formatting
+            formstyle = "table3cols"
+        else:
+            formstyle = self.settings.formstyle
 
         # Get the form
         form = SQLFORM(table,
@@ -1165,7 +1184,7 @@ class S3CRUD(S3Method):
                        showid = False,
                        upload = self.download_url,
                        labels = labels,
-                       formstyle = self.settings.formstyle,
+                       formstyle = formstyle,
                        submit_button = self.settings.submit_button)
 
         # Process the form

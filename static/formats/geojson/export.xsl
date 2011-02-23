@@ -62,35 +62,72 @@
         </xsl:choose>
     </xsl:template>
 
-    <xsl:template match="resource">
+    <!-- ****************************************************************** -->
+    <xsl:template match="resource[@name='gis_location']">
+        <xsl:variable name="uid" select="./@uuid"/>
         <xsl:choose>
-            <xsl:when test="@name='gis_location'">
-                <type>Feature</type>
-                <id>
-                    <xsl:value-of select="@uuid"/>
-                </id>
-                <geometry>
-                    <type>
-                        <xsl:value-of select="data[@field='gis_feature_type']"/>
-                    </type>
-                    <coordinates>
-                        <xsl:text>[</xsl:text>
-                        <xsl:value-of select="data[@field='lon']"/>
-                        <xsl:text>,</xsl:text>
-                        <xsl:value-of select="data[@field='lat']"/>
-                        <xsl:text>]</xsl:text>
-                    </coordinates>
-                </geometry>
+            <xsl:when test="//reference[@resource='gis_location' and @uuid=$uid]">
+                <xsl:for-each select="//reference[@resource='gis_location' and @uuid=$uid]">
+                    <xsl:if test="not(../@name='gis_location')">
+                        <xsl:apply-templates select=".."/>
+                    </xsl:if>
+                </xsl:for-each>
             </xsl:when>
             <xsl:otherwise>
-                <xsl:apply-templates select="./reference[@resource='gis_location']"/>
+                <type>Feature</type>
+                <geometry>
+                    <type>
+                        <xsl:text>Point</xsl:text>
+                    </type>
+                    <coordinates>
+                        <xsl:value-of select="data[@field='lon']"/>
+                    </coordinates>
+                    <coordinates>
+                        <xsl:value-of select="data[@field='lat']"/>
+                    </coordinates>
+                </geometry>
+                <properties>
+                    <id>
+                        <xsl:value-of select="$uid"/>
+                    </id>
+                    <name>
+                        <xsl:value-of select="data[@field='name']"/>
+                    </name>
+                    <marker>
+                        <xsl:value-of select="@marker"/>
+                    </marker>
+                </properties>
             </xsl:otherwise>
         </xsl:choose>
     </xsl:template>
 
-    <xsl:template match="reference[@resource='gis_location']">
-        <xsl:variable name="uid" select="@uuid"/>
-        <xsl:apply-templates select="//resource[@name='gis_location' and @uuid=$uid]"/>
+    <!-- ****************************************************************** -->
+    <xsl:template match="resource">
+        <xsl:if test="./reference[@field='location_id']">
+            <type>Feature</type>
+            <geometry>
+                <type>
+                    <xsl:text>Point</xsl:text>
+                </type>
+                <coordinates>
+                    <xsl:value-of select="reference[@field='location_id']/@lon"/>
+                </coordinates>
+                <coordinates>
+                    <xsl:value-of select="reference[@field='location_id']/@lat"/>
+                </coordinates>
+            </geometry>
+            <properties>
+                <id>
+                    <xsl:value-of select="reference[@field='location_id']/@uuid"/>
+                </id>
+                <name>
+                    <xsl:value-of select="data[@field='name']"/>
+                </name>
+                <marker>
+                    <xsl:value-of select="reference[@field='location_id']/@marker"/>
+                </marker>
+            </properties>
+        </xsl:if>
     </xsl:template>
 
 </xsl:stylesheet>

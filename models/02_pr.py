@@ -254,17 +254,23 @@ table.first_name.requires = IS_NOT_EMPTY(error_message = T("Please enter a First
 # http://eden.sahanafoundation.org/ticket/834
 
 table.pe_label.comment = DIV(DIV(_class="tooltip",
-    _title=T("ID Tag Number") + "|" + T("Number or Label on the identification tag this person is wearing (if any).")))
+    _title="%s|%s" % (T("ID Tag Number"),
+                      T("Number or Label on the identification tag this person is wearing (if any)."))))
 table.first_name.comment =  DIV(_class="tooltip",
-    _title=T("First name") + "|" + T("The first or only name of the person (mandatory)."))
+    _title="%s|%s" % (T("First name"),
+                      T("The first or only name of the person (mandatory).")))
 table.preferred_name.comment = DIV(DIV(_class="tooltip",
-    _title=T("Preferred Name") + "|" + T("The name to be used when calling for or directly addressing the person (optional).")))
+    _title="%s|%s" % (T("Preferred Name"),
+                      T("The name to be used when calling for or directly addressing the person (optional)."))))
 table.local_name.comment = DIV(DIV(_class="tooltip",
-    _title=T("Local Name") + "|" + T("Name of the person in local language and script (optional).")))
+    _title="%s|%s" % (T("Local Name"),
+                      T("Name of the person in local language and script (optional)."))))
 table.nationality.comment = DIV(DIV(_class="tooltip",
-    _title=T("Nationality") + "|" + T("Nationality of the person.")))
+    _title="%s|%s" % (T("Nationality"),
+                      T("Nationality of the person."))))
 table.country.comment = DIV(DIV(_class="tooltip",
-    _title=T("Country of Residence") + "|" + T("The country the person usually lives in.")))
+    _title="%s|%s" % (T("Country of Residence"),
+                      T("The country the person usually lives in."))))
 
 table.missing.represent = lambda missing: (missing and ["missing"] or [""])[0]
 
@@ -413,7 +419,8 @@ table.name.requires = IS_NOT_EMPTY()
 
 table.description.label = T("Group description")
 table.description.comment = DIV(DIV(_class="tooltip",
-    _title=T("Group description") + "|" + T("A brief description of the group (optional)")))
+    _title="%s|%s" % (T("Group description"),
+                      T("A brief description of the group (optional)"))))
 
 # -----------------------------------------------------------------------------
 ADD_GROUP = T("Add Group")
@@ -451,7 +458,8 @@ group_id = S3ReusableField("group_id", db.pr_group,
                                     _target="top",
                                     _title=s3.crud_strings.pr_group.label_create_button),
                                 DIV(DIV(_class="tooltip",
-                                    _title=T("Create Group Entry") + "|" + T("Create a group entry in the registry.")))),
+                                    _title="%s|%s" % (T("Create Group Entry"),
+                                                      T("Create a group entry in the registry."))))),
                            ondelete = "RESTRICT")
 
 # -----------------------------------------------------------------------------
@@ -463,14 +471,24 @@ s3xrc.model.configure(table,
 
 # -----------------------------------------------------------------------------
 # Search method
+#pr_person_search = s3base.S3PersonSearch(
+    #label=T("Name and/or ID"),
+    #comment=T("To search for a person, enter any of the first, middle or last names and/or an ID number of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons."),
+    #fields=["pe_label",
+            #"first_name",
+            #"middle_name",
+            #"last_name",
+            #"identity.value"])
+
 pr_person_search = s3base.S3PersonSearch(
-    label=T("Name and/or ID"),
-    comment=T("To search for a person, enter any of the first, middle or last names and/or an ID number of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons."),
-    fields=["pe_label",
-            "first_name",
-            "middle_name",
-            "last_name",
-            "identity.value"])
+            name="person_search_simple",
+            label=T("Name and/or ID"),
+            comment=T("To search for a person, enter any of the first, middle or last names and/or an ID number of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons."),
+            field=["pe_label",
+                   "first_name",
+                   "middle_name",
+                   "last_name",
+                   "identity.value"])
 
 # Set as default search method
 s3xrc.model.configure(db.pr_person, search_method=pr_person_search)
@@ -528,6 +546,7 @@ if request.function in ("person", "group_membership"):
         msg_record_modified = T("Membership updated"),
         msg_record_deleted = T("Membership deleted"),
         msg_list_empty = T("No Memberships currently registered"))
+
 elif request.function == "group":
     s3.crud_strings[tablename] = Storage(
         title_create = T("Add Member"),

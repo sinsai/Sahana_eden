@@ -162,6 +162,62 @@ shn_url_represent = lambda url: (url and [A(url, _href=url, _target="blank")] or
 
 
 # -----------------------------------------------------------------------------
+def s3_include_debug():
+    """
+    Generates html to include:
+        the js scripts listed in ../static/scripts/tools/sahana.js.cfg
+        the css listed in ../static/scripts/tools/sahana.css.cfg
+    """
+    # Disable printing
+    class dummyStream:
+        """ dummyStream behaves like a stream but does nothing. """
+        def __init__(self): pass
+        def write(self,data): pass
+        def read(self,data): pass
+        def flush(self): pass
+        def close(self): pass
+    save_stdout = sys.stdout    
+    # redirect all print deals
+    sys.stdout = dummyStream()
+    
+    scripts_dir_path = "applications/%s/static/scripts" % request.application
+
+    # Get list of script files
+    sys.path.append( "%s/tools" % scripts_dir_path)    
+    import mergejs    
+
+    configDictCore = {
+        "web2py": scripts_dir_path,
+        "T2":     scripts_dir_path,
+        "S3":     scripts_dir_path
+    }
+    configFilename = "%s/tools/sahana.js.cfg"  % scripts_dir_path
+    (fs, files) = mergejs.getFiles(configDictCore, configFilename)
+    
+    # Enable print
+    sys.stdout = save_stdout
+    
+    include = ""
+    for file in files:
+        include = '%s\n<script src="/%s/static/scripts/%s" type="text/javascript"></script>' \
+            % ( include,
+                request.application,
+                file)
+
+    include = "%s\n <!-- CSS Syles -->" % include            
+    f = open("%s/tools/sahana.css.cfg" % scripts_dir_path, "r")
+    files = f.readlines()
+    for file in files[:-1]:
+        include = '%s\n<link href="/%s/static/styles/%s" rel="stylesheet" type="text/css" />' \
+            % ( include, 
+                request.application,
+                file[:-1]
+               )
+    f.close()
+
+    return XML(include)
+
+# -----------------------------------------------------------------------------
 #def myname(user_id):
 
     #""" Return the first name of the current user """

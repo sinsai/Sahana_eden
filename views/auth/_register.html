@@ -1,8 +1,12 @@
-{{register_form[0].insert(-4, TR(TD(LABEL(T("Mobile Phone") + ":")), INPUT(_name="mobile", _id="mobile"), TD(DIV(_class="tooltip", _title=T("Mobile Phone") + "|" + T("Entering a phone number is optional, but doing so allows you to subscribe to receive SMS messages.")))))}}
+{{register_form[0].insert(-4, TR(TD(LABEL(T("Mobile Phone") + ":"), _class="w2p_fl"), INPUT(_name="mobile", _id="mobile"), TD(DIV(_class="tooltip", _title=T("Mobile Phone") + "|" + T("Entering a phone number is optional, but doing so allows you to subscribe to receive SMS messages.")))))}}
 {{register_form.attributes['_id'] = "regform"}}
+{{if self_registration:}}
+{{register_form[0][-1][1].append(A(T("Login"), _href=URL(r=request, f="user", args="login"), _id="login-btn", _class="action-lnk"))}}
+{{pass}}
 {{include "key.html"}}
+<div class="form-container">
 {{=register_form}}
-
+</div>
 <script src="/{{=request.application}}/static/scripts/S3/jquery.pstrength-min.1.2.js" type="text/javascript"></script>
 <script type="text/javascript">
 $(function() {
@@ -11,8 +15,3 @@ $(function() {
 {{include "auth/validation.js"}}
 </script>
 
-{{if self_registration:}}
-  <p>
-    <a id='login-btn' class='action-btn' href='{{=URL(r=request, f="user", args="login")}}'>{{=T("Login")}}</a>
-  </p>
-{{pass}}

@@ -1,0 +1,7 @@
+{{extend "layout.html"}}
+{{include "_update.html"}}
+<script type="text/javascript">//<![CDATA[
+$(document).ready(function() {
+    $('#rheader + h3').after('{{=T("Choose a posting based on the evaluation and team judgment. Severe conditions endangering the overall building are grounds for an Unsafe posting. Localized Severe and overall Moderate conditions may allow a Restricted Use posting. Post INSPECTED placard at main entrance. Post RESTRICTED USE and UNSAFE placards at all entrances.")}}');
+});
+//]]></script>

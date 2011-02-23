@@ -31,14 +31,6 @@ def req():
     tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
     
-    def postp(r, output):
-        if r.component_name == "req_item":
-            #@todo create a function to add static JS & use min if available
-            response.js = SCRIPT(_src="/%s/static/scripts/S3/S3.logs.js" % request.application ) 
-        return output   
-            
-    response.s3.postp = postp         
-    
     inventory_store_id = shn_get_db_field_value(db,
                                                 "inventory_store_user",
                                                 "inventory_store_id",                                                           

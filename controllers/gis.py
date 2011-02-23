@@ -15,6 +15,7 @@ response.menu_options = [
         #[T("List"), False, URL(r=request, f="location")],
         [T("Search"), False, URL(r=request, f="location", args="search")],
         [T("Add"), False, URL(r=request, f="location", args="create")],
+        #[T("Geocode"), False, URL(r=request, f="geocode_manual")],
     ]],
     [T("Fullscreen Map"), False, URL(r=request, f="map_viewing_client")],
     # Currently broken
@@ -112,7 +113,7 @@ def location():
 
     """ RESTful CRUD controller for Locations """
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # Allow prep to pass vars back to the controller
@@ -125,10 +126,10 @@ def location():
     def prep(r, vars):
 
         def get_location_info():
-            return db(db.gis_location.id == r.id).select(
-                db.gis_location.lat,
-                db.gis_location.lon,
-                db.gis_location.level, limitby=(0, 1)).first()
+            return db(db.gis_location.id == r.id).select(db.gis_location.lat,
+                                                         db.gis_location.lon,
+                                                         db.gis_location.level,
+                                                         limitby=(0, 1)).first()
 
         # Override the default Search Method
         #r.resource.set_handler("search", s3base.S3LocationSearch())
@@ -154,8 +155,7 @@ def location():
             location = get_location_info()
             if location.level == "GR":
                 table.level.writable = False
-                table.parent.readable = False
-                table.parent.writable = False
+                table.parent.readable = table.parent.writable = False
                 table.members.notnull = True
                 # Record that this is a group location. Since we're setting
                 # level to not writable, it won't be in either form.vars or
@@ -163,8 +163,7 @@ def location():
                 # db access.
                 response.s3.location_is_group = True
             else:
-                table.members.writable = False
-                table.members.readable = False
+                table.members.writable = table.members.readable = False
                 response.s3.location_is_group = False
 
         # Don't show street address, postcode for hierarchy on read or update.
@@ -174,10 +173,8 @@ def location():
             except:
                 location = get_location_info()
             if location.level:
-                table.addr_street.writable = False
-                table.addr_street.readable = False
-                table.addr_postcode.writable = False
-                table.addr_postcode.readable = False
+                table.addr_street.writable = table.addr_street.readable = False
+                table.addr_postcode.writable = table.addr_postcode.readable = False
 
         if r.http in ("GET", "POST") and r.representation in shn_interactive_view_formats:
             # Options which are only required in interactive HTML views
@@ -209,24 +206,6 @@ def location():
                 table.uuid.label = "UUID"
                 table.uuid.comment = DIV(_class="stickytip",
                                          _title="UUID|" + T("The") + " <a href='http://eden.sahanafoundation.org/wiki/UUID#Mapping' target=_blank>Universally Unique ID</a>. " + T("Suggest not changing this field unless you know what you are doing."))
-
-            # CRUD Strings
-            LIST_LOCATIONS = T("List Locations")
-            s3.crud_strings[tablename] = Storage(
-                title_create = ADD_LOCATION,
-                title_display = T("Location Details"),
-                title_list = T("Locations"),
-                title_update = T("Edit Location"),
-                title_search = T("Search Locations"),
-                subtitle_create = T("Add New Location"),
-                subtitle_list = LIST_LOCATIONS,
-                label_list_button = LIST_LOCATIONS,
-                label_create_button = ADD_LOCATION,
-                label_delete_button = T("Delete Location"),
-                msg_record_created = T("Location added"),
-                msg_record_modified = T("Location updated"),
-                msg_record_deleted = T("Location deleted"),
-                msg_list_empty = T("No Locations currently available"))
 
             if r.method in (None, "list") and r.record is None:
                 # List
@@ -1714,6 +1693,122 @@ def geocode():
 
     if service == "yahoo":
         return s3base.YahooGeocoder(location, db).get_xml()
+
+# -----------------------------------------------------------------------------
+def geocode_manual():
+
+    """
+        Manually Geocode locations
+
+        @ToDo: make this accessible by Anonymous users?
+    """
+
+    table = db.gis_location
+
+    # Filter
+    query = (table.level == None)
+    # @ToDo: make this role-dependent
+    # - Normal users do the Lat/Lons
+    # - Special users do the Codes
+    filter = (table.lat == None)
+    response.s3.filter = (query & filter)
+
+    # Hide unnecessary fields
+    table.name_dummy.readable = table.name_dummy.writable = False
+    table.code.readable = table.code.writable = False # @ToDo: Role-dependent
+    table.level.readable = table.level.writable = False
+    table.members.readable = table.members.writable = False
+    table.gis_feature_type.readable = table.gis_feature_type.writable = False
+    table.wkt.readable = table.wkt.writable = False
+    table.url.readable = table.url.writable = False
+    table.geonames_id.readable = table.geonames_id.writable = False
+    table.osm_id.readable = table.osm_id.writable = False
+    table.source.readable = table.source.writable = False
+    table.comments.readable = table.comments.writable = False
+    
+    # Customise Labels for specific use-cases
+    #table.name.label = T("Building Name") # Building Assessments-specific
+    #table.parent.label = T("Suburb") # Christchurch-specific
+    
+    # For Special users doing codes
+    #table.code.label = T("Property reference in the council system") # Christchurch-specific 'prupi'
+    #table.code2.label = T("Polygon reference of the rating unit") # Christchurch-specific 'gisratingid'
+
+    # Allow prep to pass vars back to the controller
+    vars = {}
+
+    # Pre-processor
+    def prep(r, vars):
+        def get_location_info():
+            return db(db.gis_location.id == r.id).select(db.gis_location.lat,
+                                                         db.gis_location.lon,
+                                                         db.gis_location.level,
+                                                         limitby=(0, 1)).first()
+
+        if r.method in (None, "list") and r.record is None:
+            # List
+            pass
+        elif r.method in ("delete", "search"):
+            pass
+        else:
+            # Add Map to allow locations to be found this way
+            # @ToDo: DRY with one in location()
+            config = gis.get_config()
+            lat = config.lat
+            lon = config.lon
+            zoom = config.zoom
+            feature_queries = []
+
+            if r.method == "create":
+                add_feature = True
+                add_feature_active = True
+            else:
+                if r.method == "update":
+                    add_feature = True
+                    add_feature_active = False
+                else:
+                    # Read
+                    add_feature = False
+                    add_feature_active = False
+
+                try:
+                    location
+                except:
+                    location = get_location_info()
+                if location and location.lat is not None and location.lon is not None:
+                    lat = location.lat
+                    lon = location.lon
+                # Same as a single zoom on a cluster
+                zoom = zoom + 2
+
+            # @ToDo: Does map make sense if the user is updating a group?
+            # If not, maybe leave it out. OTOH, might be nice to select
+            # admin regions to include in the group by clicking on them in
+            # the map. Would involve boundaries...
+            _map = gis.show_map(lat = lat,
+                                lon = lon,
+                                zoom = zoom,
+                                feature_queries = feature_queries,
+                                add_feature = add_feature,
+                                add_feature_active = add_feature_active,
+                                toolbar = True,
+                                collapsed = True)
+
+            # Pass the map back to the main controller
+            vars.update(_map=_map)
+        return True
+    response.s3.prep = lambda r, vars=vars: prep(r, vars)
+
+    s3xrc.model.configure(table, listadd=False,
+                          list_fields=["id", "name", "address", "parent"])
+    
+    output = s3_rest_controller("gis", "location")
+
+    _map = vars.get("_map", None)
+    if _map and isinstance(output, dict):
+        output.update(_map=_map)
+
+    return output
 
 # -----------------------------------------------------------------------------
 def geoexplorer():

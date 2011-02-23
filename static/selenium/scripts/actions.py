@@ -13,7 +13,7 @@ class Action(unittest.TestCase):
     def _openReport(self):
         # used to save the diagnostics to a file
         if self._diag:
-            self._diagResults = open('diagResults.txt', 'a')
+            self._diagResults = open('diag/Results.txt', 'a')
             self._diagResults.write(time.strftime('New Search run %d %b %Y (%H:%M:%S)\n'))
     
     def closeReport(self, msg):
@@ -48,7 +48,7 @@ class Action(unittest.TestCase):
         msg = "Unable to log in as " + username
         if reveal:
             msg += " with password " + password
-        self.assertTrue(self.successMsg("Logged in"),msg)
+        self.assertTrue(self.successMsg("Logged in"), msg)
 
     def logout(self):
         # logout of the system
@@ -56,7 +56,6 @@ class Action(unittest.TestCase):
         if sel.is_element_present("link=Logout"):
             sel.click("link=Logout")
             self.successMsg("Logged out")
-#            sel.wait_for_page_to_load("30000")
 
     # Searching methods
     # _performSearch
@@ -202,7 +201,8 @@ class Action(unittest.TestCase):
         sel.wait_for_page_to_load("30000")
         if message != None:
             return self.successMsg(message)
-        
+
+
     def checkForm (self, elementList, buttonList, helpList):
         # Method to check the layout of a form
         # elementList:  data to check the elements on the form
@@ -215,26 +215,44 @@ class Action(unittest.TestCase):
         for element in elementList:
             result = self._element(element)
             if result == True:
-                if len(element)>2 and element[2]: elements.append(element[1])
+                if len(element) > 2 and element[2]: elements.append(element[1])
             else: failed.append(result)
         for name in buttonList:
-            self.button(name)
+            self._button(name)
         for title in helpList:
-            self.helpBallon(title)
+            self._helpBalloon(title)
         if len(failed) > 0:
             msg = '/n'.join(failed)
             self.fail(msg)
         if len(elements) > 0:
             print "Verified the following form elements %s" % elements
 
-    # Method to check that form _element is present
-    # The elementDetails parameter is a list of up to 4 elements
-    # elementDetails[0] the type of HTML tag
-    # elementDetails[1] the id associated with the HTML tag
-    # elementDetails[2] *optional* the visibility of the HTML tag
-    # elementDetails[3] *optional* the value or text of the HTML tag
-    # return            True on success error message on failure
+    def _button(self, name):
+        # Method to check that form button is present
+        sel = self.sel
+        element = '//input[@value="%s"]' % (name)
+        errmsg = "%s button is missing" % (name)
+        self.assertTrue(sel.is_element_present(element), errmsg)
+        print "%s button is present" % (name)        
+
+    def _helpBalloon(self, helpTitle):
+        # Method to check that the help message is displayed
+        # helpTitle: the balloon help that is displyed on the form 
+        sel = self.sel
+        element = "//div[contains(@title,'%s')]" % (helpTitle)
+        self.assertTrue(sel.is_element_present(element))
+        sel.mouse_over(element)
+        self.assertFalse(sel.is_element_present(element), "Help %s is missing" % (helpTitle))
+        print "Help %s is present" % (helpTitle)
+
     def _element(self, elementDetails):
+        # Method to check that form _element is present
+        # The elementDetails parameter is a list of up to 4 elements
+        # elementDetails[0] the type of HTML tag
+        # elementDetails[1] the id associated with the HTML tag
+        # elementDetails[2] *optional* the visibility of the HTML tag
+        # elementDetails[3] *optional* the value or text of the HTML tag
+        # return            True on success error message on failure
         sel = self.sel
         type = elementDetails[0]
         id = elementDetails[1]
@@ -250,8 +268,8 @@ class Action(unittest.TestCase):
         elementDetails = '//%s[@id="%s"]' % (type, id)
         if visible:
             if not sel.is_element_present(elementDetails): return "%s element %s is missing" % (type, id)
-        if sel.is_visible(elementDetails) != visible: return "%s element %s doesn't have a visibility of %s"  % (type, id, visible)
-        if value!= None:
+        if sel.is_visible(elementDetails) != visible: return "%s element %s doesn't have a visibility of %s" % (type, id, visible)
+        if value != None:
             actual = sel.get_value(elementDetails)
             msg = "expected %s for element %s doesn't equal the actual value of %s" % (value, id, actual)
             if value != actual: return msg
@@ -298,10 +316,46 @@ class Action(unittest.TestCase):
             self.assertTrue(key in heading, msg % (key, heading))
             self.assertTrue(value in heading, msg % (value, heading))
 
+    def clickTab(self, name):
+        # Method to click on a tab
+        sel = self.sel
+        element = "//div[@id='rheader_tabs']/span/a[text()='%s']" % (name)
+        sel.click(element)
+        sel.wait_for_page_to_load("30000")
+        
+    def btnLink(self, id, name):
+        # Method to check button link
+        sel = self.sel
+        element = '//a[@id="%s"]' % (id)
+        errMsg = "%s button is missing" % (name)
+        self.assertTrue(sel.is_element_present(element), errMsg)
+        self.assertTrue(sel.get_text(element), errMsg)
+        print "%s button is present" % (name)
+        
+    def noBtnLink(self, id, name):
+        # Method to check button link is not present
+        sel = self.sel
+        element = '//a[@id="%s"]' % (id)
+        errMsg = "Unexpected presence of %s button" % (name)
+        if sel.is_element_present(element):
+            self.assertFalse(sel.get_text(element), errMsg)
+        print "%s button is not present" % (name)
 
+    def deleteObject(self, page, objName, type="Object"):
+        sel = self.sel
+        # need the following line which reloads the page otherwise the search gets stuck  
+        sel.open(page)
+        try:
+            self.searchUnique(objName)
+            sel.click("link=Delete")
+            self.assertTrue(re.search(r"^Sure you want to delete this object[\s\S]$", sel.get_confirmation()))
+            if self.findResponse("%s deleted" % type, "Integrity error:"):
+                print "%s %s deleted" % (type, objName)
+            else:
+                print "Failed to delete %s %s" % (type, objName)
+        except:
+            print "Failed to delete %s %s from page %s" % (type, objName, page)
 
-    
-    
     def registerUser(self, first_name, last_name, email, password):
         first_name = first_name.strip()
         last_name = last_name.strip()
@@ -382,62 +436,4 @@ class Action(unittest.TestCase):
         self.assertTrue(self.successMsg("User deleted"))
         self.search(email, r"No matching records found")
         print "User %s deleted" % (email)
-
-    def deleteObject(self, page, objName, type="Object"):
-        sel = self.sel
-        # need the following line which reloads the page otherwise the search gets stuck  
-        sel.open(page)
-        try:
-            self.searchUnique(objName)
-            sel.click("link=Delete")
-            self.assertTrue(re.search(r"^Sure you want to delete this object[\s\S]$", sel.get_confirmation()))
-            if self.findResponse("%s deleted" % type, "Integrity error:"):
-                print "%s %s deleted" % (type, objName)
-            else:
-                print "Failed to delete %s %s" % (type, objName)
-        except:
-            print "Failed to delete %s %s from page %s" % (type, objName, page)
-
-                
-    # Method to click on a tab
-    def clickTab(self, name):
-        sel = self.sel
-        element = "//div[@id='rheader_tabs']/span/a[text()='%s']" % (name)
-        sel.click(element)
-        sel.wait_for_page_to_load("30000")
-        
-    # Method to check button link
-    def btnLink(self, id, name):
-        sel = self.sel
-        element = '//a[@id="%s"]' % (id)
-        errMsg = "%s button is missing" % (name)
-        self.assertTrue(sel.is_element_present(element), errMsg)
-        self.assertTrue(sel.get_text(element),errMsg)
-        print "%s button is present" % (name)
-        
-    # Method to check button link is not present
-    def noBtnLink(self, id, name):
-        sel = self.sel
-        element = '//a[@id="%s"]' % (id)
-        errMsg = "Unexpected presence of %s button" % (name)
-        if sel.is_element_present(element):
-            self.assertFalse(sel.get_text(element), errMsg)
-        print "%s button is not present" % (name)
-
-    # Method to check that form button is present
-    def button(self, name):
-        sel = self.sel
-        element = '//input[@value="%s"]' % (name)
-        errmsg = "%s button is missing" % (name)
-        self.assertTrue(sel.is_element_present(element), errmsg)
-        print "%s button is present" % (name)
-        
-    # Method to check that the help message is displayed
-    def helpBallon(self, helpTitle):
-        sel = self.sel
-        element = "//div[contains(@title,'%s')]" % (helpTitle)
-        self.assertTrue(sel.is_element_present(element))
-        sel.mouse_over(element)
-        self.assertFalse(sel.is_element_present(element), "Help %s is missing" % (helpTitle))
-        print "Help %s is present" % (helpTitle)
 

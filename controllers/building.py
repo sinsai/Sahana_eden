@@ -14,6 +14,8 @@
     http://eden.sahanafoundation.org/wiki/BluePrintBuildingAssessments
     
     @ToDo: add other forms
+    Urgent: Level 2 of the ~ATC-20
+    - make this a 1-1 component of the rapid form?
 """
 
 module = request.controller
@@ -28,6 +30,7 @@ def shn_menu():
         [T("ATC-20"), False, aURL(r=request, f="atc20"), [
             [T("List"), False, aURL(r=request, f="atc20")],
             [T("Add"), False, aURL(p="create", r=request, f="atc20", args="create")],
+            [T("Report"), False, aURL(r=request, f="atc20_report")],
             #[T("Search"), False, URL(r=request, f="atc20", args="search")],
         ]],
     ]
@@ -130,4 +133,32 @@ def shn_atc20_rheader(r, tabs=[]):
                 return rheader
     return None
 
+# -----------------------------------------------------------------------------
+def atc20_report():
+    """
+        A report providing assessment totals, and breakdown by assessment type and status.
+        e.g. Level 1 (red, yellow, green) Level 2 (R1-R3, Y1-Y2, G1-G2)
+
+        @ToDo: Make into a Custom Method to be able to support Table ACLs
+        (currently protected by Controller ACL)
+    """
+
+    table = db.building_atc20
+    level1 = Storage()
+    # Which is more efficient?
+    # A) 4 separate .count() in DB
+    # B) Pulling all records into Python & doing counts in Python
+    query = (table.deleted == False)
+    level1.total = db(query).count()
+    filter = (table.posting == 1)
+    level1.green = db(query & filter).count()
+    filter = (table.posting == 2)
+    level1.yellow = db(query & filter).count()
+    filter = (table.posting == 3)
+    level1.red = db(query & filter).count()
+    
+    level2 = Storage()
+    
+    return dict(level1=level1,
+                level2=level2)
 # -----------------------------------------------------------------------------

@@ -173,7 +173,7 @@ if deployment_settings.has_module(module):
                                   comment="(%s)" % T("Exclude contents"),
                                   requires=IS_IN_SET(building_estimated_damage),
                                   represent=lambda opt: building_estimated_damage.get(opt, UNKNOWN_OPT)),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
 
     # CRUD strings
     ADD_ASSESSMENT = T("Add ATC-20 Rapid Assessment")

@@ -1,5 +1,5 @@
 {{extend "layout.html"}}
-{{include "_create.html"}}
+{{include "_list_create.html"}}
 <script type="text/javascript">//<![CDATA[
 $(document).ready(function() {
     // Hide detail fields
@@ -23,12 +23,12 @@ $(document).ready(function() {
     // Set the L1 to Christchurch
     //$('#gis_location_L1').val(247);
     // Hide the Search button
-    //$('#gis_location_search-btn').hide();
+    $('#gis_location_search-btn').hide();
 
     // Open up the 'Add New Location' form
     $('#gis_location_add-btn').click();
     // Hide the Cancel button
-    //$('#gis_location_cancel-btn').hide();
+    $('#gis_location_cancel-btn').hide();
 
     // Hide the name field & pre-populate
     //$('#gis_location_name_label').hide();
@@ -46,7 +46,7 @@ $(document).ready(function() {
 
     // Triage form
     var triage_checkbox = 'Triage form?<br><input type="checkbox" value="on" id="triage" class="boolean"> (Hides optional fields)';
-    $('#rheader').after(triage_checkbox);
+    $('#list-add > h3').after(triage_checkbox);
     $('#triage').change(function() {
 		if ($('#triage:checked').val() !== undefined) {
             // Checked: hide the optional fields

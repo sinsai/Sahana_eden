@@ -12,7 +12,7 @@
     http://www.atcouncil.org/pdfs/rapid.pdf
     This is actually based on the New Zealand variant:
     http://eden.sahanafoundation.org/wiki/BluePrintBuildingAssessments
-    
+
     @ToDo: add other forms
     Urgent: Level 2 of the ~ATC-20
     - make this a 1-1 component of the rapid form?
@@ -61,24 +61,27 @@ def nzseel1():
     table = db[tablename]
 
     # Pre-populate Inspector ID
-    if auth.is_logged_in():
-        person_id = db((db.pr_person.uuid == session.auth.user.person_uuid)).select(db.pr_person.id,
-                                                                                    limitby=(0, 1)).first()
-        if person_id:
-            table.person_id.default = person_id.id
+    table.person_id.default = s3_logged_in_person()
+    #if auth.is_logged_in():
+        #person_id = db((db.pr_person.uuid == session.auth.user.person_uuid)).select(db.pr_person.id,
+                                                                                    #limitby=(0, 1)).first()
+        #if person_id:
+            #table.person_id.default = person_id.id
 
     # Post-processor
-    def postp(r, output):
-        shn_action_buttons(r, deletable=False)
-        # Redirect to read/edit view rather than list view
-        if r.representation == "html" and r.method == "create":
-            r.next = r.other(method="",
-                             record_id=s3xrc.get_session("building", "nzseel1"))
-        return output
-    response.s3.postp = postp
+    #def postp(r, output):
+        #shn_action_buttons(r, deletable=False)
+        ## Redirect to read/edit view rather than list view
+        #if r.representation == "html" and r.method == "create":
+            #r.next = r.other(method="",
+                             #record_id=s3xrc.get_session("building", "nzseel1"))
+        #return output
+    #response.s3.postp = postp
 
     # Subheadings in forms:
     s3xrc.model.configure(table,
+        deletable=False,
+        create_next = URL(r=request, c=module, f=resourcename, args="[id]"),
         subheadings = {
             ".": "name", # Description in ATC-20
             "%s / %s" % (T("Overall Hazards"), T("Damage")): "collapse",
@@ -150,9 +153,9 @@ def report():
     level1.yellow = db(query & filter).count()
     filter = (table.posting == 3)
     level1.red = db(query & filter).count()
-    
+
     level2 = Storage()
-    
+
     return dict(level1=level1,
                 level2=level2)
 # -----------------------------------------------------------------------------

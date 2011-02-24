@@ -1408,13 +1408,63 @@ class S3QueryBuilder(object):
 
 
     # -------------------------------------------------------------------------
+    def parse_bbox_query(self, resource, vars):
+        """
+        Build a BBOX filter query
+        Syntax ?bbox{.fkfield}=minLon,minLat,maxLon,maxLat
+
+        @param resource: the resource
+        @param vars: dict of URL vars
+
+        """
+
+        db = resource.db
+
+        locations = db.gis_location
+        table = resource.table
+
+        for k in vars:
+            if k[:4] == "bbox":
+                fname = None
+                if k.find(".") != -1:
+                    fname = k.split(".")[1]
+                elif resource.tablename != "gis_location":
+                    for f in resource.table.fields:
+                        if str(table[f].type) == "reference gis_location":
+                            fname = f
+                            break
+                if fname is None or fname not in resource.table.fields:
+                    # Field not found - ignore
+                    continue
+                try:
+                    minLon, minLat, maxLon, maxLat = vars[k].split(",")
+                except:
+                    # Badly-formed bbox - ignore
+                    continue
+                else:
+                    bbox_filter = ((locations.lon > minLon) & \
+                                   (locations.lon < maxLon) & \
+                                   (locations.lat > minLat) & \
+                                   (locations.lat < maxLat))
+                    if fname is not None:
+                        # Need a join
+                        join = (locations.id == table[fname])
+                        return (join & bbox_filter)
+                    else:
+                        return bbox_filter
+
+        return None
+
+
+    # -------------------------------------------------------------------------
     def parse_url_rlinks(self, resource, vars):
 
-        """ Parse URL resource link queries. Syntax:
-            ?linked{.<component>}.<from|to>.<table>={link_class},<ANY|ALL|list_of_ids>
+        """
+        Parse URL resource link queries. Syntax:
+        ?linked{.<component>}.<from|to>.<table>={link_class},<ANY|ALL|list_of_ids>
 
-            @param resource: the resource
-            @param vars: dict of URL vars
+        @param resource: the resource
+        @param vars: dict of URL vars
 
         """
 
@@ -1542,9 +1592,11 @@ class S3QueryBuilder(object):
         q = Storage(context=c)
 
         for k in vars:
+            if k == "bbox":
+                continue
             if k.find(".") > 0:
                 rname, field = k.split(".", 1)
-                if rname in ("context", "linked"):
+                if rname in ("context", "linked", "bbox"):
                     continue
                 elif rname == resource.name:
                     table = resource.table
@@ -1716,19 +1768,6 @@ class S3QueryBuilder(object):
             remaining = (table[deletion_status] == False)
             mquery = remaining & mquery
 
-        # BBOX Query (Bounding Box)
-        if vars and "bbox" in vars:
-            try:
-                minLon, minLat, maxLon, maxLat = vars.bbox.split(",")
-                locations = db.gis_location
-                for ttuple in locations._referenced_by:
-                    if ttuple[0] == str(table):
-                        bbox_filter = (locations.lon > minLon) & (locations.lon < maxLon) & (locations.lat > minLat) & (locations.lat < maxLat)
-                        mquery = bbox_filter & mquery
-            except:
-                # Badly-formed bbox - ignore
-                pass
-
         # Component Query
         parent = resource.parent
         if parent:
@@ -1754,6 +1793,11 @@ class S3QueryBuilder(object):
             if id or uid:
                 if name not in url_query:
                     url_query[name] = Storage()
+
+            # BBOX query
+            bbox = self.parse_bbox_query(resource, vars)
+            if bbox is not None:
+                mquery = mquery & bbox
 
             # Collect IDs
             if id:

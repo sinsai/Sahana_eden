@@ -12,10 +12,10 @@
 
     Postearthquake Safety Evaluation of Buildings: ATC-20
     http://www.atcouncil.org/pdfs/rapid.pdf
-    
+
     This is actually based on the New Zealand variant:
     http://eden.sahanafoundation.org/wiki/BluePrintBuildingAssessments
-    
+
     @ToDo: add other forms (ATC-38, ATC-45)
 """
 
@@ -24,11 +24,6 @@ module = "building"
 if deployment_settings.has_module(module):
 
     # Options
-    am_pm = {
-        1:T("AM"),
-        2:T("PM")
-    }
-
     building_area_inspected = {
         1:T("Exterior and Interior"),
         2:T("Exterior Only")
@@ -45,7 +40,7 @@ if deployment_settings.has_module(module):
         8:T("RC frame with masonry infill"),
         99:T("Other")
     }
-    
+
     building_primary_occupancy_opts = {
         1:T("Dwelling"),
         2:T("Other residential"),
@@ -58,7 +53,7 @@ if deployment_settings.has_module(module):
         9:T("Heritage Listed"), # Historic
         99:T("Other")
     }
-    
+
     building_evaluation_condition = {
         1:T("Minor/None"),
         2:T("Moderate"),
@@ -81,25 +76,39 @@ if deployment_settings.has_module(module):
         3:"%s (%s)" % (T("Unsafe"), T("Red")),
     }
 
+    uuid8anum = lambda: str(uuid.uuid4())[0:4] + '-' + str(uuid.uuid4())[4:8]
+
+    s3uuid_8char = SQLCustomType(type = 'string',
+                                 native = 'VARCHAR(64)',
+                                 encoder = (lambda x: "'%s'" % (uuid8anum if x=="" else str(x).replace("'", "''"))),
+                                 decoder = (lambda x: x))
+
     # NZSEE Level 1 (~ATC-20 Rapid Evaluation) Safety Assessment Form ---------
     resourcename = "nzseel1"
     tablename = "%s_%s" % (module, resourcename)
 
     table = db.define_table(tablename,
+                            Field("ticket_id",
+                                  type=s3uuid_8char,
+                                  length=64,
+                                  notnull=True,
+                                  unique=True,
+                                  writable=False,
+                                  default=uuid8anum,
+                                  label = T("Ticket ID"),
+                                  represent = lambda id: id and id.upper() or T("None")),
                             person_id(label=T("Inspector ID"), empty=False), # pre-populated in Controller
                             organisation_id(label=T("Territorial Authority")), # Affiliation in ATC20 terminology
-                            Field("date", "date", default=request.now,
-                                  requires=IS_DATE(),
-                                  label=T("Inspection date")),
-                            Field("daytime", "integer", label=T("Inspection time"),
-                                  requires=IS_IN_SET(am_pm),
-                                  represent=lambda opt: am_pm.get(opt, UNKNOWN_OPT)),
+                            Field("date", "datetime", default=request.now,
+                                  requires=IS_DATETIME(),
+                                  label=T("Inspection date and time")),
+                            #Field("daytime", "time", label=T("Inspection time")),
                             Field("area", "integer", label=T("Areas inspected"),
                                   requires=IS_NULL_OR(IS_IN_SET(building_area_inspected)),
                                   represent=lambda opt: building_area_inspected.get(opt, UNKNOWN_OPT)),
                             #Field("name", label=T("Building Name"), requires=IS_NOT_EMPTY()), # Included in location_id
                             location_id(empty=False),
-                            Field("name_short", label=T("Building Short Name")),
+                            Field("name_short", label=T("Building Short Name/Business Name")),
                             Field("contact_name", label=T("Contact Name"), requires=IS_NOT_EMPTY()),
                             Field("contact_phone", label=T("Contact Phone"), requires=IS_NOT_EMPTY()),
                             Field("stories_above", "integer", label=T("Storeys at and above ground level")), # Number of stories above ground
@@ -190,4 +199,13 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("NZEE Level 1 Assessment updated"),
         msg_record_deleted = T("NZEE Level 1 Assessment deleted"),
         msg_list_empty = T("No NZEE Level 1 Assessments currently registered"))
+
+    building_nzseel1_search = s3base.S3Find(
+            name="nzseel1_search_simple",
+            label=T("Ticket ID"),
+            comment=T("To search for an assessment, enter any portion the ticket number of the assessment. You may use % as wildcard. Press 'Search' without input to list all assessments."),
+            field=["ticket_id"])
+
+    # Set as default search method
+    s3xrc.model.configure(table, search_method=building_nzseel1_search)
     # -------------------------------------------------------------------------

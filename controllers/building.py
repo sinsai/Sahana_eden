@@ -12,7 +12,7 @@
     http://www.atcouncil.org/pdfs/rapid.pdf
     This is actually based on the New Zealand variant:
     http://eden.sahanafoundation.org/wiki/BluePrintBuildingAssessments
-    
+
     @ToDo: add other forms
     Urgent: Level 2 of the ~ATC-20
     - make this a 1-1 component of the rapid form?
@@ -29,10 +29,10 @@ if module not in deployment_settings.modules:
 def shn_menu():
     menu = [
         [T("NZSEE Level 1"), False, aURL(r=request, f="nzseel1"), [
+            [T("Submit New (triage)"), False, aURL(p="create", r=request, f="nzseel1", args="create", vars={"triage":1})],
+            [T("Submit New (full form)"), False, aURL(p="create", r=request, f="nzseel1", args="create")],
+            [T("Search"), False, aURL(r=request, f="nzseel1", args="search")],
             [T("List"), False, aURL(r=request, f="nzseel1")],
-            [T("Add"), False, aURL(p="create", r=request, f="nzseel1", args="create")],
-            [T("Add Triage"), False, aURL(p="create", r=request, f="nzseel1", args="create", vars={"triage":1})],
-            #[T("Search"), False, URL(r=request, f="nzseel1", args="search")],
         ]],
         [T("Report"), False, aURL(r=request, f="report")]
     ]
@@ -61,24 +61,12 @@ def nzseel1():
     table = db[tablename]
 
     # Pre-populate Inspector ID
-    if auth.is_logged_in():
-        person_id = db((db.pr_person.uuid == session.auth.user.person_uuid)).select(db.pr_person.id,
-                                                                                    limitby=(0, 1)).first()
-        if person_id:
-            table.person_id.default = person_id.id
-
-    # Post-processor
-    def postp(r, output):
-        shn_action_buttons(r, deletable=False)
-        # Redirect to read/edit view rather than list view
-        if r.representation == "html" and r.method == "create":
-            r.next = r.other(method="",
-                             record_id=s3xrc.get_session("building", "nzseel1"))
-        return output
-    response.s3.postp = postp
+    table.person_id.default = s3_logged_in_person()
 
     # Subheadings in forms:
     s3xrc.model.configure(table,
+        deletable=False,
+        create_next = URL(r=request, c=module, f=resourcename, args="[id]"),
         subheadings = {
             ".": "name", # Description in ATC-20
             "%s / %s" % (T("Overall Hazards"), T("Damage")): "collapse",
@@ -116,10 +104,16 @@ def nzseel1_rheader(r, tabs=[]):
                 rheader = DIV(TABLE(
                                 TR(
                                     TH("%s: " % T("Person")), person,
-                                    TH("%s: " % T("Mobile")), mobile
+                                    TH("%s: " % T("Mobile")), mobile,
                                   ),
                                 TR(
-                                    TH("%s: " % T("Location")), location,TH("%s: " % T("Date")), assess.date
+                                    TH("%s: " % T("Location")), location,
+                                    TH("%s: " % T("Date")), assess.date
+                                  ),
+                                TR(
+                                    TH(""), "",
+                                    TH("%s: " % T("Ticket ID")),
+                                        r.table.ticket_id.represent(assess.ticket_id),
                                   ),
                                 ),
                               rheader_tabs)
@@ -150,9 +144,9 @@ def report():
     level1.yellow = db(query & filter).count()
     filter = (table.posting == 3)
     level1.red = db(query & filter).count()
-    
+
     level2 = Storage()
-    
+
     return dict(level1=level1,
                 level2=level2)
 # -----------------------------------------------------------------------------

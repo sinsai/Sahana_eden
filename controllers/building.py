@@ -29,10 +29,10 @@ if module not in deployment_settings.modules:
 def shn_menu():
     menu = [
         [T("NZSEE Level 1"), False, aURL(r=request, f="nzseel1"), [
+            [T("New"), False, aURL(p="create", r=request, f="nzseel1", args="create")],
+            [T("Search"), False, aURL(r=request, f="nzseel1", args="search")],
             [T("List"), False, aURL(r=request, f="nzseel1")],
-            [T("Add"), False, aURL(p="create", r=request, f="nzseel1", args="create")],
             [T("Add Triage"), False, aURL(p="create", r=request, f="nzseel1", args="create", vars={"triage":1})],
-            #[T("Search"), False, URL(r=request, f="nzseel1", args="search")],
         ]],
         [T("Report"), False, aURL(r=request, f="report")]
     ]
@@ -119,10 +119,16 @@ def nzseel1_rheader(r, tabs=[]):
                 rheader = DIV(TABLE(
                                 TR(
                                     TH("%s: " % T("Person")), person,
-                                    TH("%s: " % T("Mobile")), mobile
+                                    TH("%s: " % T("Mobile")), mobile,
                                   ),
                                 TR(
-                                    TH("%s: " % T("Location")), location,TH("%s: " % T("Date")), assess.date
+                                    TH("%s: " % T("Location")), location,
+                                    TH("%s: " % T("Date")), assess.date
+                                  ),
+                                TR(
+                                    TH(""), "",
+                                    TH("%s: " % T("Ticket ID")),
+                                        r.table.ticket_id.represent(assess.ticket_id),
                                   ),
                                 ),
                               rheader_tabs)

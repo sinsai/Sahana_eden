@@ -72,6 +72,7 @@ class S3RecordMerger(S3CRUD):
         self.settings = self.manager.s3.crud
 
         # Environment
+        db = self.db
         session = self.manager.session
         request = self.manager.request
         response = self.manager.response
@@ -99,8 +100,13 @@ class S3RecordMerger(S3CRUD):
                 # Need a source record ID
                 r.error(501, self.manager.ERROR.BAD_RECORD)
 
+            source = db(table.id==source_id).select(table.ALL,
+                                                    limitby=(0, 1)).first()
+            if not source:
+                r.error(501, self.manager.ERROR.BAD_RECORD)
+
             # Generate form
-            form = self.merge_form(merge_id, source_id)
+            form = self.merge_form(merge_id, source)
 
             # Process form
             pass
@@ -122,7 +128,7 @@ class S3RecordMerger(S3CRUD):
     # -------------------------------------------------------------------------
     def merge_form(self,
                    merge_id,
-                   source_id,
+                   source,
                    onvalidation=None,
                    onaccept=None,
                    message="Records merged",
@@ -133,6 +139,7 @@ class S3RecordMerger(S3CRUD):
         """
 
         # Environment
+        db = self.db
         session = self.manager.session
         request = self.manager.request
         response = self.manager.response
@@ -178,6 +185,16 @@ class S3RecordMerger(S3CRUD):
                     response.s3.has_required = True
                     labels[field.name] = DIV("%s:" % field.label,
                                                 SPAN(" *", _class="req"))
+
+        for f in source:
+            row = self.db(table.id==merge_id).select(limitby=(0, 1)).first()
+            if f in row.keys():
+                print f
+                if table[f].represent is not None:
+                    value = table[f].represent(source[f])
+                else:
+                    value = str(source[f])
+                comment = DIV(INPUT(_type="hidden", _value=row[f]), value)
 
         # Get formstyle from settings
         formstyle = self.settings.formstyle

@@ -630,6 +630,31 @@ def shn_pr_rheader(jr, tabs=[]):
 
     return None
 
+# -------------------------------------------------------------------------------------------------------------------
+resourcename = "submitter"
+tablename = "%s_%s" % (prefix, resourcename)
+table = db.define_table(tablename,
+                        person_id(),
+                        Field("submitter_handle", notnull=True, unique=True),
+                        Field("rating"),
+                        Field("number_submitted"),
+                        Field("number_i_corrected"),
+                        Field("my_submissions_corrected"),
+                        Field("number_i_edited"),
+                        Field("my_submissions_edited"),
+                        migrate=migrate)
+
+table.submitter_handle.label = T("Submitter Handle")
+table.rating.label = T("Rating")
+table.number_submitted.label = T("Number submitted")
+table.number_i_corrected.label = T("Number I corrected")
+table.my_submissions_corrected.label = T("My submissions corrected")
+table.number_i_edited.label = T("Number I edited")
+table.my_submissions_edited.label = T("My submissions edited")
+
+
+
+
 #
 # END
 # *****************************************************************************

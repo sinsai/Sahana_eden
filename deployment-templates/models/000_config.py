@@ -22,12 +22,12 @@ from gluon.contrib.simplejson.ordered_dict import OrderedDict
 deployment_settings = s3base.S3Config(T)
 
 # Database settings
-deployment_settings.database.db_type = "sqlite"
+deployment_settings.database.db_type = "mysql"
 deployment_settings.database.host = "localhost"
 deployment_settings.database.port = None # use default
 deployment_settings.database.database = "sahana"
 deployment_settings.database.username = "sahana"
-deployment_settings.database.password = "password"
+deployment_settings.database.password = "sahana"
 deployment_settings.database.pool_size = 30
 
 # Authentication settings

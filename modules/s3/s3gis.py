@@ -2781,7 +2781,6 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         # Strategy
         # Need to be uniquely instantiated
-        strategy_fixed = """new OpenLayers.Strategy.Fixed()"""
         strategy_cluster = """new OpenLayers.Strategy.Cluster({distance: """ + str(cluster_distance) + """, threshold: """ + str(cluster_threshold) + """})"""
 
         # Layout
@@ -3351,6 +3350,15 @@ OpenLayers.Util.extend( selectPdfControl, {
         else:
             cacheable = False
 
+        # Duplicate Features to go across the dateline?
+        if deployment_settings.get_gis_duplicate_features():
+            uuid_from_fid = """
+            var uuid = fid.replace('_', '');
+            """
+        else:
+            uuid_from_fid = """
+            var uuid = fid;
+            """
         #
         # Features
         #
@@ -3359,15 +3367,6 @@ OpenLayers.Util.extend( selectPdfControl, {
 
             if not wfs_enabled:
                 layers_features = cluster_style_options
-
-            if deployment_settings.get_gis_duplicate_features():
-                uuid_from_fid = """
-                var uuid = fid.replace('_', '');
-                """
-            else:
-                uuid_from_fid = """
-                var uuid = fid;
-                """
 
             layers_features += """
         var featureLayers = new Array();
@@ -3857,48 +3856,6 @@ OpenLayers.Util.extend( selectPdfControl, {
                     height = marker.height
                     width = marker.width
 
-                    if cacheable:
-                        # Download file
-                        try:
-                            file = fetch(url)
-                            warning = ""
-                        except urllib2.URLError:
-                            warning = "URLError"
-                        except urllib2.HTTPError:
-                            warning = "HTTPError"
-                        _name = name.replace(" ", "_")
-                        _name = _name.replace(",", "_")
-                        filename = "gis_cache.file." + _name + ".geojson"
-                        filepath = os.path.join(cachepath, filename)
-                        f = open(filepath, "w")
-                        # Handle errors
-                        if "URLError" in warning or "HTTPError" in warning:
-                            # URL inaccessible
-                            if os.access(filepath, os.R_OK):
-                                # Use cached version
-                                date = db(db.gis_cache.name == name).select(db.gis_cache.modified_on, limitby=(0, 1)).first().modified_on
-                                response.warning += url + " " + T("not accessible - using cached version from") + " " + str(date) + "\n"
-                                url = URL(r=request, c="default", f="download", args=[filename])
-                            else:
-                                # No cached version available
-                                response.warning += url + " " + T("not accessible - no cached version available!") + "\n"
-                                # skip layer
-                                continue
-                        else:
-                            # Download was succesful
-                            # Write file to cache
-                            f.write(file)
-                            f.close()
-                            records = db(db.gis_cache.name == name).select()
-                            if records:
-                                records[0].update(modified_on=response.utcnow)
-                            else:
-                                db.gis_cache.insert(name=name, file=filename)
-                            url = URL(r=request, c="default", f="download", args=[filename])
-                    else:
-                        # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
-                        pass
-
                     # Generate HTML snippet
                     name_safe = re.sub("\W", "_", name)
                     if visible:
@@ -4044,7 +4001,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             '""" + name_safe + """',
             {
                 """ + projection_str + """
-                strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                strategies: [ new OpenLayers.Strategy.BBOX(), """ + strategy_cluster + """ ],
                 //style: style_marker,
                 styleMap: featureClusterStyleMap,
                 protocol: new OpenLayers.Protocol.HTTP({
@@ -4179,7 +4136,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             '""" + name_safe + """',
             {
                 """ + projection_str + """
-                strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                strategies: [ new OpenLayers.Strategy.Fixed(), """ + strategy_cluster + """ ],
                 style: style_marker,
                 protocol: new OpenLayers.Protocol.HTTP({
                     url: '""" + url + """',
@@ -4270,7 +4227,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             '""" + name_safe + """',
             {
                 projection: proj4326,
-                strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                strategies: [ new OpenLayers.Strategy.Fixed(), """ + strategy_cluster + """ ],
                 style: style_marker,
                 protocol: new OpenLayers.Protocol.HTTP({
                     url: '""" + url + """',
@@ -4436,7 +4393,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             '""" + name + """',
             {
                 """ + projection_str + """
-                strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                strategies: [ new OpenLayers.Strategy.Fixed(), """ + strategy_cluster + """ ],
                 style: style_marker,
                 protocol: new OpenLayers.Protocol.HTTP({
                     url: '""" + url + """',

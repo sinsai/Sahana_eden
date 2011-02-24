@@ -83,10 +83,10 @@ class S3Resource(object):
 
         """
 
-        self.manager = manager
+        self.manager = manager # S3ResourceController() defined in s3xrc.py
         self.db = manager.db
 
-        self.HOOKS = manager.HOOKS
+        self.HOOKS = manager.HOOKS  # "s3"
         self.ERROR = manager.ERROR
 
         # Export/Import hooks
@@ -236,6 +236,7 @@ class S3Resource(object):
         # Reset the rows counter
         self._length = None
 
+        # self.query_builder = manager.query_builder = S3QueryBuilder() defined in s3xrc.py
         return self.query_builder.query(self,
                                         id=id,
                                         uid=uid,
@@ -862,7 +863,7 @@ class S3Resource(object):
 
         r.resource = self
         r.next = None
-        hooks = r.response.get(self.HOOKS, None)
+        hooks = r.response.get(self.HOOKS, None)    # HOOKS = "s3"
         bypass = False
         output = None
         preprocess = None
@@ -1940,7 +1941,7 @@ class S3Request(object):
 
         """
 
-        self.manager = manager
+        self.manager = manager # S3ResourceController() defined in s3xrc.py
 
         # Get the environment
         self.session = manager.session or Storage()
@@ -1975,10 +1976,10 @@ class S3Request(object):
 
         # Define the target resource
         self.resource = manager.define_resource(self.prefix, self.name,
-                                                  id=self.id,
-                                                  filter=self.response[manager.HOOKS].filter,
-                                                  vars=vars,
-                                                  components=self.component_name)
+                                                id=self.id,
+                                                filter=self.response[manager.HOOKS].filter, # manager.HOOKS="s3"
+                                                vars=vars,
+                                                components=self.component_name)
 
         self.tablename = self.resource.tablename
         self.table = self.resource.table

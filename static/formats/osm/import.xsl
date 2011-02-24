@@ -145,13 +145,19 @@
                 </xsl:if>
             </xsl:for-each>
 
-            <xsl:for-each select="./tag[@k='contact:phone' or @k='phone'][1]">
-                <data field="phone_exchange">
-                    <xsl:value-of select="@v"/>
-                </data>
-            </xsl:for-each>
+            <data field="phone_exchange">
+                <xsl:call-template name="phone_exchange"/>
+            </data>
 
-            <xsl:for-each select="./tag[@k='contact:website'][1]">
+            <data field="phone_business">
+                <xsl:call-template name="phone_business"/>
+            </data>
+
+            <data field="phone_emergency">
+                <xsl:call-template name="phone_emergency"/>
+            </data>
+
+            <xsl:for-each select="./tag[@k='contact:website' or @k='website' or @k='url'][1]">
                 <data field="website">
                     <xsl:value-of select="@v"/>
                 </data>
@@ -327,6 +333,33 @@
     <xsl:template name="datetime">
         <xsl:param name="datetime"/>
         <xsl:value-of select="concat(substring-before($datetime, 'T'),' ',substring-before(substring-after($datetime, 'T'), 'Z'))"/>
+    </xsl:template>
+
+    <xsl:template name="phone_exchange">
+        <xsl:for-each select="./tag[@k='contact:phone' or @k='phone' or @k='phone_number' or @k='telephone']">
+            <xsl:if test="position() != 1">
+                <xsl:text>; </xsl:text>
+            </xsl:if>
+            <xsl:value-of select="@v"/>
+        </xsl:for-each>
+    </xsl:template>
+
+    <xsl:template name="phone_business">
+        <xsl:for-each select="./tag[@k='sahana:phone_business']">
+            <xsl:if test="position() != 1">
+                <xsl:text>; </xsl:text>
+            </xsl:if>
+            <xsl:value-of select="@v"/>
+        </xsl:for-each>
+    </xsl:template>
+
+    <xsl:template name="phone_emergency">
+        <xsl:for-each select="./tag[@k='emergency_phone' or @k='emergency_department_phone']">
+            <xsl:if test="position() != 1">
+                <xsl:text>; </xsl:text>
+            </xsl:if>
+            <xsl:value-of select="@v"/>
+        </xsl:for-each>
     </xsl:template>
 
 </xsl:stylesheet>

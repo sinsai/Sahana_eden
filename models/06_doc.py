@@ -200,7 +200,7 @@ image_id = S3ReusableField("image_id", db.doc_image,
                                 _title=ADD_IMAGE),
                           DIV( _class="tooltip",
                                _title="%s|%s" % (ADD_IMAGE,
-                                                 T("Add an Photo.")))),
+                                                 T("Upload an image, such as a photo")))),
                 ondelete = "RESTRICT"
                 )
 

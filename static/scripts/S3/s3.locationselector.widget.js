@@ -2,7 +2,12 @@
 // This script is in Static to allow caching
 // Dynamic constants (e.g. Internationalised strings) are set in server-generated script
 
+// Flag to open next dropdown when there is only a single value
+var pullNext;
+
 function s3_gis_dropdown_select(level, force) {
+    pullNext = false;
+
     // Clear any values in the specific location field
     $('#gis_location_lat').val('');
     $('#gis_location_lon').val('');
@@ -25,6 +30,10 @@ function s3_gis_dropdown_select(level, force) {
             var v = '';
             if (data.length == 0) {
                 options = s3_gis_empty_set;
+            } else if (data.length == 1) {
+                // Only 1 value available, so set directly
+                options = '<option value="' +  data[0].id + '">' + data[0].name + '</option>';
+                pullNext = true;
             } else {
                 options = s3_gis_select_location;
                 for (var i = 0; i < data.length; i++){
@@ -63,6 +72,11 @@ function s3_gis_dropdown_select(level, force) {
         // Populate the real location_id field (unless a name is already present)
         if ( '' == $('#gis_location_name').val() ) {
             $('#' + s3_gis_location_id).val(new_id);
+        }
+        
+        if (pullNext) {
+            // We just had a single value & so need to trigger the subsequent dropdown
+            s3_gis_dropdown_select(level + 1);
         }
 
     } else {

@@ -654,6 +654,7 @@ class S3LocationSelectorWidget(FormWidget):
         response = self.response
         response.s3.gis.level1_dropdown = False
         response.s3.gis.level2_dropdown = False
+        response.s3.gis.level3_dropdown = False
         T = self.T
 
         # shortcut
@@ -886,12 +887,24 @@ class S3LocationSelectorWidget(FormWidget):
                     # Prepopulate L2 dropdown from db
                     if hasattr(requires[0], "options"):
                         options = requires[0].options()
+                        if options.__len__() == 2:
+                            # If there is only a single L2 available then pre-select it
+                            options = [options[1]]
+                            # Ensure that the L3 dropdown is opened
+                            response.s3.gis.level3_dropdown = True
+                    else:
+                        raise SyntaxError, "widget cannot determine options of %s" % field
+
+                elif level == "L3" and response.s3.gis.level3_dropdown:
+                    # Prepopulate L3 dropdown from db
+                    if hasattr(requires[0], "options"):
+                        options = requires[0].options()
                         # @ToDo:
                         #if options.__len__() == 2:
-                        #    # If there is only a single L2 available then pre-select it
+                        #    # If there is only a single L3 available then pre-select it
                         #    options = [options[1]]
-                        #    # Ensure that the L3 dropdown is opened
-                        #    response.s3.gis.level3_dropdown = True
+                        #    # Ensure that the L4 dropdown is opened
+                        #    response.s3.gis.level4_dropdown = True
                     else:
                         raise SyntaxError, "widget cannot determine options of %s" % field
 
@@ -920,7 +933,9 @@ class S3LocationSelectorWidget(FormWidget):
             attr_dropdown["_id"] = "gis_location_%s" % level
             # Need to blank the name to prevent it from appearing in form.vars & requiring validation
             attr_dropdown["_name"] = ""
-            if visible or (level == "L1" and response.s3.gis.level1_dropdown) or (level == "L2" and response.s3.gis.level2_dropdown):
+            if visible or (level == "L1" and response.s3.gis.level1_dropdown) or \
+                          (level == "L2" and response.s3.gis.level2_dropdown) or \
+                          (level == "L3" and response.s3.gis.level3_dropdown):
                 if level:
                     label = LABEL(location_hierarchy[level], ":", _id="gis_location_label_%s" % level)
                 else:

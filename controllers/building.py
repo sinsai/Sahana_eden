@@ -34,7 +34,17 @@ def shn_menu():
             [T("Search"), False, aURL(r=request, f="nzseel1", args="search")],
             [T("List"), False, aURL(r=request, f="nzseel1")],
         ]],
-        [T("Report"), False, aURL(r=request, f="report")]
+        [T("NZSEE Level 2"), False, aURL(r=request, f="nzseel2"), [
+            [T("Submit New"), False, aURL(p="create", r=request, f="nzseel2", args="create")],
+            [T("Search"), False, aURL(r=request, f="nzseel2", args="search")],
+            [T("List"), False, aURL(r=request, f="nzseel2")],
+        ]],
+        [T("Report"), False, aURL(r=request, f="report"),
+         [
+          [T("Snapshot"), False, aURL(r=request, f="report")],
+          [T("Assessment timeline"), False, aURL(r=request, f="timeline", args="assessment")],
+         ]
+        ]
     ]
     response.menu_options = menu
 
@@ -55,6 +65,7 @@ def nzseel1():
 
     """
         RESTful CRUD controller
+        @ToDo: Action Button to create a new L2 Assessment from an L1
     """
 
     tablename = "%s_%s" % (module, resourcename)
@@ -122,6 +133,81 @@ def nzseel1_rheader(r, tabs=[]):
     return None
 
 # -----------------------------------------------------------------------------
+# NZSEE Level 2 (~ATC-20 Rapid Evaluation) Safety Assessment Form
+def nzseel2():
+
+    """
+        RESTful CRUD controller
+    """
+
+    tablename = "%s_%s" % (module, resourcename)
+    table = db[tablename]
+
+    # Pre-populate Inspector ID
+    table.person_id.default = s3_logged_in_person()
+
+    # Subheadings in forms:
+    s3xrc.model.configure(table,
+        deletable=False,
+        create_next = URL(r=request, c=module, f=resourcename, args="[id]"),
+        subheadings = {
+            ".": "name", # Description in ATC-20
+            "%s / %s" % (T("Overall Hazards"), T("Damage")): "collapse",
+            ".": "posting_existing",
+            "%s:" % T("Further Action Recommended"): "barricades",
+            ".": "estimated_damage",
+            "%s / %s" % (T("Structural Hazards"), T("Damage")): "structural_foundations",
+            "%s / %s" % (T("Non-structural Hazards"), T("Damage")): "non_parapets",
+            "%s / %s" % (T("Geotechnical Hazards"), T("Damage")): "geotechnical_slope",
+            })
+
+    rheader = lambda r: nzseel2_rheader(r)
+
+    output = s3_rest_controller(module, resourcename,
+                                rheader=rheader)
+    return output
+
+# -----------------------------------------------------------------------------
+def nzseel2_rheader(r, tabs=[]):
+    """ Resource Headers """
+
+    if r.representation == "html":
+        if r.name == "nzseel2":
+            assess = r.record
+            if assess:
+                rheader_tabs = shn_rheader_tabs(r, tabs)
+                location = assess.location_id
+                if location:
+                    location = shn_gis_location_represent(location)
+                person = assess.person_id
+                if person:
+                    pe_id = db(db.pr_person.id == person).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
+                    query = (db.pr_pe_contact.pe_id == pe_id) & (db.pr_pe_contact.contact_method == 2)
+                    mobile = db(query).select(db.pr_pe_contact.value, limitby=(0, 1)).first()
+                    if mobile:
+                        mobile = mobile.value
+                    person = vita.fullname(person)
+                rheader = DIV(TABLE(
+                                TR(
+                                    TH("%s: " % T("Person")), person,
+                                    TH("%s: " % T("Mobile")), mobile,
+                                  ),
+                                TR(
+                                    TH("%s: " % T("Location")), location,
+                                    TH("%s: " % T("Date")), assess.date
+                                  ),
+                                TR(
+                                    TH(""), "",
+                                    TH("%s: " % T("Ticket ID")),
+                                        r.table.ticket_id.represent(assess.ticket_id),
+                                  ),
+                                ),
+                              rheader_tabs)
+
+                return rheader
+    return None
+
+# -----------------------------------------------------------------------------
 def report():
     """
         A report providing assessment totals, and breakdown by assessment type and status.
@@ -149,4 +235,46 @@ def report():
 
     return dict(level1=level1,
                 level2=level2)
+# -----------------------------------------------------------------------------
+def timeline():
+    """
+        A report providing assessments received broken down by time
+        @ToDo: Switch to created_on as it's date entered that we want to report on.
+        - data model for date/time of actual assessment has also changed
+        @ToDo: Use DAL not raw SQL for portability
+    """
+    from datetime import datetime
+    
+    result = Storage()
+    inspection = []
+    creation = {}
+    sql = "select `date`, daytime, count(*) FROM building_nzseel1 WHERE deleted = \"F\" GROUP BY `date`, daytime ORDER BY `date` DESC"
+    result = db.executesql(sql)
+    # Format the results
+    for report in result:
+        date = datetime.strptime(report[0],"%Y-%m-%d").strftime('%d %b %Y')
+        daytime = report[1]
+        count = report[2]
+        print date 
+        inspection.append((date,daytime, count))
+    
+    sql = "select created_on FROM building_nzseel1 WHERE deleted = \"F\" ORDER BY created_on DESC"
+    result = db.executesql(sql)
+    # Format the results
+    for report in result:
+        print report[0]
+        trueDate = datetime.strptime(report[0],"%Y-%m-%d %H:%M:%S") 
+        date = trueDate.strftime('%d %b %Y')
+        hour = trueDate.strftime("%H")
+        if creation.has_key((date,hour)):
+            creation[(date,hour)] += 1
+        else:
+            creation[(date,hour)] = 1
+    for (key,value) in creation.keys():
+        print key
+        print value
+        print creation[(key,value)]
+    return dict(inspection=inspection,
+                creation=creation
+                )
 # -----------------------------------------------------------------------------

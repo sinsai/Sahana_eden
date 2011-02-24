@@ -154,6 +154,9 @@ def hospital():
                                                        (T("Cholera Treatment Capability"), "ctc_capability")
                                                       ])
 
+    s3xrc.model.configure(db.hms_hospital,
+                create_onvalidation = s3_hms_submit_processor)
+
     output = s3_rest_controller(module, resourcename, rheader=rheader)
     shn_menu()
     return output
@@ -204,7 +207,7 @@ def shn_hms_hospital_rheader(r, tabs=[]):
     return None
 
 #------entry submission handler: adds submission handler for submitters who are not logged in------
-def s3_hms_submit_processor(form)
+def s3_hms_submit_processor(form):
 
     # check if user is not authenticated
     if not auth.is_logged_in():
@@ -224,16 +227,17 @@ def s3_hms_submit_processor(form)
                 user_id = result.auth_user.id
                 form.vars.created_by = user_id
         else:
-            dummy_submitter_handle = lambda: str(uuid.uuid4())[0:4] + '-' + str(uuid.uuid4())[4:8]
+            dummy_submitter_handle = str(uuid.uuid4())[0:4] + '-' + str(uuid.uuid4())[4:8]
 
-            dummy = Storage(first_name = user_handle,
-                            last_name = "dummy")
+            dummy = Storage(first_name = dummy_submitter_handle,
+                            last_name = "dummy",
+                            email="%s@%s" % (dummy_submitter_handle, "example.com"))
             user_id = db.auth_user.insert(**dummy)
             dummy.update(id=user_id)
             dummy_person_id = auth.s3_link_to_person(dummy)
             db.pr_submitter.insert(person_id = dummy_person_id, submitter_handle = dummy_submitter_handle)
             form.vars.created_by = user_id
-            session.s3.submitter_handle = user_handle
+            session.s3.submitter_handle = dummy_submitter_handle
             
             
         #----

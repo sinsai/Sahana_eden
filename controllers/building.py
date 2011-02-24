@@ -170,7 +170,7 @@ def timeline():
     
     result = Storage()
     inspection = []
-    creation = []
+    creation = {}
     sql = "select `date`, daytime, count(*) FROM building_nzseel1 WHERE deleted = \"F\" GROUP BY `date`, daytime ORDER BY `date` DESC"
     result = db.executesql(sql)
     # Format the results
@@ -181,16 +181,22 @@ def timeline():
         print date 
         inspection.append((date,daytime, count))
     
-    sql = "select  date(created_on), strftime('%H',created_on)  as`time`, count(*) FROM building_nzseel1 WHERE deleted = \"F\" GROUP BY date(created_on), `time` ORDER BY created_on DESC"
+    sql = "select created_on FROM building_nzseel1 WHERE deleted = \"F\" ORDER BY created_on DESC"
     result = db.executesql(sql)
     # Format the results
     for report in result:
-        date = datetime.strptime(report[0],"%Y-%m-%d").strftime('%d %b %Y')
-        daytime = report[1]
-        count = report[2]
-        print date 
-        creation.append((date,daytime, count))
-    
+        print report[0]
+        trueDate = datetime.strptime(report[0],"%Y-%m-%d %H:%M:%S") 
+        date = trueDate.strftime('%d %b %Y')
+        hour = trueDate.strftime("%H")
+        if creation.has_key((date,hour)):
+            creation[(date,hour)] += 1
+        else:
+            creation[(date,hour)] = 1
+    for (key,value) in creation.keys():
+        print key
+        print value
+        print creation[(key,value)]
     return dict(inspection=inspection,
                 creation=creation
                 )

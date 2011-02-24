@@ -21,7 +21,7 @@
 <th>Date</th><th>Count</th>
 </thead>
 <tbody>
-{{for item in creation:}}<tr>{{include "building/incident_hour_summary.html"}}</tr>{{pass}}
+{{for (cdate,chour) in creation.keys():}}<tr>{{include "building/incident_hour_summary.html"}}</tr>{{pass}}
 <tbody>
 </table>
 

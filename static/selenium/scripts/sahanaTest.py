@@ -73,7 +73,7 @@ class SahanaTest(unittest.TestCase):
             cls.firstRunExists = False
             cls.lastRunExists = False
             cls.timings = []
-            cls.action.openReport()
+#            cls.action.openReport()
             # Use inspect to find the number of test methods
             # this is then used in tearDown() to work out if lastRun() needs to be invoked
             methods = inspect.getmembers(cls, inspect.ismethod)

@@ -207,9 +207,9 @@ class TestWindow(Frame):
                                   self.ipPort.get(),
                                   self.URL.get() + self.app.get()
                                  )
-        #SahanaTest.useSahanaAccount(self.adminUser.get(),
-        #                            self.adminPassword.get(),
-        #                           )
+        SahanaTest.useSahanaAccount(self.adminUser.get(),
+                                    self.adminPassword.get(),
+                                   )
         self.clean = False
         testConfig = TestConfig()
         testModuleList = self.getTestCasesToRun()
@@ -254,16 +254,16 @@ class TestWindow(Frame):
     
     def sahanaPanel(self, panel):
         Label(panel, text="Sahana options").pack(side=TOP)
-        #Label(panel, text="To run the tests a user with admin rights needs to be provided.").pack(side=TOP, anchor=W)
-        #Label(panel, text="If this is left blank then the user of testing@example.com will be used.").pack(side=TOP, anchor=W)
+        Label(panel, text="To run the tests a user with admin rights needs to be provided.").pack(side=TOP, anchor=W)
+        Label(panel, text="If this is left blank then the user of testing@example.com will be used.").pack(side=TOP, anchor=W)
         detailPanel = Frame(panel)
         detailPanel.pack(side=TOP, anchor=W, fill=X)
-        #Label(detailPanel, text="User name:").grid(row=0, column=0, sticky=NW)
-        #self.adminUser = Entry(detailPanel, width=30)
-        #self.adminUser.grid(row=0, column=1, sticky=NW)
-        #Label(detailPanel, text="Password:").grid(row=1, column=0, sticky=NW)
-        #self.adminPassword = Entry(detailPanel, show="*", width=16)
-        #self.adminPassword.grid(row=1, column=1, sticky=NW)
+        Label(detailPanel, text="User name:").grid(row=0, column=0, sticky=NW)
+        self.adminUser = Entry(detailPanel, width=30)
+        self.adminUser.grid(row=0, column=1, sticky=NW)
+        Label(detailPanel, text="Password:").grid(row=1, column=0, sticky=NW)
+        self.adminPassword = Entry(detailPanel, show="*", width=16)
+        self.adminPassword.grid(row=1, column=1, sticky=NW)
         Label(detailPanel, text="Sahana URL:").grid(row=2, column=0, sticky=NW)
         self.URL = Entry(detailPanel, width=40)
         self.URL.grid(row=2, column=1, sticky=NW)

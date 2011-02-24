@@ -239,12 +239,8 @@ def report():
 def timeline():
     """
         A report providing assessments received broken down by time
-        @ToDo: Switch to created_on as it's date entered that we want to report on.
-        - data model for date/time of actual assessment has also changed
-        @ToDo: Use DAL not raw SQL for portability
+        @ToDo: Use DAL for database portability
     """
-    from datetime import datetime
-    
     result = Storage()
     inspection = []
     creation = {}
@@ -252,28 +248,29 @@ def timeline():
     result = db.executesql(sql)
     # Format the results
     for report in result:
-        date = datetime.strptime(report[0],"%Y-%m-%d").strftime('%d %b %Y')
+        date = datetime.datetime.strptime(report[0], "%Y-%m-%d").strftime('%d %b %Y')
         daytime = report[1]
         count = report[2]
         print date 
-        inspection.append((date,daytime, count))
+        inspection.append((date, daytime, count))
     
-    sql = "select created_on FROM building_nzseel1 WHERE deleted = \"F\" ORDER BY created_on DESC"
+    sql = "select created_on, estimated_damage FROM building_nzseel1 WHERE deleted = \"F\" ORDER BY created_on DESC"
     result = db.executesql(sql)
     # Format the results
     for report in result:
         print report[0]
-        trueDate = datetime.strptime(report[0],"%Y-%m-%d %H:%M:%S") 
+        trueDate = datetime.datetime.strptime(report[0], "%Y-%m-%d %H:%M:%S") 
         date = trueDate.strftime('%d %b %Y')
         hour = trueDate.strftime("%H")
-        if creation.has_key((date,hour)):
-            creation[(date,hour)] += 1
+        if creation.has_key((date, hour)):
+            creation[(date, hour)][0] += 1
         else:
-            creation[(date,hour)] = 1
-    for (key,value) in creation.keys():
+            creation[(date, hour)] = [1, 0, 0, 0, 0, 0, 0, 0]
+        creation[(date, hour)][report[1]] += 1
+    for (key, value) in creation.keys():
         print key
         print value
-        print creation[(key,value)]
+        print creation[(key, value)]
     return dict(inspection=inspection,
                 creation=creation
                 )

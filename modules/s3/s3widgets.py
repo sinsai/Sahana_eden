@@ -652,6 +652,8 @@ class S3LocationSelectorWidget(FormWidget):
         deployment_settings = self.deployment_settings
         request = self.request
         response = self.response
+        response.s3.gis.level1_dropdown = False
+        response.s3.gis.level2_dropdown = False
         T = self.T
 
         # shortcut
@@ -854,6 +856,11 @@ class S3LocationSelectorWidget(FormWidget):
                     # Prepopulate top-level dropdown from db
                     if hasattr(requires[0], "options"):
                         options = requires[0].options()
+                        if options.__len__() == 2:
+                            # If there is only a single country available then pre-select it
+                            options = [options[1]]
+                            # Ensure that the L1 dropdown is opened
+                            response.s3.gis.level1_dropdown = True
                     else:
                         raise SyntaxError, "widget cannot determine options of %s" % field
 
@@ -863,10 +870,28 @@ class S3LocationSelectorWidget(FormWidget):
                 else:
                     _parent = default[max_hierarchy]
 
-                if level == "L1" and countries and len(countries) == 1:
-                    # Prepopulate top-level dropdown from db
+                if level == "L1" and ((countries and len(countries) == 1) or response.s3.gis.level1_dropdown):
+                    # Prepopulate L1 dropdown from db
                     if hasattr(requires[0], "options"):
                         options = requires[0].options()
+                        if options.__len__() == 2:
+                            # If there is only a single L1 available then pre-select it
+                            options = [options[1]]
+                            # Ensure that the L2 dropdown is opened
+                            response.s3.gis.level2_dropdown = True
+                    else:
+                        raise SyntaxError, "widget cannot determine options of %s" % field
+
+                elif level == "L2" and response.s3.gis.level2_dropdown:
+                    # Prepopulate L2 dropdown from db
+                    if hasattr(requires[0], "options"):
+                        options = requires[0].options()
+                        # @ToDo:
+                        #if options.__len__() == 2:
+                        #    # If there is only a single L2 available then pre-select it
+                        #    options = [options[1]]
+                        #    # Ensure that the L3 dropdown is opened
+                        #    response.s3.gis.level3_dropdown = True
                     else:
                         raise SyntaxError, "widget cannot determine options of %s" % field
 
@@ -895,7 +920,7 @@ class S3LocationSelectorWidget(FormWidget):
             attr_dropdown["_id"] = "gis_location_%s" % level
             # Need to blank the name to prevent it from appearing in form.vars & requiring validation
             attr_dropdown["_name"] = ""
-            if visible:
+            if visible or (level == "L1" and response.s3.gis.level1_dropdown) or (level == "L2" and response.s3.gis.level2_dropdown):
                 if level:
                     label = LABEL(location_hierarchy[level], ":", _id="gis_location_label_%s" % level)
                 else:

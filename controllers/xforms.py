@@ -38,6 +38,8 @@ def create():
                      "owned_by_user"]:
             # This will get added server-side
             pass
+        elif table[field].writable == False and table[field].readable == False:
+            pass
         else:
             ref = "/" + title + "/" + field
             instance_list.append(generate_instance(table, field))
@@ -96,8 +98,10 @@ def generate_bindings(table, field, ref):
     elif table[field].type == "double":
         _type = "decimal"
     # Collect doesn't support datetime yet
-    elif table[field].type == "date" or table[field].type == "datetime":
+    elif table[field].type == "date":
         _type = "date"
+    elif table[field].type == "datetime":
+        _type = "datetime"
     elif table[field].type == "integer":
         _type = "int"
     elif table[field].type == "boolean":
@@ -202,6 +206,8 @@ def generate_controllers(table, field, ref):
         items_list.append(TAG["label"](_ref="jr:itext('" + ref + ":label')"))
         items_list.append(TAG["hint"](_ref="jr:itext('" + ref + ":hint')"))
         controller = TAG["upload"](items_list, _ref=ref, _mediatype="image/*")
+    elif table[field].writable == False:
+        controller = TAG["input"](TAG["label"](table[field].label), _ref=ref, _readonly="true", _default=table[field].default.upper())
     else:
         # Normal Input field
         controller = TAG["input"](TAG["label"](table[field].label), _ref=ref)

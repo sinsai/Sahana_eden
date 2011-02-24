@@ -147,7 +147,7 @@ class Form:
             self.lasty = self.y
         self.x = self.marginsides
 
-    def draw_check_boxes(self, boxes=1, completeline=0, lines=0, seek=0, continuetext=0, fontsize=0, gray=0, style="", isdate=0):
+    def draw_check_boxes(self, boxes=1, completeline=0, lines=0, seek=0, continuetext=0, fontsize=0, gray=0, style="", isdate=0, isdatetime=0):
         """ Function to draw check boxes default no of boxes = 1 """
 
         c = self.canvas
@@ -187,6 +187,15 @@ class Form:
             t.setFont(Helvetica, 13)
             t.setFillGray(0)
             t.textOut("   D  D  M  M  Y  Y  Y  Y")
+            c.drawText(t)
+            self.y = self.y - fontsize
+            self.lastx = t.getX()
+            self.lasty = self.y
+        if isdatetime:
+            t = c.beginText(self.x, self.y)
+            t.setFont(Helvetica, 12.5)
+            t.setFillGray(0.4)
+            t.textOut("   D  D  M  M  Y  Y  Y  Y -H  H :M  M")
             c.drawText(t)
             self.y = self.y - fontsize
             self.lastx = t.getX()
@@ -315,6 +324,8 @@ class FormHandler(ContentHandler):
                                  "staff_id":2,\
                                  "staff2_id":2,\
                                  } # fields having custom sizes
+        self.readonly = ""
+        self.default = ""
 
     def xmlcreate(self):
         """ Creates the xml """
@@ -352,6 +363,8 @@ class FormHandler(ContentHandler):
         if name == "input":
             self.input = 1
             self.ref = attrs.get("ref")
+            self.readonly = attrs.get("readonly", "")
+            self.default = attrs.get("default", "")
             #if not str(self.ref).find("/") == -1:
             #    ref = str(self.ref).split("/")[-1]
             #    if ref in self.hiddenfields:
@@ -448,6 +461,8 @@ class FormHandler(ContentHandler):
             self.input = 0
             #self.protectedfield = 0
             self.type = ""
+            self.readonly = ""
+            self.default = ""
         elif name == "select" or name == "select1":
             self.select = 0
             self.multiple = 0
@@ -463,12 +478,17 @@ class FormHandler(ContentHandler):
                 self.child3 = self.doc.createTextNode("%s,%s" % (str(self.form.lastx), str(self.form.lasty)))
                 self.child2.appendChild(self.child3)
                 self.child2.setAttribute("font", str(16))
-                if self.ref == "age":
+                if self.readonly == "true":
+                    self.form.print_text(["   " + unicode(self.default) + " "])
+                elif self.ref == "age":
                     self.form.draw_check_boxes(boxes=2, completeline=0, continuetext=0, gray=0.9, fontsize=16, seek=10)
                     self.child2.setAttribute("boxes", str(2))
                 elif self.type == "date":
                     self.form.draw_check_boxes(boxes=8, completeline=0, continuetext=0, gray=0.9, fontsize=16, seek=10, isdate=1)
                     self.child2.setAttribute("boxes", str(8))
+                elif self.type == "datetime":
+                    self.form.draw_check_boxes(boxes=12, completeline=0, continuetext=0, gray=0.9, fontsize=16, seek=10, isdatetime=1)
+                    self.child2.setAttribute("boxes", str(12))
                 elif self.type == "int":
                     count = (self.form.width - 2 * self.form.marginsides) / 32
                     self.form.draw_check_boxes(boxes=1, completeline=1, continuetext=0, gray=0.9, fontsize=16, seek=10)

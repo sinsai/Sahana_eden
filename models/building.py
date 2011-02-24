@@ -76,7 +76,7 @@ if deployment_settings.has_module(module):
         3:"%s (%s)" % (T("Unsafe"), T("Red")),
     }
 
-    uuid8anum = lambda: str(uuid.uuid4())[0:4] + '-' + str(uuid.uuid4())[4:8]
+    uuid8anum = str(uuid.uuid4())[0:4] + '-' + str(uuid.uuid4())[4:8]
 
     s3uuid_8char = SQLCustomType(type = 'string',
                                  native = 'VARCHAR(64)',

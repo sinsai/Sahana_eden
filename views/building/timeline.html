@@ -1,0 +1,29 @@
+{{extend "layout.html"}}
+<div id='home'>
+<h2>{{=T("Timeline")}}</h2>
+
+<h3>{{=T("Inspection")}}:</h3>
+
+<table>
+<thead>
+<th>Date</th><th>Count</th>
+</thead>
+<tbody>
+{{for item in inspection:}}<tr>{{include "building/incident_summary.html"}}</tr>{{pass}}
+<tbody>
+</table>
+
+
+<h3>{{=T("When reports were entered")}}:</h3>
+
+<table>
+<thead>
+<th>Date</th><th>Count</th>
+</thead>
+<tbody>
+{{for item in creation:}}<tr>{{include "building/incident_hour_summary.html"}}</tr>{{pass}}
+<tbody>
+</table>
+
+
+</div>

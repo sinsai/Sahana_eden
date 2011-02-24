@@ -54,11 +54,6 @@ body { min-width: 800px; }
 {{pass}}
 
 <script src="/{{=request.application}}/static/scripts/ext/src/locale/ext-lang-{{=response.s3.language}}.js" type="text/javascript"></script>
-
-{{if response.js:}} 
-	<!-- Include (non global) js scripts --> 
-    {{=response.js}}
-{{pass}}
    
 <!--Scripts which need pre-processing by server must be called in-line-->
 <script type="text/javascript">//<![CDATA[

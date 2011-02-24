@@ -2781,7 +2781,6 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         # Strategy
         # Need to be uniquely instantiated
-        strategy_fixed = """new OpenLayers.Strategy.Fixed()"""
         strategy_cluster = """new OpenLayers.Strategy.Cluster({distance: """ + str(cluster_distance) + """, threshold: """ + str(cluster_threshold) + """})"""
 
         # Layout
@@ -3351,6 +3350,15 @@ OpenLayers.Util.extend( selectPdfControl, {
         else:
             cacheable = False
 
+        # Duplicate Features to go across the dateline?
+        if deployment_settings.get_gis_duplicate_features():
+            uuid_from_fid = """
+            var uuid = fid.replace('_', '');
+            """
+        else:
+            uuid_from_fid = """
+            var uuid = fid;
+            """
         #
         # Features
         #
@@ -3359,15 +3367,6 @@ OpenLayers.Util.extend( selectPdfControl, {
 
             if not wfs_enabled:
                 layers_features = cluster_style_options
-
-            if deployment_settings.get_gis_duplicate_features():
-                uuid_from_fid = """
-                var uuid = fid.replace('_', '');
-                """
-            else:
-                uuid_from_fid = """
-                var uuid = fid;
-                """
 
             layers_features += """
         var featureLayers = new Array();
@@ -3771,10 +3770,255 @@ OpenLayers.Util.extend( selectPdfControl, {
             pass
 
         layer_coordinategrid = ""
+        layers_geojson = ""
         layers_georss = ""
         layers_gpx = ""
         layers_kml = ""
         if catalogue_overlays:
+            # GeoJSON
+            geojson_enabled = db(db.gis_layer_geojson.enabled == True).select()
+            if geojson_enabled:
+                layers_geojson += """
+        var geojsonLayers = new Array();
+        var format_geojson = new OpenLayers.Format.GeoJSON();
+        function onGeojsonFeatureSelect(event) {
+            // unselect any previous selections
+            tooltipUnselect(event);
+            var feature = event.feature;
+            var selectedFeature = feature;
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
+            if (feature.cluster) {
+                // Cluster
+                var name, fid, uuid, url;
+                var html = '""" + T("There are multiple records at this location") + """:<ul>';
+                for (var i = 0; i < feature.cluster.length; i++) {
+                    name = feature.cluster[i].attributes.name;
+                    fid = feature.cluster[i].fid;
+                    """ + uuid_from_fid + """
+                    //if ( feature.cluster[i].popup_url.match("<id>") != null ) {
+                    //    url = feature.cluster[i].popup_url.replace("<id>", uuid);
+                    //} else {
+                    //    url = feature.cluster[i].popup_url + uuid;
+                    //}
+                    //html += "<li><a href='javascript:loadClusterPopup(" + "\\"" + url + "\\", \\"" + id + "\\"" + ")'>" + name + "</a></li>";
+                }
+                html += '</ul>';
+                html += "<div align='center'><a href='javascript:zoomToSelectedFeature(" + centerPoint.lon + "," + centerPoint.lat + ", 3)'>Zoom in</a></div>";
+                var popup = new OpenLayers.Popup.FramedCloud(
+                    id,
+                    centerPoint,
+                    new OpenLayers.Size(200, 200),
+                    html,
+                    null,
+                    true,
+                    onPopupClose
+                );
+                feature.popup = popup;
+                map.addPopup(popup);
+            } else {
+                // Single Feature
+                if (undefined == feature.attributes.description) {
+                    var popup = new OpenLayers.Popup.FramedCloud('geojsonpopup',
+                    centerPoint,
+                    new OpenLayers.Size(200, 200),
+                    '<h2>' + feature.attributes.name + '</h2>',
+                    null, true, onPopupClose);
+                } else {
+                    var popup = new OpenLayers.Popup.FramedCloud('geojsonpopup',
+                    centerPoint,
+                    new OpenLayers.Size(200, 200),
+                    '<h2>' + feature.attributes.name + '</h2>' + feature.attributes.description,
+                    null, true, onPopupClose);
+                };
+            };
+            feature.popup = popup;
+            popup.feature = feature;
+            map.addPopup(popup);
+        }
+        """
+                for layer in geojson_enabled:
+                    if layer.role_required and not auth.s3_has_role(layer.role_required):
+                        continue
+                    name = layer["name"]
+                    url = layer["url"]
+                    visible = layer["visible"]
+                    geojson_projection = db(db.gis_projection.id == layer["projection_id"]).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
+                    if geojson_projection == 4326:
+                        projection_str = "projection: proj4326,"
+                    else:
+                        projection_str = "projection: new OpenLayers.Projection('EPSG:" + geojson_projection + "'),"
+                    marker_id = layer["marker_id"]
+                    if marker_id:
+                        marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+                    else:
+                        marker = db(db.gis_marker.id == marker__id_default).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+                    marker_url = URL(r=request, c="static", f="img", args=["markers", marker.image])
+                    height = marker.height
+                    width = marker.width
+
+                    # Generate HTML snippet
+                    name_safe = re.sub("\W", "_", name)
+                    if visible:
+                        visibility = "geojsonLayer" + name_safe + ".setVisibility(true);"
+                    else:
+                        visibility = "geojsonLayer" + name_safe + ".setVisibility(false);"
+                    layers_geojson += """
+        iconURL = '""" + marker_url + """';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = iconURL;
+        // Needs to be uniquely instantiated
+        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+        style_marker.graphicOpacity = 1;
+        style_marker.graphicWidth = i.width;
+        style_marker.graphicHeight = i.height;
+        style_marker.graphicXOffset = -(i.width / 2);
+        style_marker.graphicYOffset = -i.height;
+        style_marker.externalGraphic = iconURL;
+        // Style Rule For Clusters
+        var style_cluster_style = {
+            label: '${label}',
+            pointRadius: '${radius}',
+            fillColor: '${fill}',
+            fillOpacity: 0.5,
+            strokeColor: '${stroke}',
+            strokeWidth: 2,
+            strokeOpacity: 1,
+            graphicWidth: '${graphicWidth}',
+            graphicHeight: '${graphicHeight}',
+            graphicXOffset: '${graphicXOffset}',
+            graphicYOffset: '${graphicYOffset}',
+            graphicOpacity: 1, //'${graphicOpacity}'
+            externalGraphic: '${externalGraphic}'
+        };
+        var style_cluster_options = {
+            context: {
+                graphicWidth: function(feature) {
+                    // Unclustered Point
+                    var pix = i.width;
+                    // Clustered Point
+                    if (feature.cluster) {
+                        pix = '';
+                    }
+                    return pix;
+                },
+                graphicHeight: function(feature) {
+                    // Unclustered Point
+                    var pix = i.width;
+                    // Clustered Point
+                    if (feature.cluster) {
+                        pix = '';
+                    }
+                    return pix;
+                },
+                graphicXOffset: function(feature) {
+                    // Unclustered Point
+                    var pix = -(i.width / 2);
+                    // Clustered Point
+                    if (feature.cluster) {
+                        pix = '';
+                    }
+                    return pix;
+                },
+                graphicYOffset: function(feature) {
+                    // Unclustered Point
+                    var pix = -i.height;
+                    // Clustered Point
+                    if (feature.cluster) {
+                        pix = '';
+                    }
+                    return pix;
+                },
+                //graphicOpacity: function(feature) {
+                    // Unclustered Point
+                //    var opacity = styleMarker.opacity;
+                    // Clustered Point
+                //    if (feature.cluster) {
+                //        opacity = '';
+                //    }
+                //    return opacity;
+                //},
+                externalGraphic: function(feature) {
+                    // Unclustered Point
+                    var url = iconURL;
+                    // Clustered Point
+                    if (feature.cluster) {
+                        url = '';
+                    }
+                    return url;
+                },
+                radius: function(feature) {
+                    // Size for Unclustered Point
+                    var pix = 12;
+                    // Size for Clustered Point
+                    if (feature.cluster) {
+                        pix = Math.min(feature.attributes.count/2, 8) + 12;
+                    }
+                    return pix;
+                },
+                fill: function(feature) {
+                    // fillColor for Unclustered Point
+                    var color = '#f5902e';
+                    // fillColor for Clustered Point
+                    if (feature.cluster) {
+                        color = '#8087ff';
+                    }
+                    return color;
+                },
+                stroke: function(feature) {
+                    // strokeColor for Unclustered Point
+                    var color = '#f5902e';
+                    // strokeColor for Clustered Point
+                    if (feature.cluster) {
+                        color = '#2b2f76';
+                    }
+                    return color;
+                },
+                label: function(feature) {
+                    // Label For Unclustered Point or Cluster of just 2
+                    var label = '';
+                    // Label For Clustered Point
+                    if (feature.cluster && feature.attributes.count > 2) {
+                        label = feature.attributes.count;
+                    }
+                    return label;
+                }
+            }
+        };
+        // Needs to be uniquely instantiated
+        var style_cluster = new OpenLayers.Style(style_cluster_style, style_cluster_options);
+        // Define StyleMap, Using 'style_cluster' rule for 'default' styling intent
+        var featureClusterStyleMap = new OpenLayers.StyleMap({
+                                          'default': style_cluster,
+                                          'select': {
+                                              fillColor: '#ffdc33',
+                                              strokeColor: '#ff9933'
+                                          }
+        });
+        var geojsonLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+            '""" + name_safe + """',
+            {
+                """ + projection_str + """
+                strategies: [ new OpenLayers.Strategy.BBOX(), """ + strategy_cluster + """ ],
+                //style: style_marker,
+                styleMap: featureClusterStyleMap,
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: '""" + url + """',
+                    format: format_geojson
+                })
+            }
+        );
+        """ + visibility + """
+        map.addLayer(geojsonLayer""" + name_safe + """);
+        geojsonLayers.push(geojsonLayer""" + name_safe + """);
+        geojsonLayer""" + name_safe + """.events.on({ "featureselected": onGeojsonFeatureSelect, "featureunselected": onFeatureUnselect });
+        """
+                layers_geojson += """
+        allLayers = allLayers.concat(geojsonLayers);
+        """
+
             # GeoRSS
             georss_enabled = db(db.gis_layer_georss.enabled == True).select()
             if georss_enabled:
@@ -3892,7 +4136,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             '""" + name_safe + """',
             {
                 """ + projection_str + """
-                strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                strategies: [ new OpenLayers.Strategy.Fixed(), """ + strategy_cluster + """ ],
                 style: style_marker,
                 protocol: new OpenLayers.Protocol.HTTP({
                     url: '""" + url + """',
@@ -3983,7 +4227,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             '""" + name_safe + """',
             {
                 projection: proj4326,
-                strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                strategies: [ new OpenLayers.Strategy.Fixed(), """ + strategy_cluster + """ ],
                 style: style_marker,
                 protocol: new OpenLayers.Protocol.HTTP({
                     url: '""" + url + """',
@@ -4149,7 +4393,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             '""" + name + """',
             {
                 """ + projection_str + """
-                strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                strategies: [ new OpenLayers.Strategy.Fixed(), """ + strategy_cluster + """ ],
                 style: style_marker,
                 protocol: new OpenLayers.Protocol.HTTP({
                     url: '""" + url + """',
@@ -4302,6 +4546,9 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         // Features
         """ + layers_features + """
+
+        // GeoJSON
+        """ + layers_geojson + """
 
         // GeoRSS
         """ + layers_georss + """

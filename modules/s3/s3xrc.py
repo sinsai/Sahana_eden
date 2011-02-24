@@ -208,7 +208,7 @@ class S3ResourceController(object):
 
         self.error = None
         try:
-            req = S3Request(self, prefix, name)
+            req = S3Request(self, prefix, name) # Goes to s3rest.py
         except SyntaxError:
             raise HTTP(400, body=self.xml.json_message(False, 400, message=self.error))
         except KeyError:
@@ -1701,6 +1701,7 @@ class S3QueryBuilder(object):
 
         resource._multiple = True # multiple results expected by default
 
+        db = resource.db
         table = resource.table
         name = resource.name
 
@@ -1714,6 +1715,19 @@ class S3QueryBuilder(object):
         if deletion_status in table.fields:
             remaining = (table[deletion_status] == False)
             mquery = remaining & mquery
+
+        # BBOX Query (Bounding Box)
+        if vars and "bbox" in vars:
+            try:
+                minLon, minLat, maxLon, maxLat = vars.bbox.split(",")
+                locations = db.gis_location
+                for ttuple in locations._referenced_by:
+                    if ttuple[0] == str(table):
+                        bbox_filter = (locations.lon > minLon) & (locations.lon < maxLon) & (locations.lat > minLat) & (locations.lat < maxLat)
+                        mquery = bbox_filter & mquery
+            except:
+                # Badly-formed bbox - ignore
+                pass
 
         # Component Query
         parent = resource.parent
@@ -1801,7 +1815,7 @@ class S3QueryBuilder(object):
                         rtable = table
                         cjoin = None
 
-                    _table = resource.db[context.table]
+                    _table = db[context.table]
                     if context.multiple:
                         join = (rtable[context.field].contains(_table.id))
                     else:
@@ -1824,7 +1838,7 @@ class S3QueryBuilder(object):
                     pkey = component.pkey
                     fkey = component.fkey
 
-                    join = (resource.table[pkey]==_table[fkey])
+                    join = (resource.table[pkey] == _table[fkey])
                     mquery = mquery & join
 
                     if deletion_status in _table.fields:

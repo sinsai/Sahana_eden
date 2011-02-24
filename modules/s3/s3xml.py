@@ -71,8 +71,6 @@ class S3XML(object):
     # GIS field names
     Lat = "lat"
     Lon = "lon"
-    FeatureClass = "feature_class_id"
-    #Marker = "marker_id"
 
     IGNORE_FIELDS = ["deleted", "id", "owned_by_role", "owned_by_user"]
 
@@ -540,7 +538,6 @@ class S3XML(object):
             ktable = db[r.table]
             LatLon = db(ktable.id == r_id).select(ktable[self.Lat],
                                                   ktable[self.Lon],
-                                                  #ktable[self.FeatureClass],
                                                   limitby=(0, 1))
             if LatLon:
                 LatLon = LatLon.first()

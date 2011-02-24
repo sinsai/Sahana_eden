@@ -44,22 +44,27 @@
     </xsl:template>
 
     <xsl:template match="s3xml">
-        <xsl:variable name="resource">
-            <xsl:value-of select="concat($prefix,'_',$name)"/>
+        <xsl:variable name="results">
+            <xsl:value-of select="@results"/>
         </xsl:variable>
-        <xsl:choose>
-            <xsl:when test="count(./resource[@name=$resource])=1">
-                <xsl:apply-templates select="./resource[@name=$resource]"/>
-            </xsl:when>
-            <xsl:otherwise>
-                <type>FeatureCollection</type>
-                <xsl:for-each select="./resource[@name=$resource]">
-                    <features>
-                        <xsl:apply-templates select="."/>
-                    </features>
-                </xsl:for-each>
-            </xsl:otherwise>
-        </xsl:choose>
+        <xsl:if test="$results &gt; 0">
+            <xsl:variable name="resource">
+                <xsl:value-of select="concat($prefix,'_',$name)"/>
+            </xsl:variable>
+            <xsl:choose>
+                <xsl:when test="count(./resource[@name=$resource])=1">
+                    <xsl:apply-templates select="./resource[@name=$resource]"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <type>FeatureCollection</type>
+                    <xsl:for-each select="./resource[@name=$resource]">
+                        <features>
+                            <xsl:apply-templates select="."/>
+                        </features>
+                    </xsl:for-each>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:if>
     </xsl:template>
 
     <!-- ****************************************************************** -->

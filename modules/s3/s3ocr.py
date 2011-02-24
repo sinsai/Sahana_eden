@@ -485,7 +485,8 @@ class FormHandler(ContentHandler):
                         if ref in self.customfields.keys():
                             numlines = self.customfields[ref]
                         else:
-                            numlines = 1
+                            # Minimum of 2 lines
+                            numlines = 2
                     count = (self.form.width - 2 * self.form.marginsides) / 16
                     self.child2.setAttribute("boxes", str(int(count)))
                     self.child2.setAttribute("lines", str(numlines))

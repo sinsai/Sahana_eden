@@ -23,13 +23,235 @@
 
     OpenLayers.ProxyHost = '/{{=request.application}}/gis/proxy?url='; 
 
-    var url = '/{{=request.application}}/org/office.geojson';
-    
     var lon = -118.186291499;
     var lat = 34.3296640406;
     var center = new OpenLayers.LonLat(lon, lat);
     var zoom = 9;
     var map, layer;
+    var iconURL;
+    var centerPoint, currentFeature, popupControl, highlightControl;
+    var allLayers = new Array();
+    var popup_url;
+
+    var max_w = 30;
+    var max_h = 35;
+    var scaleImage = function(){
+        var scaleRatio = i.height/i.width;
+        var w = Math.min(i.width, max_w);
+        var h = w * scaleRatio;
+        if (h > max_h) {
+                h = max_h;
+                scaleRatio = w/h;
+                w = w * scaleRatio;
+            }
+        i.height = h;
+        i.width = w;
+    }
+
+    function onFeatureSelect(event) {
+        // unselect any previous selections
+        tooltipUnselect(event);
+        var feature = event.feature;
+        var id = 'featureLayerPopup';
+        centerPoint = feature.geometry.getBounds().getCenterLonLat();
+        if (feature.cluster) {
+            // Cluster
+            var name, fid, uuid, url;
+            var html = '{{=T("There are multiple records at this location")}}:<ul>';
+            for (var i = 0; i < feature.cluster.length; i++) {
+                name = feature.cluster[i].attributes.name;
+                fid = feature.cluster[i].fid;
+                // NB Doesn't support duplicate features!
+                var uuid = fid;
+                if ( feature.cluster[i].popup_url.match("<id>") != null ) {
+                    url = feature.cluster[i].popup_url.replace("<id>", uuid);
+                } else {
+                    url = feature.cluster[i].popup_url + uuid;
+                }
+                html += "<li><a href='javascript:loadClusterPopup(" + "\"" + url + "\", \"" + id + "\"" + ")'>" + name + "</a></li>";
+            }
+            html += '</ul>';
+            html += "<div align='center'><a href='javascript:zoomToSelectedFeature(" + centerPoint.lon + "," + centerPoint.lat + ", 3)'>Zoom in</a></div>";
+            var popup = new OpenLayers.Popup.FramedCloud(
+                id,
+                centerPoint,
+                new OpenLayers.Size(200, 200),
+                html,
+                null,
+                true,
+                onPopupClose
+            );
+            feature.popup = popup;
+            map.addPopup(popup);
+        } else {
+            // Single Feature
+            var popup_url = feature.popup_url;
+            var popup = new OpenLayers.Popup.FramedCloud(
+                id,
+                centerPoint,
+                new OpenLayers.Size(200, 200),
+                "{{=T("Loading")}}...<img src='{{=URL(r=request, c="static", f="img", args="ajax-loader.gif")}}' border=0>",
+                null,
+                true,
+                onPopupClose
+            );
+            feature.popup = popup;
+            map.addPopup(popup);
+            // call AJAX to get the contentHTML
+            var fid = feature.fid;
+            // NB Doesn't support duplicate features!
+            var uuid = fid;
+            if ( popup_url.match("<id>") != null ) {
+                popup_url = popup_url.replace("<id>", uuid)
+            }
+            else {
+                popup_url = popup_url + uuid;
+            }
+            loadDetails(popup_url, id, popup);
+        }
+    }
+
+    function loadDetails(url, id, popup) {
+        $.get(
+                url,
+                function(data) {
+                    $('#' + id + '_contentDiv').html(data);
+                    popup.updateSize();
+                },
+                'html'
+            );
+    }
+
+    // Functions which are called by user & hence need to be in global scope
+
+    // Replace Cluster Popup contents with selected Feature Popup
+    function loadClusterPopup(url, id) {
+        $.get(
+                url,
+                function(data) {
+                    $('#' + id + '_contentDiv').html(data);
+                    map.popups[0].updateSize();
+                },
+                'html'
+            );
+    }
+
+    // Zoom to Selected Feature from within Popup
+    function zoomToSelectedFeature(lon, lat, zoomfactor) {
+        var lonlat = new OpenLayers.LonLat(lon, lat);
+        // Get Current Zoom
+        var currZoom = map.getZoom();
+        // New Zoom
+        var newZoom = currZoom + zoomfactor;
+        // Center and Zoom
+        map.setCenter(lonlat, newZoom);
+        // Remove Popups
+        for (var i=0; i < map.popups.length; ++i)   {
+            map.removePopup(map.popups[i]);
+        }
+    }
+
+    // Supports popupControl for All Vector Layers
+    function onFeatureUnselect(event) {
+        var feature = event.feature;
+        if (feature.popup) {
+            map.removePopup(feature.popup);
+            feature.popup.destroy();
+            delete feature.popup;
+        }
+    }
+    function onPopupClose(evt) {
+        popupControl.unselectAll();
+    }
+
+    // Supports highlightControl for All Vector Layers
+    var lastFeature = null;
+    var tooltipPopup = null;
+    function tooltipSelect(event) {
+        var feature = event.feature;
+        if (feature.cluster) {
+            // Cluster
+            // no tooltip
+        } else {
+            // Single Feature
+            var selectedFeature = feature;
+            // if there is already an opened details window, don\'t draw the tooltip
+            if (feature.popup != null) {
+                return;
+            }
+            // if there are other tooltips active, destroy them
+            if (tooltipPopup != null) {
+                map.removePopup(tooltipPopup);
+                tooltipPopup.destroy();
+                if (lastFeature != null) {
+                    delete lastFeature.popup;
+                    tooltipPopup = null;
+                }
+            }
+            lastFeature = feature;
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
+            _attributes = feature.attributes;
+            if (undefined == _attributes.name && undefined == _attributes.title) {
+                // KML Layer
+                var title = feature.layer.title;
+                if (undefined == title) {
+                    // We don't have a suitable title, so don't display a tooltip
+                    tooltipPopup = null;
+                } else {
+                    var type = typeof _attributes[title];
+                    if ('object' == type) {
+                        _title = _attributes[title].value;
+                    } else {
+                        _title = _attributes[title];
+                    }
+                    tooltipPopup = new OpenLayers.Popup("activetooltip",
+                        centerPoint,
+                        new OpenLayers.Size(80, 12),
+                        _title,
+                        false
+                    );
+                }
+            } else if (undefined == _attributes.title) {
+                // Features
+                tooltipPopup = new OpenLayers.Popup("activetooltip",
+                        centerPoint,
+                        new OpenLayers.Size(80, 12),
+                        _attributes.name,
+                        false
+                );
+            } else {
+                // GeoRSS
+                tooltipPopup = new OpenLayers.Popup("activetooltip",
+                        centerPoint,
+                        new OpenLayers.Size(80, 12),
+                        _attributes.title,
+                        false
+                );
+            }
+            if (tooltipPopup != null) {
+                // should be moved to CSS
+                tooltipPopup.contentDiv.style.backgroundColor='ffffcb';
+                tooltipPopup.contentDiv.style.overflow='hidden';
+                tooltipPopup.contentDiv.style.padding='3px';
+                tooltipPopup.contentDiv.style.margin='10px';
+                tooltipPopup.closeOnMove = true;
+                tooltipPopup.autoSize = true;
+                tooltipPopup.opacity = 0.7;
+                feature.popup = tooltipPopup;
+                map.addPopup(tooltipPopup);
+            }
+        }
+    }
+    function tooltipUnselect(event){
+        var feature = event.feature;
+        if (feature != null && feature.popup != null) {
+            map.removePopup(feature.popup);
+            feature.popup.destroy();
+            delete feature.popup;
+            tooltipPopup = null;
+            lastFeature = null;
+        }
+    }
 
     Ext.onReady(function() {
         map = new OpenLayers.Map('map');
@@ -39,15 +261,68 @@
         map.addLayer(layer);
         map.setCenter(center, zoom);
 
+        // Hack - just read 1 layer
+        {{for feature_query in feature_queries:}}
+        var url = '{{=feature_query["url"]}}';
+        popup_url = '{{=feature_query["popup_url"]}}';
+        // @ToDo: Turn this into a function & call from the format's filter parsing iconURL from the feature attributes
+        iconURL = '{{=URL(r=request, c="static", f="img", args=["markers", feature_query["marker"].image])}}';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = iconURL;
+        // Needs to be uniquely instantiated
+        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+        style_marker.graphicOpacity = 1;
+        style_marker.graphicWidth = i.width;
+        style_marker.graphicHeight = i.height;
+        style_marker.graphicXOffset = -(i.width / 2);
+        style_marker.graphicYOffset = -i.height;
+        style_marker.externalGraphic = iconURL;
+
         var geojson_format = new OpenLayers.Format.GeoJSON();
         var vector_layer = new OpenLayers.Layer.Vector("GeoJSON", {
             strategies: [new OpenLayers.Strategy.Fixed()],
+            style: style_marker,
             protocol: new OpenLayers.Protocol.HTTP({
                 url: url,
                 format: geojson_format
             })
         });
         map.addLayer(vector_layer);
+        allLayers = allLayers.concat(vector_layer);
+        vector_layer.events.on({
+            "featureselected": onFeatureSelect,
+            "featureunselected": onFeatureUnselect
+        });
+        {{pass}}
+
+        // Popups (add these after the layers)
+        // onClick Popup
+        popupControl = new OpenLayers.Control.SelectFeature(
+            allLayers, {
+                toggle: true,
+                clickout: true,
+                multiple: false
+            }
+        );
+        // onHover Tooltip
+        highlightControl = new OpenLayers.Control.SelectFeature(
+            allLayers, {
+                hover: true,
+                highlightOnly: true,
+                //renderIntent: 'temporary',
+                eventListeners: {
+                    featurehighlighted: tooltipSelect,
+                    featureunhighlighted: tooltipUnselect
+                }
+            }
+        );
+        map.addControl(highlightControl);
+        map.addControl(popupControl);
+        highlightControl.activate();
+        popupControl.activate();
 
         mapPanel = new GeoExt.MapPanel({
             region: 'center',

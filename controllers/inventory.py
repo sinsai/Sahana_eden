@@ -144,6 +144,7 @@ def store_item_quantity():
                  ).select(db.inventory_store_item.quantity,
                           db.supply_item_packet.quantity,
                           limitby=[0,1]).first()#
+
     return json.dumps(record)
 
 def store_item_packets():

@@ -254,16 +254,23 @@ if deployment_settings.has_module("logs"):
                                     ondelete = "RESTRICT"
                                     )    
 
-    # Items as component of Stores
+    # Store items as component of Stores
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(inventory_store="inventory_store_id")
+                              joinby=dict(inventory_store = "inventory_store_id")
                               )
     
+    # Store items as components of Supply Items 
     s3xrc.model.add_component(module, resourcename,
                               multiple=False,
-                              joinby=dict(supply_item="item_id")
+                              joinby=dict(supply_item = "item_id")
                               )     
+    
+    #Store Items as component of packets
+    s3xrc.model.add_component(module, resourcename,
+                              multiple=True,
+                              joinby=dict(supply_item_packet = "item_packet_id"))   
+       
     # -----------------------------------------------------------------------------    
     def store_resource_onaccept(form, tablename):
         """ 

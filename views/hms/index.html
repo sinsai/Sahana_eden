@@ -5,21 +5,15 @@
 
     {{=OL(
       LI(
-        SPAN(A(T("Hospital Status Report"),
+        SPAN(A(T("New Hospital"),
+          _href=URL(r=request, c="hms", f="hospital", args="create")), _style="font-weight:bold;"),
+        P(T("Report new hospital information."), _style="padding-left:0;"),
+          _style="margin-top:1em;"),
+
+      LI(
+        SPAN(A(T("Find Hospital"),
           _href=URL(r=request, c="hms", f="hospital", args="search")), _style="font-weight:bold;"),
-        P(T("View or update the status of a hospital."), _style="padding-left:0;"),
-          _style="margin-top:1em;"),
-
-      LI(
-        SPAN(A(T("Support Request"),
-          _href=URL(r=request, c="rms", f="req", args="create")), _style="font-weight:bold;"),
-        P(T("Enter a new support request."), _style="padding-left:0;"),
-          _style="margin-top:1em;"),
-
-      LI(
-        SPAN(A(T("Pledge Support"),
-          _href=URL(r=request, c="rms", f="req")), _style="font-weight:bold;"),
-       P(T("View pending requests and pledge support."), _style="padding-left:0;"),
+        P(T("Find and update hospital information."), _style="padding-left:0;"),
           _style="margin-top:1em;"),
 
       LI(
@@ -66,7 +60,6 @@
     {{=H3(T("Features Include"), _style="margin-top:15px;")}}
     {{=UL(
       LI(T("Hospital status assessment.")),
-      LI(T("Manage requests of hospitals for assistance.")),
       _style="margin-left:20px;")
     }}
   </div>

@@ -15,6 +15,7 @@ response.menu_options = [
         #[T("List"), False, URL(r=request, f="location")],
         [T("Search"), False, URL(r=request, f="location", args="search")],
         [T("Add"), False, URL(r=request, f="location", args="create")],
+        #[T("Geocode"), False, URL(r=request, f="geocode_manual")],
     ]],
     [T("Fullscreen Map"), False, URL(r=request, f="map_viewing_client")],
     # Currently broken
@@ -83,7 +84,7 @@ def define_map(window=False, toolbar=False, config=None):
     else:
         print_tool = {}
 
-    # Custom Feature Layers
+    # Internal Feature Layers
     feature_queries = []
     feature_layers = db(db.gis_layer_feature.enabled == True).select()
     for layer in feature_layers:
@@ -112,7 +113,7 @@ def location():
 
     """ RESTful CRUD controller for Locations """
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # Allow prep to pass vars back to the controller
@@ -125,10 +126,10 @@ def location():
     def prep(r, vars):
 
         def get_location_info():
-            return db(db.gis_location.id == r.id).select(
-                db.gis_location.lat,
-                db.gis_location.lon,
-                db.gis_location.level, limitby=(0, 1)).first()
+            return db(db.gis_location.id == r.id).select(db.gis_location.lat,
+                                                         db.gis_location.lon,
+                                                         db.gis_location.level,
+                                                         limitby=(0, 1)).first()
 
         # Override the default Search Method
         #r.resource.set_handler("search", s3base.S3LocationSearch())
@@ -154,8 +155,7 @@ def location():
             location = get_location_info()
             if location.level == "GR":
                 table.level.writable = False
-                table.parent.readable = False
-                table.parent.writable = False
+                table.parent.readable = table.parent.writable = False
                 table.members.notnull = True
                 # Record that this is a group location. Since we're setting
                 # level to not writable, it won't be in either form.vars or
@@ -163,8 +163,7 @@ def location():
                 # db access.
                 response.s3.location_is_group = True
             else:
-                table.members.writable = False
-                table.members.readable = False
+                table.members.writable = table.members.readable = False
                 response.s3.location_is_group = False
 
         # Don't show street address, postcode for hierarchy on read or update.
@@ -174,10 +173,8 @@ def location():
             except:
                 location = get_location_info()
             if location.level:
-                table.addr_street.writable = False
-                table.addr_street.readable = False
-                table.addr_postcode.writable = False
-                table.addr_postcode.readable = False
+                table.addr_street.writable = table.addr_street.readable = False
+                table.addr_postcode.writable = table.addr_postcode.readable = False
 
         if r.http in ("GET", "POST") and r.representation in shn_interactive_view_formats:
             # Options which are only required in interactive HTML views
@@ -209,24 +206,6 @@ def location():
                 table.uuid.label = "UUID"
                 table.uuid.comment = DIV(_class="stickytip",
                                          _title="UUID|" + T("The") + " <a href='http://eden.sahanafoundation.org/wiki/UUID#Mapping' target=_blank>Universally Unique ID</a>. " + T("Suggest not changing this field unless you know what you are doing."))
-
-            # CRUD Strings
-            LIST_LOCATIONS = T("List Locations")
-            s3.crud_strings[tablename] = Storage(
-                title_create = ADD_LOCATION,
-                title_display = T("Location Details"),
-                title_list = T("Locations"),
-                title_update = T("Edit Location"),
-                title_search = T("Search Locations"),
-                subtitle_create = T("Add New Location"),
-                subtitle_list = LIST_LOCATIONS,
-                label_list_button = LIST_LOCATIONS,
-                label_create_button = ADD_LOCATION,
-                label_delete_button = T("Delete Location"),
-                msg_record_created = T("Location added"),
-                msg_record_modified = T("Location updated"),
-                msg_record_deleted = T("Location deleted"),
-                msg_list_empty = T("No Locations currently available"))
 
             if r.method in (None, "list") and r.record is None:
                 # List
@@ -725,7 +704,7 @@ def apikey():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # Pre-processor
@@ -767,7 +746,7 @@ def config():
 
     """ RESTful CRUD controller """
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # Pre-processor
@@ -809,7 +788,7 @@ def feature_class():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # Model options
@@ -867,7 +846,7 @@ def layer_feature():
 
     response.s3.postp = postp
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # CRUD Strings
@@ -935,7 +914,7 @@ def marker():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # CRUD Strings
@@ -970,7 +949,7 @@ def projection():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # CRUD Strings
@@ -1003,7 +982,7 @@ def waypoint():
 
     """ RESTful CRUD controller for GPS Waypoints """
 
-    table = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     return s3_rest_controller(module, resourcename)
 
@@ -1020,7 +999,7 @@ def trackpoint():
 
     """ RESTful CRUD controller for GPS Track points """
 
-    table = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     return s3_rest_controller(module, resourcename)
 
@@ -1031,7 +1010,7 @@ def track():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    table = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # Model options
     # used in multiple controllers, so defined in model
@@ -1066,7 +1045,7 @@ def layer_openstreetmap():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # CRUD Strings
     type = "OpenStreetMap"
@@ -1101,7 +1080,7 @@ def layer_google():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # Model options
@@ -1140,7 +1119,7 @@ def layer_yahoo():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # CRUD Strings
@@ -1177,7 +1156,7 @@ def layer_mgrs():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # CRUD Strings
@@ -1214,7 +1193,7 @@ def layer_bing():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     # CRUD Strings
@@ -1246,12 +1225,49 @@ def layer_bing():
 
     return output
 
+def layer_geojson():
+    """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
+        unauthorised()
+
+    tablename = "%s_%s" % (module, resourcename)
+
+    # CRUD Strings
+    type = "GeoJSON"
+    LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    s3.crud_strings[tablename] = Storage(
+        title_create=ADD_LAYER,
+        title_display=LAYER_DETAILS,
+        title_list=LAYERS,
+        title_update=EDIT_LAYER,
+        title_search=SEARCH_LAYERS,
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_LAYERS,
+        label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
+        msg_record_created=LAYER_ADDED,
+        msg_record_modified=LAYER_UPDATED,
+        msg_record_deleted=LAYER_DELETED,
+        msg_list_empty=NO_LAYERS)
+
+    output = s3_rest_controller(module, resourcename)
+
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+
+    return output
+
 def layer_georss():
     """ RESTful CRUD controller """
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # CRUD Strings
     type = "GeoRSS"
@@ -1288,7 +1304,7 @@ def layer_gpx():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # Model options
     # Needed in multiple controllers, so defined in Model
@@ -1328,7 +1344,7 @@ def layer_kml():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # CRUD Strings
     type = "KML"
@@ -1371,7 +1387,7 @@ def layer_tms():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # CRUD Strings
     type = "TMS"
@@ -1408,7 +1424,7 @@ def layer_wfs():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # CRUD Strings
     type = "WFS"
@@ -1445,7 +1461,7 @@ def layer_wms():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # CRUD Strings
     type = "WMS"
@@ -1481,7 +1497,7 @@ def layer_wms():
 def layer_js():
     """ RESTful CRUD controller """
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # CRUD Strings
     type = "JS"
@@ -1518,7 +1534,7 @@ def layer_xyz():
     if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
         unauthorised()
 
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module, resourcename)
 
     # CRUD Strings
     type = "XYZ"
@@ -1714,6 +1730,122 @@ def geocode():
 
     if service == "yahoo":
         return s3base.YahooGeocoder(location, db).get_xml()
+
+# -----------------------------------------------------------------------------
+def geocode_manual():
+
+    """
+        Manually Geocode locations
+
+        @ToDo: make this accessible by Anonymous users?
+    """
+
+    table = db.gis_location
+
+    # Filter
+    query = (table.level == None)
+    # @ToDo: make this role-dependent
+    # - Normal users do the Lat/Lons
+    # - Special users do the Codes
+    filter = (table.lat == None)
+    response.s3.filter = (query & filter)
+
+    # Hide unnecessary fields
+    table.name_dummy.readable = table.name_dummy.writable = False
+    table.code.readable = table.code.writable = False # @ToDo: Role-dependent
+    table.level.readable = table.level.writable = False
+    table.members.readable = table.members.writable = False
+    table.gis_feature_type.readable = table.gis_feature_type.writable = False
+    table.wkt.readable = table.wkt.writable = False
+    table.url.readable = table.url.writable = False
+    table.geonames_id.readable = table.geonames_id.writable = False
+    table.osm_id.readable = table.osm_id.writable = False
+    table.source.readable = table.source.writable = False
+    table.comments.readable = table.comments.writable = False
+    
+    # Customise Labels for specific use-cases
+    #table.name.label = T("Building Name") # Building Assessments-specific
+    #table.parent.label = T("Suburb") # Christchurch-specific
+    
+    # For Special users doing codes
+    #table.code.label = T("Property reference in the council system") # Christchurch-specific 'prupi'
+    #table.code2.label = T("Polygon reference of the rating unit") # Christchurch-specific 'gisratingid'
+
+    # Allow prep to pass vars back to the controller
+    vars = {}
+
+    # Pre-processor
+    def prep(r, vars):
+        def get_location_info():
+            return db(db.gis_location.id == r.id).select(db.gis_location.lat,
+                                                         db.gis_location.lon,
+                                                         db.gis_location.level,
+                                                         limitby=(0, 1)).first()
+
+        if r.method in (None, "list") and r.record is None:
+            # List
+            pass
+        elif r.method in ("delete", "search"):
+            pass
+        else:
+            # Add Map to allow locations to be found this way
+            # @ToDo: DRY with one in location()
+            config = gis.get_config()
+            lat = config.lat
+            lon = config.lon
+            zoom = config.zoom
+            feature_queries = []
+
+            if r.method == "create":
+                add_feature = True
+                add_feature_active = True
+            else:
+                if r.method == "update":
+                    add_feature = True
+                    add_feature_active = False
+                else:
+                    # Read
+                    add_feature = False
+                    add_feature_active = False
+
+                try:
+                    location
+                except:
+                    location = get_location_info()
+                if location and location.lat is not None and location.lon is not None:
+                    lat = location.lat
+                    lon = location.lon
+                # Same as a single zoom on a cluster
+                zoom = zoom + 2
+
+            # @ToDo: Does map make sense if the user is updating a group?
+            # If not, maybe leave it out. OTOH, might be nice to select
+            # admin regions to include in the group by clicking on them in
+            # the map. Would involve boundaries...
+            _map = gis.show_map(lat = lat,
+                                lon = lon,
+                                zoom = zoom,
+                                feature_queries = feature_queries,
+                                add_feature = add_feature,
+                                add_feature_active = add_feature_active,
+                                toolbar = True,
+                                collapsed = True)
+
+            # Pass the map back to the main controller
+            vars.update(_map=_map)
+        return True
+    response.s3.prep = lambda r, vars=vars: prep(r, vars)
+
+    s3xrc.model.configure(table, listadd=False,
+                          list_fields=["id", "name", "address", "parent"])
+    
+    output = s3_rest_controller("gis", "location")
+
+    _map = vars.get("_map", None)
+    if _map and isinstance(output, dict):
+        output.update(_map=_map)
+
+    return output
 
 # -----------------------------------------------------------------------------
 def geoexplorer():
@@ -2827,6 +2959,26 @@ def test():
     return dict(map=html)
 
 def test2():
-    " Test new OpenLayers functionality in a RAD environment "
-    
-    return dict()
+    """
+        Test new OpenLayers functionality in a RAD environment
+        - currently being used to trial using GeoJSON for internal feature layers
+    """
+
+    # Internal Feature Layers
+    feature_queries = []
+    feature_layers = db(db.gis_layer_feature.resource == "office").select()
+    for layer in feature_layers:
+        if layer.role_required and not auth.s3_has_role(layer.role_required):
+            continue
+        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons, opacity=layer.opacity)
+        if _layer:
+            # Add a URL for downloading the GeoJSON
+            # @ToDO: add to gis.get_feature_layer
+            _layer["url"] = "%s.geojson" % URL(r=request, c=layer.module, f=layer.resource)
+            marker = db(db.gis_marker.id == _layer["marker"]).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+            _layer["marker"] = marker
+            feature_queries.append(_layer)
+
+    return dict(feature_queries=feature_queries)
+
+# -----------------------------------------------------------------------------

@@ -357,6 +357,12 @@ deployment_settings.modules = OrderedDict([
             #restricted = False,
             #module_type = 2,
         #)),
+    #("building", Storage(
+            #name_nice = "Building Assessments",
+            #description = "Building Safety Assessments",
+            #restricted = False,
+            #module_type = 10,
+        #)),
     #("delphi", Storage(
     #        name_nice = T("Delphi Decision Maker"),
     #        description = T("Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list."),

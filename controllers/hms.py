@@ -146,8 +146,8 @@ def hospital():
     rheader = lambda r: shn_hms_hospital_rheader(r,
                                                  tabs=[(T("Status Report"), ""),
                                                        (T("Bed Capacity"), "bed_capacity"),
-                                                       (T("Activity Report"), "activity"),
-                                                       (T("Requests"), "req"),
+                                                       #(T("Activity Report"), "activity"),
+                                                       #(T("Requests"), "req"),
                                                        (T("Images"), "image"),
                                                        (T("Services"), "services"),
                                                        (T("Contacts"), "contact"),
@@ -238,9 +238,9 @@ def s3_hms_submit_processor(form):
             db.pr_submitter.insert(person_id = dummy_person_id, submitter_handle = dummy_submitter_handle)
             form.vars.created_by = user_id
             session.s3.submitter_handle = dummy_submitter_handle
-            
-            
+
+
         #----
-    
-    
+
+
 

@@ -39,7 +39,8 @@ def shn_ocr_downloadpdf(tablename):
         #except(ValueError):
         #    pass
         # Hard-code list for now
-        formelementsls = ["en", "es"]
+        #formelementsls = ["en", "es"]
+        formelementsls = [response.s3.language]
 
         if len(formelementsls) == 0:
             pdfenable = 0

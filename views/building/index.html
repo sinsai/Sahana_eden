@@ -1,0 +1,17 @@
+{{extend "layout.html"}}
+<div id='home'>
+{{=H2(module_name)}}
+<p>
+{{=T("The Building Asssesments module allows building safety to be assessed, e.g. after an Earthquake.")}}
+</p>
+<h3>{{=T("Forms available")}}:</h3>
+NZSEE {{=T("Safety Assessment Form")}} (ATC-20 Rapid Evaluation modified for New Zealand)
+<ul>
+<li><a href='{{=URL(r=request, f="nzseel1", args=["create"], vars={"triage":1})}}'>Submit new Level 1 assessment (triage)</a></li>
+<li><a href='{{=URL(r=request, f="nzseel1", args=["create"])}}'>Submit new Level 1 assessment (full form)</a></li>
+<li><a href='{{=URL(r=request, f="nzseel2", args=["create"])}}'>Submit new Level 2 assessment</a></li>
+<li><a href='{{=URL(r=request, f="nzseel1")}}'>List Level 1 assessments</a></li>
+<li><a href='{{=URL(r=request, f="nzseel2")}}'>List Level 2 assessments</a></li>
+<li><a href='{{=URL(r=request, f="report")}}'>{{=T("Reports")}}</a></li>
+</ul>
+</div>

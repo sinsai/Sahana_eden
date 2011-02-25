@@ -82,7 +82,12 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                     super_link(db.org_site),
-                    Field("gov_uuid", unique=True, length=128), # UID assigned by Local Government
+                    # PAHO UID
+                    Field("paho_uuid", unique=True, length=128),
+                    # UID assigned by Local Government
+                    Field("gov_uuid", unique=True, length=128),
+                    # Alternate ids found in data feeds
+                    Field("other_ids", length=128),
                     Field("name", notnull=True),                # Name of the facility
                     Field("aka1"),                              # Alternate name, or name in local language
                     Field("aka2"),                              # Alternate name, or name in local language
@@ -155,6 +160,8 @@ if deployment_settings.has_module(module):
                                       (meta_record_status(), meta_duplicate_uid())))
 
     table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
+    table.paho_uuid.label = T("PAHO UID")
+    table.paho_uuid.requires = IS_NULL_OR(IS_NOT_ONE_OF(db, "%s.paho_uuid" % tablename))
     table.gov_uuid.label = T("Government UID")
     table.gov_uuid.requires = IS_NULL_OR(IS_NOT_ONE_OF(db, "%s.gov_uuid" % tablename))
     table.name.label = T("Name")

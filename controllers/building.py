@@ -236,6 +236,26 @@ def report():
     return dict(level1=level1,
                 level2=level2)
 # -----------------------------------------------------------------------------
+def getformatedData(sql):
+    dbresult = db.executesql(sql)
+    result = []
+    cnt = -1;
+    # Format the results
+    for report in dbresult:
+        trueDate = datetime.datetime.strptime(report[0], "%Y-%m-%d %H:%M:%S") 
+        date = trueDate.strftime('%d %b %Y')
+        hour = trueDate.strftime("%H")
+        key = (date, hour)
+        if (cnt == -1) or (result[cnt][0] != key):
+            result.append([key , 0, 0, 0, 0, 0, 0, 0, 1])
+            cnt += 1
+        else:
+            result[cnt][8] += 1
+        damage = report[1]
+        result[cnt][damage] += 1
+
+    return result
+
 def timeline():
     """
         A report providing assessments received broken down by time
@@ -243,35 +263,21 @@ def timeline():
     """
     result = Storage()
     inspection = []
-    creation = {}
-    sql = "select `date`, daytime, count(*) FROM building_nzseel1 WHERE deleted = \"F\" GROUP BY `date`, daytime ORDER BY `date` DESC"
-    result = db.executesql(sql)
-    # Format the results
-    for report in result:
-        date = datetime.datetime.strptime(report[0], "%Y-%m-%d").strftime('%d %b %Y')
-        daytime = report[1]
-        count = report[2]
-        print date 
-        inspection.append((date, daytime, count))
-    
+    creation = []
+    sql = "select `date`, estimated_damage FROM building_nzseel1 WHERE deleted = \"F\" ORDER BY `date` DESC"
+    inspection = getformatedData(sql)
+
     sql = "select created_on, estimated_damage FROM building_nzseel1 WHERE deleted = \"F\" ORDER BY created_on DESC"
-    result = db.executesql(sql)
-    # Format the results
-    for report in result:
-        print report[0]
-        trueDate = datetime.datetime.strptime(report[0], "%Y-%m-%d %H:%M:%S") 
-        date = trueDate.strftime('%d %b %Y')
-        hour = trueDate.strftime("%H")
-        if creation.has_key((date, hour)):
-            creation[(date, hour)][0] += 1
-        else:
-            creation[(date, hour)] = [1, 0, 0, 0, 0, 0, 0, 0]
-        creation[(date, hour)][report[1]] += 1
-    for (key, value) in creation.keys():
-        print key
-        print value
-        print creation[(key, value)]
+    creation = getformatedData(sql)
+    
+    totals = [0,0,0,0,0,0,0,0]
+    for line in inspection:
+        for i in range(8):
+            totals[i] += line[i+1]
     return dict(inspection=inspection,
-                creation=creation
-                )
+                creation=creation,
+                totals= totals
+                ) 
+
+    
 # -----------------------------------------------------------------------------

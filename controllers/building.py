@@ -251,15 +251,15 @@ def timeline():
         date = datetime.datetime.strptime(report[0], "%Y-%m-%d").strftime('%d %b %Y')
         daytime = report[1]
         count = report[2]
-        print date 
+        print date
         inspection.append((date, daytime, count))
-    
+
     sql = "select created_on, estimated_damage FROM building_nzseel1 WHERE deleted = \"F\" ORDER BY created_on DESC"
     result = db.executesql(sql)
     # Format the results
     for report in result:
         print report[0]
-        trueDate = datetime.datetime.strptime(report[0], "%Y-%m-%d %H:%M:%S") 
+        trueDate = datetime.datetime.strptime(report[0], "%Y-%m-%d %H:%M:%S")
         date = trueDate.strftime('%d %b %Y')
         hour = trueDate.strftime("%H")
         if creation.has_key((date, hour)):

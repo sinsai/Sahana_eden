@@ -1424,39 +1424,40 @@ class S3QueryBuilder(object):
         table = resource.table
         bbox_query = None
 
-        for k in vars:
-            if k[:4] == "bbox":
-                fname = None
-                if k.find(".") != -1:
-                    fname = k.split(".")[1]
-                elif resource.tablename != "gis_location":
-                    for f in resource.table.fields:
-                        if str(table[f].type) == "reference gis_location":
-                            fname = f
-                            break
-                if fname is None or fname not in resource.table.fields:
-                    # Field not found - ignore
-                    continue
-                try:
-                    minLon, minLat, maxLon, maxLat = vars[k].split(",")
-                except:
-                    # Badly-formed bbox - ignore
-                    continue
-                else:
-                    bbox_filter = ((locations.lon > minLon) & \
-                                   (locations.lon < maxLon) & \
-                                   (locations.lat > minLat) & \
-                                   (locations.lat < maxLat))
-                    if fname is not None:
-                        # Need a join
-                        join = (locations.id == table[fname])
-                        bbox = (join & bbox_filter)
+        if vars:
+            for k in vars:
+                if k[:4] == "bbox":
+                    fname = None
+                    if k.find(".") != -1:
+                        fname = k.split(".")[1]
+                    elif resource.tablename != "gis_location":
+                        for f in resource.table.fields:
+                            if str(table[f].type) == "reference gis_location":
+                                fname = f
+                                break
+                    if fname is None or fname not in resource.table.fields:
+                        # Field not found - ignore
+                        continue
+                    try:
+                        minLon, minLat, maxLon, maxLat = vars[k].split(",")
+                    except:
+                        # Badly-formed bbox - ignore
+                        continue
                     else:
-                        bbox = bbox_filter
-                if bbox_query is None:
-                    bbox_query = bbox
-                else:
-                    bbox_query = bbox_query & bbox
+                        bbox_filter = ((locations.lon > minLon) & \
+                                    (locations.lon < maxLon) & \
+                                    (locations.lat > minLat) & \
+                                    (locations.lat < maxLat))
+                        if fname is not None:
+                            # Need a join
+                            join = (locations.id == table[fname])
+                            bbox = (join & bbox_filter)
+                        else:
+                            bbox = bbox_filter
+                    if bbox_query is None:
+                        bbox_query = bbox
+                    else:
+                        bbox_query = bbox_query & bbox
 
         return bbox_query
 

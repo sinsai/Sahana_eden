@@ -154,6 +154,9 @@ def hospital():
                                                        (T("Cholera Treatment Capability"), "ctc_capability")
                                                       ])
 
+    s3xrc.model.configure(db.hms_hospital,
+                create_onvalidation = s3_hms_submit_processor)
+
     output = s3_rest_controller(module, resourcename, rheader=rheader)
     shn_menu()
     return output
@@ -161,6 +164,7 @@ def hospital():
 
 # -----------------------------------------------------------------------------
 #
+
 def shn_hms_hospital_rheader(r, tabs=[]):
 
     """ Page header for component resources """
@@ -201,3 +205,42 @@ def shn_hms_hospital_rheader(r, tabs=[]):
                 return rheader
 
     return None
+
+#------entry submission handler: adds submission handler for submitters who are not logged in------
+def s3_hms_submit_processor(form):
+
+    # check if user is not authenticated
+    if not auth.is_logged_in():
+        submitter_handle = None
+        if form.vars.submitter_handle:
+            submitter_handle = form.vars.submitter_handle
+        elif session.s3.submitter_handle:
+            submitter_handle = session.s3.submitter_handle
+        if submitter_handle:
+            query = (db.pr_submitter.submitter_handle==submitter_handle) & \
+                    (db.pr_person.id == db.pr_submitter.person_id) & \
+                    (db.auth_user.person_uuid == db.pr_person.uuid)
+            result = db(query).select().first()
+            if not result:
+                form.errors.submitter_handle = "You have to enter a valid submitter handle"
+            else:
+                user_id = result.auth_user.id
+                form.vars.created_by = user_id
+        else:
+            dummy_submitter_handle = str(uuid.uuid4())[0:4] + '-' + str(uuid.uuid4())[4:8]
+
+            dummy = Storage(first_name = dummy_submitter_handle,
+                            last_name = "dummy",
+                            email="%s@%s" % (dummy_submitter_handle, "example.com"))
+            user_id = db.auth_user.insert(**dummy)
+            dummy.update(id=user_id)
+            dummy_person_id = auth.s3_link_to_person(dummy)
+            db.pr_submitter.insert(person_id = dummy_person_id, submitter_handle = dummy_submitter_handle)
+            form.vars.created_by = user_id
+            session.s3.submitter_handle = dummy_submitter_handle
+            
+            
+        #----
+    
+    
+

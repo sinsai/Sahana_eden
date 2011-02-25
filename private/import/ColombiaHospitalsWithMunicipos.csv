@@ -1,0 +1,282 @@
+OBJECTID,HospitalName,ID,Address,Phone,Latitude,Longitude,URL,Source,DEPARTAMEN,Municipio
+1,Clinica Palermo,0,,,1.225525,-77.285463,,Student Collection,NARI�O,Pasto
+2,Fundacion Hospital San Pedro,0,,,1.22407,-77.291764,,Student Collection,NARI�O,Pasto
+3,Hospital San Rafael,0,,,1.223202,-77.291368,,Student Collection,NARI�O,Pasto
+4,Hospital Infantil Los Angeles,0,,,1.22294,-77.280344,,Student Collection,NARI�O,Pasto
+5,Hospital Mental,0,,,1.208549,-77.295403,,Student Collection,NARI�O,Pasto
+6,Cruz Roja,0,,,1.213046,-77.282741,,Student Collection,NARI�O,Pasto
+7,Hospital Departamental,0,,,1.205126,-77.268383,,Student Collection,NARI�O,Pasto
+8,San vicente de Paul,0,,,5.150836,-75.034333,,Student Collection,TOLIMA,Fresno
+9,San Vicente de Pa�l,280990608,,,5.150836,-75.034333,,OSM,TOLIMA,Fresno
+10,Centro de Saludd e Manta,0,,,5.0109,-73.538379,,Student Collection,CUNDINAMARCA,Manta
+11,,0,,,3.725935,-75.485242,,Student Collection,TOLIMA,Chaparral
+12,,446193278,,,3.725935,-75.485242,,OSM,TOLIMA,Chaparral
+13,CLINICA EL PRADO,0,,,11.236917,-74.21089,,Student Collection,MAGDALENA,SANTA MARTA
+14,Centro de Salud,0,,,4.866461,-73.880761,,Student Collection,CUNDINAMARCA,Guasca
+15,Hospital Ram�n Mar�a Arana ESE,0,,,4.875963,-75.17154,,Student Collection,TOLIMA,Murillo
+16,centro M�dico,0,,,4.762868,-75.130061,,Student Collection,TOLIMA,Murillo
+17,Clinica Casanare,0,,,5.348048,-72.391252,,Student Collection,CASANARE,Yopal
+18,Hospital Yopal,0,,,5.349874,-72.395139,,Student Collection,CASANARE,Yopal
+19,nuestra se�ora de Guadalupe,0,,,2.023429,-75.759649,,Student Collection,HUILA,Guadalupe
+20,cruz roja,0,,,2.941892,-75.294368,,Student Collection,HUILA,Neiva
+21,UROS,0,,,2.934601,-75.289723,,Student Collection,HUILA,Neiva
+22,cesar osorio implantologia y maxilofacial,0,,,2.937423,-75.290599,,Student Collection,HUILA,Neiva
+23,clinica la piel centro dermatologico y de cirujia plastica,0,,,2.936943,-75.290084,,Student Collection,HUILA,Neiva
+24,Clinica de Fraturas,0,,,2.936071,-75.288992,,Student Collection,HUILA,Neiva
+25,nueva E.P.S.,0,,,2.937117,-75.288828,,Student Collection,HUILA,Neiva
+26,Clinica Navarro,0,,,2.933415,-75.281435,,Student Collection,HUILA,Neiva
+27,odontoclinicas MR,0,,,2.930237,-75.290677,,Student Collection,HUILA,Neiva
+28,Hospital Universitario,0,,,2.932306,-75.280582,,Student Collection,HUILA,Neiva
+29,MEDILASER CLINICA,0,,,2.931172,-75.287921,,Student Collection,HUILA,Neiva
+30,clinica central de especialistas,0,,,2.930881,-75.287835,,Student Collection,HUILA,Neiva
+31,clinica i.p.s. san pedro claver,0,,,2.929628,-75.287711,,Student Collection,HUILA,Neiva
+32,emcosalud,0,,,2.924638,-75.286014,,Student Collection,HUILA,Neiva
+33,clinica tundama,0,,,5.827446,-73.035937,,Student Collection,BOYACA,Duitama
+34,clinica boyaca,0,,,5.814712,-73.031079,,Student Collection,BOYACA,Duitama
+35,San Juan De Dios,0,,,2.262881,-75.807695,,Student Collection,HUILA,Pital
+36,Hospital,0,,,6.557322,-75.826787,,Student Collection,ANTIOQUIA,Santaf� de Antioquia
+37,Anolaima,0,,,4.763671,-74.46675,,Student Collection,CUNDINAMARCA,Anolaima
+38,Clinica La Estancia,0,,,2.450634,-76.597155,,Student Collection,CAUCA,Popay�n
+39,Hospital Universitario San Jos�,0,,,2.450869,-76.599816,,Student Collection,CAUCA,Popay�n
+40,,0,,,7.601652,-72.60045,,Student Collection,NORTE DE SANTANDER,Chin�cota
+41,,683560374,,,7.601652,-72.60045,,OSM,NORTE DE SANTANDER,Chin�cota
+42,Centro Salud,0,,,3.068275,-75.138868,,Student Collection,HUILA,Tello
+43,,0,,,5.723374,-72.923542,,Student Collection,BOYACA,Sogamoso
+44,,0,,,5.717225,-72.926632,,Student Collection,BOYACA,Sogamoso
+45,Regional,0,,,5.712784,-72.934357,,Student Collection,BOYACA,Sogamoso
+46,,0,,,5.712442,-72.928006,,Student Collection,BOYACA,Sogamoso
+47,,0,,,5.707147,-72.937619,,Student Collection,BOYACA,Sogamoso
+48,,628389469,,,5.717224,-72.926632,,OSM,BOYACA,Sogamoso
+49,,628389472,,,5.723373,-72.923542,,OSM,BOYACA,Sogamoso
+50,,628389506,,,5.707147,-72.937618,,OSM,BOYACA,Sogamoso
+51,,628389509,,,5.712442,-72.928005,,OSM,BOYACA,Sogamoso
+52,Hospital Marco Fidel Suarez / Sede Antigua,0,,,6.342478,-75.548097,,Student Collection,ANTIOQUIA,Bello
+53,Hospital Marco Fidel Suarez,0,,,6.330748,-75.557302,,Student Collection,ANTIOQUIA,Bello
+54,Hospital Mental de Antioquia,0,,,6.324124,-75.56471,,Student Collection,ANTIOQUIA,Bello
+55,,0,,,4.914796,-74.099524,,Student Collection,CUNDINAMARCA,Tabio
+56,,986219061,,,4.914796,-74.099523,,OSM,CUNDINAMARCA,Tabio
+57,Clinica Rafael Uribe,0,,,3.466979,-76.524514,,Student Collection,VALLE,Cali
+58,Hospital Club Noel,0,,,3.439779,-76.537833,,Student Collection,VALLE,Cali
+59,Hospital Universitario del Valle,0,,,3.430324,-76.545023,,Student Collection,VALLE,Cali
+60,Puesto de Salud de Lourdes,0,,,3.390855,-76.554395,,Student Collection,VALLE,Cali
+61,Clinica del rosario,0,,,3.425193,-76.533478,,Student Collection,VALLE,Cali
+62,psiquiatrico,0,,,3.387647,-76.545602,,Student Collection,VALLE,Cali
+63,Puesto de Salud de Napoles,0,,,3.388563,-76.549633,,Student Collection,VALLE,Cali
+64,Hospital Marco Tulio Afanador,0,,,4.45702,-74.635816,,Student Collection,CUNDINAMARCA,Tocaima
+65,Centro Terepia Gustavo Polania,0,,,2.890805,-75.434742,,Student Collection,HUILA,Palermo
+66,Hospital San Francisco de Asis,0,,,2.890227,-75.431909,,Student Collection,HUILA,Palermo
+67,San Juan de Dios,0,,,6.556329,-73.129629,,Student Collection,SANTANDER,San Gil
+68,Santa Cruz,0,,,6.552201,-73.134041,,Student Collection,SANTANDER,San Gil
+69,centro de Salud de Apulo,0,,,4.519108,-74.595098,,Student Collection,CUNDINAMARCA,Apulo (Rafael Reyes)
+70,Emiro Quintero Canizares,0,,,8.254249,-73.358547,,Student Collection,NORTE DE SANTANDER,Oca�a
+71,E.P.S. Sanitas,0,,,8.237098,-73.352786,,Student Collection,NORTE DE SANTANDER,Oca�a
+72,Jorge Cavelir,0,,,4.91602,-74.025619,,Student Collection,CUNDINAMARCA,Cajic�
+73,,1055852728,,,5.75554,-73.437355,,OSM,BOYACA,Arcabuco
+74,Hospital Geri�trico San Isidro,0,,,5.096118,-75.529145,,Student Collection,CALDAS,Manizales
+75,Cl�nica Aman,0,,,5.068564,-75.514954,,Student Collection,CALDAS,Manizales
+76,Cl�nica de La Presentaci�n,0,,,5.065546,-75.501586,,Student Collection,CALDAS,Manizales
+77,Hospital Santa Sof�a,0,,,5.057853,-75.529939,,Student Collection,CALDAS,Manizales
+78,Cl�nica Versalles,0,,,5.062827,-75.497807,,Student Collection,CALDAS,Manizales
+79,La Toscana   Cl�nica de la Polic�a,0,,,5.057207,-75.47932,,Student Collection,CALDAS,Manizales
+80,Cl�nica Psiqui�trica San Juan de Dios,0,,,5.04878,-75.493094,,Student Collection,CALDAS,Manizales
+81,Cl�nica de la Polic�a,946273087,,,5.057206,-75.479319,,OSM,CALDAS,Manizales
+82,Centro de Salud Villa de Leyva,0,,,5.630945,-73.52458,,Student Collection,BOYACA,Villa de Leiva
+83,,0,,,7.832427,-72.471505,,Student Collection,NORTE DE SANTANDER,Villa del Rosario
+84,,847804999,,,7.832427,-72.471504,,OSM,NORTE DE SANTANDER,Villa del Rosario
+85,,0,,,5.081165,-75.176696,,Student Collection,TOLIMA,Herveo
+86,,448976709,,,5.081165,-75.176696,,OSM,TOLIMA,Herveo
+87,Hospital Universitario Samaritano,0,,,5.02801,-74.002086,,Student Collection,CUNDINAMARCA,Zipaquir�
+88,Hospital Cardiovascular del Ni�o de Cundinamarca,0,,,4.582337,-74.200325,,Student Collection,CUNDINAMARCA,Soacha
+89,Hospital de Guatavita,1122695763,,,4.935627,-73.834153,,OSM,CUNDINAMARCA,Guatavita
+90,HOSPITAN SAN ANTONIO,0,,,1.845625,-76.049143,,Student Collection,HUILA,Pitalito
+91,Centro Medico AMEG,0,,,4.298068,-74.803662,,Student Collection,CUNDINAMARCA,Girardot
+92,Clinica,0,,,6.997615,-73.055246,,Student Collection,SANTANDER,Piedecuesta
+93,Clinica Ardila Lulle,0,,,7.073591,-73.110124,,Student Collection,SANTANDER,Floridablanca
+94,Hospital San Jose,0,,,5.071123,-74.601636,,Student Collection,CUNDINAMARCA,Guaduas
+95,HOGAR SAN CAMILO,0,,,10.964797,-74.833225,,Student Collection,ATLANTICO,BARRANQUILLA
+96,,0,,,8.214813,-73.237585,,Student Collection,NORTE DE SANTANDER,La Playa
+97,,992013819,,,8.214813,-73.237584,,OSM,NORTE DE SANTANDER,La Playa
+98,Hospital Baraya,0,,,3.151291,-75.05557,,Student Collection,HUILA,Baraya
+99,Clinica Medilaser,0,,,5.569531,-73.33695,,Student Collection,BOYACA,Tunja
+100,Clinica SaludCoop Tunja,0,,,5.556848,-73.344837,,Student Collection,BOYACA,Tunja
+101,San Rafael,0,,,5.540433,-73.361581,,Student Collection,BOYACA,Tunja
+102,Hospital San Antonio,0,,,4.85824,-74.060598,,Student Collection,CUNDINAMARCA,Ch�a
+103,Cl�nica Ch�a,0,,,4.856594,-74.062492,,Student Collection,CUNDINAMARCA,Ch�a
+104,Cl�nica San Juan de Dios,0,,,4.864466,-74.03831,,Student Collection,CUNDINAMARCA,Ch�a
+105,Cl�nica Universitaria Telet�n,0,,,4.856231,-74.03062,,Student Collection,CUNDINAMARCA,Ch�a
+106,Isnor,0,,,7.114498,-73.116136,,Student Collection,SANTANDER,Bucaramanga
+107,Cl�nica Metropolitana,0,,,7.109987,-73.111825,,Student Collection,SANTANDER,Bucaramanga
+108,Cl�nica de la Merced,1059950607,,,7.136343,-73.12005,,OSM,SANTANDER,Bucaramanga
+109,ESE RIVERA,0,,,2.779431,-75.260609,,Student Collection,HUILA,Rivera
+110,Asio de Ancianos,0,,,4.148834,-74.895498,,Student Collection,TOLIMA,Espinal
+111,Hospital regional,0,,,8.308699,-73.604566,,Student Collection,CESAR,Aguachica
+112,Maria Auxiliadora,0,,,4.703442,-74.228019,,Student Collection,CUNDINAMARCA,Mosquera
+113,Hospital San Vicente de Paul,0,,,4.241559,-75.23738,,Student Collection,TOLIMA,Rovira
+114,Clinica Santa Sofia,0,,,4.240757,-75.23911,,Student Collection,TOLIMA,Rovira
+115,Hospital Civil de Ipiales,1107818919,,,0.828298,-77.613641,,OSM,NARI�O,Ipiales
+116,Hospital universitario del Caribe,0,,,10.401111,-75.503408,,Student Collection,BOLIVAR,CARTAGENA
+117,Hospital Universitario San Juan de Dios,0,,,10.388877,-75.501529,,Student Collection,BOLIVAR,CARTAGENA
+118,Madre Bernarda,0,,,10.394655,-75.47724,,Student Collection,BOLIVAR,CARTAGENA
+119,Hospital San Jos�,0,,,6.40997,-72.447553,,Student Collection,BOYACA,El Cocuy
+120,Hospital San vicente,0,,,7.081503,-70.75316,,Student Collection,ARAUCA,Arauca
+121,Seguro Social EPS,0,,,7.904708,-72.491255,,Student Collection,NORTE DE SANTANDER,C�cuta
+122,Hospital Erasmo Meoz,0,,,7.9035,-72.490706,,Student Collection,NORTE DE SANTANDER,C�cuta
+123,Clinica Santa Ana,0,,,7.891252,-72.488798,,Student Collection,NORTE DE SANTANDER,C�cuta
+124,Clinica San Jose,0,,,7.885343,-72.496462,,Student Collection,NORTE DE SANTANDER,C�cuta
+125,Clinmica de Leones,0,,,7.879254,-72.501018,,Student Collection,NORTE DE SANTANDER,C�cuta
+126,CEGINOB,0,,,7.881659,-72.498831,,Student Collection,NORTE DE SANTANDER,C�cuta
+127,Clinica San Diego,0,,,7.882362,-72.498917,,Student Collection,NORTE DE SANTANDER,C�cuta
+128,Clinica Norte,0,,,7.879307,-72.497939,,Student Collection,NORTE DE SANTANDER,C�cuta
+129,Los Andes,0,,,7.880363,-72.498134,,Student Collection,NORTE DE SANTANDER,C�cuta
+130,,0,,,4.932549,-73.986417,,Student Collection,CUNDINAMARCA,Sop�
+131,,459410558,,,4.932549,-73.986416,,OSM,CUNDINAMARCA,Sop�
+132,Hospital de Villeta,0,,,5.006091,-74.470331,,Student Collection,CUNDINAMARCA,Villeta
+133,salupcoop,0,,,7.369598,-72.650279,,Student Collection,NORTE DE SANTANDER,Pamplona
+134,salupcoop oficinas,0,,,7.370056,-72.650075,,Student Collection,NORTE DE SANTANDER,Pamplona
+135,,0,,,7.000494,-72.106757,,Student Collection,BOYACA,Cubar�
+136,,357912845,,,7.000493,-72.106757,,OSM,BOYACA,Cubar�
+137,Universitario San Jorge,0,,,4.817961,-75.699005,,Student Collection,RISARALDA,Pereira
+138,Cafam,0,,,4.818981,-74.358083,,Student Collection,CUNDINAMARCA,Facatativa
+139,UPA Caba�as,0,,,4.63089,-74.190127,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+140,Hospital de Bosa,0,,,4.606458,-74.185554,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+141,Colsubsidio Centro Medico Chicala,0,,,4.623842,-74.178869,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+142,"Hospital de Engativ�, EMAUS",614486128,,,4.715142,-74.141127,,OSM,CUNDINAMARCA,Bogot� D.C.
+143,Juan N Corpas,0,,,4.761212,-74.093062,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+144,Hospital Cafam Suba,0,,,4.747665,-74.103012,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+145,Hospital de Suba,0,,,4.75354,-74.091759,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+146,CAP Aures,0,,,4.735251,-74.099501,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+147,,0,,,4.720583,-74.114906,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+148,Cami Suba,0,,,4.743254,-74.084265,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+149,Fundaci�n Cardio Infantil,0,,,4.74175,-74.034346,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+150,Hospital Sim�n Bolivar,0,,,4.742639,-74.023017,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+151,Idime,0,,,4.703296,-74.053838,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+152,JaveSalud,0,,,4.705022,-74.053604,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+153,Clinica Reina Sofia,0,,,4.706988,-74.052034,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+154,Cl�nica Saludcoop,0,,,4.71948,-74.037857,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+155,Cl�nica Monserrat Psiquiatr�a,0,,,4.717282,-74.046835,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+156,Cl�nica del Bosque,0,,,4.711816,-74.030785,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+157,Unidad Medico Quirurgica,0,,,4.70401,-74.044971,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+158,Clinica la Carolina,0,,,4.704346,-74.041037,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+159,Clinica Partenon,0,,,4.692443,-74.098106,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+160,Hospital de Fontibon,0,,,4.671504,-74.146201,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+161,,0,,,4.667496,-74.121308,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+162,Fundaci�n Clinica Abood Shaio,0,,,4.698073,-74.073059,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+163,Clin8ca Fray Bartolome de las Casas,0,,,4.692804,-74.067257,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+164,Jorge Pi�eros Corpas,0,,,4.692359,-74.056821,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+165,Clinica Vascular Navarra,0,,,4.693671,-74.055601,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+166,Cl�nica de Hipertensi�n Arterial y CUidados Coronarios - CHACC,0,,,4.690424,-74.057057,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+167,Clinica Materno Infantil SaludCoop,0,,,4.682802,-74.0584,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+168,Salud Total EPS,0,,,4.681424,-74.058561,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+169,Cl�nica Fundaci�n Santa F� de Bogot�,0,,,4.695529,-74.033308,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+170,Cl�nica Del Country,0,,,4.669344,-74.056208,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+171,Consultorios del Country,0,,,4.668608,-74.057186,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+172,Cl�nica del Ni�o,0,,,4.647757,-74.094432,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+173,Nuestra se�ora de la Paz,0,,,4.638257,-74.1259,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+174,Salud Total,0,,,4.638392,-74.116574,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+175,Clinica de la Policia,0,,,4.64709,-74.097557,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+176,Clinica Colsubsidio Roma,0,,,4.615075,-74.17239,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+177,Compensar,0,,,4.615634,-74.158481,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+178,Hospital de Kennedy,0,,,4.616586,-74.153321,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+179,Clinica de Occidente,0,,,4.629503,-74.135513,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+180,Colsubsidio,0,,,4.650746,-74.072152,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+181,,0,,,4.653675,-74.065484,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+182,Cl�nica de Marly,0,,,4.636787,-74.065316,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+183,Hospital Militar Central,0,,,4.634246,-74.06208,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+184,Hospital Universitario Mayor MEDERI,0,,,4.623681,-74.082954,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+185,HCO-CAMI Samper Mendoza,0,,,4.617147,-74.081095,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+186,Cl�nica de Especialistas,0,,,4.61892,-74.071492,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+187,UNIDAD PEDIATRICA - HOSPITAL CENTRO ORIENTE,0,,,4.616225,-74.077176,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+188,Clinica Venecia,0,,,4.592811,-74.141351,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+189,Alqueria Nueva EPS,0,,,4.606898,-74.130872,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+190,UPA 26 Alcala Muzu,0,,,4.602088,-74.129514,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+191,Clinica De Cancer De Bogot�,0,,,4.592752,-74.107084,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+192,Hospital Santa Clara ESE,0,,,4.591293,-74.092686,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+193,Hospital el Tunal,0,,,4.571797,-74.128104,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+194,Carlos Lleras Restrepo,0,,,4.571019,-74.107538,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+195,Hospital de San Jos�,0,,,4.604021,-74.085829,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+196,Instituto de Medicina Legal,0,,,4.598071,-74.082957,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+197,Hospital Materno Infantil HOMI,0,,,4.59307,-74.088233,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+198,Instituto Materno Infantil Concepci�n Villaveces,0,,,4.588877,-74.084628,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+199,Hospital General Universitario de la Samaritana ESE,0,,,4.587107,-74.08407,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+200,,0,,,4.590802,-74.090765,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+201,Clinica SaludCoop Policarpa,0,,,4.587185,-74.086641,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+202,Centro Dermatol�gico Federico Lleras Acosta,0,,,4.59145,-74.089246,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+203,UPA Lourdes,0,,,4.589519,-74.073795,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+204,Hospital Universitario Cl�nica San Rafael,0,,,4.576754,-74.091134,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+205,Hospital Meissen,0,,,4.559448,-74.138138,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+206,Cami Clinica de Medicina Interna Tunjuelito,0,,,4.562981,-74.125083,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+207,Centro de Atencion Chircales,0,,,4.557524,-74.111958,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+208,Hospital de Usme,0,,,4.47314,-74.121812,,Student Collection,CUNDINAMARCA,Bogot� D.C.
+209,,515464377,,,4.720583,-74.114906,,OSM,CUNDINAMARCA,Bogot� D.C.
+210,,660703300,,,4.667495,-74.121307,,OSM,CUNDINAMARCA,Bogot� D.C.
+211,,663889460,,,4.653674,-74.065484,,OSM,CUNDINAMARCA,Bogot� D.C.
+212,Clinica Nuestra Se�ora del Rosario,0,,,4.715414,-73.968995,,Student Collection,CUNDINAMARCA,La Calera
+213,La Estrella,0,,,6.157608,-75.642791,,Student Collection,ANTIOQUIA,La Estrella
+214,Clinica las Am�ricas,0,,,6.214084,-75.595021,,Student Collection,ANTIOQUIA,Medell�n
+215,Hospital Zamora,0,,,6.309412,-75.551846,,Student Collection,ANTIOQUIA,Medell�n
+216,,0,,,6.294778,-75.552588,,Student Collection,ANTIOQUIA,Medell�n
+217,Hospital San Vicente de Pa�l,0,,,6.262919,-75.565407,,Student Collection,ANTIOQUIA,Medell�n
+218,Hospital Universitario San Vicente Paul,0,,,6.262618,-75.565646,,Student Collection,ANTIOQUIA,Medell�n
+219,,0,,,6.261845,-75.579302,,Student Collection,ANTIOQUIA,Medell�n
+220,Cl�nica Medell�n,0,,,6.251296,-75.563895,,Student Collection,ANTIOQUIA,Medell�n
+221,SOMA,0,,,6.248787,-75.564555,,Student Collection,ANTIOQUIA,Medell�n
+222,Hospital General de Medellin,0,,,6.234403,-75.57275,,Student Collection,ANTIOQUIA,Medell�n
+223,Cl�nica Las Vegas,0,,,6.203434,-75.576555,,Student Collection,ANTIOQUIA,Medell�n
+224,Clinica Medellin,0,,,6.206785,-75.570957,,Student Collection,ANTIOQUIA,Medell�n
+225,,956568204,,,6.294778,-75.552588,,OSM,ANTIOQUIA,Medell�n
+226,,0,,,4.149876,-74.722038,,Student Collection,TOLIMA,Carmen de Apical�
+227,,336602351,,,4.149876,-74.722037,,OSM,TOLIMA,Carmen de Apical�
+228,Cruz roja,0,,,4.924443,-75.06458,,Student Collection,TOLIMA,L�bano
+229,,0,,,4.920801,-75.057838,,Student Collection,TOLIMA,L�bano
+230,,663526285,,,4.920801,-75.057837,,OSM,TOLIMA,L�bano
+231,Centro De Salud San Sebastian,0,,,1.290042,-77.356819,,Student Collection,NARI�O,Nari�o
+232,,0,,,4.485136,-73.892592,,Student Collection,CUNDINAMARCA,F�meque
+233,,545407443,,,4.485135,-73.892592,,OSM,CUNDINAMARCA,F�meque
+234,Hospital la misericordia,0,,,4.529834,-75.633573,,Student Collection,QUINDIO,Calarc�
+235,Hospital de Villamar�a,0,,,5.046083,-75.515039,,Student Collection,CALDAS,Villamar�a
+236,Hospital San Francisco,0,,,4.818225,-73.641465,,Student Collection,CUNDINAMARCA,Jun�n
+237,,0,,,4.531077,-73.923962,,Student Collection,CUNDINAMARCA,Choach�
+238,,545439114,,,4.531077,-73.923961,,OSM,CUNDINAMARCA,Choach�
+239,Hospital Anzoategui,0,,,4.628713,-75.096214,,Student Collection,TOLIMA,Anz�ategui
+240,,0,,,5.081466,-73.608539,,Student Collection,CUNDINAMARCA,Machet�
+241,,0,,,4.444171,-75.232831,,Student Collection,TOLIMA,Ibagu�
+242,Clinica Ibanasca,0,,,4.43872,-75.199572,,Student Collection,TOLIMA,Ibagu�
+243,Hospital Federico Lleras Acosta,0,,,4.433311,-75.219347,,Student Collection,TOLIMA,Ibagu�
+244,Cafesalud,0,,,4.435439,-75.218853,,Student Collection,TOLIMA,Ibagu�
+245,Clinica Estetica,0,,,4.433831,-75.21349,,Student Collection,TOLIMA,Ibagu�
+246,IPS calle 42 (Salud Total),0,,,4.435793,-75.212609,,Student Collection,TOLIMA,Ibagu�
+247,Clinica Los Remansos,0,,,4.436851,-75.219703,,Student Collection,TOLIMA,Ibagu�
+248,Saludcoop,0,,,4.437414,-75.202941,,Student Collection,TOLIMA,Ibagu�
+249,Clinica Manuel Elkin Patgarroyo (Nueva EPS),0,,,4.435807,-75.204706,,Student Collection,TOLIMA,Ibagu�
+250,IPS Cra 5 (Nueva EPS),0,,,4.435639,-75.212326,,Student Collection,TOLIMA,Ibagu�
+251,Clinica Salud Total (under construction),0,,,4.4303,-75.200209,,Student Collection,TOLIMA,Ibagu�
+252,"salud arte ,oncomedic",466493621,,,4.43699,-75.220868,,OSM,TOLIMA,Ibagu�
+253,,914747778,,,4.44417,-75.232831,,OSM,TOLIMA,Ibagu�
+254,Clinica Medicadiz,1033472734,,,4.438662,-75.219807,www.medicaidz.com.co,OSM,TOLIMA,Ibagu�
+255,Puesto de salud Toche,1071534291,,,4.519529,-75.409454,,OSM,TOLIMA,Ibagu�
+256,Clinica Belen,0,,,4.335352,-74.366259,,Student Collection,CUNDINAMARCA,Fusagasug�
+257,Hospitla san Rafael,0,,,4.333602,-74.370712,,Student Collection,CUNDINAMARCA,Fusagasug�
+258,Urgencias Hospital San Antonio,0,,,4.272701,-74.416742,,Student Collection,CUNDINAMARCA,Arbel�ez
+259,San Antonio,0,,,4.778752,-74.766507,,Student Collection,CUNDINAMARCA,Beltr�n
+260,Hospital San Juan de Dios,0,,,4.556195,-75.656432,,Student Collection,QUINDIO,
+261,,0,,,4.544632,-75.662906,,Student Collection,QUINDIO,
+262,,0,,,4.538617,-75.668228,,Student Collection,QUINDIO,
+263,,318898690,,,4.544631,-75.662906,,OSM,QUINDIO,
+264,,325116680,,,4.538616,-75.668227,,OSM,QUINDIO,
+265,Hospital Regional,401910928,,,-3.727004,-73.253523,,OSM,,
+266,,0,,,0.977901,-79.653383,,Student Collection,,
+267,,0,,,0.919716,-79.679132,,Student Collection,,
+268,,0,,,0.90856,-79.69235,,Student Collection,,
+269,Medicina Legal,0,,,1.81019,-78.76988,,Student Collection,,
+270,Cl�nica Cesmed,0,,,0.822361,-77.713399,,Student Collection,,
+271,San Vicente de Paul,0,,,0.35899,-78.128415,,Student Collection,,
+272,Hospital San Luis de Otavalo,0,,,0.233218,-78.25968,,Student Collection,,
+273,Marco Vinicio Ize,1038883022,,,0.082107,-76.886041,,OSM,,
+274,,1052246607,,,7.060926,-69.500405,,OSM,,
+275,Clinica Samaritana,879426968,,,7.779303,-72.233979,,OSM,,
+276,Hospital Central,881249013,,,7.756611,-72.226227,,OSM,,
+277,Clinica San Sebastian,893737447,,,7.782674,-72.217988,,OSM,,
+278,Centro Clinico San Cristobal,893737450,,,7.778831,-72.226142,,OSM,,
+279,Manuel Noriega Trigo IVSS,1096748515,,,10.576379,-71.630025,,OSM,,
+280,Nuevo Hospital Bocagrande - NHB,0,,,10.395908,-75.556107,,Student Collection,,
+281,,0,,,9.786068,-75.859295,,Student Collection,,

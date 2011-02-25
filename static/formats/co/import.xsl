@@ -3,7 +3,17 @@
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 
     <xsl:output method="xml"/>
-    <xsl:include href="../xml/commons.xsl"/>
+<!--     <xsl:include href="../xml/commons.xsl"/> -->
+
+    <xsl:key
+        name="departments"
+        match="//row"
+        use="./col[@field='DEPARTAMEN']/text()"/>
+
+    <xsl:key
+        name="municipality"
+        match="//row"
+        use="./col[@field='Municipio']/text()"/>
 
     <xsl:template match="/">
         <s3xml>
@@ -13,6 +23,8 @@
 
     <xsl:template match="table">
         <xsl:apply-templates select="./row"/>
+        <xsl:call-template name="Municipalities"/>
+        <xsl:call-template name="Departments"/>
     </xsl:template>
 
     <!-- ****************************************************************** -->
@@ -73,8 +85,49 @@
                 <data field="lon">
                     <xsl:value-of select="./col[@field='Longitude']"/>
                 </data>
+                <reference field="parent" resource="gis_location">
+                    <xsl:attribute name="uuid">
+                        <xsl:value-of select="./col[@field='Municipio']/text()"/>
+                    </xsl:attribute>
+                </reference>
             </resource>
         </reference>
+    </xsl:template>
+
+    <xsl:template name="Municipalities">
+        <xsl:variable name="unique-list" select="//row[not(col[@field='Municipio']=following::col[@field='Municipio'])]" />
+        <xsl:for-each select="$unique-list">
+            <resource name="gis_location">
+                <xsl:attribute name="uuid">
+                    <xsl:value-of select="./col[@field='Municipio']/text()"/>
+                </xsl:attribute>
+                <data field="name">
+                    <xsl:value-of select="./col[@field='Municipio']/text()"/>
+                </data>
+                <reference field="parent" resource="gis_location">
+                    <xsl:attribute name="uuid">
+                        <xsl:value-of select="./col[@field='DEPARTAMEN']/text()"/>
+                    </xsl:attribute>
+                </reference>
+            </resource>
+        </xsl:for-each>
+    </xsl:template>
+
+    <xsl:template name="Departments">
+        <xsl:variable name="unique-list" select="//row[not(col[@field='DEPARTAMEN']=following::col[@field='DEPARTAMEN'])]" />
+        <xsl:for-each select="$unique-list">
+            <resource name="gis_location">
+                <xsl:attribute name="uuid">
+                    <xsl:value-of select="./col[@field='DEPARTAMEN']/text()"/>
+                </xsl:attribute>
+                <data field="name">
+                    <xsl:value-of select="./col[@field='DEPARTAMEN']/text()"/>
+                </data>
+                <reference field="parent" resource="gis_location">
+                    <xsl:attribute name="uuid">www.sahanafoundation.org/COUNTRY-CO</xsl:attribute>
+                </reference>
+            </resource>
+        </xsl:for-each>
     </xsl:template>
 
     <!-- ****************************************************************** -->

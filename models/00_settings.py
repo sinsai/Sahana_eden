@@ -321,7 +321,9 @@ s3xrc.content_type = Storage(
 s3xrc.json_formats = ["geojson", "s3json"]
 
 # CSV Formats
-s3xrc.csv_formats = ["hrf", "hr"]
+s3xrc.csv_formats = ["hrf",
+                     "co"   # Colombia Hospital Information
+                    ]
 
 s3xrc.ROWSPERPAGE = 20
 

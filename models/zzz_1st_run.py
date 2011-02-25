@@ -337,8 +337,8 @@ if populate:
 
     # Supply / Inventory
     tablename = "supply_item_category"
-    table = db[tablename]
-    if not db(table.id > 0).count():
+    table = db.get(tablename, None)
+    if table and not db(table.id > 0).count():
         #shn_import_table("supply_item_category")
         table.insert( name = "Agriculture" )
         #table.insert( name = "Clothing" )
@@ -350,8 +350,8 @@ if populate:
         #table.insert( name = "Transport" )
         table.insert( name = "WASH" )
     tablename = "supply_item"
-    table = db[tablename]
-    if not db(table.id > 0).count():
+    table = db.get(tablename, None)
+    if table and not db(table.id > 0).count():
         #shn_import_table("supply_item_pakistan")
         agriculture = db(db.supply_item_category.name == "Agriculture").select(db.supply_item_category.id, limitby=(0, 1)).first().id
         food = db(db.supply_item_category.name == "Food").select(db.supply_item_category.id, limitby=(0, 1)).first().id
@@ -1177,6 +1177,9 @@ if populate:
                     dict(c="logs", uacl=acl.READ, oacl=acl.ALL)
                     )
         create_role("Anonymous", "Unauthenticated users",
+                    # Anonymous users can submit new hospital records and
+                    # update them during the same session
+                    dict(c="hms", uacl=acl.CREATE|acl.READ, oacl=acl.READ|acl.UPDATE),
                     dict(c="gis", uacl=acl.READ, oacl=acl.READ))
         create_role("Editor", "Editor - can access & make changes to any unprotected data")
         create_role("MapAdmin", "MapAdmin - allowed access to edit the MapService Catalogue",
@@ -1184,13 +1187,15 @@ if populate:
                     dict(c="gis", f="location", uacl=acl.ALL, oacl=acl.ALL))
 
         # Additional roles + ACLs
-        create_role("DVI", "Role for DVI staff - permission to access the DVI module",
-                    dict(c="dvi", uacl=acl.ALL, oacl=acl.ALL))
-        create_role("HMS Staff", "Hospital Staff - permission to add/update own records in the HMS",
-                    dict(c="hms", uacl=acl.CREATE, oacl=acl.ALL))
-        create_role("HMS Admin", "Hospital Admin - permission to add/update all records in the HMS",
+        # HMS Reviewers are permitted to update all hospitals records
+        # they own (where they might be given ownership by another role based on
+        # location or the like)
+        create_role("HMS Reviewer", "Hospital Record Reviewers",
+                    dict(c="hms", uacl=acl.CREATE|acl.READ, oacl=acl.READ|acl.UPDATE))
+        # HMS Admins can review and delete all records, this role would be required
+        # to merge records
+        create_role("HMS Admin", "Hospital Admin - permission to add/update/delete all records in the HMS",
                     dict(c="hms", uacl=acl.ALL, oacl=acl.ALL))
-
 
     # Security Defaults for all tables (if using 'full' security policy: i.e. native Web2Py)
     if session.s3.security_policy not in (1, 2, 3, 4, 5):

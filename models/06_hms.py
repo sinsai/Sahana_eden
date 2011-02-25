@@ -151,7 +151,8 @@ if deployment_settings.has_module(module):
                     Field("access_status"),                     # Access Status
                     document_id(),                              # Information Source
                     comments(),
-                    migrate=migrate, *s3_meta_fields())
+                    migrate=migrate, *(s3_meta_fields() +
+                                      (meta_record_status(), meta_duplicate_uid())))
 
     table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     table.gov_uuid.label = T("Government UID")

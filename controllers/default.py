@@ -43,34 +43,41 @@ _table_user.language.represent = lambda opt: s3_languages.get(opt, UNKNOWN_OPT)
 def index():
     """ Main Home Page """
 
-    def menu_box( title, ci, fi ):
+    def menu_box(title, ci, fi, sub=[]):
           """ Returns a menu_box linking to URL(ci, fi) """
-          return A( DIV(title, _class = "menu-box-r"), _class = "menu-box-l", _href = URL( r=request, c=ci, f=fi) )
+          return A(DIV(title, _class = "menu-box-r"),
+                   _class="menu-box-l",
+                   _href=URL(r=request, c=ci, f=fi, args=sub))
 
-    div_sit = DIV( H3(T("SITUATION")),
-                   menu_box(T("Incidents"),   "irs",      "ireport"),
-                   menu_box(T("Assessments"), "assess",   "assess"),
-                   menu_box(T("Logistics"),  "inventory","store"),
-                  _class = "menu_div")
+    div_l = DIV(menu_box(T("New Hospital"), "hms", "hospital", "create"),
+                _class = "menu_div")
+    div_r = DIV(menu_box(T("Find Hospital"), "hms", "hospital", "search"),
+                _class = "menu_div", _style="padding-left:30px;")
 
-    div_arrow_1 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % request.application),
-                          _class = "div_arrow")
+    #div_sit = DIV( H3(T("SITUATION")),
+                   #menu_box(T("Incidents"),   "irs",      "ireport"),
+                   #menu_box(T("Assessments"), "assess",   "assess"),
+                   #menu_box(T("Logistics"),  "inventory","store"),
+                  #_class = "menu_div")
 
-    div_dec = DIV( H3(T("DECISION")),
-                   menu_box(T("Gap Report"), "project", "gap_report"),
-                   menu_box(T("Gap Map"),    "project", "gap_map"),
-                   menu_box(T("Map"), "gis", "index"),
-                  _class = "menu_div")
+    #div_arrow_1 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % request.application),
+                          #_class = "div_arrow")
 
-    div_arrow_2 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % request.application),
-                          _class = "div_arrow")
+    #div_dec = DIV( H3(T("DECISION")),
+                   #menu_box(T("Gap Report"), "project", "gap_report"),
+                   #menu_box(T("Gap Map"),    "project", "gap_map"),
+                   #menu_box(T("Map"), "gis", "index"),
+                  #_class = "menu_div")
 
-    div_res = DIV(H3(T("RESPONSE")),
-                  menu_box(T("Activities"), "project", "activity"),
-                  menu_box(T("Requests"),   "rms",     "req"),
-                  #+menu_box(T("Distribution"), "logs", "distrib")
-                  _class = "menu_div",
-                  _id = "menu_div_response")
+    #div_arrow_2 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % request.application),
+                          #_class = "div_arrow")
+
+    #div_res = DIV(H3(T("RESPONSE")),
+                  #menu_box(T("Activities"), "project", "activity"),
+                  #menu_box(T("Requests"),   "rms",     "req"),
+                  ##+menu_box(T("Distribution"), "logs", "distrib")
+                  #_class = "menu_div",
+                  #_id = "menu_div_response")
 
     #div_additional = DIV(A(DIV(T("Mobile Assess."),
     #                       _class = "menu_box"
@@ -79,7 +86,6 @@ def index():
     #                   ))
 
     modules = deployment_settings.modules
-
     module_name = modules[module].name_nice
 
     settings = db(db.s3_setting.id == 1).select(limitby=(0, 1)).first()
@@ -95,7 +101,8 @@ def index():
 
     self_registration = deployment_settings.get_security_self_registration()
 
-    title = T("Sahana Eden Disaster Management Platform")
+    #title = T("Sahana Eden Disaster Management Platform")
+    title = T("Sahana Eden Hospital Database")
     login_form = None
     register_form = None
 
@@ -113,11 +120,13 @@ def index():
 
     response.title = title
     return dict(title = title,
-                div_sit = div_sit,
-                div_arrow_1 = div_arrow_1,
-                div_dec = div_dec,
-                div_arrow_2 = div_arrow_2,
-                div_res = div_res,
+                div_l=div_l,
+                div_r=div_r,
+                #div_sit = div_sit,
+                #div_arrow_1 = div_arrow_1,
+                #div_dec = div_dec,
+                #div_arrow_2 = div_arrow_2,
+                #div_res = div_res,
                 #div_additional = div_additional,
                 module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel, self_registration=self_registration, login_form=login_form, register_form=register_form)
 

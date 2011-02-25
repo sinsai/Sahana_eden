@@ -2,11 +2,15 @@
 <div id='home'>
 <h2>{{=title}}</h2>
 <div>
-{{=div_sit}}
-{{=div_arrow_1}}
-{{=div_dec}}
-{{=div_arrow_2}}
-{{=div_res}}
+{{try:}}
+{{=div_l}}
+{{except:}}
+{{pass}}
+<div style="padding-left:30px;"></div>
+{{try:}}
+{{=div_r}}
+{{except:}}
+{{pass}}
 </div>
 </div>
 {{if 2 not in session.s3.roles:}}
@@ -70,11 +74,11 @@ $(document).ready(function() {
     <br/>{{=T("Email")}}: {{=admin_email}}
     <br/>{{=T("Telephone")}}: {{=admin_tel}}
     </p>
-    <p class="menu_text">
+<!--    <p class="menu_text">
     {{=T("For more details on the Sahana Eden system, see the")}} <a href="http://eden.sahanafoundation.org" target="_blank">{{=T("Sahana Eden Website")}}</a>
     <br/>{{=T("For live help from the Sahana community on using this application, go to")}} <a href="http://eden.sahanafoundation.org/wiki/Chat" target="_blank">{{=T("Sahana Community Chat")}}</a>
-    </p>
+    </p>-->
     <p>&nbsp;</p>
 </div>
-{{include "rssviewer.html"}}
+<!-- {{include "rssviewer.html"}} -->
 </div>

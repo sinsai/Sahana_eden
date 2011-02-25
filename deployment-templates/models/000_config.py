@@ -179,7 +179,7 @@ deployment_settings.osm.oauth_consumer_secret = ""
 #deployment_settings.security.map = True
 # Security Policy (defaults to 1 = Simple)
 # http://eden.sahanafoundation.org/wiki/S3AAA#System-widePolicy
-#deployment_settings.security.policy = 3 # Controller-ACLs
+deployment_settings.security.policy = 3 # Controller-ACLs
 # Should users be allowed to register themselves?
 deployment_settings.security.self_registration = True
 # Use 'soft' deletes
@@ -223,12 +223,12 @@ deployment_settings.modules = OrderedDict([
                 gis_location = {"importer" : True}
              )
         )),
-    ("doc", Storage(
-            name_nice = T("Documents and Photos"),
-            description = T("A library of digital resources, such as photos, documents and reports"),
-            restricted = False,
-            module_type = 10,
-        )),
+    #("doc", Storage(
+            #name_nice = T("Documents and Photos"),
+            #description = T("A library of digital resources, such as photos, documents and reports"),
+            #restricted = False,
+            #module_type = 10,
+        #)),
     ("msg", Storage(
             name_nice = T("Messaging"),
             description = T("Sends & Receives Alerts via Email & SMS"),
@@ -251,24 +251,24 @@ deployment_settings.modules = OrderedDict([
                 pr_group_membership = {"importer" : True},
             )
         )),
-    ("pf", Storage(
-            name_nice = T("Person Finder"),
-            description = T("Helps to report and search for Missing Persons"),
-            restricted = False,
-            module_type = 10,
-        )),
-    ("dvi", Storage(
-            name_nice = T("Disaster Victim Identification"),
-            description = T("Disaster Victim Identification"),
-            restricted = True,
-            module_type = 10,
-            #access = "|DVI|",      # Only users with the DVI role can see this module in the default menu & access the controller
-            #audit_read = True,     # Can enable Audit for just an individual module here
-            #audit_write = True,
-            resources = Storage(
-                dvi_recreq = {"importer" : True},
-            )
-        )),
+    #("pf", Storage(
+            #name_nice = T("Person Finder"),
+            #description = T("Helps to report and search for Missing Persons"),
+            #restricted = False,
+            #module_type = 10,
+        #)),
+    #("dvi", Storage(
+            #name_nice = T("Disaster Victim Identification"),
+            #description = T("Disaster Victim Identification"),
+            #restricted = True,
+            #module_type = 10,
+            ##access = "|DVI|",      # Only users with the DVI role can see this module in the default menu & access the controller
+            ##audit_read = True,     # Can enable Audit for just an individual module here
+            ##audit_write = True,
+            #resources = Storage(
+                #dvi_recreq = {"importer" : True},
+            #)
+        #)),
     #("dvr", Storage(
     #        name_nice = T("Disaster Victim Registry"),
     #        description = T("Traces internally displaced people (IDPs) and their needs"),
@@ -286,30 +286,30 @@ deployment_settings.modules = OrderedDict([
             )
         )),
     # NB Project module depends on Assess Module
-    ("project", Storage(
-            name_nice = T("Project Tracking"),
-            description = T("Tracking of Projects, Activities and Tasks"),
-            restricted = False,
-            module_type = 10
-        )),
+    #("project", Storage(
+            #name_nice = T("Project Tracking"),
+            #description = T("Tracking of Projects, Activities and Tasks"),
+            #restricted = False,
+            #module_type = 10
+        #)),
     # NB Budget module depends on Project Tracking Module
-    ("budget", Storage(
-            name_nice = T("Budgeting Module"),
-            description = T("Allows a Budget to be drawn up"),
-            restricted = False,
-            module_type = 10,
-            resources = Storage(
-                budget_item = {"importer" : True},
-                budget_kit = {"importer" : True},
-                budget_bundle = {"importer" : True},
-            )
-        )),
-    ("logs", Storage(
-            name_nice = T("Logistics Management"),
-            description = T("Managing, Storing and Distributing Items"),
-            restricted = False,
-            module_type = 10
-        )),
+    #("budget", Storage(
+            #name_nice = T("Budgeting Module"),
+            #description = T("Allows a Budget to be drawn up"),
+            #restricted = False,
+            #module_type = 10,
+            #resources = Storage(
+                #budget_item = {"importer" : True},
+                #budget_kit = {"importer" : True},
+                #budget_bundle = {"importer" : True},
+            #)
+        #)),
+    #("logs", Storage(
+            #name_nice = T("Logistics Management"),
+            #description = T("Managing, Storing and Distributing Items"),
+            #restricted = False,
+            #module_type = 10
+        #)),
     ("vol", Storage(
             name_nice = T("Volunteers"),
             description = T("Manage volunteers by capturing their skills, availability and allocation"),
@@ -317,24 +317,24 @@ deployment_settings.modules = OrderedDict([
             module_type = 10,
         )),
     # NB RMS module depends on HMS, CR & Project
-    ("rms", Storage(
-            name_nice = T("Requests"),
-            description = T("Tracks requests for aid and matches them against donors who have pledged aid"),
-            restricted = False,
-            module_type = 3,
-            resources = Storage(
-                rms_req = {"importer" : True},
-            )
-        )),
-    ("cr", Storage(
-            name_nice = T("Shelter Registry"),
-            description = T("Tracks the location, distibution, capacity and breakdown of victims in Shelters"),
-            restricted = False,
-            module_type = 10,
-            resources = Storage(
-                cr_shelter = {"importer" : True }
-            )
-        )),
+    #("rms", Storage(
+            #name_nice = T("Requests"),
+            #description = T("Tracks requests for aid and matches them against donors who have pledged aid"),
+            #restricted = False,
+            #module_type = 3,
+            #resources = Storage(
+                #rms_req = {"importer" : True},
+            #)
+        #)),
+    #("cr", Storage(
+            #name_nice = T("Shelter Registry"),
+            #description = T("Tracks the location, distibution, capacity and breakdown of victims in Shelters"),
+            #restricted = False,
+            #module_type = 10,
+            #resources = Storage(
+                #cr_shelter = {"importer" : True }
+            #)
+        #)),
     ("hms", Storage(
             name_nice = T("Hospitals"),
             description = T("Helps to monitor status of hospitals"),
@@ -344,19 +344,19 @@ deployment_settings.modules = OrderedDict([
                 hms_hospital = {"importer" : True}
             )
         )),
-    ("irs", Storage(
-            name_nice = T("Incident Reporting"),
-            description = T("Incident Reporting System"),
-            restricted = False,
-            module_type = 10
-        )),
+    #("irs", Storage(
+            #name_nice = T("Incident Reporting"),
+            #description = T("Incident Reporting System"),
+            #restricted = False,
+            #module_type = 10
+        #)),
     # Assess currently depends on CR & IRS
-    ("assess", Storage(
-            name_nice = "Assessments",
-            description = "Rapid Assessments & Flexible Impact Assessments",
-            restricted = False,
-            module_type = 2,
-        )),
+    #("assess", Storage(
+            #name_nice = "Assessments",
+            #description = "Rapid Assessments & Flexible Impact Assessments",
+            #restricted = False,
+            #module_type = 2,
+        #)),
     #("delphi", Storage(
     #        name_nice = T("Delphi Decision Maker"),
     #        description = T("Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list."),

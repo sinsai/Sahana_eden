@@ -69,8 +69,34 @@ meta_deletion_fk = S3ReusableField("deleted_fk", #"text",
                                    readable=False,
                                    writable=False)
 
+# Record verification status
+v_record_status_opts = {
+    1: T("unverified"),
+    2: T("invalid"),
+    3: T("duplicate"),
+    4: T("verified")
+}
+
+meta_record_status = S3ReusableField("v_record_status", "integer",
+                                     requires = IS_NULL_OR(IS_IN_SET(v_record_status_opts)),
+                                     default = 1,
+                                     label = T("Verification Status"),
+                                     represent = lambda opt: v_record_status_opts.get(opt, T("not specified")),
+                                     readable=False,
+                                     writable=False)
+
+# Duplicate UID
+meta_duplicate_uid = S3ReusableField("v_duplicate_uid",
+                                     length=128,
+                                     readable=False,
+                                     writable=False)
+
 def s3_deletion_status():
-    return (meta_deletion_status(), meta_deletion_fk())
+    return (meta_deletion_status(),
+            meta_deletion_fk(),
+            #meta_record_status(),
+            #meta_duplicate_uid(),
+           )
 
 # -----------------------------------------------------------------------------
 # Record timestamp meta-fields
@@ -111,9 +137,19 @@ meta_modified_by = S3ReusableField("modified_by", db.auth_user,
                                    represent=lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
                                    ondelete="RESTRICT")
 
+# Last verified by
+meta_verified_by = S3ReusableField("verified_by", db.auth_user,
+                                   readable=False, # Enable when needed, not by default
+                                   writable=False,
+                                   requires=None,
+                                   represent=lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
+                                   ondelete="RESTRICT")
+
 def s3_authorstamp():
     return (meta_created_by(),
-            meta_modified_by())
+            meta_modified_by(),
+            #meta_verified_by(),
+           )
 
 # -----------------------------------------------------------------------------
 # Record ownership meta-fields
@@ -149,10 +185,13 @@ def s3_meta_fields():
               meta_mci(),
               meta_deletion_status(),
               meta_deletion_fk(),
+              #meta_record_status(),
+              #meta_duplicate_uid(),
               meta_created_on(),
               meta_modified_on(),
               meta_created_by(),
               meta_modified_by(),
+              #meta_verified_by(),
               meta_owned_by_user(),
               meta_owned_by_role())
 

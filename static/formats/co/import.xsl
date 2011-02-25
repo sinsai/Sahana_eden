@@ -86,7 +86,7 @@
                     <xsl:value-of select="./col[@field='Longitude']"/>
                 </data>
                 <reference field="parent" resource="gis_location">
-                    <xsl:attribute name="uuid">
+                    <xsl:attribute name="tuid">
                         <xsl:value-of select="./col[@field='Municipio']/text()"/>
                     </xsl:attribute>
                 </reference>
@@ -98,14 +98,14 @@
         <xsl:variable name="unique-list" select="//row[not(col[@field='Municipio']=following::col[@field='Municipio'])]" />
         <xsl:for-each select="$unique-list">
             <resource name="gis_location">
-                <xsl:attribute name="uuid">
+                <xsl:attribute name="tuid">
                     <xsl:value-of select="./col[@field='Municipio']/text()"/>
                 </xsl:attribute>
                 <data field="name">
                     <xsl:value-of select="./col[@field='Municipio']/text()"/>
                 </data>
                 <reference field="parent" resource="gis_location">
-                    <xsl:attribute name="uuid">
+                    <xsl:attribute name="tuid">
                         <xsl:value-of select="./col[@field='DEPARTAMEN']/text()"/>
                     </xsl:attribute>
                 </reference>
@@ -117,7 +117,7 @@
         <xsl:variable name="unique-list" select="//row[not(col[@field='DEPARTAMEN']=following::col[@field='DEPARTAMEN'])]" />
         <xsl:for-each select="$unique-list">
             <resource name="gis_location">
-                <xsl:attribute name="uuid">
+                <xsl:attribute name="tuid">
                     <xsl:value-of select="./col[@field='DEPARTAMEN']/text()"/>
                 </xsl:attribute>
                 <data field="name">

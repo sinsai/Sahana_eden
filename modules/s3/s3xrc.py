@@ -1422,6 +1422,7 @@ class S3QueryBuilder(object):
 
         locations = db.gis_location
         table = resource.table
+        bbox_query = None
 
         for k in vars:
             if k[:4] == "bbox":
@@ -1449,11 +1450,15 @@ class S3QueryBuilder(object):
                     if fname is not None:
                         # Need a join
                         join = (locations.id == table[fname])
-                        return (join & bbox_filter)
+                        bbox = (join & bbox_filter)
                     else:
-                        return bbox_filter
+                        bbox = bbox_filter
+                if bbox_query is None:
+                    bbox_query = bbox
+                else:
+                    bbox_query = bbox_query & bbox
 
-        return None
+        return bbox_query
 
 
     # -------------------------------------------------------------------------

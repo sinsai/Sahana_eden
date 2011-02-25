@@ -31,7 +31,7 @@ def shn_role_represent(id):
 s3uuid = SQLCustomType(
                 type = "string",
                 native = "VARCHAR(128)",
-                encoder = (lambda x: "'%s'" % (uuid.uuid4().urn if x == "" else str(x).replace("'", "''"))),
+                encoder = (lambda x: "'%s'" % (uuid.uuid4().urn if x == "" else str(x.encode("utf-8")).replace("'", "''"))),
                 decoder = (lambda x: x)
             )
 

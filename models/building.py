@@ -70,6 +70,16 @@ if deployment_settings.has_module(module):
         7:"100%"
     }
 
+    building_estimated_damage_image = {
+        1:"tic.png",
+        2:"1percent.png",
+        3:"10percent.png",
+        4:"10-30percent.png",
+        5:"30-60percent.png",
+        6:"60-100percent.png",
+        7:"cross.png",
+    }
+
     building_posting_l1_opts = {
         1:"%s (%s)" % (T("Inspected"), T("Green")),
         2:"%s (%s)" % (T("Restricted Use"), T("Yellow")),
@@ -86,11 +96,11 @@ if deployment_settings.has_module(module):
         7:"%s (%s): R3" % (T("Unsafe"), T("Red")),
     }
 
-    uuid8anum = lambda: str(uuid.uuid4())[0:4] + '-' + str(uuid.uuid4())[4:8]
+    uuid8anum = lambda: "%s-%s" % (str(uuid.uuid4())[0:4], str(uuid.uuid4())[4:8])
 
-    s3uuid_8char = SQLCustomType(type = 'string',
-                                 native = 'VARCHAR(64)',
-                                 encoder = (lambda x: "'%s'" % (uuid8anum if x=="" else str(x).replace("'", "''"))),
+    s3uuid_8char = SQLCustomType(type = "string",
+                                 native = "VARCHAR(64)",
+                                 encoder = (lambda x: "'%s'" % (uuid8anum if x == "" else str(x).replace("'", "''"))),
                                  decoder = (lambda x: x))
 
     # NZSEE Level 1 (~ATC-20 Rapid Evaluation) Safety Assessment Form ---------
@@ -106,7 +116,8 @@ if deployment_settings.has_module(module):
                                   writable=False,
                                   default=uuid8anum,
                                   label = T("Ticket ID"),
-                                  represent = lambda id: id and id.upper() or T("None")),
+                                  #represent = lambda id: id and id.upper() or T("None") # Breaks on SQLite
+                                  ),
                             person_id(label=T("Inspector ID"), empty=False), # pre-populated in Controller
                             organisation_id(label=T("Territorial Authority")), # Affiliation in ATC20 terminology
                             Field("date", "datetime", default=request.now,

@@ -962,6 +962,7 @@ class AuthS3(Auth):
         else:
             users = [user]
 
+        person_ids = []
         for user in users:
             if "email" in user:
 
@@ -974,8 +975,9 @@ class AuthS3(Auth):
                         (ctable.pe_id == ptable.pe_id) & \
                         (ctable.contact_method == 1) & \
                         (ctable.value.lower() == email)
-                person = db(query).select(ptable.uuid).first()
+                person = db(query).select(ptable.id, ptable.uuid).first()
                 if person:
+                    person_ids.append(person.id)
                     if not db(utable.person_uuid == person.uuid).count():
                         db(utable.id == user.id).update(person_uuid=person.uuid,
                                                         owned_by_user=user.id)
@@ -992,6 +994,7 @@ class AuthS3(Auth):
                         owned_by_user = user.id
                         )
                     if new_id:
+                        person_ids.append(new_id)
                         person_uuid = ptable[new_id].uuid
                         db(utable.id == user.id).update(person_uuid=person_uuid)
                         db(etable.id == pe_id).update(uuid=person_uuid)
@@ -1013,6 +1016,10 @@ class AuthS3(Auth):
                 if self.user and self.user.id == user.id:
                     self.user.person_uuid = person_uuid
 
+        if len(person_ids) == 1:
+            return person_ids[0]
+        else:
+            return person_ids
 
     # -------------------------------------------------------------------------
     def s3_create_role(self, role, description, *acls):

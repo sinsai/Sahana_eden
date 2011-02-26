@@ -8,13 +8,13 @@ class Action(unittest.TestCase):
         self._diagResults = None
         self._diag_sleepTime = None
         self._diag_performCalls = None
-        self._openReport();
+        #self.openReport();
         
-    def _openReport(self):
+    def openReport(self):
         # used to save the diagnostics to a file
         if self._diag:
-            self._diagResults = open('diag/Results.txt', 'a')
-            self._diagResults.write(time.strftime('New Search run %d %b %Y (%H:%M:%S)\n'))
+            self._diagResults = open("../results/diagResults.txt", "a")
+            self._diagResults.write(time.strftime("New Search run %d %b %Y (%H:%M:%S)\n"))
     
     def closeReport(self, msg):
         # Close the file that is recording the diagnostics
@@ -30,7 +30,7 @@ class Action(unittest.TestCase):
         # username: the username to be used
         # password: the password of the user
         # reveal:   show the password on any error message
-        print "Logging in as user: " + username
+        print "Logging in as user: %s" % username
         sel = self.sel
         if sel.is_element_present("link=Logout"):
             # Already logged in check the account
@@ -45,9 +45,9 @@ class Action(unittest.TestCase):
         sel.type("auth_user_email", username)
         sel.type("auth_user_password", password)
         sel.click("//input[@value='Login']")
-        msg = "Unable to log in as " + username
+        msg = "Unable to log in as %s" % username
         if reveal:
-            msg += " with password " + password
+            msg += " with password %s " % password
         self.assertTrue(self.successMsg("Logged in"), msg)
 
     def logout(self):
@@ -96,9 +96,18 @@ class Action(unittest.TestCase):
         sel = self.sel
         self._diag_sleepTime = 0
         self._diag_performCalls = 0
-        if self._diag:
-            self._diagResults.write("%s\tFAILED\t%s\t%s\n" % (searchString, self._diag_sleepTime, self._diag_performCalls))
-            self.fail("time out search didn't respond, whilst searching for %s" % searchString)
+        found = False
+        result = ""
+        # perform the search it should work first time but, give it up to three attempts before giving up
+        for i in range (3):
+            self._diag_performCalls += 1
+            found = self._performSearch(searchString)
+            if found:
+                break
+        if not found:
+            if self._diag:
+                self._diagResults.write("%s\tFAILED\t%s\t%s\n" % (searchString, self._diag_sleepTime, self._diag_performCalls))
+                self.fail("time out search didn't respond, whilst searching for %s" % searchString)
         else:
             if self._diag:
                 self._diagResults.write("%s\tSUCCEEDED\t%s\t%s\n" % (searchString, self._diag_sleepTime, self._diag_performCalls))

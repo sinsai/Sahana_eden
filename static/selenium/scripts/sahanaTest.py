@@ -45,7 +45,7 @@ class SahanaTest(unittest.TestCase):
         # Only run once
         if not SahanaTest._seleniumCreated:
             if browser == "*custom":
-                browser += " " + path
+                browser += " %s" % path
             print "selenium %s %s %s %s" % (ipaddr, ipport, browser, webURL)
             SahanaTest.selenium = selenium(ipaddr, ipport, browser, webURL)
             SahanaTest.action = actions.Action(SahanaTest.selenium)
@@ -125,6 +125,7 @@ class SahanaTest(unittest.TestCase):
         cls._password = password
     
     def setUp(self):
+        self.action.openReport()
         print self.shortDescription()
         self.start()
         self.timings.append(time.time())

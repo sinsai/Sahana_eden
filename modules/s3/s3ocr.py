@@ -974,9 +974,6 @@ class S3XForms(S3Method):
                                                    })
 
             elif table[field].type == "upload": # For uploading images
-                controller = TAG["upload"](items_list,
-                                           _ref=ref,
-                                           _mediatype="image/*")
                 controller = self._get_controller("upload",
                                                   kargs={"ref":ref,
                                                    "labelref":"jr:itext('%s:label')" % ref,

@@ -117,6 +117,8 @@ if deployment_settings.has_module(module):
                                   default=uuid8anum,
                                   label = T("Ticket ID"),
                                   #represent = lambda id: id and id.upper() or T("None")
+                                  #represent = lambda id: id.encoder() and id.encoder().upper() or T("None")
+                                  represent = lambda id: id() and id().upper() or T("None")
                                   ),
                             person_id(label=T("Inspector ID"), empty=False), # pre-populated in Controller
                             organisation_id(label=T("Territorial Authority")), # Affiliation in ATC20 terminology

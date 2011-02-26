@@ -1598,6 +1598,10 @@ class S3Permission(object):
         if not f:
             f = self.function
 
+        # Hide disabled modules
+        if self.modules and c not in self.modules:
+            return False
+
         acl = self.page_acl(c=c, f=f)
         acl = (acl[0] | acl[1]) & permission
         if acl == permission or self.policy not in (3, 4, 5):

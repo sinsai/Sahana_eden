@@ -70,6 +70,7 @@ from s3rest import S3Resource, S3Method
 # RESTful Methods
 from s3crud import S3CRUD
 from s3find import *
+from s3merge import *
 
 # GIS Mapping
 from s3gis import *

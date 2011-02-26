@@ -39,7 +39,7 @@ def shn_menu():
             [T("Search"), False, aURL(r=request, f="nzseel2", args="search")],
             [T("List"), False, aURL(r=request, f="nzseel2")],
         ]],
-        [T("Report"), False, aURL(r=request, f="report"),
+        [T("Report"), False, aURL(r=request, f="index"),
          [
           [T("Snapshot"), False, aURL(r=request, f="report")],
           [T("Assessment timeline"), False, aURL(r=request, f="timeline")],
@@ -218,8 +218,8 @@ def report():
         (currently protected by Controller ACL)
     """
 
-    table = db.building_nzseel1
     level1 = Storage()
+    table = db.building_nzseel1
     # Which is more efficient?
     # A) 4 separate .count() in DB
     # B) Pulling all records into Python & doing counts in Python
@@ -233,6 +233,15 @@ def report():
     level1.red = db(query & filter).count()
 
     level2 = Storage()
+    table = db.building_nzseel2
+    query = (table.deleted == False)
+    level2.total = db(query).count()
+    filter = (table.posting.belongs((1, 2)))
+    level2.green = db(query & filter).count()
+    filter = (table.posting.belongs((3, 4)))
+    level2.yellow = db(query & filter).count()
+    filter = (table.posting.belongs((5, 6, 7)))
+    level2.red = db(query & filter).count()
 
     return dict(level1=level1,
                 level2=level2)
@@ -286,6 +295,7 @@ def timeline():
 def adminLevel():
     """
         A report providing assessments received broken down by administration level
+        @ToDo: Use DAL for database portability
     """
     sql = "select parent, `path`, estimated_damage FROM building_nzseel1, gis_location WHERE building_nzseel1.deleted = \"F\" and (gis_location.id = building_nzseel1.location_id)"
     dbresult = db.executesql(sql)
@@ -302,7 +312,7 @@ def adminLevel():
             temp[parent][7] += 1
         else:
             temp[parent]=[0, 0, 0, 0, 0, 0, 0, 1]
-        temp[parent][damage-1] += 1
+        temp[parent][damage - 1] += 1
     gis = {}
     for (key) in temp.keys():
         sql = "select name, parent FROM gis_location WHERE gis_location.id = '%s'" % key

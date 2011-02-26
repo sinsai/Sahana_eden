@@ -70,6 +70,16 @@ if deployment_settings.has_module(module):
         7:"100%"
     }
 
+    building_estimated_damage_image = {
+        1:"tic.png",
+        2:"1percent.png",
+        3:"10percent.png",
+        4:"10-30percent.png",
+        5:"30-60percent.png",
+        6:"60-100percent.png",
+        7:"cross.png",
+    }
+
     building_posting_l1_opts = {
         1:"%s (%s)" % (T("Inspected"), T("Green")),
         2:"%s (%s)" % (T("Restricted Use"), T("Yellow")),

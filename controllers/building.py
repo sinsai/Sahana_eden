@@ -42,7 +42,8 @@ def shn_menu():
         [T("Report"), False, aURL(r=request, f="report"),
          [
           [T("Snapshot"), False, aURL(r=request, f="report")],
-          [T("Assessment timeline"), False, aURL(r=request, f="timeline", args="assessment")],
+          [T("Assessment timeline"), False, aURL(r=request, f="timeline")],
+          [T("Assessment admin level"), False, aURL(r=request, f="adminLevel")],
          ]
         ]
     ]
@@ -279,5 +280,44 @@ def timeline():
                 totals= totals
                 ) 
 
+    
+# -----------------------------------------------------------------------------
+
+def adminLevel():
+    """
+        A report providing assessments received broken down by administration level
+    """
+    sql = "select parent, `path`, estimated_damage FROM building_nzseel1, gis_location WHERE building_nzseel1.deleted = \"F\" and (gis_location.id = building_nzseel1.location_id)"
+    dbresult = db.executesql(sql)
+    result = []
+    temp = {}
+
+    # Format the results
+    for report in dbresult:
+        parent = report[0]
+        path   = report[1]
+        damage = report[2]
+        
+        if temp.has_key(parent):
+            temp[parent][7] += 1
+        else:
+            temp[parent]=[0, 0, 0, 0, 0, 0, 0, 1]
+        temp[parent][damage-1] += 1
+    gis = {}
+    for (key) in temp.keys():
+        sql = "select name, parent FROM gis_location WHERE gis_location.id = '%s'" % key
+        dbresult = db.executesql(sql)
+        if len(dbresult) > 0:
+            gis[key] = dbresult[0][0]
+
+    for (key,item) in temp.items():
+        if gis.has_key(key):
+            name = gis[key]
+        else:
+            name = "Unknown"
+        result.append((name,item))
+    return dict(report=result,
+                ) 
+    
     
 # -----------------------------------------------------------------------------

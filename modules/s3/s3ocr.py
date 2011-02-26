@@ -838,8 +838,10 @@ class S3XForms(S3Method):
                 # Unknown type
                 _type = "string"
 
-            if self._uses_requirement("IS_INT_IN_RANGE", table[field]) \
-                    or self._uses_requirement("IS_FLOAT_IN_RANGE", table[field]):
+            if self._uses_requirement("IS_INT_IN_RANGE",
+                                      table[field]) \
+                    or self._uses_requirement("IS_FLOAT_IN_RANGE",
+                                              table[field]):
 
                 if hasattr(table[field].requires, "other"):
                     maximum = table[field].requires.other.maximum
@@ -852,7 +854,8 @@ class S3XForms(S3Method):
                 elif maximum is None:
                     constraint = "(. > %s)" % minimum
                 else:
-                    constraint = "(. > %s and . < %s)" % (minimum, maximum)
+                    constraint = "(. > %s and . < %s)" % (minimum,
+                                                          maximum)
             elif self._uses_requirement("IS_IN_SET", table[field]):
                 _type = ""
 
@@ -860,17 +863,27 @@ class S3XForms(S3Method):
 
             if _type!="":
                 if constraint != "":
-                    model.append(etree.Element("%sbind" % XFORMS, nodeset=ref, required=required, type=_type, constraint=constraint))
+                    model.append(etree.Element("%sbind" % XFORMS,
+                                               nodeset=ref,
+                                               required=required,
+                                               type=_type,
+                                               constraint=constraint))
                 else:
-                    model.append(etree.Element("%sbind" % XFORMS, nodeset=ref, required=required, type=_type))
+                    model.append(etree.Element("%sbind" % XFORMS,
+                                               nodeset=ref,
+                                               required=required,
+                                               type=_type))
             else:
-                model.append(etree.Element("%sbind" % XFORMS, nodeset=ref, required=required))
+                model.append(etree.Element("%sbind" % XFORMS,
+                                           nodeset=ref,
+                                           required=required))
 
         return
 
     def _generate_controllers(self, fields, body):
         """
-        Generates etree for conntrollers and translation values for the resource
+        Generates etree for conntrollers and translation values
+        for the resource
         """
 
         _table = self.tablename
@@ -882,23 +895,30 @@ class S3XForms(S3Method):
 
         # Store resource title
         try:
-            translation.append(self._textvalue("title", self.manager.s3.crud_strings[_table].subtitle_list.read()))
+            translation.append(self._textvalue("title",
+                                               self.manager.s3.crud_strings[_table].subtitle_list.read()))
         except(KeyError):
             translation.append(self._textvalue("title", self.tablename))
         for field in fields:
             ref = "/%s/%s" % (_table, field)
 
-            translation.append(self._textvalue("%s:label" % ref, self._get_str(table[field].label)))
-            translation.append(self._textvalue("%s:hint" % ref, self._get_str(table[field].comment)))
+            translation.append(self._textvalue("%s:label" % ref,
+                                               self._get_str(table[field].label)))
+            translation.append(self._textvalue("%s:hint" % ref,
+                                               self._get_str(table[field].comment)))
 
             if hasattr(table[field].requires, "option"):
                 item_list = []
                 for option in table[field].requires.theset:
-                    items_list.append(self._itemlabelvalue(valuetext=self._get_str(option), labeltext=self._get_str(option)))
-                controller = self._get_controller("select1", kargs={"items_list":items_list, "ref":ref})
+                    items_list.append(self._itemlabelvalue(valuetext=self._get_str(option),
+                                                           labeltext=self._get_str(option)))
+                controller = self._get_controller("select1",
+                                                  kargs={"items_list":items_list,
+                                                         "ref":ref})
                 #controllers_list.append(TAG["select1"](items_list, _ref=field))
 
-            elif self._uses_requirement("IS_IN_SET", table[field]): # Defined below
+            elif self._uses_requirement("IS_IN_SET",
+                                        table[field]): # Defined below
                 if hasattr(table[field].requires, "other"):
                     insetrequires = table[field].requires.other
                 else:
@@ -911,8 +931,10 @@ class S3XForms(S3Method):
                     if table[field].type == "integer":
                         option = int(option)
                     option_ref = "%s:option%s" % (ref, str(option_num))
-                    items_list.append(self._itemlabelvalue(valuetext=self._get_str(option), labelref="jr:itext('%s')" % option_ref))
-                    translation.append(self._textvalue(option_ref, self._get_str(insetrequires.labels[theset.index(str(option))])))
+                    items_list.append(self._itemlabelvalue(valuetext=self._get_str(option),
+                                                           labelref="jr:itext('%s')" % option_ref))
+                    translation.append(self._textvalue(option_ref,
+                                                       self._get_str(insetrequires.labels[theset.index(str(option))])))
                     option_num += 1
                 if insetrequires.multiple:
                     controller = self._get_controller("select",
@@ -933,12 +955,16 @@ class S3XForms(S3Method):
                 items_list=[]
                 
                 # True option
-                items_list.append(self._itemlabelvalue(valuetext=str(1), labelref="jr:itext('%s:option0')" % ref))
-                translation.append(self._textvalue("%s:option0" % ref, "True"))
+                items_list.append(self._itemlabelvalue(valuetext=str(1),
+                                                       labelref="jr:itext('%s:option0')" % ref))
+                translation.append(self._textvalue("%s:option0" % ref,
+                                                   "True"))
 
                 # False option
-                items_list.append(self._itemlabelvalue(valuetext=str(0), labelref="jr:itext('%s:option1')" % ref))
-                translation.append(self._textvalue("%s:option1" % ref, "False"))
+                items_list.append(self._itemlabelvalue(valuetext=str(0),
+                                                       labelref="jr:itext('%s:option1')" % ref))
+                translation.append(self._textvalue("%s:option1" % ref,
+                                                   "False"))
                 
                 controller = self._get_controller("select1",
                                                   kargs={"items_list":items_list,
@@ -948,7 +974,9 @@ class S3XForms(S3Method):
                                                    })
 
             elif table[field].type == "upload": # For uploading images
-                controller = TAG["upload"](items_list, _ref=ref, _mediatype="image/*")
+                controller = TAG["upload"](items_list,
+                                           _ref=ref,
+                                           _mediatype="image/*")
                 controller = self._get_controller("upload",
                                                   kargs={"ref":ref,
                                                    "labelref":"jr:itext('%s:label')" % ref,
@@ -1018,7 +1046,9 @@ class S3XForms(S3Method):
             label.text = unicode(labeltext, 'utf8')
             value.text = unicode(valuetext, 'utf8')
         elif labelref != None:
-            label = etree.SubElement(item, "%slabel" % XFORMS, ref=labelref)
+            label = etree.SubElement(item,
+                                     "%slabel" % XFORMS,
+                                     ref=labelref)
             value = etree.SubElement(item, "%svalue" % XFORMS)
             value.text = unicode(valuetext, 'utf8')
         return item
@@ -1041,30 +1071,48 @@ class S3XForms(S3Method):
             readonly = str(kargs.get("readonly", False))
             defaulttext = str(kargs.get("default", ""))
             if readonly == "true":
-                controller = etree.Element("%s%s" % (XFORMS, controller_name), ref=ref, readonly="true", default=defaulttext)
+                controller = etree.Element("%s%s" % (XFORMS,
+                                                     controller_name),
+                                           ref=ref,
+                                           readonly="true",
+                                           default=defaulttext)
             else:
-                controller = etree.Element("%s%s" % (XFORMS, controller_name), ref=ref)
+                controller = etree.Element("%s%s" % (XFORMS,
+                                                     controller_name),
+                                           ref=ref)
             label = etree.SubElement(controller, "%slabel" % XFORMS)
             label.text = unicode(labeltext, 'utf8')
         elif controller_name == "select1" or controller_name == "select":
             items = kargs.get("items_list", [])
             labelref = str(kargs.get("labelref", ""))
             hintref = str(kargs.get("hintref", ""))
-            controller = etree.Element("%s%s" % (XFORMS, controller_name), ref=ref)
+            controller = etree.Element("%s%s" % (XFORMS,
+                                                 controller_name),
+                                       ref=ref)
             if labelref != None:
-                label = etree.SubElement(controller, "%slabel" % XFORMS, ref=labelref)
+                label = etree.SubElement(controller,
+                                         "%slabel" % XFORMS,
+                                         ref=labelref)
             if hintref != None:
-                hint = etree.SubElement(controller, "%shint" % XFORMS, ref=hintref)
+                hint = etree.SubElement(controller,
+                                        "%shint" % XFORMS,
+                                        ref=hintref)
             for item in items:
                 controller.append(item)
         elif controller_name == "upload":
             labelref = str(kargs.get("labelref", ""))
             hintref = str(kargs.get("hintref", ""))
-            controller = etree.Element("%s%s" % (XFORMS, controller_name), ref=ref)
+            controller = etree.Element("%s%s" % (XFORMS,
+                                                 controller_name),
+                                       ref=ref)
             if labelref != None:
-                label = etree.SubElement(controller, "%slabel" % XFORMS, ref=labelref)
+                label = etree.SubElement(controller,
+                                         "%slabel" % XFORMS,
+                                         ref=labelref)
             if hintref != None:
-                hint = etree.SubElement(controller, "%shint" % XFORMS, ref=hintref)
+                hint = etree.SubElement(controller,
+                                        "%shint" % XFORMS,
+                                        ref=hintref)
 
         return controller
 
@@ -1076,7 +1124,9 @@ class S3XForms(S3Method):
                elif (pdf exists) : retrive(db) + deliver
         """
         xforms = self.xforms_create()
-        xforms = etree.tostring(xforms, encoding="UTF-8", pretty_print=True)
+        xforms = etree.tostring(xforms,
+                                encoding="UTF-8",
+                                pretty_print=True)
 
         uid = uuid.uuid1()
         xmls = {}
@@ -1094,7 +1144,8 @@ class S3XForms(S3Method):
         Check if a given database field uses the specified requirement
         (IS_IN_SET, IS_INT_IN_RANGE, etc)
         """
-        if hasattr(field.requires, "other") or requirement in str(field.requires):
+        if hasattr(field.requires, "other") \
+                or requirement in str(field.requires):
             if hasattr(field.requires, "other"):
                 if requirement in str(field.requires.other):
                     return True

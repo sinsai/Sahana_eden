@@ -50,7 +50,7 @@ class TestConfig(object):
             # loadTestsFromName will also import the module 
             tempTests = testLoader.loadTestsFromName(className)
         except:
-            print "Unable to run test %s, check the test exists." % moduleName
+            print "Unable to run test %s, check the test exists." % className
             traceback.print_exc()
         parts = className.split(".")
         if len(parts) == 2:
@@ -254,8 +254,12 @@ class TestWindow(Frame):
     
     def sahanaPanel(self, panel):
         Label(panel, text="Sahana options").pack(side=TOP)
-        Label(panel, text="To run the tests a user with admin rights needs to be provided.").pack(side=TOP, anchor=W)
-        Label(panel, text="If this is left blank then the user of testing@example.com will be used.").pack(side=TOP, anchor=W)
+        Label(panel,
+              text="To run the tests a user with admin rights needs to be provided.").pack(side=TOP,
+                                                                                           anchor=W)
+        Label(panel,
+              text="If this is left blank then it is assumed that there is a blank database & so this can be created by registering the user.").pack(side=TOP,
+                                                                                                                                                     anchor=W)
         detailPanel = Frame(panel)
         detailPanel.pack(side=TOP, anchor=W, fill=X)
         Label(detailPanel, text="User name:").grid(row=0, column=0, sticky=NW)
@@ -268,7 +272,8 @@ class TestWindow(Frame):
         self.URL = Entry(detailPanel, width=40)
         self.URL.grid(row=2, column=1, sticky=NW)
         self.URL.insert(0, "http://127.0.0.1:8000/")
-        Label(detailPanel, text="Sahana Application:").grid(row=3, column=0, sticky=NW)
+        Label(detailPanel, text="Sahana Application:").grid(row=3, column=0,
+                                                            sticky=NW)
         self.app = Entry(detailPanel, width=40)
         self.app.grid(row=3, column=1, sticky=NW)
         self.app.insert(0, "eden/")
@@ -308,7 +313,9 @@ class TestWindow(Frame):
     def testModulepanel(self, panel):
         self.moduleList = TestConfig().getTestModuleDetails()
         Label(panel, text="Test Modules").pack(side=TOP)
-        Label(panel, text="Select the test modules that you would like to run.").pack(side=TOP, anchor=W)
+        Label(panel,
+              text="Select the test modules that you would like to run.").pack(side=TOP,
+                                                                               anchor=W)
         detailPanel = Frame(panel)
         detailPanel.pack(side=TOP, anchor=W, fill=X)
         self.checkboxModules = []
@@ -322,12 +329,14 @@ class TestWindow(Frame):
             self.moduleName.append(name)
             var = IntVar()
             
-            chk = Checkbutton(detailPanel, text=name, variable=var, command=self.toggleButton)
+            chk = Checkbutton(detailPanel, text=name, variable=var,
+                              command=self.toggleButton)
             self.checkboxModules.append(var)
             btnFrame = Frame(detailPanel)
             chk.grid(row=i//2, column=i%2*3, sticky=NW)
-            lbl = Label(detailPanel, text=self.testcaseTotals(self.moduleList[i]))
-            lbl['fg'] = self.testcaseColour
+            lbl = Label(detailPanel,
+                        text=self.testcaseTotals(self.moduleList[i]))
+            lbl["fg"] = self.testcaseColour
             lbl.grid(row=i//2, column=i%2*3+1, sticky=NW)
             self.labelList.append(lbl)
             btn = Button(btnFrame, text="Select tests")
@@ -378,8 +387,12 @@ class TestWindow(Frame):
         logPanel = Frame(detailPanel)
         logPanel.grid(row=4, column=1, sticky=NSEW)
         self.radioLog = StringVar()
-        Radiobutton(logPanel, text="No Logging", value="None", command=self.onPressServerLog, variable=self.radioLog).pack(side=TOP, anchor = W)
-        Radiobutton(logPanel, text="Log to file", value="File", command=self.onPressServerLog, variable=self.radioLog).pack(side=TOP, anchor = W)
+        Radiobutton(logPanel, text="No Logging", value="None",
+                    command=self.onPressServerLog,
+                    variable=self.radioLog).pack(side=TOP, anchor = W)
+        Radiobutton(logPanel, text="Log to file", value="File",
+                    command=self.onPressServerLog,
+                    variable=self.radioLog).pack(side=TOP, anchor = W)
         self.logFilename = Entry(logPanel, width=40)
         self.logFilename.insert(0, "SahanaEdenRegressionTests.log")
         self.logFilename.config(state="readonly")
@@ -390,9 +403,11 @@ class TestWindow(Frame):
         self.updateServerCommand()
         button = Frame(logPanel)
         button.pack(side=TOP, fill=BOTH)
-        self.startSelenium = Button(button, text="Start", command=self.startSelenium)
+        self.startSelenium = Button(button, text="Start",
+                                    command=self.startSelenium)
         self.startSelenium.pack(side=RIGHT, anchor=SE)
-        self.stopSelenium = Button(button, text="Stop", command=self.stopSelenium)
+        self.stopSelenium = Button(button, text="Stop",
+                                   command=self.stopSelenium)
         self.stopSelenium.pack(side=RIGHT, anchor=SE)
 
         self.serverStatus(Event())
@@ -411,7 +426,8 @@ class TestWindow(Frame):
             java = "java"
         # http://wiki.openqa.org/display/SIDE/record+and+assert+Ext+JS
         #args = [java, r"-jar", r"selenium-server.jar", r"-userExtensions", r"user-extensions.js", r"-singlewindow", "-port", "%s" % self.ipPort.get()]
-        args = [java, r"-jar", r"selenium-server.jar", r"-singlewindow", "-port", "%s" % self.ipPort.get()]
+        args = [java, r"-jar", r"selenium-server.jar", r"-singlewindow",
+                "-port", "%s" % self.ipPort.get()]
         if self.radioLog.get() == "File":
             args.append("-log")
             args.append(self.logFilename.get())
@@ -441,7 +457,8 @@ class TestWindow(Frame):
                 if "selenium" in line and "java" in line:
                     pid = line.split()[0]
                     os.system("kill %s" % pid)
-                    print "Stopping process %s started with command %s" % (pid, line)
+                    print "Stopping process %s started with command %s" % (pid,
+                                                                           line)
             self.serverStatus(Event())
             return
     
@@ -471,7 +488,9 @@ class TestWindow(Frame):
         self.radioB = StringVar()
         Label(panel, text="Browser").pack(side=TOP)
         for browser in browserList:
-            Radiobutton(panel, text=browser[0], command=self.onPressBrowser, value=browser[1], variable=self.radioB).pack(side=TOP, anchor=W)
+            Radiobutton(panel, text=browser[0], command=self.onPressBrowser,
+                        value=browser[1],
+                        variable=self.radioB).pack(side=TOP, anchor=W)
         path = Frame(panel)
         path.pack(side=TOP, fill=X)
         Label(path, text="Path to custom Browser").pack(side=TOP, anchor=W)
@@ -538,7 +557,9 @@ class SelectTestWindow(tkSimpleDialog.Dialog):
             i += 1
 
     def testcasePanel(self, panel):
-        Label(panel, text="Select the test cases that you would like to run.").pack(side=TOP, anchor=W)
+        Label(panel,
+              text="Select the test cases that you would like to run.").pack(side=TOP,
+                                                                             anchor=W)
         detailPanel = Frame(panel)
         detailPanel.pack(side=TOP, anchor=W, fill=X)
         self.checkboxModules = []
@@ -546,7 +567,8 @@ class SelectTestWindow(tkSimpleDialog.Dialog):
         self.testcases = self.details["tests"]
         for test in self.testcases:
             var = IntVar()
-            chk = Checkbutton(detailPanel, text=test["name"], variable=var, command=self.toggleButton)
+            chk = Checkbutton(detailPanel, text=test["name"], variable=var,
+                              command=self.toggleButton)
             if test["state"]:
                 chk.select()
             self.checkboxModules.append(var)
@@ -586,7 +608,8 @@ if __name__ == "__main__":
             report_format = "html"
 
         if report_format == "xml": # Arg 2 is used to generate xml output for jenkins
-            runner = XMLTestRunner(file("../results/regressionTest-%s.xml" % (browser.replace("*", "")) , "w"))
+            runner = XMLTestRunner(file("../results/regressionTest-%s.xml" % (browser.replace("*", "")),
+                                                                              "w"))
             runner.run(suite)
 
         elif report_format == "html":
@@ -595,7 +618,8 @@ if __name__ == "__main__":
                         title="<Sahana Eden Test>",
                         description="Suite of regressions tests for Sahana Eden."
                         )
-            fileName = "../results/regressionTest-%s-%s.html" % (browser.replace("*", ""), time.strftime("%Y%m%d-%H%M%S"))
+            fileName = "../results/regressionTest-%s-%s.html" % (browser.replace("*", ""),
+                                                                 time.strftime("%Y%m%d-%H%M%S"))
             file = open(fileName, "w")
             runner.run(suite)
             # check out the output

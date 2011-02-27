@@ -945,6 +945,8 @@ def s3_rest_controller(prefix, resourcename, **attr):
     resource.set_handler("barchart", shn_barchart)
     resource.set_handler("merge", s3base.S3RecordMerger())
 
+    resource.set_handler("xforms", s3base.S3XForms())
+
     # Execute the request
     output = resource.execute_request(r, **attr)
 

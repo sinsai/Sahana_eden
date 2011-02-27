@@ -5,23 +5,25 @@
 <h3>{{=T("Inspection")}}:</h3>
 
 <table>
+<table border="5">
 <thead>
-<th>Date</th><th>Count</th>
+<th>Date</th>{{for i in range(7):}}<th><img width=24 height=24 src="/eden/static/img/{{=building_estimated_damage_image[i+1]}}"><br/>{{=building_estimated_damage[i+1]}}</th>{{pass}}<th><img width=24 height=24 src="/eden/static/img/sum.png	"><br/>Total</th>
 </thead>
 <tbody>
-{{for item in inspection:}}<tr>{{include "building/incident_summary.html"}}</tr>{{pass}}
+<tr><td><b>Total</b></td>{{for i in range(8):}}<td><b>{{=totals[i]}}</b></td>{{pass}}</tr>
+{{for details in inspection:}}<tr>{{include "building/incident_hour_summary.html"}}</tr>{{pass}}
 <tbody>
 </table>
 
 
 <h3>{{=T("When reports were entered")}}:</h3>
 
-<table border=1>
+<table border="5">
 <thead>
-<th>Date</th>{{for i in range(7):}}<th>{{=building_estimated_damage[i+1]}}</th>{{pass}}<th>Count</th>
+<th>Date</th>{{for i in range(7):}}<th><img width=24 height=24 src="/eden/static/img/{{=building_estimated_damage_image[i+1]}}"><br/>{{=building_estimated_damage[i+1]}}</th>{{pass}}<th><img width=24 height=24 src="/eden/static/img/sum.png	"><br/>Total</th>
 </thead>
 <tbody>
-{{for (cdate,chour) in creation.keys():}}<tr>{{include "building/incident_hour_summary.html"}}</tr>{{pass}}
+{{for details in creation:}}<tr>{{include "building/incident_hour_summary.html"}}</tr>{{pass}}
 <tbody>
 </table>
 

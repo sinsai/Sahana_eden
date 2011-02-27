@@ -13,9 +13,11 @@
     This is actually based on the New Zealand variant:
     http://eden.sahanafoundation.org/wiki/BluePrintBuildingAssessments
 
+    @ToDo: Hide fields for triage form server side
+    - once print comes from controller then it will also skip these fields
+    - less to download to browser (more scalable)
+    
     @ToDo: add other forms
-    Urgent: Level 2 of the ~ATC-20
-    - make this a 1-1 component of the rapid form?
 """
 
 module = request.controller
@@ -39,10 +41,11 @@ def shn_menu():
             [T("Search"), False, aURL(r=request, f="nzseel2", args="search")],
             [T("List"), False, aURL(r=request, f="nzseel2")],
         ]],
-        [T("Report"), False, aURL(r=request, f="report"),
+        [T("Report"), False, aURL(r=request, f="index"),
          [
           [T("Snapshot"), False, aURL(r=request, f="report")],
-          [T("Assessment timeline"), False, aURL(r=request, f="timeline", args="assessment")],
+          [T("Assessment timeline"), False, aURL(r=request, f="timeline")],
+          [T("Assessment admin level"), False, aURL(r=request, f="adminLevel")],
          ]
         ]
     ]
@@ -217,8 +220,8 @@ def report():
         (currently protected by Controller ACL)
     """
 
-    table = db.building_nzseel1
     level1 = Storage()
+    table = db.building_nzseel1
     # Which is more efficient?
     # A) 4 separate .count() in DB
     # B) Pulling all records into Python & doing counts in Python
@@ -232,46 +235,124 @@ def report():
     level1.red = db(query & filter).count()
 
     level2 = Storage()
+    table = db.building_nzseel2
+    query = (table.deleted == False)
+    level2.total = db(query).count()
+    filter = (table.posting.belongs((1, 2)))
+    level2.green = db(query & filter).count()
+    filter = (table.posting.belongs((3, 4)))
+    level2.yellow = db(query & filter).count()
+    filter = (table.posting.belongs((5, 6, 7)))
+    level2.red = db(query & filter).count()
 
     return dict(level1=level1,
                 level2=level2)
+
 # -----------------------------------------------------------------------------
+def getformatedData(dbresult):
+    result = []
+    cnt = -1;
+    # Format the results
+    for row in dbresult:
+        print row
+        damage = row.building_nzseel1.estimated_damage
+        try:
+            trueDate = row.building_nzseel1.date #datetime.datetime.strptime(row.date, "%Y-%m-%d %H:%M:%S")
+        except:
+            trueDate = row.building_nzseel1.created_on
+        date = trueDate.strftime('%d %b %Y')
+        hour = trueDate.strftime("%H")
+        key = (date, hour)
+        if (cnt == -1) or (result[cnt][0] != key):
+            result.append([key , 0, 0, 0, 0, 0, 0, 0, 1])
+            cnt += 1
+        else:
+            result[cnt][8] += 1
+        result[cnt][damage] += 1
+
+    return result
+
 def timeline():
     """
         A report providing assessments received broken down by time
-        @ToDo: Use DAL for database portability
     """
     result = Storage()
     inspection = []
-    creation = {}
-    sql = "select `date`, daytime, count(*) FROM building_nzseel1 WHERE deleted = \"F\" GROUP BY `date`, daytime ORDER BY `date` DESC"
-    result = db.executesql(sql)
-    # Format the results
-    for report in result:
-        date = datetime.datetime.strptime(report[0], "%Y-%m-%d").strftime('%d %b %Y')
-        daytime = report[1]
-        count = report[2]
-        print date
-        inspection.append((date, daytime, count))
+    creation = []
+    # raw SQL command
+    # select `date`, estimated_damage FROM building_nzseel1 WHERE deleted = "F" ORDER BY `date` DESC
+    
+    table = db.building_nzseel1
+    dbresult = db(table.deleted == False).select(table.date,
+                                                 table.estimated_damage,
+                                                 orderby=~table.date,
+                                                )
+    inspection = getformatedData(dbresult)
 
-    sql = "select created_on, estimated_damage FROM building_nzseel1 WHERE deleted = \"F\" ORDER BY created_on DESC"
-    result = db.executesql(sql)
-    # Format the results
-    for report in result:
-        print report[0]
-        trueDate = datetime.datetime.strptime(report[0], "%Y-%m-%d %H:%M:%S")
-        date = trueDate.strftime('%d %b %Y')
-        hour = trueDate.strftime("%H")
-        if creation.has_key((date, hour)):
-            creation[(date, hour)][0] += 1
-        else:
-            creation[(date, hour)] = [1, 0, 0, 0, 0, 0, 0, 0]
-        creation[(date, hour)][report[1]] += 1
-    for (key, value) in creation.keys():
-        print key
-        print value
-        print creation[(key, value)]
+    # Here is the raw SQL command
+    # select created_on, estimated_damage FROM building_nzseel1 WHERE deleted = "F" ORDER BY created_on DESC
+    dbresult = db(table.deleted == False).select(table.created_on,
+                                                 table.estimated_damage,
+                                                 orderby=~table.created_on,
+                                                )
+    creation = getformatedData(dbresult)
+    
+    totals = [0, 0, 0, 0, 0, 0, 0, 0]
+    for line in inspection:
+        for i in range(8):
+            totals[i] += line[i + 1]
     return dict(inspection=inspection,
-                creation=creation
-                )
+                creation=creation,
+                totals= totals
+                ) 
+
+# -----------------------------------------------------------------------------
+
+def adminLevel():
+    """
+        A report providing assessments received broken down by administration level
+    """
+    # raw SQL command
+    # select parent, `path`, estimated_damage FROM building_nzseel1, gis_location WHERE building_nzseel1.deleted = "F" and (gis_location.id = building_nzseel1.location_id)
+    tableNZ1 = db.building_nzseel1
+    tableGIS = db.gis_location
+    query = (tableNZ1.location_id == tableGIS.id) & (tableNZ1.deleted == False)
+    dbresult = db(query).select(tableGIS.path,
+                                tableGIS.parent,
+                                tableNZ1.estimated_damage
+                               )
+
+    result = []
+    temp = {}
+
+    # Format the results
+    for row in dbresult:
+        parent = row.gis_location.parent ##report[0]
+        path   = row.gis_location.path #report[1]
+        damage = row.building_nzseel1.estimated_damage #report[2]
+        
+        if temp.has_key(parent):
+            temp[parent][7] += 1
+        else:
+            temp[parent]=[0, 0, 0, 0, 0, 0, 0, 1]
+        temp[parent][damage - 1] += 1
+    gis = {}
+    for (key) in temp.keys():
+        # raw SQL command
+        # "select name, parent FROM gis_location WHERE gis_location.id = '%s'" % key
+        row = tableGIS(key)
+        if row == None:
+            gis[key] = T("Unknown")
+        else:
+            gis[key] = row.name
+
+    for (key,item) in temp.items():
+        if gis.has_key(key):
+            name = gis[key]
+        else:
+            name = T("Unknown")
+        result.append((name,item))
+    return dict(report=result,
+                ) 
+
 # -----------------------------------------------------------------------------

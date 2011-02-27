@@ -13,6 +13,10 @@
     This is actually based on the New Zealand variant:
     http://eden.sahanafoundation.org/wiki/BluePrintBuildingAssessments
 
+    @ToDo: Hide fields for triage form server side
+    - once print comes from controller then it will also skip these fields
+    - less to download to browser (more scalable)
+    
     @ToDo: add other forms
 """
 

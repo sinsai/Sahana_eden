@@ -1249,7 +1249,6 @@ for layertype in gis_layer_types:
                      #Field("editable", "boolean", default=False, label=T("Editable?")),
                     )
         table = db.define_table(tablename, t, migrate=migrate)
-        #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
     elif layertype == "wms":
         t = db.Table(db, table,
                      gis_layer,

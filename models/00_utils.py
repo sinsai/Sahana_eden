@@ -176,15 +176,15 @@ def s3_include_debug():
         def read(self,data): pass
         def flush(self): pass
         def close(self): pass
-    save_stdout = sys.stdout    
+    save_stdout = sys.stdout
     # redirect all print deals
     sys.stdout = dummyStream()
-    
+
     scripts_dir_path = "applications/%s/static/scripts" % request.application
 
     # Get list of script files
-    sys.path.append( "%s/tools" % scripts_dir_path)    
-    import mergejs    
+    sys.path.append( "%s/tools" % scripts_dir_path)
+    import mergejs
 
     configDictCore = {
         "web2py": scripts_dir_path,
@@ -193,10 +193,10 @@ def s3_include_debug():
     }
     configFilename = "%s/tools/sahana.js.cfg"  % scripts_dir_path
     (fs, files) = mergejs.getFiles(configDictCore, configFilename)
-    
+
     # Enable print
     sys.stdout = save_stdout
-    
+
     include = ""
     for file in files:
         include = '%s\n<script src="/%s/static/scripts/%s" type="text/javascript"></script>' \
@@ -204,12 +204,12 @@ def s3_include_debug():
                 request.application,
                 file)
 
-    include = "%s\n <!-- CSS Syles -->" % include            
+    include = "%s\n <!-- CSS Syles -->" % include
     f = open("%s/tools/sahana.css.cfg" % scripts_dir_path, "r")
     files = f.readlines()
     for file in files[:-1]:
         include = '%s\n<link href="/%s/static/styles/%s" rel="stylesheet" type="text/css" />' \
-            % ( include, 
+            % ( include,
                 request.application,
                 file[:-1]
                )
@@ -943,6 +943,9 @@ def s3_rest_controller(prefix, resourcename, **attr):
 
     resource.set_handler("copy", shn_copy)
     resource.set_handler("barchart", shn_barchart)
+    resource.set_handler("merge", s3base.S3RecordMerger())
+
+    resource.set_handler("xforms", s3base.S3XForms())
 
     # Execute the request
     output = resource.execute_request(r, **attr)

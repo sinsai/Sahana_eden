@@ -738,7 +738,10 @@ class S3XML(object):
                     relements = [relements[0]]
 
             elif tree and self.UID in ktable:
-                root = tree.getroot()
+                if isinstance(tree, etree._Element):
+                    root = tree
+                else:
+                    root = tree.getroot()
 
                 for uid in uids:
                     entry = None

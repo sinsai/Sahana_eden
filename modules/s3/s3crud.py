@@ -1144,8 +1144,8 @@ class S3CRUD(S3Method):
             for field in table:
                 if field.writable:
                     required = field.required or \
-                            field.notnull or \
-                            mark_required and field.name in mark_required
+                               field.notnull or \
+                               mark_required and field.name in mark_required
                     validators = field.requires
                     if not validators and not required:
                         continue

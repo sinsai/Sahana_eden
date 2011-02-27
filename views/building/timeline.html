@@ -4,28 +4,45 @@
 
 <h3>{{=T("Inspection")}}:</h3>
 
-<table>
-<table border="5">
+<div class="table-container"> 
+<table class="display">
 <thead>
-<th>Date</th>{{for i in range(7):}}<th><img width=24 height=24 src="/eden/static/img/{{=building_estimated_damage_image[i+1]}}"><br/>{{=building_estimated_damage[i+1]}}</th>{{pass}}<th><img width=24 height=24 src="/eden/static/img/sum.png	"><br/>Total</th>
+<tr><th>Date</th>
+{{for i in range(7):}}<th><img width=24 height=24 src="/eden/static/img/{{=building_estimated_damage_image[i+1]}}"><br/>{{=building_estimated_damage[i+1]}}</th>{{pass}}
+<th><img width=24 height=24 src="/eden/static/img/sum.png	"><br/>Total</th>
+</tr>
+<tr><th>Total</th>{{for i in range(8):}}<th>{{=totals[i]}}</th>{{pass}}</tr>
 </thead>
 <tbody>
-<tr><td><b>Total</b></td>{{for i in range(8):}}<td><b>{{=totals[i]}}</b></td>{{pass}}</tr>
-{{for details in inspection:}}<tr>{{include "building/incident_hour_summary.html"}}</tr>{{pass}}
+{{cnt = 1}}
+{{for details in inspection:}}
+	<tr class="{{if cnt%2 == 1:}}odd{{else:}}even{{pass}}">
+	{{include "building/incident_hour_summary.html"}}</tr>
+{{cnt += 1}}
+{{pass}}
 <tbody>
 </table>
-
+</div>
 
 <h3>{{=T("When reports were entered")}}:</h3>
 
-<table border="5">
+<div class="table-container"> 
+<table class="display">
 <thead>
-<th>Date</th>{{for i in range(7):}}<th><img width=24 height=24 src="/eden/static/img/{{=building_estimated_damage_image[i+1]}}"><br/>{{=building_estimated_damage[i+1]}}</th>{{pass}}<th><img width=24 height=24 src="/eden/static/img/sum.png	"><br/>Total</th>
+<th>Date</th>
+{{for i in range(7):}}<th><img width=24 height=24 src="/eden/static/img/{{=building_estimated_damage_image[i+1]}}"><br/>{{=building_estimated_damage[i+1]}}</th>{{pass}}
+<th><img width=24 height=24 src="/eden/static/img/sum.png	"><br/>Total</th>
 </thead>
 <tbody>
-{{for details in creation:}}<tr>{{include "building/incident_hour_summary.html"}}</tr>{{pass}}
+{{cnt = 1}}
+{{for details in creation:}}
+	<tr class="{{if cnt%2 == 1:}}odd{{else:}}even{{pass}}">
+	{{include "building/incident_hour_summary.html"}}</tr>
+{{cnt += 1}}
+{{pass}}
 <tbody>
 </table>
+</div>
 
 
 </div>

@@ -254,12 +254,11 @@ def getformatedData(dbresult):
     cnt = -1;
     # Format the results
     for row in dbresult:
-        print row
-        damage = row.building_nzseel1.estimated_damage
+        damage = row.estimated_damage
         try:
-            trueDate = row.building_nzseel1.date #datetime.datetime.strptime(row.date, "%Y-%m-%d %H:%M:%S")
+            trueDate = row.date #datetime.datetime.strptime(row.date, "%Y-%m-%d %H:%M:%S")
         except:
-            trueDate = row.building_nzseel1.created_on
+            trueDate = row.created_on
         date = trueDate.strftime('%d %b %Y')
         hour = trueDate.strftime("%H")
         key = (date, hour)

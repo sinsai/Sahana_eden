@@ -249,27 +249,56 @@ def report():
                 level2=level2)
 
 # -----------------------------------------------------------------------------
+#def getformatedData(dbresult):
+#    result = []
+#    cnt = -1;
+#    # Format the results
+#    for row in dbresult:
+#        damage = row.estimated_damage
+#        try:
+#            trueDate = row.date #datetime.datetime.strptime(row.date, "%Y-%m-%d %H:%M:%S")
+#        except:
+#            trueDate = row.created_on
+#        date = trueDate.strftime('%d %b %Y')
+#        hour = trueDate.strftime("%H")
+#        key = (date, hour)
+#        if (cnt == -1) or (result[cnt][0] != key):
+#            result.append([key , 0, 0, 0, 0, 0, 0, 0, 1])
+#            cnt += 1
+#        else:
+#            result[cnt][8] += 1
+#        result[cnt][damage] += 1
+#
+#    return result
+
 def getformatedData(dbresult):
     result = []
-    cnt = -1;
-    # Format the results
+    cntT = cntH = -1
     for row in dbresult:
         damage = row.estimated_damage
         try:
-            trueDate = row.date #datetime.datetime.strptime(row.date, "%Y-%m-%d %H:%M:%S")
+            trueDate = row.date
         except:
             trueDate = row.created_on
         date = trueDate.strftime('%d %b %Y')
         hour = trueDate.strftime("%H")
-        key = (date, hour)
-        if (cnt == -1) or (result[cnt][0] != key):
-            result.append([key , 0, 0, 0, 0, 0, 0, 0, 1])
-            cnt += 1
-        else:
-            result[cnt][8] += 1
-        result[cnt][damage] += 1
+        keyT = (date, "Total")
+        keyH = (date, hour)
+        #print date, hour, keyT, keyH, cntT, cntH
+        if (cntT == -1) or (result[cntT][0] != keyT):
+            result.append([keyT, 0, 0, 0, 0, 0, 0, 0, 0])
+            cntT = cntH + 1
+            cntH = cntT
+        if (result[cntH][0] != keyH):
+            result.append([keyH, 0, 0, 0, 0, 0, 0, 0, 0])
+            cntH += 1
+        result[cntT][8] += 1
+        result[cntH][8] += 1
+        result[cntT][damage] += 1
+        result[cntH][damage] += 1
 
     return result
+
 
 def timeline():
     """
@@ -298,8 +327,10 @@ def timeline():
     
     totals = [0, 0, 0, 0, 0, 0, 0, 0]
     for line in inspection:
-        for i in range(8):
-            totals[i] += line[i + 1]
+        if line[0][1] == "Total":
+            for i in range(8):
+                totals[i] += line[i + 1]
+
     return dict(inspection=inspection,
                 creation=creation,
                 totals= totals

@@ -726,8 +726,9 @@ class S3Find(S3CRUD):
                     comment = widget.attr.get("comment", comment)
                 use = isinstance(widget, S3SearchSimpleWidget) and \
                       "hidden" or "checkbox"
+                on = use == "hidden" and 'on' or ''
                 tr = TR(TD(INPUT(_type=use, _name="use_%s" % name,
-                                 _class="use_widget", _value='on')),
+                                 _class="use_widget", _value=on)),
                                  TD("%s: " % label, _class="w2p_fl"),
                                  widget.widget(resource, vars))
                 if comment:

@@ -867,7 +867,7 @@ if deployment_settings.has_module(module):
                     field=["gov_uuid", "name", "aka1", "aka2",
                         "organisation_id$name", "organisation_id$acronym"]
                   ),
-                  # for testing:
+                  ## for testing:
                   #s3base.S3SearchMinMaxWidget(
                     #name="hospital_search_bedcount",
                     #method="range",

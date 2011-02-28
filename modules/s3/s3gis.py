@@ -2874,8 +2874,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
         else:
             center = """
-    var lat = %f;
-    var lon = %f;
+    var lat = %s;
+    var lon = %s;
     var center = new OpenLayers.LonLat(lon, lat);
     center.transform(proj4326, projection_current);
     """ % (lat, lon)

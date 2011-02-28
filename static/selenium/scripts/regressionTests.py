@@ -591,15 +591,17 @@ if __name__ == "__main__":
                                   testSettings.ipPort,
                                   testSettings.URL + testSettings.app
                                  )
-        #SahanaTest.useSahanaAccount(testSettings.adminUser,
-        #                            testSettings.adminPassword,
-        #                           )
+        # When running non-interactively, Username/Password are blank
+        SahanaTest.useSahanaAccount("",
+                                    "",
+                                   )
         testConfig = TestConfig()
         moduleList = testConfig.getTestModuleDetails()
         testList = testConfig.getTestCasesToRun(moduleList)
         suite = testConfig.suite
         for testModule in testList: # dotted notation module.class
-            testConfig.overrideClassSortList(testModule["class"], testModule["tests"])
+            testConfig.overrideClassSortList(testModule["class"],
+                                             testModule["tests"])
         # Invoke TestRunner
         buf = StringIO.StringIO()
         try:

@@ -12,7 +12,10 @@
 
     Postearthquake Safety Evaluation of Buildings: ATC-20
     http://www.atcouncil.org/pdfs/rapid.pdf
-    
+
+    This is actually based on the New Zealand variant:
+    http://eden.sahanafoundation.org/wiki/BluePrintBuildingAssessments
+
     @ToDo: add other forms (ATC-38, ATC-45)
 """
 
@@ -20,61 +23,37 @@ module = "building"
 
 if deployment_settings.has_module(module):
 
-    # Section CRUD strings
-    ADD_SECTION = T("Add Section")
-    LIST_SECTIONS = T("List Sections")
-    section_crud_strings = Storage(
-        title_create = ADD_SECTION,
-        title_display = T("Section Details"),
-        title_list = LIST_SECTIONS,
-        title_update = "",
-        title_search = T("Search Sections"),
-        subtitle_create = "",
-        subtitle_list = T("Sections"),
-        label_list_button = LIST_SECTIONS,
-        label_create_button = ADD_SECTION,
-        label_delete_button = T("Delete Section"),
-        msg_record_created = T("Section updated"),
-        msg_record_modified = T("Section updated"),
-        msg_record_deleted = T("Section deleted"),
-        msg_list_empty = T("No Sections currently registered"))
-
     # Options
-    am_pm = {
-        1:T("AM"),
-        2:T("PM")
-    }
-
     building_area_inspected = {
         1:T("Exterior and Interior"),
         2:T("Exterior Only")
     }
 
-    atc20_construction_types = {
-        1:T("Wood frame"),
+    building_construction_types = {
+        1:T("Timber frame"), # Wood frame
         2:T("Steel frame"),
         3:T("Tilt-up concrete"),
         4:T("Concrete frame"),
         5:T("Concrete shear wall"),
         6:T("Unreinforced masonry"),
         7:T("Reinforced masonry"),
+        8:T("RC frame with masonry infill"),
         99:T("Other")
     }
-    
-    atc20_primary_occupancy_opts = {
+
+    building_primary_occupancy_opts = {
         1:T("Dwelling"),
         2:T("Other residential"),
         3:T("Public assembly"),
-        4:T("Emergency services"),
-        5:T("Commercial"),
-        6:T("Offices"),
+        4:T("School"),
+        5:T("Religious"),
+        6:T("Commercial/Offices"),
         7:T("Industrial"),
         8:T("Government"),
-        9:T("Historic"),
-        10:T("School"),
+        9:T("Heritage Listed"), # Historic
         99:T("Other")
     }
-    
+
     building_evaluation_condition = {
         1:T("Minor/None"),
         2:T("Moderate"),
@@ -91,244 +70,377 @@ if deployment_settings.has_module(module):
         7:"100%"
     }
 
-    building_posting_state = {
-        1:T("Inspected (Green placard"),
-        2:T("Restricted Use (Yellow placard)"),
-        3:T("Unsafe (Red placard")
+    building_estimated_damage_image = {
+        1:"tic.png",
+        2:"1percent.png",
+        3:"10percent.png",
+        4:"10-30percent.png",
+        5:"30-60percent.png",
+        6:"60-100percent.png",
+        7:"cross.png",
     }
 
-    # ATC-20 Rapid Evaluation Safety Assessment Form --------------------------
-    resourcename = "atc20"
+    building_posting_l1_opts = {
+        1:"%s (%s)" % (T("Inspected"), T("Green")),
+        2:"%s (%s)" % (T("Restricted Use"), T("Yellow")),
+        3:"%s (%s)" % (T("Unsafe"), T("Red")),
+    }
+
+    building_posting_l2_opts = {
+        1:"%s (%s): G1" % (T("Inspected"), T("Green")),
+        2:"%s (%s): G2" % (T("Inspected"), T("Green")),
+        3:"%s (%s): Y1" % (T("Restricted Use"), T("Yellow")),
+        4:"%s (%s): Y2" % (T("Restricted Use"), T("Yellow")),
+        5:"%s (%s): R1" % (T("Unsafe"), T("Red")),
+        6:"%s (%s): R2" % (T("Unsafe"), T("Red")),
+        7:"%s (%s): R3" % (T("Unsafe"), T("Red")),
+    }
+
+    uuid8anum = lambda: "%s-%s" % (str(uuid.uuid4())[0:4], str(uuid.uuid4())[4:8])
+
+    s3uuid_8char = SQLCustomType(type = "string",
+                                 native = "VARCHAR(64)",
+                                 encoder = (lambda x: "'%s'" % (uuid8anum() if x == "" else str(x).replace("'", "''"))),
+                                 decoder = (lambda x: x))
+
+    # NZSEE Level 1 (~ATC-20 Rapid Evaluation) Safety Assessment Form ---------
+    resourcename = "nzseel1"
     tablename = "%s_%s" % (module, resourcename)
 
     table = db.define_table(tablename,
+                            Field("ticket_id",
+                                  type=s3uuid_8char,
+                                  length=64,
+                                  notnull=True,
+                                  unique=True,
+                                  writable=False,
+                                  default=uuid8anum(),
+                                  label = T("Ticket ID"),
+                                  represent = lambda id: id and id.upper() or T("None")
+                                  ),
                             person_id(label=T("Inspector ID"), empty=False), # pre-populated in Controller
-                            organisation_id(label=T("Affiliation")), #, empty=False
-                            location_id(),
-                            Field("date", "date", default=request.now,
-                                  label=T("Inspection date")),
-                            Field("daytime", "integer", label=T("Inspection time"),
-                                  requires=IS_EMPTY_OR(IS_IN_SET(am_pm)),
-                                  represent=lambda opt: am_pm.get(opt, UNKNOWN_OPT)),
+                            organisation_id(label=T("Territorial Authority")), # Affiliation in ATC20 terminology
+                            Field("date", "datetime", default=request.now,
+                                  requires=IS_DATETIME(),
+                                  label=T("Inspection date and time")),
+                            #Field("daytime", "time", label=T("Inspection time")),
                             Field("area", "integer", label=T("Areas inspected"),
-                                  requires=IS_IN_SET(building_area_inspected),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_area_inspected)),
                                   represent=lambda opt: building_area_inspected.get(opt, UNKNOWN_OPT)),
-                            migrate=migrate)
-
-    # CRUD strings
-    ADD_ASSESSMENT = T("Add ATC-20 Rapid Assessment")
-    LIST_ASSESSMENTS = T("List ATC-20 Rapid Assessments")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_ASSESSMENT,
-        title_display = T("ATC-20 Rapid Assessment Details"),
-        title_list = LIST_ASSESSMENTS,
-        title_update = T("Edit ATC-20 Rapid Assessment"),
-        title_search = T("Search ATC-20 Rapid Assessments"),
-        subtitle_create = T("Add New ATC-20 Rapid Assessment"),
-        subtitle_list = T("ATC-20 Rapid Assessments"),
-        label_list_button = LIST_ASSESSMENTS,
-        label_create_button = ADD_ASSESSMENT,
-        label_delete_button = T("Delete ATC-20 Rapid Assessment"),
-        msg_record_created = T("ATC-20 Rapid Assessment added"),
-        msg_record_modified = T("ATC-20 Rapid Assessment updated"),
-        msg_record_deleted = T("ATC-20 Rapid Assessment deleted"),
-        msg_list_empty = T("No ATC-20 Rapid Assessments currently registered"))
-
-
-    # -------------------------------------------------------------------------
-    def atc20_onaccept(form):
-
-        id = form.vars.get("id", None)
-
-        if id:
-            for x in ["description", "evaluation", "posting", "actions"]:
-                section = "building_atc20_%s" % x
-                set = db(db[section].atc20_id == id)
-                record = set.select(db[section].id, limitby=(0, 1)).first()
-                if not record:
-                    db[section].insert(atc20_id=id)
-
-
-    # -------------------------------------------------------------------------
-    def atc20_represent(id):
-
-        """ Represent assessment as string """
-
-        table = db.building_atc20
-        row = db(table.id == id).select(table.date,
-                                        table.person_id,
-                                        table.location_id,
-                                        limitby = (0, 1)).first()
-
-        if row:
-            date = row.date and str(row.date) or ""
-            location = row.location_id and shn_gis_location_represent(row.location_id) or ""
-            person = row.person_id and vita.fullname(row.person_id) or ""
-
-            assessment_represent = XML("<div>%s %s, %s %s</div>" % (location, person, date))
-
-        else:
-            assessment_represent = NONE
-
-        return assessment_represent
-
-
-    # -------------------------------------------------------------------------
-    atc20_id = S3ReusableField("atc20_id", table,
-                               requires = IS_NULL_OR(IS_ONE_OF(db, "building_atc20.id",
-                                                               atc20_represent,
-                                                               orderby="building_atc20.id")),
-                               represent = lambda id: shn_atc20_represent(id),
-                               label = T("ATC-20 Form"),
-                               comment = A(ADD_ASSESSMENT,
-                                           _class="colorbox",
-                                           _href=URL(r=request, c="building", f="atc20",
-                                                     args="create",
-                                                     vars=dict(format="popup")),
-                                           _target="top",
-                                           _title=ADD_ASSESSMENT),
-                               ondelete = "RESTRICT")
-
-    s3xrc.model.configure(table,
-                          listadd=False,    # We override this in the controller for when not a component
-                          onaccept=lambda form: atc20_onaccept(form))
-
-    # Section 2: Building Description -----------------------------------------
-    resourcename = "atc20_description"
-    tablename = "%s_%s" % (module, resourcename)
-
-    table = db.define_table(tablename,
-                            atc20_id(),
-                            Field("name", label=T("Building Name")),
-                            Field("address", "text"), # @ToDo: merge with location_id?
-                            Field("contact", label=T("Building contact/phone")),
-                            Field("stories_above", "integer", label=T("Number of stories above ground")),
-                            Field("stories_below", "integer", label=T("Number of stories below ground")),
-                            Field("footprint", "integer", label=T("Approx. 'Footprint area' (square meters)")),
+                            #Field("name", label=T("Building Name"), requires=IS_NOT_EMPTY()), # Included in location_id
+                            location_id(empty=False),
+                            Field("name_short", label=T("Building Short Name/Business Name")),
+                            Field("contact_name", label=T("Contact Name"), requires=IS_NOT_EMPTY()),
+                            Field("contact_phone", label=T("Contact Phone"), requires=IS_NOT_EMPTY()),
+                            Field("stories_above", "integer", label=T("Storeys at and above ground level")), # Number of stories above ground
+                            Field("stories_below", "integer", label=T("Below ground level")), # Number of stories below ground
+                            Field("footprint", "integer", label=T("Total gross floor area (square meters)")),
+                            Field("year_built", "integer", label=T("Year built")),
                             Field("residential_units", "integer", label=T("Number of residential units")),
-                            Field("residential_units_not_habitable", "integer",
-                                  label=T("Number of residential units not habitable")),
+                            #Field("residential_units_not_habitable", "integer",
+                            #      label=T("Number of residential units not habitable")),
+                            Field("photo", "boolean", label=T("Photo Taken?")),
                             Field("construction_type", "integer", label=T("Type of Construction"),
-                                  requires=IS_IN_SET(atc20_construction_types),
-                                  represent=lambda opt: atc20_construction_types.get(opt, UNKNOWN_OPT)),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_construction_types)),
+                                  represent=lambda opt: building_construction_types.get(opt, UNKNOWN_OPT)),
                             Field("construction_type_other", label="(%s)" % T("specify")),
                             Field("primary_occupancy", "integer", label=T("Primary Occupancy"),
-                                  requires=IS_IN_SET(atc20_primary_occupancy_opts),
-                                  represent=lambda opt: atc20_primary_occupancy_opts.get(opt, UNKNOWN_OPT)),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_primary_occupancy_opts)),
+                                  represent=lambda opt: building_primary_occupancy_opts.get(opt, UNKNOWN_OPT)),
                             Field("primary_occupancy_other", label="(%s)" % T("specify")),
-                            migrate=migrate)
-
-    # CRUD strings
-    s3.crud_strings[tablename] = section_crud_strings
-
-    s3xrc.model.add_component(module, resourcename,
-                              multiple = False,
-                              joinby = dict(building_atc20="atc20_id"))
-
-    s3xrc.model.configure(table, deletable=False)
-    
-    # Section 3: Evaluation--------------------------------------------------------
-    resourcename = "atc20_evaluation"
-    tablename = "%s_%s" % (module, resourcename)
-    # @ToDo: Helptext in view
-
-    table = db.define_table(tablename,
-                            atc20_id(), # @ToDo: Represents for below
-                            Field("estimated_damage", "integer",
-                                  label=T("Estimated Building Damage"),
-                                  comment=T("excluding contents"),
-                                  requires=IS_IN_SET(building_estimated_damage),
-                                  represent=lambda opt: building_estimated_damage.get(opt, UNKNOWN_OPT)),
                             Field("collapse", "integer",
-                                  label=T("Collapse, partial collapse, or building off foundation"),
-                                  requires=IS_IN_SET(building_evaluation_condition),
+                                  label=T("Collapse, partial collapse, off foundation"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
                                   represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
-                            Field("leaning", "integer", label=T("Building or story leaning"),
-                                  requires=IS_IN_SET(building_evaluation_condition),
+                            Field("leaning", "integer", label=T("Building or storey leaning"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
                                   represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
                             Field("structural", "integer",
-                                  label=T("Racking damage to walls, other structural damage"),
-                                  requires=IS_IN_SET(building_evaluation_condition),
+                                  label=T("Wall or other structural damage"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
                                   represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
                             Field("falling", "integer",
-                                  label=T("Chimney, parapet, or other falling hazard"),
-                                  requires=IS_IN_SET(building_evaluation_condition),
+                                  label=T("Overhead falling hazard"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
                                   represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
-                            Field("cracking", "integer",
-                                  label=T("Ground slope movement or cracking"),
-                                  requires=IS_IN_SET(building_evaluation_condition),
+                            Field("slips", "integer",
+                                  label=T("Ground movement, settlement, slips"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("neighbour", "integer",
+                                  label=T("Neighbouring building hazard"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
                                   represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
                             Field("other", "integer", label=T("Other"),
-                                  requires=IS_IN_SET(building_evaluation_condition),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
                                   represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
                             Field("other_details", label="(%s)" % T("specify")),
-                            comments(),
-                            migrate=migrate)
-
-    # CRUD strings
-    s3.crud_strings[tablename] = section_crud_strings
-
-    s3xrc.model.add_component(module, resourcename,
-                              multiple = False,
-                              joinby = dict(building_atc20="atc20_id"))
-
-    s3xrc.model.configure(table, deletable=False)
-    
-    # Section 3: Posting ------------------------------------------------------
-    resourcename = "atc20_posting"
-    tablename = "%s_%s" % (module, resourcename)
-    # @ToDo: Helptext in view
-
-    table = db.define_table(tablename,
-                            atc20_id(),
+                            Field("action_comments", "text", label=T("Comments")),
                             Field("posting", "integer",
-                                  requires=IS_IN_SET(building_posting_state),
-                                  represent=lambda opt: building_posting_state.get(opt, UNKNOWN_OPT)),
-                            comments(label=T("Record any use and entry restrictions exactly as written on placard")),
-                            migrate=migrate
-                            )
-    # CRUD strings
-    s3.crud_strings[tablename] = section_crud_strings
-
-    s3xrc.model.add_component(module, resourcename,
-                              multiple = False,
-                              joinby = dict(building_atc20="atc20_id"))
-
-    s3xrc.model.configure(table, deletable=False)
-    
-    # Section 3: Further actions ----------------------------------------------
-    resourcename = "atc20_actions"
-    tablename = "%s_%s" % (module, resourcename)
-    # @ToDo: Helptext in view
-
-    table = db.define_table(tablename,
-                            atc20_id(),
+                                  requires=IS_IN_SET(building_posting_l1_opts),
+                                  represent=lambda opt: building_posting_l1_opts.get(opt, UNKNOWN_OPT)),
+                            Field("restrictions", "text", label=T("Record any restriction on use or entry")),
+                            #Field("posting_comments", "text", label=T("Comments")),
                             Field("barricades", "boolean",
-                                  label=T("Barricades needed")),
+                                  label=T("Barricades are needed")),
                             Field("barricades_details", "text",
-                                  label=T("in the following areas")),
+                                  label=T("(state location)")),
                             Field("detailed_evaluation", "boolean",
-                                  label=T("Detailed Evaluation recommended")),
-                            # @ToDo: Hide these fields in JS until parent ticked
-                            Field("structural", "boolean",
+                                  label=T("Level 2 or detailed engineering evaluation recommended")),
+                            Field("detailed_structural", "boolean",
                                   label=T("Structural")),
-                            Field("geotechnical", "boolean",
+                            Field("detailed_geotechnical", "boolean",
                                   label=T("Geotechnical")),
-                            Field("other", "boolean", label=T("Other")),
-                            Field("other_details", label="(%s)" % T("specify")),
+                            Field("detailed_other", "boolean", label=T("Other")),
+                            Field("detailed_other_details", label="(%s)" % T("specify")),
                             Field("other_recommendations", "text",
                                   label=T("Other recommendations")),
-                            comments(),
-                            migrate=migrate
-                            )
+                            Field("estimated_damage", "integer",
+                                  label=T("Estimated Overall Building Damage"),
+                                  comment="(%s)" % T("Exclude contents"),
+                                  requires=IS_IN_SET(building_estimated_damage),
+                                  represent=lambda opt: building_estimated_damage.get(opt, UNKNOWN_OPT)),
+                            migrate=migrate, *s3_meta_fields())
 
     # CRUD strings
-    s3.crud_strings[tablename] = section_crud_strings
+    ADD_ASSESSMENT = T("Add Level 1 Assessment")
+    LIST_ASSESSMENTS = T("List Level 1 Assessments")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_ASSESSMENT,
+        title_display = T("Level 1 Assessment Details"),
+        title_list = LIST_ASSESSMENTS,
+        title_update = T("Edit Level 1 Assessment"),
+        title_search = T("Search Level 1 Assessments"),
+        subtitle_create = T("Add New Level 1 Assessment"),
+        subtitle_list = T("Level 1 Assessments"),
+        label_list_button = LIST_ASSESSMENTS,
+        label_create_button = ADD_ASSESSMENT,
+        label_delete_button = T("Delete Level 1 Assessment"),
+        msg_record_created = T("Level 1 Assessment added"),
+        msg_record_modified = T("Level 1 Assessment updated"),
+        msg_record_deleted = T("Level 1 Assessment deleted"),
+        msg_list_empty = T("No Level 1 Assessments currently registered"))
 
-    s3xrc.model.add_component(module, resourcename,
-                              multiple = False,
-                              joinby = dict(building_atc20="atc20_id"))
+    building_nzseel1_search = s3base.S3Find(
+            name="nzseel1_search_simple",
+            label=T("Ticket ID"),
+            comment=T("To search for an assessment, enter any portion the ticket number of the assessment. You may use % as wildcard. Press 'Search' without input to list all assessments."),
+            field=["ticket_id"])
 
-    s3xrc.model.configure(table, deletable=False)
-    
-    
+    # Set as default search method
+    s3xrc.model.configure(table, search_method=building_nzseel1_search)
+    # -------------------------------------------------------------------------
+
+    # NZSEE Level 2 (~ATC-20 Rapid Evaluation) Safety Assessment Form ---------
+    resourcename = "nzseel2"
+    tablename = "%s_%s" % (module, resourcename)
+
+    table = db.define_table(tablename,
+                            Field("ticket_id",
+                                  type=s3uuid_8char,
+                                  length=64,
+                                  notnull=True,
+                                  unique=True,
+                                  label = T("Ticket ID"),
+                                  represent = lambda id: id and id.upper() or T("None")),
+                            person_id(label=T("Inspector ID"), empty=False), # pre-populated in Controller
+                            organisation_id(label=T("Territorial Authority")), # Affiliation in ATC20 terminology
+                            Field("date", "datetime", default=request.now,
+                                  requires=IS_DATETIME(),
+                                  label=T("Inspection date and time")),
+                            #Field("daytime", "time", label=T("Inspection time")),
+                            Field("area", "integer", label=T("Areas inspected"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_area_inspected)),
+                                  represent=lambda opt: building_area_inspected.get(opt, UNKNOWN_OPT)),
+                            #Field("name", label=T("Building Name"), requires=IS_NOT_EMPTY()), # Included in location_id
+                            location_id(empty=False),
+                            Field("name_short", label=T("Building Short Name/Business Name")),
+                            Field("contact_name", label=T("Contact Name"), requires=IS_NOT_EMPTY()),
+                            Field("contact_phone", label=T("Contact Phone"), requires=IS_NOT_EMPTY()),
+                            Field("stories_above", "integer", label=T("Storeys at and above ground level")), # Number of stories above ground
+                            Field("stories_below", "integer", label=T("Below ground level")), # Number of stories below ground
+                            Field("footprint", "integer", label=T("Total gross floor area (square meters)")),
+                            Field("year_built", "integer", label=T("Year built")),
+                            Field("residential_units", "integer", label=T("Number of residential units")),
+                            #Field("residential_units_not_habitable", "integer",
+                            #      label=T("Number of residential units not habitable")),
+                            Field("photo", "boolean", label=T("Photo Taken?")),
+                            Field("construction_type", "integer", label=T("Type of Construction"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_construction_types)),
+                                  represent=lambda opt: building_construction_types.get(opt, UNKNOWN_OPT)),
+                            Field("construction_type_other", label="(%s)" % T("specify")),
+                            Field("primary_occupancy", "integer", label=T("Primary Occupancy"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_primary_occupancy_opts)),
+                                  represent=lambda opt: building_primary_occupancy_opts.get(opt, UNKNOWN_OPT)),
+                            Field("primary_occupancy_other", label="(%s)" % T("specify")),
+                            Field("collapse", "integer",
+                                  label=T("Collapse, partial collapse, off foundation"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("leaning", "integer", label=T("Building or storey leaning"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("structural", "integer",
+                                  label=T("Wall or other structural damage"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("falling", "integer",
+                                  label=T("Overhead falling hazard"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("slips", "integer",
+                                  label=T("Ground movement, settlement, slips"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("neighbour", "integer",
+                                  label=T("Neighbouring building hazard"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("other", "integer", label=T("Electrical, gas, sewerage, water, hazmats"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            #Field("other_details", label="(%s)" % T("specify")),
+                            Field("action_comments", "text", label=T("Comments")),
+                            Field("posting_existing", "integer",
+                                  label=T("Existing Placard Type"),
+                                  requires=IS_IN_SET(building_posting_l1_opts),
+                                  represent=lambda opt: building_posting_l1_opts.get(opt, UNKNOWN_OPT)),
+                            Field("posting", "integer",
+                                  label=T("Choose a new posting based on the new evaluation and team judgement. Severe conditions affecting the whole building are grounds for an UNSAFE posting.  Localised Severe and overall Moderate conditions may require a RESTRICTED USE.  Place INSPECTED placard at main entrance. Post all other placards at every significant entrance."),
+                                  requires=IS_IN_SET(building_posting_l2_opts),
+                                  #@ToDo: comment= Guidance on meaning of options
+                                  represent=lambda opt: building_posting_l2_opts.get(opt, UNKNOWN_OPT)),
+                            Field("restrictions", "text", label=T("Record any restriction on use or entry")),
+                            #Field("posting_comments", "text", label=T("Comments")),
+                            Field("barricades", "boolean",
+                                  label=T("Barricades are needed")),
+                            Field("barricades_details", "text",
+                                  label=T("(state location)")),
+                            Field("detailed_evaluation", "boolean",
+                                  label=T("Level 2 or detailed engineering evaluation recommended")),
+                            Field("detailed_structural", "boolean",
+                                  label=T("Structural")),
+                            Field("detailed_geotechnical", "boolean",
+                                  label=T("Geotechnical")),
+                            Field("detailed_other", "boolean", label=T("Other")),
+                            Field("detailed_other_details", label="(%s)" % T("specify")),
+                            Field("other_recommendations", "text",
+                                  label=T("Other recommendations")),
+                            Field("estimated_damage", "integer",
+                                  label=T("Estimated Overall Building Damage"),
+                                  comment="(%s)" % T("Exclude contents"),
+                                  requires=IS_IN_SET(building_estimated_damage),
+                                  represent=lambda opt: building_estimated_damage.get(opt, UNKNOWN_OPT)),
+                            Field("structural_foundations", "integer",
+                                  label=T("Foundations"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("structural_roofs", "integer",
+                                  label=T("Roofs, floors (vertical load)"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("structural_columns", "integer",
+                                  label=T("Columns, pilasters, corbels"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("structural_diaphragms", "integer",
+                                  label=T("Diaphragms, horizontal bracing"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("structural_precast", "integer",
+                                  label=T("Pre-cast connections"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("structural_beam", "integer",
+                                  label=T("Beam"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("non_parapets", "integer",
+                                  label=T("Parapets, ornamentation"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("non_cladding", "integer",
+                                  label=T("Cladding, glazing"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("non_ceilings", "integer",
+                                  label=T("Ceilings, light fixtures"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("non_interior", "integer",
+                                  label=T("Interior walls, partitions"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("non_elevators", "integer",
+                                  label=T("Elevators"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("non_stairs", "integer",
+                                  label="%s/ %s" % (T("Stairs"), T("Exits")),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("non_utilities", "integer",
+                                  label=T("Utilities"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  comment= "(%s)" % T("eg. gas, electricity, water"),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("non_other", "integer",
+                                  label=T("Other"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("geotechnical_slope", "integer",
+                                  label=T("Slope failure, debris"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("geotechnical_ground", "integer",
+                                  label=T("Ground movement, fissures"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("geotechnical_soil", "integer",
+                                  label=T("Soil bulging, liquefaction"),
+                                  requires=IS_NULL_OR(IS_IN_SET(building_evaluation_condition)),
+                                  represent=lambda opt: building_evaluation_condition.get(opt, UNKNOWN_OPT)),
+                            Field("general_comments", "text",
+                                  label=T("General Comment")),
+                            image_id(label=T("Sketch"),
+                                     comment=DIV(A(ADD_IMAGE,
+                                _class="colorbox",
+                                _href=URL(r=request, c="doc", f="image", args="create", vars=dict(format="popup")),
+                                _target="top",
+                                _title=ADD_IMAGE),
+                          DIV( _class="tooltip",
+                               _title="%s|%s" % (T("Sketch"),
+                                                 T("Provide an optional sketch of the entire building or damage points. Indicate damage points."))))),
+                            Field("recommendations", "text",
+                                  label=T("Recommendations for Repair and Reconstruction or Demolition"),
+                                  comment="(%s)" % T("Optional")),
+                            migrate=migrate, *s3_meta_fields())
+
+    # CRUD strings
+    ADD_ASSESSMENT = T("Add Level 2 Assessment")
+    LIST_ASSESSMENTS = T("List Level 2 Assessments")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_ASSESSMENT,
+        title_display = T("Level 2 Assessment Details"),
+        title_list = LIST_ASSESSMENTS,
+        title_update = T("Edit Level 2 Assessment"),
+        title_search = T("Search Level 2 Assessments"),
+        subtitle_create = T("Add New Level 2 Assessment"),
+        subtitle_list = T("Level 2 Assessments"),
+        label_list_button = LIST_ASSESSMENTS,
+        label_create_button = ADD_ASSESSMENT,
+        label_delete_button = T("Delete Level 2 Assessment"),
+        msg_record_created = T("Level 2 Assessment added"),
+        msg_record_modified = T("Level 2 Assessment updated"),
+        msg_record_deleted = T("Level 2 Assessment deleted"),
+        msg_list_empty = T("No Level 2 Assessments currently registered"))
+
+    building_nzseel2_search = s3base.S3Find(
+            name="nzseel2_search_simple",
+            label=T("Ticket ID"),
+            comment=T("To search for an assessment, enter any portion the ticket number of the assessment. You may use % as wildcard. Press 'Search' without input to list all assessments."),
+            field=["ticket_id"])
+
+    # Set as default search method
+    s3xrc.model.configure(table, search_method=building_nzseel2_search)
+    # -------------------------------------------------------------------------

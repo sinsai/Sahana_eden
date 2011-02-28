@@ -16,11 +16,13 @@ $(document).ready(function() {
                    .hide();
         
         if ($('[name = "item_id"]').length != 0) {
-            url = S3.Ap.concat('/supply/item_packet.json?item_packet.item_id=', $('[name = "item_id"]').val());
+            var url = S3.Ap.concat('/supply/item_packet.json?item_packet.item_id=', $('[name = "item_id"]').val());
         } else {
-            url = S3.Ap.concat('/inventory/store_item_packets/',$('[name $= "item_id"]').val());
+        	var url = S3.Ap.concat('/inventory/store_item_packets/',$('[name $= "item_id"]').val());
         }
-                                
+        
+        var data;
+        
         $.getJSON(url, function(data) {
             /* Create Select Element */
             var options = '';

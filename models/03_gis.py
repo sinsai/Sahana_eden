@@ -378,7 +378,7 @@ def shn_gis_location_represent_row(location, showlink=True):
         # the same name, e.g. Los Angeles (County) and Los Angeles (City).)
         lat = location.lat
         lon = location.lon
-        if lat and lon:
+        if lat is not None and lon is not None:
             if lat > 0:
                 lat_prefix = "N"
             else:
@@ -397,6 +397,9 @@ def shn_gis_location_represent_row(location, showlink=True):
                 text = "%s (%s)" % (location.name, level_name)
             else:
                 text = location.name
+            if not location.parent:
+                # No way to show on a map
+                showlink = False
     if request.raw_args == "read.plain":
        # Map popups don't support iframes (& meaningless anyway)
        showlink = False
@@ -432,8 +435,10 @@ resourcename = "location"
 tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("name", notnull=True),    # Primary name
+                        #Field("name_short"),           # Secondary name
                         Field("name_dummy"),            # Dummy field to provide Widget (real data is stored in the separate table which links back to this one)
-                        Field("code"),
+                        Field("code"), # Christchurch: 'prupi', label=T("Property reference in the council system")
+                        #Field("code2"), # Christchurch: 'gisratingid', label=T("Polygon reference of the rating unit")
                         Field("level", length=2),
                         Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
                         Field("path", length=500, readable=False, writable=False),  # Materialised Path
@@ -538,8 +543,26 @@ table.members.comment = DIV(_class="tooltip",
 s3xrc.model.configure(table, listadd=False)
     #list_fields=["id", "name", "level", "parent", "lat", "lon"])
 
-# Reusable field to include in other table definitions
+# CRUD Strings
 ADD_LOCATION = T("Add Location")
+LIST_LOCATIONS = T("List Locations")
+s3.crud_strings[tablename] = Storage(
+    title_create = ADD_LOCATION,
+    title_display = T("Location Details"),
+    title_list = T("Locations"),
+    title_update = T("Edit Location"),
+    title_search = T("Search Locations"),
+    subtitle_create = T("Add New Location"),
+    subtitle_list = LIST_LOCATIONS,
+    label_list_button = LIST_LOCATIONS,
+    label_create_button = ADD_LOCATION,
+    label_delete_button = T("Delete Location"),
+    msg_record_created = T("Location added"),
+    msg_record_modified = T("Location updated"),
+    msg_record_deleted = T("Location deleted"),
+    msg_list_empty = T("No Locations currently available"))
+
+# Reusable field to include in other table definitions
 repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
 location_id = S3ReusableField("location_id", db.gis_location,
                     sortby="name",
@@ -1076,7 +1099,7 @@ s3xrc.model.configure(table, deletable=False)
 # -----------------------------------------------------------------------------
 # GIS Layers
 #gis_layer_types = ["shapefile", "scan"]
-gis_layer_types = ["bing", "coordinate", "openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wfs", "wms", "xyz", "yahoo"]
+gis_layer_types = ["bing", "coordinate", "openstreetmap", "geojson", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wfs", "wms", "xyz", "yahoo"]
 gis_layer_google_subtypes = gis.layer_subtypes("google")
 gis_layer_yahoo_subtypes = gis.layer_subtypes("yahoo")
 gis_layer_bing_subtypes = gis.layer_subtypes("bing")
@@ -1118,17 +1141,26 @@ for layertype in gis_layer_types:
                      Field("attribution", label=T("Attribution")),
                     )
         table = db.define_table(tablename, t, migrate=migrate)
+    elif layertype == "geojson":
+        t = db.Table(db, table,
+                     gis_layer,
+                     Field("visible", "boolean", default=False, label=T("On by default?")),
+                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     projection_id(default=2,
+                                   requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")),
+                     marker_id()
+                    )
+        table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "georss":
         t = db.Table(db, table,
                      gis_layer,
                      Field("visible", "boolean", default=False, label=T("On by default?")),
                      Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
-                     projection_id(),
+                     projection_id(default=2,
+                                   requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")),
                      marker_id()
                     )
         table = db.define_table(tablename, t, migrate=migrate)
-        table.projection_id.requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")
-        table.projection_id.default = 2
     elif layertype == "google":
         t = db.Table(db, table,
                      gis_layer,
@@ -1217,7 +1249,6 @@ for layertype in gis_layer_types:
                      #Field("editable", "boolean", default=False, label=T("Editable?")),
                     )
         table = db.define_table(tablename, t, migrate=migrate)
-        #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
     elif layertype == "wms":
         t = db.Table(db, table,
                      gis_layer,
@@ -1228,8 +1259,9 @@ for layertype in gis_layer_types:
                                                           T("The URL to access the service.")))),
                      Field("version", label=T("Version"), default="1.1.1",
                            requires=IS_IN_SET(["1.1.1", "1.3.0"], zero=None)),
-                     Field("base", "boolean", default=True, label=T("Base Layer?")),
-                     Field("transparent", "boolean", default=False, label=T("Transparent?")),
+                     Field("base", "boolean", default=False, label=T("Base Layer?")),
+                     Field("transparent", "boolean", default=True, label=T("Transparent?")),
+                     Field("opacity", "double", default=1.0, requires=IS_FLOAT_IN_RANGE(0, 1), label=T("Opacity (1 for opaque, 0 for fully-transparent)")),
                      Field("map", label=T("Map")),
                      Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
                      Field("img_format", label=T("Format"),

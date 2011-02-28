@@ -39,7 +39,8 @@ def shn_ocr_downloadpdf(tablename):
         #except(ValueError):
         #    pass
         # Hard-code list for now
-        formelementsls = ["en", "es"]
+        #formelementsls = ["en", "es"]
+        formelementsls = [response.s3.language]
 
         if len(formelementsls) == 0:
             pdfenable = 0
@@ -100,7 +101,7 @@ def shn_ocr_downloadpdf(tablename):
                                _alt=T("Download PDF")),
                            _id="download-pdf-btn",
                            _title=T("Download PDF"),
-                           _href=URL("ocr", "getpdf/%s" % tablename)),
+                           _href=URL(request.controller, "%s/xforms.pdf" % request.function)),
                          _style="height: 10px; text-align: right;")
     except(AttributeError):
         output = ""

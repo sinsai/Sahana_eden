@@ -36,10 +36,12 @@
 from gluon.storage import Storage
 from gluon.http import HTTP
 from gluon.html import *
+from gluon.validators import *
 from gluon.serializers import json
 
 from s3rest import S3Method
 from s3crud import S3CRUD
+from s3validators import *
 
 __all__ = ["S3SearchWidget",
            "S3SearchSimpleWidget",
@@ -79,14 +81,16 @@ class S3SearchWidget(object):
         if name is not None:
             self.attr["_name"] = name
 
+        self.master_query = None
+        self.search_field = None
 
-    def widget(self, resource, vars, **attr):
+
+    def widget(self, resource, vars):
         """
         Returns the widget
 
         @param resource: the resource to search in
         @param vars: the URL GET variables as dict
-        @param attr: HTML attributes for the widget container
 
         """
 
@@ -106,62 +110,17 @@ class S3SearchWidget(object):
         raise NotImplementedError
 
 
-    def __and__(self, other):
-
-        raise NotImplementedError
-
-    def __or__(self, other):
-
-        raise NotImplementedError
-
-
-# *****************************************************************************
-class S3SearchSimpleWidget(S3SearchWidget):
-    """
-    Simple full-text search widget
-
-    """
-
-    def widget(self, resource, vars):
+    def build_master_query(self, resource):
         """
-        Returns the widget
-
-        @param resource: the resource to search in
-        @param vars: the URL GET variables as dict
-        @param attr: HTML attributes for the widget container
+        Get the master query for the specified field(s)
 
         """
 
-        if "_size" not in self.attr:
-            self.attr.update(_size="40")
-        if "_name" not in self.attr:
-            self.attr.update(_name="%s_search_simple" % resource.name)
-        self.attr.update(_type="text")
-
-        self.name = self.attr._name
-        return INPUT(**self.attr)
-
-
-    def query(self, resource, value):
-        """
-        Returns a sub-query for this search option
-
-        @param resource: the resource to search in
-        @param value: the value returned from the widget
-
-        """
-
-        prefix = resource.prefix
-        name = resource.name
-
-        table = resource.table
         db = resource.db
-        model = resource.manager.model
+        table = resource.table
 
-        DEFAULT = (table.id == None)
-
-        mq = Storage()
-        search_fields = Storage()
+        master_query = Storage()
+        search_field = Storage()
 
         fields = self.field
         if fields and not isinstance(fields, (list, tuple)):
@@ -214,7 +173,7 @@ class S3SearchSimpleWidget(S3SearchWidget):
                     continue
 
             # Master queries
-            if ktable and ktablename not in mq:
+            if ktable and ktablename not in master_query:
                 query = (resource.accessible_query("read", ktable))
                 if "deleted" in ktable.fields:
                     query = (query & (ktable.deleted == "False"))
@@ -249,17 +208,70 @@ class S3SearchSimpleWidget(S3SearchWidget):
                     join = j
                 if join is not None:
                     query = (query & join)
-                mq[ktable._tablename] = query
+                master_query[ktable._tablename] = query
 
             # Search fields
             if ktable and f in ktable.fields:
-                if ktable._tablename not in search_fields:
-                    search_fields[ktablename] = [ktable[f]]
+                if ktable._tablename not in search_field:
+                    search_field[ktablename] = [ktable[f]]
                 else:
-                    search_fields[ktablename].append(ktable[f])
+                    search_field[ktablename].append(ktable[f])
+
+        self.master_query = master_query
+        self.search_field = search_field
+
+
+# *****************************************************************************
+class S3SearchSimpleWidget(S3SearchWidget):
+    """
+    Simple full-text search widget
+
+    """
+
+    def widget(self, resource, vars):
+        """
+        Returns the widget
+
+        @param resource: the resource to search in
+        @param vars: the URL GET variables as dict
+
+        """
+
+        if "_size" not in self.attr:
+            self.attr.update(_size="40")
+        if "_name" not in self.attr:
+            self.attr.update(_name="%s_search_simple" % resource.name)
+        self.attr.update(_type="text")
+
+        self.name = self.attr._name
+        return INPUT(**self.attr)
+
+
+    def query(self, resource, value):
+        """
+        Returns a sub-query for this search option
+
+        @param resource: the resource to search in
+        @param value: the value returned from the widget
+
+        """
+
+        prefix = resource.prefix
+        name = resource.name
+
+        table = resource.table
+        db = resource.db
+        model = resource.manager.model
+
+        DEFAULT = (table.id == None)
+
+        # Get master query and search fields
+        self.build_master_query(resource)
+        master_query = self.master_query
+        search_field = self.search_field
 
         # No search fields?
-        if not search_fields:
+        if not search_field:
             return DEFAULT
 
         # Default search (wildcard)
@@ -275,10 +287,10 @@ class S3SearchSimpleWidget(S3SearchWidget):
                 wc = "%"
                 _v = "%s%s%s" % (wc, v.lower(), wc)
                 query = None
-                for tablename in search_fields:
-                    hq = mq[tablename]
+                for tablename in search_field:
+                    hq = master_query[tablename]
                     fq = None
-                    fields = search_fields[tablename]
+                    fields = search_field[tablename]
                     for f in fields:
                         if fq:
                             fq = (f.lower().like(_v)) | fq
@@ -306,17 +318,14 @@ class S3SearchMatchWidget(S3SearchWidget):
 
     """
 
-    def widget(self, resource, vars, **attr):
+    def widget(self, resource, vars):
         """
         Returns the widget
 
         @param resource: the resource to search in
         @param vars: the URL GET variables as dict
-        @param attr: HTML attributes for the widget container
 
         """
-
-        self.attr = Storage(attr)
 
         raise NotImplementedError
 
@@ -339,19 +348,97 @@ class S3SearchMinMaxWidget(S3SearchWidget):
 
     """
 
-    def widget(self, resource, vars, **attr):
+    def widget(self, resource, vars):
         """
         Returns the widget
 
         @param resource: the resource to search in
         @param vars: the URL GET variables as dict
-        @param attr: HTML attributes for the widget container
 
         """
 
-        self.attr = Storage(attr)
+        self.names = []
 
-        raise NotImplementedError
+        T = resource.manager.T
+
+        self.method = self.attr.get("method", "range")
+        select_min = self.method in ("min", "range")
+        select_max = self.method in ("max", "range")
+
+        if len(self.field) > 1:
+            raise SyntaxError("Only one search field allowed")
+
+        if not self.search_field:
+            self.build_master_query(resource)
+
+        search_field = self.search_field.values()
+        if not search_field:
+            raise SyntaxError("No valid search field specified")
+
+        search_field = search_field[0][0]
+
+        ftype = str(search_field.type)
+        input_min = input_max = None
+        if ftype == "integer":
+            requires = IS_EMPTY_OR(IS_INT_IN_RANGE())
+        elif ftype == "date":
+            self.attr.update(_class="date")
+            requires = IS_EMPTY_OR(IS_DATE())
+        elif ftype == "time":
+            self.attr.update(_class="time")
+            requires = IS_EMPTY_OR(IS_TIME())
+        elif ftype == "datetime":
+            self.attr.update(_class="datetime")
+            requires = IS_EMPTY_OR(IS_DATETIME())
+        else:
+            raise SyntaxError("Unsupported search field type")
+
+        self.attr.update(_type="text")
+        if select_min:
+            name = "min_%s" % search_field.name
+            self.attr.update(_name=name, _id=name)
+            self.names.append(name)
+            input_min = INPUT(requires=requires, **self.attr)
+        if select_max:
+            name = "max_%s" % search_field.name
+            self.attr.update(_name=name, _id=name)
+            self.names.append(name)
+            input_max = INPUT(requires=requires, **self.attr)
+        trl = TR(_class="sublabels")
+        tri = TR()
+        if input_min is not None:
+            trl.append(T("min"))
+            tri.append(input_min)
+        if input_max is not None:
+            trl.append(T("max"))
+            tri.append(input_max)
+        w = DIV(TABLE(trl, tri))
+        return w
+
+
+    def validate(self, resource, value):
+        """
+        Validate the input values of the widget
+
+        """
+
+        errors = dict()
+
+        T = resource.manager.T
+
+        tablename = self.search_field.keys()[0]
+        search_field = self.search_field[tablename][0]
+        select_min = self.method in ("min", "range")
+        select_max = self.method in ("max", "range")
+
+        if select_min and select_max:
+            vmin = value.get("min_%s" % search_field.name, None)
+            vmax = value.get("max_%s" % search_field.name, None)
+            if vmax is not None and vmin > vmax:
+                errors["max_%s" % search_field.name] = \
+                     T("Maximum must be greater than minimum")
+
+        return errors or None
 
 
     def query(self, resource, value):
@@ -362,6 +449,33 @@ class S3SearchMinMaxWidget(S3SearchWidget):
         @param value: the value returned from the widget
 
         """
+
+        db = resource.db
+
+        tablename = self.search_field.keys()[0]
+        search_field = self.search_field[tablename][0]
+
+        select_min = self.method in ("min", "range")
+        select_max = self.method in ("max", "range")
+
+        min_query = max_query = None
+        if select_min:
+            v = value.get("min_%s" % search_field.name, None)
+            if v is not None and str(v):
+                min_query = (search_field >= v)
+        if select_max:
+            v = value.get("max_%s" % search_field.name, None)
+            if v is not None and str(v):
+                max_query = (search_field <= v)
+        query = self.master_query[tablename]
+        if min_query is not None or max_query is not None:
+            if min_query is not None:
+                query = query & min_query
+            if max_query is not None:
+                query = query & max_query
+        else:
+            query = None
+        return (query)
         raise NotImplementedError
 
 
@@ -372,13 +486,12 @@ class S3SearchSelectWidget(S3SearchWidget):
 
     """
 
-    def widget(self, resource, vars, **attr):
+    def widget(self, resource, vars):
         """
         Returns the widget
 
         @param resource: the resource to search in
         @param vars: the URL GET variables as dict
-        @param attr: HTML attributes for the widget container
 
         """
 
@@ -405,13 +518,12 @@ class S3SearchLocationWidget(S3SearchWidget):
 
     """
 
-    def widget(self, resource, vars, **attr):
+    def widget(self, resource, vars):
         """
         Returns the widget
 
         @param resource: the resource to search in
         @param vars: the URL GET variables as dict
-        @param attr: HTML attributes for the widget container
 
         """
 
@@ -528,6 +640,14 @@ class S3Find(S3CRUD):
 
     # -------------------------------------------------------------------------
     def search_interactive(self, r, **attr):
+        """
+        Interactive search
+
+        @param r: the S3Request instance
+        @param attr: request parameters
+
+        """
+
         # Get environment
         session = self.session
         request = self.request
@@ -552,10 +672,10 @@ class S3Find(S3CRUD):
         list_fields = self._config("list_fields")
         insertable = self._config("insertable", True)
 
-        # Build the form
+        # Initialize the form
         form = DIV(_id="search_form", _class="form-container")
 
-        # Add Link
+        # Add-link (common to all forms)
         ADD = self.crud_string(tablename, "label_create_button")
         href_add = r.other(method="create", representation=representation)
         authorised = self.permit("create", tablename)
@@ -565,6 +685,7 @@ class S3Find(S3CRUD):
         else:
             add_link = ""
 
+        # Append the simple search form
         if self.__simple:
             simple = True
             trows = []
@@ -592,6 +713,7 @@ class S3Find(S3CRUD):
             simple_form = FORM(TABLE(trows), _id="simple-form")
             form.append(simple_form)
 
+        # Append the advanced search form
         if self.__advanced:
             trows = []
             for name, widget in self.__advanced:
@@ -602,8 +724,12 @@ class S3Find(S3CRUD):
                 if hasattr(widget, "attr"):
                     label = widget.attr.get("label", label)
                     comment = widget.attr.get("comment", comment)
-                tr = TR(TD("%s: " % label, _class="w2p_fl"),
-                        widget.widget(resource, vars))
+                use = isinstance(widget, S3SearchSimpleWidget) and \
+                      "hidden" or "checkbox"
+                tr = TR(TD(INPUT(_type=use, _name="use_%s" % name,
+                                 _class="use_widget", _value='on')),
+                                 TD("%s: " % label, _class="w2p_fl"),
+                                 widget.widget(resource, vars))
                 if comment:
                     tr.append(DIV(DIV(_class="tooltip",
                                       _title="%s|%s" % (label, comment))))
@@ -613,7 +739,7 @@ class S3Find(S3CRUD):
                                 _class="action-lnk", _id="simple-lnk")
             else:
                 switch_link = ""
-            trows.append(TR("", TD(INPUT(_type="submit", _value=T("Search")),
+            trows.append(TR("", "", TD(INPUT(_type="submit", _value=T("Search")),
                                    switch_link, add_link)))
             advanced_form = FORM(TABLE(trows), _id="advanced-form")
             form.append(advanced_form)
@@ -627,9 +753,21 @@ class S3Find(S3CRUD):
            simple_form.accepts(request.vars, session,
                                formname="search_simple",
                                keepvalues=True):
+            errors = None
             for name, widget in self.__simple:
-                if name in simple_form.vars:
+                if hasattr(widget, "names"):
+                    value = Storage([(name, advanced_form.vars[name])
+                                     for name in widget.names
+                                     if name in advanced_form.vars])
+                elif name in simple_form.vars:
                     value = simple_form.vars[name]
+                else:
+                    value = None
+                if hasattr(widget, "validate"):
+                    errors = widget.validate(resource, value)
+                if errors:
+                    simple_form.errors.update(errors)
+                else:
                     q = widget.query(resource, value)
                     if q is not None:
                         if query is None:
@@ -643,9 +781,24 @@ class S3Find(S3CRUD):
                                  formname="search_advanced",
                                  keepvalues=True):
             simple = False
+            errors = None
             for name, widget in self.__advanced:
-                if name in advanced_form.vars:
+                use_widget = advanced_form.vars.get("use_%s" % name, False)
+                if not use_widget:
+                    continue
+                if hasattr(widget, "names"):
+                    value = Storage([(name, advanced_form.vars[name])
+                                     for name in widget.names
+                                     if name in advanced_form.vars])
+                elif name in advanced_form.vars:
                     value = advanced_form.vars[name]
+                else:
+                    value = None
+                if hasattr(widget, "validate"):
+                    errors = widget.validate(resource, value)
+                if errors:
+                    advanced_form.errors.update(errors)
+                else:
                     q = widget.query(resource, value)
                     if q is not None:
                         if query is None:
@@ -654,13 +807,15 @@ class S3Find(S3CRUD):
                             query = query | q
                         else:
                             query = query & q
-        elif self.__advanced and \
-             advanced_form.errors:
+        elif self.__advanced and advanced_form.errors:
             simple = False
 
         output.update(simple=simple)
+        errors = simple and self.__simple and simple_form.errors or \
+                 self.__advanced and advanced_form.errors or \
+                 None
 
-        if query is not None:
+        if query is not None and not errors:
             # Build query
             resource.add_filter(query)
 
@@ -698,6 +853,7 @@ class S3Find(S3CRUD):
                                   format=representation)
 
             if items and not response.s3.no_sspag:
+                # Pre-populate SSPag cache (avoids the 1st Ajax request)
                 totalrows = self.resource.count()
                 if totalrows:
                     aadata = dict(aaData =

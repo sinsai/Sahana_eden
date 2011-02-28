@@ -686,6 +686,8 @@ div#rheader_tabs span.rheader_tab_here a { color: #006699;
 .action-lnk { font-size: 85%;
               padding-left: 15px; }
 
+.sublabels { font-size: 85%; }
+
 .delete-btn,
 .action-btn { text-decoration: none;
               color: #006699;

@@ -15,21 +15,23 @@ $(document).ready(function() {
         selSubField.after('<div id="item_packet_ajax_throbber" class="ajax_throbber style="display:inline;"/>')
                    .hide();
         
+        var url;
+        
         if ($('[name = "item_id"]').length != 0) {
-            var url = S3.Ap.concat('/supply/item_packet.json?item_packet.item_id=', $('[name = "item_id"]').val());
+            url = S3.Ap.concat('/supply/item_packet.json?item_packet.item_id=', $('[name = "item_id"]').val());
         } else {
-        	var url = S3.Ap.concat('/inventory/store_item_packets/',$('[name $= "item_id"]').val());
+            url = S3.Ap.concat('/inventory/store_item_packets/', $('[name $= "item_id"]').val());
         }
         
         var data;
-        
+                                
         $.getJSON(url, function(data) {
             /* Create Select Element */
             var options = '';
             var v = '';
             
             if (data.length == 0) {
-                options += '<option value="">' + '{{=T("No Packets  for Item")}}</options>';
+                options += '<option value="">' + S3.i18n.no_packets + '</options>';
             } else {
                 for (var i = 0; i < data.length; i++){
                     v = data[i].id;
@@ -55,7 +57,8 @@ $(document).ready(function() {
             }; 
         });   
     }
-    var ItemID = $('[name $= "item_id"]').val();            
+    var ItemID = $('[name $= "item_id"]').val();       
+    
     if (ItemID == '' | ItemID == undefined) {
         /* Hide the item packet input if the item hasn't been entered */
         $('[id$="item_packet_id__row1"]').hide();
@@ -70,51 +73,52 @@ $(document).ready(function() {
     
 	$('.quantity.ajax_more').live( 'click', function (e) {		
 		e.preventDefault();
-		DIV = $(this)
-		if (DIV.hasClass("collapsed")) {
-			if (DIV.hasClass("fulfil")) {
-				ShipmentType = "recv"
-			} else if (DIV.hasClass("transit")) {
-				ShipmentType = "send"
-			} else if (DIV.hasClass("commit")) {
-				ShipmentType = "commit"
+		var DIV = $(this)
+        var ShipmentType;
+		if (DIV.hasClass('collapsed')) {
+			if (DIV.hasClass('fulfil')) {
+				ShipmentType = 'recv';
+			} else if (DIV.hasClass('transit')) {
+				ShipmentType = 'send';
+			} else if (DIV.hasClass('commit')) {
+				ShipmentType = 'commit';
 			}	
 			DIV.after('<div class="ajax_throbber quantity_req_ajax_throbber"/>')
-			   .removeClass("collapsed")
-			   .addClass("expanded");
+			   .removeClass('collapsed')
+			   .addClass('expanded');
 			
 			//Get the req_item_id
-			UpdateURL = $(".action-btn",DIV.parent().parent().parent()).attr("href");
-			re = /req_item\/(.*)/i;
-			req_item_id = re.exec(UpdateURL)[1];
-			url = S3.Ap.concat("/logs/", ShipmentType, "_item_json/", req_item_id);						
+			var UpdateURL = $('.action-btn', DIV.parent().parent().parent()).attr('href');
+			var re = /req_item\/(.*)/i;
+			var req_item_id = re.exec(UpdateURL)[1];
+			var url = S3.Ap.concat('/logs/', ShipmentType, '_item_json/', req_item_id);						
 			$.ajax( { 
 				url: url,
 				dataType: 'json',
 				context: DIV,
 				success: function(data) {
 					RecvTable = '<table class="recv_table">'	
-					for(i=0; i<data.length; i++) {
-						RecvTable += "<tr><td>";
+					for (i=0; i<data.length; i++) {
+						RecvTable += '<tr><td>';
 						if (i==0) {
 							//Header Row
 							RecvTable += data[0].id
 							
 						} else {
-							RecvURL = S3.Ap.concat("/logs/", ShipmentType, "/",  data[i].id);
+							RecvURL = S3.Ap.concat('/logs/', ShipmentType, '/',  data[i].id);
 							RecvTable += "<a href = '" + RecvURL + "'>"; 
-							RecvTable += data[i].datetime.substring(0,10) + "</a>"; 						
+							RecvTable += data[i].datetime.substring(0, 10) + '</a>';
 						}
-						RecvTable += "</td><td>" + data[i].quantity + "</td></tr>";
+						RecvTable += '</td><td>' + data[i].quantity + '</td></tr>';
 					}
-					RecvTable += "</table>";	
-					$('.quantity_req_ajax_throbber',this.parent()).remove();
+					RecvTable += '</table>';
+					$('.quantity_req_ajax_throbber', this.parent()).remove();
 					this.parent().after(RecvTable);
 				}
 			});
 		} else {			
-			DIV.removeClass("expanded")
-			   .addClass("collapsed");			
+			DIV.removeClass('expanded')
+			   .addClass('collapsed');
 			$('.recv_table', DIV.parent().parent() ).remove()
 		}
 			

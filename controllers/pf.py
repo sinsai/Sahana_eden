@@ -130,7 +130,7 @@ def index():
                     person = s3_logged_in_person()
                     if person and db.pr_person[person].missing:
                         myself = URL(r=request, f=resourcename,
-                                     args=[person.id, "presence"],
+                                     args=[person, "presence"],
                                      vars=dict(condition=vita.CONFIRMED))
                         output.update(myself=myself)
 

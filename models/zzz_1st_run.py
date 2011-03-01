@@ -335,92 +335,93 @@ if populate:
                                                      look_up_field = "abrv")
                           )
 
-    # Supply / Inventory
-    tablename = "supply_item_category"
-    table = db[tablename]
-    if not db(table.id > 0).count():
-        #shn_import_table("supply_item_category")
-        table.insert( name = "Agriculture" )
-        #table.insert( name = "Clothing" )
-        #table.insert( name = "Equipment" )
-        table.insert( name = "Food" )
-        table.insert( name = "Health" )
-        #table.insert( name = "NFIs" )
-        table.insert( name = "Shelter" )
-        #table.insert( name = "Transport" )
-        table.insert( name = "WASH" )
-    tablename = "supply_item"
-    table = db[tablename]
-    if not db(table.id > 0).count():
-        #shn_import_table("supply_item_pakistan")
-        agriculture = db(db.supply_item_category.name == "Agriculture").select(db.supply_item_category.id, limitby=(0, 1)).first().id
-        food = db(db.supply_item_category.name == "Food").select(db.supply_item_category.id, limitby=(0, 1)).first().id
-        health = db(db.supply_item_category.name == "Health").select(db.supply_item_category.id, limitby=(0, 1)).first().id
-        shelter = db(db.supply_item_category.name == "Shelter").select(db.supply_item_category.id, limitby=(0, 1)).first().id
-        wash = db(db.supply_item_category.name == "WASH").select(db.supply_item_category.id, limitby=(0, 1)).first().id
-        table.insert(
-            item_category_id = agriculture,
-            name = "Rice Seed",
-            base_unit = "sack20kg",
-            comments = "This should provide enough seed for 1 Hectare of land"
-            )
-        table.insert(
-            item_category_id = food,
-            name = "Rice",
-            base_unit = "sack50kg",
-            comments = "This should feed 125 people for 1 day"
-            )
-        table.insert(
-            item_category_id = food,
-            name = "Cooking Utensils",
-            base_unit = "kit",
-            comments = "Cooking Utensils for a Household"
-            )
-        table.insert(
-            item_category_id = health,
-            name = "First Ait Kit",
-            base_unit = "kit",
-            comments = "This should provide basic first aid (bandages, oral rehydration salts, etc) for 100 people to self-administer"
-            )
-        table.insert(
-            item_category_id = health,
-            name = "Medical Kit",
-            base_unit = "kit",
-            comments = "This should provide medical supplies (medicines, vaccines) for a professional clinic to provide assistance to a total community of 10,000 people."
-            )
-        table.insert(
-            item_category_id = shelter,
-            name = "Shelter Kit",
-            base_unit = "kit",
-            comments = "This kit is suitable to provide emergency repair to a damaged home. It contains a tarpaulin, zinc sheet, wooden poles, hammer & nails"
-            )
-        table.insert(
-            item_category_id = shelter,
-            name = "Tent",
-            base_unit = "piece",
-            comments = "This should house a family of up to 8 people"
-            )
-        table.insert(
-            item_category_id = wash,
-            name = "Hygiene Kit",
-            base_unit = "kit",
-            comments = "Personal Hygiene supplies for 100 Households (5 persons/household): Each get 2x Buckets, 10x Soap, Cotton cloth"
-            )
-        table.insert(
-            item_category_id = wash,
-            name = "Water Purification Sachets",
-            base_unit = "kit",
-            comments = "Designed to provide a 1st phase drinking water purification solution at the household level. Contains 600 sachets to provide sufficient drinking water (4l) for 100 people for 30 days."
-            )
+    if deployment_settings.has_module("logs"):
+        # Supply / Inventory
+        tablename = "supply_item_category"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            #shn_import_table("supply_item_category")
+            table.insert( name = "Agriculture" )
+            #table.insert( name = "Clothing" )
+            #table.insert( name = "Equipment" )
+            table.insert( name = "Food" )
+            table.insert( name = "Health" )
+            #table.insert( name = "NFIs" )
+            table.insert( name = "Shelter" )
+            #table.insert( name = "Transport" )
+            table.insert( name = "WASH" )
+        tablename = "supply_item"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            #shn_import_table("supply_item_pakistan")
+            agriculture = db(db.supply_item_category.name == "Agriculture").select(db.supply_item_category.id, limitby=(0, 1)).first().id
+            food = db(db.supply_item_category.name == "Food").select(db.supply_item_category.id, limitby=(0, 1)).first().id
+            health = db(db.supply_item_category.name == "Health").select(db.supply_item_category.id, limitby=(0, 1)).first().id
+            shelter = db(db.supply_item_category.name == "Shelter").select(db.supply_item_category.id, limitby=(0, 1)).first().id
+            wash = db(db.supply_item_category.name == "WASH").select(db.supply_item_category.id, limitby=(0, 1)).first().id
+            table.insert(
+                item_category_id = agriculture,
+                name = "Rice Seed",
+                base_unit = "sack20kg",
+                comments = "This should provide enough seed for 1 Hectare of land"
+                )
+            table.insert(
+                item_category_id = food,
+                name = "Rice",
+                base_unit = "sack50kg",
+                comments = "This should feed 125 people for 1 day"
+                )
+            table.insert(
+                item_category_id = food,
+                name = "Cooking Utensils",
+                base_unit = "kit",
+                comments = "Cooking Utensils for a Household"
+                )
+            table.insert(
+                item_category_id = health,
+                name = "First Ait Kit",
+                base_unit = "kit",
+                comments = "This should provide basic first aid (bandages, oral rehydration salts, etc) for 100 people to self-administer"
+                )
+            table.insert(
+                item_category_id = health,
+                name = "Medical Kit",
+                base_unit = "kit",
+                comments = "This should provide medical supplies (medicines, vaccines) for a professional clinic to provide assistance to a total community of 10,000 people."
+                )
+            table.insert(
+                item_category_id = shelter,
+                name = "Shelter Kit",
+                base_unit = "kit",
+                comments = "This kit is suitable to provide emergency repair to a damaged home. It contains a tarpaulin, zinc sheet, wooden poles, hammer & nails"
+                )
+            table.insert(
+                item_category_id = shelter,
+                name = "Tent",
+                base_unit = "piece",
+                comments = "This should house a family of up to 8 people"
+                )
+            table.insert(
+                item_category_id = wash,
+                name = "Hygiene Kit",
+                base_unit = "kit",
+                comments = "Personal Hygiene supplies for 100 Households (5 persons/household): Each get 2x Buckets, 10x Soap, Cotton cloth"
+                )
+            table.insert(
+                item_category_id = wash,
+                name = "Water Purification Sachets",
+                base_unit = "kit",
+                comments = "Designed to provide a 1st phase drinking water purification solution at the household level. Contains 600 sachets to provide sufficient drinking water (4l) for 100 people for 30 days."
+                )
 
-        # enter base_unit as packets
-        item_rows = db(table.id > 0).select(table.id, table.base_unit)
-        for item_row in item_rows:
-            db.supply_item_packet.insert(
-                item_id = item_row.id,
-                name = item_row.base_unit,
-                quantity = 1
-               )
+            # enter base_unit as packets
+            item_rows = db(table.id > 0).select(table.id, table.base_unit)
+            for item_row in item_rows:
+                db.supply_item_packet.insert(
+                    item_id = item_row.id,
+                    name = item_row.base_unit,
+                    quantity = 1
+                   )
 
     # Project Module
     if deployment_settings.has_module("project"):

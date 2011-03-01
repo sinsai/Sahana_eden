@@ -28,18 +28,21 @@ if deployment_settings.modules[module].access:
 # Options Menu (available in all Functions" Views)
 def shn_menu():
     response.menu_options = [
-        [T("Home"), False, URL(r=request, f="index")],
-        [T("Recovery Requests"), False, aURL(r=request, f="recreq"),[
-            [T("List Requests"), False, aURL(r=request, f="recreq")],
+        #[T("Home"), False, URL(r=request, f="index")],
+        [T("Recovery"), False, None,[
             [T("New Request"), False, aURL(p="create", r=request, f="recreq", args="create")],
+            [T("List Requests"), False, aURL(r=request, f="recreq")],
         ]],
-        [T("Dead Body Reports"), False, aURL(r=request, f="body"),[
+        [T("Dead Body"), False, None,[
+            [T("New"), False, aURL(p="create", r=request, f="body", args="create")],
+            [T("Search"), False, aURL(r=request, f="body", args="search")],
             [T("List all"), False, aURL(r=request, f="body")],
             [T("List unidentified"), False, aURL(r=request, f="body", vars=dict(status="unidentified"))],
-            [T("New Report"), False, aURL(p="create", r=request, f="body", args="create")],
-            [T("Search by ID Tag"), False, aURL(r=request, f="body", args="search")]
         ]],
-        [T("Missing Persons"), False, aURL(r=request, f="person")]
+        [T("Missing Persons"), False, None, [
+            [T("List all"), False, aURL(r=request, f="person")],
+        ]],
+        [T("Help"), False, URL(r=request, f="index")]
     ]
     menu_selected = []
     if session.rcvars and "dvi_body" in session.rcvars:
@@ -48,8 +51,8 @@ def shn_menu():
         record = db(query).select(body.id, body.pe_label, limitby=(0,1)).first()
         if record:
             label = record.pe_label
-            response.menu_options[-1].append(
-                [[T("Candidate Matches for Body %s" % label), False, URL(r=request, f="person", vars=dict(match=record.id))]]
+            response.menu_options[-2][-1].append(
+                [T("Candidate Matches for Body %s" % label), False, URL(r=request, f="person", vars=dict(match=record.id))]
             )
             menu_selected.append(["%s: %s" % (T("Body"), label), False,
                                  URL(r=request, f="body", args=[record.id])])

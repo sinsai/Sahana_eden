@@ -1,2 +1,7 @@
-<td>{{=item[0]+" "+am_pm[item[1]]+" :"}}</td>
-<td>{{=item[2]}}</td>
+<thead>
+<tr><th>Date</th><th>Hour</th>
+{{for i in range(7):}}<th><img width=24 height=24 src="/eden/static/img/{{=building_estimated_damage_image[i+1]}}"><br/>{{=building_estimated_damage[i+1]}}</th>{{pass}}
+<th><img width=24 height=24 src="/eden/static/img/sum.png	"><br/>Total</th>
+</tr>
+<tr><th></th><th>Total</th>{{for i in range(8):}}<th>{{=totals[i]}}</th>{{pass}}</tr>
+</thead>

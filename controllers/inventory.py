@@ -48,8 +48,8 @@ def shn_store_rheader(r):
                                                        ])
 
             rheader = DIV(TABLE(TR(
-                                   TH(T("Location") + ": "), inventory_store_represent(inventory_store.id),
-                                   TH(T("Description") + ": "), inventory_store.comments,
+                                   TH("%s: " % T("Location")), inventory_store_represent(inventory_store.id),
+                                   TH("%s: " % T("Description")), inventory_store.comments,
                                    ),
                                 ),
                           rheader_tabs
@@ -143,7 +143,7 @@ def store_item_quantity():
                   (db.inventory_store_item.item_packet_id == db.supply_item_packet.id)
                  ).select(db.inventory_store_item.quantity,
                           db.supply_item_packet.quantity,
-                          limitby=[0,1]).first()#
+                          limitby=[0, 1]).first()#
 
     return json.dumps(record)
 

@@ -341,13 +341,14 @@ class Locations(SahanaTest):
         self.action.checkHeading({"Name:" : shelterName,
                                   "Location:" : L0a,
                                  })
-        location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
-        location_id = location.split("(")[1].split(")")[0]
+        # @ToDo: Hyperlink is no longer shown as we have no map location for this
+        #location = sel.get_attribute("//a[starts-with(@onclick, 's3_viewMap')]/@onclick")
+        #location_id = location.split("(")[1].split(")")[0]
         self.initFormDetails()        
         Locations.formDetails[13][2] = True
         Locations.formDetails[14][2] = True
         Locations.formDetails[17][2] = True
-        Locations.formDetails[0][3] = location_id
+        #Locations.formDetails[0][3] = location_id
         self.action.checkForm(Locations.formDetails,
                               (),
                               ()

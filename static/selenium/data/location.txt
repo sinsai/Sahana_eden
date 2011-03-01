@@ -1,5 +1,7 @@
 Ouest, L1, Haiti, L0
+Centre, L1, Haiti, L0
 Port-Au-Prince, L2, Ouest, L1, Haiti
+Petit-Goave, L2, Ouest, L1, Haiti
 Martissant, L3, Port-Au-Prince, L2, Ouest
 Carrefour Feuilles, L4, Martissant, L3, Port-Au-Prince
 Turgeau, L3, Port-Au-Prince, L2, Ouest

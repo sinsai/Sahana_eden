@@ -130,8 +130,8 @@ function s3_tb_remove(){
 
 
 (function($) {
-    jQuery.ajaxS3 = function(s) {
-        var options = jQuery.extend( {}, jQuery.ajaxS3Settings, s );
+    $.ajaxS3 = function(s) {
+        var options = $.extend( {}, $.ajaxS3Settings, s );
         options.tryCount = 0;
         if (s.message) {
             s3_showStatus(S3.i18n.ajax_get + ' ' + (s.message ? s.message : S3.i18n.ajax_fmd) + '...', this.ajaxS3Settings.msgTimeout);
@@ -161,11 +161,11 @@ function s3_tb_remove(){
                 s3_showStatus(S3.i18n.ajax_dwn, $.ajaxS3Settings.msgTimeout, false, true);
             }
         };
-        jQuery.ajax(options);
+        $.ajax(options);
     };
 
-    jQuery.postS3 = function(url, data, callback, type) {
-        return jQuery.ajaxS3({
+    $.postS3 = function(url, data, callback, type) {
+        return $.ajaxS3({
             type: "POST",
             url: url,
             data: data,
@@ -174,9 +174,9 @@ function s3_tb_remove(){
         });
     };
 
-    jQuery.getS3 = function(url, data, callback, type, message, sync) {
+    $.getS3 = function(url, data, callback, type, message, sync) {
         // shift arguments if data argument was omitted
-        if ( jQuery.isFunction( data ) ) {
+        if ( $.isFunction( data ) ) {
             sync = message;
             message = type;
             type = callback;
@@ -186,7 +186,7 @@ function s3_tb_remove(){
         if (sync) {
             var async = false;
         }
-        return jQuery.ajaxS3({
+        return $.ajaxS3({
             type: 'GET',
             url: url,
             async: async,
@@ -197,9 +197,9 @@ function s3_tb_remove(){
         });
     };
 
-    jQuery.getJSONS3 = function(url, data, callback, message, sync) {
+    $.getJSONS3 = function(url, data, callback, message, sync) {
         // shift arguments if data argument was omitted
-        if ( jQuery.isFunction( data ) ) {
+        if ( $.isFunction( data ) ) {
             sync = message;
             message = callback;
             callback = data;
@@ -208,10 +208,10 @@ function s3_tb_remove(){
         if (!sync) {
             var sync = false;
         }
-        return jQuery.getS3(url, data, callback, 'json', message, sync);
+        return $.getS3(url, data, callback, 'json', message, sync);
     };
 
-    jQuery.ajaxS3Settings = {
+    $.ajaxS3Settings = {
         timeout : 10000,
         msgTimeout: 2000,
         retryLimit : 10,
@@ -220,11 +220,11 @@ function s3_tb_remove(){
         type: 'GET'
     };
 
-    jQuery.ajaxS3Setup = function(settings) {
-        jQuery.extend(jQuery.ajaxS3Settings, settings);
+    $.ajaxS3Setup = function(settings) {
+        $.extend($.ajaxS3Settings, settings);
     };
 
-})(jQuery);
+})($);
 
 // status bar for ajaxS3 operation
 // taken from http://www.west-wind.com/WebLog/posts/388213.aspx

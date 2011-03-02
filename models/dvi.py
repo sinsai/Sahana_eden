@@ -157,20 +157,20 @@ if deployment_settings.has_module(module):
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(
-        title_create = T("Add Recovery Report"),
+        title_create = T("Add Dead Body Report"),
         title_display = T("Dead Body Details"),
-        title_list = T("Body Recovery Reports"),
-        title_update = T("Edit Recovery Details"),
+        title_list = T("Dead Body Reports"),
+        title_update = T("Edit Dead Body Details"),
         title_search = T("Find Dead Body Report"),
         subtitle_create = T("Add New Report"),
         subtitle_list = T("List of Reports"),
         label_list_button = T("List Reports"),
-        label_create_button = T("Add Recovery Report"),
-        label_delete_button = T("Delete Recovery Report"),
-        msg_record_created = T("Recovery report added"),
-        msg_record_modified = T("Recovery report updated"),
-        msg_record_deleted = T("Recovery report deleted"),
-        msg_list_empty = T("No recovery reports available"))
+        label_create_button = T("Add Report"),
+        label_delete_button = T("Delete Report"),
+        msg_record_created = T("Dead body report added"),
+        msg_record_modified = T("Dead body report updated"),
+        msg_record_deleted = T("Dead body report deleted"),
+        msg_list_empty = T("No dead body reports available"))
 
     s3xrc.model.configure(table,
                           super_entity=db.pr_pentity,

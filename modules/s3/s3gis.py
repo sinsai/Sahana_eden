@@ -1915,7 +1915,12 @@ class GIS(object):
         maxExtent = config.maxExtent
         numZoomLevels = config.zoom_levels
         marker_id_default = config.marker_id
-        marker_default = db(db.gis_marker.id == marker_id_default).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1), cache=cache).first()
+        query = (db.gis_marker.id == marker_id_default)
+        marker_default = db(query).select(db.gis_marker.image,
+                                          db.gis_marker.height,
+                                          db.gis_marker.width,
+                                          limitby=(0, 1),
+                                          cache=cache).first()
         symbology = config.symbology_id
         cluster_distance = config.cluster_distance
         cluster_threshold = config.cluster_threshold
@@ -1935,17 +1940,29 @@ class GIS(object):
         # Catalogue Toolbar
         if catalogue_toolbar:
             if auth.has_membership(1):
-                config_button = SPAN( A(T("Defaults"), _href=URL(r=request, c="gis", f="config", args=["1", "update"])), _class="rheader_tab_other" )
+                config_button = SPAN( A(T("Defaults"),
+                                      _href=URL(r=request, c="gis", f="config",
+                                                args=["1", "update"])),
+                                      _class="rheader_tab_other" )
             else:
-                config_button = SPAN( A(T("Defaults"), _href=URL(r=request, c="gis", f="config", args=["1", "display"])), _class="rheader_tab_other" )
+                config_button = SPAN( A(T("Defaults"),
+                                      _href=URL(r=request, c="gis", f="config",
+                                                args=["1", "display"])),
+                                      _class="rheader_tab_other" )
             catalogue_toolbar = DIV(
                 config_button,
-                SPAN( A(T("Layers"), _href=URL(r=request, c="gis", f="map_service_catalogue")), _class="rheader_tab_other" ),
-                #SPAN( A(T("Feature Layers"), _href=URL(r=request, c="gis", f="feature_layer")), _class="rheader_tab_other" ),
-                #SPAN( A(T("Feature Classes"), _href=URL(r=request, c="gis", f="feature_class")), _class="rheader_tab_other" ),
-                SPAN( A(T("Markers"), _href=URL(r=request, c="gis", f="marker")), _class="rheader_tab_other" ),
-                SPAN( A(T("Keys"), _href=URL(r=request, c="gis", f="apikey")), _class="rheader_tab_other" ),
-                SPAN( A(T("Projections"), _href=URL(r=request, c="gis", f="projection")), _class="rheader_tab_other" ),
+                SPAN( A(T("Layers"),
+                      _href=URL(r=request, c="gis", f="map_service_catalogue")),
+                      _class="rheader_tab_other" ),
+                SPAN( A(T("Markers"),
+                      _href=URL(r=request, c="gis", f="marker")),
+                      _class="rheader_tab_other" ),
+                SPAN( A(T("Keys"),
+                      _href=URL(r=request, c="gis", f="apikey")),
+                      _class="rheader_tab_other" ),
+                SPAN( A(T("Projections"),
+                      _href=URL(r=request, c="gis", f="projection")),
+                      _class="rheader_tab_other" ),
                 _id="rheader_tabs")
             html.append(catalogue_toolbar)
 
@@ -1974,18 +1991,25 @@ class GIS(object):
         # Scripts
         #########
         if session.s3.debug:
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/openlayers/lib/OpenLayers.js")))
-            #html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/MP.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/cdauth.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/usng2.js")))
-            #html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/osm_styles.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt/lib/GeoExt.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt/ux/GeoNamesSearchCombo.js")))
+            html.append(SCRIPT(_type="text/javascript",
+                               _src=URL(r=request, c="static", f="scripts/gis/openlayers/lib/OpenLayers.js")))
+            html.append(SCRIPT(_type="text/javascript",
+                               _src=URL(r=request, c="static", f="scripts/gis/MP.js")))
+            html.append(SCRIPT(_type="text/javascript",
+                               _src=URL(r=request, c="static", f="scripts/gis/cdauth.js")))
+            html.append(SCRIPT(_type="text/javascript",
+                               _src=URL(r=request, c="static", f="scripts/gis/usng2.js")))
+            html.append(SCRIPT(_type="text/javascript",
+                               _src=URL(r=request, c="static", f="scripts/gis/osm_styles.js")))
+            html.append(SCRIPT(_type="text/javascript",
+                               _src=URL(r=request, c="static", f="scripts/gis/GeoExt/lib/GeoExt.js")))
+            html.append(SCRIPT(_type="text/javascript",
+                               _src=URL(r=request, c="static", f="scripts/gis/GeoExt/ux/GeoNamesSearchCombo.js")))
         else:
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt.js")))
+            html.append(SCRIPT(_type="text/javascript",
+                               _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
+            html.append(SCRIPT(_type="text/javascript",
+                               _src=URL(r=request, c="static", f="scripts/gis/GeoExt.js")))
 
         if print_tool:
             url = print_tool["url"] + "info.json?var=printCapabilities"
@@ -2048,15 +2072,15 @@ OpenLayers.Util.extend( selectPdfControl, {
             mgrs2 = """
     // MGRS Control
     var mgrsButton = new GeoExt.Action({
-        text: 'Select """ + mgrs["name"] + """',
+        text: 'Select %s',
         control: selectPdfControl,
         map: map,
         toggleGroup: toggleGroup,
         allowDepress: false,
-        tooltip: 'Select """ + mgrs["name"] + """',
+        tooltip: 'Select %s',
         // check item options group: 'draw'
     });
-    """
+    """ % (mgrs["name"], mgrs["name"])
             mgrs3 = """
     toolbar.add(mgrsButton);
     toolbar.addSeparator();
@@ -2071,7 +2095,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             legend1= """
         legendPanel = new GeoExt.LegendPanel({
             id: 'legendpanel',
-            title: '""" + T("Legend") + """',
+            title: '%s',
             defaults: {
                 labelCls: 'mylabel',
                 style: 'padding:5px'
@@ -2082,7 +2106,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             collapseMode: 'mini',
             lines: false
         });
-        """
+        """ % (T("Legend"))
             legend2 = ", legendPanel"
         else:
             legend1= ""
@@ -2125,13 +2149,13 @@ OpenLayers.Util.extend( selectPdfControl, {
             },
             map: map,
             iconCls: 'drawpoint-off',
-            tooltip: '""" + T("Add Point") + """',
+            tooltip: '%s',
             toggleGroup: 'controls',
             allowDepress: true,
             enableToggle: true,
             pressed: """ + draw_depress + """
         });
-        """
+        """ % T("Add Point")
 
         
             if None:
@@ -2246,7 +2270,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 save_button = """
         var saveButton = new Ext.Toolbar.Button({
             iconCls: 'save',
-            tooltip: '""" + T("Save: Default Lat, Lon & Zoom for the Viewport") + """',
+            tooltip: '%s',
             handler: function() {
                 // Read current settings from map
                 var lonlat = map.getCenter();
@@ -2254,12 +2278,12 @@ OpenLayers.Util.extend( selectPdfControl, {
                 // Convert back to LonLat for saving
                 lonlat.transform(map.getProjectionObject(), proj4326);
                 // Use AJAX to send back
-                var url = '""" + URL(r=request, c="gis", f="config", args=["1.url", "update"]) + """';
+                var url = '%s';
                 Ext.Ajax.request({
                     url: url,
                     method: 'GET',
                     params: {
-                        uuid: '""" + config.uuid + """',
+                        uuid: '%s',
                         lat: lonlat.lat,
                         lon: lonlat.lon,
                         zoom: zoom_current
@@ -2267,7 +2291,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                 });
             }
         });
-        """
+        """ % (T("Save: Default Lat, Lon & Zoom for the Viewport"),
+               URL(r=request, c="gis", f="config", args=["1.url", "update"]),
+               config.uuid)
                 save_button2 = """
         toolbar.addSeparator();
         // Save Viewport
@@ -2283,7 +2309,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 potlatch_button = """
         var potlatchButton = new Ext.Toolbar.Button({
             iconCls: 'potlatch',
-            tooltip: '""" + T("Edit the OpenStreetMap data for this area") + """',
+            tooltip: '%s',
             handler: function() {
                 // Read current settings from map
                 var lonlat = map.getCenter();
@@ -2293,11 +2319,12 @@ OpenLayers.Util.extend( selectPdfControl, {
                 }
                 // Convert back to LonLat for saving
                 lonlat.transform(map.getProjectionObject(), proj4326);
-                var url = '""" + URL(r=request, f="potlatch2", args="potlatch2.html") + """?lat=' + lonlat.lat + '&lon=' + lonlat.lon + '&zoom=' + zoom_current;
+                var url = '%s?lat=' + lonlat.lat + '&lon=' + lonlat.lon + '&zoom=' + zoom_current;
                 window.open(url);
             }
         });
-        """
+        """ % (T("Edit the OpenStreetMap data for this area"),
+               URL(r=request, f="potlatch2", args="potlatch2.html"))
                 potlatch_button2 = """
         toolbar.addSeparator();
         // Edit in OpenStreetMap
@@ -2509,7 +2536,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         var searchCombo = new Ext.Panel({
             id: 'searchCombo',
-            title: '""" + T("Search Geonames") + """',
+            title: '%s',
             layout: 'border',
             rootVisible: false,
             split: true,
@@ -2517,13 +2544,14 @@ OpenLayers.Util.extend( selectPdfControl, {
             collapsible: true,
             collapseMode: 'mini',
             lines: false,
-            html: '""" + T("Geonames.org search requires Internet connectivity!") + """',
+            html: '%s',
             items: [{
                     region: 'center',
                     items: [ mapSearch ]
                 }]
         });
-        """
+        """ % (T("Search Geonames"),
+               T("Geonames.org search requires Internet connectivity!"))
             search2 = """,
                             searchCombo"""
         else:
@@ -2539,7 +2567,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         var root = new Ext.tree.AsyncTreeNode({
             expanded: true,
             loader: new GeoExt.tree.WMSCapabilitiesLoader({
-                url: OpenLayers.ProxyHost + '""" + url + """',
+                url: OpenLayers.ProxyHost + '%s',
                 layerOptions: {buffer: 1, singleTile: false, ratio: 1, wrapDateLine: true},
                 layerParams: {'TRANSPARENT': 'TRUE'},
                 // customize the createNode method to add a checkbox to nodes
@@ -2551,7 +2579,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         });
         wmsBrowser = new Ext.tree.TreePanel({
             id: 'wmsbrowser',
-            title: '""" + name + """',
+            title: '%s',
             root: root,
             rootVisible: false,
             split: true,
@@ -2572,7 +2600,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 }
             }
         });
-        """
+        """ % (url, name)
             layers_wms_browser2 = """,
                             wmsBrowser"""
         else:
@@ -2754,7 +2782,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         } else {
             // Display error diagnostic
             var formPanel = new Ext.Panel ({
-                title: '""" + T("Print Map") + """',
+                title: '%s',
                 rootVisible: false,
                 split: true,
                 autoScroll: true,
@@ -2765,10 +2793,11 @@ OpenLayers.Util.extend( selectPdfControl, {
                 bodyStyle: 'padding:5px',
                 labelAlign: 'top',
                 defaults: {anchor: '100%'},
-                html: '""" + T("Printing disabled since server not accessible: ") + "<BR />" + url + """'
+                html: '%s: <BR />%s'
             });
         }
-        """
+        """ % (T("Print Map"),
+               T("Printing disabled since server not accessible"), url)
             print_tool2 = """,
                     formPanel"""
         else:
@@ -2781,7 +2810,8 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         # Strategy
         # Need to be uniquely instantiated
-        strategy_cluster = """new OpenLayers.Strategy.Cluster({distance: """ + str(cluster_distance) + """, threshold: """ + str(cluster_threshold) + """})"""
+        strategy_cluster = "new OpenLayers.Strategy.Cluster({distance: %i, threshold: %i})" % (cluster_distance,
+                                                                                               cluster_threshold)
 
         # Layout
         if window:
@@ -2828,27 +2858,27 @@ OpenLayers.Util.extend( selectPdfControl, {
         if bbox:
             # Calculate from Bounds
             center = """
-    var bottom_left = new OpenLayers.LonLat(""" + str(bbox["min_lon"]) + "," + str(bbox["min_lat"]) + """);
+    var bottom_left = new OpenLayers.LonLat(%f, %f);
     bottom_left.transform(proj4326, projection_current);
     var left = bottom_left.lon;
     var bottom = bottom_left.lat;
-    top_right = new OpenLayers.LonLat(""" + str(bbox["max_lon"]) + "," + str(bbox["max_lat"]) + """);
+    top_right = new OpenLayers.LonLat(%f, %f);
     top_right.transform(proj4326, projection_current);
     var right = top_right.lon;
     var top = top_right.lat;
     var bounds = OpenLayers.Bounds.fromArray([left, bottom, right, top]);
     var center = bounds.getCenterLonLat();
-    """
+    """ % (bbox["min_lon"], bbox["min_lat"], bbox["max_lon"], bbox["max_lat"])
             zoomToExtent = """
         map.zoomToExtent(bounds);
         """
         else:
             center = """
-    var lat = """ + str(lat) + """;
-    var lon = """ + str(lon) + """;
+    var lat = %s;
+    var lon = %s;
     var center = new OpenLayers.LonLat(lon, lat);
     center.transform(proj4326, projection_current);
-    """
+    """ % (lat, lon)
             zoomToExtent = ""
 
         cluster_style_options = """
@@ -2931,7 +2961,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_bing = ""
 
         # OpenStreetMap
-        openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled == True).select()
+        query = (db.gis_layer_openstreetmap.enabled == True)
+        openstreetmap_enabled = db(query).select()
         if openstreetmap_enabled:
             functions_openstreetmap = """
         function osm_getTileURL(bounds) {
@@ -2957,7 +2988,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 if layer.role_required and not auth.s3_has_role(layer.role_required):
                     continue
                 name = layer.name
-                name_safe = re.sub('\W', '_', name)
+                name_safe = re.sub("\W", "_", name)
                 url1 = layer.url1
                 url2 = layer.url2
                 url3 = layer.url3
@@ -2966,7 +2997,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 elif url2:
                     url = "['%s', '%s']" % (url1, url2)
                 else:
-                    url = "['%s']" % (url1)
+                    url = "['%s']" % url1
                 if layer.base:
                     base = ""
                 else:
@@ -3007,67 +3038,70 @@ OpenLayers.Util.extend( selectPdfControl, {
                     # Need to use v2 API
                     # http://code.google.com/p/gmaps-api-issues/issues/detail?id=2349
                     googleMapmaker = True
-                    html.append(SCRIPT(_type="text/javascript", _src="http://maps.google.com/maps?file=api&v=2&key=" + google.key))
+                    html.append(SCRIPT(_type="text/javascript",
+                                       _src="http://maps.google.com/maps?file=api&v=2&key=%s" % google.key))
                 else:
                     googleMapmaker = False
-                    html.append(SCRIPT(_type="text/javascript", _src="http://maps.google.com/maps/api/js?sensor=false"))
+                    html.append(SCRIPT(_type="text/javascript",
+                                       _src="http://maps.google.com/maps/api/js?sensor=false"))
                 # Google Earth (coming soon)
-                #html.append(SCRIPT(_type="text/javascript", _src="http://www.google.com/jsapi?key=" + google.key))
+                #html.append(SCRIPT(_type="text/javascript",
+                #                   _src="http://www.google.com/jsapi?key=%s" % google.key))
                 #html.append(SCRIPT("google && google.load('earth', '1');", _type="text/javascript"))
                 if google.Satellite:
                     if googleMapmaker:
                         layers_google += """
-        var googlesat = new OpenLayers.Layer.Google( '""" + google.Satellite + """' , {type: G_SATELLITE_MAP, 'sphericalMercator': true} );
+        var googlesat = new OpenLayers.Layer.Google( '%s' , {type: G_SATELLITE_MAP, 'sphericalMercator': true} );
         map.addLayer(googlesat);
-                    """
+                    """ % google.Satellite
                     else:
                         layers_google += """
-        var googlesat = new OpenLayers.Layer.Google( '""" + google.Satellite + """' , {type: google.maps.MapTypeId.SATELLITE, numZoomLevels: 22} );
+        var googlesat = new OpenLayers.Layer.Google( '%s' , {type: google.maps.MapTypeId.SATELLITE, numZoomLevels: 22} );
         map.addLayer(googlesat);
-                    """
+                    """ % google.Satellite
                 if google.Maps:
                     if googleMapmaker:
                         layers_google += """
-        var googlemaps = new OpenLayers.Layer.Google( '""" + google.Maps + """' , {type: G_NORMAL_MAP, 'sphericalMercator': true} );
+        var googlemaps = new OpenLayers.Layer.Google( '%s' , {type: G_NORMAL_MAP, 'sphericalMercator': true} );
         map.addLayer(googlemaps);
-                    """
+                    """ % google.Maps
                     else:
                         layers_google += """
-        var googlemaps = new OpenLayers.Layer.Google( '""" + google.Maps + """' , {numZoomLevels: 20} );
+        var googlemaps = new OpenLayers.Layer.Google( '%s' , {numZoomLevels: 20} );
         map.addLayer(googlemaps);
-                    """
+                    """ % google.Maps
                 if google.Hybrid:
                     if googleMapmaker:
                         layers_google += """
-        var googlehybrid = new OpenLayers.Layer.Google( '""" + google.Hybrid + """' , {type: G_HYBRID_MAP, 'sphericalMercator': true} );
+        var googlehybrid = new OpenLayers.Layer.Google( '%s' , {type: G_HYBRID_MAP, 'sphericalMercator': true} );
         map.addLayer(googlehybrid);
-                    """
+                    """ % google.Hybrid
                     else:
                         layers_google += """
-        var googlehybrid = new OpenLayers.Layer.Google( '""" + google.Hybrid + """' , {type: google.maps.MapTypeId.HYBRID, numZoomLevels: 20} );
+        var googlehybrid = new OpenLayers.Layer.Google( '%s' , {type: google.maps.MapTypeId.HYBRID, numZoomLevels: 20} );
         map.addLayer(googlehybrid);
-                    """
+                    """ % google.Hybrid
                 if google.Terrain:
                     if googleMapmaker:
                         layers_google += """
-        var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: G_PHYSICAL_MAP, 'sphericalMercator': true} )
+        var googleterrain = new OpenLayers.Layer.Google( '%s' , {type: G_PHYSICAL_MAP, 'sphericalMercator': true} )
         map.addLayer(googleterrain);
-                    """
+                    """ % google.Terrain
                     else:
                         layers_google += """
-        var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: google.maps.MapTypeId.TERRAIN} )
+        var googleterrain = new OpenLayers.Layer.Google( '%s' , {type: google.maps.MapTypeId.TERRAIN} )
         map.addLayer(googleterrain);
-                    """
+                    """ % google.Terrain
                 if google.MapMaker:
                     layers_google += """
-        var googlemapmaker = new OpenLayers.Layer.Google( '""" + google.MapMaker + """' , {type: G_MAPMAKER_NORMAL_MAP, 'sphericalMercator': true } )
+        var googlemapmaker = new OpenLayers.Layer.Google( '%s' , {type: G_MAPMAKER_NORMAL_MAP, 'sphericalMercator': true } )
         map.addLayer(googlemapmaker);
-                    """
+                    """ % google.MapMaker
                 if google.MapMakerHybrid:
                     layers_google += """
-        var googlemapmakerhybrid = new OpenLayers.Layer.Google( '""" + google.MapMakerHybrid + """' , {type: G_MAPMAKER_HYBRID_MAP, 'sphericalMercator': true } )
+        var googlemapmakerhybrid = new OpenLayers.Layer.Google( '%s' , {type: G_MAPMAKER_HYBRID_MAP, 'sphericalMercator': true } )
         map.addLayer(googlemapmakerhybrid);
-                    """
+                    """ % google.MapMakerHybrid
 
             # Yahoo
             gis_layer_yahoo_subtypes = self.layer_subtypes("yahoo")
@@ -3082,22 +3116,23 @@ OpenLayers.Util.extend( selectPdfControl, {
                         if layer.subtype == subtype:
                             yahoo["%s" % subtype] = layer.name
             if yahoo:
-                html.append(SCRIPT(_type="text/javascript", _src="http://api.maps.yahoo.com/ajaxymap?v=3.8&appid=" + yahoo.key))
+                html.append(SCRIPT(_type="text/javascript",
+                                   _src="http://api.maps.yahoo.com/ajaxymap?v=3.8&appid=%s" % yahoo.key))
                 if yahoo.Satellite:
                     layers_yahoo += """
-        var yahoosat = new OpenLayers.Layer.Yahoo( '""" + yahoo.Satellite + """' , {type: YAHOO_MAP_SAT, 'sphericalMercator': true } );
+        var yahoosat = new OpenLayers.Layer.Yahoo( '%s' , {type: YAHOO_MAP_SAT, 'sphericalMercator': true } );
         map.addLayer(yahoosat);
-                    """
+                    """ % yahoo.Satellite
                 if yahoo.Maps:
                     layers_yahoo += """
-        var yahoomaps = new OpenLayers.Layer.Yahoo( '""" + yahoo.Maps + """' , {'sphericalMercator': true } );
+        var yahoomaps = new OpenLayers.Layer.Yahoo( '%s' , {'sphericalMercator': true } );
         map.addLayer(yahoomaps);
-                    """
+                    """ % yahoo.Maps
                 if yahoo.Hybrid:
                     layers_yahoo += """
-        var yahoohybrid = new OpenLayers.Layer.Yahoo( '""" + yahoo.Hybrid + """' , {type: YAHOO_MAP_HYB, 'sphericalMercator': true } );
+        var yahoohybrid = new OpenLayers.Layer.Yahoo( '%s' , {type: YAHOO_MAP_HYB, 'sphericalMercator': true } );
         map.addLayer(yahoohybrid);
-                    """
+                    """ % yahoo.Hybrid
 
             gis_layer_bing_subtypes = self.layer_subtypes("bing")
             bing = Storage()
@@ -3116,30 +3151,28 @@ OpenLayers.Util.extend( selectPdfControl, {
                     bing = False
             if bing:
                 layers_bing += """
-        var bingApiKey = '""" + bing.key + """';
-                    """
-                # VirtualEarth broken in GeoExt currently: http://www.geoext.org/pipermail/users/2009-December/000417.html
-                #html.append(SCRIPT(_type="text/javascript", _src="http://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.2&mkt=en-us"))
+        var bingApiKey = '%s';
+                    """ % bing.key
                 if bing.Satellite:
                     layers_bing += """
-        var bingsat = new OpenLayers.Layer.Bing( {key: bingApiKey, type: 'Aerial', name: '""" + bing.Satellite + """'} );
+        var bingsat = new OpenLayers.Layer.Bing( {key: bingApiKey, type: 'Aerial', name: '%s'} );
         map.addLayer(bingsat);
-                    """
+                    """ % bing.Satellite
                 if bing.Maps:
                     layers_bing += """
-        var bingmaps = new OpenLayers.Layer.Bing( {key: bingApiKey, type: 'Road', name: '""" + bing.Maps + """'} );
+        var bingmaps = new OpenLayers.Layer.Bing( {key: bingApiKey, type: 'Road', name: '%s'} );
         map.addLayer(bingmaps);
-                    """
+                    """ % bing.Maps
                 if bing.Hybrid:
                     layers_bing += """
-        var binghybrid = new OpenLayers.Layer.Bing( {key: bingApiKey, type: 'AerialWithLabels', name: '""" + bing.Hybrid + """'} );
+        var binghybrid = new OpenLayers.Layer.Bing( {key: bingApiKey, type: 'AerialWithLabels', name: '%s'} );
         map.addLayer(binghybrid);
-                    """
+                    """ % bing.Hybrid
         #        if bing.Terrain:
         #            layers_bing += """
-        #var bingterrain = new OpenLayers.Layer.VirtualEarth( '""" + bing.Terrain + """' , {type: VEMapStyle.Shaded, 'sphericalMercator': true } );
+        #var bingterrain = new OpenLayers.Layer.VirtualEarth( '%s' , {type: VEMapStyle.Shaded, 'sphericalMercator': true } );
         #map.addLayer(bingterrain);
-        #            """
+        #            """ % bing.Terrain
 
         # WFS
         layers_wfs = ""
@@ -3150,34 +3183,37 @@ OpenLayers.Util.extend( selectPdfControl, {
             if layer.role_required and not auth.s3_has_role(layer.role_required):
                 continue
             name = layer.name
-            name_safe = re.sub('\W', '_', name)
+            name_safe = re.sub("\W", "_", name)
             url = layer.url
             try:
                 wfs_version = layer.version
             except:
                 wfs_version = ""
-            featureType = "featureType: '" + layer.featureType + "'"
+            featureType = "featureType: '%s'" % layer.featureType
             if layer.featureNS:
                 featureNS = """,
-                    featureNS: '""" + layer.featureNS + "'"
+                    featureNS: '%s'""" % layer.featureNS
             else:
                 featureNS = ""
             if layer.geometryName:
                 geometryName = """,
-                    geometryName: '""" + layer.geometryName + "'"
+                    geometryName: '%s'""" % layer.geometryName
             else:
                 geometryName = ""
             try:
-                wfs_projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1), cache=cache).first().epsg
-                wfs_projection1 = "projection: new OpenLayers.Projection('EPSG:" + str(wfs_projection) + "'),"
-                wfs_projection2 = "srsName: 'EPSG:" + str(wfs_projection) + "',"
+                query = (db.gis_projection.id == layer.projection_id)
+                wfs_projection = db(query).select(db.gis_projection.epsg,
+                                                  limitby=(0, 1),
+                                                  cache=cache).first().epsg
+                wfs_projection1 = "projection: new OpenLayers.Projection('EPSG:%i')," % wfs_projection
+                wfs_projection2 = "srsName: 'EPSG:%i'," % wfs_projection
             except:
                 wfs_projection = ""
                 wfs_projection2 = ""
             if layer.visible:
                 wfs_visibility = ""
             else:
-                wfs_visibility = "wfsLayer" + name_safe + ".setVisibility(false);"
+                wfs_visibility = "wfsLayer%s.setVisibility(false);" % name_safe
             #if layer.editable:
             #    wfs_strategy = "strategies: [new OpenLayers.Strategy.BBOX(), new OpenLayers.Strategy.Save()],"
             wfs_strategy = """
@@ -3215,19 +3251,19 @@ OpenLayers.Util.extend( selectPdfControl, {
             if layer.role_required and not auth.s3_has_role(layer.role_required):
                 continue
             name = layer.name
-            name_safe = re.sub('\W', '_', name)
+            name_safe = re.sub("\W", "_", name)
             url = layer.url
             try:
-                wms_version = "version: '" + layer.version + "',"
+                wms_version = "version: '%s'," % layer.version
             except:
                 wms_version = ""
             try:
-                wms_map = "map: '" + layer.map + "',"
+                wms_map = "map: '%s'," % layer.map
             except:
                 wms_map = ""
             wms_layers = layer.layers
             try:
-                format = "type: '" + layer.img_format + "',"
+                format = "type: '%s'," % layer.img_format
             except:
                 format = ""
             if layer.transparent:
@@ -3241,9 +3277,12 @@ OpenLayers.Util.extend( selectPdfControl, {
                 if not layer.visible:
                     options += """,
                     visibility: false"""
+                if layer.opacity:
+                    options += """,
+                    opacity: %f""" % layer.opacity
                 if layer.buffer:
                     options += """,
-                    buffer: """ + layer.buffer
+                    buffer: %i""" % layer.buffer
                 else:
                     options += """,
                     buffer: 0"""
@@ -3271,21 +3310,21 @@ OpenLayers.Util.extend( selectPdfControl, {
             if layer.role_required and not auth.s3_has_role(layer.role_required):
                 continue
             name = layer.name
-            name_safe = re.sub('\W', '_', name)
+            name_safe = re.sub("\W", "_", name)
             url = layer.url
             tms_layers = layer.layers
             try:
-                format = "type: '" + layer.img_format + "'"
+                format = "type: '%s'" % layer.img_format
             except:
                 format = ""
 
             layers_tms  += """
-        var tmsLayer""" + name_safe + """ = new OpenLayers.Layer.TMS( '""" + name + """', '""" + url + """', {
-                layername: '""" + tms_layers + """',
-                """ + format + """
+        var tmsLayer%s = new OpenLayers.Layer.TMS( '%s', '%s', {
+                layername: '%s',
+                %s
             });
         map.addLayer(tmsLayer""" + name_safe + """);
-        """
+        """ % (name_safe, name, url, tms_layers, format)
 
         # XYZ
         layers_xyz = ""
@@ -3294,18 +3333,18 @@ OpenLayers.Util.extend( selectPdfControl, {
             if layer.role_required and not auth.s3_has_role(layer.role_required):
                 continue
             name = layer.name
-            name_safe = re.sub('\W', '_', name)
+            name_safe = re.sub("\W", "_", name)
             url = layer.url
             if layer.sphericalMercator:
                 sphericalMercator = "sphericalMercator: 'true',"
             else:
                 sphericalMercator = ""
             if layer.transitionEffect:
-                transitionEffect = "transitionEffect: '{{=xyz_layers[layer].transitionEffect}}',"
+                transitionEffect = "transitionEffect: '%s'," % layer.transitionEffect
             else:
                 transitionEffect = ""
             if layer.numZoomLevels:
-                xyz_numZoomLevels = "numZoomLevels: '" + layer.numZoomLevels + "'"
+                xyz_numZoomLevels = "numZoomLevels: '%i'" % layer.numZoomLevels
             else:
                 xyz_numZoomLevels = ""
             if layer.base:
@@ -3317,18 +3356,19 @@ OpenLayers.Util.extend( selectPdfControl, {
                 if layer.visible:
                     base += "visibility: 'true',"
                 if layer.opacity:
-                    base += "opacity: '" + layer.opacity + "',"
+                    base += "opacity: '%f'," % layer.opacity
                 base += "isBaseLayer: 'false'"
 
             layers_xyz  += """
-        var xyzLayer""" + name_safe + """ = new OpenLayers.Layer.XYZ( '""" + name + """', '""" + url + """', {
-                """ + sphericalMercator + """
-                """ + transitionEffect + """
-                """ + xyz_numZoomLevels + """
-                """ + base + """
+        var xyzLayer%s = new OpenLayers.Layer.XYZ( '%s', '%s', {
+                %s
+                %s
+                %s
+                %s
             });
-        map.addLayer(xyzLayer""" + name_safe + """);
-        """
+        map.addLayer(xyzLayer%s);
+        """ % (name_safe, name, url, sphericalMercator, transitionEffect,
+               xyz_numZoomLevels, base, name_safe)
 
         # JS
         layers_js = ""
@@ -3413,11 +3453,11 @@ OpenLayers.Util.extend( selectPdfControl, {
             if (feature.cluster) {
                 // Cluster
                 var name, fid, uuid, url;
-                var html = '""" + T("There are multiple records at this location") + """:<ul>';
+                var html = '%s:<ul>';
                 for (var i = 0; i < feature.cluster.length; i++) {
                     name = feature.cluster[i].attributes.name;
                     fid = feature.cluster[i].fid;
-                    """ + uuid_from_fid + """
+                    %s
                     if ( feature.cluster[i].popup_url.match("<id>") != null ) {
                         url = feature.cluster[i].popup_url.replace("<id>", uuid);
                     } else {
@@ -3445,7 +3485,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     id,
                     centerPoint,
                     new OpenLayers.Size(200, 200),
-                    """ + '"' + T("Loading") + """...<img src='""" + URL(r=request, c="static", f="img", args="ajax-loader.gif") + """' border=0>",
+                    "%s...<img src='%s' border=0>",
                     null,
                     true,
                     onPopupClose
@@ -3454,7 +3494,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 map.addPopup(popup);
                 // call AJAX to get the contentHTML
                 var fid = feature.fid;
-                """ + uuid_from_fid + """
+                %s
                 if ( popup_url.match("<id>") != null ) {
                     popup_url = popup_url.replace("<id>", uuid)
                 }
@@ -3476,7 +3516,10 @@ OpenLayers.Util.extend( selectPdfControl, {
                 );
         }
 
-        """
+        """ % (T("There are multiple records at this location"), uuid_from_fid,
+               T("Loading"),
+               URL(r=request, c="static", f="img", args="ajax-loader.gif"),
+               uuid_from_fid)
             # Draft Features
             # This is currently used just to select the Lat/Lon for a Location, so no Features pre-loaded
             if add_feature:
@@ -3484,15 +3527,15 @@ OpenLayers.Util.extend( selectPdfControl, {
             //features = [];
         """ + cluster_style + """
         draftLayer = new OpenLayers.Layer.Vector(
-            '""" + T("Draft Features") + """', {}
+            '%s', {}
             //{
-            //    strategies: [ """ + strategy_cluster + """ ],
+            //    strategies: [ %s ],
             //    styleMap: featureClusterStyleMap
             //}
         );
         draftLayer.setVisibility(true);
         map.addLayer(draftLayer);
-        """
+        """ % (T("Draft Features"), strategy_cluster)
 
             if None:
                 layers_features += """
@@ -3525,7 +3568,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 if "name" in layer:
                     name = str(layer["name"])
                 else:
-                    name = "Query" + str(int(random.random()*1000))
+                    name = "Query%i" % int(random.random()*1000)
 
                 if "marker" in layer:
                     marker = layer["marker"]
@@ -3535,7 +3578,12 @@ OpenLayers.Util.extend( selectPdfControl, {
                         markerLayer = marker
                     except:
                         # integer (marker_id)
-                        markerLayer = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1), cache=cache).first()
+                        query = (db.gis_marker.id == layer["marker"])
+                        markerLayer = db(query).select(db.gis_marker.image,
+                                                       db.gis_marker.height,
+                                                       db.gis_marker.width,
+                                                       limitby=(0, 1),
+                                                       cache=cache).first()
                 else:
                     markerLayer = ""
 
@@ -3547,7 +3595,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                 if "popup_url" in layer:
                     _popup_url = urllib.unquote(layer["popup_url"])
                 else:
-                    _popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
+                    _popup_url = urllib.unquote(URL(r=request, c="gis", f="location",
+                                                    args=["read.popup?location.id="]))
 
                 if "polygon" in layer and layer.polygon:
                     polygons = True
@@ -3557,28 +3606,29 @@ OpenLayers.Util.extend( selectPdfControl, {
                 # Generate HTML snippet
                 name_safe = re.sub("\W", "_", name)
                 if "active" in layer and layer["active"]:
-                    visibility = "featureLayer" + name_safe + ".setVisibility(true);"
+                    visibility = "featureLayer%s.setVisibility(true);" % name_safe
                 else:
-                    visibility = "featureLayer" + name_safe + ".setVisibility(false);"
+                    visibility = "featureLayer%s.setVisibility(false);" % name_safe
                 layers_features += """
         features = [];
-        var popup_url = '""" + _popup_url + """';
-        """ + cluster_style + """
-        var featureLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
-            '""" + name + """',
+        var popup_url = '%s';
+        %s
+        var featureLayer%s = new OpenLayers.Layer.Vector(
+            '%s',
             {
-                strategies: [ """ + strategy_cluster + """ ],
+                strategies: [ %s ],
                 styleMap: featureClusterStyleMap
             }
         );
-        """ + visibility + """
-        map.addLayer(featureLayer""" + name_safe + """);
-        featureLayer""" + name_safe + """.events.on({
-            "featureselected": onFeatureSelect,
-            "featureunselected": onFeatureUnselect
+        %s
+        map.addLayer(featureLayer%s);
+        featureLayer%s.events.on({
+            'featureselected': onFeatureSelect,
+            'featureunselected': onFeatureUnselect
         });
-        featureLayers.push(featureLayer""" + name_safe + """);
-        """
+        featureLayers.push(featureLayer%s);
+        """ % (_popup_url, cluster_style, name_safe, name, strategy_cluster,
+               visibility, name_safe, name_safe, name_safe)
                 features = layer["query"]
                 for _feature in features:
                     try:
@@ -3671,7 +3721,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                     try:
                         # Has a per-feature Vector Shape been added to the query?
                         graphicName = feature.shape
-                        if graphicName not in ["circle", "square", "star", "x", "cross", "triangle"]:
+                        if graphicName not in ["circle", "square", "star", "x",
+                                               "cross", "triangle"]:
                             # Default to Circle
                             graphicName = "circle"
                         try:
@@ -3702,8 +3753,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                             else:
                                 marker = marker_default
                         # Faster to bypass the download handler
-                        #marker_url = URL(r=request, c="default", f="download", args=[marker.image])
-                        marker_url = URL(r=request, c="static", f="img", args=["markers", marker.image])
+                        marker_url = URL(r=request, c="static", f="img",
+                                         args=["markers", marker.image])
 
                     try:
                         # Has a per-feature popup_label been added to the query?
@@ -3719,29 +3770,29 @@ OpenLayers.Util.extend( selectPdfControl, {
 
                     if marker_url:
                         layers_features += """
-        styleMarker.iconURL = '""" + marker_url + """';
-        styleMarker.opacity = '""" + str(opacity) + """';
+        styleMarker.iconURL = '%s';
+        styleMarker.opacity = '%f';
         // Need unique names
         // More reliable & faster to use the height/width calculated on upload
         var i = new Array();
-        i.height = """ + str(marker.height) + """;
-        i.width = """ + str(marker.width) + """;
+        i.height = %i;
+        i.width = %i;
         scaleImage(i);
-        """
+        """ % (marker_url, opacity, marker.height, marker.width)
                     else:
                         layers_features += """
         var i = '';
         styleMarker.iconURL = '';
-        styleMarker.opacity = '""" + str(opacity) + """';
-        styleMarker.graphicName = '""" + graphicName + """';
-        styleMarker.pointRadius = """ + str(pointRadius) + """;
-        styleMarker.fillColor = '""" + fillColor + """';
-        """
+        styleMarker.opacity = '%f';
+        styleMarker.graphicName = '%s';
+        styleMarker.pointRadius = %i;
+        styleMarker.fillColor = '%s';
+        """ % (opacity, graphicName, pointRadius, fillColor)
                     layers_features += """
-        geom = parser.read('""" + wkt + """').geometry;
-        featureVec = addFeature('""" + str(feature.id) + """', '""" + fname + """', geom, styleMarker, i, popup_url)
+        geom = parser.read('%s').geometry;
+        featureVec = addFeature('%i', '%s', geom, styleMarker, i, popup_url)
         features.push(featureVec);
-        """
+        """ % (wkt, feature.id, fname)
                     if deployment_settings.get_gis_duplicate_features():
                         # Add an additional Point feature to provide wrapping around the Data Line
                         # lon<0 have a duplicate at lon+360
@@ -3752,14 +3803,14 @@ OpenLayers.Util.extend( selectPdfControl, {
                             lon = lon - 360
                         wkt = self.latlon_to_wkt(lat, lon)
                         layers_features += """
-        geom = parser.read('""" + wkt + """').geometry;
-        featureVec = addFeature('_""" + str(feature.id) + """', '""" + fname + """', geom, styleMarker, i, popup_url)
+        geom = parser.read('%s').geometry;
+        featureVec = addFeature('_%i', '%s', geom, styleMarker, i, popup_url)
         features.push(featureVec);
-        """
+        """ % (wkt, feature.id, fname)
                 # Append to Features layer
                 layers_features += """
-        featureLayer""" + name_safe + """.addFeatures(features);
-        """
+        featureLayer%s.addFeatures(features);
+        """ % name_safe
             # Append to allLayers
             layers_features += """
         allLayers = allLayers.concat(featureLayers);
@@ -4055,17 +4106,28 @@ OpenLayers.Util.extend( selectPdfControl, {
                     name = layer["name"]
                     url = layer["url"]
                     visible = layer["visible"]
-                    georss_projection = db(db.gis_projection.id == layer["projection_id"]).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
+                    query = (db.gis_projection.id == layer["projection_id"])
+                    georss_projection = db(query).select(db.gis_projection.epsg,
+                                                         limitby=(0, 1)).first().epsg
                     if georss_projection == 4326:
                         projection_str = "projection: proj4326,"
                     else:
-                        projection_str = "projection: new OpenLayers.Projection('EPSG:" + georss_projection + "'),"
+                        projection_str = "projection: new OpenLayers.Projection('EPSG:%i')," % georss_projection
                     marker_id = layer["marker_id"]
                     if marker_id:
-                        marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+                        query = (db.gis_marker.id == marker_id)
+                        marker = db(query).select(db.gis_marker.image,
+                                                  db.gis_marker.height,
+                                                  db.gis_marker.width,
+                                                  limitby=(0, 1)).first()
                     else:
-                        marker = db(db.gis_marker.id == marker__id_default).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
-                    marker_url = URL(r=request, c="static", f="img", args=["markers", marker.image])
+                        query = (db.gis_marker.id == marker__id_default)
+                        marker = db(query).select(db.gis_marker.image,
+                                                  db.gis_marker.height,
+                                                  db.gis_marker.width,
+                                                  limitby=(0, 1)).first()
+                    marker_url = URL(r=request, c="static", f="img",
+                                     args=["markers", marker.image])
                     height = marker.height
                     width = marker.width
 
@@ -4080,7 +4142,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                             warning = "HTTPError"
                         _name = name.replace(" ", "_")
                         _name = _name.replace(",", "_")
-                        filename = "gis_cache.file." + _name + ".rss"
+                        filename = "gis_cache.file.%s.rss" % _name
                         filepath = os.path.join(cachepath, filename)
                         f = open(filepath, "w")
                         # Handle errors
@@ -4088,12 +4150,17 @@ OpenLayers.Util.extend( selectPdfControl, {
                             # URL inaccessible
                             if os.access(filepath, os.R_OK):
                                 # Use cached version
-                                date = db(db.gis_cache.name == name).select(db.gis_cache.modified_on, limitby=(0, 1)).first().modified_on
-                                response.warning += url + " " + T("not accessible - using cached version from") + " " + str(date) + "\n"
+                                query = (db.gis_cache.name == name)
+                                date = db(query).select(db.gis_cache.modified_on,
+                                                        limitby=(0, 1)).first().modified_on
+                                response.warning += "%s %s %s\n" % (url,
+                                                                    T("not accessible - using cached version from"),
+                                                                    str(date))
                                 url = URL(r=request, c="default", f="download", args=[filename])
                             else:
                                 # No cached version available
-                                response.warning += url + " " + T("not accessible - no cached version available!") + "\n"
+                                response.warning += "%s %s\n" (url,
+                                                                  T("not accessible - no cached version available!"))
                                 # skip layer
                                 continue
                         else:
@@ -4106,7 +4173,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                                 records[0].update(modified_on=response.utcnow)
                             else:
                                 db.gis_cache.insert(name=name, file=filename)
-                            url = URL(r=request, c="default", f="download", args=[filename])
+                            url = URL(r=request, c="default", f="download",
+                                      args=[filename])
                     else:
                         # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
                         pass
@@ -4114,9 +4182,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                     # Generate HTML snippet
                     name_safe = re.sub("\W", "_", name)
                     if visible:
-                        visibility = "georssLayer" + name_safe + ".setVisibility(true);"
+                        visibility = "georssLayer%s.setVisibility(true);" % name_safe
                     else:
-                        visibility = "georssLayer" + name_safe + ".setVisibility(false);"
+                        visibility = "georssLayer%s.setVisibility(false);" % name_safe
                     layers_georss += """
         iconURL = '""" + marker_url + """';
         // Pre-cache this image
@@ -4169,9 +4237,12 @@ OpenLayers.Util.extend( selectPdfControl, {
                     if layer.role_required and not auth.s3_has_role(layer.role_required):
                         continue
                     name = layer["name"]
-                    track = db(db.gis_track.id == layer.track_id).select(db.gis_track.track, limitby=(0, 1)).first()
+                    query = (db.gis_track.id == layer.track_id)
+                    track = db(query).select(db.gis_track.track,
+                                             limitby=(0, 1)).first()
                     if track:
-                        url = URL(r=request, c="default", f="download") + "/" + track.track
+                        url = "%s/%s" % (URL(r=request, c="default", f="download"),
+                                         track.track)
                     else:
                         url = ""
                     visible = layer["visible"]
@@ -4180,17 +4251,20 @@ OpenLayers.Util.extend( selectPdfControl, {
                     routes = layer["routes"]
                     marker_id = layer["marker_id"]
                     if marker_id:
-                        marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
+                        query = (db.gis_marker.id == marker_id)
+                        marker = db(query).select(db.gis_marker.image,
+                                                  limitby=(0, 1)).first().image
                     else:
                         marker = marker_default.image
-                    marker_url = URL(r=request, c="static", f="img", args=["markers", marker])
+                    marker_url = URL(r=request, c="static", f="img",
+                                     args=["markers", marker])
 
                     # Generate HTML snippet
                     name_safe = re.sub("\W", "_", name)
                     if visible:
-                        visibility = "gpxLayer" + name_safe + ".setVisibility(true);"
+                        visibility = "gpxLayer%s.setVisibility(true);" % name_safe
                     else:
-                        visibility = "gpxLayer" + name_safe + ".setVisibility(false);"
+                        visibility = "gpxLayer%s.setVisibility(false);" % name_safe
                     gpx_format = "extractAttributes:true"
                     if not waypoints:
                         gpx_format += ", extractWaypoints:false"
@@ -4313,10 +4387,15 @@ OpenLayers.Util.extend( selectPdfControl, {
                     projection_str = "projection: proj4326,"
                     marker_id = layer["marker_id"]
                     if marker_id:
-                        marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+                        query = (db.gis_marker.id == marker_id)
+                        marker = db(query).select(db.gis_marker.image,
+                                                  db.gis_marker.height,
+                                                  db.gis_marker.width,
+                                                  limitby=(0, 1)).first()
                     else:
                         marker = marker_default
-                    marker_url = URL(r=request, c="static", f="img", args=["markers", marker.image])
+                    marker_url = URL(r=request, c="static", f="img",
+                                     args=["markers", marker.image])
                     height = marker.height
                     width = marker.width
                     if cacheable:
@@ -4324,7 +4403,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         file, warning = self.download_kml(url, public_url)
                         _name = name.replace(" ", "_")
                         _name = _name.replace(",", "_")
-                        filename = "gis_cache.file." + _name + ".kml"
+                        filename = "gis_cache.file.%s.kml" % _name
                         filepath = os.path.join(cachepath, filename)
                         f = open(filepath, "w")
                         # Handle errors
@@ -4334,46 +4413,59 @@ OpenLayers.Util.extend( selectPdfControl, {
                                 statinfo = os.stat(filepath)
                                 if statinfo.st_size:
                                     # Use cached version
-                                    date = db(db.gis_cache.name == name).select(db.gis_cache.modified_on, limitby=(0, 1)).first().modified_on
-                                    response.warning += url + " " + T("not accessible - using cached version from") + " " + str(date) + "\n"
-                                    url = URL(r=request, c="default", f="download", args=[filename])
+                                    query = (db.gis_cache.name == name)
+                                    date = db(query).select(db.gis_cache.modified_on,
+                                                            limitby=(0, 1)).first().modified_on
+                                    response.warning += "%s %s %s\n" % (url,
+                                                                        T("not accessible - using cached version from"),
+                                                                        str(date))
+                                    url = URL(r=request, c="default", f="download",
+                                              args=[filename])
                                 else:
                                     # 0k file is all that is available
-                                    response.warning += url + " " + T("not accessible - no cached version available!") + "\n"
+                                    response.warning += "%s %s\n" % (url,
+                                                                     T("not accessible - no cached version available!"))
                                     # skip layer
                                     continue
                             else:
                                 # No cached version available
-                                response.warning += url + " " + T("not accessible - no cached version available!") + "\n"
+                                response.warning += "%s %s\n" % (url,
+                                                                 T("not accessible - no cached version available!"))
                                 # skip layer
                                 continue
                         else:
                             # Download was succesful
                             if "ParseError" in warning:
                                 # @ToDo Parse detail
-                                response.warning += T("Layer") + ": " + name + " " + T("couldn't be parsed so NetworkLinks not followed.") + "\n"
+                                response.warning += "%s: %s %s\n" % (T("Layer"),
+                                                                   name,
+                                                                   T("couldn't be parsed so NetworkLinks not followed."))
                             if "GroundOverlay" in warning or "ScreenOverlay" in warning:
-                                response.warning += T("Layer") + ": " + name + " " + T("includes a GroundOverlay or ScreenOverlay which aren't supported in OpenLayers yet, so it may not work properly.") + "\n"
+                                response.warning += "%s: %s %s\n" % (T("Layer"),
+                                                                     name,
+                                                                     T("includes a GroundOverlay or ScreenOverlay which aren't supported in OpenLayers yet, so it may not work properly."))
                             # Write file to cache
                             f.write(file)
                             f.close()
-                            record = db(db.gis_cache.name == name).select().first()
+                            query = (db.gis_cache.name == name)
+                            record = db(query).select().first()
                             if record:
                                 record.update(modified_on=response.utcnow)
                             else:
                                 db.gis_cache.insert(name=name, file=filename)
-                            url = URL(r=request, c="default", f="download", args=[filename])
+                            url = URL(r=request, c="default", f="download",
+                                      args=[filename])
                     else:
                         # No caching possible (e.g. GAE), display file direct from remote (using Proxy)
                         pass
 
                     # Generate HTML snippet
                     name_safe = re.sub("\W", "_", name)
-                    layer_name = "kmlLayer" + name_safe
+                    layer_name = "kmlLayer%s" % name_safe
                     if visible:
-                        visibility = layer_name + ".setVisibility(true);"
+                        visibility = "%s.setVisibility(true);" % layer_name
                     else:
-                        visibility = layer_name + ".setVisibility(false);"
+                        visibility = "%s.setVisibility(false);" % layer_name
                     layers_kml += """
         iconURL = '""" + marker_url + """';
         // Pre-cache this image
@@ -4427,83 +4519,38 @@ OpenLayers.Util.extend( selectPdfControl, {
                     else:
                         visibility = ", visibility: false"
                     layer_coordinategrid = """
-        map.addLayer(new OpenLayers.Layer.cdauth.CoordinateGrid(null, { name: '""" + name_safe + """', shortName: 'grid' """ + visibility + """ }));
-        """
+        map.addLayer(new OpenLayers.Layer.cdauth.CoordinateGrid(null, { name: '%s', shortName: 'grid' %s }));
+        """ % (name_safe, visibility)
 
         #############
         # Main script
         #############
 
+        # Configure settings to pass through to Static script
         html.append(SCRIPT("""
-    var map, mapPanel, legendPanel, toolbar, mapWin;
-    var pointButton, lastDraftFeature, draftLayer;
-    var centerPoint, currentFeature, popupControl, highlightControl;
-    var wmsBrowser, printProvider;
-    var allLayers = new Array();
-    OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
-    // avoid pink tiles
-    OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
-    OpenLayers.Util.onImageLoadErrorColor = "transparent";
-    OpenLayers.ProxyHost = '""" + str(URL(r=request, c="gis", f="proxy")) + """?url=';
-    // See http://crschmidt.net/~crschmidt/spherical_mercator.html#reprojecting-points
-    var proj4326 = new OpenLayers.Projection('EPSG:4326');
-    var projection_current = new OpenLayers.Projection('EPSG:""" + str(projection) + """');
+var s3_gis_projection = '%i';
+var s3_gis_units = '%s';
+var s3_gis_maxResolution = %f;
+var s3_gis_maxExtent = new OpenLayers.Bounds(%s);
+var s3_gis_numZoomLevels = %i;
+var s3_gis_max_w = %i;
+var s3_gis_max_h = %i;
+""" % (projection, units, maxResolution, maxExtent, numZoomLevels,
+       deployment_settings.get_gis_marker_max_width(),
+       deployment_settings.get_gis_marker_max_height()
+       )))
+
+        # Static Script
+        if session.s3.debug:
+            html.append(SCRIPT(_type="text/javascript",
+                               _src=URL(r=request, c="static", f="scripts/S3/s3.gis.js")))
+        else:
+            html.append(SCRIPT(_type="text/javascript",
+                               _src=URL(r=request, c="static", f="scripts/S3/s3.gis.min.js")))
+
+        # Dynamic Script (stuff which should, as far as possible, be moved to static)
+        html.append(SCRIPT("""
     """ + center + """
-    var options = {
-        displayProjection: proj4326,
-        projection: projection_current,
-        // Use Manual stylesheet download (means can be done in HEAD to not delay pageload)
-        theme: null,
-        paddingForPopups: new OpenLayers.Bounds(50, 10, 200, 300),
-        units: '""" + units + """',
-        maxResolution: """ + str(maxResolution) + """,
-        maxExtent: new OpenLayers.Bounds(""" + maxExtent + """),
-        numZoomLevels: """ + str(numZoomLevels) + """
-    };
-
-    // Functions which are called by user & hence need to be in global scope
-
-    // Replace Cluster Popup contents with selected Feature Popup
-    function loadClusterPopup(url, id) {
-        $.get(
-                url,
-                function(data) {
-                    $('#' + id + '_contentDiv').html(data);
-                    map.popups[0].updateSize();
-                },
-                'html'
-            );
-    }
-
-    // Zoom to Selected Feature from within Popup
-    function zoomToSelectedFeature(lon, lat, zoomfactor) {
-        var lonlat = new OpenLayers.LonLat(lon, lat);
-        // Get Current Zoom
-        var currZoom = map.getZoom();
-        // New Zoom
-        var newZoom = currZoom + zoomfactor;
-        // Center and Zoom
-        map.setCenter(lonlat, newZoom);
-        // Remove Popups
-        for (var i=0; i < map.popups.length; ++i)   {
-            map.removePopup(map.popups[i]);
-        }
-    }
-
-    // HTML5 GeoLocation: http://dev.w3.org/geo/api/spec-source.html
-    function getCurrentPosition(position){
-        // Level to zoom into
-        var zoomLevel = 15;
-        var lat = position.coords.latitude;
-        var lon = position.coords.longitude;
-        //var elevation = position.coords.altitude;
-        //var ce = position.coords.accuracy;
-        //var le = position.coords.altitudeAccuracy;
-        //position.coords.heading;
-        //position.coords.speed;
-        map.setCenter(new OpenLayers.LonLat(lon, lat).transform(proj4326, map.getProjectionObject()), zoomLevel);
-    };
-
     function addLayers(map) {
         // Base Layers
         // OSM
@@ -4526,24 +4573,6 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + layers_js + """
 
         // Overlays
-        var max_w = """ + str(deployment_settings.get_gis_marker_max_width()) + """;
-        var max_h = """ + str(deployment_settings.get_gis_marker_max_height()) + """;
-        var styleMarker = new Object();
-        var iconURL;
-
-        var scaleImage = function(){
-            var scaleRatio = i.height/i.width;
-            var w = Math.min(i.width, max_w);
-            var h = w * scaleRatio;
-            if (h > max_h) {
-                    h = max_h;
-                    scaleRatio = w/h;
-                    w = w * scaleRatio;
-                }
-            i.height = h;
-            i.width = w;
-        }
-
         // Features
         """ + layers_features + """
 
@@ -4836,7 +4865,8 @@ class GoogleGeocoder(Geocoder):
         " Acquire API key from the database "
         db = self.db
         query = db.gis_apikey.name == "google"
-        return db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
+        return db(query).select(db.gis_apikey.apikey,
+                                limitby=(0, 1)).first().apikey
 
     def get_kml(self):
         " Returns the output in KML format "
@@ -4861,7 +4891,8 @@ class YahooGeocoder(Geocoder):
         " Acquire API key from the database "
         db = self.db
         query = db.gis_apikey.name == "yahoo"
-        return db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
+        return db(query).select(db.gis_apikey.apikey,
+                                limitby=(0, 1)).first().apikey
 
     def get_xml(self):
         " Return the output in XML format "

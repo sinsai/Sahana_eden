@@ -3,10 +3,11 @@
 // Dynamic constants (e.g. Internationalised strings) are set in server-generated script
 
 // Flag to open next dropdown when there is only a single value
-var pullNext;
+// in Global scope to cross function boundaries
+var s3_gis_pullNext;
 
 function s3_gis_dropdown_select(level, force) {
-    pullNext = false;
+    s3_gis_pullNext = false;
 
     // Clear any values in the specific location field
     $('#gis_location_lat').val('');
@@ -25,7 +26,7 @@ function s3_gis_dropdown_select(level, force) {
             // Next level = Level + 1
             var this_url  = s3_gis_url + '/search.json?filter=%3D&field=level&value=L' + (level + 1) + '&parent=' + new_id;
         }
-        var s3_gis_load_locations = function(data, status){
+        var s3_gis_load_locations = function(data, status) {
             var options;
             var v = '';
             if (data.length == 0) {
@@ -33,7 +34,7 @@ function s3_gis_dropdown_select(level, force) {
             } else if (data.length == 1) {
                 // Only 1 value available, so set directly
                 options = '<option value="' +  data[0].id + '">' + data[0].name + '</option>';
-                pullNext = true;
+                s3_gis_pullNext = true;
             } else {
                 options = s3_gis_select_location;
                 for (var i = 0; i < data.length; i++){
@@ -47,7 +48,8 @@ function s3_gis_dropdown_select(level, force) {
                 $('#gis_location_L' + (level + 1)).html(options);
             }
         }
-        $.getJSONS3(this_url, s3_gis_load_locations, false, force);
+        // Ensure this call is Synchronous
+        $.getJSONS3(this_url, s3_gis_load_locations, false, true);
 
         // Show the new level
         if (level == s3_gis_maxlevel) {
@@ -69,14 +71,18 @@ function s3_gis_dropdown_select(level, force) {
         // Hide other levels & reset their contents
         s3_gis_dropdown_hide(level + 2);
 
-        // Populate the real location_id field (unless a name is already present)
-        if ( '' == $('#gis_location_name').val() ) {
+        if (s3_gis_pullNext) {
+            // We just had a single value
+            // Read the new value of the dropdown
+            new_id = $('#gis_location_L' + (level + 1)).val();
             $('#' + s3_gis_location_id).val(new_id);
-        }
-        
-        if (pullNext) {
-            // We just had a single value & so need to trigger the subsequent dropdown
+            // Trigger the subsequent dropdown
             s3_gis_dropdown_select(level + 1);
+        } else {
+            // Populate the real location_id field (unless a name is already present)
+            if ( '' == $('#gis_location_name').val() ) {
+                $('#' + s3_gis_location_id).val(new_id);
+            }
         }
 
     } else {
@@ -96,7 +102,7 @@ function s3_gis_dropdown_select(level, force) {
 
 function s3_gis_dropdown_hide(level) {
     // Hide other levels & reset their contents
-    for (l=level; l <= parseInt(s3_gis_maxlevel); l=l + 1) {
+    for (l = level; l <= parseInt(s3_gis_maxlevel); l = l + 1) {
         $('#gis_location_L' + l).hide().html(s3_gis_loading_locations);
         $('#gis_location_label_L' + l).hide();
     }

@@ -14,15 +14,16 @@ resourcename = request.function
 # Options Menu (available in all Functions' Views)
 def shn_menu():
     response.menu_options = [
-        [T("Home"), False, URL(r=request, f="index")],
-        [T("Search for a Person"), False, URL(r=request, f="person", args="search")],
-        [T("Persons"), False, URL(r=request, f="person"), [
-            [T("List"), False, URL(r=request, f="person")],
-            [T("Add"), False, URL(r=request, f="person", args="create")],
+        #[T("Home"), False, URL(r=request, f="index")],
+        #[T("Search for a Person"), False, URL(r=request, f="person", args="search")],
+        [T("Person"), False, None, [
+            [T("New"), False, URL(r=request, f="person", args="create")],
+            [T("Search"), False, URL(r=request, f="index")],
+            [T("List All"), False, URL(r=request, f="person")],
         ]],
         [T("Groups"), False, URL(r=request, f="group"), [
-            [T("List"), False, URL(r=request, f="group")],
-            [T("Add"), False, URL(r=request, f="group", args="create")],
+            [T("New"), False, URL(r=request, f="group", args="create")],
+            [T("List All"), False, URL(r=request, f="group")],
         ]],
         #[T("Help"), False, URL(r=request, f="guide")],
     ]

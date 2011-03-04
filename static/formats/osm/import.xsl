@@ -21,6 +21,8 @@
     -->
     <xsl:param name="name"/>
 
+    <xsl:key name="nodes" match="node" use="@id" />
+
     <xsl:template match="/">
         <xsl:apply-templates select="./osm"/>
     </xsl:template>
@@ -309,7 +311,7 @@
                         <xsl:text>POLYGON((</xsl:text>
                         <xsl:for-each select="./nd">
                             <xsl:variable name="id" select="@ref"/>
-                            <xsl:for-each select="//node[@id=$id][1]">
+                            <xsl:for-each select="key('nodes', $id)[1]">
                                 <xsl:value-of select="concat(@lon, ' ', @lat)"/>
                             </xsl:for-each>
                             <xsl:if test="following-sibling::nd">

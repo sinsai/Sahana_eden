@@ -52,11 +52,58 @@ try:
     from reportlab.pdfgen.canvas import Canvas
     from reportlab.lib.pagesizes import A4
     from reportlab.graphics.barcode import code128
+    # for adding more fonts
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    import reportlab
 except(ImportError):
     print >>sys.stderr, "S3 Debug: WARNING: S3OCR: reportlab has not been installed."
 
 from lxml import etree
 from s3rest import S3Method
+
+
+#==========================================================================
+#==================== unicode support to reportlab ========================
+#==========================================================================
+
+reportlab.rl_config.warnOnMissingFontGlyphs = 0
+fonts_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               "../../static/fonts")
+
+fontrange = {}
+
+## unifont - considered to be an rounder
+try:
+    pdfmetrics.registerFont(TTFont("unifont",
+                                   os.path.join(fonts_directory,
+                                                "unifont/unifont.ttf")))
+except:
+    print >>sys.stderr, "S3 Debug: s3ocr: unifont not found, run static/fonts/setfonts.py"
+
+## arabic fonts
+try:
+    pdfmetrics.registerFont(TTFont("AlMateen-Bold",
+                                   os.path.join(fonts_directory,
+                                                "arabic/ae_AlMateen-Bold.ttf")))
+    pdfmetrics.registerFont(TTFont("AlMohanad",
+                                   os.path.join(fonts_directory,
+                                                "arabic/ae_AlMohanad.ttf")))
+
+    fontrange.update({
+            "arabic" : ()
+            })
+
+except:
+    print >>sys.stderr, "S3 Debug: s3ocr: arabic fonts not found, run static/fonts/setfonts.py"    
+
+
+# unifont
+unifont = "unifont"
+
+# arabic (urdu)
+AlMateenBold="AlMateen-Bold"
+AlMohanad="AlMohanad"
 
 # Fonts
 Courier = "Courier"
@@ -64,6 +111,7 @@ Helvetica = "Helvetica"
 Helvetica_Bold = "Helvetica-Bold"
 Helvetica_Bold_Oblique = "Helvetica-BoldOblique"
 Helvetica_Oblique = "Helvetica-Oblique"
+
 
 #==========================================================================
 #=============== internal Class Definitions and functions =================
@@ -130,6 +178,7 @@ class Form:
             if seek == 0:
                 self.y = self.y + fontsize
         for line in lines:
+            line = unicode(line)
             if style == "center":
                 self.x = self.x - (len(line)) * self.fontsize / 2
             if style == "right":
@@ -140,15 +189,23 @@ class Form:
                     self.y = self.y - 2 * fontsize
             if (self.y - self.fontsize) < 50:
                 self.set_new_page()
-            t = c.beginText(self.x, self.y)
-            t.setFont(Helvetica, fontsize)
-            t.setFillGray(gray)
-            t.textOut(line)
-            c.drawText(t)
+            for char in line:
+                font=self.selectfont(char)
+                t = c.beginText(self.x, self.y)
+                t.setFont(font, fontsize)
+                t.setFillGray(gray)
+                t.textOut(line)
+                c.drawText(t)
+                self.x += fontsize
 	    self.y = self.y - fontsize
 	    self.lastx = t.getX()
             self.lasty = self.y
         self.x = self.marginsides
+
+    def selectfont(self, char):
+        """ Select font according to the input character """
+
+        
 
     def draw_check_boxes(self, boxes=1, completeline=0, lines=0, seek=0,
                          continuetext=0, fontsize=0, gray=0, style="",
@@ -269,7 +326,7 @@ class Form:
         self.x = self.marginsides
         self.lastx = self.marginsides
         self.y = self.height - self.margintop
-        self.print_text(["Page %s" % str(self.num)], fontsize=8,
+        self.print_text(["Page %s" % unicode(self.num)], fontsize=8,
                         style="right")
         self.x = self.marginsides
         self.lastx = self.x
@@ -404,11 +461,11 @@ class FormHandler(ContentHandler):
             self.child1.setAttribute("ref", self.ref)
             self.root.appendChild(self.child1)
             if name == "select":
-                self.form.print_text(["", "", str(" Multiple select: "), ""],
+                self.form.print_text(["", "", unicode(" Multiple select: "), ""],
                                      fontsize=10, gray=0)
                 self.multiple = 1
             else:
-                self.form.print_text(["", "", str("Single select: "), ""],
+                self.form.print_text(["", "", unicode("Single select: "), ""],
                                      fontsize=10, gray=0)
                 self.single = 1
         elif name == "item":
@@ -465,13 +522,13 @@ class FormHandler(ContentHandler):
                 #self.form.set_title(str(self.title))
                 self.form.print_text([unicode(self.printtext)], fontsize=18,
                                      style="center")
-                #self.form.print_text([str(self.title)], fontsize=18, style="center")
-                self.form.print_text([str("1. Fill the necessary fields in BLOCK CAPITAL letters."),
-                                      str("2. Always use one box per letter and leave one box space to separate words."),
-                                      str("3. Fill in the circles completely.")],
+                #self.form.print_text([unicode(self.title)], fontsize=18, style="center")
+                self.form.print_text([unicode("1. Fill the necessary fields in BLOCK CAPITAL letters."),
+                                      unicode("2. Always use one box per letter and leave one box space to separate words."),
+                                      unicode("3. Fill in the circles completely.")],
                                       fontsize=13, gray=0)
                 self.form.draw_line()
-                # self.form.print_text([str(self.uuid)], fontsize=10, gray=0)
+                # self.form.print_text([unicode(self.uuid)], fontsize=10, gray=0)
         elif name == "input":
             self.input = 0
             #self.protectedfield = 0
@@ -495,7 +552,7 @@ class FormHandler(ContentHandler):
                 self.child2.appendChild(self.child3)
                 self.child2.setAttribute("font", str(16))
                 if self.readonly == "true":
-                    self.form.print_text(["   %s " % self.default])
+                    self.form.print_text(["   %s " % unicode(self.default)])
                 elif self.ref == "age":
                     self.form.draw_check_boxes(boxes=2, completeline=0,
                                                continuetext=0, gray=0.9,
@@ -556,7 +613,7 @@ class FormHandler(ContentHandler):
                     if trtuple[0] == labelid and trtuple[1] == labeltype:
                         self.printtext = trtuple[2]
                 if self.printtext != "None" and self.printtext != "Unknown":
-                    self.form.print_text(["     %s" % self.printtext],
+                    self.form.print_text(["     %s" % unicode(self.printtext)],
                                          continuetext = 1)
                     x = self.form.lastx
                     y = self.form.lasty
@@ -570,7 +627,7 @@ class FormHandler(ContentHandler):
                 for trtuple in self.translist:
                     if trtuple[0] == labelid and trtuple[1] == labeltype:
                         self.printtext = trtuple[2]
-                self.form.print_text([" %s " % str(self.printtext), " ", " "])
+                self.form.print_text([" %s " % unicode(self.printtext), " ", " "])
                 self.read = 0
             self.label= 0
             self.labelref = ""
@@ -588,7 +645,7 @@ class FormHandler(ContentHandler):
                 self.child2.setAttribute("boxes", str(1))
                 if self.item == 1 and self.labelTrans == "NoTrans":
                     self.printtext = str(self.value_ch)
-                    self.form.print_text(["     " + self.printtext],
+                    self.form.print_text(["     " + unicode(self.printtext)],
                                          continuetext = 1)
                     x = self.form.lastx
                     y = self.form.lasty
@@ -617,7 +674,7 @@ class FormHandler(ContentHandler):
                     if trtuple[0] == self.ref and trtuple[1] == "hint":
                         self.printtext = trtuple[2]
             if self.printtext not in ["None", "Unkown"]:
-                self.form.print_text([" %s " % str(self.printtext), " ", " "],
+                self.form.print_text([" %s " % unicode(self.printtext), " ", " "],
                                      fontsize=10)
             self.hint = 0
         elif name == "html":

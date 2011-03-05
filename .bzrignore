@@ -35,3 +35,6 @@ languages/*.po
 __init__.pyc
 *.log
 *.ttf
+static/fonts/*
+!static/fonts/setfonts.py
+!static/fonts/generatefontmapping.py

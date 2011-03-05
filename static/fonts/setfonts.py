@@ -9,6 +9,15 @@ import tarfile
 import urllib
 import os
 import shutil
+import gzip
+
+
+# set fonts to be downloaded
+downloadfonts = [
+    "arabic",    # urdu language support
+    "unifont",   # unifont
+    ]
+
 
 ## set up
 print "Setting Up Environment"
@@ -22,12 +31,6 @@ else:
     print "'%s' directory already exists!!!" % temp_downloads_dir
     print "Please make sure to delete this directry before running the script!!!"
     exit()
-
-
-# set fonts to be downloaded
-downloadfonts = [
-    "arabic",    #urdu lang support
-    ]
 
 
 SFMIRROR = "downloads"      # Automatic
@@ -49,9 +52,9 @@ SOURCEFORGE = "%s.sourceforge.net/sourceforge" % SFMIRROR
 
 ## arabic fonts
 fontcategory = "arabic"
-if not os.path.exists(os.path.join(script_directory, fontcategory)):
-    os.makedirs(os.path.join(script_directory, fontcategory))
 if fontcategory in downloadfonts:
+    if not os.path.exists(os.path.join(script_directory, fontcategory)):
+        os.makedirs(os.path.join(script_directory, fontcategory))
     print "Downloading Arabic Fonts"
     url = "http://%s/arabeyes/ae_fonts_2.0.tar.bz2" % SOURCEFORGE
     url = "http://127.0.0.1/static/aefonts.tar.bz2" # for testing
@@ -65,10 +68,10 @@ if fontcategory in downloadfonts:
     try:
         response = urllib.urlretrieve(url, filename)
         if response[1].type == filetype:
-            print "Download Successful!! Extracting Arabic Fonts"
+            print "Download Successful!! Extracting %s" % filename
             try:
                 fontpack = tarfile.open(os.path.join(temp_downloads_dir,
-                                                     "aefonts.tar.bz2"))
+                                                     filename))
                 fontpack.extractfile("ae_fonts_2.0")
                 for font in fontfiles:
                     fontpack.extract(font, path=temp_downloads_dir)
@@ -85,6 +88,41 @@ if fontcategory in downloadfonts:
                 print "Download Failed, Proceeding forward!!"
     except(IOError):
         print "Download Failed, Network Error!! Proceeding forward!!"
+
+
+## unifont fonts
+fontcategory = "unifont"
+if fontcategory in downloadfonts:
+    if not os.path.exists(os.path.join(script_directory, fontcategory)):
+        os.makedirs(os.path.join(script_directory, fontcategory))
+    print "Downloading Unifont"
+    url = "http://www.lgm.cl/contenido/unifont.ttf.gz"
+    filename = "unifont.ttf.gz"
+    fontname = "unifont.ttf"
+    filetype = "application/x-gzip"
+    print "Downloading Fonts to %s" % filename
+    try:
+        response = urllib.urlretrieve(url, filename)
+        if response[1].type == filetype:
+            print "Download Successful!! Extracting %s" % filename
+            try:
+                fontpack = gzip.open(os.path.join(temp_downloads_dir,
+                                                            filename))
+                fontfile = open(os.path.join(script_directory,
+                                             fontcategory,
+                                             fontname),
+                                "w")
+                fontfile.write(fontpack.read())
+                fontfile.close()
+                fontpack.close()
+            except:
+                print "Half or Imporperly Downloaded file!"
+                print "Download Failed, Proceeding forward!!"
+        else:
+                print "Download Failed, Proceeding forward!!"
+    except(IOError):
+        print "Download Failed, Network Error!! Proceeding forward!!"
+
 
 
 

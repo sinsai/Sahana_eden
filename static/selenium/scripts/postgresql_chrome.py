@@ -5,4 +5,4 @@ class Settings(object):
         self.ipAddr = "ci.eden.sahanafoundation.org"
         self.ipPort = 4444
         self.URL = "http://postgresql.eden.sahanafoundation.org/"
-        self.app = "mysql/"
+        self.app = "postgresql/"

@@ -8,11 +8,16 @@
 {{=H2(module_name)}}
 <div style='margin:20px auto; width:96%; max-width:1000px;'>
     <div style='width:65%; float:left;'>
-        {{=H4(T("About this module"))}}
-        <p>
-            This module assists the management of the recovery of
-            dead bodies and the identification of the deceased.
-        </p>
+        {{=H4(T("DVI Navigator"))}}
+        {{=H5(T("You have found a dead body?"))}}
+        <ul>
+            <li>{{=A(T("Submit a request for recovery"), _href=URL(r=request, c="dvi", f="recreq", args="create"))}}</li>
+        </ul>
+        {{=H5(T("You are a recovery team?"))}}
+        <ul>
+            <li>{{=A(T("See unassigned recovery requests"), _href=URL(r=request, c="dvi", f="recreq", vars={"recreq.status":"1"}))}}</li>
+            <li>{{=A(T("Get incoming recovery requests as RSS feed"), _href=URL(r=request, c="dvi", f="recreq.rss", vars={"recreq.status":"1"}))}}</li>
+        </ul>
     </div>
     <div style='width:30%; float:right;'>
         {{=H4("%s: %s" % (T("Bodies recovered"), total))}}

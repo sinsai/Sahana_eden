@@ -21,8 +21,7 @@
     -->
     <xsl:param name="name"/>
 
-    <!-- create an index of all nodes in the file -->
-    <xsl:key name="nodes" match="node" use="@id"/>
+    <xsl:key name="nodes" match="node" use="@id" />
 
     <xsl:template match="/">
         <xsl:apply-templates select="./osm"/>
@@ -309,20 +308,17 @@
                     <!-- Note that we assume a closed way here. The onvalidation routine will try an open way (LINESTRING) if the POLYGON import fails -->
                     <data field="gis_feature_type" value="3">Polygon</data>
                     <data field="wkt">
-                      <xsl:text>POLYGON((</xsl:text>
-                      <xsl:for-each select="./nd">
-                        <xsl:variable name="id" select="@ref"/>
-
-                        <!-- use the index instead of traversing the whole tree again -->
-                        <xsl:for-each select="key('nodes', $id)[1]">
-
-                          <xsl:value-of select="concat(@lon, ' ', @lat)"/>
+                        <xsl:text>POLYGON((</xsl:text>
+                        <xsl:for-each select="./nd">
+                            <xsl:variable name="id" select="@ref"/>
+                            <xsl:for-each select="key('nodes', $id)[1]">
+                                <xsl:value-of select="concat(@lon, ' ', @lat)"/>
+                            </xsl:for-each>
+                            <xsl:if test="following-sibling::nd">
+                                <xsl:text>,</xsl:text>
+                            </xsl:if>
                         </xsl:for-each>
-                        <xsl:if test="following-sibling::nd">
-                          <xsl:text>,</xsl:text>
-                        </xsl:if>
-                      </xsl:for-each>
-                      <xsl:text>))</xsl:text>
+                        <xsl:text>))</xsl:text>
                     </data>
                 </xsl:when>
             </xsl:choose>

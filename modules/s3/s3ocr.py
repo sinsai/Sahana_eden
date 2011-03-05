@@ -194,17 +194,17 @@ class Form:
                 t = c.beginText(self.x, self.y)
                 t.setFont(font, fontsize)
                 t.setFillGray(gray)
-                t.textOut(line)
+                t.textOut(char)
                 c.drawText(t)
-                self.x += fontsize
-	    self.y = self.y - fontsize
-	    self.lastx = t.getX()
+                self.x = t.getX()
+                self.lastx = t.getX()
+            self.y = self.y - fontsize
             self.lasty = self.y
         self.x = self.marginsides
 
     def selectfont(self, char):
         """ Select font according to the input character """
-
+        return Helvetica
         
 
     def draw_check_boxes(self, boxes=1, completeline=0, lines=0, seek=0,

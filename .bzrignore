@@ -34,4 +34,4 @@ tests/.cherrypy/*
 languages/*.po
 __init__.pyc
 *.log
-
+*.ttf

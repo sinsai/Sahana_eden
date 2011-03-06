@@ -1,4 +1,11 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
+"""
+Generate mappings of any font, to check if 
+a given hex code is available or not.
+author: Shiv Deepak <idlecool@gmail.com>
+"""
+
 
 from xml.sax import saxutils, make_parser
 from xml.sax.handler import feature_namespaces
@@ -15,6 +22,10 @@ except(ImportError):
     exit()
 
 class GetMappings(saxutils.DefaultHandler):
+    """
+    Parses The ttx file to get available fonts
+    """
+
     def __init__(self):
         self.cmap_format_4 = 0
         self.cmap = 0
@@ -69,13 +80,17 @@ class GetMappings(saxutils.DefaultHandler):
             
 
 if __name__ == '__main__':
+    # get filepath as argument
     filepath = sys.argv[1]
-    print filepath
+
+    #extract font directory font filename and extension
     filedir, filename = os.path.split(filepath)
     fileext = filename.split(".")[-1]
     filename  = filename.split(".")
     filename.pop(-1)
     filename  = ".".join(filename)
+
+    # work only if its ttf
     try:
         if fileext != "ttf":
             print >>sys.stderr, "Given file is not a ttf file"
@@ -83,14 +98,20 @@ if __name__ == '__main__':
     except(IndexError):
         print >>sys.stderr, "You should provide a ttf file as first argument"
         exit()
+
+    # generate xml
     ttx.main([filepath, ])
     ttxfilepath = os.path.join(filedir, "%s.ttx" % filename)
+
+    # parse xml to extract available mappings
     parser = make_parser()
     parser.setFeature(feature_namespaces, 0)
     dh = GetMappings()
     parser.setContentHandler(dh)
     fontttx = open(ttxfilepath)
     parser.parse(fontttx)
+
+    # close and revert changes
     fontttx.close()
     os.remove(ttxfilepath)
     dh.maprange()

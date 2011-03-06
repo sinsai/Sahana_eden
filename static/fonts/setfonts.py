@@ -124,8 +124,6 @@ if fontcategory in downloadfonts:
         print "Download Failed, Network Error!! Proceeding forward!!"
 
 
-
-
 ## script exit
 os.chdir(script_directory)
 shutil.rmtree(temp_downloads_dir)

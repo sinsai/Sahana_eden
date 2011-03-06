@@ -23,7 +23,7 @@ class GetMappings(saxutils.DefaultHandler):
 
     def startElement(self, name, attrs):
         if name == "cmap_format_4" \
-                and attrs.get("platformID") == "0":
+                and attrs.get("platformID") == "3":
             self.cmap_format_4 = 1
         elif name == "cmap":
             self.cmap = 1
@@ -46,7 +46,7 @@ class GetMappings(saxutils.DefaultHandler):
                     pass
                 else:
                     highindex = index - 1
-                    self.charrange.append((self.charmap[lowindex], self.charmap[highindex]))
+                    self.charrange.append((self.charmap[lowindex], self.charmap[highindex]+1))
                     lowindex = index
             if index == (len(self.charmap)-1):
                 highindex = index
@@ -62,7 +62,7 @@ class GetMappings(saxutils.DefaultHandler):
 
         fileobj = open("maprange-%s.txt" % filename, "w")
         for eca in self.charrange:
-            fileobj.write("(%s, %s)" % (str(eca[0]), str(eca[1])))
+            fileobj.write("(%s, %s)," % (str(eca[0]), str(eca[1])))
             fileobj.write("\n")
         fileobj.close()
         print >>sys.stderr, "The Mapping has been saved to maprange-%s.txt" % filename

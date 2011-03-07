@@ -11,13 +11,13 @@ class Action(unittest.TestCase):
         #self.openReport();
         
     def openReport(self):
-        # used to save the diagnostics to a file
+        " used to save the diagnostics to a file "
         if self._diag:
             self._diagResults = open("../results/diagResults.txt", "a")
             self._diagResults.write(time.strftime("New Search run %d %b %Y (%H:%M:%S)\n"))
     
     def closeReport(self, msg):
-        # Close the file that is recording the diagnostics
+        " Close the file that is recording the diagnostics "
         if self._diag:
             self._diagResults.write(msg)
             self._diagResults.close()
@@ -26,10 +26,12 @@ class Action(unittest.TestCase):
     # login
     # logout
     def login(self, username, password, reveal=True):
-        # login to the system using the name provided
-        # username: the username to be used
-        # password: the password of the user
-        # reveal:   show the password on any error message
+        """
+            login to the system using the name provided
+            username: the username to be used
+            password: the password of the user
+            reveal:   show the password on any error message
+        """
         print "Logging in as user: %s" % username
         sel = self.sel
         if sel.is_element_present("link=Logout"):
@@ -51,11 +53,12 @@ class Action(unittest.TestCase):
         self.assertTrue(self.successMsg("Logged in"), msg)
 
     def logout(self):
-        # logout of the system
+        " logout of the system "
         sel = self.sel
         if sel.is_element_present("link=Logout"):
             sel.click("link=Logout")
-            self.successMsg("Logged out")
+            #self.successMsg("Logged out")
+            self.findResponse("Logged out", "")
 
     # Searching methods
     # _performSearch

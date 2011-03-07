@@ -79,16 +79,16 @@ table = db.define_table(tablename,
 
 # CRUD strings
 ADD_CLUSTER = T("Add Sector")
-LIST_CLUSTER = T("List Sector")
+LIST_CLUSTERS = T("List Sectors")
 s3.crud_strings[tablename] = Storage(
     title_create = ADD_CLUSTER,
     title_display = T("Sector Details"),
-    title_list = LIST_CLUSTER,
+    title_list = LIST_CLUSTERS,
     title_update = T("Edit Sector"),
     title_search = T("Search Sectors"),
     subtitle_create = T("Add New Sector"),
     subtitle_list = T("Sectors"),
-    label_list_button = LIST_CLUSTER,
+    label_list_button = LIST_CLUSTERS,
     label_create_button = ADD_CLUSTER,
     label_delete_button = T("Delete Sector"),
     msg_record_created = T("Sector added"),
@@ -123,16 +123,16 @@ table = db.define_table(tablename,
 
 # CRUD strings
 ADD_CLUSTER_SUBSECTOR = T("Add Cluster Subsector")
-LIST_CLUSTER_SUBSECTOR = T("List Cluster Subsectors")
+LIST_CLUSTER_SUBSECTORS = T("List Cluster Subsectors")
 s3.crud_strings[tablename] = Storage(
     title_create = ADD_CLUSTER_SUBSECTOR,
     title_display = T("Cluster Subsector Details"),
-    title_list = LIST_CLUSTER_SUBSECTOR,
+    title_list = LIST_CLUSTER_SUBSECTORS,
     title_update = T("Edit Cluster Subsector"),
     title_search = T("Search Cluster Subsectors"),
     subtitle_create = T("Add New Cluster Subsector"),
     subtitle_list = T("Cluster Subsectors"),
-    label_list_button = LIST_CLUSTER_SUBSECTOR,
+    label_list_button = LIST_CLUSTER_SUBSECTORS,
     label_create_button = ADD_CLUSTER_SUBSECTOR,
     label_delete_button = T("Delete Cluster Subsector"),
     msg_record_created = T("Cluster Subsector added"),

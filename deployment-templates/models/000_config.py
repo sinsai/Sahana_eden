@@ -198,6 +198,9 @@ deployment_settings.security.archive_not_delete = True
 # (unused currently)
 #deployment_settings.ui.autocomplete = True
 
+# Should we use internal Support Requests?
+#deployment_settings.options.support_requests = True
+
 # Comment/uncomment modules here to disable/enable them
 # Modules menu is defined in 01_menu.py
 deployment_settings.modules = OrderedDict([

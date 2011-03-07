@@ -32,8 +32,8 @@ def cluster():
 
     """ RESTful CRUD controller """
 
-    tablename = "%s_%s" % (prefix, resourcename)
-    table = db[tablename]
+    #tablename = "%s_%s" % (prefix, resourcename)
+    #table = db[tablename]
 
     return s3_rest_controller(prefix, resourcename)
 
@@ -43,8 +43,8 @@ def cluster_subsector():
 
     """ RESTful CRUD controller """
 
-    tablename = "%s_%s" % (prefix, resourcename)
-    table = db[tablename]
+    #tablename = "%s_%s" % (prefix, resourcename)
+    #table = db[tablename]
 
     return s3_rest_controller(prefix, resourcename)
 

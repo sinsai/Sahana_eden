@@ -40,6 +40,7 @@ _table_user.password.comment = SPAN("*", _class="req")
 _table_user.language.comment = DIV(_class="tooltip", _title=T("Language") + "|" + T("The language to use for notifications."))
 _table_user.language.represent = lambda opt: s3_languages.get(opt, UNKNOWN_OPT)
 
+# -------------------------------------------------------------------------
 def index():
     """ Main Home Page """
 
@@ -122,6 +123,7 @@ def index():
                 module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel, self_registration=self_registration, login_form=login_form, register_form=register_form)
 
 
+# -------------------------------------------------------------------------
 def user():
     "Auth functions based on arg. See gluon/tools.py"
 
@@ -164,24 +166,12 @@ def user():
 
     return dict(form=form, login_form=login_form, register_form=register_form, self_registration=self_registration)
 
+# -------------------------------------------------------------------------
 def source():
     """ RESTful CRUD controller """
     return s3_rest_controller("s3", "source")
 
-# NB These 4 functions are unlikely to get used in production
-def header():
-    "Custom view designed to be pulled into an Ext layout's North Panel"
-    return dict()
-def footer():
-    "Custom view designed to be pulled into an Ext layout's South Panel"
-    return dict()
-def menu():
-    "Custom view designed to be pulled into the 1st item of an Ext layout's Center Panel"
-    return dict()
-def list():
-    "Custom view designed to be pulled into an Ext layout's Center Panel"
-    return dict()
-
+# -------------------------------------------------------------------------
 # About Sahana
 def apath(path=""):
     "Application path"
@@ -244,17 +234,27 @@ def about():
                 xlwt_version=xlwt_version
                 )
 
+# -------------------------------------------------------------------------
 def help():
     "Custom View"
     response.title = T("Help")
     return dict()
 
 def contact():
-    "Custom View"
-    response.title = T("Contact us")
-    return dict()
-
-def bug():
-    "Custom View"
-    response.title = T("Report a Bug")
-    return dict()
+    """
+        Give the user options to contact the site admins.
+        Either:
+            An internal Support Requests database
+        or:
+            Custom View
+    """
+    if deployment_settings.get_options_support_requests():
+        prefix = "support"
+        resourcename = "req"
+        #tablename = "%s_%s" % (pefix, resourcename)
+        #table = db[tablename]
+        return s3_rest_controller(prefix, resourcename)
+    else:
+        # Default: Simple Custom View
+        response.title = T("Contact us")
+        return dict()

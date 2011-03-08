@@ -347,10 +347,10 @@ if deployment_settings.has_module("org"):
                             super_link(db.org_site), #( label = T("From Warehouse")),
                             location_id( "to_location_id",
                                          label = T("To Location") ),
-                            super_link(db.org_site,
-                                       "to_site_id",
-                                       compute = shn_to_location_id_to_site_id
-                                       ),                               
+                            Field("to_site_id",
+                                   db.org_site,
+                                   compute = shn_to_location_id_to_site_id
+                                   ),                               
                             Field("status", 
                                   "integer",
                                   requires = IS_NULL_OR(IS_IN_SET(shipment_status)),

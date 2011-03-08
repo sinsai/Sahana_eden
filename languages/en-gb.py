@@ -559,6 +559,7 @@
 'List All': 'List All',
 'List Assessments': 'List Assessments',
 'List GeoJSON Layers': 'List GeoJSON Layers',
+'List Offices': 'List Offices',
 'List OpenStreetMap Layers': 'List OpenStreetMap Layers',
 'List Organizations': 'List Organizations',
 'List Request': 'List Request',

@@ -1169,6 +1169,9 @@ if populate:
     # User Roles (uses native Web2Py Auth Groups)
     acl = auth.permission
     table = auth.settings.table_group_name
+    default_acl = deployment_settings.get_aaa_default_acl()
+    default_uacl = deployment_settings.get_aaa_default_uacl()
+    default_oacl = deployment_settings.get_aaa_default_oacl()
     if not db(db[table].id > 0).count():
         create_role = auth.s3_create_role
         # Do not remove or change order of these 5 definitions (System Roles):
@@ -1176,12 +1179,12 @@ if populate:
         create_role("Authenticated", "Authenticated - all logged-in users",
                     dict(c="gis", uacl=acl.ALL, oacl=acl.ALL),
                     dict(c="gis", f="location", uacl=acl.READ, oacl=acl.ALL),
-                    dict(c="org", uacl=acl.READ, oacl=acl.ALL),
-                    dict(c="inv", uacl=acl.READ, oacl=acl.ALL),       
-                    dict(c="req", uacl=acl.READ, oacl=acl.ALL),               
+                    dict(c="org", uacl=default_uacl, oacl=default_oacl),
+                    dict(c="inv", uacl=default_uacl, oacl=default_oacl),       
+                    dict(c="req", uacl=default_uacl, oacl=default_oacl),               
                     )
         create_role("Anonymous", "Unauthenticated users",
-                    dict(c="gis", uacl=acl.READ, oacl=acl.READ))
+                    dict(c="gis", uacl = default_acl, oacl = default_acl))
         create_role("Editor", "Editor - can access & make changes to any unprotected data")
         create_role("MapAdmin", "MapAdmin - allowed access to edit the MapService Catalogue",
                     dict(c="gis", uacl=acl.ALL, oacl=acl.ALL),
@@ -1194,7 +1197,6 @@ if populate:
                     dict(c="hms", uacl=acl.CREATE, oacl=acl.ALL))
         create_role("HMS Admin", "Hospital Admin - permission to add/update all records in the HMS",
                     dict(c="hms", uacl=acl.ALL, oacl=acl.ALL))
-
 
     # Security Defaults for all tables (if using 'full' security policy: i.e. native Web2Py)
     if session.s3.security_policy not in (1, 2, 3, 4, 5):

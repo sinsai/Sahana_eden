@@ -280,6 +280,16 @@ class S3Config(Storage):
         return self.security.get("self_registration", True)
     
     # AAA Settings
+    def get_aaa_default_acl(self):
+        return self.aaa.get("default_acl", self.aaa.acl.READ)  
+    def get_aaa_default_uacl(self):
+        return self.aaa.get("default_user_acl", self.aaa.acl.READ)  
+    def get_aaa_default_oacl(self):
+        return self.aaa.get("default_user_acl", self.aaa.acl.CREATE | 
+                                                self.aaa.acl.READ | 
+                                                self.aaa.acl.UPDATE)          
+    def get_aaa_has_staff_permissions(self):
+        return self.aaa.get("has_staff_permissions", False)    
     def get_aaa_staff_acl(self):
         return self.aaa.get("staff_acl", self.aaa.acl.CREATE | 
                                          self.aaa.acl.READ | 

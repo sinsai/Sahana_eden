@@ -130,7 +130,18 @@ if deployment_settings.has_module("org"):
     #Store Items as component of packets
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(supply_item_packet = "item_packet_id"))       
+                              joinby=dict(supply_item_packet = "item_packet_id")) 
+    
+    #------------------------------------------------------------------------------
+    # Update owned_by_role to the site's owned_by_role    
+    s3xrc.model.configure(
+        table, 
+        onaccept = shn_component_copy_role_func(component_name = tablename, 
+                                                resource_name = "org_site", 
+                                                fk = "site_id",
+                                                pk = "site_id")
+    )      
+
 
     #==============================================================================
     # Received (In/Receive / Donation / etc)
@@ -247,10 +258,13 @@ if deployment_settings.has_module("org"):
                           create_next = URL(r=request, c="inv", f="recv", args=["[id]", "recv_item"]))
     
     #------------------------------------------------------------------------------
-    # Update owned_by_role to the store's owned_by_role    
+    # Update owned_by_role to the site's owned_by_role    
     s3xrc.model.configure(
         table, 
-        onaccept = lambda form, tablename = tablename : shn_create_record_roles(form, tablename)
+        onaccept = shn_component_copy_role_func(component_name = tablename, 
+                                                resource_name = "org_site", 
+                                                fk = "site_id",
+                                                pk = "site_id")
     )      
 
     #==============================================================================
@@ -298,6 +312,15 @@ if deployment_settings.has_module("org"):
                               multiple=True,
                               joinby=dict(inv_recv = "recv_id",
                                           supply_item = "item_id")) 
+    
+    #------------------------------------------------------------------------------
+    # Update owned_by_role to the recv's owned_by_role    
+    s3xrc.model.configure(
+        table, 
+        onaccept = shn_component_copy_role_func(component_name = tablename, 
+                                                resource_name = "inv_recv", 
+                                                fk = "recv_id")
+    )     
 
     #==============================================================================
     def shn_location_id_to_site_id(r, field = "location_id"):
@@ -402,7 +425,10 @@ if deployment_settings.has_module("org"):
     # Update owned_by_role to the site's owned_by_role    
     s3xrc.model.configure(
         table, 
-        onaccept = lambda form, tablename = tablename : shn_create_record_roles(form, tablename)
+        onaccept = shn_component_copy_role_func(component_name = tablename, 
+                                                resource_name = "org_site", 
+                                                fk = "site_id",
+                                                pk = "site_id")
     ) 
     
     # send set as a component of Sites in controller, depending if it is outgoing or incoming
@@ -461,7 +487,14 @@ if deployment_settings.has_module("org"):
                               multiple=True,
                               joinby=dict(inv_send = "send_id",
                                           inv_item = "inv_item_id"))
-
+    #------------------------------------------------------------------------------
+    # Update owned_by_role to the send's owned_by_role    
+    s3xrc.model.configure(
+        table, 
+        onaccept = shn_component_copy_role_func(component_name = tablename, 
+                                                resource_name = "inv_send", 
+                                                fk = "send_id")
+    ) 
     #==============================================================================    
         
     

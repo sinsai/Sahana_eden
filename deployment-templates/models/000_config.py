@@ -187,6 +187,10 @@ deployment_settings.security.archive_not_delete = True
 
 # AAA Settings
 acl = deployment_settings.aaa.acl
+deployment_settings.aaa.default_acl = acl.READ # If not logged in
+deployment_settings.aaa.default_uacl =  acl.READ # If logged in  
+deployment_settings.aaa.default_oacl =  acl.CREATE | acl.READ | acl.UPDATE # If logged in & owner
+deployment_settings.aaa.has_staff_permissions = True
 deployment_settings.aaa.staff_acl = acl.CREATE | acl.READ | acl.UPDATE 
 deployment_settings.aaa.supervisor_acl = acl.ALL 
 

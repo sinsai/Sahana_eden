@@ -217,8 +217,7 @@ if deployment_settings.has_module(module):
                           #listadd=False,
                           super_entity=db.org_site,                        
                           # Create a role for each shelter 
-                          onaccept = lambda form, tablename = tablename : 
-                                         shn_create_record_roles(form, tablename),  
+                          onaccept = shn_staff_join_onaccept_func(tablename),
                           list_fields=["id",
                                        "name",
                                        "shelter_type_id",

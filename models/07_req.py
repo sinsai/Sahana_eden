@@ -142,7 +142,10 @@ if deployment_settings.has_module("org"):
     # Update owned_by_role to the site's owned_by_role    
     s3xrc.model.configure(
         table, 
-        onaccept = lambda form, tablename = tablename : shn_create_record_roles(form, tablename)
+        onaccept = shn_component_copy_role_func(component_name = tablename, 
+                                                resource_name = "org_site", 
+                                                fk = "site_id",
+                                                pk = "site_id")
     )    
     #==============================================================================
     # Request Items
@@ -254,6 +257,12 @@ if deployment_settings.has_module("org"):
         Partial = some items have quantity > 0 
         Complete = quantity_x = quantity(requested) for ALL items
         """       
+        # Update owned_by_role to the req's owned_by_role    
+        shn_component_copy_role_func(component_name = "req_req_item", 
+                                     resource_name = "req_req", 
+                                     fk = "req_id")()  
+                                     
+                                             
         req_id = session.rcvars.req_req
                 
         is_none = dict(commit = True,
@@ -379,7 +388,10 @@ if deployment_settings.has_module("org"):
     # Update owned_by_role to the site's owned_by_role    
     s3xrc.model.configure(
         table, 
-        onaccept = lambda form, tablename = tablename : shn_create_record_roles(form, tablename)
+        onaccept = shn_component_copy_role_func(component_name = tablename, 
+                                                resource_name = "org_site", 
+                                                fk = "site_id",
+                                                pk = "site_id")
     )      
 
     #==============================================================================
@@ -430,6 +442,11 @@ if deployment_settings.has_module("org"):
     
     #------------------------------------------------------------------------------
     def shn_commit_item_onaccept(form):
+         # Update owned_by_role to the commit's owned_by_role    
+        shn_component_copy_role_func(component_name = "req_commit_item", 
+                                     resource_name = "req_commit", 
+                                     fk = "commit_id")()  
+        
         # try to get req_item_id from the form
         req_item_id = 0
         if form:

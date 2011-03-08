@@ -271,11 +271,21 @@ s3xrc.model.configure(table,
                                      "country",
                                      "website"])
 
+#============================================================================== 
+def shn_staff_join_onaccept_func(tablename):
+    """
+    If the setting is enabled, returns an onaccept function to create roles 
+    for a record which can staff as a component join
+    """
+    if deployment_settings.get_aaa_has_staff_permissions():
+        return lambda form, tablename = tablename: \
+                   shn_create_record_roles(form, tablename)
+    else:
+        return None
 # -----------------------------------------------------------------------------    
 # Create roles for each organisation 
 s3xrc.model.configure(table, 
-                      onaccept = lambda form, tablename = tablename : 
-                                     shn_create_record_roles(form, tablename))  
+                      onaccept = shn_staff_join_onaccept_func(tablename))  
 
 #==============================================================================
 # Site
@@ -310,6 +320,7 @@ table = super_entity(tablename,
                      Field("name"),
                      location_id(),
                      organisation_id(),
+                     *s3_ownerstamp(),
                      migrate=migrate)
 
 # -----------------------------------------------------------------------------
@@ -405,20 +416,45 @@ def shn_create_record_roles(form, tablename):
                                 owned_by_user = auth.user.id,
                                 owned_by_role = staff_role_id,                            
                                 )
-   
+
 # -----------------------------------------------------------------------------    
-def shn_component_copy_role(form, resource_name, component_name, fk ):
+def shn_component_copy_role(form, 
+                            component_name, resource_name, fk,  pk  = "id" ):
     """ 
     Generic onaccept function to copy a component's "owned_by_role" 
     from the main resource's "owned_by_role" 
-    """
-    resource_id = session.rcvars[fk]
+    For example, allowing other components of a record which has staff as a 
+    component (org + site instances) to have the same permissions as the 
+    primary record.
+    @todo: integrate this with s3xrc?
+    """    
     component_id = session.rcvars[component_name]
-    role_id = shn_get_db_field_value(db,
-                                     resource_name,
-                                     "owned_by_role",
-                                     id )    
-    db[component_name][component_id] = dict(owned_by_role = site_role_id)  
+    fk_id = db[component_name][component_id][fk]
+    
+    if pk == "id":
+        role_id = db[resource_name][fk_id].owned_by_role
+    else:        
+        role_id = db(db[resource_name][pk] == fk_id
+                     ).select(db[resource_name].owned_by_role,
+                              limitby = (0,1)
+                              ).first().owned_by_role
+                              
+    db[component_name][component_id] = dict(owned_by_role = role_id)  
+    
+# -----------------------------------------------------------------------------    
+def shn_component_copy_role_func(component_name, resource_name,fk, pk = "id" ):
+    """ 
+    Wrapper function check settings to return the function
+    @todo: this could use a separate deployment_settings
+    """
+    if deployment_settings.get_aaa_has_staff_permissions():
+        return lambda form, component_name = component_name, \
+                      resource_name = resource_name, fk = fk, pk = pk: \
+                    shn_component_copy_role(form,  
+                                           component_name, resource_name, 
+                                           fk, pk )
+    else:
+        return None
 
 #==============================================================================
 # Offices
@@ -542,8 +578,7 @@ s3xrc.model.configure(table,
                       super_entity=(db.pr_pentity, db.org_site),
                       onvalidation=address_onvalidation,
                       # Create a role for each office 
-                      onaccept = lambda form, tablename = tablename : 
-                                     shn_create_record_roles(form, tablename),
+                      onaccept = shn_staff_join_onaccept_func(tablename),
                       list_fields=[
                         "id",
                         "name",
@@ -839,9 +874,16 @@ def shn_update_staff_membership(record,
             auth.add_membership(site_staff_role_id, user_id)  
             auth.add_membership(site_supervisor_role_id, user_id)     
                                           
-# -----------------------------------------------------------------------------              
+# ----------------------------------------------------------------------------- 
+def shn_staff_onaccept(form):
+    shn_update_staff_membership(form)
+    shn_component_copy_role_func(component_name = "org_staff", 
+                                 resource_name = "org_site", 
+                                 fk = "site_id",
+                                 pk = "site_id")(form)
+# -----------------------------------------------------------------------------          
 s3xrc.model.configure(table, 
-                      onaccept = shn_update_staff_membership,
+                      onaccept = shn_staff_onaccept,
                       ondelete = lambda form, delete = True: 
                                     shn_update_staff_membership(form, delete)
                       )

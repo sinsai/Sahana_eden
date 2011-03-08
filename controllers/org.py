@@ -81,13 +81,22 @@ def office():
     if isinstance(request.vars.organisation_id, list):
         request.vars.organisation_id = request.vars.organisation_id[0]
 
+    inv_prep = shn_add_dynamic_inv_components()
+
     # Pre-processor
-    def prep(r):
-        
+    def prep(r):  
+        if inv_prep:    
+            inv_prep(r)
+          
         if r.representation == "popup":
             organisation = request.vars.organisation_id or session.s3.organisation_id or ""
             if organisation:
                 table.organisation_id.default = organisation
+        
+        #Cascade the organisation_id from the office to the staff
+        if r.record:
+            db.org_staff.organisation_id.default = r.record.organisation_id
+            db.org_staff.organisation_id.writable = False
             
         # No point in downloading large dropdowns which we hide, so provide a smaller represent
         # the update forms are not ready. when they will - uncomment this and comment the next one
@@ -99,19 +108,66 @@ def office():
         return True
     response.s3.prep = prep
 
-    rheader = lambda r: shn_org_rheader(r,
-                                        tabs = [(T("Basic Details"), None),
-                                                (T("Contact Data"), "pe_contact"),
-                                                (T("Staff"), "staff"),
-                                               ])
+    rheader = shn_office_rheader
 
     return s3_rest_controller(prefix, resourcename, rheader=rheader)
+# -----------------------------------------------------------------------------
+def shn_office_rheader(r, tabs=[]):
 
+    """ Office page headers """
 
+    if r.representation == "html":
+
+        if r.record is None:
+            # List or Create form: rheader makes no sense here
+            return None
+        
+        tabs = [(T("Basic Details"), None),
+                (T("Contact Data"), "pe_contact"),
+                (T("Staff"), "staff"),                
+                ]        
+
+        rheader_tabs = shn_rheader_tabs(r, tabs + shn_show_inv_tabs(r))
+
+        office = r.record
+        if office:
+            organisation = db(db.org_organisation.id == office.organisation_id
+                              ).select(db.org_organisation.name, 
+                                       limitby=(0, 1)
+                                       ).first()
+            if organisation:
+                org_name = organisation.name
+            else:
+                org_name = None
+
+            rheader = DIV(TABLE(
+                          TR(TH(T("Name") + ": "),
+                             office.name,
+                             TH(T("Type") + ": "),
+                             org_office_type_opts.get(office.type, 
+                                                      UNKNOWN_OPT),
+                             ),
+                          TR(TH(T("Organization") + ": "),
+                             org_name,
+                             TH(T("Location") + ": "),
+                             shn_gis_location_represent(office.location_id),
+                             ),
+                          #TR(#TH(A(T("Edit Office"),
+                          #   #    _href=URL(r=request, c="org", f="office", args=[r.id, "update"], vars={"_next": _next})))
+                          #   )
+                              ),
+                          rheader_tabs)
+
+            return rheader
+
+    return None
 #==============================================================================
 def staff():
-
-    """ RESTful CRUD controller """
+    """ 
+    RESTful CRUD controller
+    @todo: This function may be removed, to restrict the view of staff to only 
+    as components within site instances and organisations
+    """
 
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
@@ -178,71 +234,41 @@ def shn_org_rheader(r, tabs=[]):
 
         rheader_tabs = shn_rheader_tabs(r, tabs)
 
-        if r.name == "organisation":
+        #_next = r.here()
+        #_same = r.same()
 
-            #_next = r.here()
-            #_same = r.same()
+        organisation = r.record
+        if organisation:
+            if organisation.cluster_id:
+                _sectors = shn_org_cluster_represent(organisation.cluster_id)
+            else:
+                _sectors = None
 
-            organisation = r.record
-            if organisation:
-                if organisation.cluster_id:
-                    _sectors = shn_org_cluster_represent(organisation.cluster_id)
-                else:
-                    _sectors = None
+            try:
+                _type = org_organisation_type_opts[organisation.type]
+            except KeyError:
+                _type = None
 
-                try:
-                    _type = org_organisation_type_opts[organisation.type]
-                except KeyError:
-                    _type = None
+            rheader = DIV(TABLE(
+                TR(
+                    TH(T("Organization") + ": "),
+                    organisation.name,
+                    TH(T("Cluster(s)") + ": "),
+                    _sectors
+                    ),
+                TR(
+                    #TH(A(T("Edit Organization"),
+                    #    _href=URL(r=request, c="org", f="organisation", args=[r.id, "update"], vars={"_next": _next})))
+                    TH(T("Type") + ": "),
+                    _type,
+                    )
+            ), rheader_tabs)
 
-                rheader = DIV(TABLE(
-                    TR(
-                        TH(T("Organization") + ": "),
-                        organisation.name,
-                        TH(T("Cluster(s)") + ": "),
-                        _sectors
-                        ),
-                    TR(
-                        #TH(A(T("Edit Organization"),
-                        #    _href=URL(r=request, c="org", f="organisation", args=[r.id, "update"], vars={"_next": _next})))
-                        TH(T("Type") + ": "),
-                        _type,
-                        )
-                ), rheader_tabs)
-
-                return rheader
-
-        elif r.name == "office":
-
-            office = r.record
-            if office:
-                organisation = db(db.org_organisation.id == office.organisation_id).select(db.org_organisation.name, limitby=(0, 1)).first()
-                if organisation:
-                    org_name = organisation.name
-                else:
-                    org_name = None
-
-                rheader = DIV(TABLE(
-                        TR(
-                            TH(T("Name") + ": "),
-                            office.name,
-                            TH(T("Type") + ": "),
-                            org_office_type_opts.get(office.type, UNKNOWN_OPT),
-                            ),
-                        TR(
-                            TH(T("Organization") + ": "),
-                            org_name,
-                            TH(T("Location") + ": "),
-                            shn_gis_location_represent(office.location_id),
-                            ),
-                        TR(
-                            #TH(A(T("Edit Office"),
-                            #    _href=URL(r=request, c="org", f="office", args=[r.id, "update"], vars={"_next": _next})))
-                            )
-                    ), rheader_tabs)
-
-                return rheader
+            return rheader
 
     return None
+
+#==============================================================================
+
 
 #==============================================================================

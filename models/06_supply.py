@@ -10,7 +10,7 @@
 """
 
 module = "supply"
-if deployment_settings.has_module("logs"):
+if deployment_settings.has_module("inv"):
     #==============================================================================
     # Item Category
     #
@@ -179,22 +179,31 @@ if deployment_settings.has_module("logs"):
                                           item_packet_id)  
         else:
             return None  
+        
+    # Virtual Field for packet_quantity
+    class item_packet_virtualfields(dict, object):
+        def __init__(self,
+                     tablename):
+            self.tablename = tablename
+        def packet_quantity(self):
+            if self.tablename == "inv_inv_item":
+                item_packet = self.inv_inv_item.item_packet_id
+            elif self.tablename == "req_req_item":
+                item_packet = self.req_req_item.item_packet_id
+            elif self.tablename == "req_commit_item":
+                item_packet = self.req_commit_item.item_packet_id       
+            elif self.tablename == "inv_recv_item":
+                item_packet = self.inv_recv_item.item_packet_id     
+            elif self.tablename == "inv_send_item":
+                item_packet = self.inv_send_item.item_packet_id                                                           
+            else:
+                item_packet = None
+            if item_packet:
+                return item_packet.quantity 
+            else:
+                return None
     
     #Packets as component of Items
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(supply_item="item_id"))               
-    
-    logs_unit_opts = {
-        "piece" : T("piece"),
-        "kit" : T("kit"),
-        "sack50kg" : T("sack 50kg"),
-        "sack20kg" : T("sack 20kg"),
-        "pack10" : T("pack of 10"),
-        "m" : T("meter"),
-        "m3" : T("meter cubed"),
-        "l" : T("liter"),
-        "kg" : T("kilogram"),
-        "ton" : T("ton"),
-    }
-        
+                              joinby=dict(supply_item="item_id"))                       

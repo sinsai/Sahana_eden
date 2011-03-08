@@ -142,6 +142,14 @@ def shelter():
                                               filterby="instance_type",
                                               orderby="instance_type",
                                               filter_opts=("pr_person", "pr_group"))
+    
+    # Pre-processor
+    def prep(r):                
+        #Cascade the organisation_id from the shelter to the staff
+        db.org_staff.organisation_id.default = r.record.organisation_id
+        db.org_staff.organisation_id.writable = False
+        return True
+    response.s3.prep = prep    
 
     s3xrc.model.configure(db.pr_presence,
         # presence not deletable in this view! (need to register a check-out
@@ -160,6 +168,7 @@ def shelter():
 
     shelter_tabs = [(T("Basic Details"), None),
                     (T("People"), "presence"),
+                    (T("Staff"), "staff"),
                     (T("Assessments"), "rat"),
                     (T("Warehouse"), "store"),  # table is inventory_store
                     (T("Requests"), "req")]

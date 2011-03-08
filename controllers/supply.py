@@ -12,7 +12,7 @@
 prefix = request.controller
 resourcename = request.function
 
-response.menu_options = logs_menu
+response.menu_options = inv_menu
 
 #==============================================================================
 #@auth.s3_requires_membership(1)

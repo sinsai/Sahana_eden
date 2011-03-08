@@ -335,7 +335,7 @@ if populate:
                                                      look_up_field = "abrv")
                           )
 
-    if deployment_settings.has_module("logs"):
+    if deployment_settings.has_module("inv"):
         # Supply / Inventory
         tablename = "supply_item_category"
         table = db[tablename]
@@ -1174,8 +1174,9 @@ if populate:
         create_role("Authenticated", "Authenticated - all logged-in users",
                     dict(c="gis", uacl=acl.ALL, oacl=acl.ALL),
                     dict(c="gis", f="location", uacl=acl.READ, oacl=acl.ALL),
-                    dict(c="inventory", uacl=acl.READ, oacl=acl.ALL),
-                    dict(c="logs", uacl=acl.READ, oacl=acl.ALL)
+                    dict(c="org", uacl=acl.READ, oacl=acl.ALL),
+                    dict(c="inv", uacl=acl.READ, oacl=acl.ALL),       
+                    dict(c="req", uacl=acl.READ, oacl=acl.ALL),               
                     )
         create_role("Anonymous", "Unauthenticated users",
                     dict(c="gis", uacl=acl.READ, oacl=acl.READ))

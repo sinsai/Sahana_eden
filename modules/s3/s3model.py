@@ -416,21 +416,22 @@ class S3ResourceModel(object):
 
 
     # -------------------------------------------------------------------------
-    def super_link(self, super):
+    def super_link(self, super, key = None, compute = None):
         """
         Get a foreign key field for a super-entity
 
         @param super: the super-entity table
 
         """
-
-        key = self.super_key(super)
+        if not key: 
+            key = self.super_key(super)
 
         return Field(key, super,
                      requires = IS_EMPTY_OR(IS_IN_DB(self.db, "%s.%s" %
                                                     (super._tablename, key))),
                      readable = False,
                      writable = False,
+                     compute = compute,
                      ondelete = "RESTRICT")
 
 

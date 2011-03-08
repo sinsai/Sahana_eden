@@ -184,6 +184,12 @@ deployment_settings.osm.oauth_consumer_secret = ""
 deployment_settings.security.self_registration = True
 # Use 'soft' deletes
 deployment_settings.security.archive_not_delete = True
+
+# AAA Settings
+acl = deployment_settings.aaa.acl
+deployment_settings.aaa.staff_acl = acl.CREATE | acl.READ | acl.UPDATE 
+deployment_settings.aaa.supervisor_acl = acl.ALL 
+
 # Audit settings
 # We Audit if either the Global or Module asks us to
 # (ignore gracefully if module author hasn't implemented this)
@@ -197,6 +203,9 @@ deployment_settings.security.archive_not_delete = True
 # Should potentially large dropdowns be turned into autocompletes?
 # (unused currently)
 #deployment_settings.ui.autocomplete = True
+
+# Request 
+deployment_settings.req.status_writable = True
 
 # Comment/uncomment modules here to disable/enable them
 # Modules menu is defined in 01_menu.py
@@ -304,9 +313,9 @@ deployment_settings.modules = OrderedDict([
                 budget_bundle = {"importer" : True},
             )
         )),
-    ("logs", Storage(
-            name_nice = T("Logistics Management"),
-            description = T("Managing, Storing and Distributing Items"),
+    ("inv", Storage(
+            name_nice = T("Inventory Management"),
+            description = T("Receiving and Sending Items"),
             restricted = False,
             module_type = 10
         )),

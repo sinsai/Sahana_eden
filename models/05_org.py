@@ -3,70 +3,34 @@
 """
     Organisation Registry
 """
-
+#==============================================================================
 module = "org"
 
-# -----------------------------------------------------------------------------
-# Site
-#
-# Site is a generic type for any facility (office, hospital, shelter,
-# warehouse, etc.) and serves the same purpose as pentity does for person
-# entity types:  It provides a common join key name across all types of
-# sites, with a unique value for each sites.  This allows other types that
-# are useful to any sort of site to have a common way to join to any of
-# them.  It's especially useful for component types.
-#
-# This is currently being added so people can discuss it, and to get
-# inventories quickly associated with shelters without adding shelter_id
-# to inventory_store, or attempting to join on location_id.  It is in
-# org because that's relatively generic and has one of the site types.
-# You'll note that it is a slavish copy of pentity with the names changed.
+#==============================================================================
+org_menu = [
+    [T("Organizations"), False, URL(r=request, c="org", f="organisation"),[
+        [T("List"), False, URL(r=request, c="org", f="organisation")],
+        [T("Add"), False, URL(r=request, c="org", f="organisation", args="create")],
+        #[T("Search"), False, URL(r=request, f="organisation", args="search")]
+    ]],
+    [T("Offices"), False, URL(r=request, c="org", f="office"),[
+        [T("List"), False, URL(r=request, c="org", f="office")],
+        [T("Add"), False, URL(r=request,  c="org",f="office", args="create")],
+        #[T("Search"), False, URL(r=request, f="office", args="search")]
+    ]],
+    [T("Staff"), False, URL(r=request,  c="org",f="staff"),[
+        [T("List"), False, URL(r=request,  c="org",f="staff")],
+        [T("Add"), False, URL(r=request,  c="org",f="staff", args="create")],
+        #[T("Search"), False, URL(r=request, f="staff", args="search")]
+    ]],
+    #[T("Tasks"), False, URL(r=request,  c="org",f="task"),[
+    #    [T("List"), False, URL(r=request,  c="org",f="task")],
+    #    [T("Add"), False, URL(r=request,  c="org",f="task", args="create")],
+        #[T("Search"), False, URL(r=request, f="task", args="search")]
+    #]],
+]
 
-org_site_types = Storage(
-    cr_shelter = T("Shelter"),
-    org_office = T("Office"),
-    hms_hospital = T("Hospital"),
-    inventory_store = T("Inventory Store"),
-)
-
-resource = "site"
-tablename = "%s_%s" % (module, resource)
-table = super_entity(tablename, "site_id", org_site_types, migrate=migrate)
-
-# -----------------------------------------------------------------------------
-def shn_site_represent(id, default_label="[no label]"):
-
-    """ Represent a site in option fields or list views """
-
-    site_str = T("None (no such record)")
-
-    site_table = db.org_site
-    site = db(site_table.site_id == id).select(site_table.instance_type,
-                                               limitby=(0, 1)).first()
-    if not site:
-        return site_str
-
-    instance_type = site.instance_type
-    instance_type_nice = site_table.instance_type.represent(instance_type)
-
-    table = db.get(instance_type, None)
-    if not table:
-        return site_str
-
-    # All the current types of sites have a required "name" field that can
-    # serve as their representation.
-    record = db(table.site_id == id).select(table.name, limitby=(0, 1)).first()
-
-    if record:
-        site_str = "%s (%s)" % (record.name, instance_type_nice)
-    else:
-        # Since name is notnull for all types so far, this won't be reached.
-        site_str = "[site %d] (%s)" % (id, instance_type_nice)
-
-    return site_str
-
-
-# -----------------------------------------------------------------------------
+#==============================================================================
 # Cluster
 # @ToDo Allow easy changing between the term 'Cluster' (UN) & 'Sector' (everywhere else)
 resourcename = "cluster"
@@ -110,7 +74,7 @@ cluster_id = S3ReusableField("cluster_id", db.org_cluster, sortby="abrv",
                              ondelete = "RESTRICT"
                             )
 
-# -----------------------------------------------------------------------------
+#==============================================================================
 # Cluster Subsector
 resourcename = "cluster_subsector"
 tablename = "%s_%s" % (module, resourcename)
@@ -170,7 +134,7 @@ cluster_subsector_id = S3ReusableField("cluster_subsector_id", db.org_cluster_su
                                        ondelete = "RESTRICT"
                                       )
 
-# -----------------------------------------------------------------------------
+#==============================================================================
 # Organizations
 #
 org_organisation_type_opts = {
@@ -307,14 +271,164 @@ s3xrc.model.configure(table,
                                      "country",
                                      "website"])
 
+# -----------------------------------------------------------------------------    
+# Create roles for each organisation 
+s3xrc.model.configure(table, 
+                      onaccept = lambda form, tablename = tablename : 
+                                     shn_create_record_roles(form, tablename))  
+
+#==============================================================================
+# Site
+#
+# Site is a generic type for any facility (office, hospital, shelter,
+# warehouse, etc.) and serves the same purpose as pentity does for person
+# entity types:  It provides a common join key name across all types of
+# sites, with a unique value for each sites.  This allows other types that
+# are useful to any sort of site to have a common way to join to any of
+# them.  It's especially useful for component types.
+#
+# This is currently being added so people can discuss it, and to get
+# inventories quickly associated with shelters without adding shelter_id
+# to inventory_store, or attempting to join on location_id.  It is in
+# org because that's relatively generic and has one of the site types.
+# You'll note that it is a slavish copy of pentity with the names changed.
+#
+# MH: Site has been extended to support inventorys and staff for any site type
+
+org_site_types = Storage(
+    cr_shelter = T("Shelter"),
+    org_office = T("Office"),
+    hms_hospital = T("Hospital"),
+    inventory_store = T("Inventory Store"),
+)
+
+resource = "site"
+tablename = "%s_%s" % (module, resource)
+table = super_entity(tablename, 
+                     "site_id", 
+                     org_site_types, 
+                     Field("name"),
+                     location_id(),
+                     organisation_id(),
+                     migrate=migrate)
+
 # -----------------------------------------------------------------------------
+def shn_site_represent(id, default_label="[no label]"):
+
+    """ Represent a site in option fields or list views """
+
+    site_str = T("None (no such record)")
+
+    site_table = db.org_site
+    site = db(site_table.site_id == id).select(site_table.instance_type,
+                                               limitby=(0, 1)).first()
+    if not site:
+        return site_str
+
+    instance_type = site.instance_type
+    instance_type_nice = site_table.instance_type.represent(instance_type)
+
+    table = db.get(instance_type, None)
+    if not table:
+        return site_str
+
+    # All the current types of sites have a required "name" field that can
+    # serve as their representation.
+    record = db(table.site_id == id).select(table.name, limitby=(0, 1)).first()
+
+    if record:
+        site_str = "%s (%s)" % (record.name, instance_type_nice)
+    else:
+        # Since name is notnull for all types so far, this won't be reached.
+        site_str = "[site %d] (%s)" % (id, instance_type_nice)
+
+    return site_str
+
+ # -------------------------------------------------------------------------
+def shn_create_record_roles(form, tablename):
+    """
+    Function to be called from an onaccept by a record which can have 
+    org_staff as components, eg. Organisations & Site instances (Offices,
+    Hospitals and Shelters).  
+    
+    Creates:
+     - a staff role (acl = deployment_settings.get_aaa_staff_acl())
+     - a supervisor role (acl = deployment_settings.get_aaa_supervisor_acl())
+     
+    The record's owned_by_role = staff role
+    
+    The current user is given membership to both staff & supervisor roles 
+    
+    A new staff component for the current user is created for the record 
+    """
+    id = session.rcvars[tablename]
+    staff_acl = deployment_settings.get_aaa_staff_acl()
+    supervisor_acl = deployment_settings.get_aaa_supervisor_acl()
+    cf = tablename.split("_")
+    c = cf[0]
+    f = cf[1]
+    staff_role_id = auth.s3_create_role( "%s_staff_%s" % (tablename,id),
+                                         "Staff Record Role",
+                                         dict(c=c, f=f, 
+                                              uacl=acl.NONE, oacl=staff_acl),
+                                          )
+    supervisor_role_id = auth.s3_create_role( "%s_supervisor_%s" % (tablename,id),
+                                              "Supervisor Record Role",
+                                              dict(c=c, f=f, 
+                                                  uacl=acl.NONE, oacl=supervisor_acl),                                              
+                                              )    
+    db[tablename][id] = dict(owned_by_role = staff_role_id)
+    
+    #Add user to the role
+    auth.add_membership(staff_role_id)    
+    auth.add_membership(supervisor_role_id)
+    
+    if tablename in org_site_types:
+        #This is a site - add user as org_staff component
+        person_id = auth.person_id() 
+        if person_id:
+            
+            if tablename == "org_organisation":
+                #This record is an organisation 
+                site_id = None
+                organisation_id = id        
+            else:
+                #This record is an instant of a site (office/hospital/shelter)
+                record = db[tablename][id] 
+                site_id = record.site_id
+                organisation_id = record.organisation_id         
+            
+            db.org_staff.insert(site_id = site_id,
+                                person_id = person_id,
+                                organisation_id = organisation_id,
+                                supervisor = True,
+                                owned_by_user = auth.user.id,
+                                owned_by_role = staff_role_id,                            
+                                )
+   
+# -----------------------------------------------------------------------------    
+def shn_component_copy_role(form, resource_name, component_name, fk ):
+    """ 
+    Generic onaccept function to copy a component's "owned_by_role" 
+    from the main resource's "owned_by_role" 
+    """
+    resource_id = session.rcvars[fk]
+    component_id = session.rcvars[component_name]
+    role_id = shn_get_db_field_value(db,
+                                     resource_name,
+                                     "owned_by_role",
+                                     id )    
+    db[component_name][component_id] = dict(owned_by_role = site_role_id)  
+
+#==============================================================================
 # Offices
 #
 org_office_type_opts = {
     1:T("Headquarters"),
     2:T("Regional"),
     3:T("Country"),
-    4:T("Satellite Office")
+    4:T("Satellite Office"),
+    5:T("Warehouse"),
 }
 
 resourcename = "office"
@@ -417,6 +531,7 @@ office_id = S3ReusableField("office_id", db.org_office, sortby="default/indexnam
                 ondelete = "RESTRICT"
                 )
 
+# -----------------------------------------------------------------------------    
 # Offices as component of Orgs & Locations
 s3xrc.model.add_component(module, resourcename,
                           multiple=True,
@@ -425,7 +540,10 @@ s3xrc.model.add_component(module, resourcename,
 
 s3xrc.model.configure(table,
                       super_entity=(db.pr_pentity, db.org_site),
-                      onvalidation=lambda form: address_onvalidation(form),
+                      onvalidation=address_onvalidation,
+                      # Create a role for each office 
+                      onaccept = lambda form, tablename = tablename : 
+                                     shn_create_record_roles(form, tablename),
                       list_fields=[
                         "id",
                         "name",
@@ -438,6 +556,8 @@ s3xrc.model.configure(table,
                         "phone1",
                         "email"
                     ])
+
+#==============================================================================
 
 # Donors are a type of Organisation
 def shn_donor_represent(donor_ids):
@@ -470,7 +590,7 @@ donor_id = S3ReusableField("donor_id", db.org_organisation, sortby="name",
                     ondelete = "RESTRICT"
                    )
 
-# -----------------------------------------------------------------------------
+#==============================================================================
 # Staff
 # Many-to-Many Persons to Offices & Projects with also the Title & Manager that the person has in this context
 # @ToDo: Handle Shifts (e.g. Red Cross: 06:00-18:00 & 18:00-06:00)
@@ -479,12 +599,17 @@ donor_id = S3ReusableField("donor_id", db.org_organisation, sortby="name",
 resourcename = "staff"
 tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
+                        super_link(db.org_site), # site_id
+                        person_id(label=T("Name")),
                         Field("title"),
-                        organisation_id(empty=False),
-                        office_id(),
-                        Field("manager_id", "reference org_staff", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
-                        Field("focal_point", "boolean"),
-                        person_id(),
+                        organisation_id(), 
+                        # This form of hierarchy may not work on all DBs                       
+                        Field("manager_id", 
+                              "reference org_staff", 
+                              ondelete = "RESTRICT"),                               
+                        Field("supervisor", "boolean"),
+                        Field("no_access", "boolean"),        
+                        Field("focal_point", "boolean"),            
                         #project_id(),
                         #Field("slots", "integer", default=1),
                         #Field("payrate", "double", default=0.0), # Wait for Bugeting integration
@@ -497,8 +622,9 @@ def shn_org_staff_represent(staff_id):
                                                    db.pr_person.first_name,
                                                    db.pr_person.middle_name,
                                                    db.pr_person.last_name,
-                                                   left = [db.pr_person.on(db.pr_person.id == db.org_staff.person_id),
-                                                           db.org_office.on(db.org_office.id == db.org_staff.office_id)]
+                                                   #@TODO: Fix this
+                                                   #left = [db.pr_person.on(db.pr_person.id == db.org_staff.person_id),
+                                                   #        db.org_office.on(db.org_office.id == db.org_staff.office_id)]                                                   
                                                   ).first()
     if staff:
         title = staff.org_staff.title
@@ -515,14 +641,13 @@ def shn_org_staff_represent(staff_id):
         return title
 
 # Field settings
-table.title.requires = IS_NOT_EMPTY()
 table.manager_id.requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id",
                                                  shn_org_staff_represent,
                                                  orderby="org_staff.title"))
 table.manager_id.represent = lambda id: (id and [shn_org_staff_represent(id)] or [NONE])[0]
-table.person_id.comment = DIV( _class="tooltip",
-                               _title="%s|%s" % (T("Person"),
-                                                 T("The Person currently filling this Role.")))
+
+table.person_id.comment = shn_person_comment(T("Person"),
+                                             T("The Person currently filling this Role."))
 
 # Staff Resource called from multiple controllers
 # - so we define strings in the model
@@ -557,15 +682,18 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T("No Staff currently registered"))
 
 # Functions
-def represent_focal_point(is_focal_point):
-    if is_focal_point:
+def shn_represent_focal_point(focal_point):
+    if focal_point:
         return "Focal Point"
     else:
-        return "-"
+        return NONE
 
-table.focal_point.represent = lambda focal_point: represent_focal_point(focal_point)
+table.focal_point.represent = shn_represent_focal_point
 
-def shn_orgs_to_person(person_id):
+def shn_orgs_to_person(person_id):   
+    """
+    Returns a list of organisations for which the person is staff
+    """
     orgs = []
     if person_id:
         staff = db((db.org_staff.person_id == person_id) &
@@ -591,51 +719,129 @@ staff_id = S3ReusableField("staff_id", db.org_staff, sortby="name",
                                                          T("Add new staff role.")))),
                         label = T("Staff"),
                         ondelete = "RESTRICT"
-                        )
+                        ) 
 
-# Staff as component of Orgs, Offices & Projects
+# Staff as component of Orgs & Projects
 s3xrc.model.add_component(module, resourcename,
                           multiple=True,
                           joinby=dict(org_organisation="organisation_id",
-                                      org_office="office_id",
+                                      #org_office="office_id",
                                       #project_project="project_id"
                                       ))
 
+# Staff as component of sites
+s3xrc.model.add_component(module, resourcename,
+                          multiple=True,
+                          joinby=super_key(db.org_site)
+                          )
+
 # May wish to over-ride this in controllers
-s3xrc.model.configure(table,
+#s3xrc.model.configure(table,
                       #listadd=False,
-                      list_fields=["id",
-                                   "person_id",
-                                   "organisation_id",
-                                   "office_id",
-                                   "project_id",
-                                   "title",
-                                   "manager_id",
-                                   "focal_point"
+ #                     list_fields=["id",
+  #                                 "person_id",
+   #                                "site_id",
+    #                               "project_id",
+     #                              "title",
+      #                             "manager_id",
+       #                            "focal_point"
                                    #"description",
                                    #"slots",
                                    #"payrate"
-                                   ])
+        #                           ])
+# -----------------------------------------------------------------------------
+def shn_update_staff_membership(record,                                
+                                delete = False):
+    """
+    Updates the staff's memberships of the roles associated with the 
+    organisation and/or site instance record which the staff is a component of
+    """    
+    
+    if delete:
+        org_staff_id = record.id
+        org_staff_record = db.org_staff[org_staff_id]
+        deleted_fks = Storage()
+        for fk in eval(org_staff_record.deleted_fk):
+            deleted_fks[fk["f"]] = fk["k"]
+        organisation_id = deleted_fks.organisation_id
+        person_id       = deleted_fks.person_id           
+        site_id         = deleted_fks.site_id     
+    else:
+        org_staff_id = session.rcvars.org_staff
+        org_staff_record = db.org_staff[org_staff_id]
+        organisation_id  = org_staff_record.organisation_id
+        person_id        = org_staff_record.person_id
+        site_id          = org_staff_record.site_id
+    
+    supervisor       = org_staff_record.supervisor    
+    no_access        = org_staff_record.no_access
+    
+    user_id = auth.s3_person_to_user(person_id) 
+    
+    if organisation_id:    
+        #This staff is a component of an organisation        
+        #This should alwasy be true
+        
+        organisation_staff_role_id = \
+            db.org_organisation[organisation_id].owned_by_role
+        organisation_supervisor_role = \
+            "org_organisation_supervisor_%s" % organisation_id
+        organisation_supervisor_role_id = \
+            shn_get_db_field_value(db,
+                                   str(auth.settings.table_group), #tablename
+                                   field = "id",
+                                   look_up = organisation_supervisor_role,
+                                   look_up_field = "role" )             
+        if no_access or delete:
+            auth.del_membership(organisation_staff_role_id, user_id)   
+            auth.del_membership(organisation_supervisor_role_id, user_id)  
+        elif not supervisor:
+            auth.add_membership(organisation_staff_role_id, user_id)  
+            auth.del_membership(organisation_supervisor_role_id, user_id)  
+        else:
+            auth.add_membership(organisation_staff_role_id, user_id)  
+            auth.add_membership(organisation_supervisor_role_id, user_id)     
 
-org_menu = [
-    [T("Organizations"), False, URL(r=request, c="org", f="organisation"),[
-        [T("List"), False, URL(r=request, c="org", f="organisation")],
-        [T("Add"), False, URL(r=request, c="org", f="organisation", args="create")],
-        #[T("Search"), False, URL(r=request, f="organisation", args="search")]
-    ]],
-    [T("Offices"), False, URL(r=request, c="org", f="office"),[
-        [T("List"), False, URL(r=request, c="org", f="office")],
-        [T("Add"), False, URL(r=request,  c="org",f="office", args="create")],
-        #[T("Search"), False, URL(r=request, f="office", args="search")]
-    ]],
-    [T("Staff"), False, URL(r=request,  c="org",f="staff"),[
-        [T("List"), False, URL(r=request,  c="org",f="staff")],
-        [T("Add"), False, URL(r=request,  c="org",f="staff", args="create")],
-        #[T("Search"), False, URL(r=request, f="staff", args="search")]
-    ]],
-    #[T("Tasks"), False, URL(r=request,  c="org",f="task"),[
-    #    [T("List"), False, URL(r=request,  c="org",f="task")],
-    #    [T("Add"), False, URL(r=request,  c="org",f="task", args="create")],
-        #[T("Search"), False, URL(r=request, f="task", args="search")]
-    #]],
-]
+        # The organisation staff role owns the org_staff 
+        # (This is more inclusive that site staff role) 
+        staff_ownership = dict(owned_by_role = organisation_staff_role_id)
+        if no_access or delete:
+            #Current user has no permissions
+            staff_ownership["owned_by_user"] = None            
+        db.org_staff[org_staff_id] = staff_ownership
+                                
+    if site_id:
+        #This staff is a component of a site instance
+            
+        site_staff_role_id = shn_get_db_field_value(
+                                 db,
+                                 "%(controller)s_%(function)s" % (request),
+                                 "owned_by_role",
+                                 site_id,
+                                 look_up_field = "site_id" )        
+        site_supervisor_role = \
+            "org_site_supervisor_%s" % site_id
+        site_supervisor_role_id = \
+            shn_get_db_field_value(db,
+                                   str(auth.settings.table_group), #tablename
+                                   field = "id",    
+                                   look_up = site_supervisor_role,
+                                   look_up_field = "role" )                  
+        if no_access or delete:
+            auth.del_membership(site_staff_role_id, user_id)   
+            auth.del_membership(site_supervisor_role_id, user_id)  
+            
+        elif not supervisor:
+            auth.add_membership(site_staff_role_id, user_id)  
+            auth.del_membership(site_supervisor_role_id, user_id)
+              
+        else:
+            auth.add_membership(site_staff_role_id, user_id)  
+            auth.add_membership(site_supervisor_role_id, user_id)     
+                                          
+# -----------------------------------------------------------------------------              
+s3xrc.model.configure(table, 
+                      onaccept = shn_update_staff_membership,
+                      ondelete = lambda form, delete = True: 
+                                    shn_update_staff_membership(form, delete)
+                      )

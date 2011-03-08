@@ -207,6 +207,9 @@ deployment_settings.aaa.supervisor_acl = acl.ALL
 # Request 
 deployment_settings.req.status_writable = True
 
+# Should we use internal Support Requests?
+#deployment_settings.options.support_requests = True
+
 # Comment/uncomment modules here to disable/enable them
 # Modules menu is defined in 01_menu.py
 deployment_settings.modules = OrderedDict([

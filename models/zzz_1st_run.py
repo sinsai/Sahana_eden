@@ -1035,7 +1035,8 @@ if populate:
                 url = "http://labs.metacarta.com/wms/vmap0",
                 #projection_id = db(db.gis_projection.epsg == 4326).select(limitby=(0, 1)).first().id,
                 layers = "basic",
-                enabled = False
+                enabled = False,
+                base = True
             )
         table.insert(
                 name = "Blue Marble",
@@ -1043,7 +1044,8 @@ if populate:
                 url = "http://maps.opengeo.org/geowebcache/service/wms",
                 #projection_id = db(db.gis_projection.epsg == 4326).select(limitby=(0, 1)).first().id,
                 layers = "bluemarble",
-                enabled = False
+                enabled = False,
+                base = True
             )
     tablename = "gis_layer_georss"
     table = db[tablename]

@@ -3774,14 +3774,14 @@ OpenLayers.Util.extend( selectPdfControl, {
         styleMarker.opacity = '%f';
         // Need unique names
         // More reliable & faster to use the height/width calculated on upload
-        var i = new Array();
-        i.height = %i;
-        i.width = %i;
-        scaleImage(i);
+        s3_gis_image = new Array();
+        s3_gis_image.height = %i;
+        s3_gis_image.width = %i;
+        scaleImage(s3_gis_image);
         """ % (marker_url, opacity, marker.height, marker.width)
                     else:
                         layers_features += """
-        var i = '';
+        s3_gis_image = '';
         styleMarker.iconURL = '';
         styleMarker.opacity = '%f';
         styleMarker.graphicName = '%s';
@@ -3790,7 +3790,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ % (opacity, graphicName, pointRadius, fillColor)
                     layers_features += """
         geom = parser.read('%s').geometry;
-        featureVec = addFeature('%i', '%s', geom, styleMarker, i, popup_url)
+        featureVec = addFeature('%i', '%s', geom, styleMarker, s3_gis_image, popup_url)
         features.push(featureVec);
         """ % (wkt, feature.id, fname)
                     if deployment_settings.get_gis_duplicate_features():
@@ -3917,9 +3917,9 @@ OpenLayers.Util.extend( selectPdfControl, {
         iconURL = '""" + marker_url + """';
         // Pre-cache this image
         // Need unique names
-        var i = new Image();
-        i.onload = scaleImage;
-        i.src = iconURL;
+        s3_gis_image = new Image();
+        s3_gis_image.onload = scaleImage;
+        s3_gis_image.src = iconURL;
         // Needs to be uniquely instantiated
         var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
         style_marker.graphicOpacity = 1;
@@ -4189,16 +4189,16 @@ OpenLayers.Util.extend( selectPdfControl, {
         iconURL = '""" + marker_url + """';
         // Pre-cache this image
         // Need unique names
-        var i = new Image();
-        i.onload = scaleImage;
-        i.src = iconURL;
+        s3_gis_image = new Image();
+        s3_gis_image.onload = scaleImage;
+        s3_gis_image.src = iconURL;
         // Needs to be uniquely instantiated
         var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
         style_marker.graphicOpacity = 1;
-        style_marker.graphicWidth = i.width;
-        style_marker.graphicHeight = i.height;
-        style_marker.graphicXOffset = -(i.width / 2);
-        style_marker.graphicYOffset = -i.height;
+        style_marker.graphicWidth = s3_gis_image.width;
+        style_marker.graphicHeight = s3_gis_image.height;
+        style_marker.graphicXOffset = -(s3_gis_image.width / 2);
+        style_marker.graphicYOffset = -s3_gis_image.height;
         style_marker.externalGraphic = iconURL;
         var georssLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
             '""" + name_safe + """',
@@ -4288,9 +4288,9 @@ OpenLayers.Util.extend( selectPdfControl, {
         iconURL = '""" + marker_url + """';
         // Pre-cache this image
         // Need unique names
-        var i = new Image();
-        i.onload = scaleImage;
-        i.src = iconURL;
+        s3_gis_image = new Image();
+        s3_gis_image.onload = scaleImage;
+        s3_gis_image.src = iconURL;
         // Needs to be uniquely instantiated
         var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
         """ + style_marker + """
@@ -4470,16 +4470,16 @@ OpenLayers.Util.extend( selectPdfControl, {
         iconURL = '""" + marker_url + """';
         // Pre-cache this image
         // Need unique names
-        var i = new Image();
-        i.onload = scaleImage;
-        i.src = iconURL;
+        var s3_gis_image = new Image();
+        s3_gis_image.onload = scaleImage;
+        s3_gis_image.src = iconURL;
         // Needs to be uniquely instantiated
         var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
         style_marker.graphicOpacity = 1;
-        style_marker.graphicWidth = i.width;
-        style_marker.graphicHeight = i.height;
-        style_marker.graphicXOffset = -(i.width / 2);
-        style_marker.graphicYOffset = -i.height;
+        style_marker.graphicWidth = s3_gis_image.width;
+        style_marker.graphicHeight = s3_gis_image.height;
+        style_marker.graphicXOffset = -(s3_gis_image.width / 2);
+        style_marker.graphicYOffset = -s3_gis_image.height;
         style_marker.externalGraphic = iconURL;
         var kmlLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
             '""" + name + """',
@@ -4697,13 +4697,13 @@ var s3_gis_max_h = %i;
     }
 
     Ext.onReady(function() {
-        map = new OpenLayers.Map('center', options);
+        map = new OpenLayers.Map('center', s3_gis_options);
         addLayers(map);
 
         map.addControl(new OpenLayers.Control.ScaleLine());
         """ + mouse_position + """
         map.addControl(new OpenLayers.Control.Permalink());
-        map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
+        map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: s3_gis_options}));
 
         // Popups (add these after the layers)
         // onClick Popup

@@ -319,6 +319,7 @@ class S3ResourceController(object):
         onaccept = self.model.get_config(table, "onaccept")
         job = S3ImportJob(self, prefix, name, id,
                           record=record,
+                          original=original,
                           element=element,
                           mtime=mtime,
                           rmap=rmap,
@@ -627,7 +628,7 @@ class S3ResourceController(object):
 
         # Try to find exactly one match
         if query:
-            original = self.db(query).select(table.ALL)
+            original = self.db(query).select(table.ALL, limitby=(0, 2))
             if len(original) == 1:
                 return original.first()
 
@@ -999,7 +1000,7 @@ class S3ResourceController(object):
                         celement = celements[k]
                         cjobs = self.__create_job(ctablename,
                                                   celement,
-                                                  files = resource.files,
+                                                  files=resource.files,
                                                   validate=self.validate,
                                                   tree=tree,
                                                   directory=directory,
@@ -1086,6 +1087,7 @@ class S3ImportJob(object):
     # -------------------------------------------------------------------------
     def __init__(self, manager, prefix, name, id,
                  record=None,
+                 original=None,
                  element=None,
                  mtime=None,
                  rmap=None,
@@ -1108,6 +1110,7 @@ class S3ImportJob(object):
 
         self.element = element
         self.record = record
+        self.original = original
         self.id = id
 
         if mtime:
@@ -1138,10 +1141,10 @@ class S3ImportJob(object):
         if not self.id:
             self.id = 0
             self.method = permission = self.METHOD.CREATE
-            orig = self.manager.original(self.table, self.record)
-            if orig:
-                self.id = orig.id
-                self.uid = orig.get(self.UID, None)
+            #orig = self.manager.original(self.table, self.record)
+            if self.original:
+                self.id = self.original.id
+                self.uid = self.original.get(self.UID, None)
                 self.method = permission = self.METHOD.UPDATE
         else:
             self.method = permission = self.METHOD.UPDATE
@@ -1233,10 +1236,13 @@ class S3ImportJob(object):
 
                 # Update
                 elif self.method == self.METHOD.UPDATE:
-                    query = (self.table.id == self.id)
-                    this = self.db(query).select(self.table.ALL, limitby=(0,1))
+                    if self.original:
+                        this = self.original
+                    else:
+                        query = (self.table.id == self.id)
+                        this = self.db(query).select(self.table.ALL, limitby=(0,1)).first()
                     if this:
-                        this = this.first()
+                        #this = this.first()
                         if self.MTIME in self.table.fields:
                             this_mtime = this[self.MTIME]
                         else:
@@ -1317,15 +1323,14 @@ class S3ImportJob(object):
 
         # Commit components
         if self.id and self.components and not skip_components:
-            db_record = self.db(self.table.id == self.id).select(self.table.ALL)
+            db_record = self.db(self.table.id == self.id).select(self.table.ALL, limitby=(0, 1)).first()
             if db_record:
-                db_record = db_record.first()
-            for i in xrange(0, len(self.components)):
-                component = self.components[i]
-                pkey = component.pkey
-                fkey = component.fkey
-                component.record[fkey] = db_record[pkey]
-                component.commit()
+                for i in xrange(0, len(self.components)):
+                    component = self.components[i]
+                    pkey = component.pkey
+                    fkey = component.fkey
+                    component.record[fkey] = db_record[pkey]
+                    component.commit()
 
         # Update referencing jobs
         if self.update and self.id:

@@ -53,6 +53,7 @@ class S3Config(Storage):
         self.mail = Storage()
         self.twitter = Storage()
         self.L10n = Storage()
+        self.options = Storage()
         self.osm = Storage()
         self.security = Storage()
         self.aaa = Storage()
@@ -286,6 +287,10 @@ class S3Config(Storage):
     def get_aaa_supervisor_acl(self):
         return self.aaa.get("supervisor_acl", self.aaa.acl.ALL)    
 
+    # Options
+    def get_options_support_requests(self):
+        return self.options.get("support_requests", False)
+
     # UI/Workflow Settings
     def get_ui_navigate_away_confirm(self):
         return self.ui.get("navigate_away_confirm", True)
@@ -311,17 +316,16 @@ class S3Config(Storage):
                 "dvi",          # Disaster Victim Identification
                 #"dvr",          # Disaster Victim Registry
                 "hms",          # Hospital Management
-                "importer",     # Spreadsheet Importer
                 "inv",         # Logistics
-                #"lms",          # Logistics
-                "mpr",          # Missing Person Registry
+                "pf",           # Person Finder
                 "msg",          # Messaging
                 "project",      # Project Tracking
-                "rat",          # Rapid Assessment Tool
+                "assess",       # Assessments Tool
                 "rms",          # Request Management
-                "survey",       # Surveys
-                #"ticket",       # Ticketing
                 "vol",          # Volunteer Management
+                #"importer",     # Spreadsheet Importer
+                #"survey",       # Surveys
+                #"ticket",       # Ticketing
             ]
         else:
             _modules = self.modules

@@ -1851,7 +1851,7 @@ def geocode_manual():
 def geoexplorer():
 
     """
-        Custom View for GeoExplorer: http://projects.opengeo.org/geoext/wiki/GeoExplorer
+        Embedded GeoExplorer: https://github.com/opengeo/GeoExplorer
     """
 
     _cache = (cache.ram, 60)

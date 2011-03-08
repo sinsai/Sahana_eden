@@ -48,8 +48,10 @@
         "plugins/StyleWriter.js",
         "plugins/GeoServerStyleWriter.js",
         "plugins/Tool.js",
+        "plugins/ClickableFeatures.js",
         "plugins/DeleteSelectedFeatures.js",
         "plugins/GoogleGeocoder.js",
+        "plugins/WMSFilterView.js",
         "plugins/WMSRasterStylesDialog.js",
         "plugins/WMSGetFeatureInfo.js",
         "plugins/FeatureEditor.js",
@@ -62,6 +64,7 @@
         "plugins/RemoveLayer.js",
         "plugins/SelectedFeatureActions.js",
         "plugins/SnappingAgent.js",
+        "plugins/Styler.js",
         "plugins/NavigationHistory.js",
         "plugins/Zoom.js",
         "plugins/ZoomToExtent.js",
@@ -72,7 +75,9 @@
         "plugins/Navigation.js",
         "plugins/LayerProperties.js",
         "plugins/Legend.js",
-        "plugins/Print.js"
+        "plugins/Print.js",
+        "locale/es.js",
+        "locale/ca.js"
     );
     
     var scripts = document.getElementsByTagName("script");
@@ -101,5 +106,9 @@
     }
     if(!appendable) {
         document.write(pieces.join(""));
+    }
+    
+    if (GeoExt.Lang) {
+        GeoExt.Lang.set(OpenLayers.Util.getParameters()["lang"] || GeoExt.Lang.locale);
     }
 })();

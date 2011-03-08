@@ -70,8 +70,8 @@ gxp.plugins.WMSCSource = Ext.extend(gxp.plugins.WMSSource, {
             REQUEST: "GetCapabilities",
             TILED: true
         };
-        config.format = new OpenLayers.Format.WMSCapabilities({profile: 'WMSC'});
         gxp.plugins.WMSCSource.superclass.constructor.apply(this, arguments); 
+        this.format = new OpenLayers.Format.WMSCapabilities({profile: 'WMSC'});
     },
     
     /** api: method[createLayerRecord]
@@ -99,12 +99,25 @@ gxp.plugins.WMSCSource = Ext.extend(gxp.plugins.WMSSource, {
                         layer.addOptions({resolutions: tileSet.resolutions,
                             tileSize: new OpenLayers.Size(tileSet.width, tileSet.height),
                             tileOrigin: new OpenLayers.LonLat(bbox[0], bbox[1])});
-                        layer.params.TILED = true;
+                        layer.params.TILED = config.tiled || false; // set to true when http://projects.opengeo.org/suite/ticket/1286 is closed
                         break;
                 }
             }
         }
         return record;
+    },
+
+    /** api: method[getConfigForRecord]
+     *  :arg record: :class:`GeoExt.data.LayerRecord`
+     *  :returns: ``Object``
+     *
+     *  Create a config object that can be used to recreate the given record.
+     */
+    getConfigForRecord: function(record) {
+        var config = gxp.plugins.WMSCSource.superclass.getConfigForRecord.apply(this, arguments);
+        return Ext.apply(config, {
+            tiled: !!record.getLayer().params.TILED
+        });
     }
     
 });

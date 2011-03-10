@@ -23,7 +23,8 @@ def item_category():
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    s3xrc.model.configure(table, listadd=False)
+    s3xrc.model.configure(table, 
+                          listadd=False)
     return s3_rest_controller(prefix, resourcename)
 
 def item_pack():
@@ -33,7 +34,9 @@ def item_pack():
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    s3xrc.model.configure(table, listadd=False)
+    s3xrc.model.configure(table, 
+                          listadd=False) 
+                          #insertable=False)
     return s3_rest_controller(prefix, resourcename)
 
 

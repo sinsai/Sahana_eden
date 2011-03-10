@@ -51,7 +51,7 @@ def index():
     div_sit = DIV( H3(T("SITUATION")),
                    menu_box(T("Incidents"),   "irs",      "ireport"),
                    menu_box(T("Assessments"), "assess",   "assess"),
-                   menu_box(T("Logistics"),  "inventory","store"),
+                   menu_box(T("Organisations"),  "org", "organisation"),
                   _class = "menu_div")
 
     div_arrow_1 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % request.application),

@@ -62,7 +62,10 @@ if deployment_settings.has_module("inv"):
     table = db.define_table(tablename,
                             item_category_id(),
                             Field("name", length=128, notnull=True, unique=True),
-                            Field("base_unit", length=128),
+                            Field("um", 
+                                  length=128,
+                                  label = T("Unit of Measure"),
+                                  notnull=True),
                             comments(), # These comments do *not* pull through to an Inventory's Items or a Request's Items
                             migrate=migrate, *s3_meta_fields())
 
@@ -88,14 +91,14 @@ if deployment_settings.has_module("inv"):
     
     def shn_item_represent(id):
         record = db(db.supply_item.id == id).select(db.supply_item.name,
-                                                    db.supply_item.base_unit,
+                                                    db.supply_item.um,
                                                     limitby=(0, 1)).first()    
         if not record:
             return NONE
-        elif not record.base_unit:
+        elif not record.um:
             return record.name
         else:
-            item_represent = "%s (%s)" % (record.name, record.base_unit)
+            item_represent = "%s (%s)" % (record.name, record.um)
             return item_represent
 
 
@@ -114,6 +117,27 @@ if deployment_settings.has_module("inv"):
                                                  ADD_ITEM))),
                 ondelete = "RESTRICT"
                 )    
+    
+    #------------------------------------------------------------------------------
+    # Update the UM in the supply_item_pack table   
+    def shn_supply_item_onaccept(form):
+        item_id = session.rcvars.supply_item
+        
+        # try to update the existing record
+        if db((db.supply_item_pack.item_id == item_id) &
+              (db.supply_item_pack.quantity == 1 )
+              ).update(name = form.vars.um) == 0:
+            #Create a new item packet
+            db.supply_item_pack.insert(item_id = item_id,
+                                       name = form.vars.um,
+                                       quantity = 1,
+                                       )
+
+    #------------------------------------------------------------------------------
+    s3xrc.model.configure(
+        table, 
+        onaccept = shn_supply_item_onaccept
+    )     
     #==============================================================================
     # Item Pack
     #
@@ -144,12 +168,31 @@ if deployment_settings.has_module("inv"):
         msg_record_deleted = T("Item Pack deleted"),
         msg_list_empty = T("No Item Packs currently registered"))
 
+    def shn_item_pack_represent(id):
+        record = db((db.supply_item_pack.id == id) &
+                    (db.supply_item_pack.item_id == db.supply_item.id) 
+                    ).select( db.supply_item_pack.name,
+                              db.supply_item_pack.quantity,
+                              db.supply_item.um,
+                              limitby = (0,1)
+                             ).first()
+        if record:            
+            if record.supply_item_pack.quantity == 1:
+                return record.supply_item_pack.name            
+            else:                
+                return "%s (%s x %s)" % ( record.supply_item_pack.name, 
+                                          record.supply_item_pack.quantity, 
+                                          record.supply_item.um )
+        else:
+            return NONE
+
     # Reusable Field
     item_pack_id = S3ReusableField("item_pack_id", db.supply_item_pack, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item_pack.id",
-                                                "%(name)s",
+                requires = IS_NULL_OR(IS_ONE_OF(db, 
+                                                "supply_item_pack.id",
+                                                shn_item_pack_represent,
                                                 sort=True)),
-                represent = lambda id: shn_get_db_field_value(db=db, table="supply_item_pack", field="name", look_up=id),
+                represent = shn_item_pack_represent,
                 label = T("Pack"),    
                 comment = DIV(DIV( _class="tooltip",
                                    _title="%s|%s" % (T("Item Packs"),

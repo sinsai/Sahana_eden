@@ -34,7 +34,7 @@ $(document).ready(function() {
     $('#inv_send_item_item_pack_id').change(InvItemPackIDChange);
     
 	function ItemIDChange() { 
-		var selField = $(this);
+		var selField = $('[name $= "item_id"]');
         var selSubField = $('[name = "item_pack_id"]');
         
         $('[id$="item_pack_id__row1"]').show();
@@ -61,14 +61,25 @@ $(document).ready(function() {
 			success: function(data) {        
             /* Create Select Element */
 	            var options = '';
-	            var v = '';
+	            var UM = '';
 	            
 	            if (data.length == 0) {
 	                options += '<option value="">' + S3.i18n.no_packs + '</options>';
 	            } else {
+	            	for (var i = 0; i < data.length; i++){
+	            		if (data[i].quantity == 1) {
+	            			UM = data[i].name;
+	            			break;
+	            		}	            		
+	            	}
 	                for (var i = 0; i < data.length; i++){
-	                    v = data[i].id;
-	                    options += '<option value="' +  data[i].id + '">' + data[i].name + ' (' + data[i].quantity + ')</option>';
+	                	options += '<option value="' +  data[i].id + '">'
+	                	if (data[i].quantity == 1) {
+	                		options += data[i].name 
+	                	} else {
+	                		options += data[i].name + ' (' + data[i].quantity + ' x ' + UM +')'
+	                	}
+	                    options += '</option>';
 	                }                
 	            }
 	            

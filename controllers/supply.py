@@ -35,8 +35,7 @@ def item_pack():
     table = db[tablename]
 
     s3xrc.model.configure(table, 
-                          listadd=False) 
-                          #insertable=False)
+                          listadd=False)
     return s3_rest_controller(prefix, resourcename)
 
 

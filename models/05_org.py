@@ -432,14 +432,19 @@ def shn_component_copy_role(form,
     fk_id = db[component_name][component_id][fk]
     
     if pk == "id":
-        role_id = db[resource_name][fk_id].owned_by_role
+        primary_record = db[resource_name][fk_id]
     else:        
-        role_id = db(db[resource_name][pk] == fk_id
+        primary_record = db(db[resource_name][pk] == fk_id
                      ).select(db[resource_name].owned_by_role,
                               limitby = (0,1)
-                              ).first().owned_by_role
+                              ).first()
+    try:
+        role_id = primary_record.owned_by_role
+        db[component_name][component_id] = dict(owned_by_role = role_id)  
+    except:
+        pass
                               
-    db[component_name][component_id] = dict(owned_by_role = role_id)  
+    
     
 # -----------------------------------------------------------------------------    
 def shn_component_copy_role_func(component_name, resource_name,fk, pk = "id" ):

@@ -170,13 +170,13 @@ if deployment_settings.has_module("org"):
                                   writable = False,
                                   readable = False #unless the record is locked
                                   ),
-                            super_link(db.org_site), #(label = T("By Warehouse")),
                             Field("type",
                                   "integer",
                                   requires = IS_NULL_OR(IS_IN_SET(inv_recv_type)),
                                   represent = lambda type: inv_recv_type[type] if type else NONE,
                                   default = 0,
-                                  ),
+                                  ),                                  
+                            super_link(db.org_site), #(label = T("By Warehouse")),
                             organisation_id("from_organisation_id",
                                             label = T("From Organisation")),
                             location_id("from_location_id",
@@ -187,7 +187,7 @@ if deployment_settings.has_module("org"):
                                   requires = IS_NULL_OR(IS_IN_SET(shipment_status)),
                                   represent = lambda status: shipment_status.get(status),       
                                   default = SHIP_STATUS_IN_PROCESS,                           
-                                  #writable = False,
+                                  writable = False,
                                   ),
                             person_id(name = "recipient_id",
                                       label = T("Received By")),
@@ -254,8 +254,10 @@ if deployment_settings.has_module("org"):
 
     #------------------------------------------------------------------------------
     # Redirect to the Items tabs after creation
+    recv_item_url = URL(r=request, c="inv", f="recv", args=["[id]", "recv_item"])
     s3xrc.model.configure(table,
-                          create_next = URL(r=request, c="inv", f="recv", args=["[id]", "recv_item"]))
+                          create_next = recv_item_url,
+                          update_next = recv_item_url)
     
     #------------------------------------------------------------------------------
     # Update owned_by_role to the site's owned_by_role    
@@ -265,8 +267,200 @@ if deployment_settings.has_module("org"):
                                                 resource_name = "org_site", 
                                                 fk = "site_id",
                                                 pk = "site_id")
-    )      
+    )    
+      
+    # -------------------------------------------------------------------------        
+    def shn_inv_recv_form (xrequest, **attr):   
+        db.inv_recv.datetime.readable = True  
+        db.inv_recv.site_id.readable = True  
+        db.inv_recv.site_id.label = T("By Inventory")
+        db.inv_recv.site_id.represent = shn_site_represent
+        return shn_component_form( xrequest, 
+                                   componentname = "recv_item", 
+                                   formname = T("Goods Received Note"),
+                                   filename = T("GRN"),
+                                   **attr)
+        
+    s3xrc.model.set_method(module, resourcename, 
+                           method='form', action=shn_inv_recv_form ) 
+    
+    # -------------------------------------------------------------------------        
+    def shn_inv_recv_donation_cert (xrequest, **attr):   
+        db.inv_recv.datetime.readable = True  
+        db.inv_recv.type.readable = False
+        db.inv_recv.site_id.readable = True  
+        db.inv_recv.site_id.label = T("By Inventory")
+        db.inv_recv.site_id.represent = shn_site_represent
+        return shn_component_form( xrequest, 
+                                   componentname = "recv_item", 
+                                   formname = T("Donation Certificate"),
+                                   filename = T("DC"),
+                                   **attr)
+        
+    s3xrc.model.set_method(module, resourcename, 
+                           method='cert', action=shn_inv_recv_donation_cert )     
+        
+    # -------------------------------------------------------------------------
+    def shn_component_form( xrequest, **attr):     
+        """
+        Copied from modules/s3/s3export.py:pdf
+        """
+        module, resourcename, table, tablename = xrequest.target()
+        resource = xrequest.resource             
+        componentname = attr.get("componentname") 
+        formname = attr.get("formname")
+        filename = attr.get("filename")        
+        component = resource.components[componentname].resource
+        
+        xml = s3xrc.xml
+        
+        import StringIO
+        from gluon.contenttype import contenttype
 
+        # Import ReportLab
+        try:
+            from reportlab.lib.units import cm
+            from reportlab.lib.pagesizes import A4
+            from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+        except ImportError:
+            session.error = self.ERROR.REPORTLAB_ERROR
+            redirect(URL(r=request, extension=""))
+
+        # Import Geraldo
+        try:
+            from geraldo import Report, ReportBand, Label, ObjectValue, SystemField, landscape, BAND_WIDTH
+            from geraldo.generators import PDFGenerator
+        except ImportError:
+            session.error = self. ERROR.GERALDO_ERROR
+            redirect(URL(r=request, extension=""))
+
+        # Create output stream
+        output = StringIO.StringIO()
+        
+        # Settings
+        COLWIDTH = 3.0
+        LEFTMARGIN = 0.2
+        TITLEHEIGHT = 1.0
+        LINEHEIGTH = 0.5
+        LABELWIDTH = 4.0
+        VALUEWIDTH = 16.0
+        clean_str = lambda text: s3xrc.xml.xml_encode(str(text)
+                                                      ).decode("utf-8")
+
+        # Add Title
+        header_ele = [ SystemField(
+                            expression = "%(report_title)s",
+                            top = 0.1 * cm,
+                            left = 0,
+                            height = TITLEHEIGHT * cm,
+                            width = 20 * cm, # BAND_WIDTH,
+                            style = {
+                                "fontName": "Helvetica-Bold",
+                                "fontSize": 14,
+                                #"alignment": TA_CENTER
+                                }
+                            )]
+        detail_ele = []
+         
+        #Add values of the primary resource      
+        fields = resource.readable_fields()#subset=list_fields)
+        line = 0;
+        for field in fields:
+            if field.name == "id":
+                continue
+            header_ele.append(Label(text= clean_str( field.label ),
+                                       top= (TITLEHEIGHT + line * LINEHEIGTH) * cm, 
+                                       left=LEFTMARGIN*cm, 
+                                       width=LABELWIDTH*cm,
+                                       style={'fontName': 'Helvetica-Bold'})
+                              )
+            value = xrequest.record[field.name]
+            header_ele.append(Label(text=clean_str( 
+                                            s3xrc.represent(field,
+                                                            value=value,
+                                                            strip_markup=True,
+                                                            xml_escape=True)
+                                            ),
+                                       top= (TITLEHEIGHT + line * LINEHEIGTH) * cm, 
+                                       left=(LEFTMARGIN + LABELWIDTH) * cm,
+                                       width=VALUEWIDTH*cm,
+                                       style={'fontName': 'Helvetica'})
+                              )
+            line += 1
+
+        #Add table for component resource
+        fields = component.readable_fields()
+        
+
+        component_represent = lambda field, value, table=component.table: \
+                                     clean_str( s3xrc.represent(table[field],
+                                                     value=value,
+                                                     strip_markup=True,
+                                                     xml_escape=True)
+                                               )   
+        line += 1 #blank line before component table           
+        column = 0
+        for field in fields:
+            if field.name == "id":
+                continue            
+            # Append component table column headers
+            label = Label(text= clean_str( field.label ),
+                          top = (TITLEHEIGHT + line * LINEHEIGTH) * cm, 
+                          left = (LEFTMARGIN + column * COLWIDTH) *cm,
+                          style={'fontName': 'Helvetica-Bold'}
+                          )
+            header_ele.append(label)
+
+            # Append value
+            value = ObjectValue(attribute_name = field.name,
+                                left = (LEFTMARGIN + column * COLWIDTH) *cm,
+                                width = COLWIDTH * cm,
+                                get_value = lambda instance, 
+                                                   column = field.name: \
+                                            component_represent(column, 
+                                                                instance[column]),
+                                style={'fontName': 'Helvetica'}
+                                )
+            detail_ele.append(value)
+
+            # Increase left margin
+            column += 1
+
+        component_records = xrequest.record[component.tablename].select()
+
+        class MyReport(Report):
+            title = clean_str ( formname )
+            page_size = A4
+            class band_page_header(ReportBand):
+                height = (TITLEHEIGHT + (line+1) * LINEHEIGTH) * cm
+                auto_expand_height = True
+                elements = header_ele
+                borders = {"bottom": True}              
+            class band_page_footer(ReportBand):
+                height = 0.5*cm
+                elements = [
+                    Label(text="%s" % request.utcnow.date(), top=0.1*cm, left=0),
+                    SystemField(expression="Page: %(page_number)d of %(page_count)d", top=0.1*cm,
+                        width=BAND_WIDTH, style={"alignment": TA_RIGHT}),
+                ]
+                borders = {"top": True}
+            class band_detail(ReportBand):
+                height = LINEHEIGTH * cm
+                auto_expand_height = True
+                elements = detail_ele
+        report = MyReport(queryset=component_records)
+        report.generate_by(PDFGenerator, filename=output)
+
+        # Set content type and disposition headers
+        if response:
+            filename = "%s.pdf" % filename
+            response.headers["Content-Type"] = contenttype(".pdf")
+            response.headers["Content-disposition"] = "attachment; filename=\"%s\"" % filename
+
+        # Return the stream
+        output.seek(0)
+        return output.read()        
+    
     #==============================================================================
     # In (Receive / Donation / etc) Items
     #
@@ -343,14 +537,15 @@ if deployment_settings.has_module("org"):
     table = db.define_table(tablename,
                             Field( "datetime", 
                                    "datetime",
-                                   label = "Date Sent"),
+                                   label = T("Date Sent")),
                             super_link(db.org_site), #( label = T("From Warehouse")),
                             location_id( "to_location_id",
                                          label = T("To Location") ),
-                            Field("to_site_id",
-                                   db.org_site,
-                                   compute = shn_to_location_id_to_site_id
-                                   ),                               
+                            Field("to_site_id",                                  
+                                  db.org_site,
+                                  label = T("To Site"),
+                                  compute = shn_to_location_id_to_site_id
+                                  ),                               
                             Field("status", 
                                   "integer",
                                   requires = IS_NULL_OR(IS_IN_SET(shipment_status)),
@@ -433,6 +628,18 @@ if deployment_settings.has_module("org"):
     
     # send set as a component of Sites in controller, depending if it is outgoing or incoming
     
+    # -------------------------------------------------------------------------        
+    def shn_inv_send_form (xrequest, **attr):   
+        db.inv_recv.datetime.readable = True  
+        return shn_component_form( xrequest, 
+                                   componentname = "send_item", 
+                                   formname = T("Consignment Note"),
+                                   filename = T("CN"),
+                                   **attr)
+        
+    s3xrc.model.set_method(module, resourcename, 
+                           method='form', action=shn_inv_send_form ) 
+    
     #==============================================================================
     # Send (Outgoing / Dispatch / etc) Items
     #
@@ -496,12 +703,7 @@ if deployment_settings.has_module("org"):
                                                 fk = "send_id")
     ) 
     #==============================================================================    
-        
-    
-    #------------------------------------------------------------------------------
-    
-    #------------------------------------------------------------------------------
-    
+            
     #==============================================================================
     # Inventory Controller Helper functions
 

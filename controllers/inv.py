@@ -100,6 +100,25 @@ def shn_recv_rheader(r):
                                               % T("Do you want to receive this shipment?") )
                     rheader.append(recv_btn)
                     rheader.append(recv_btn_confirm)
+                else:
+                    grn_btn = A( T("Goods Received Note"),
+                                  _href = URL(r = request,
+                                              c = "inv",
+                                              f = "recv",
+                                              args = [recv_record.id, "form.pdf"]
+                                              ),
+                                  _class = "action-btn"
+                                  )
+                    rheader.append(grn_btn) 
+                    dc_btn = A( T("Donation Certificate"),
+                                  _href = URL(r = request,
+                                              c = "inv",
+                                              f = "recv",
+                                              args = [recv_record.id, "cert.pdf"]
+                                              ),
+                                  _class = "action-btn"
+                                  )
+                    rheader.append(dc_btn)   
                                     
                 rheader_tabs = shn_rheader_tabs( r,
                                                  [(T("Edit Details"), None),
@@ -229,6 +248,16 @@ def shn_send_rheader(r):
                                               % T("Do you want to send this shipment?") )
                     rheader.append(send_btn)
                     rheader.append(send_btn_confirm)     
+                else:
+                    cn_btn = A( T("Consignment Note"),
+                                  _href = URL(r = request,
+                                              c = "inv",
+                                              f = "send",
+                                              args = [send_record.id, "form.pdf"]
+                                              ),
+                                  _class = "action-btn"
+                                  )
+                    rheader.append(cn_btn)
 
                 rheader.append(shn_rheader_tabs( r,
                                                  [(T("Edit Details"), None),

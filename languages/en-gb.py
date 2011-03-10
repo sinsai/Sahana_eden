@@ -886,6 +886,7 @@
 'Squall': 'Squall',
 'Staff': 'Staff',
 'Staff 2': 'Staff 2',
+'Staff and volunteers': 'Staff and volunteers',
 'Staff present and caring for residents': 'Staff present and caring for residents',
 'Staffing': 'Staffing',
 'Stairs': 'Stairs',

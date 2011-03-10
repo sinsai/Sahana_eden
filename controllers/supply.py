@@ -26,7 +26,7 @@ def item_category():
     s3xrc.model.configure(table, listadd=False)
     return s3_rest_controller(prefix, resourcename)
 
-def item_packet():
+def item_pack():
 
     """ RESTful CRUD controller """
 
@@ -68,7 +68,7 @@ def item():
 
     tabs = [
             (T("Edit Details"), None),
-            (T("Packets"), "item_packet"),
+            (T("packs"), "item_pack"),
             (T("In Inventories"), "store_item"),
             (T("Requested"), "ritem")            
            ]

@@ -155,7 +155,7 @@ if deployment_settings.has_module("org"):
     table = db.define_table(tablename,
                             req_id(),
                             item_id(),
-                            item_packet_id(),
+                            item_pack_id(),
                             Field( "quantity",
                                    "double",
                                    notnull = True),
@@ -174,8 +174,8 @@ if deployment_settings.has_module("org"):
                             comments(),
                             migrate=migrate, *s3_meta_fields())
     
-    #packet_quantity virtual field
-    table.virtualfields.append(item_packet_virtualfields(tablename = tablename))   
+    #pack_quantity virtual field
+    table.virtualfields.append(item_pack_virtualfields(tablename = tablename))   
     
     # -----------------------------------------------------------------------------
     def shn_req_quantity_represent(quantity, type):
@@ -404,15 +404,15 @@ if deployment_settings.has_module("org"):
                             commit_id(),
                             #item_id(),
                             req_item_id(),
-                            item_packet_id(),
+                            item_pack_id(),
                             Field("quantity", 
                                   "double",
                                   notnull = True),                          
                             comments(),
                             migrate=migrate, *s3_meta_fields())
     
-    #packet_quantity virtual field
-    table.virtualfields.append(item_packet_virtualfields(tablename = tablename))    
+    #pack_quantity virtual field
+    table.virtualfields.append(item_pack_virtualfields(tablename = tablename))    
 
     # CRUD strings
     ADD_COMMIT_ITEM = T("Commitment Item")
@@ -461,14 +461,14 @@ if deployment_settings.has_module("org"):
         commit_items =  db( (db.req_commit_item.req_item_id == req_item_id) & \
                             (db.req_commit_item.deleted == False) 
                             ).select(db.req_commit_item.quantity ,
-                                     db.req_commit_item.item_packet_id 
+                                     db.req_commit_item.item_pack_id 
                                      )
         quantity_commit = 0
         for commit_item in commit_items:
-            quantity_commit += commit_item.quantity * commit_item.packet_quantity
+            quantity_commit += commit_item.quantity * commit_item.pack_quantity
         
         r_req_item = db.req_req_item[req_item_id]
-        quantity_commit = quantity_commit / r_req_item.packet_quantity
+        quantity_commit = quantity_commit / r_req_item.pack_quantity
         db.req_req_item[req_item_id] = dict(quantity_commit = quantity_commit)
         
         #Update status_commit of the req record

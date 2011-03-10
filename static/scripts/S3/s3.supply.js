@@ -18,38 +18,38 @@ $(document).ready(function() {
         $.getJSON(url, function(data) {
             /* @todo: Error Checking */
             var InvQuantity = data.inv_inv_item.quantity; 
-            var InvPacketQuantity = data.supply_item_packet.quantity; 
+            var InvPackQuantity = data.supply_item_pack.quantity; 
             
-            var PacketName = $('[name = "item_packet_id"] option:selected').text();
+            var PackName = $('[name = "item_pack_id"] option:selected').text();
             var re = /\(([0-9]*)/;
-            var PacketQuantity = re.exec(PacketName)[1];
+            var PackQuantity = re.exec(PackName)[1];
             
-            var Quantity = (InvQuantity * InvPacketQuantity) / PacketQuantity;
+            var Quantity = (InvQuantity * InvPackQuantity) / PackQuantity;
                             
-            TotalQuantity = '<span id = "TotalQuantity"> / ' + Quantity.toFixed(2) + ' ' + PacketName + ' in inv.</span>';
+            TotalQuantity = '<span id = "TotalQuantity"> / ' + Quantity.toFixed(2) + ' ' + PackName + ' in inv.</span>';
             $('#inv_quantity_ajax_throbber').remove();
             $('[name = "quantity"]').after(TotalQuantity);
         });
     };
-    $('#inv_send_item_item_packet_id').change(InvItemPackIDChange);
+    $('#inv_send_item_item_pack_id').change(InvItemPackIDChange);
     
 	function ItemIDChange() { 
 		var selField = $(this);
-        var selSubField = $('[name = "item_packet_id"]');
+        var selSubField = $('[name = "item_pack_id"]');
         
-        $('[id$="item_packet_id__row1"]').show();
-        $('[id$="item_packet_id__row"]').show();        
+        $('[id$="item_pack_id__row1"]').show();
+        $('[id$="item_pack_id__row"]').show();        
         
         /* Show Throbber */
-        selSubField.after('<div id="item_packet_ajax_throbber" class="ajax_throbber style="display:inline;"/>')
+        selSubField.after('<div id="item_pack_ajax_throbber" class="ajax_throbber style="display:inline;"/>')
                    .hide();
         
         var url;
         
         if (selField.length != 0) {
-            url = S3.Ap.concat('/supply/item_packet.json?item_packet.item_id=', selField.val());
+            url = S3.Ap.concat('/supply/item_pack.json?item_pack.item_id=', selField.val());
         } else {
-            url = S3.Ap.concat('/inv/inv_item_packets/', selField.val());
+            url = S3.Ap.concat('/inv/inv_item_packs/', selField.val());
         }
         
         var data;
@@ -64,7 +64,7 @@ $(document).ready(function() {
 	            var v = '';
 	            
 	            if (data.length == 0) {
-	                options += '<option value="">' + S3.i18n.no_packets + '</options>';
+	                options += '<option value="">' + S3.i18n.no_packs + '</options>';
 	            } else {
 	                for (var i = 0; i < data.length; i++){
 	                    v = data[i].id;
@@ -78,12 +78,12 @@ $(document).ready(function() {
 	                       .show(); 
 	            
 	            /* Show "Add" Button & modify link */  
-	            href = $('#item_packet_add').attr('href') + "&item_id=" + $('[name = "item_id"]').val();
-	            $('#item_packet_add').attr('href', href)
+	            href = $('#item_pack_add').attr('href') + "&item_id=" + $('[name = "item_id"]').val();
+	            $('#item_pack_add').attr('href', href)
 	         						 .show();
 	            
 	            /* Hide Throbber */
-	            $('#item_packet_ajax_throbber').hide();
+	            $('#item_pack_ajax_throbber').hide();
 	            
 	            /* If this is an inventory item */
 	            if ( this.attr('name') == 'inv_item_id' ) {
@@ -96,11 +96,11 @@ $(document).ready(function() {
     var ItemID = $('[name $= "item_id"]').val();       
         
     if (ItemID == '' | ItemID == undefined) {
-        /* Hide the item packet input if the item hasn't been entered */
-        $('[id$="item_packet_id__row1"]').hide();
-        $('[id$="item_packet_id__row"]').hide();    
+        /* Hide the item pack input if the item hasn't been entered */
+        $('[id$="item_pack_id__row1"]').hide();
+        $('[id$="item_pack_id__row"]').hide();    
     } else {
-        /* Show the item packet input id the item has already been entered (if this is an error or update) */      
+        /* Show the item pack input id the item has already been entered (if this is an error or update) */      
         ItemIDChange();
     }
    

@@ -38,20 +38,20 @@ def inv_item():
 def inv_item_quantity():
     response.headers["Content-Type"] = "application/json"
     record =  db( (db.inv_inv_item.id == request.args[0]) & \
-                  (db.inv_inv_item.item_packet_id == db.supply_item_packet.id)
+                  (db.inv_inv_item.item_pack_id == db.supply_item_pack.id)
                  ).select(db.inv_inv_item.quantity,
-                          db.supply_item_packet.quantity,
+                          db.supply_item_pack.quantity,
                           limitby=[0, 1]).first()#
 
     return json.dumps(record)
 #------------------------------------------------------------------------------
-def inv_item_packets():
+def inv_item_packs():
     response.headers["Content-Type"] = "text/x-json"
     return db( (db.inv_inv_item.id == request.args[0]) & \
-               (db.inv_inv_item.item_id == db.supply_item_packet.item_id)
-              ).select( db.supply_item_packet.id,
-                        db.supply_item_packet.name,
-                        db.supply_item_packet.quantity).json()
+               (db.inv_inv_item.item_id == db.supply_item_pack.item_id)
+              ).select( db.supply_item_pack.id,
+                        db.supply_item_pack.name,
+                        db.supply_item_pack.quantity).json()
 #==============================================================================
 def recv():
     """ RESTful CRUD controller """
@@ -145,31 +145,31 @@ def recv_item():
 class QUANTITY_INV_ITEM:
     def __init__(self, 
                  inv_item_id,
-                 item_packet_id):
+                 item_pack_id):
         self.inv_item_id = inv_item_id
-        self.item_packet_id = item_packet_id
+        self.item_pack_id = item_pack_id
     def __call__(self, value):
         error = "Invalid Quantity" # @todo: better error catching
         inv_item_record = db( (db.inv_inv_item.id == self.inv_item_id) & \
-                                (db.inv_inv_item.item_packet_id == db.supply_item_packet.id)
+                                (db.inv_inv_item.item_pack_id == db.supply_item_pack.id)
                                ).select(db.inv_inv_item.quantity,
-                                        db.supply_item_packet.quantity,
-                                        db.supply_item_packet.name,
+                                        db.supply_item_pack.quantity,
+                                        db.supply_item_pack.name,
                                         limitby = [0,1]).first() # @todo: this should be a virtual field
         if inv_item_record and value:
             send_quantity = float(value) * shn_get_db_field_value(db,
-                                                           "supply_item_packet",
+                                                           "supply_item_pack",
                                                            "quantity",                                                           
-                                                           self.item_packet_id   
+                                                           self.item_pack_id   
                                                            )       
             inv_quantity = inv_item_record.inv_inv_item.quantity * \
-                             inv_item_record.supply_item_packet.quantity
+                             inv_item_record.supply_item_pack.quantity
             if send_quantity > inv_quantity:
                 return (value, 
                         "Only %s %s (%s) in the Inventory." %
                         (inv_quantity,
-                         inv_item_record.supply_item_packet.name,
-                         inv_item_record.supply_item_packet.quantity)    
+                         inv_item_record.supply_item_pack.name,
+                         inv_item_record.supply_item_pack.quantity)    
                         )
             else:
                 return (value, None)
@@ -187,7 +187,7 @@ def send():
     #Set Validator for checking against the number of items in the warehouse
     if (request.vars.inv_item_id):
         db.inv_send_item.quantity.requires = QUANTITY_INV_ITEM(request.vars.inv_item_id, 
-                                                                     request.vars.item_packet_id)
+                                                                     request.vars.item_pack_id)
     
     def prep(r):
         # If component view
@@ -281,7 +281,7 @@ def req_items_for_inv(site_id, quantity_type):
     
     req_items = db( ( db.req_req.site_id == site_id ) & \
                     ( db.req_req.id == db.req_req_item.req_id) & \
-                    ( db.req_req_item.item_packet_id == db.req_req_item.item_packet_id) & \
+                    ( db.req_req_item.item_pack_id == db.req_req_item.item_pack_id) & \
                     ( db.req_req_item["quantity_%s" % quantity_type] < db.req_req_item.quantity) & \
                     ( db.req_req_item.deleted == False ) 
                    ).select(db.req_req_item.id,
@@ -289,7 +289,7 @@ def req_items_for_inv(site_id, quantity_type):
                             db.req_req_item.item_id,
                             db.req_req_item.quantity,
                             db.req_req_item["quantity_%s" % quantity_type],
-                            db.req_req_item.item_packet_id,
+                            db.req_req_item.item_pack_id,
                             orderby = db.req_req.date_required | db.req_req.datetime, 
                             #groupby = db.req_req_item.item_id
                             )  
@@ -335,10 +335,10 @@ def req_item_in_shipment( shipment_item,
         req_item_id = req_item.id
         
         #Update the quantity_fulfil             
-        #convert the shipment items quantity into the req_tem.quantity_fulfil (according to packet)
+        #convert the shipment items quantity into the req_tem.quantity_fulfil (according to pack)
         quantity = req_item[quantity_req_type] + \
-                   (shipment_item[shipment_item_table].packet_quantity / \
-                    req_item.packet_quantity) * \
+                   (shipment_item[shipment_item_table].pack_quantity / \
+                    req_item.pack_quantity) * \
                     shipment_item[shipment_item_table].quantity    
         quantity = min(quantity, req_item.quantity)  #Cap at req. quantity  
         db.req_req_item[req_item_id] = {quantity_req_type: quantity}      
@@ -363,7 +363,7 @@ def recv_process():
                      ).select(db.inv_recv_item.id,     
                               db.inv_recv_item.item_id,                    
                               db.inv_recv_item.quantity,
-                              db.inv_recv_item.item_packet_id,    
+                              db.inv_recv_item.item_pack_id,    
                               )
                       
     inv_items = db( ( db.inv_inv_item.site_id == site_id ) & \
@@ -371,7 +371,7 @@ def recv_process():
                       ).select(db.inv_inv_item.id,
                                db.inv_inv_item.item_id,
                                db.inv_inv_item.quantity,
-                               db.inv_inv_item.item_packet_id,
+                               db.inv_inv_item.item_pack_id,
                                ) 
                       
     inv_items_dict = inv_items.as_dict(key = "item_id")                      
@@ -389,14 +389,14 @@ def recv_process():
             inv_item_id = inv_item.id        
             
             inv_item_quantity = inv_item.quantity * \
-                                  inv_item.packet_quantity
+                                  inv_item.pack_quantity
             
             recv_item_quantity = recv_item.quantity * \
-                                 recv_item.packet_quantity         
+                                 recv_item.pack_quantity         
 
-            #convert the recv items quantity into the inv item quantity (according to packet)
+            #convert the recv items quantity into the inv item quantity (according to pack)
             quantity = (inv_item_quantity + recv_item_quantity) / \
-                        inv_item.packet_quantity
+                        inv_item.pack_quantity
             item = dict(quantity = quantity)
         else:
             # This item must be added to the inv
@@ -404,7 +404,7 @@ def recv_process():
             item = dict( site_id = site_id,
                          item_id = item_id,
                          quantity = recv_item.quantity,
-                         item_packet_id = recv_item.item_packet_id
+                         item_pack_id = recv_item.item_pack_id
                          )    
                     
         # Update Inv Item
@@ -461,11 +461,11 @@ def send_process():
                      ( db.inv_send_item.deleted == False ) )\
                  .select( db.inv_send_item.id,                         
                           db.inv_send_item.quantity,
-                          db.inv_send_item.item_packet_id,
+                          db.inv_send_item.item_pack_id,
                           db.inv_inv_item.id,
                           db.inv_inv_item.item_id,
                           db.inv_inv_item.quantity,
-                          db.inv_inv_item.item_packet_id, #required by packet_quantity virtualfield
+                          db.inv_inv_item.item_pack_id, #required by pack_quantity virtualfield
                           db.inv_inv_item.deleted,
                           left=db.inv_inv_item.on(db.inv_send_item.inv_item_id == db.inv_inv_item.id),
                           #To ensure that all send items are selected, even if the inv item has been deleted.
@@ -486,10 +486,10 @@ def send_process():
         inv_item_id = send_item.inv_inv_item.id        
         
         inv_item_quantity = send_item.inv_inv_item.quantity * \
-                        send_item.inv_inv_item.packet_quantity
+                        send_item.inv_inv_item.pack_quantity
         
         send_item_quantity = send_item.inv_send_item.quantity * \
-                        send_item.inv_send_item.packet_quantity
+                        send_item.inv_send_item.pack_quantity
                         
         if send_item_quantity > inv_item_quantity:
             # This shipment is invalid
@@ -501,7 +501,7 @@ def send_process():
         else:
             # Update the Inv Item Quantity
             new_inv_quantity = ( inv_item_quantity - send_item_quantity) / \
-                                 send_item.inv_inv_item.packet_quantity
+                                 send_item.inv_inv_item.pack_quantity
             db.inv_inv_item[inv_item_id] = dict(quantity = new_inv_quantity)
         
         #Check for req_items (-> transit)
@@ -575,14 +575,14 @@ def recv_sent():
                      (db.inv_send_item.inv_item_id == db.inv_inv_item.id) & \
                      (db.inv_send_item.deleted == False) 
                      ).select(db.inv_inv_item.item_id,
-                              db.inv_send_item.item_packet_id,
+                              db.inv_send_item.item_pack_id,
                               db.inv_send_item.quantity)   
 
     # Copy items from send to recv
     for sent_item in sent_items:
         db.inv_recv_item.insert(recv_id = recv_id,
                                 item_id = sent_item.inv_inv_item.item_id,
-                                item_packet_id = sent_item.inv_send_item.item_packet_id,
+                                item_pack_id = sent_item.inv_send_item.item_pack_id,
                                 quantity = sent_item.inv_send_item.quantity)
 
     #Flag shipment as received as received
@@ -625,14 +625,14 @@ def send_commit():
                        (db.inv_inv_item.deleted == False)
                    ).select( db.inv_inv_item.id,
                              db.req_commit_item.quantity,
-                             db.req_commit_item.item_packet_id,
+                             db.req_commit_item.item_pack_id,
                             )   
     
     for commit_item in commit_items:                        
         send_item_id = db.inv_send_item.insert( send_id = send_id,
                                                  inv_item_id = commit_item.inv_inv_item.id,
                                                  quantity = commit_item.req_commit_item.quantity,
-                                                 item_packet_id = commit_item.req_commit_item.item_packet_id                                                 
+                                                 item_pack_id = commit_item.req_commit_item.item_pack_id                                                 
                                                  ) 
                                                     
     # Redirect to send

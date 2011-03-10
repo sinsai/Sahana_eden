@@ -55,19 +55,19 @@ if deployment_settings.has_module("org"):
     table = db.define_table(tablename,
                             super_link(db.org_site), # site_id
                             item_id(),
-                            item_packet_id(),
+                            item_pack_id(),
                             Field("quantity", 
                                   "double",
                                   notnull = True),
-                            #Field("packet_quantity",
+                            #Field("pack_quantity",
                             #      "double",
-                            #      compute = shn_record_packet_quantity),   
+                            #      compute = shn_record_pack_quantity),   
                             Field("expiry_date",
                                   "date"),                            
                             comments(),
                             migrate=migrate, *s3_meta_fields())
     
-    db.inv_inv_item.virtualfields.append(item_packet_virtualfields(tablename = "inv_inv_item"))    
+    db.inv_inv_item.virtualfields.append(item_pack_virtualfields(tablename = "inv_inv_item"))    
 
     # CRUD strings
     INV_ITEM = T("Inventory Item")
@@ -127,10 +127,10 @@ if deployment_settings.has_module("org"):
                               joinby=dict(supply_item = "item_id")
                               )     
     
-    #Store Items as component of packets
+    #Store Items as component of packs
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(supply_item_packet = "item_packet_id")) 
+                              joinby=dict(supply_item_pack = "item_pack_id")) 
     
     #------------------------------------------------------------------------------
     # Update owned_by_role to the site's owned_by_role    
@@ -469,7 +469,7 @@ if deployment_settings.has_module("org"):
     table = db.define_table(tablename,
                             recv_id(),
                             item_id(),
-                            item_packet_id(),
+                            item_pack_id(),
                             Field("quantity", "double",
                                   notnull = True),
                             comments(),
@@ -477,8 +477,8 @@ if deployment_settings.has_module("org"):
                                              writable = False),
                             migrate=migrate, *s3_meta_fields())
         
-    #packet_quantity virtual field
-    table.virtualfields.append(item_packet_virtualfields(tablename = tablename))      
+    #pack_quantity virtual field
+    table.virtualfields.append(item_pack_virtualfields(tablename = tablename))      
 
     # CRUD strings
     ADD_RECV_ITEM = T("Add Item to Shipment")
@@ -652,7 +652,7 @@ if deployment_settings.has_module("org"):
     table = db.define_table(tablename,
                             send_id(),
                             inv_item_id(),
-                            item_packet_id(),
+                            item_pack_id(),
                             Field("quantity", "double",
                                   notnull = True),
                             comments(),
@@ -665,8 +665,8 @@ if deployment_settings.has_module("org"):
                                         writable = False),      
                             migrate=migrate, *s3_meta_fields())
     
-    #packet_quantity virtual field
-    table.virtualfields.append(item_packet_virtualfields(tablename = tablename))       
+    #pack_quantity virtual field
+    table.virtualfields.append(item_pack_virtualfields(tablename = tablename))       
 
     # CRUD strings
     ADD_SEND_ITEM = T("Add Item to Shipment")

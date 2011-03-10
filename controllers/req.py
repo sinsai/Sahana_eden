@@ -193,28 +193,28 @@ def commit_req():
                        (db.inv_inv_item.deleted == False)
                        ).select(db.req_req_item.id,
                                 db.req_req_item.quantity,
-                                db.req_req_item.item_packet_id,
+                                db.req_req_item.item_pack_id,
                                 db.inv_inv_item.item_id,
                                 db.inv_inv_item.quantity,
-                                db.inv_inv_item.item_packet_id)   
+                                db.inv_inv_item.item_pack_id)   
         
         for req_item in req_items:
             req_item_quantity = req_item.req_req_item.quantity * \
-                            req_item.req_req_item.packet_quantity   
+                            req_item.req_req_item.pack_quantity   
                                         
             inv_item_quantity = req_item.inv_inv_item.quantity * \
-                            req_item.inv_inv_item.packet_quantity
+                            req_item.inv_inv_item.pack_quantity
                             
             if inv_item_quantity > req_item_quantity:
                 commit_item_quantity = req_item_quantity
             else:
                 commit_item_quantity = inv_item_quantity
-            commit_item_quantity = commit_item_quantity / req_item.req_req_item.packet_quantity
+            commit_item_quantity = commit_item_quantity / req_item.req_req_item.pack_quantity
             
             if commit_item_quantity:                 
                 commit_item_id = db.req_commit_item.insert( commit_id = commit_id,
                                             req_item_id = req_item.req_req_item.id,
-                                            item_packet_id = req_item.req_req_item.item_packet_id,
+                                            item_pack_id = req_item.req_req_item.item_pack_id,
                                             quantity = commit_item_quantity
                                            ) 
                 

@@ -115,95 +115,95 @@ if deployment_settings.has_module("inv"):
                 ondelete = "RESTRICT"
                 )    
     #==============================================================================
-    # Item Packet
+    # Item Pack
     #
-    resourcename = "item_packet"
+    resourcename = "item_pack"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             item_id(notnull=True),
-                            Field("name", length=128, notnull=True), # Ideally this would reference another table for normalising Packet names
+                            Field("name", length=128, notnull=True), # Ideally this would reference another table for normalising Pack names
                             Field("quantity", "double", notnull=True),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
     # CRUD strings
-    ADD_ITEM_PACKET = T("Add Item Packet")
-    LIST_ITEM_PACKET = T("List Item Packets")
+    ADD_ITEM_PACKET = T("Add Item Pack")
+    LIST_ITEM_PACKET = T("List Item Packs")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_ITEM_PACKET,
-        title_display = T("Item Packet Details"),
+        title_display = T("Item Pack Details"),
         title_list = LIST_ITEM_PACKET,
-        title_update = T("Edit Item Packet"),
-        title_search = T("Search Item Packets"),
-        subtitle_create = T("Add New Item Packet"),
-        subtitle_list = T("Item Packets"),
+        title_update = T("Edit Item Pack"),
+        title_search = T("Search Item Packs"),
+        subtitle_create = T("Add New Item Pack"),
+        subtitle_list = T("Item Packs"),
         label_list_button = LIST_ITEM_PACKET,
         label_create_button = ADD_ITEM_PACKET,
-        label_delete_button = T("Delete Item Packet"),
-        msg_record_created = T("Item Packet added"),
-        msg_record_modified = T("Item Packet updated"),
-        msg_record_deleted = T("Item Packet deleted"),
-        msg_list_empty = T("No Item Packets currently registered"))
+        label_delete_button = T("Delete Item Pack"),
+        msg_record_created = T("Item Pack added"),
+        msg_record_modified = T("Item Pack updated"),
+        msg_record_deleted = T("Item Pack deleted"),
+        msg_list_empty = T("No Item Packs currently registered"))
 
     # Reusable Field
-    item_packet_id = S3ReusableField("item_packet_id", db.supply_item_packet, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item_packet.id",
+    item_pack_id = S3ReusableField("item_pack_id", db.supply_item_pack, sortby="name",
+                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item_pack.id",
                                                 "%(name)s",
                                                 sort=True)),
-                represent = lambda id: shn_get_db_field_value(db=db, table="supply_item_packet", field="name", look_up=id),
-                label = T("Packet"),    
+                represent = lambda id: shn_get_db_field_value(db=db, table="supply_item_pack", field="name", look_up=id),
+                label = T("Pack"),    
                 comment = DIV(DIV( _class="tooltip",
-                                   _title="%s|%s" % (T("Item Packets"),
+                                   _title="%s|%s" % (T("Item Packs"),
                                                      T("The way in which an item is normally distributed"))),
                               A( ADD_ITEM_PACKET, 
                                  _class="colorbox", 
                                  _href=URL(r=request, 
                                            c="supply", 
-                                           f="item_packet", 
+                                           f="item_pack", 
                                            args="create", 
                                            vars=dict(format="popup")
                                            ), 
                                  _target="top", 
-                                 _id = "item_packet_add",
+                                 _id = "item_pack_add",
                                  _style = "display: none",
                                  ),                               
                               ),
                 ondelete = "RESTRICT"
                 )    
     
-    def shn_record_packet_quantity(r):
-        item_packet_id = r.get("item_packet_id", None)
-        if item_packet_id:
+    def shn_record_pack_quantity(r):
+        item_pack_id = r.get("item_pack_id", None)
+        if item_pack_id:
             return shn_get_db_field_value(db,
-                                          "supply_item_packet",
+                                          "supply_item_pack",
                                           "quantity",
-                                          item_packet_id)  
+                                          item_pack_id)  
         else:
             return None  
         
-    # Virtual Field for packet_quantity
-    class item_packet_virtualfields(dict, object):
+    # Virtual Field for pack_quantity
+    class item_pack_virtualfields(dict, object):
         def __init__(self,
                      tablename):
             self.tablename = tablename
-        def packet_quantity(self):
+        def pack_quantity(self):
             if self.tablename == "inv_inv_item":
-                item_packet = self.inv_inv_item.item_packet_id
+                item_pack = self.inv_inv_item.item_pack_id
             elif self.tablename == "req_req_item":
-                item_packet = self.req_req_item.item_packet_id
+                item_pack = self.req_req_item.item_pack_id
             elif self.tablename == "req_commit_item":
-                item_packet = self.req_commit_item.item_packet_id       
+                item_pack = self.req_commit_item.item_pack_id       
             elif self.tablename == "inv_recv_item":
-                item_packet = self.inv_recv_item.item_packet_id     
+                item_pack = self.inv_recv_item.item_pack_id     
             elif self.tablename == "inv_send_item":
-                item_packet = self.inv_send_item.item_packet_id                                                           
+                item_pack = self.inv_send_item.item_pack_id                                                           
             else:
-                item_packet = None
-            if item_packet:
-                return item_packet.quantity 
+                item_pack = None
+            if item_pack:
+                return item_pack.quantity 
             else:
                 return None
     
-    #Packets as component of Items
+    #Packs as component of Items
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(supply_item="item_id"))                       

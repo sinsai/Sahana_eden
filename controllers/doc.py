@@ -115,8 +115,8 @@ def document():
     """ RESTful CRUD controller """
 
     resource = request.function
-    tablename = "%s_%s" % (module, resource)
-    table = db[tablename]
+    #tablename = "%s_%s" % (module, resource)
+    #table = db[tablename]
 
     # Model options
     # used in multiple controllers, so in the model
@@ -136,8 +136,8 @@ def image():
         update_onvalidation=image_onvalidation)
 
     resource = request.function
-    tablename = "%s_%s" % (module, resource)
-    table = db[tablename]
+    #tablename = "%s_%s" % (module, resource)
+    #table = db[tablename]
 
     # Model options
     # used in multiple controllers, so in the model

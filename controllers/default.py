@@ -249,11 +249,26 @@ def contact():
             Custom View
     """
     if deployment_settings.get_options_support_requests():
+        # Provide an internal Support Requests ticketing system.
         prefix = "support"
         resourcename = "req"
-        #tablename = "%s_%s" % (pefix, resourcename)
-        #table = db[tablename]
-        return s3_rest_controller(prefix, resourcename)
+        tablename = "%s_%s" % (prefix, resourcename)
+        table = db[tablename]
+
+        # Pre-processor
+        def prep(r):
+            # Only Admins should be able to update ticket status
+            if not auth.s3_has_role(1):
+                table.status.writable = False
+                table.actions.writable = False
+            if r.interactive and r.method == "create":
+                table.status.readable = False
+                table.actions.readable = False
+            return True
+        response.s3.prep = prep
+
+        output = s3_rest_controller(prefix, resourcename)
+        return output
     else:
         # Default: Simple Custom View
         response.title = T("Contact us")

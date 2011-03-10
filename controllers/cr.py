@@ -170,10 +170,9 @@ def shelter():
                     (T("People"), "presence"),
                     (T("Staff"), "staff"),
                     (T("Assessments"), "rat"),
-                    (T("Warehouse"), "store"),  # table is inventory_store
                     (T("Requests"), "req")]
 
-    rheader = lambda r: shn_shelter_rheader(r, tabs=shelter_tabs)
+    rheader = lambda r: shn_shelter_rheader(r, tabs=shelter_tabs + shn_show_inv_tabs(r))
     output = s3_rest_controller(module, resourcename, rheader=rheader)
 
     return output

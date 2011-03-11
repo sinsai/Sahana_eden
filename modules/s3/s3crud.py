@@ -1209,9 +1209,11 @@ class S3CRUD(S3Method):
 
                 # Audit
                 if record_id is None:
-                    audit("create", prefix, name, form=form, representation=format)
+                    audit("create", prefix, name, form=form,
+                          representation=format)
                 else:
-                    audit("update", prefix, name, form=form, representation=format)
+                    audit("update", prefix, name, form=form,
+                          record=record_id, representation=format)
                 logged = True
 
                 # Update super entity links

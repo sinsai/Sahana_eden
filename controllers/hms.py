@@ -151,8 +151,9 @@ def hospital():
                                                        (T("Images"), "image"),
                                                        (T("Services"), "services"),
                                                        (T("Contacts"), "contact"),
-                                                       (T("Cholera Treatment Capability"), "ctc_capability")
-                                                      ])
+                                                       (T("Cholera Treatment Capability"), "ctc_capability"),
+                                                       (T("Staff"), "staff"),
+                                                      ] + shn_show_inv_tabs(r))
 
     output = s3_rest_controller(module, resourcename, rheader=rheader)
     shn_menu()

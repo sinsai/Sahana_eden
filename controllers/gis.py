@@ -18,7 +18,7 @@ response.menu_options = [
         #[T("Geocode"), False, URL(r=request, f="geocode_manual")],
     ]],
     [T("Fullscreen Map"), False, URL(r=request, f="map_viewing_client")],
-    # Currently broken
+    # Currently not got geocoding support
     #[T("Bulk Uploader"), False, URL(r=request, c="doc", f="bulk_upload")]
 ]
 

@@ -254,9 +254,16 @@ auth.settings.login_onaccept = shn_auth_on_login
 
 auth.settings.lock_keys = True
 
-########
-# S3CRUD
-########
+# Languages available in User Profiles
+if len(s3.l10n_languages) > 1:
+    auth.settings.table_user.language.requires = IS_IN_SET(s3.l10n_languages, zero=None)
+else:
+    auth.settings.table_user.language.default = s3.l10n_languages.keys()[0]
+    auth.settings.table_user.language.readable = auth.settings.table_user.language.writable = False
+
+######
+# CRUD
+######
 
 def s3_formstyle(id, label, widget, comment):
 
@@ -290,9 +297,7 @@ s3.base_url = "%s/%s" % (deployment_settings.get_base_public_url(),
                          request.application)
 s3.download_url = "%s/default/download" % s3.base_url
 
-#############
-# Web2py/Crud
-#############
+# Web2py Crud
 
 # Breaks refresh of List after Create: http://groups.google.com/group/web2py/browse_thread/thread/d5083ed08c685e34
 #crud.settings.keepvalues = True
@@ -328,14 +333,10 @@ s3xrc.ROWSPERPAGE = 20
 ##########
 # Messages
 ##########
-
 from gluon.storage import Messages
 s3.messages = Messages(T)
 s3.messages.confirmation_email_subject = T("Sahana access granted")
 s3.messages.confirmation_email = T("Welcome to the Sahana Portal at ") + deployment_settings.get_base_public_url() + ". " + T("Thanks for your assistance") + "."
-
-auth.settings.table_user.language.requires = IS_IN_SET(s3.l10n_languages, zero=None)
-
 
 # -----------------------------------------------------------------------------
 # List of Nations (ISO-3166-1 Country Codes)

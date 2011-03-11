@@ -284,6 +284,8 @@ def shn_action_buttons(r,
         Designed to be called from a postp
 
         @note: standard action buttons will be inserted automatically unless already overridden
+        @note: If custom action buttons are already added, 
+               they will appear AFTER the standard action buttons 
     """
 
     if r.component:
@@ -292,7 +294,9 @@ def shn_action_buttons(r,
         args = ["[id]"]
 
     prefix, name, table, tablename = r.target()
-
+    
+    custom_actions = response.s3.actions
+        
     if s3_has_permission("update", table) and \
        not auth.permission.ownership_required(table, "update"):
         if not update_url:
@@ -329,6 +333,9 @@ def shn_action_buttons(r,
         response.s3.actions.append(
             dict(label=str(COPY), _class="action-btn", url=copy_url)
         )
+        
+    if custom_actions:
+        response.s3.actions = response.s3.actions + custom_actions
 
     return
 
@@ -633,7 +640,7 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
             args = [r.id, component]
             tab.update(_href=URL(r=request, f=function, args=args, vars=_vars))
         else:
-            if not r.component:
+            if not r.component and len(tabs[i]) <= 2:
                 tab.update(_class = "rheader_tab_here")
                 previous = i and tablist[i-1] or None
             args = [r.id]

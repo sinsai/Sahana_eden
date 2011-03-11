@@ -184,6 +184,16 @@ deployment_settings.osm.oauth_consumer_secret = ""
 deployment_settings.security.self_registration = True
 # Use 'soft' deletes
 deployment_settings.security.archive_not_delete = True
+
+# AAA Settings
+acl = deployment_settings.aaa.acl
+deployment_settings.aaa.default_acl = acl.READ # If not logged in
+deployment_settings.aaa.default_uacl =  acl.READ # If logged in  
+deployment_settings.aaa.default_oacl =  acl.CREATE | acl.READ | acl.UPDATE # If logged in & owner
+deployment_settings.aaa.has_staff_permissions = True
+deployment_settings.aaa.staff_acl = acl.CREATE | acl.READ | acl.UPDATE 
+deployment_settings.aaa.supervisor_acl = acl.ALL 
+
 # Audit settings
 # We Audit if either the Global or Module asks us to
 # (ignore gracefully if module author hasn't implemented this)
@@ -197,6 +207,11 @@ deployment_settings.security.archive_not_delete = True
 # Should potentially large dropdowns be turned into autocompletes?
 # (unused currently)
 #deployment_settings.ui.autocomplete = True
+
+# Request 
+#Allow the status for requests to be set manually,
+#rather than just automatically from commitments and shipments
+deployment_settings.req.status_writable = True
 
 # Should we use internal Support Requests?
 #deployment_settings.options.support_requests = True
@@ -307,24 +322,24 @@ deployment_settings.modules = OrderedDict([
                 budget_bundle = {"importer" : True},
             )
         )),
-    ("logs", Storage(
-            name_nice = T("Logistics Management"),
-            description = T("Managing, Storing and Distributing Items"),
+    ("inv", Storage(
+            name_nice = T("Inventory Management"),
+            description = T("Receiving and Sending Items"),
             restricted = False,
-            module_type = 10
+            module_type = 4
         )),
     ("vol", Storage(
             name_nice = T("Volunteers"),
             description = T("Manage volunteers by capturing their skills, availability and allocation"),
             restricted = False,
-            module_type = 10,
+            module_type = 3,
         )),
     # NB RMS module depends on HMS, CR & Project
     ("rms", Storage(
             name_nice = T("Requests"),
             description = T("Tracks requests for aid and matches them against donors who have pledged aid"),
             restricted = False,
-            module_type = 3,
+            module_type = 10,
             resources = Storage(
                 rms_req = {"importer" : True},
             )

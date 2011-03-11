@@ -147,12 +147,12 @@ Helvetica_map = [
 # some global variables
 #--------------------------------------------------------------------------
 
-fontchecksequence = [
+fontlist = [
     "Helvetica",         # english and latin english fonts
     "AlMateen-Bold",     # arabic fonts
     "AlMohanad",         # arabic fonts
     "SazanamiGothic",    # japanese fonts
-    "SazanamiMincho",
+    "SazanamiMincho",    # japanese fonts
     "unifont",           # unifont should be always at the last
     ]
 
@@ -164,6 +164,12 @@ fontmapping = {
     "SazanamiMincho": SazanamiMincho_map,
     "unifont": unifont_map,
 }
+
+fontchecksequence = []
+
+for eachfont in fontlist:
+    if len(fontmapping[eachfont]) != 0:
+        fontchecksequence.append(eachfont)
 
 
 
@@ -264,6 +270,7 @@ class Form:
             for fontrange in fontmapping[font]:
                 if charcode in xrange(fontrange[0], fontrange[1]):
                     return font
+        return "Helvetica"  # fallback, if no thirdparty font is installed
 
     def draw_check_boxes(self, boxes=1, completeline=0, lines=0, seek=0,
                          continuetext=0, fontsize=0, gray=0, style="",

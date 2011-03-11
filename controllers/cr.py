@@ -245,12 +245,6 @@ def shn_shelter_prep(r):
                     if staff_id:
                         db.assess_rat.staff_id.default = staff_id.id
 
-            elif r.component.name == "store":
-                # Hide the Implied fields
-                db.inventory_store.location_id.writable = False
-                db.inventory_store.location_id.default = r.record.location_id
-                db.inventory_store.location_id.comment = ""
-
             elif r.component.name == "req":
                 # Hide the Implied fields
                 db.rms_req.hospital_id.writable = db.rms_req.hospital_id.readable = False

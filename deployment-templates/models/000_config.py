@@ -209,6 +209,8 @@ deployment_settings.aaa.supervisor_acl = acl.ALL
 #deployment_settings.ui.autocomplete = True
 
 # Request 
+#Allow the status for requests to be set manually,
+#rather than just automatically from commitments and shipments
 deployment_settings.req.status_writable = True
 
 # Should we use internal Support Requests?

@@ -122,8 +122,9 @@ try:
     from fontmap.SazanamiMincho import SazanamiMincho_map
 
 except:
-    taileval_map = []
-    print >> sys.stderr, "S3 Debug: s3ocr: unifont not found, run static/fonts/setfonts.py"
+    SazanamiGothic_map = []
+    SazanamiMincho_map = []
+    print >> sys.stderr, "S3 Debug: s3ocr: japanese fonts not found, run static/fonts/setfonts.py"
 
 #--------------------------------------------------------------------------
 # Standard fonts

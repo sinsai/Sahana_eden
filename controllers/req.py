@@ -174,6 +174,20 @@ def commit_req():
     req_id = request.args[0]
     r_req = db.req_req[req_id]
     site_id = request.vars.get("site_id")
+    
+    #User must have permissions over site which is sending 
+    (prefix, resourcename, id) = shn_site_resource(site_id)        
+    if not site or not auth.s3_has_permission("update", 
+                                              db["%s_%s" % (prefix,
+                                                            resourcename)], 
+                                              record_id=id):    
+        session.error = T("You do no have permission to make this commitment.")    
+        redirect(URL(r = request,
+                     c = "req",
+                     f = "commit",
+                     args = [commit_id],
+                     )
+                 )      
 
     # Create a new commit record
     commit_id = db.req_commit.insert( datetime = request.utcnow,

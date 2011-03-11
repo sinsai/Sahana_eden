@@ -356,6 +356,22 @@ def shn_site_represent(id, default_label="[no label]"):
     return site_str
 
  # -------------------------------------------------------------------------
+def shn_site_resource(site_id):
+    """
+    Returns the prefix, resource and id which a site refers to 
+    @todo: Should this functionality be shifted to the super entity code?
+    """
+    r_site = db.org_site[site_id]
+    site_type = r_site.instance_type
+    site_type_split = site_type.split("_")
+    prefix = site_type_split[0]
+    resourcename = site_type_split[1]
+    id = r_site[site_type].select(db[site_type].id,
+                                  limitby=(0,1)
+                                  ).first().id
+    return (prefix, resourcename, id)
+ 
+ 
 def shn_create_record_roles(form, tablename):
     """
     Function to be called from an onaccept by a record which can have 

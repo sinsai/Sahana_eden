@@ -84,22 +84,26 @@ def shn_recv_rheader(r):
                                       ),
                                      )
                                 )                            
-               
+                
+
                 if recv_record.status == SHIP_STATUS_IN_PROCESS: 
-                    recv_btn = A( T("Receive Items"),
-                                  _href = URL(r = request,
-                                              c = "inv",
-                                              f = "recv_process",
-                                              args = [recv_record.id]
-                                              ),
-                                  _id = "recv_process",
-                                  _class = "action-btn"
-                                  )
+                    if auth.s3_has_permission("update", 
+                                              db.inv_recv, 
+                                              record_id=recv_record.id):
+                        recv_btn = A( T("Receive Items"),
+                                      _href = URL(r = request,
+                                                  c = "inv",
+                                                  f = "recv_process",
+                                                  args = [recv_record.id]
+                                                  ),
+                                      _id = "recv_process",
+                                      _class = "action-btn"
+                                      )
                     
-                    recv_btn_confirm = SCRIPT("S3ConfirmClick('#recv_process','%s')" 
-                                              % T("Do you want to receive this shipment?") )
-                    rheader.append(recv_btn)
-                    rheader.append(recv_btn_confirm)
+                        recv_btn_confirm = SCRIPT("S3ConfirmClick('#recv_process','%s')" 
+                                                  % T("Do you want to receive this shipment?") )
+                        rheader.append(recv_btn)
+                        rheader.append(recv_btn_confirm)
                 else:
                     grn_btn = A( T("Goods Received Note"),
                                   _href = URL(r = request,
@@ -234,20 +238,23 @@ def shn_send_rheader(r):
                                 )
                 
                 if send_record.status == SHIP_STATUS_IN_PROCESS: 
-                    send_btn = A( T("Send Shipment"),
-                                  _href = URL(r = request,
-                                              c = "inv",
-                                              f = "send_process",
-                                              args = [send_record.id]
-                                              ),
-                                  _id = "send_process",
-                                  _class = "action-btn"
-                                  )
-                    
-                    send_btn_confirm = SCRIPT("S3ConfirmClick('#send_process', '%s')" 
-                                              % T("Do you want to send this shipment?") )
-                    rheader.append(send_btn)
-                    rheader.append(send_btn_confirm)     
+                    if auth.s3_has_permission("update", 
+                                              db.inv_send, 
+                                              record_id=send_record.id):                    
+                        send_btn = A( T("Send Shipment"),
+                                      _href = URL(r = request,
+                                                  c = "inv",
+                                                  f = "send_process",
+                                                  args = [send_record.id]
+                                                  ),
+                                      _id = "send_process",
+                                      _class = "action-btn"
+                                      )
+                        
+                        send_btn_confirm = SCRIPT("S3ConfirmClick('#send_process', '%s')" 
+                                                  % T("Do you want to send this shipment?") )
+                        rheader.append(send_btn)
+                        rheader.append(send_btn_confirm)     
                 else:
                     cn_btn = A( T("Consignment Note"),
                                   _href = URL(r = request,
@@ -354,7 +361,25 @@ def req_item_in_shipment( shipment_item,
 
 def recv_process():
     recv_id = request.args[0]
+    if not auth.s3_has_permission("update", 
+                                  db.inv_recv, 
+                                  record_id=recv_id):    
+        session.error = T("You do no have permission to receive this shipment.")
+   
+            
     recv_record = db.inv_recv[recv_id]
+    
+    if recv_record.status != SHIP_STATUS_IN_PROCESS:
+        session.error = T("This shipment has already been received.")
+    
+    if session.error:
+        redirect(URL(r = request,
+                     c = "inv",
+                     f = "recv",
+                     args = [recv_id],
+                     )
+                 )         
+    
     site_id = recv_record.site_id
     
     #Get Recv & Inv Items 
@@ -433,15 +458,11 @@ def recv_process():
     response.confirmation = T("Received Items added to Warehouse Items")
 
     # Go to the Site which has received these items
-    r_site = db.org_site[site_id]
-    site_type = r_site.instance_type
-    site_type_split = site_type.split("_")
-    id = r_site[site_type].select(db[site_type].id,
-                                  limitby=(0,1)
-                                  ).first().id
+    (prefix, resourcename, id) = shn_site_resource(site_id)
+    
     redirect(URL(r = request,
-                 c = site_type_split[0],
-                 f = site_type_split[1],
+                 c = prefix,
+                 f = resourcename,
                  args = [id, "inv_item"],
                  vars = dict(show_inv="True")
                  )
@@ -450,7 +471,25 @@ def recv_process():
 #------------------------------------------------------------------------------
 def send_process():
     send_id = request.args[0]
+    if not auth.s3_has_permission("update", 
+                                  db.inv_send, 
+                                  record_id=send_id):    
+        session.error = T("You do no have permission to send this shipment.")
+        
     send_record = db.inv_send[send_id]
+    
+    if send_record.status != SHIP_STATUS_IN_PROCESS:
+        session.error = T("This shipment has already been sent.")
+
+    if session.error:                
+        redirect(URL(r = request,
+                     c = "inv",
+                     f = "send",
+                     args = [send_id],
+                     )
+                 )     
+            
+    
     site_id = send_record.site_id
     to_site_id = send_record.to_site_id
     cancel_send = False
@@ -539,25 +578,37 @@ def send_process():
                 shn_req_item_onaccept(None)        
                
         # Go to the Site which has sent these items
-        r_site = db.org_site[site_id]
-        site_type = r_site.instance_type
-        site_type_split = site_type.split("_")
-        id = r_site[site_type].select(db[site_type].id,
-                                      limitby=(0,1)
-                                      ).first().id
+        (prefix, resourcename, id) = shn_site_resource(site_id)
+
         redirect(URL(r = request,
-                     c = site_type_split[0],
-                     f = site_type_split[1],
+                     c = prefix,
+                     f = resourcename, 
                      args = [id, "inv_item"]
                      )
                  )                   
 #==============================================================================
 def recv_sent():
     """ function to copy data from a shipment which was sent to the warehouse to a recv shipment """
-
+    
     send_id = request.args[0]
-
+    
+    if not auth.s3_has_permission("update", 
+                                  db.inv_send, 
+                                  record_id=send_id):    
+        session.error = T("You do no have permission to receive this shipment.")
+        
     r_send = db.inv_send[send_id]
+    
+    if r_send.status != SHIP_STATUS_IN_PROCESS:
+        session.error = T("This shipment has already been received.")
+
+    if session.error:                
+        redirect(URL(r = request,
+                     c = "inv",
+                     f = "send",
+                     args = [send_id],
+                     )
+                 )     
 
     site_id = r_send.to_site_id
 
@@ -606,6 +657,18 @@ def send_commit():
     commit_id = request.args[0]
     r_commit = db.req_commit[commit_id]
     
+    #User must have permissions over site which is sending 
+    (prefix, resourcename, id) = shn_site_resource(site_id)        
+    if not auth.s3_has_permission("update", 
+                                  db["%s_%s" % (prefix, resourcename)], 
+                                  record_id=id):    
+        session.error = T("You do no have permission to send this shipment.")    
+        redirect(URL(r = request,
+                     c = "req",
+                     f = "commit",
+                     args = [commit_id],
+                     )
+                 )         
     # Create a new send record
     to_site_id = r_commit.for_site_id
     to_location_id = db.org_site[to_site_id].location_id    

@@ -906,13 +906,14 @@ if populate:
             popup_label = "Activity",
             marker_id = db(db.gis_marker.name == "activity").select(db.gis_marker.id, limitby=(0, 1)).first().id
         )
-        table.insert(
-            name = "Warehouses",
-            module = "inventory",
-            resource = "store",
-            popup_label = "Warehouse",
-            marker_id = db(db.gis_marker.name == "office").select(db.gis_marker.id, limitby=(0, 1)).first().id
-        )
+        #table.insert(
+        #    name = "Warehouses",
+        #    module = "org",
+        #    resource = "office",
+        #    type = 5,
+        #    popup_label = "Warehouse",
+        #    marker_id = db(db.gis_marker.name == "office").select(db.gis_marker.id, limitby=(0, 1)).first().id
+        #)
     tablename = "gis_layer_coordinate"
     table = db[tablename]
     if not db(table.id > 0).count():

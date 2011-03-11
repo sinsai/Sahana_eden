@@ -836,7 +836,7 @@
 'Click here to open log': 'Haga clic aquí para abrir registro',
 "Click on 'Pledge' button in the left-hand column to make a Pledge to match a request for aid.": "Click on 'Pledge' button in the left-hand column to make a Pledge to match a request for aid.",
 'Click on an ID in the left-hand column to make a Pledge to match a request for aid.': 'Haga clic en una identificación en la columna de la izquierda para hacer una promesa para que coincida con una solicitud de ayuda.',
-'Click on the link ': 'Click en el enlace ',
+'Click on the link': 'Click en el enlace',
 'Client IP': 'IP del cliente',
 'Clinical Laboratory': 'Laboratorio Clínico',
 'Clinical Operations': 'Operaciones Clínicas',

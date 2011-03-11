@@ -627,7 +627,7 @@
 'Civil Emergency': 'Civil Emergency',
 'Clear Selection': 'Clear Selection',
 "Click on 'Pledge' button in the left-hand column to make a Pledge to match a request for aid.": "Click on 'Pledge' button in the left-hand column to make a Pledge to match a request for aid.",
-'Click on the link ': 'Click on the link ',
+'Click on the link': 'Click on the link',
 'Clinical Laboratory': 'Clinical Laboratory',
 'Clinical Operations': 'Clinical Operations',
 'Clinical Status': 'Clinical Status',

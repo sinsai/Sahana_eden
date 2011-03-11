@@ -675,7 +675,7 @@
 'City': 'City',
 'Civil Emergency': 'Civil Emergency',
 'Clear Selection': 'Clear Selection',
-'Click on the link ': 'Click on the link ',
+'Click on the link': 'Click on the link',
 'Client IP': 'Client IP',
 'Clinical Laboratory': 'Clinical Laboratory',
 'Clinical Operations': 'Clinical Operations',

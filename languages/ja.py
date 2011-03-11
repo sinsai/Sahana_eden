@@ -718,7 +718,7 @@
 'Civil Emergency': '市民緊急事態',
 'Clear Selection': '選択をクリア',
 "Click on 'Pledge' button in the left-hand column to make a Pledge to match a request for aid.": "救援要請と寄付項目を関連付けるには、項目左の'Pledge'ボタンを押してください。",
-'Click on the link ': 'リンクをクリック ',
+'Click on the link': 'リンクをクリック',
 'Client IP': 'クライアントIP',
 'Clinical Laboratory': 'Clinical Laboratory',
 'Clinical Operations': '診療の人員数',

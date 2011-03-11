@@ -33,7 +33,58 @@ def s3_is_mobile_client(request):
     if request.env.http_accept and \
        request.env.http_accept.find("text/vnd.wap.wml") > 0:
         return True
-    keys = ["iphone", "ipod", "android", "opera mini", "blackberry", "palm", "windows ce", "iemobile", "smartphone", "medi", "sk-0", "vk-v", "aptu", "xda-", "mtv ", "v750", "p800", "opwv", "send", "xda2", "sage", "t618", "qwap", "veri", "t610", "tcl-", "vx60", "vx61", "lg-k", "lg-l", "lg-m", "lg-o", "lg-a", "lg-b", "lg-c", "xdag", "lg-f", "lg-g", "sl45", "emul", "lg-p", "lg-s", "lg-t", "lg-u", "lg-w", "6590", "t250", "qc21", "ig01", "port", "m1-w", "770s", "n710", "ez60", "mt50", "g1 u", "vk40", "bird", "tagt", "pose", "jemu", "beck", "go.w", "jata", "gene", "smar", "g-mo", "o2-x", "htc_", "hei-", "fake", "qc-7", "smal", "htcp", "htcs", "craw", "htct", "aste", "htca", "htcg", "teli", "telm", "kgt", "mwbp", "kwc-", "owg1", "htc ", "kgt/", "htc-", "benq", "slid", "qc60", "dmob", "blac", "smt5", "nec-", "sec-", "sec1", "sec0", "fetc", "spv ", "mcca", "nem-", "spv-", "o2im", "m50/", "ts70", "arch", "qtek", "opti", "devi", "winw", "rove", "winc", "talk", "pant", "netf", "pana", "esl8", "pand", "vite", "v400", "whit", "scoo", "good", "nzph", "mtp1", "doco", "raks", "wonu", "cmd-", "cell", "mode", "im1k", "modo", "lg-d", "idea", "jigs", "bumb", "sany", "vulc", "vx70", "psio", "fly_", "mate", "pock", "cdm-", "fly-", "i230", "lge-", "lge/", "argo", "qc32", "n701", "n700", "mc21", "n500", "midp", "t-mo", "airn", "bw-u", "iac", "bw-n", "lg g", "erk0", "sony", "alav", "503i", "pt-g", "au-m", "treo", "ipaq", "dang", "seri", "mywa", "eml2", "smb3", "brvw", "sgh-", "maxo", "pg-c", "qci-", "vx85", "vx83", "vx80", "vx81", "pg-8", "pg-6", "phil", "pg-1", "pg-2", "pg-3", "ds12", "scp-", "dc-s", "brew", "hipt", "kddi", "qc07", "elai", "802s", "506i", "dica", "mo01", "mo02", "avan", "kyoc", "ikom", "siem", "kyok", "dopo", "g560", "i-ma", "6310", "sie-", "grad", "ibro", "sy01", "nok6", "el49", "rim9", "upsi", "inno", "wap-", "sc01", "ds-d", "aur ", "comp", "wapp", "wapr", "waps", "wapt", "wapu", "wapv", "wapy", "newg", "wapa", "wapi", "wapj", "wapm", "hutc", "lg/u", "yas-", "hita", "lg/l", "lg/k", "i-go", "4thp", "bell", "502i", "zeto", "ez40", "java", "n300", "n302", "mmef", "pn-2", "newt", "1207", "sdk/", "gf-5", "bilb", "zte-", "maui", "qc-3", "qc-2", "blaz", "r600", "hp i", "qc-5", "moto", "cond", "motv", "virg", "ccwa", "audi", "shar", "i-20", "samm", "sama", "sams", "sch-", "mot ", "http", "505i", "mot-", "n502", "topl", "n505", "mobi", "3gso", "wmlb", "ezwa", "qc12", "abac", "tdg-", "neon", "mio8", "sp01", "rozo", "vx98", "dait", "t600", "anyw", "tx-9", "sava", "m-cr", "tsm-", "mioa", "tsm5", "klon", "capi", "tsm3", "hcit", "libw", "lg50", "mc01", "amoi", "lg54", "ez70", "se47", "n203", "vk52", "vk53", "vk50", "webc", "haie", "semc", "grun", "play", "palm", "a wa", "anny", "prox", "o2 x", "ezze", "symb", "hs-c", "pg13", "mits", "kpt ", "qa-a", "501i", "pdxg", "iris", "pluc", "acoo", "soft", "hpip", "iac/", "iac-", "aus ", "s55/", "vx53", "vx52", "chtm", "meri", "merc", "your", "huaw", "cldc", "voda", "smit", "x700", "mozz", "lexi", "up.b", "sph-", "keji", "jbro", "wig ", "attw", "pire", "r380", "lynx", "anex", "vm40", "hd-m", "504i", "w3c ", "c55/", "w3c-", "upg1", "t218", "tosh", "acer", "hd-t", "eric", "hd-p", "noki", "acs-", "dbte", "n202", "tim-", "alco", "ezos", "dall", "leno", "alca", "asus", "m3ga", "utst", "aiko", "n102", "n101", "n100", "oran"]
+    keys = ["iphone", "ipod", "android", "opera mini", "blackberry", "palm",
+            "windows ce", "iemobile", "smartphone", "medi", "sk-0", "vk-v",
+            "aptu", "xda-", "mtv ", "v750", "p800", "opwv", "send", "xda2",
+            "sage", "t618", "qwap", "veri", "t610", "tcl-", "vx60", "vx61",
+            "lg-k", "lg-l", "lg-m", "lg-o", "lg-a", "lg-b", "lg-c", "xdag",
+            "lg-f", "lg-g", "sl45", "emul", "lg-p", "lg-s", "lg-t", "lg-u",
+            "lg-w", "6590", "t250", "qc21", "ig01", "port", "m1-w", "770s",
+            "n710", "ez60", "mt50", "g1 u", "vk40", "bird", "tagt", "pose",
+            "jemu", "beck", "go.w", "jata", "gene", "smar", "g-mo", "o2-x",
+            "htc_", "hei-", "fake", "qc-7", "smal", "htcp", "htcs", "craw",
+            "htct", "aste", "htca", "htcg", "teli", "telm", "kgt", "mwbp",
+            "kwc-", "owg1", "htc ", "kgt/", "htc-", "benq", "slid", "qc60",
+            "dmob", "blac", "smt5", "nec-", "sec-", "sec1", "sec0", "fetc",
+            "spv ", "mcca", "nem-", "spv-", "o2im", "m50/", "ts70", "arch",
+            "qtek", "opti", "devi", "winw", "rove", "winc", "talk", "pant",
+            "netf", "pana", "esl8", "pand", "vite", "v400", "whit", "scoo",
+            "good", "nzph", "mtp1", "doco", "raks", "wonu", "cmd-", "cell",
+            "mode", "im1k", "modo", "lg-d", "idea", "jigs", "bumb", "sany",
+            "vulc", "vx70", "psio", "fly_", "mate", "pock", "cdm-", "fly-",
+            "i230", "lge-", "lge/", "argo", "qc32", "n701", "n700", "mc21",
+            "n500", "midp", "t-mo", "airn", "bw-u", "iac", "bw-n", "lg g",
+            "erk0", "sony", "alav", "503i", "pt-g", "au-m", "treo", "ipaq",
+            "dang", "seri", "mywa", "eml2", "smb3", "brvw", "sgh-", "maxo",
+            "pg-c", "qci-", "vx85", "vx83", "vx80", "vx81", "pg-8", "pg-6",
+            "phil", "pg-1", "pg-2", "pg-3", "ds12", "scp-", "dc-s", "brew",
+            "hipt", "kddi", "qc07", "elai", "802s", "506i", "dica", "mo01",
+            "mo02", "avan", "kyoc", "ikom", "siem", "kyok", "dopo", "g560",
+            "i-ma", "6310", "sie-", "grad", "ibro", "sy01", "nok6", "el49",
+            "rim9", "upsi", "inno", "wap-", "sc01", "ds-d", "aur ", "comp",
+            "wapp", "wapr", "waps", "wapt", "wapu", "wapv", "wapy", "newg",
+            "wapa", "wapi", "wapj", "wapm", "hutc", "lg/u", "yas-", "hita",
+            "lg/l", "lg/k", "i-go", "4thp", "bell", "502i", "zeto", "ez40",
+            "java", "n300", "n302", "mmef", "pn-2", "newt", "1207", "sdk/",
+            "gf-5", "bilb", "zte-", "maui", "qc-3", "qc-2", "blaz", "r600",
+            "hp i", "qc-5", "moto", "cond", "motv", "virg", "ccwa", "audi",
+            "shar", "i-20", "samm", "sama", "sams", "sch-", "mot ", "http",
+            "505i", "mot-", "n502", "topl", "n505", "mobi", "3gso", "wmlb",
+            "ezwa", "qc12", "abac", "tdg-", "neon", "mio8", "sp01", "rozo",
+            "vx98", "dait", "t600", "anyw", "tx-9", "sava", "m-cr", "tsm-",
+            "mioa", "tsm5", "klon", "capi", "tsm3", "hcit", "libw", "lg50",
+            "mc01", "amoi", "lg54", "ez70", "se47", "n203", "vk52", "vk53",
+            "vk50", "webc", "haie", "semc", "grun", "play", "palm", "a wa",
+            "anny", "prox", "o2 x", "ezze", "symb", "hs-c", "pg13", "mits",
+            "kpt ", "qa-a", "501i", "pdxg", "iris", "pluc", "acoo", "soft",
+            "hpip", "iac/", "iac-", "aus ", "s55/", "vx53", "vx52", "chtm",
+            "meri", "merc", "your", "huaw", "cldc", "voda", "smit", "x700",
+            "mozz", "lexi", "up.b", "sph-", "keji", "jbro", "wig ", "attw",
+            "pire", "r380", "lynx", "anex", "vm40", "hd-m", "504i", "w3c ",
+            "c55/", "w3c-", "upg1", "t218", "tosh", "acer", "hd-t", "eric",
+            "hd-p", "noki", "acs-", "dbte", "n202", "tim-", "alco", "ezos",
+            "dall", "leno", "alca", "asus", "m3ga", "utst", "aiko", "n102",
+            "n101", "n100", "oran"]
     ua = (request.env.http_user_agent or "").lower()
     if [key for key in keys if key in ua]:
         return True
@@ -191,7 +242,8 @@ if deployment_settings.get_auth_openid():
         from gluon.contrib.login_methods.openid_auth import OpenIDAuth
         openid_login_form = OpenIDAuth(auth)
         from gluon.contrib.login_methods.extended_login_form import ExtendedLoginForm
-        extended_login_form = ExtendedLoginForm(auth, openid_login_form, signals=["oid", "janrain_nonce"])
+        extended_login_form = ExtendedLoginForm(auth, openid_login_form,
+                                                signals=["oid", "janrain_nonce"])
         auth.settings.login_form = extended_login_form
     except ImportError:
         session.warning = T("Library support not available for OpenID")
@@ -203,10 +255,18 @@ auth.settings.expiration = 28800  # seconds
 auth.settings.registration_requires_verification = deployment_settings.get_auth_registration_requires_verification()
 # Email settings for registration verification
 auth.settings.mailer = mail
-auth.messages.verify_email = T("Click on the link ") + deployment_settings.get_base_public_url() + "/" + request.application + "/default/user/verify_email/%(key)s " + T("to verify your email")
+auth.messages.verify_email = "%s %s/%s/default/user/verify_email/%s %s" % (T("Click on the link"),
+                                                                           deployment_settings.get_base_public_url(),
+                                                                           request.application, 
+                                                                           "%(key)s", 
+                                                                           T("to verify your email"))
 auth.settings.on_failed_authorization = URL(r=request, c="default", f="user", args="not_authorized")
 auth.settings.reset_password_requires_verification = True
-auth.messages.reset_password = T("Click on the link ") + deployment_settings.get_base_public_url() + "/" + request.application + "/default/user/reset_password/%(key)s " + T("to reset your password")
+auth.messages.reset_password = "%s %s/%s/default/user/reset_password/%s %s" % (T("Click on the link"),
+                                                                               deployment_settings.get_base_public_url(),
+                                                                               request.application,
+                                                                               "%(key)s",
+                                                                               T("to reset your password"))
 # Require Admin approval for self-registered users
 auth.settings.registration_requires_approval = deployment_settings.get_auth_registration_requires_approval()
 auth.messages.registration_pending = T("Email address verified, however registration is still pending approval - please wait until confirmation received.")
@@ -216,8 +276,10 @@ if deployment_settings.get_auth_registration_requires_approval():
     auth.settings.verify_email_onaccept = lambda form: \
         auth.settings.mailer.send(to=deployment_settings.get_mail_approver(),
                                   subject=T("Sahana Login Approval Pending"),
-                                  message=T("Your action is required. Please approve user %s asap: " % form.email) +
-                                  deployment_settings.get_base_public_url() + "/" + request.application + "/admin/user")
+                                  message="%s %s: %s/%s/admin/user" % (T("Your action is required. Please approve user"),
+                                                                       form.email,
+                                                                       deployment_settings.get_base_public_url(),
+                                                                       request.application))
 
 # Allow use of LDAP accounts for login
 # NB Currently this means that change password should be disabled:

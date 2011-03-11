@@ -898,6 +898,7 @@ def shn_update_staff_membership(record,
             auth.del_membership(site_supervisor_role_id, user_id)  
             
         elif not supervisor:
+            
             auth.add_membership(site_staff_role_id, user_id)  
             auth.del_membership(site_supervisor_role_id, user_id)
               
@@ -908,6 +909,8 @@ def shn_update_staff_membership(record,
 # ----------------------------------------------------------------------------- 
 def shn_staff_onaccept(form):
     shn_update_staff_membership(form)
+    #Staff resources inherit permissions from sites not organisations, 
+    #because this is LESS permissive. This may need to be a deployment setting
     shn_component_copy_role_func(component_name = "org_staff", 
                                  resource_name = "org_site", 
                                  fk = "site_id",
@@ -921,10 +924,14 @@ s3xrc.model.configure(table,
 # -----------------------------------------------------------------------------  
 def shn_staff_prep(r):
     #Filter out people which are already staff for  in this inventory
-     #Make S3PersonAutocompleteWidget work with the filter criteria of the 
-     #field.requires 
-     #(this is required to ensure only unique staff can be added to each site)
-    staff_rows =  db((db.org_staff.site_id == r.record.site_id) &
+    #Make S3PersonAutocompleteWidget work with the filter criteria of the 
+    #field.requires 
+    #(this is required to ensure only unique staff can be added to each site)
+    try: 
+        site_id = r.record.site_id
+    except:
+        site_id = None    
+    staff_rows =  db((db.org_staff.site_id == site_id) &
                      (db.org_staff.deleted == False)           
                      ).select(db.org_staff.person_id)
     person_ids = [r.person_id for r in staff_rows]

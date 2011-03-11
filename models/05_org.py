@@ -632,12 +632,14 @@ donor_id = S3ReusableField("donor_id", db.org_organisation, sortby="name",
 
 #==============================================================================
 # Staff
-# Many-to-Many Persons to Offices & Projects with also the Title & Manager that the person has in this context
+# Many-to-Many Persons to Offices & Projects with also the Title & Manager that 
+# the person has in this context
 # @ToDo: Handle Shifts (e.g. Red Cross: 06:00-18:00 & 18:00-06:00)
 # @ToDo: Build an Organigram out of this data
 #
 resourcename = "staff"
 tablename = "%s_%s" % (module, resourcename)
+
 table = db.define_table(tablename,
                         super_link(db.org_site), # site_id
                         person_id(label=T("Name")),
@@ -652,9 +654,16 @@ table = db.define_table(tablename,
                         Field("focal_point", "boolean"),            
                         #project_id(),
                         #Field("slots", "integer", default=1),
-                        #Field("payrate", "double", default=0.0), # Wait for Bugeting integration
+                        # Wait for Bugeting integration
+                        #Field("payrate", "double", default=0.0), 
                         comments(),
                         migrate=migrate, *s3_meta_fields())
+
+table.person_id.requires = IS_ONE_OF( db, "pr_person.id",
+                                      shn_pr_person_represent,
+                                      orderby="pr_person.first_name",
+                                      sort=True,
+                                      error_message="Person must be specified!")
 
 def shn_org_staff_represent(staff_id):
     staff = db(db.org_staff.id == staff_id).select(db.org_staff.title,
@@ -662,7 +671,7 @@ def shn_org_staff_represent(staff_id):
                                                    db.pr_person.first_name,
                                                    db.pr_person.middle_name,
                                                    db.pr_person.last_name,
-                                                   #@TODO: Fix this
+                                                   #@TODO: Fix this (use site_id not office_id)
                                                    #left = [db.pr_person.on(db.pr_person.id == db.org_staff.person_id),
                                                    #        db.org_office.on(db.org_office.id == db.org_staff.office_id)]                                                   
                                                   ).first()
@@ -795,6 +804,7 @@ def shn_update_staff_membership(record,
     """
     Updates the staff's memberships of the roles associated with the 
     organisation and/or site instance record which the staff is a component of
+    Called from onaccept & ondelete
     """    
     
     if delete:
@@ -892,3 +902,15 @@ s3xrc.model.configure(table,
                       ondelete = lambda form, delete = True: 
                                     shn_update_staff_membership(form, delete)
                       )
+# -----------------------------------------------------------------------------  
+def shn_staff_prep(r):
+    #Filter out people which are already staff for  in this inventory
+     #Make S3PersonAutocompleteWidget work with the filter criteria of the 
+     #field.requires 
+     #(this is required to ensure only unique staff can be added to each site)
+    staff_rows =  db((db.org_staff.site_id == r.record.site_id) &
+                     (db.org_staff.deleted == False)           
+                     ).select(db.org_staff.person_id)
+    person_ids = [r.person_id for r in staff_rows]
+    db.org_staff.person_id.requires.set_filter(not_filterby = "id",
+                                               not_filter_opts = person_ids)

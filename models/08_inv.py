@@ -732,10 +732,6 @@ if deployment_settings.has_module("org"):
                     msg_record_deleted = T("Incoming Shipment canceled"),
                     msg_list_empty = T("No Incoming Shipments"))
                 
-                def prep(r):    
-                    filter = (db.inv_send.status == SHIP_STATUS_SENT)
-                    r.resource.add_component_filter("send", filter)  
-                    return True    
                 response.s3.actions = [dict(url = str(URL(r=request,
                                                       c = "inv",
                                                       f = "recv_sent",
@@ -744,8 +740,7 @@ if deployment_settings.has_module("org"):
                                                    ),
                                             _class = "action-btn",
                                             label = "Receive")
-                                        ]  
-                return prep                  
+                                        ]                    
             else:
                 s3xrc.model.add_component(
                     "inv",
@@ -756,8 +751,26 @@ if deployment_settings.has_module("org"):
                 s3.crud_strings["inv_send"].update(
                     msg_record_modified = T("Sent Shipment updated"),
                     msg_record_deleted = T("Sent Shipment canceled"),
-                    msg_list_empty = T("No Sent Shipments"))  
-                return None   
+                    msg_list_empty = T("No Sent Shipments"))    
+            
+    #------------------------------------------------------------------------------   
+    def shn_inv_prep(r):      
+        if "inv_item" in request.args:
+            #Filter out items which are already  in this inventory
+            inv_item_rows =  db((db.inv_inv_item.site_id == r.record.site_id) &
+                                (db.inv_inv_item.deleted == False)           
+                                ).select(db.inv_inv_item.item_id)
+            item_ids = [r.item_id for r in inv_item_rows]
+            db.inv_inv_item.item_id.requires.set_filter(not_filterby = "id",
+                                                        not_filter_opts = item_ids)
+        
+        
+        if "send" in request.args and \
+            request.get_vars.get("select","sent") == "incoming":        
+            #Display only incoming shipments which haven't been received yet
+            filter = (db.inv_send.status == SHIP_STATUS_SENT)
+            r.resource.add_component_filter("send", filter)  
+
     #------------------------------------------------------------------------------
     #Session dictionary to indicate if a site inv should be shown
     if session.s3.show_inv == None:

@@ -81,12 +81,12 @@ def office():
     if isinstance(request.vars.organisation_id, list):
         request.vars.organisation_id = request.vars.organisation_id[0]
 
-    inv_prep = shn_add_dynamic_inv_components()
+    shn_add_dynamic_inv_components()
 
     # Pre-processor
-    def prep(r):  
-        if inv_prep:    
-            inv_prep(r)
+    def prep(r): 
+        shn_staff_prep(r) 
+        shn_inv_prep(r)
           
         if r.representation == "popup":
             organisation = request.vars.organisation_id or session.s3.organisation_id or ""

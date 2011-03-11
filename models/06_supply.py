@@ -104,7 +104,7 @@ if deployment_settings.has_module("inv"):
 
     # Reusable Field
     item_id = S3ReusableField("item_id", db.supply_item, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item.id", "%(name)s", sort=True)),
+                requires = IS_ONE_OF(db, "supply_item.id", "%(name)s", sort=True),
                 represent = shn_item_represent,
                 label = T("Item"),
                 comment = DIV(A(ADD_ITEM,
@@ -125,7 +125,8 @@ if deployment_settings.has_module("inv"):
         
         # try to update the existing record
         if db((db.supply_item_pack.item_id == item_id) &
-              (db.supply_item_pack.quantity == 1 )
+              (db.supply_item_pack.quantity == 1 ) &
+              (db.supply_item_pack.deleted == False ) 
               ).update(name = form.vars.um) == 0:
             #Create a new item packet
             db.supply_item_pack.insert(item_id = item_id,

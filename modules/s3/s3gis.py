@@ -271,11 +271,11 @@ class GIS(object):
     # -----------------------------------------------------------------------------
     def download_kml(self, url, public_url):
         """
-        Download a KML file:
-            - unzip it if-required
-            - follow NetworkLinks recursively if-required
+            Download a KML file:
+                - unzip it if-required
+                - follow NetworkLinks recursively if-required
 
-        Returns a file object
+            Returns a file object
         """
 
         response = self.response
@@ -456,7 +456,7 @@ class GIS(object):
     # -------------------------------------------------------------------------
     def _lookup_parent_path(self, feature_id):
         """
-        Helper that gets parent and path for a location.
+            Helper that gets parent and path for a location.
         """
 
         db = self.db
@@ -473,17 +473,17 @@ class GIS(object):
     # -------------------------------------------------------------------------
     def get_children(self, parent_id):
         """
-        Return a list of all GIS Features which are children of
-        the requested feature, using Materialized path for retrieving
-        the children
+            Return a list of all GIS Features which are children of
+            the requested feature, using Materialized path for retrieving
+            the children
 
-        @author: Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
+            @author: Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
 
-        This has been chosen over Modified Preorder Tree Traversal for greater efficiency:
-        http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+            This has been chosen over Modified Preorder Tree Traversal for greater efficiency:
+            http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
 
-        Assists lazy update of a database without location paths by calling
-        update_location_tree to get the path.
+            Assists lazy update of a database without location paths by calling
+            update_location_tree to get the path.
         """
 
         parent_row = self._lookup_parent_path(parent_id)
@@ -499,25 +499,25 @@ class GIS(object):
     # -------------------------------------------------------------------------
     def get_parents(self, feature_id, feature=None, ids_only=False):
         """
-        Returns a list containing ancestors of the requested feature.
+            Returns a list containing ancestors of the requested feature.
 
-        If the caller already has the location row, including path and parent
-        fields, they can supply it via feature to avoid a db lookup.
+            If the caller already has the location row, including path and parent
+            fields, they can supply it via feature to avoid a db lookup.
 
-        If ids_only is false, each element in the list is a gluon.sql.Row
-        containing the gis_location record of an ancestor of the specified
-        location.
+            If ids_only is false, each element in the list is a gluon.sql.Row
+            containing the gis_location record of an ancestor of the specified
+            location.
 
-        If ids_only is true, just returns a list of ids of the parents.
-        This avoids a db lookup for the parents if the specified feature has
-        a path.
+            If ids_only is true, just returns a list of ids of the parents.
+            This avoids a db lookup for the parents if the specified feature has
+            a path.
 
-        List elements are in the opposite order as the location path and
-        exclude the specified location itself, i.e. element 0 is the parent
-        and the last element is the most distant ancestor.
+            List elements are in the opposite order as the location path and
+            exclude the specified location itself, i.e. element 0 is the parent
+            and the last element is the most distant ancestor.
 
-        Assists lazy update of a database without location paths by calling
-        update_location_tree to get the path.
+            Assists lazy update of a database without location paths by calling
+            update_location_tree to get the path.
         """
 
         db = self.db
@@ -561,21 +561,21 @@ class GIS(object):
     # -------------------------------------------------------------------------
     def get_parent_per_level(self, results, feature_id, feature=None, names=False):
         """
-        Adds ancestor of requested feature for each level to supplied dict.
+            Adds ancestor of requested feature for each level to supplied dict.
 
-        If the caller already has the location row, including path and parent
-        fields, they can supply it via feature to avoid a db lookup.
+            If the caller already has the location row, including path and parent
+            fields, they can supply it via feature to avoid a db lookup.
 
-        If a dict is not supplied in results, one is created. The results
-        dict is returned in either case.
+            If a dict is not supplied in results, one is created. The results
+            dict is returned in either case.
 
-        If names=True (used by address_onvalidation) then:
-        For each ancestor, an entry ancestor.level : ancestor.name is added to
-        results.
+            If names=True (used by address_onvalidation) then:
+            For each ancestor, an entry ancestor.level : ancestor.name is added to
+            results.
 
-        If names=False (used by S3LocationSelectorWidget) then:
-        For each ancestor, an entry ancestor.level : ancestor.id is added to
-        results.
+            If names=False (used by S3LocationSelectorWidget) then:
+            For each ancestor, an entry ancestor.level : ancestor.id is added to
+            results.
         """
 
         if not results:
@@ -654,18 +654,30 @@ class GIS(object):
 
         db = self.db
 
-        feature = db(db.gis_feature_class.name == name).select(db.gis_feature_class.id, limitby=(0, 1)).first()
+        feature = db(db.gis_feature_class.name == name).select(db.gis_feature_class.id,
+                                                               limitby=(0, 1)).first()
         if feature:
             return feature.id
         else:
             return None
 
     # -----------------------------------------------------------------------------
-    def get_feature_layer(self, prefix, resourcename, layername, popup_label, config=None, marker_id=None, filter=None, active=True, polygons=False, opacity=1):
+    def get_feature_layer(self,
+                          prefix,
+                          resourcename,
+                          layername,
+                          popup_label,
+                          config=None,
+                          marker_id=None,
+                          filter=None,
+                          active=True,
+                          polygons=False,
+                          opacity=1):
         """
-        Return a Feature Layer suitable to display on a map
-        @param layername: used as the label in the LayerSwitcher
-        @param popup_label: used in Cluster Popups to differentiate between types
+            Return a Feature Layer suitable to display on a map
+            @param layername: used as the label in the LayerSwitcher
+            @param popup_label: used in Cluster Popups to differentiate between types
+            @param filter: Used by Location Selector
         """
         db = self.db
         cache = self.cache
@@ -696,40 +708,88 @@ class GIS(object):
             query = query & (_locations.id == db["%s_%s" % (prefix, resourcename)].location_id)
             if not polygons and not resourcename in gis_categorised_resources:
                 # Only retrieve the bulky polygons if-required
-                locations = db(query).select(_locations.id, _locations.uuid, _locations.parent, _locations.name, _locations.lat, _locations.lon)
+                locations = db(query).select(_locations.id,
+                                             _locations.uuid,
+                                             _locations.parent,
+                                             _locations.name,
+                                             _locations.lat,
+                                             _locations.lon)
             elif not polygons and resourcename in gis_categorised_resources:
-                locations = db(query).select(_locations.id, _locations.uuid, _locations.parent, _locations.name, _locations.lat, _locations.lon, table.category)
+                locations = db(query).select(_locations.id,
+                                             _locations.uuid,
+                                             _locations.parent,
+                                             _locations.name,
+                                             _locations.lat,
+                                             _locations.lon,
+                                             table.category)
             elif polygons and not resourcename in gis_categorised_resources:
-                locations = db(query).select(_locations.id, _locations.uuid, _locations.parent, _locations.name, _locations.wkt, _locations.lat, _locations.lon)
+                locations = db(query).select(_locations.id,
+                                             _locations.uuid,
+                                             _locations.parent,
+                                             _locations.name,
+                                             _locations.wkt,
+                                             _locations.lat,
+                                             _locations.lon)
             else:
                 # Polygons & Categorised resources
-                locations = db(query).select(_locations.id, _locations.uuid, _locations.parent, _locations.name, _locations.wkt, _locations.lat, _locations.lon, table.category)
+                locations = db(query).select(_locations.id,
+                                             _locations.uuid,
+                                             _locations.parent,
+                                             _locations.name,
+                                             _locations.wkt,
+                                             _locations.lat,
+                                             _locations.lon,
+                                             table.category)
 
             if resourcename in gis_categorised_resources:
                 for i in range(0, len(locations)):
-                    locations[i].popup_label = "%s-%s" % (locations[i].name, popup_label)
-                    locations[i].marker = self.get_marker(tablename, locations[i][tablename].category)
+                    locations[i].popup_label = "%s-%s" % (locations[i].name,
+                                                          popup_label)
+                    locations[i].marker = self.get_marker(tablename,
+                                                          locations[i][tablename].category)
             else:
                 for i in range(0, len(locations)):
-                    locations[i].popup_label = "%s-%s" % (locations[i].name, popup_label)
+                    locations[i].popup_label = "%s-%s" % (locations[i].name,
+                                                          popup_label)
 
-            popup_url = URL(r=request, c=prefix, f=resourcename, args="read.plain?%s.location_id=" % resourcename)
+            popup_url = URL(r=request, c=prefix, f=resourcename,
+                            args="read.plain?%s.location_id=" % resourcename)
 
             if not marker_id and not resourcename in gis_categorised_resources:
                 # Add the marker here so that we calculate once/layer not once/feature
                 table_fclass = db.gis_feature_class
                 if not config:
                     config = self.get_config()
-                query = (table_fclass.deleted == False) & (table_fclass.symbology_id == config.symbology_id) & (table_fclass.resource == resourcename)
-                marker = db(query).select(db.gis_feature_class.id, limitby=(0, 1), cache=cache).first()
+                query = (table_fclass.deleted == False) & \
+                        (table_fclass.symbology_id == config.symbology_id) & \
+                        (table_fclass.resource == resourcename)
+                marker = db(query).select(db.gis_feature_class.id,
+                                          limitby=(0, 1),
+                                          cache=cache).first()
                 if marker:
                     marker_id = marker.id
 
             try:
-                marker = db(_markers.id == marker_id).select(_markers.image, _markers.height, _markers.width, _markers.id, limitby=(0, 1), cache=cache).first()
-                layer = {"name":layername, "query":locations, "active":active, "marker":marker, "opacity": opacity, "popup_url": popup_url, "polygons": polygons}
+                marker = db(_markers.id == marker_id).select(_markers.image,
+                                                             _markers.height,
+                                                             _markers.width,
+                                                             _markers.id,
+                                                             limitby=(0, 1),
+                                                             cache=cache).first()
+                layer = {"name":layername,
+                         "query":locations,
+                         "active":active,
+                         "marker":marker,
+                         "opacity": opacity,
+                         "popup_url": popup_url,
+                         "polygons": polygons}
             except:
-                layer = {"name":layername, "query":locations, "active":active, "opacity": opacity, "popup_url": popup_url, "polygons": polygons}
+                layer = {"name":layername,
+                         "query":locations,
+                         "active":active,
+                         "opacity": opacity,
+                         "popup_url": popup_url,
+                         "polygons": polygons}
 
             return layer
 
@@ -749,7 +809,12 @@ class GIS(object):
         locations = db.gis_location
 
         # Check that the location is a polygon
-        location = db(locations.id == location_id).select(locations.wkt, locations.lon_min, locations.lon_max, locations.lat_min, locations.lat_max, limitby=(0, 1)).first()
+        location = db(locations.id == location_id).select(locations.wkt,
+                                                          locations.lon_min,
+                                                          locations.lon_max,
+                                                          locations.lat_min,
+                                                          locations.lat_max,
+                                                          limitby=(0, 1)).first()
         if location and location.wkt and (location.wkt.startswith("POLYGON") or location.wkt.startswith("MULTIPOLYGON")):
             # ok
             pass

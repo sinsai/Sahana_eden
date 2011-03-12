@@ -767,7 +767,7 @@ class S3CRUD(S3Method):
         orderby = self._config("orderby", None)
         sortby = self._config("sortby", [[1,'asc']])
         linkto = self._config("linkto", None)
-        insertable = self._config("insertable", True)
+        insertable = self._config("insertable", False)
         listadd = self._config("listadd", True)
         list_fields = self._config("list_fields")
 
@@ -844,6 +844,8 @@ class S3CRUD(S3Method):
                 buttons = self.insert_buttons(r, "add")
                 if buttons:
                     output.update(buttons)
+                self.response.view = self._view(r, "list.html")
+            else:
                 self.response.view = self._view(r, "list.html")
 
             # Get the list

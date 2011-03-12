@@ -43,13 +43,19 @@ gxp.plugins.AddLayers = Ext.extend(gxp.plugins.Tool, {
      *  Text for add action tooltip (i18n).
      */
     addActionTip: "Add layers",
-
+   
     /** api: config[addServerText]
      *  ``String``
      *  Text for add server button (i18n).
      */
     addServerText: "Add a New Server",
 
+    /** api: config[addButtonText]
+     *  ``String``
+     *  Text for add layers button (i18n).
+     */
+    addButtonText: "Add layers",
+    
     /** api: config[untitledText]
      *  ``String``
      *  Text for an untitled layer (i18n).
@@ -68,6 +74,24 @@ gxp.plugins.AddLayers = Ext.extend(gxp.plugins.Tool, {
      */
     availableLayersText: "Available Layers",
 
+    /** api: config[availableLayersText]
+     *  ``String``
+     *  Text for the grid expander (i18n).
+     */
+    expanderTemplateText: "<p><b>Abstract:</b> {abstract}</p>",
+    
+    /** api: config[availableLayersText]
+     *  ``String``
+     *  Text for the layer title (i18n).
+     */
+    panelTitleText: "Title",
+
+    /** api: config[availableLayersText]
+     *  ``String``
+     *  Text for the layer selection (i18n).
+     */
+    layerSelectionText: "View available data from:",
+    
     /** api: config[doneText]
      *  ``String``
      *  Text for Done button (i18n).
@@ -102,6 +126,12 @@ gxp.plugins.AddLayers = Ext.extend(gxp.plugins.Tool, {
      *  URLs (e.g. "/geoserver").  Default is ``true``.
      */
     relativeUploadOnly: true,
+
+    /** api: config[startSourceId]
+     * ``Integer``
+     * The identifier of the source that we should start with.
+     */
+    startSourceId: null,
     
     /** private: property[selectedSource]
      *  :class:`gxp.plugins.LayerSource`
@@ -142,7 +172,7 @@ gxp.plugins.AddLayers = Ext.extend(gxp.plugins.Tool, {
         return actions;
     },
         
-    /** private: method[showCapabilitiesGrid]
+    /** api: method[showCapabilitiesGrid]
      * Shows the window with a capabilities grid.
      */
     showCapabilitiesGrid: function() {
@@ -157,7 +187,6 @@ gxp.plugins.AddLayers = Ext.extend(gxp.plugins.Tool, {
      * Constructs a window with a capabilities grid.
      */
     initCapGrid: function() {
-        
         var source, data = [];        
         for (var id in this.target.layerSources) {
             source = this.target.layerSources[id];
@@ -171,7 +200,7 @@ gxp.plugins.AddLayers = Ext.extend(gxp.plugins.Tool, {
         });
 
         var expander = new Ext.grid.RowExpander({
-            tpl: new Ext.Template("<p><b>Abstract:</b> {abstract}</p>")
+            tpl: new Ext.Template(this.expanderTemplateText)
         });
         
         var addLayers = function() {
@@ -195,8 +224,17 @@ gxp.plugins.AddLayers = Ext.extend(gxp.plugins.Tool, {
             }
         };
 
+        var idx = 0;
+        if (this.startSourceId !== null) {
+            sources.each(function(record) {
+                if (record.get("id") === this.startSourceId) {
+                    idx = sources.indexOf(record);
+                }
+            }, this);
+        }
+
         var capGridPanel = new Ext.grid.GridPanel({
-            store: this.target.layerSources[data[0][0]].store,
+            store: this.target.layerSources[data[idx][0]].store,
             layout: "fit",
             region: "center",
             autoScroll: true,
@@ -204,7 +242,7 @@ gxp.plugins.AddLayers = Ext.extend(gxp.plugins.Tool, {
             plugins: [expander],
             colModel: new Ext.grid.ColumnModel([
                 expander,
-                {id: "title", header: "Title", dataIndex: "title", sortable: true},
+                {id: "title", header: this.panelTitleText, dataIndex: "title", sortable: true},
                 {header: "Id", dataIndex: "name", width: 150, sortable: true}
             ]),
             listeners: {
@@ -222,7 +260,7 @@ gxp.plugins.AddLayers = Ext.extend(gxp.plugins.Tool, {
             allowBlank: false,
             forceSelection: true,
             mode: "local",
-            value: data[0][0],
+            value: data[idx][0],
             listeners: {
                 select: function(combo, record, index) {
                     var source = this.target.layerSources[record.get("id")];
@@ -240,7 +278,7 @@ gxp.plugins.AddLayers = Ext.extend(gxp.plugins.Tool, {
         if (this.target.proxy || data.length > 1) {
             capGridToolbar = [
                 new Ext.Toolbar.TextItem({
-                    text: "View available data from:"
+                    text: this.layerSelectionText
                 }),
                 sourceComboBox
             ];
@@ -288,7 +326,7 @@ gxp.plugins.AddLayers = Ext.extend(gxp.plugins.Tool, {
         var bbarItems = [
             "->",
             new Ext.Button({
-                text: "Add Layers",
+                text: this.addButtonText,
                 iconCls: "gxp-icon-addlayers",
                 handler: addLayers,
                 scope : this
@@ -322,7 +360,7 @@ gxp.plugins.AddLayers = Ext.extend(gxp.plugins.Tool, {
                     capGridPanel.getSelectionModel().clearSelections();
                 },
                 show: function(win) {
-                    this.setSelectedSource(this.target.layerSources[data[0][0]]);
+                    this.setSelectedSource(this.target.layerSources[data[idx][0]]);
                 },
                 scope: this
             }
@@ -446,11 +484,11 @@ gxp.plugins.AddLayers = Ext.extend(gxp.plugins.Tool, {
                         // http://example.com/geoserver/rest.
                         var parts = source.url.split("/");
                         parts.pop();
-                        parts.push("rest/upload");
+                        parts.push("rest");
                         // this sets the url for the layer upload panel
                         url = parts.join("/");
-                        // only show button if URL returns a 405 for GET
-                        getStatus(url, function(status) {
+                        // only show button if upload URL returns a 405 for GET
+                        getStatus(url + "/upload", function(status) {
                             button.setVisible(status === 405);
                         }, this);
                     }

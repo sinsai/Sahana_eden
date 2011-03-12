@@ -335,7 +335,7 @@ if populate:
                                                      look_up_field = "abrv")
                           )
 
-    if deployment_settings.has_module("logs"):
+    if deployment_settings.has_module("inv"):
         # Supply / Inventory
         tablename = "supply_item_category"
         table = db[tablename]
@@ -362,64 +362,64 @@ if populate:
             table.insert(
                 item_category_id = agriculture,
                 name = "Rice Seed",
-                base_unit = "sack20kg",
+                um = "sack20kg",
                 comments = "This should provide enough seed for 1 Hectare of land"
                 )
             table.insert(
                 item_category_id = food,
                 name = "Rice",
-                base_unit = "sack50kg",
+                um = "sack50kg",
                 comments = "This should feed 125 people for 1 day"
                 )
             table.insert(
                 item_category_id = food,
                 name = "Cooking Utensils",
-                base_unit = "kit",
+                um = "kit",
                 comments = "Cooking Utensils for a Household"
                 )
             table.insert(
                 item_category_id = health,
                 name = "First Ait Kit",
-                base_unit = "kit",
+                um = "kit",
                 comments = "This should provide basic first aid (bandages, oral rehydration salts, etc) for 100 people to self-administer"
                 )
             table.insert(
                 item_category_id = health,
                 name = "Medical Kit",
-                base_unit = "kit",
+                um = "kit",
                 comments = "This should provide medical supplies (medicines, vaccines) for a professional clinic to provide assistance to a total community of 10,000 people."
                 )
             table.insert(
                 item_category_id = shelter,
                 name = "Shelter Kit",
-                base_unit = "kit",
+                um = "kit",
                 comments = "This kit is suitable to provide emergency repair to a damaged home. It contains a tarpaulin, zinc sheet, wooden poles, hammer & nails"
                 )
             table.insert(
                 item_category_id = shelter,
                 name = "Tent",
-                base_unit = "piece",
+                um = "piece",
                 comments = "This should house a family of up to 8 people"
                 )
             table.insert(
                 item_category_id = wash,
                 name = "Hygiene Kit",
-                base_unit = "kit",
+                um = "kit",
                 comments = "Personal Hygiene supplies for 100 Households (5 persons/household): Each get 2x Buckets, 10x Soap, Cotton cloth"
                 )
             table.insert(
                 item_category_id = wash,
                 name = "Water Purification Sachets",
-                base_unit = "kit",
+                um = "kit",
                 comments = "Designed to provide a 1st phase drinking water purification solution at the household level. Contains 600 sachets to provide sufficient drinking water (4l) for 100 people for 30 days."
                 )
 
-            # enter base_unit as packets
-            item_rows = db(table.id > 0).select(table.id, table.base_unit)
+            # enter Units of Measure as packs
+            item_rows = db(table.id > 0).select(table.id, table.um)
             for item_row in item_rows:
-                db.supply_item_packet.insert(
+                db.supply_item_pack.insert(
                     item_id = item_row.id,
-                    name = item_row.base_unit,
+                    name = item_row.um,
                     quantity = 1
                    )
 
@@ -906,13 +906,14 @@ if populate:
             popup_label = "Activity",
             marker_id = db(db.gis_marker.name == "activity").select(db.gis_marker.id, limitby=(0, 1)).first().id
         )
-        table.insert(
-            name = "Warehouses",
-            module = "inventory",
-            resource = "store",
-            popup_label = "Warehouse",
-            marker_id = db(db.gis_marker.name == "office").select(db.gis_marker.id, limitby=(0, 1)).first().id
-        )
+        #table.insert(
+        #    name = "Warehouses",
+        #    module = "org",
+        #    resource = "office",
+        #    type = 5,
+        #    popup_label = "Warehouse",
+        #    marker_id = db(db.gis_marker.name == "office").select(db.gis_marker.id, limitby=(0, 1)).first().id
+        #)
     tablename = "gis_layer_coordinate"
     table = db[tablename]
     if not db(table.id > 0).count():
@@ -1169,6 +1170,9 @@ if populate:
     # User Roles (uses native Web2Py Auth Groups)
     acl = auth.permission
     table = auth.settings.table_group_name
+    default_acl = deployment_settings.get_aaa_default_acl()
+    default_uacl = deployment_settings.get_aaa_default_uacl()
+    default_oacl = deployment_settings.get_aaa_default_oacl()
     if not db(db[table].id > 0).count():
         create_role = auth.s3_create_role
         # Do not remove or change order of these 5 definitions (System Roles):
@@ -1176,11 +1180,12 @@ if populate:
         create_role("Authenticated", "Authenticated - all logged-in users",
                     dict(c="gis", uacl=acl.ALL, oacl=acl.ALL),
                     dict(c="gis", f="location", uacl=acl.READ, oacl=acl.ALL),
-                    dict(c="inventory", uacl=acl.READ, oacl=acl.ALL),
-                    dict(c="logs", uacl=acl.READ, oacl=acl.ALL)
+                    dict(c="org", uacl=default_uacl, oacl=default_oacl),
+                    dict(c="inv", uacl=default_uacl, oacl=default_oacl),       
+                    dict(c="req", uacl=default_uacl, oacl=default_oacl),               
                     )
         create_role("Anonymous", "Unauthenticated users",
-                    dict(c="gis", uacl=acl.READ, oacl=acl.READ))
+                    dict(c="gis", uacl = default_acl, oacl = default_acl))
         create_role("Editor", "Editor - can access & make changes to any unprotected data")
         create_role("MapAdmin", "MapAdmin - allowed access to edit the MapService Catalogue",
                     dict(c="gis", uacl=acl.ALL, oacl=acl.ALL),
@@ -1193,7 +1198,6 @@ if populate:
                     dict(c="hms", uacl=acl.CREATE, oacl=acl.ALL))
         create_role("HMS Admin", "Hospital Admin - permission to add/update all records in the HMS",
                     dict(c="hms", uacl=acl.ALL, oacl=acl.ALL))
-
 
     # Security Defaults for all tables (if using 'full' security policy: i.e. native Web2Py)
     if session.s3.security_policy not in (1, 2, 3, 4, 5):

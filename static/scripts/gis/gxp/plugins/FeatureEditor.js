@@ -7,7 +7,7 @@
  */
 
 /**
- * @requires plugins/Tool.js
+ * @requires plugins/ClickableFeatures.js
  * @requires widgets/FeatureEditPopup.js
  */
 
@@ -17,7 +17,7 @@
  */
 
 /** api: (extends)
- *  plugins/Tool.js
+ *  plugins/ClickableFeatures.js
  */
 Ext.namespace("gxp.plugins");
 
@@ -27,7 +27,7 @@ Ext.namespace("gxp.plugins");
  *    Plugin for feature editing. Requires a
  *    :class:`gxp.plugins.FeatureManager`.
  */   
-gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
+gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.ClickableFeatures, {
     
     /** api: ptype = gxp_featureeditor */
     ptype: "gxp_featureeditor",
@@ -37,6 +37,14 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
      *  Tooltip string for create new feature action (i18n).
      */
     createFeatureActionTip: "Create a new feature",
+
+
+    /** api: config[featureEditPopupType]
+     *  ``String``
+     *  The xtype for a popup to create when editing features.  Default is 
+     *  "gxp_featureeditpopup".
+     */
+    featureEditPopupType: "gxp_featureeditpopup",
 
     /** api: config[createFeatureActionText]
      *  ``String``
@@ -58,12 +66,6 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
      *  ``String`` By default, the FeatureEditPopup will be added to the map.
      */
     outputTarget: "map",
-    
-    /** api: config[featureManager]
-     *  ``String`` The id of the :class:`gxp.plugins.FeatureManager` to use
-     *  with this tool.
-     */
-    featureManager: null,
     
     /** api: config[snappingAgent]
      *  ``String`` Optional id of the :class:`gxp.plugins.SnappingAgent` to use
@@ -107,31 +109,10 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
      *  excluded from the property grid of the FeatureEditPopup.
      */
 
-    /** api: config[tolerance]
-     *  ``Number`` 
-     *  Optional pixel tolerance to use when selecting features.  By default,
-     *  the server decides whether a pixel click intersects a feature based on 
-     *  its own rules.  If a pixel tolerance is provided, it will be included in
-     *  requests for features to inform the server to look in a buffer around 
-     *  features.
-     */
-    
-    /** private: property[toleranceParameters]
-     *  ``Array``
-     *  List of parameter names to use in a GetFeatureInfo request when a 
-     * ``tolerance`` is provided.  Default is ["BUFFER", "RADIUS"].
-     */
-    toleranceParameters: ["BUFFER", "RADIUS"],
-    
     /** private: property[drawControl]
      *  ``OpenLayers.Control.DrawFeature``
      */
     drawControl: null,
-    
-    /** private: property[selectControl]
-     *  ``OpenLayers.Control.SelectFeature``
-     */
-    selectControl: null,
     
     /** private: property[popup]
      *  :class:`gxp.FeatureEditPopup` FeatureEditPopup for this tool
@@ -167,6 +148,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
             }
         }
 
+        var intercepting = false;
         // intercept calls to methods that change the feature store - allows us
         // to persist unsaved changes before calling the original function
         function intercept(mgr, fn) {
@@ -174,9 +156,10 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
             // remove mgr and fn, which will leave us with the original
             // arguments of the intercepted loadFeatures or setLayer function
             fnArgs.splice(0, 2);
-            if (popup) {
+            if (!intercepting && popup && !popup.isDestroyed) {
                 if (popup.editing) {
                     function doIt() {
+                        intercepting = true;
                         unregisterDoIt.call(this);
                         if (fn === "setLayer") {
                             this.target.selectLayer(fnArgs[0]);
@@ -191,6 +174,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
                     function unregisterDoIt() {
                         featureManager.featureStore.un("write", doIt, this);
                         popup.un("canceledit", doIt, this);
+                        popup.un("cancelclose", unregisterDoIt, this);
                     }
                     featureManager.featureStore.on("write", doIt, this);
                     popup.on({
@@ -198,10 +182,11 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
                         cancelclose: unregisterDoIt,
                         scope: this
                     });
+                    popup.close();
                 }
-                popup.close();
                 return !popup.editing;
             }
+            intercepting = false;
         };
         featureManager.on({
             "beforequery": intercept.createDelegate(this, "loadFeatures", 1),
@@ -241,6 +226,13 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
         this.selectControl = new OpenLayers.Control.SelectFeature(featureLayer, {
             clickout: false,
             multipleKey: "fakeKey",
+            unselect: function() {
+                // TODO consider a beforefeatureunselected event for
+                // OpenLayers.Layer.Vector
+                if (!featureManager.featureStore.getModifiedRecords().length) {
+                    OpenLayers.Control.SelectFeature.prototype.unselect.apply(this, arguments);
+                }
+            },
             eventListeners: {
                 "activate": function() {
                     if (this.autoLoadFeatures === true || featureManager.paging) {
@@ -280,6 +272,9 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
         });
         
         featureLayer.events.on({
+            "beforefeatureremoved": function(evt) {
+                this.selectControl.unselect(evt.feature);
+            },
             "featureunselected": function(evt) {
                 if(popup) {
                     popup.close();
@@ -303,7 +298,7 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
                 var featureStore = featureManager.featureStore;
                 if(this.selectControl.active) {
                     popup = this.addOutput({
-                        xtype: "gxp_featureeditpopup",
+                        xtype: this.featureEditPopupType,
                         collapsible: true,
                         feature: feature,
                         vertexRenderIntent: "vertex",
@@ -411,106 +406,6 @@ gxp.plugins.FeatureEditor = Ext.extend(gxp.plugins.Tool, {
         featureManager.on("layerchange", this.onLayerChange, this);
         
         return actions;
-    },
-    
-    /** private: method[noFeatureClick]
-     *  :arg evt: ``Object``
-     */
-    noFeatureClick: function(evt) {
-        var evtLL = this.target.mapPanel.map.getLonLatFromPixel(evt.xy);
-        var featureManager = this.target.tools[this.featureManager];
-        var page = featureManager.page;
-        if (featureManager.visible() == "all" && featureManager.paging && page && page.extent.containsLonLat(evtLL)) {
-            // no need to load a different page if the clicked location is
-            // inside the current page bounds and all features are visible
-            return;
-        }
-
-        var layer = featureManager.layerRecord && featureManager.layerRecord.getLayer();
-        if (!layer) {
-            // if the feature manager has no layer currently set, do nothing
-            return;
-        }
-        
-        // construct params for GetFeatureInfo request
-        // layer is not added to map, so we do this manually
-        var map = this.target.mapPanel.map;
-        var size = map.getSize();
-        var params = Ext.applyIf({
-            REQUEST: "GetFeatureInfo",
-            BBOX: map.getExtent().toBBOX(),
-            WIDTH: size.w,
-            HEIGHT: size.h,
-            X: evt.xy.x,
-            Y: evt.xy.y,
-            QUERY_LAYERS: layer.params.LAYERS,
-            INFO_FORMAT: "application/vnd.ogc.gml",
-            EXCEPTIONS: "application/vnd.ogc.se_xml",
-            FEATURE_COUNT: 1
-        }, layer.params);
-        if (typeof this.tolerance === "number") {
-            for (var i=0, ii=this.toleranceParameters.length; i<ii; ++i) {
-                params[this.toleranceParameters[i]] = this.tolerance;
-            }
-        }
-        var projectionCode = map.getProjection();
-        if (parseFloat(layer.params.VERSION) >= 1.3) {
-            params.CRS = projectionCode;
-        } else {
-            params.SRS = projectionCode;
-        }
-        
-        var store = new GeoExt.data.FeatureStore({
-            fields: {},
-            proxy: new GeoExt.data.ProtocolProxy({
-                protocol: new OpenLayers.Protocol.HTTP({
-                    url: (typeof layer.url === "string") ? layer.url : layer.url[0],
-                    params: params,
-                    format: new OpenLayers.Format.WMSGetFeatureInfo()
-                })
-            }),
-            autoLoad: true,
-            listeners: {
-                "load": function(store, records) {
-                    if (records.length > 0) {
-                        var fid = records[0].get("fid");
-                        var filter = new OpenLayers.Filter.FeatureId({
-                            fids: [fid] 
-                        });
-
-                        var autoLoad = function() {
-                            featureManager.loadFeatures(
-                                filter, function(features) {
-                                    this.autoLoadedFeature = features[0];
-                                    this.selectControl.select(features[0]);
-                                }, this
-                            );
-                        }.createDelegate(this);
-                        
-                        var feature = featureManager.featureLayer.getFeatureByFid(fid);                        
-                        if (feature) {
-                            var popup = this.popup;
-                            this.selectControl.unselectAll(
-                                popup && popup.editing && {except: popup.feature});
-                            this.selectControl.select(feature);
-                        } else if (featureManager.paging) {
-                            var lonLat = this.target.mapPanel.map.getLonLatFromPixel(evt.xy);
-                            featureManager.setPage({lonLat: lonLat}, function() {
-                                var feature = featureManager.featureLayer.getFeatureByFid(fid);
-                                if (feature) {
-                                    this.selectControl.select(feature);
-                                } else if (this.autoLoadFeatures === true) {
-                                    autoLoad();
-                                }
-                            }, this);
-                        } else {
-                            autoLoad();
-                        }
-                    }
-                },
-                scope: this
-            }
-        });
     },
     
     /** private: method[onLayerChange]

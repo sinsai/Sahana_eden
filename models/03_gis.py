@@ -965,6 +965,7 @@ table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("module"),
                         Field("resource"),
+                        #Field("type", "integer"),  # @ToDo: Optional filtering by type (e.g. for Warehouses)
                         Field("popup_label"),       # @ToDo: Replace with s3.crud_strings[tablename]
                         marker_id(),                # Optional Marker to over-ride the values from the Feature Classes
                         Field("polygons", "boolean", default=False, label=T("Display Polygons?")),

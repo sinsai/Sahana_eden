@@ -81,6 +81,42 @@ gxp.plugins.LayerTree = Ext.extend(gxp.plugins.Tool, {
             allowDrop: false
         });
         treeRoot.appendChild(new GeoExt.tree.LayerContainer({
+            text: this.overlayNodeText,
+            iconCls: "gxp-folder",
+            expanded: true,
+            loader: new GeoExt.tree.LayerLoader({
+                store: this.target.mapPanel.layers,
+                filter: function(record) {
+                    return !record.get("group") &&
+                        record.getLayer().displayInLayerSwitcher == true;
+                },
+                createNode: function(attr) {
+                    attr.uiProvider = LayerNodeUI;
+                    var layer = attr.layer;
+                    var store = attr.layerStore;
+                    if (layer && store) {
+                        var record = store.getAt(store.findBy(function(r) {
+                            return r.getLayer() === layer;
+                        }));
+                        if (record && !record.get("queryable")) {
+                            attr.iconCls = "gxp-tree-rasterlayer-icon";
+                        }
+                    }
+                    var node = GeoExt.tree.LayerLoader.prototype.createNode.apply(this, [attr]);
+                    addListeners(node, record);
+                    return node;
+                }
+            }),
+            singleClickExpand: true,
+            allowDrag: false,
+            listeners: {
+                append: function(tree, node) {
+                    node.expand();
+                }
+            }
+        }));
+        
+        treeRoot.appendChild(new GeoExt.tree.LayerContainer({
             text: this.baseNodeText,
             iconCls: "gxp-folder",
             expanded: true,
@@ -110,41 +146,6 @@ gxp.plugins.LayerTree = Ext.extend(gxp.plugins.Tool, {
                         }
                     }
                     var node = GeoExt.tree.LayerLoader.prototype.createNode.apply(this, arguments);
-                    addListeners(node, record);
-                    return node;
-                }
-            }),
-            singleClickExpand: true,
-            allowDrag: false,
-            listeners: {
-                append: function(tree, node) {
-                    node.expand();
-                }
-            }
-        }));
-        treeRoot.appendChild(new GeoExt.tree.LayerContainer({
-            text: this.overlayNodeText,
-            iconCls: "gxp-folder",
-            expanded: true,
-            loader: new GeoExt.tree.LayerLoader({
-                store: this.target.mapPanel.layers,
-                filter: function(record) {
-                    return !record.get("group") &&
-                        record.getLayer().displayInLayerSwitcher == true;
-                },
-                createNode: function(attr) {
-                    attr.uiProvider = LayerNodeUI;
-                    var layer = attr.layer;
-                    var store = attr.layerStore;
-                    if (layer && store) {
-                        var record = store.getAt(store.findBy(function(r) {
-                            return r.getLayer() === layer;
-                        }));
-                        if (record && !record.get("queryable")) {
-                            attr.iconCls = "gxp-tree-rasterlayer-icon";
-                        }
-                    }
-                    var node = GeoExt.tree.LayerLoader.prototype.createNode.apply(this, [attr]);
                     addListeners(node, record);
                     return node;
                 }

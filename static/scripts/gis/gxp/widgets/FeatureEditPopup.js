@@ -74,7 +74,6 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
      */
     
     /** private: property[excludeFields]
-     *
      */
     
     /** api: config[readOnly]
@@ -92,7 +91,17 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
      *  ``Boolean`` Set to true to open the popup in editing mode.
      *  Default is false.
      */
+    
+    /** api: config[dateFormat]
+     *  ``String`` Date format. Default is the value of
+     *  ``Ext.form.DateField.prototype.format``.
+     */
         
+    /** api: config[timeFormat]
+     *  ``String`` Time format. Default is the value of
+     *  ``Ext.form.TimeField.prototype.format``.
+     */
+
     /** private: property[editing]
      *  ``Boolean`` If we are in editing mode, this will be true.
      */
@@ -176,6 +185,12 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
             "cancelclose"
         );
         
+        if (!this.dateFormat) {
+            this.dateFormat = Ext.form.DateField.prototype.format;
+        }
+        if (!this.timeFormat) {
+            this.timeFormat = Ext.form.TimeField.prototype.format;
+        }
         var feature = this.feature;
         if (!this.location) {
             this.location = feature
@@ -196,59 +211,75 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
                     attributes[this.fields[i]] = null;
                 }
             }
-            var name, type, value;
+            var ucFields = this.fields ?
+                this.fields.join(",").toUpperCase().split(",") : [];
             this.schema.each(function(r) {
-                type = this.getFieldType(r.get("type"));
-                if (type.match(/gml:((Multi)?(Point|Line|Polygon|Curve|Surface)).*/)) {
+                var type = r.get("type");
+                if (type.match(/^[^:]*:?((Multi)?(Point|Line|Polygon|Curve|Surface|Geometry))/)) {
                     // exclude gml geometries
                     return;
                 }
-                name = r.get("name");
+                var name = r.get("name");
                 if (this.fields) {
-                    if (this.fields.indexOf(name) == -1) {
+                    if (ucFields.indexOf(name.toUpperCase()) == -1) {
                         this.excludeFields.push(name);
                     }
                 }
-                value = feature.attributes[name];
-                switch(type) {
-                    case "string":
-                        break;
-                    case "date":
-                        customEditors[name] = new Ext.grid.GridEditor(
-                            new Ext.form.DateField({
-                                format: "Y-m-d",
-                                altFormats: "Y-m-d\\Z"
-                            })
-                        );
-                        customRenderers[name] = function(v) {
-                            //TODO see if there i a higher level component that
-                            // would help us here
-                            var value = v;
-                            if (!(value instanceof Date)) {
-                                value = Date.parseDate(v, "Y-m-d\\Z");
+                var value = feature.attributes[name];
+                var fieldCfg = GeoExt.form.recordToField(r);
+                var listeners;
+                if (typeof value == "string") {
+                    var format;
+                    switch(type.split(":").pop()) {
+                        case "date":
+                            format = this.dateFormat;
+                            fieldCfg.editable = false;
+                        case "dateTime":
+                            if (!format) {
+                                format = this.dateFormat + " " + this.timeFormat;
+                                // make dateTime fields editable because the
+                                // date picker does not allow to edit time
+                                fieldCfg.editable = true;
                             }
-                            return value ? value.format("Y-m-d") : v;
-                        }
-                        break;
-                    case "boolean":
-                        //TODO nodata handling for Boolean
-                        value = Boolean(value);
-                    default:
-                        // Ext.PropertyGrid determines the appropriate editor
-                        // with a typeof check. This means if we would set
-                        // value to Number(value) here, the value would be 0
-                        // (which we don't want for nodata values). If we
-                        // would set value to Number(value || undefined) we
-                        // would have NaN, which would look ugly in the
-                        // editor. So instead, we set a custom editor with a
-                        // plain NumberField.
-                        customEditors[name] = new Ext.grid.GridEditor(
-                            new Ext.form.NumberField({
-                                selectOnFocus: true,
-                                style: 'text-align:left;'
-                            })
-                        );
+                            fieldCfg.format = format;
+                            //TODO When http://trac.osgeo.org/openlayers/ticket/3131
+                            // is resolved, remove the listeners assignment below
+                            listeners = {
+                                "startedit": function(el, value) {
+                                    if (!(value instanceof Date)) {
+                                        var date = Date.parseDate(value.replace(/Z$/, ""), "c");
+                                        if (date) {
+                                            this.setValue(date);
+                                        }
+                                    }
+                                }
+                            };
+                            customRenderers[name] = (function() {
+                                return function(value) {
+                                    //TODO When http://trac.osgeo.org/openlayers/ticket/3131
+                                    // is resolved, change the 5 lines below to
+                                    // return value.format(format);
+                                    var date = value;
+                                    if (typeof value == "string") {
+                                        date = Date.parseDate(value.replace(/Z$/, ""), "c");
+                                    }
+                                    return date ? date.format(format) : value;
+                                }
+                            })();
+                            break;
+                        case "boolean":
+                            listeners = {
+                                "startedit": function(el, value) {
+                                    this.setValue(Boolean(value));
+                                }
+                            }
+                            break;
+                    }
                 }
+                customEditors[name] = new Ext.grid.GridEditor({
+                    field: Ext.create(fieldCfg),
+                    listeners: listeners
+                });
                 attributes[name] = value;
             }, this);
             feature.attributes = attributes;
@@ -297,7 +328,8 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
             scope: this
         });
         
-        var excludeFields = this.excludeFields;
+        var ucExcludeFields = this.excludeFields ?
+            this.excludeFields.join(",").toUpperCase().split(",") : [];
         this.grid = new Ext.grid.PropertyGrid({
             border: false,
             source: feature.attributes,
@@ -306,7 +338,7 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
             viewConfig: {
                 forceFit: true,
                 getRowClass: function(record) {
-                    if (excludeFields && excludeFields.indexOf(record.get("name")) !== -1) {
+                    if (ucExcludeFields.indexOf(record.get("name").toUpperCase()) !== -1) {
                         return "x-hide-nosize";
                     }
                 }
@@ -336,7 +368,7 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
          * values to show up in the property grid.  Decide if this should be 
          * handled in another way.
          */
-        this.grid.propStore.isEditableValue = function() {return true};
+        this.grid.propStore.isEditableValue = function() {return true;};
 
         this.items = [
             this.grid
@@ -401,29 +433,6 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
             this.feature.state : OpenLayers.State.UPDATE;
     },
     
-    /** private: method[getFieldType]
-     *  :arg attrType: ``String`` Attribute type.
-     *  :returns: ``String`` Field type
-     *
-     *  Given a feature attribute type, return an Ext field type if possible.
-     *  Note that there are many unhandled xsd types here.
-     *  
-     *  TODO: this should go elsewhere (AttributeReader)
-     */
-    getFieldType: function(attrType) {
-        return ({
-            "xsd:boolean": "boolean",
-            "xsd:int": "int",
-            "xsd:integer": "int",
-            "xsd:short": "int",
-            "xsd:long": "int",
-            "xsd:date": "date",
-            "xsd:string": "string",
-            "xsd:float": "float",
-            "xsd:double": "float"
-        })[attrType] || attrType;
-    },
-
     /** private: method[startEditing]
      */
     startEditing: function() {
@@ -445,9 +454,6 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
             );
             this.feature.layer.map.addControl(this.modifyControl);
             this.modifyControl.activate();
-            //TODO remove the line below when
-            // http://trac.osgeo.org/openlayers/ticket/3009 is fixed
-            this.modifyControl.beforeSelectFeature(this.feature);
             this.modifyControl.selectFeature(this.feature);
         }
     },
@@ -466,16 +472,18 @@ gxp.FeatureEditPopup = Ext.extend(GeoExt.Popup, {
             var feature = this.feature;
             if (feature.state === this.getDirtyState()) {
                 if (save === true) {
-                    //TODO consider handling date types in the OpenLayers.Format
+                    //TODO When http://trac.osgeo.org/openlayers/ticket/3131
+                    // is resolved, remove the if clause below
                     if (this.schema) {
                         var attribute, rec;
                         for (var i in feature.attributes) {
                             rec = this.schema.getAt(this.schema.findExact("name", i));
-                            if (this.getFieldType(rec.get("type")) == "date") {
-                                attribute = feature.attributes[i];
-                                if (attribute instanceof Date) {
-                                    feature.attributes[i] = attribute.format("Y-m-d\\Z");
-                                }
+                            attribute = feature.attributes[i];
+                            if (attribute instanceof Date) {
+                                var type = rec.get("type").split(":").pop();
+                                feature.attributes[i] = attribute.format(
+                                    type == "date" ? "Y-m-d" : "c"
+                                );
                             }
                         }
                     }

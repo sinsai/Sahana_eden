@@ -893,8 +893,6 @@ class S3ResourceController(object):
 
         """
 
-        print "Start import %s" % datetime.datetime.utcnow()
-        
         self.error = None
 
         # Call the tree-resolver to cleanup the tree
@@ -1002,7 +1000,7 @@ class S3ResourceController(object):
                         celement = celements[k]
                         cjobs = self.__create_job(ctablename,
                                                   celement,
-                                                  files = resource.files,
+                                                  files=resource.files,
                                                   validate=self.validate,
                                                   tree=tree,
                                                   directory=directory,
@@ -1025,8 +1023,6 @@ class S3ResourceController(object):
                 error = self.error
                 self.error = None
 
-        print "Done Import %s" % datetime.datetime.utcnow()
-        print "Start commit %s" % datetime.datetime.utcnow()
         if error:
             self.error = error
 
@@ -1049,7 +1045,6 @@ class S3ResourceController(object):
                     else:
                         return False
 
-        print "Done commit %s" % datetime.datetime.utcnow()
         return ignore_errors or not self.error
 
 
@@ -1401,6 +1396,7 @@ class S3ImportJob(object):
                 self.db(self.table.id == self.id).update(**{field:values})
             else:
                 self.db(self.table.id == self.id).update(**{field:value})
+        #@todo: audit!
 
 
 # *****************************************************************************

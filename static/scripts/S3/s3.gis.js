@@ -2,6 +2,7 @@
 // This script is in Static to allow caching
 // Dynamic constants (e.g. Internationalised strings) are set in server-generated script
 
+// Global vars
 var map, mapPanel, legendPanel, toolbar, mapWin;
 var pointButton, lastDraftFeature, draftLayer;
 var centerPoint, currentFeature, popupControl, highlightControl;
@@ -15,7 +16,7 @@ OpenLayers.ProxyHost = S3.Ap.concat('/gis/proxy?url=');
 // See http://crschmidt.net/~crschmidt/spherical_mercator.html#reprojecting-points
 var proj4326 = new OpenLayers.Projection('EPSG:4326');
 var projection_current = new OpenLayers.Projection('EPSG:' + s3_gis_projection);
-var options = {
+var s3_gis_options = {
         displayProjection: proj4326,
         projection: projection_current,
         // Use Manual stylesheet download (means can be done in HEAD to not delay pageload)
@@ -72,16 +73,17 @@ function getCurrentPosition(position){
 
 var styleMarker = new Object();
 var iconURL;
+var s3_gis_image;
 
-var scaleImage = function(){
-    var scaleRatio = i.height / i.width;
-    var w = Math.min(i.width, s3_gis_max_w);
+var scaleImage = function() {
+    var scaleRatio = s3_gis_image.height / s3_gis_image.width;
+    var w = Math.min(s3_gis_image.width, s3_gis_max_w);
     var h = w * scaleRatio;
     if (h > s3_gis_max_h) {
             h = s3_gis_max_h;
             scaleRatio = w / h;
             w = w * scaleRatio;
         }
-    i.height = h;
-    i.width = w;
+    s3_gis_image.height = h;
+    s3_gis_image.width = w;
 }

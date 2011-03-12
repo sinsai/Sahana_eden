@@ -6,6 +6,11 @@
  * of the license.
  */
 
+/**
+ * @include widgets/WMSStylesDialog.js
+ * @include plugins/GeoServerStyleWriter.js
+ */
+
 /** api: (define)
  *  module = gxp
  *  class = WMSLayerPanel
@@ -26,6 +31,27 @@ gxp.WMSLayerPanel = Ext.extend(Ext.TabPanel, {
      *  Show properties for this layer record.
      */
     layerRecord: null,
+
+    /** api: config[source]
+     *  ``gxp.plugins.LayerSource``
+     *  Source for the layer. Optional. If not provided, ``sameOriginStyling``
+     *  will be ignored.
+     */
+    source: null,
+    
+    /** api: config[sameOriginStyling]
+     *  ``Boolean``
+     *  Only allow editing of styles for layers whose sources have a URL that
+     *  matches the origin of this applicaiton.  It is strongly discouraged to 
+     *  do styling through the proxy as all authorization headers and cookies 
+     *  are shared with all remotesources.  Default is ``true``.
+     */
+    sameOriginStyling: true,
+
+    /** private: property[editableStyles]
+     *  ``Boolean``
+     */
+    editableStyles: false,
     
     /** api: config[activeTab]
      *  ``String or Number``
@@ -81,8 +107,15 @@ gxp.WMSLayerPanel = Ext.extend(Ext.TabPanel, {
         
         // only add the Styles panel if we know for sure that we have styles
         if (this.layerRecord.get("styles")) {
-            var url = this.layerRecord.getLayer().url.split(
+            var url = (this.source || this.layerRecord.get("layer")).url.split(
                 "?").shift().replace(/\/(wms|ows)\/?$/, "/rest");
+            if (this.sameOriginStyling) {
+                // this could be made more robust
+                // for now, only style for sources with relative url
+                this.editableStyles = url.charAt(0) === "/";
+            } else {
+                this.editableStyles = true;
+            }
             this.items.push(this.createStylesPanel(url));
         }
 
@@ -96,6 +129,7 @@ gxp.WMSLayerPanel = Ext.extend(Ext.TabPanel, {
         return {
             title: this.cacheText,
             layout: "form",
+            style: "padding: 10px",
             items: [{
                 xtype: "checkbox",
                 fieldLabel: this.cacheFieldText,
@@ -120,49 +154,37 @@ gxp.WMSLayerPanel = Ext.extend(Ext.TabPanel, {
      *  Creates the Styles panel.
      */
     createStylesPanel: function(url) {
-        var layer = this.layerRecord.getLayer();
-        return {
+        var config = gxp.WMSStylesDialog.createGeoServerStylerConfig(
+            this.layerRecord, url
+        );
+        return Ext.apply(config, {
             title: this.stylesText,
-            xtype: "gxp_wmsstylesdialog",
-            layerRecord: this.layerRecord,
-            plugins: [{
-                ptype: "gxp_geoserverstylewriter",
-                baseUrl: url
-            }],
-            listeners: {
+            style: "padding: 10px",
+            editable: false,
+            listeners: Ext.apply(config.listeners, {
                 "beforerender": {
                     fn: function(cmp) {
-                        Ext.Ajax.request({
-                            method: "PUT",
-                            url: url + "/styles",
-                            callback: function(options, success, response) {
-                                // we expect a 405 error code here if we are dealing with
-                                // GeoServer and have write access. Otherwise we will
-                                // create the panel in readonly mode.
-                                cmp.editable = (response.status == 405);
-                                cmp.ownerCt.doLayout();
-                            }
-                        });
-                        return false;
+                        var render = !this.editableStyles;
+                        if (!render) {
+                            Ext.Ajax.request({
+                                method: "PUT",
+                                url: url + "/styles",
+                                callback: function(options, success, response) {
+                                    // we expect a 405 error code here if we are dealing with
+                                    // GeoServer and have write access. Otherwise we will
+                                    // create the panel in readonly mode.
+                                    cmp.editable = (response.status == 405);
+                                    cmp.ownerCt.doLayout();
+                                }
+                            });
+                        }
+                        return render;
                     },
+                    scope: this,
                     single: true
-                },
-                "styleselected": function(cmp, style) {
-                    cmp.modified && layer.mergeNewParams({
-                        styles: style
-                    });
-                },
-                "modified": function(cmp, style) {
-                    cmp.saveStyles();
-                },
-                "saved": function(cmp, style) {
-                    layer.mergeNewParams({
-                        _olSalt: Math.random(),
-                        styles: style
-                    });
                 }
-            }
-        }
+            })
+        });
     },
     
     /** private: createAboutPanel

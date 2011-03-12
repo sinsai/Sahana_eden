@@ -142,6 +142,14 @@ def shelter():
                                               filterby="instance_type",
                                               orderby="instance_type",
                                               filter_opts=("pr_person", "pr_group"))
+    
+    # Pre-processor
+    def prep(r):                
+        #Cascade the organisation_id from the shelter to the staff
+        db.org_staff.organisation_id.default = r.record.organisation_id
+        db.org_staff.organisation_id.writable = False
+        return True
+    response.s3.prep = prep    
 
     s3xrc.model.configure(db.pr_presence,
         # presence not deletable in this view! (need to register a check-out
@@ -160,11 +168,11 @@ def shelter():
 
     shelter_tabs = [(T("Basic Details"), None),
                     (T("People"), "presence"),
+                    (T("Staff"), "staff"),
                     (T("Assessments"), "rat"),
-                    (T("Warehouse"), "store"),  # table is inventory_store
                     (T("Requests"), "req")]
 
-    rheader = lambda r: shn_shelter_rheader(r, tabs=shelter_tabs)
+    rheader = lambda r: shn_shelter_rheader(r, tabs=shelter_tabs + shn_show_inv_tabs(r))
     output = s3_rest_controller(module, resourcename, rheader=rheader)
 
     return output
@@ -236,12 +244,6 @@ def shn_shelter_prep(r):
                                    db.org_staff.id, limitby=(0, 1)).first()
                     if staff_id:
                         db.assess_rat.staff_id.default = staff_id.id
-
-            elif r.component.name == "store":
-                # Hide the Implied fields
-                db.inventory_store.location_id.writable = False
-                db.inventory_store.location_id.default = r.record.location_id
-                db.inventory_store.location_id.comment = ""
 
             elif r.component.name == "req":
                 # Hide the Implied fields
@@ -398,6 +400,7 @@ def create(name):
 def update(id, name):
     # Need to do validation manually!
     status = db(db.cr_shelter.id == id).update(name=name)
+    #@todo: audit!
     if status:
         return "Success - record %d updated!" % id
     else:

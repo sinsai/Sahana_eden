@@ -18,7 +18,7 @@ response.menu_options = [
         #[T("Geocode"), False, URL(r=request, f="geocode_manual")],
     ]],
     [T("Fullscreen Map"), False, URL(r=request, f="map_viewing_client")],
-    # Currently broken
+    # Currently not got geocoding support
     #[T("Bulk Uploader"), False, URL(r=request, c="doc", f="bulk_upload")]
 ]
 
@@ -1851,7 +1851,7 @@ def geocode_manual():
 def geoexplorer():
 
     """
-        Custom View for GeoExplorer: http://projects.opengeo.org/geoext/wiki/GeoExplorer
+        Embedded GeoExplorer: https://github.com/opengeo/GeoExplorer
     """
 
     _cache = (cache.ram, 60)

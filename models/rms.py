@@ -52,7 +52,7 @@ if deployment_settings.has_module(module):
                             hospital_id(),    # @ToDo: Check if the HMS module is enabled for adding FK: check CR for an example
                             shelter_id(),     # @ToDo: Check if the CR module is enabled for adding FK: check CR for an example
                             organisation_id(),
-                            inventory_store_id("from_inventory_store_id"),
+                            #inv_store_id("from_inv_store_id"),
                             Field("type", "integer"),
                             Field("priority", "integer"),
                             Field("message", "text"),
@@ -74,10 +74,10 @@ if deployment_settings.has_module(module):
     table.datetime.requires = IS_DATETIME()
     table.datetime.label = T("Date & Time")
 
-    table.from_inventory_store_id.label = T("From Warehouse")
+    #table.from_inv_store_id.label = T("From Warehouse")
 
     #This is only set by rms/store_for_req
-    #table.from_inventory_store_id.readable = table.from_inventory_store_id.writable = False
+    #table.from_inv_store_id.readable = table.from_inv_store_id.writable = False
 
     table.message.requires = IS_NOT_EMPTY()
 
@@ -178,7 +178,7 @@ if deployment_settings.has_module(module):
                           onaccept = lambda form: rms_req_onaccept(form),
                           )
 
-    # rms_req as component of doc_documents, shelters, hospitals, activities and inventory store
+    # rms_req as component of doc_documents, shelters, hospitals, activities and inv store
     s3xrc.model.add_component(module,
                               resourcename,
                               multiple=True,
@@ -186,7 +186,7 @@ if deployment_settings.has_module(module):
                                           cr_shelter="shelter_id",
                                           hms_hospital="hospital_id",
                                           project_activity = "activity_id",
-                                          #inventory_store = "from_inventory_store_id",
+                                          #inv_store = "from_inv_store_id",
                                           )
                               )
 

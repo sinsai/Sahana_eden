@@ -48,7 +48,7 @@ from gluon.validators import *
 #try:
 #    from gluon.contrib.gql import Field, Row, Query
 #except ImportError:
-from gluon.sql import Field, Row, Query
+from gluon.dal import Field, Row, Query, Set, Table, Expression
 from gluon.sqlhtml import SQLFORM, SQLTABLE, CheckboxesWidget
 from gluon.tools import Auth
 from gluon.contrib.simplejson.ordered_dict import OrderedDict
@@ -80,6 +80,9 @@ class AuthS3(Auth):
             s3_register() callback
             s3_link_to_person()
             s3_group_members()
+            s3_user_to_person()
+            s3_person_to_user()
+            person_id()
 
         - language
 
@@ -253,7 +256,7 @@ class AuthS3(Auth):
                     "%(id)s: %(role)s")
 
         # Permissions table (group<->permission)
-        # @todo: deprecate / replace by S3Permission
+        # NB This Web2Py table is deprecated / replaced in Eden by S3Permission
         if not self.settings.table_permission:
             self.settings.table_permission = db.define_table(
                 self.settings.table_permission_name,
@@ -702,7 +705,47 @@ class AuthS3(Auth):
         members = self.db( membership.group_id == group_id
                           ).select(membership.user_id)
         return [member.user_id for member in members]
-
+    
+    # -------------------------------------------------------------------------
+    def s3_user_to_person(self, user_id):
+        """
+        Returns the person_id for a given user_id
+        """ 
+        table_user = self.settings.table_user
+        record = db(table_user.id == user_id &
+                    table_user.person_uuid == db.pr_person.uuid
+                    ).select(db.pr_person.id, limitby=(0,1)).first()
+        if record:
+            return record.id
+        else:
+            return None
+    # -------------------------------------------------------------------------
+    def s3_person_to_user(self, person_id):
+        """   
+        Returns the user_id for a given person_id     
+        """        
+        table_user = self.settings.table_user
+        record = self.db( (self.db.pr_person.id == person_id) &
+                          (self.db.pr_person.uuid == table_user.person_uuid) 
+                    ).select(table_user.id, limitby=(0,1)).first()
+        if record:
+            return record.id
+        else:
+            return None
+    # -------------------------------------------------------------------------
+    def person_id(self):
+        """
+        Returns the person_id for the current logged in user
+        """ 
+        if self.s3_logged_in():
+            record = self.db(self.db.pr_person.uuid == self.user.person_uuid
+                             ).select(self.db.pr_person.id, 
+                                      limitby=(0,1)
+                                      ).first()
+            if record:
+                return record.id        
+        return None            
+    
     # -------------------------------------------------------------------------
     def s3_has_permission(self, method, table, record_id = 0):
 
@@ -1043,7 +1086,7 @@ class AuthS3(Auth):
                 self.s3_update_acl(role_id, **acl)
 
         return role_id
-
+    
     # -------------------------------------------------------------------------
     def s3_update_acl(self, role, c=None, f=None, t=None, oacl=None, uacl=None):
         """
@@ -1801,6 +1844,71 @@ class S3Permission(object):
 
 
 # =============================================================================
+class S3Safe(object):
+    """
+    Wrapper for AAA-safe DAL access
+
+    """
+
+    def __init__(self, auth, audit, obj=None):
+
+        self.db = audit.db
+
+        self.auth = auth
+        self.audit = audit
+
+        self.__obj = obj
+
+    # Table operations:
+    def insert(self, **fields):
+        return self.__obj.insert(**fields)
+
+    def bulk_insert(self, items):
+        return self.__obj.bulk_insert(items)
+
+    def __getitem__(self, key):
+        return self.__obj.__getitem__(key)
+
+    def __setitem__(self, key, value):
+        self.__obj.__setitem__(key, value)
+
+    def __delitem__(self, key):
+        self.__obj.__delitem__(key)
+
+    # Set operations:
+    def select(self, *fields, **attributes):
+        if isinstance(self.__obj, Set):
+            return self.__obj.select(*fields, **attributes)
+        else:
+            return self.db(self.__obj).select(*fields, **attributes)
+
+    def count(self, distinct=None):
+        if isinstance(self.__obj, Set):
+            return self.__obj.count(distinct=distinct)
+        else:
+            return self.db(self.__obj).count(distinct=distinct)
+
+    def update(self, **update_fields):
+        if isinstance(self.__obj, Set):
+            return self.__obj.update(**update_fields)
+        else:
+            return self.db(self.__obj).update(**update_fields)
+
+    def delete(self):
+        if isinstance(self.__obj, Set):
+            return self.__obj.delete()
+        else:
+            return self.db(self.__obj).delete()
+
+    # Row operations:
+    def update_record(self, **fields):
+        return self.__obj.update_record(**fields)
+
+    def delete_record(self):
+        return self.__obj.delete_record()
+
+
+# =============================================================================
 class S3Audit(object):
 
     """
@@ -1840,11 +1948,13 @@ class S3Audit(object):
                             migrate=migrate)
 
         self.session = session
+        self.auth = session.auth
         if session.auth and session.auth.user:
             self.user = session.auth.user.id
         else:
             self.user = None
 
+        self.diff = None
 
     # -------------------------------------------------------------------------
     def __call__(self, operation, prefix, name,
@@ -1882,6 +1992,19 @@ class S3Audit(object):
                 record = int(record)
             except ValueError:
                 record = None
+        elif form:
+            try:
+                record = form.vars["id"]
+            except:
+                try:
+                    record = form["id"]
+                except:
+                    record = None
+            if record:
+                try:
+                    record = int(record)
+                except ValueError:
+                    record = None
         else:
             record = None
 
@@ -1909,6 +2032,7 @@ class S3Audit(object):
                              record = record,
                              representation = representation,
                              new_value = new_value)
+                self.diff = None
 
         elif operation == "delete":
             if settings.audit_write:
@@ -1924,8 +2048,23 @@ class S3Audit(object):
                              record = record,
                              representation = representation,
                              old_value = old_value)
+                self.diff = None
 
         return True
+
+
+    # -------------------------------------------------------------------------
+    def utcnow(self, row):
+
+        self.diff = dict(row)
+
+        now = datetime.datetime.utcnow()
+        return now
+
+    # -------------------------------------------------------------------------
+    def safe(self, obj):
+
+        return S3Safe(self.auth, self, obj)
 
 
 # =============================================================================

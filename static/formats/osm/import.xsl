@@ -21,7 +21,6 @@
     -->
     <xsl:param name="name"/>
 
-    <xsl:variable name="all_nodes" select="//node"/>
     <xsl:key name="nodes" match="node" use="@id" />
 
     <xsl:template match="/">

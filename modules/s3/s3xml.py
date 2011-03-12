@@ -185,14 +185,11 @@ class S3XML(object):
 
         """
 
-        print "Start parse %s" % datetime.datetime.utcnow()
-
         self.error = None
 
         try:
             parser = etree.XMLParser(no_network=False)
             result = etree.parse(source, parser)
-            print "Done parse %s" % datetime.datetime.utcnow()
             return result
         except:
             e = sys.exc_info()[1]
@@ -211,8 +208,6 @@ class S3XML(object):
 
         """
 
-        print "Start transformation %s" % datetime.datetime.utcnow()
-
         self.error = None
 
         if args:
@@ -230,7 +225,6 @@ class S3XML(object):
                     result = transformer(tree, **_args)
                 else:
                     result = transformer(tree)
-                print "Done transformation %s" % datetime.datetime.utcnow()
                 return result
             except:
                 e = sys.exc_info()[1]

@@ -1,0 +1,11 @@
+{{extend "layout.html"}}
+<div id='home'>
+{{=H2(module_name)}}
+{{=LI(A("Catalog Items", _href=URL(r=request, c="supply", f="item")))}}
+<p>
+{{=T("Inventory functionality is available for:")}}
+</p>
+{{=LI(A("Offices", _href=URL(r=request, c="org", f="office")))}}
+{{=LI(A("Shelters", _href=URL(r=request, c="cr", f="shelter")))}}
+{{=LI(A("Hospitals", _href=URL(r=request, c="hms", f="hospital")))}}
+

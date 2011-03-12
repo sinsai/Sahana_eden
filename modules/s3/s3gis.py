@@ -3566,7 +3566,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 # NB Security for these layers has to come at an earlier stage (e.g. define_map())
                 # Features passed as Query
                 if "name" in layer:
-                    name = str(layer["name"])
+                    name = str(T(layer["name"]))
                 else:
                     name = "Query%i" % int(random.random()*1000)
 
@@ -4498,14 +4498,16 @@ OpenLayers.Util.extend( selectPdfControl, {
         kmlLayer""" + name_safe + """.body = '""" + body + """';
         map.addLayer(kmlLayer""" + name_safe + """);
         kmlLayers.push(kmlLayer""" + name_safe + """);
-        kmlLayer""" + name_safe + """.events.on({ "featureselected": onKmlFeatureSelect, "featureunselected": onFeatureUnselect });
+        kmlLayer""" + name_safe + """.events.on({ 'featureselected': onKmlFeatureSelect, 'featureunselected': onFeatureUnselect });
         """
                 layers_kml += """
         allLayers = allLayers.concat(kmlLayers);
         """
 
             # Coordinate Grid
-            coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select(db.gis_layer_coordinate.name, db.gis_layer_coordinate.visible, db.gis_layer_coordinate.role_required)
+            coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select(db.gis_layer_coordinate.name,
+                                                                                    db.gis_layer_coordinate.visible,
+                                                                                    db.gis_layer_coordinate.role_required)
             if coordinate_enabled:
                 layer = coordinate_enabled.first()
                 if layer.role_required and not auth.s3_has_role(layer.role_required):

@@ -1412,6 +1412,8 @@ def budget_totals(budget):
         total_recurring_cost += row2.total_monthly_cost * quantity * months
 
     db(db.budget_budget.id == budget).update(total_onetime_costs=total_onetime_cost, total_recurring_costs=total_recurring_cost)
+    s3_audit("update", module, "budget", record=budget, representation="html")
+
 
 def budget_update_items():
     "Update a Budget's items (Quantity, Months & Delete)"

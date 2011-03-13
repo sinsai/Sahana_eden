@@ -400,6 +400,7 @@ def create(name):
 def update(id, name):
     # Need to do validation manually!
     status = db(db.cr_shelter.id == id).update(name=name)
+    #@todo: audit!
     if status:
         return "Success - record %d updated!" % id
     else:

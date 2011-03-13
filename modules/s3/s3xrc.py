@@ -1396,6 +1396,7 @@ class S3ImportJob(object):
                 self.db(self.table.id == self.id).update(**{field:values})
             else:
                 self.db(self.table.id == self.id).update(**{field:value})
+        #@todo: audit!
 
 
 # *****************************************************************************

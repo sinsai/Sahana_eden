@@ -767,7 +767,7 @@ class S3CRUD(S3Method):
         orderby = self._config("orderby", None)
         sortby = self._config("sortby", [[1,'asc']])
         linkto = self._config("linkto", None)
-        insertable = self._config("insertable", False)
+        insertable = self._config("insertable", True)
         listadd = self._config("listadd", True)
         list_fields = self._config("list_fields")
 
@@ -1211,9 +1211,11 @@ class S3CRUD(S3Method):
 
                 # Audit
                 if record_id is None:
-                    audit("create", prefix, name, form=form, representation=format)
+                    audit("create", prefix, name, form=form,
+                          representation=format)
                 else:
-                    audit("update", prefix, name, form=form, representation=format)
+                    audit("update", prefix, name, form=form,
+                          record=record_id, representation=format)
                 logged = True
 
                 # Update super entity links

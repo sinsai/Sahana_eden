@@ -154,6 +154,7 @@ if deployment_settings.has_module(module) and deployment_settings.has_module("pr
             total_minute_cost += row.minute_cost * quantity
             total_megabyte_cost += row.megabyte_cost * quantity
         db(db.budget_kit.id == kit).update(total_unit_cost=total_unit_cost, total_monthly_cost=total_monthly_cost, total_minute_cost=total_minute_cost, total_megabyte_cost=total_megabyte_cost)
+        s3_audit("update", module, "kit", record=kit, representation="html")
 
 
     def kit_total(form):
@@ -229,6 +230,8 @@ if deployment_settings.has_module(module) and deployment_settings.has_module("pr
             total_monthly_cost += row2.megabyte_cost * quantity * row.megabytes
 
         db(db.budget_bundle.id == bundle).update(total_unit_cost=total_unit_cost, total_monthly_cost=total_monthly_cost)
+        s3_audit("update", module, "bundle", record=bundle, representation="html")
+
 
     def bundle_total(form):
         "Calculate Totals for the Bundle specified by Form"

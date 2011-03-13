@@ -70,7 +70,8 @@ def define_map(window=False, toolbar=False, config=None):
     catalogue_overlays = True
 
     if config.wmsbrowser_url:
-        wms_browser = {"name" : config.wmsbrowser_name, "url" : config.wmsbrowser_url}
+        wms_browser = {"name" : config.wmsbrowser_name,
+                       "url" : config.wmsbrowser_url}
     else:
         wms_browser = None
 
@@ -90,7 +91,15 @@ def define_map(window=False, toolbar=False, config=None):
     for layer in feature_layers:
         if layer.role_required and not auth.s3_has_role(layer.role_required):
             continue
-        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons, opacity=layer.opacity)
+        _layer = gis.get_feature_layer(layer.module,
+                                       layer.resource,
+                                       layer.name,
+                                       layer.popup_label,
+                                       config=config,
+                                       marker_id=layer.marker_id,
+                                       active=layer.visible,
+                                       polygons=layer.polygons,
+                                       opacity=layer.opacity)
         if _layer:
             feature_queries.append(_layer)
 
@@ -1873,7 +1882,11 @@ def geoexplorer():
 
     # Feature Layers
     marker_id_default = config.marker_id
-    marker_default = db(db.gis_marker.id == marker_id_default).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1), cache=_cache).first()
+    marker_default = db(db.gis_marker.id == marker_id_default).select(db.gis_marker.image,
+                                                                      db.gis_marker.height,
+                                                                      db.gis_marker.width,
+                                                                      limitby=(0, 1),
+                                                                      cache=_cache).first()
     marker_max_width = deployment_settings.get_gis_marker_max_width()
     marker_max_height = deployment_settings.get_gis_marker_max_height()
 
@@ -1884,7 +1897,15 @@ def geoexplorer():
     for layer in feature_layers:
         if layer.role_required and not auth.s3_has_role(layer.role_required):
             continue
-        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons, opacity=layer.opacity)
+        _layer = gis.get_feature_layer(layer.module,
+                                       layer.resource,
+                                       layer.name,
+                                       layer.popup_label,
+                                       config=config,
+                                       marker_id=layer.marker_id,
+                                       active=layer.visible,
+                                       polygons=layer.polygons,
+                                       opacity=layer.opacity)
         if _layer:
             feature_queries.append(_layer)
 
@@ -1968,7 +1989,7 @@ def geoexplorer():
 
     for layer in feature_queries:
         if "name" in layer:
-            name = str(layer["name"])
+            name = str(T(layer["name"]))
         else:
             name = "Query" + str(int(random.random()*1000))
 
@@ -2970,12 +2991,23 @@ def test2():
     for layer in feature_layers:
         if layer.role_required and not auth.s3_has_role(layer.role_required):
             continue
-        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons, opacity=layer.opacity)
+        _layer = gis.get_feature_layer(layer.module,
+                                       layer.resource,
+                                       layer.name,
+                                       layer.popup_label,
+                                       config=config,
+                                       marker_id=layer.marker_id,
+                                       active=layer.visible,
+                                       polygons=layer.polygons,
+                                       opacity=layer.opacity)
         if _layer:
             # Add a URL for downloading the GeoJSON
             # @ToDO: add to gis.get_feature_layer
             _layer["url"] = "%s.geojson" % URL(r=request, c=layer.module, f=layer.resource)
-            marker = db(db.gis_marker.id == _layer["marker"]).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+            marker = db(db.gis_marker.id == _layer["marker"]).select(db.gis_marker.image,
+                                                                     db.gis_marker.height,
+                                                                     db.gis_marker.width,
+                                                                     limitby=(0, 1)).first()
             _layer["marker"] = marker
             feature_queries.append(_layer)
 

@@ -767,7 +767,7 @@ class S3CRUD(S3Method):
         orderby = self._config("orderby", None)
         sortby = self._config("sortby", [[1,'asc']])
         linkto = self._config("linkto", None)
-        insertable = self._config("insertable", False)
+        insertable = self._config("insertable", True)
         listadd = self._config("listadd", True)
         list_fields = self._config("list_fields")
 

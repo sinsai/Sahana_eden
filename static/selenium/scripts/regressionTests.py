@@ -215,7 +215,7 @@ class TestWindow(Frame):
         testModuleList = self.getTestCasesToRun()
         testConfig.test_main(testModuleList, self.radioB.get())
         call(["firefox", os.path.join("..", "results", testConfig.fileName)])
-        SahanaTest.selenium.stop() # Debug: Comment out to keep the Selenium window open 
+        #SahanaTest.selenium.stop() # Debug: Comment out to keep the Selenium window open 
         self.clean = True
 
     def getTestCasesToRun(self):

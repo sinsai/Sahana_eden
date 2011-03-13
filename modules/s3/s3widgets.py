@@ -764,13 +764,11 @@ class S3LocationSelectorWidget(FormWidget):
 
                 layername = T("Location")
                 popup_label = ""
-                filter = Storage(tablename="gis_location",
-                                 id=value)
                 layer = gis.get_feature_layer("gis",
                                               "location",
                                               layername,
                                               popup_label,
-                                              filter=filter)
+                                              id=value)
                 if layer:
                     feature_queries = [layer]
                 else:

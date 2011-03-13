@@ -90,13 +90,20 @@ def define_map(window=False, toolbar=False, config=None):
     feature_layers = db(db.gis_layer_feature.enabled == True).select()
     for layer in feature_layers:
         if layer.role_required and not auth.s3_has_role(layer.role_required):
+            # Skip layer is it i srestricted & we don't have the required role
             continue
+        if layer.filter_field and layer.filter_value:
+            table = db["%s_%s" % (layer.module, layer.resource)]
+            filter = (table[layer.filter_field] == layer.filter_value)
+        else:
+            filter = None
         _layer = gis.get_feature_layer(layer.module,
                                        layer.resource,
                                        layer.name,
                                        layer.popup_label,
                                        config=config,
                                        marker_id=layer.marker_id,
+                                       filter=filter,
                                        active=layer.visible,
                                        polygons=layer.polygons,
                                        opacity=layer.opacity)
@@ -886,7 +893,10 @@ def layer_feature():
     return output
 
 def feature_layer_query(form):
-    """ OnValidation callback to build the simple Query from helpers """
+    """
+        OnValidation callback to strip the module from the resource
+        - in future may build the simple Query from helpers
+    """
 
     resource = None
     if "resource" in form.vars:
@@ -894,25 +904,25 @@ def feature_layer_query(form):
         # Remove the module from name
         form.vars.resource = resource[len(form.vars.module) + 1:]
 
-    if "advanced" in form.vars:
-        # We should use the query field as-is
-        pass
+    #if "advanced" in form.vars:
+    #    # We should use the query field as-is
+    #    pass
 
-    if resource:
-        # We build query from helpers
-        if "filter_field" in form.vars and "filter_value" in form.vars:
-            if "deleted" in db[resource]:
-                form.vars.query = "(db[%s].deleted == False) & (db[%s][%s] == '%s')" % (resource, resource, filter_field, filter_value)
-            else:
-                form.vars.query = "(db[%s][%s] == '%s')" % (resource, filter_field, filter_value)
-        else:
-            if "deleted" in db[resource]:
-                # All undeleted members of the resource
-                form.vars.query = "(db[%s].deleted == False)" % (resource)
-            else:
-                # All members of the resource
-                form.vars.query = "(db[%s].id > 0)" % (resource)
-    else:
+    #if resource:
+    #    # We build query from helpers
+    #    if "filter_field" in form.vars and "filter_value" in form.vars:
+    #        if "deleted" in db[resource]:
+    #            form.vars.query = "(db[%s].deleted == False) & (db[%s][%s] == '%s')" % (resource, resource, filter_field, filter_value)
+    #        else:
+    #            form.vars.query = "(db[%s][%s] == '%s')" % (resource, filter_field, filter_value)
+    #    else:
+    #        if "deleted" in db[resource]:
+    #            # All undeleted members of the resource
+    #            form.vars.query = "(db[%s].deleted == False)" % (resource)
+    #        else:
+    #            # All members of the resource
+    #            form.vars.query = "(db[%s].id > 0)" % (resource)
+    if not resource:
         # Resource is mandatory if not in advanced mode
         session.error = T("Need to specify a Resource!")
 

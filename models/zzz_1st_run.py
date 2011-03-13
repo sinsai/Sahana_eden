@@ -945,15 +945,16 @@ if populate:
             marker_id = db(db.gis_marker.name == "person").select(db.gis_marker.id,
                                                                     limitby=(0, 1)).first().id
         )
-        #table.insert(
-        #    name = "Warehouses",
-        #    module = "org",
-        #    resource = "office",
-        #    type = 5,
-        #    popup_label = "Warehouse",
-        #    marker_id = db(db.gis_marker.name == "office").select(db.gis_marker.id,
-        #                                                          limitby=(0, 1)).first().id
-        #)
+        table.insert(
+            name = "Warehouses",
+            module = "org",
+            resource = "office",
+            filter_field = "type",
+            filter_value = 5,
+            popup_label = "Warehouse",
+            marker_id = db(db.gis_marker.name == "office").select(db.gis_marker.id,
+                                                                  limitby=(0, 1)).first().id
+        )
     tablename = "gis_layer_coordinate"
     table = db[tablename]
     if not db(table.id > 0).count():

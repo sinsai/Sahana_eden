@@ -3460,7 +3460,11 @@ OpenLayers.Util.extend( selectPdfControl, {
         if os.access(cachepath, os.W_OK):
             cacheable = True
         else:
-            cacheable = False
+            try:
+                os.mkdir(cachepath)
+                cacheable = True
+            except:
+                cacheable = False
 
         # Duplicate Features to go across the dateline?
         if deployment_settings.get_gis_duplicate_features():

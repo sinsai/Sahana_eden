@@ -328,6 +328,7 @@ def req_items_for_inv(site_id, quantity_type):
                     ( db.req_req.id == db.req_req_item.req_id) & \
                     ( db.req_req_item.item_pack_id == db.req_req_item.item_pack_id) & \
                     ( db.req_req_item["quantity_%s" % quantity_type] < db.req_req_item.quantity) & \
+                    ( db.req_req_item.cancel == False ) & \
                     ( db.req_req_item.deleted == False ) 
                    ).select(db.req_req_item.id,
                             db.req_req_item.req_id,

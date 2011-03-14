@@ -14,8 +14,9 @@ if prefix not in deployment_settings.modules:
 # Options Menu (available in all Functions)
 def shn_menu():
     menu = [
-        [T("Home"), False, aURL(r=request, f="index")],
+        #[T("Home"), False, aURL(r=request, f="index")],
         [T("Projects"), False, aURL(r=request, f="project"),[
+            [T("List"), False, aURL(r=request, f="project")],
             [T("Search"), False, aURL(r=request, f="project", args="search_location")],
             [T("Add Project"), False, aURL(p="create", r=request, f="project", args="create")],
         ]],
@@ -55,8 +56,9 @@ def shn_menu():
             menu.extend(menu_teams)
 
     menu_persons = [
-        [T("Volunteers"), False, aURL(r=request, f="person", args=["search"]),[
+        [T("Volunteers"), False, aURL(r=request, f="index"),[
             [T("List"), False, aURL(r=request, f="person")],
+            [T("Search"), False, aURL(r=request, f="person", args=["search"])],
             [T("Add"), False, aURL(p="create", r=request, f="person", args="create")],
             #[T("Find Volunteers"), False, aURL(r=request, f="skillSearch")],
         ]]
@@ -676,13 +678,21 @@ def view_map():
         feature_queries = []
         feature_layers = db(db.gis_layer_feature.enabled == True).select()
         for layer in feature_layers:
-            _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=False, polygons=layer.polygons)
+            _layer = gis.get_feature_layer(layer.module,
+                                           layer.resource,
+                                           layer.name,
+                                           layer.popup_label,
+                                           config=config,
+                                           marker_id=layer.marker_id,
+                                           active=False,
+                                           polygons=layer.polygons)
             if _layer:
                 feature_queries.append(_layer)
 
         # Add the Volunteer layer
         try:
-            marker_id = db(db.gis_marker.name == "volunteer").select().first().id
+            marker_id = db(db.gis_marker.name == "volunteer").select(db.gis_marker.id,
+                                                                     limitby=(0, 1)).first().id
         except:
             marker_id = 1
 
@@ -943,7 +953,14 @@ def view_project_map():
         feature_queries = []
         feature_layers = db(db.gis_layer_feature.enabled == True).select()
         for layer in feature_layers:
-            _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=False, polygons=layer.polygons)
+            _layer = gis.get_feature_layer(layer.module,
+                                           layer.resource,
+                                           layer.name,
+                                           layer.popup_label,
+                                           config=config,
+                                           marker_id=layer.marker_id,
+                                           active=False,
+                                           polygons=layer.polygons)
             if _layer:
                 feature_queries.append(_layer)
 
@@ -1090,7 +1107,14 @@ def view_offices_map():
         feature_queries = []
         feature_layers = db(db.gis_layer_feature.enabled == True).select()
         for layer in feature_layers:
-            _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=False, polygons=layer.polygons)
+            _layer = gis.get_feature_layer(layer.module,
+                                           layer.resource,
+                                           layer.name,
+                                           layer.popup_label,
+                                           config=config,
+                                           marker_id=layer.marker_id,
+                                           active=False,
+                                           polygons=layer.polygons)
             if _layer:
                 feature_queries.append(_layer)
 

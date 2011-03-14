@@ -169,7 +169,7 @@ class IS_ONE_OF_EMPTY(Validator):
         filterby=None,
         filter_opts=None,
         not_filterby=None,
-        not_filter_opts=None,        
+        not_filter_opts=None,
         error_message="invalid value!",
         orderby=None,
         groupby=None,
@@ -219,20 +219,20 @@ class IS_ONE_OF_EMPTY(Validator):
         self.filterby = filterby
         self.filter_opts = filter_opts
         self.not_filterby = not_filterby
-        self.not_filter_opts = not_filter_opts          
+        self.not_filter_opts = not_filter_opts
 
     def set_self_id(self, id):
         if self._and:
             self._and.record_id = id
-            
-    def set_filter(self, 
-                   filterby = None, 
+
+    def set_filter(self,
+                   filterby = None,
                    filter_opts = None,
                    not_filterby = None,
                    not_filter_opts = None):
         """
-        This can be called from prep to apply a filter base on 
-        data in the record or the primary resource id.  
+        This can be called from prep to apply a filter base on
+        data in the record or the primary resource id.
         """
         if filterby:
             self.filterby = filterby
@@ -241,7 +241,7 @@ class IS_ONE_OF_EMPTY(Validator):
         if not_filterby:
             self.not_filterby = not_filterby
         if not_filter_opts:
-            self.not_filter_opts = not_filter_opts                    
+            self.not_filter_opts = not_filter_opts
 
     def build_set(self):
 
@@ -263,11 +263,7 @@ class IS_ONE_OF_EMPTY(Validator):
                     if not self.orderby:
                         dd.update(orderby=_table[self.filterby])
                 if self.not_filterby and self.not_filterby in _table and self.not_filter_opts:
-                    #Please say that there is a better way to do this?
-                    #not_belongs?
-                    #NOT IN?
-                    for opt in self.not_filter_opts:
-                        query = query & (_table[self.not_filterby] != opt)
+                    query = query & (~(_table[self.not_filter_opts].belongs(self.not_filter_opts)))
                     if not self.orderby:
                         dd.update(orderby=_table[self.filterby])
                 records = self.dbset(query).select(*self.fields, **dd)

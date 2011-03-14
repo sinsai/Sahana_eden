@@ -48,6 +48,7 @@ def atlantico():
 
 def japan():
     env.user = "root"
+    env.database = "postgresql"
     env.hosts = ["japan.sahanafoundation.org"]
 
 def taiwan():

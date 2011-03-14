@@ -166,7 +166,7 @@ def group():
 
     """ RESTful CRUD controller """
 
-    tablename = "%s_%s" % (prefix, resourcename)
+    tablename = "pr_group"
     table = db[tablename]
 
     response.s3.filter = (db.pr_group.system == False) # do not show system groups
@@ -209,6 +209,31 @@ def pe_contact():
 
     return s3_rest_controller(prefix, resourcename)
 
+
+# -----------------------------------------------------------------------------
+def presence():
+
+    """
+        RESTful CRUD controller
+        - needed for Map Popups (no Menu entry for direct access)
+    """
+
+    table = db.pr_presence
+
+    # Settings suitable for use in Map Popups
+
+    # This filter should be added to the gis_layer_feature query
+    #response.s3.filter = ((table.presence_condition.belongs(vita.PERSISTANT_PRESENCE)) & \
+    #                      (table.closed == False))
+
+    table.pe_id.readable = True
+    table.pe_id.label = "Name"
+    table.pe_id.represent = shn_pr_person_represent
+    table.observer.readable = False
+    table.presence_condition.readable = False
+    # @ToDo: Add Skills
+
+    return s3_rest_controller(prefix, resourcename)
 
 # -----------------------------------------------------------------------------
 #def group_membership():

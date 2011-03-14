@@ -9,7 +9,7 @@
 """
 #==============================================================================
 inv_menu = [
-            [T("Home"), False, URL(r=request, c="inv", f="index")],
+            #[T("Home"), False, URL(r=request, c="inv", f="index")],
             [T("Catalog Items"), False, URL(r=request, c="supply", f="item"),
             [
                 [T("List"), False, URL(r=request, c="supply", f="item")],

@@ -965,6 +965,7 @@ table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("module"),
                         Field("resource"),
+                        #Field("type", "integer"),  # @ToDo: Optional filtering by type (e.g. for Warehouses)
                         Field("popup_label"),       # @ToDo: Replace with s3.crud_strings[tablename]
                         marker_id(),                # Optional Marker to over-ride the values from the Feature Classes
                         Field("polygons", "boolean", default=False, label=T("Display Polygons?")),
@@ -972,10 +973,11 @@ table = db.define_table(tablename,
                         Field("visible", "boolean", default=True, label=T("On by default?")),
                         Field("opacity", "double", default=1.0, requires=IS_FLOAT_IN_RANGE(0, 1), label=T("Opacity (1 for opaque, 0 for fully-transparent)")),
                         # @ToDo Expose the Graphic options
-                        # @ToDo Allow defining more complex queries
                         # e.g. L1 for Provinces, L2 for Districts, etc
-                        #Field("filter_field"),     # Used to build a simple query
-                        #Field("filter_value"),     # Used to build a simple query
+                        # e.g. office type 5 for Warehouses
+                        Field("filter_field"),     # Used to build a simple query
+                        Field("filter_value"),     # Used to build a simple query
+                        # @ToDo Allow defining more complex queries
                         #Field("query", notnull=True),
                         role_required(),       # Single Role
                         #roles_permitted(),    # Multiple Roles (needs implementing in modules/s3gis.py)

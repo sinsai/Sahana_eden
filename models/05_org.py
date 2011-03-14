@@ -309,7 +309,6 @@ org_site_types = Storage(
     cr_shelter = T("Shelter"),
     org_office = T("Office"),
     hms_hospital = T("Hospital"),
-    inventory_store = T("Inventory Store"),
 )
 
 resource = "site"
@@ -485,7 +484,7 @@ org_office_type_opts = {
     2:T("Regional"),
     3:T("Country"),
     4:T("Satellite Office"),
-    5:T("Warehouse"),
+    5:T("Warehouse"),       # Don't change this number, as it affects the Warehouse module
 }
 
 resourcename = "office"
@@ -514,11 +513,11 @@ table = db.define_table(tablename,
                         Field("phone2"),
                         Field("email"),
                         Field("fax"),
-                        Field("national_staff", "integer"),
-                        Field("international_staff", "integer"),
-                        Field("number_of_vehicles", "integer"),
-                        Field("vehicle_types"),
-                        Field("equipment"),
+                        Field("national_staff", "integer"),         # @ToDo: Calculate automatically from org_staff (but still allow manual setting for a quickadd)
+                        Field("international_staff", "integer"),    # @ToDo: Calculate automatically from org_staff (but still allow manual setting for a quickadd)
+                        Field("number_of_vehicles", "integer"),     # @ToDo: Move to Fixed Assets
+                        Field("vehicle_types"),                     # @ToDo: Move to Fixed Assets
+                        Field("equipment"),                         # @ToDo: Move to Fixed Assets
                         #document_id,   # Not yet defined
                         comments(),
                         migrate=migrate, *s3_meta_fields())
@@ -651,6 +650,7 @@ donor_id = S3ReusableField("donor_id", db.org_organisation, sortby="name",
 # Many-to-Many Persons to Offices & Projects with also the Title & Manager that 
 # the person has in this context
 # @ToDo: Handle Shifts (e.g. Red Cross: 06:00-18:00 & 18:00-06:00)
+# http://eden.sahanafoundation.org/wiki/BluePrintRoster
 # @ToDo: Build an Organigram out of this data
 #
 resourcename = "staff"
@@ -776,7 +776,9 @@ staff_id = S3ReusableField("staff_id", db.org_staff, sortby="name",
                         represent = lambda id: shn_org_staff_represent(id),
                         comment = DIV(A(ADD_STAFF,
                                         _class="colorbox",
-                                        _href=URL(r=request, c="org", f="staff", args="create", vars=dict(format="popup")),
+                                        _href=URL(r=request, c="org", f="staff",
+                                                  args="create",
+                                                  vars=dict(format="popup")),
                                         _target="top",
                                         _title=ADD_STAFF),
                                   DIV( _class="tooltip",
@@ -839,15 +841,14 @@ def shn_update_staff_membership(record,
         person_id        = org_staff_record.person_id
         site_id          = org_staff_record.site_id
     
-    supervisor       = org_staff_record.supervisor    
-    no_access        = org_staff_record.no_access
+    supervisor = org_staff_record.supervisor    
+    no_access = org_staff_record.no_access
     
     user_id = auth.s3_person_to_user(person_id) 
     
     if organisation_id:    
-        #This staff is a component of an organisation        
-        #This should alwasy be true
-        
+        # This staff is a component of an organisation        
+        # This should always be true
         organisation_staff_role_id = \
             db.org_organisation[organisation_id].owned_by_role
         organisation_supervisor_role = \
@@ -872,13 +873,12 @@ def shn_update_staff_membership(record,
         # (This is more inclusive that site staff role) 
         staff_ownership = dict(owned_by_role = organisation_staff_role_id)
         if no_access or delete:
-            #Current user has no permissions
+            # Current user has no permissions
             staff_ownership["owned_by_user"] = None            
         db.org_staff[org_staff_id] = staff_ownership
                                 
     if site_id:
-        #This staff is a component of a site instance
-            
+        # This staff is a component of a site instance
         site_staff_role_id = shn_get_db_field_value(
                                  db,
                                  "%(controller)s_%(function)s" % (request),
@@ -889,7 +889,7 @@ def shn_update_staff_membership(record,
             "org_site_supervisor_%s" % site_id
         site_supervisor_role_id = \
             shn_get_db_field_value(db,
-                                   str(auth.settings.table_group), #tablename
+                                   str(auth.settings.table_group), # tablename
                                    field = "id",    
                                    look_up = site_supervisor_role,
                                    look_up_field = "role" )                  
@@ -898,7 +898,6 @@ def shn_update_staff_membership(record,
             auth.del_membership(site_supervisor_role_id, user_id)  
             
         elif not supervisor:
-            
             auth.add_membership(site_staff_role_id, user_id)  
             auth.del_membership(site_supervisor_role_id, user_id)
               
@@ -909,8 +908,8 @@ def shn_update_staff_membership(record,
 # ----------------------------------------------------------------------------- 
 def shn_staff_onaccept(form):
     shn_update_staff_membership(form)
-    #Staff resources inherit permissions from sites not organisations, 
-    #because this is LESS permissive. This may need to be a deployment setting
+    # Staff resources inherit permissions from sites not organisations, 
+    # because this is LESS permissive. This may need to be a deployment setting
     shn_component_copy_role_func(component_name = "org_staff", 
                                  resource_name = "org_site", 
                                  fk = "site_id",
@@ -923,10 +922,10 @@ s3xrc.model.configure(table,
                       )
 # -----------------------------------------------------------------------------  
 def shn_staff_prep(r):
-    #Filter out people which are already staff for  in this inventory
-    #Make S3PersonAutocompleteWidget work with the filter criteria of the 
-    #field.requires 
-    #(this is required to ensure only unique staff can be added to each site)
+    # Filter out people which are already staff for this inventory
+    # Make S3PersonAutocompleteWidget work with the filter criteria of the 
+    # field.requires 
+    # (this is required to ensure only unique staff can be added to each site)
     try: 
         site_id = r.record.site_id
     except:

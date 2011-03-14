@@ -18,7 +18,7 @@ response.menu_options = [
         #[T("Geocode"), False, URL(r=request, f="geocode_manual")],
     ]],
     [T("Fullscreen Map"), False, URL(r=request, f="map_viewing_client")],
-    # Currently broken
+    # Currently not got geocoding support
     #[T("Bulk Uploader"), False, URL(r=request, c="doc", f="bulk_upload")]
 ]
 
@@ -70,7 +70,8 @@ def define_map(window=False, toolbar=False, config=None):
     catalogue_overlays = True
 
     if config.wmsbrowser_url:
-        wms_browser = {"name" : config.wmsbrowser_name, "url" : config.wmsbrowser_url}
+        wms_browser = {"name" : config.wmsbrowser_name,
+                       "url" : config.wmsbrowser_url}
     else:
         wms_browser = None
 
@@ -89,8 +90,23 @@ def define_map(window=False, toolbar=False, config=None):
     feature_layers = db(db.gis_layer_feature.enabled == True).select()
     for layer in feature_layers:
         if layer.role_required and not auth.s3_has_role(layer.role_required):
+            # Skip layer is it i srestricted & we don't have the required role
             continue
-        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons, opacity=layer.opacity)
+        if layer.filter_field and layer.filter_value:
+            table = db["%s_%s" % (layer.module, layer.resource)]
+            filter = (table[layer.filter_field] == layer.filter_value)
+        else:
+            filter = None
+        _layer = gis.get_feature_layer(layer.module,
+                                       layer.resource,
+                                       layer.name,
+                                       layer.popup_label,
+                                       config=config,
+                                       marker_id=layer.marker_id,
+                                       filter=filter,
+                                       active=layer.visible,
+                                       polygons=layer.polygons,
+                                       opacity=layer.opacity)
         if _layer:
             feature_queries.append(_layer)
 
@@ -877,7 +893,10 @@ def layer_feature():
     return output
 
 def feature_layer_query(form):
-    """ OnValidation callback to build the simple Query from helpers """
+    """
+        OnValidation callback to strip the module from the resource
+        - in future may build the simple Query from helpers
+    """
 
     resource = None
     if "resource" in form.vars:
@@ -885,25 +904,25 @@ def feature_layer_query(form):
         # Remove the module from name
         form.vars.resource = resource[len(form.vars.module) + 1:]
 
-    if "advanced" in form.vars:
-        # We should use the query field as-is
-        pass
+    #if "advanced" in form.vars:
+    #    # We should use the query field as-is
+    #    pass
 
-    if resource:
-        # We build query from helpers
-        if "filter_field" in form.vars and "filter_value" in form.vars:
-            if "deleted" in db[resource]:
-                form.vars.query = "(db[%s].deleted == False) & (db[%s][%s] == '%s')" % (resource, resource, filter_field, filter_value)
-            else:
-                form.vars.query = "(db[%s][%s] == '%s')" % (resource, filter_field, filter_value)
-        else:
-            if "deleted" in db[resource]:
-                # All undeleted members of the resource
-                form.vars.query = "(db[%s].deleted == False)" % (resource)
-            else:
-                # All members of the resource
-                form.vars.query = "(db[%s].id > 0)" % (resource)
-    else:
+    #if resource:
+    #    # We build query from helpers
+    #    if "filter_field" in form.vars and "filter_value" in form.vars:
+    #        if "deleted" in db[resource]:
+    #            form.vars.query = "(db[%s].deleted == False) & (db[%s][%s] == '%s')" % (resource, resource, filter_field, filter_value)
+    #        else:
+    #            form.vars.query = "(db[%s][%s] == '%s')" % (resource, filter_field, filter_value)
+    #    else:
+    #        if "deleted" in db[resource]:
+    #            # All undeleted members of the resource
+    #            form.vars.query = "(db[%s].deleted == False)" % (resource)
+    #        else:
+    #            # All members of the resource
+    #            form.vars.query = "(db[%s].id > 0)" % (resource)
+    if not resource:
         # Resource is mandatory if not in advanced mode
         session.error = T("Need to specify a Resource!")
 
@@ -1851,7 +1870,7 @@ def geocode_manual():
 def geoexplorer():
 
     """
-        Custom View for GeoExplorer: http://projects.opengeo.org/geoext/wiki/GeoExplorer
+        Embedded GeoExplorer: https://github.com/opengeo/GeoExplorer
     """
 
     _cache = (cache.ram, 60)
@@ -1873,7 +1892,11 @@ def geoexplorer():
 
     # Feature Layers
     marker_id_default = config.marker_id
-    marker_default = db(db.gis_marker.id == marker_id_default).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1), cache=_cache).first()
+    marker_default = db(db.gis_marker.id == marker_id_default).select(db.gis_marker.image,
+                                                                      db.gis_marker.height,
+                                                                      db.gis_marker.width,
+                                                                      limitby=(0, 1),
+                                                                      cache=_cache).first()
     marker_max_width = deployment_settings.get_gis_marker_max_width()
     marker_max_height = deployment_settings.get_gis_marker_max_height()
 
@@ -1884,7 +1907,15 @@ def geoexplorer():
     for layer in feature_layers:
         if layer.role_required and not auth.s3_has_role(layer.role_required):
             continue
-        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons, opacity=layer.opacity)
+        _layer = gis.get_feature_layer(layer.module,
+                                       layer.resource,
+                                       layer.name,
+                                       layer.popup_label,
+                                       config=config,
+                                       marker_id=layer.marker_id,
+                                       active=layer.visible,
+                                       polygons=layer.polygons,
+                                       opacity=layer.opacity)
         if _layer:
             feature_queries.append(_layer)
 
@@ -1968,7 +1999,7 @@ def geoexplorer():
 
     for layer in feature_queries:
         if "name" in layer:
-            name = str(layer["name"])
+            name = str(T(layer["name"]))
         else:
             name = "Query" + str(int(random.random()*1000))
 
@@ -2970,12 +3001,23 @@ def test2():
     for layer in feature_layers:
         if layer.role_required and not auth.s3_has_role(layer.role_required):
             continue
-        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, config=config, marker_id=layer.marker_id, active=layer.visible, polygons=layer.polygons, opacity=layer.opacity)
+        _layer = gis.get_feature_layer(layer.module,
+                                       layer.resource,
+                                       layer.name,
+                                       layer.popup_label,
+                                       config=config,
+                                       marker_id=layer.marker_id,
+                                       active=layer.visible,
+                                       polygons=layer.polygons,
+                                       opacity=layer.opacity)
         if _layer:
             # Add a URL for downloading the GeoJSON
             # @ToDO: add to gis.get_feature_layer
             _layer["url"] = "%s.geojson" % URL(r=request, c=layer.module, f=layer.resource)
-            marker = db(db.gis_marker.id == _layer["marker"]).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+            marker = db(db.gis_marker.id == _layer["marker"]).select(db.gis_marker.image,
+                                                                     db.gis_marker.height,
+                                                                     db.gis_marker.width,
+                                                                     limitby=(0, 1)).first()
             _layer["marker"] = marker
             feature_queries.append(_layer)
 

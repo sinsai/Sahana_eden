@@ -326,20 +326,20 @@ deployment_settings.modules = OrderedDict([
             name_nice = T("Inventory Management"),
             description = T("Receiving and Sending Items"),
             restricted = False,
-            module_type = 10
+            module_type = 4
         )),
     ("vol", Storage(
             name_nice = T("Volunteers"),
             description = T("Manage volunteers by capturing their skills, availability and allocation"),
             restricted = False,
-            module_type = 10,
+            module_type = 3,
         )),
     # NB RMS module depends on HMS, CR & Project
     ("rms", Storage(
             name_nice = T("Requests"),
             description = T("Tracks requests for aid and matches them against donors who have pledged aid"),
             restricted = False,
-            module_type = 3,
+            module_type = 10,
             resources = Storage(
                 rms_req = {"importer" : True},
             )

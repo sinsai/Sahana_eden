@@ -906,6 +906,8 @@ class TRACEBACK(object):
 def ticket():
     """ Ticket handler """
 
+    from gluon.restricted import RestrictedError
+
     if len(request.args) != 2:
         session.error = T("Invalid ticket")
         redirect(URL(r=request))

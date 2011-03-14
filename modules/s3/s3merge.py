@@ -232,9 +232,11 @@ class S3RecordMerger(S3CRUD):
 
             # Audit
             if merge_id is None:
-                audit("create", prefix, name, form=form, representation=format)
+                audit("create", prefix, name, form=form,
+                      representation=format)
             else:
-                audit("update", prefix, name, form=form, representation=format)
+                audit("update", prefix, name, form=form,
+                      record=merge_id, representation=format)
             logged = True
 
             # Update super entity links

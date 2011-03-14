@@ -12,16 +12,26 @@ if deployment_settings.get_options_support_requests():
         1 : T("Bug"),
         2 : T("Feature Request")
     }
+    support_status_opts = {
+        1 : T("Open"),
+        2 : T("Closed")
+    }
 
     resource = "req"
     tablename = "%s_%s" % (prefix, resource)
     table = db.define_table(tablename,
                             Field("name", notnull=True, label=T("Short Description")),
                             Field("type", "integer", label=T("Type"),
-                                  requires=IS_IN_SET(support_request_types),
+                                  requires=IS_IN_SET(support_request_types,
+                                                     zero="%s..." % T("Please select")),
                                   represent=lambda opt: support_request_types.get(opt, UNKNOWN_OPT)),
                             Field("details", "text", label = T("Details"),
                                   comment = T("Please provide the URL of the page you are referring to, a description of what you expected to happen & what actually happened. If a ticket was issued then please provide the Ticket ID.")),
+                            Field("status", "integer", label=T("Status"), default=1,
+                                  requires=IS_IN_SET(support_status_opts),
+                                  represent=lambda opt: support_status_opts.get(opt, UNKNOWN_OPT)),
+                            Field("actions", "text", label = T("Actions"),
+                                  comment = T("Actions taken as a result of this request.")),
                             migrate=migrate, *s3_meta_fields()
                             )
 

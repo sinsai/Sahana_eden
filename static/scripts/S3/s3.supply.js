@@ -7,15 +7,20 @@
 //============================================================================
 
 $(document).ready(function() {
+	var JSONRequest;
 	//=========================================================================
 	// Displays the number of items available in a inventory
     function InvItemPackIDChange() {     
-        $('#TotalQuantity').remove();           
-        $('[name = "quantity"]').after('<div id="inv_quantity_ajax_throbber" class="ajax_throbber" style="float:right"/>'); 
-             
+    	// Cancel previous request
+    	try {JSONRequest.abort()} catch(err) {};
+    	
+        $('#TotalQuantity').remove();   
+        if ($('#inv_quantity_ajax_throbber').length == 0 ) {
+        	$('[name = "quantity"]').after('<div id="inv_quantity_ajax_throbber" class="ajax_throbber" style="float:right"/>'); 
+        }
         url = '/eden/inv/inv_item_quantity/' 
         url += $('[name = "inv_item_id"]').val();
-        $.getJSON(url, function(data) {
+        JSONRequest = $.getJSON(url, function(data) {
             /* @todo: Error Checking */
             var InvQuantity = data.inv_inv_item.quantity; 
             var InvPackQuantity = data.supply_item_pack.quantity; 
@@ -39,6 +44,9 @@ $(document).ready(function() {
     $('#inv_send_item_item_pack_id').change(InvItemPackIDChange);
     
 	function ItemIDChange() { 
+    	// Cancel previous request
+    	try {JSONRequest.abort()} catch(err) {};
+    	
 		var selField = $('[name $= "item_id"]');
         var selSubField = $('[name = "item_pack_id"]');
         
@@ -46,8 +54,10 @@ $(document).ready(function() {
         $('[id$="item_pack_id__row"]').show();        
         
         /* Show Throbber */
-        selSubField.after('<div id="item_pack_ajax_throbber" class="ajax_throbber style="display:inline;"/>')
-                   .hide();
+        if ($('#item_pack_ajax_throbber').length == 0 ) {
+        	selSubField.after('<div id="item_pack_ajax_throbber" class="ajax_throbber style="display:inline;"/>')
+        }
+        selSubField.hide();
         
         var url;
         
@@ -59,7 +69,7 @@ $(document).ready(function() {
         
         var data;
                         
-		$.ajax( { 
+        JSONRequest = $.ajax( { 
 			url: url,
 			dataType: 'json',
 			context: selField,
@@ -98,8 +108,8 @@ $(document).ready(function() {
 	            $('#item_pack_add').attr('href', href)
 	         						 .show();
 	            
-	            /* Hide Throbber */
-	            $('#item_pack_ajax_throbber').hide();
+	            /* Remove Throbber */
+	            $('#item_pack_ajax_throbber').remove();
 	            
 	            /* If this is an inventory item */
 	            if ( this.attr('name') == 'inv_item_id' ) {

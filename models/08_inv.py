@@ -155,6 +155,7 @@ if deployment_settings.has_module("org"):
     SHIP_STATUS_IN_PROCESS = 0
     SHIP_STATUS_RECEIVED   = 1
     SHIP_STATUS_SENT       = 2
+    SHIP_STATUS_CANCEL     = 3
     
     shipment_status = { SHIP_STATUS_IN_PROCESS: T("In Process"),
                         SHIP_STATUS_RECEIVED:   T("Received"),

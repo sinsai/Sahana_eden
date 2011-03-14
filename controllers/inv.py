@@ -301,9 +301,10 @@ def req_items_for_inv(site_id, quantity_type):
                             #groupby = db.req_req_item.item_id
                             )  
                    
-    # Because groupby doesn't follow the orderby remove any duplicate req_item 
+    # Because groupby doesn't follow the orderby, this will remove any 
+    # duplicate req_item, using the first record according to the orderby 
     # req_items = req_items.as_dict( key = "req_req_item.item_id") <- doensn't work 
-    # @todo: Rows.as_dict function could be extended to enable this functionality instead 
+    # @todo: web2py Rows.as_dict function could be extended to enable this functionality instead 
     req_item_ids = []
     unique_req_items = Storage()
     for req_item in req_items:
@@ -324,7 +325,8 @@ def req_item_in_shipment( shipment_item,
                           req_items,
                          ):
     """
-    Checks if a shipment item is in a request and updates the shipment
+    Checks if a shipment item is in a request and updates req_item
+    and the shipment.
     """    
   
     shipment_item_table = "inv_%s_item" % shipment_type
@@ -337,11 +339,11 @@ def req_item_in_shipment( shipment_item,
     if item_id in req_items:      
         quantity_req_type = "quantity_%s" % shipment_to_req_type[shipment_type]
               
-        #This item has been requested by this inv
+        #This item has been requested from this inv
         req_item = req_items[item_id]
         req_item_id = req_item.id
         
-        #Update the quantity_fulfil             
+        #Update the req quantity             
         #convert the shipment items quantity into the req_tem.quantity_fulfil (according to pack)
         quantity = req_item[quantity_req_type] + \
                    (shipment_item[shipment_item_table].pack_quantity / \
@@ -388,7 +390,7 @@ def recv_process():
                      ).select(db.inv_recv_item.id,     
                               db.inv_recv_item.item_id,                    
                               db.inv_recv_item.quantity,
-                              db.inv_recv_item.item_pack_id,    
+                              db.inv_recv_item.item_pack_id, # required by pack_quantity virtualfield   
                               )
                       
     inv_items = db( ( db.inv_inv_item.site_id == site_id ) & \
@@ -396,7 +398,7 @@ def recv_process():
                       ).select(db.inv_inv_item.id,
                                db.inv_inv_item.item_id,
                                db.inv_inv_item.quantity,
-                               db.inv_inv_item.item_pack_id,
+                               db.inv_inv_item.item_pack_id, # required by pack_quantity virtualfield
                                ) 
                       
     inv_items_dict = inv_items.as_dict(key = "item_id")                      
@@ -413,15 +415,10 @@ def recv_process():
             
             inv_item_id = inv_item.id        
             
-            inv_item_quantity = inv_item.quantity * \
-                                  inv_item.pack_quantity
-            
-            recv_item_quantity = recv_item.quantity * \
-                                 recv_item.pack_quantity         
-
-            #convert the recv items quantity into the inv item quantity (according to pack)
-            quantity = (inv_item_quantity + recv_item_quantity) / \
-                        inv_item.pack_quantity
+            quantity = shn_supply_item_add(inv_item.quantity,
+                                           inv_item.pack_quantity,
+                                           recv_item.quantity,
+                                           recv_item.pack_quantity)
             item = dict(quantity = quantity)
         else:
             # This item must be added to the inv
@@ -455,7 +452,7 @@ def recv_process():
             session.rcvars.req_req = req_id
             shn_req_item_onaccept(None)
 
-    response.confirmation = T("Received Items added to Warehouse Items")
+    session.confirmation = T("Shipment Items received by Inventory")
 
     # Go to the Site which has received these items
     (prefix, resourcename, id) = shn_site_resource(site_id)
@@ -523,14 +520,14 @@ def send_process():
         item_id = send_item.inv_inv_item.item_id   
         send_item_id = send_item.inv_send_item.id
         inv_item_id = send_item.inv_inv_item.id        
-        
-        inv_item_quantity = send_item.inv_inv_item.quantity * \
-                        send_item.inv_inv_item.pack_quantity
-        
-        send_item_quantity = send_item.inv_send_item.quantity * \
-                        send_item.inv_send_item.pack_quantity
+                               
+        new_inv_quantity = shn_supply_item_add(send_item.inv_inv_item.quantity,
+                                               send_item.inv_inv_item.pack_quantity,
+                                               send_item.inv_send_item.quantity,
+                                               send_item.inv_send_item.pack_quantity,
+                                               )
                         
-        if send_item_quantity > inv_item_quantity:
+        if new_inv_quantity < 0:
             # This shipment is invalid
             # flag this item
             invalid_send_item_ids.append(send_item_id)            
@@ -539,8 +536,6 @@ def send_process():
             cancel_send = True
         else:
             # Update the Inv Item Quantity
-            new_inv_quantity = ( inv_item_quantity - send_item_quantity) / \
-                                 send_item.inv_inv_item.pack_quantity
             db.inv_inv_item[inv_item_id] = dict(quantity = new_inv_quantity)
         
         #Check for req_items (-> transit)
@@ -569,7 +564,7 @@ def send_process():
                                      owned_by_user = None,   
                                      owned_by_role = ADMIN                                      
                                      )          
-        response.confirmation = T("Items Sent from Warehouse")           
+        session.confirmation = T("Shipment Items sent from Inventory")           
         
         #Update status_fulfil of the req record(s)
         for req_id in update_req_id:

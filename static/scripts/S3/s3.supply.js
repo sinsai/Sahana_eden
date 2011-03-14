@@ -21,12 +21,17 @@ $(document).ready(function() {
             var InvPackQuantity = data.supply_item_pack.quantity; 
             
             var PackName = $('[name = "item_pack_id"] option:selected').text();
-            var re = /\(([0-9]*)/;
-            var PackQuantity = re.exec(PackName)[1];
+            var re = /\(([0-9]*)\sx/;
+            var RegExpResult = re.exec(PackName);
+            if (RegExpResult == null) {
+            	var PackQuantity = 1
+            } else {
+            	var PackQuantity = RegExpResult[1]
+            }
             
             var Quantity = (InvQuantity * InvPackQuantity) / PackQuantity;
                             
-            TotalQuantity = '<span id = "TotalQuantity"> / ' + Quantity.toFixed(2) + ' ' + PackName + ' in inv.</span>';
+            TotalQuantity = '<span id = "TotalQuantity"> / ' + Quantity.toFixed(2) + ' ' + PackName + ' (' + S3.i18n.in_inv + ')</span>';
             $('#inv_quantity_ajax_throbber').remove();
             $('[name = "quantity"]').after(TotalQuantity);
         });
@@ -46,7 +51,7 @@ $(document).ready(function() {
         
         var url;
         
-        if (selField.length != 0) {
+        if ($('[name = "item_id"]').length != 0) {
             url = S3.Ap.concat('/supply/item_pack.json?item_pack.item_id=', selField.val());
         } else {
             url = S3.Ap.concat('/inv/inv_item_packs/', selField.val());

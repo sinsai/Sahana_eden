@@ -159,7 +159,8 @@ if deployment_settings.has_module("org"):
     
     shipment_status = { SHIP_STATUS_IN_PROCESS: T("In Process"),
                         SHIP_STATUS_RECEIVED:   T("Received"),
-                        SHIP_STATUS_SENT:       T("Sent")
+                        SHIP_STATUS_SENT:       T("Sent"),
+                        SHIP_STATUS_CANCEL:     T("Canceled")
                         }    
      
     resourcename = "recv"
@@ -757,14 +758,17 @@ if deployment_settings.has_module("org"):
     #------------------------------------------------------------------------------   
     def shn_inv_prep(r):      
         if "inv_item" in request.args:
-            #Filter out items which are already  in this inventory
+            #Filter out items which are already  in this inventory            
             inv_item_rows =  db((db.inv_inv_item.site_id == r.record.site_id) &
                                 (db.inv_inv_item.deleted == False)           
                                 ).select(db.inv_inv_item.item_id)
-            item_ids = [r.item_id for r in inv_item_rows]
+            item_ids = [row.item_id for row in inv_item_rows]
+            
+            #Ensure that the current item CAN be selected
+            if r.method == "update":
+                item_ids.remove(db.inv_inv_item[r.request.args[2]].item_id)
             db.inv_inv_item.item_id.requires.set_filter(not_filterby = "id",
-                                                        not_filter_opts = item_ids)
-        
+                                                        not_filter_opts = item_ids)       
         
         if "send" in request.args and \
             request.get_vars.get("select","sent") == "incoming":        

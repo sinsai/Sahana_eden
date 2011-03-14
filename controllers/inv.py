@@ -123,6 +123,25 @@ def shn_recv_rheader(r):
                                   _class = "action-btn"
                                   )
                     rheader.append(dc_btn)   
+                    
+                    if recv_record.status != SHIP_STATUS_CANCEL:
+                        if auth.s3_has_permission("delete", 
+                                                  db.inv_recv, 
+                                                  record_id=recv_record.id):                    
+                            cancel_btn = A( T("Cancel Shipment"),
+                                            _href = URL(r = request,
+                                                        c = "inv",
+                                                        f = "recv_cancel",
+                                                        args = [recv_record.id]
+                                                        ),
+                                            _id = "recv_cancel",
+                                            _class = "action-btn"
+                                            )
+                            
+                            cancel_btn_confirm = SCRIPT("S3ConfirmClick('#recv_cancel', '%s')" 
+                                                         % T("Do you want to cancel this received shipment? The items will be removed from the Inventory. This action CANNOT be undone!") )
+                            rheader.append(cancel_btn)
+                            rheader.append(cancel_btn_confirm)                         
                                     
                 rheader_tabs = shn_rheader_tabs( r,
                                                  [(T("Edit Details"), None),
@@ -265,6 +284,25 @@ def shn_send_rheader(r):
                                   _class = "action-btn"
                                   )
                     rheader.append(cn_btn)
+                    
+                    if recv_record.status != SHIP_STATUS_CANCEL:
+                        if auth.s3_has_permission("delete", 
+                                                  db.inv_send, 
+                                                  record_id=send_record.id):                    
+                            cancel_btn = A( T("Cancel Shipment"),
+                                            _href = URL(r = request,
+                                                        c = "inv",
+                                                        f = "send_cancel",
+                                                        args = [send_record.id]
+                                                        ),
+                                            _id = "send_cancel",
+                                            _class = "action-btn"
+                                            )
+                            
+                            cancel_btn_confirm = SCRIPT("S3ConfirmClick('#send_cancel', '%s')" 
+                                                         % T("Do you want to cancel this sent shipment? The items will be returned to the Inventory. This action CANNOT be undone!") )
+                            rheader.append(cancel_btn)
+                            rheader.append(cancel_btn_confirm)                       
 
                 rheader.append(shn_rheader_tabs( r,
                                                  [(T("Edit Details"), None),
@@ -315,11 +353,6 @@ def req_items_for_inv(site_id, quantity_type):
             
     return unique_req_items      
 
-shipment_to_req_type = dict( recv = "fulfil",
-                             send = "transit",
-                             commit = "commit"
-                             )
-
 def req_item_in_shipment( shipment_item,
                           shipment_type,
                           req_items,
@@ -337,7 +370,7 @@ def req_item_in_shipment( shipment_item,
     
     #Check for req_items
     if item_id in req_items:      
-        quantity_req_type = "quantity_%s" % shipment_to_req_type[shipment_type]
+        quantity_req_type = "quantity_%s" % shn_shipment_to_req_type[shipment_type]
               
         #This item has been requested from this inv
         req_item = req_items[item_id]
@@ -464,7 +497,122 @@ def recv_process():
                  vars = dict(show_inv="True")
                  )
              )
+#------------------------------------------------------------------------------
+def recv_cancel():
+    recv_id = request.args[0]
+    if not auth.s3_has_permission("delete", 
+                                  db.inv_recv, 
+                                  record_id=recv_id):    
+        session.error = T("You do no have permission to cancel this received shipment.")
+   
+            
+    recv_record = db.inv_recv[recv_id]
+    
+    if recv_record.status != SHIP_STATUS_RECEIVED:
+        session.error = T("This shipment has not been received - it has NOT been canceled because can still be edited.")
+    
+    if session.error:
+        redirect(URL(r = request,
+                     c = "inv",
+                     f = "recv",
+                     args = [recv_id],
+                     )
+                 )         
+    
+    site_id = recv_record.site_id
+    
+    #Get Recv & Inv Items 
+    recv_items = db( ( db.inv_recv_item.recv_id == recv_id ) & \
+                     ( db.inv_recv_item.deleted == False )  
+                     ).select(db.inv_recv_item.id,     
+                              db.inv_recv_item.item_id,                    
+                              db.inv_recv_item.quantity,
+                              db.inv_recv_item.item_pack_id, # required by pack_quantity virtualfield
+                              db.inv_recv_item.req_item_id,
+                              )
+                      
+    inv_items = db( ( db.inv_inv_item.site_id == site_id ) & \
+                      ( db.inv_inv_item.deleted == False )  
+                      ).select(db.inv_inv_item.id,
+                               db.inv_inv_item.item_id,
+                               db.inv_inv_item.quantity,
+                               db.inv_inv_item.item_pack_id, # required by pack_quantity virtualfield
+                               ) 
+                      
+    inv_items_dict = inv_items.as_dict(key = "item_id")                      
+                
+    req_items = req_items_for_inv(site_id, "fulfil")
+    
+    update_req_id = []
 
+    for recv_item in recv_items:
+        item_id = recv_item.item_id
+        #All Items received *should* exist in the inv.
+        if item_id in inv_items_dict:
+            # Decrease the inv_item.quantity
+            inv_item = Storage(inv_items_dict[item_id])
+            
+            inv_item_id = inv_item.id     
+            
+            quantity = shn_supply_item_add(inv_item.quantity,
+                                           inv_item.pack_quantity,
+                                           -recv_item.quantity,
+                                           recv_item.pack_quantity)           
+
+            item = dict(quantity = quantity)
+        else:
+            # This Value should be added with a negative value
+            inv_item_id = 0
+            item = dict( site_id = site_id,
+                         item_id = item_id,
+                         quantity = -recv_item.quantity,
+                         item_pack_id = recv_item.item_pack_id
+                         )    
+                    
+        # Update Inv Item
+        db.inv_inv_item[inv_item_id] = item
+        
+        # Remove the link from the recv_item to the req_item 
+        db.inv_recv_item[recv_item.id] = dict(req_item_id = None)
+        
+        # reduce any req_item
+        req_item_id = recv_item.req_item_id
+        r_req_item = db((db.req_req_item.id == recv_item.req_item_id) &
+                        (db.req_req_item.deleted == False)
+                        ).select(db.req_req_item.quantity_fulfil,
+                                 db.req_req_item.item_pack_id, # required by pack_quantity virtualfield
+                                 limitby = (0,1)).first()
+        if r_req_item:
+            quantity_fulfil = shn_supply_item_add(r_req_item.quantity_fulfil,
+                                                  r_req_item.pack_quantity,
+                                                  -recv_item.quantity,
+                                                  recv_item.pack_quantity)   
+            db.req_req_item[req_item_id] = dict(quantity_fulfil=quantity_fulfil)          
+        
+            #Check for req_items (-> fulfil)
+            update_req_id.append(  )         
+        
+    #Update recv record & lock for editing 
+    db.inv_recv[recv_id] = dict(datetime = request.utcnow,
+                                status = SHIP_STATUS_CANCEL,
+                                owned_by_user = None,   
+                                owned_by_role = ADMIN                                
+                                ) 
+    
+    #Update status_fulfil of the req record(s)
+    for req_id in update_req_id:
+        if req_id:
+            session.rcvars.req_req = req_id
+            shn_req_item_onaccept(None)
+
+    session.confirmation = T("Received Shipment canceled and items removed from Inventory")
+   
+    redirect(URL(r = request,
+                 c = "inv",
+                 f = "recv",
+                 args = [recv_id],
+                 )
+             )    
 #------------------------------------------------------------------------------
 def send_process():
     send_id = request.args[0]
@@ -523,7 +671,7 @@ def send_process():
                                
         new_inv_quantity = shn_supply_item_add(send_item.inv_inv_item.quantity,
                                                send_item.inv_inv_item.pack_quantity,
-                                               send_item.inv_send_item.quantity,
+                                               -send_item.inv_send_item.quantity,
                                                send_item.inv_send_item.pack_quantity,
                                                )
                         
@@ -580,7 +728,132 @@ def send_process():
                      f = resourcename, 
                      args = [id, "inv_item"]
                      )
-                 )                   
+                 )         
+#------------------------------------------------------------------------------
+def send_cancel():
+    """
+    Could we reuse recv_cancel? Challenges:
+     * errors
+     * sent_items query 
+      * Different query
+      * two tables in rows result
+    """    
+    send_id = request.args[0]
+    if not auth.s3_has_permission("delete", 
+                                  db.inv_send, 
+                                  record_id=send_id):    
+        session.error = T("You do no have permission to cancel this sent shipment.")
+   
+            
+    send_record = db.inv_send[send_id]
+    
+    if send_record.status != SHIP_STATUS_SENT:
+        session.error = T("This shipment has not been sent - it has NOT been canceled because can still be edited.")
+    
+    if session.error:
+        redirect(URL(r = request,
+                     c = "inv",
+                     f = "send",
+                     args = [send_id],
+                     )
+                 )         
+    
+    site_id = send_record.site_id
+    
+    #Get Send & Inv Items 
+    send_items = db( ( db.inv_send_item.send_id == send_id ) & \
+                     ( db.inv_send_item.inv_item_id == db.inv_inv_item.id ) & \
+                     ( db.inv_send_item.deleted == False ) & \
+                     ( db.inv_inv_item.deleted == False )    
+                     ).select(db.inv_send_item.id,     
+                              db.inv_inv_item.item_id,                    
+                              db.inv_send_item.quantity,
+                              db.inv_send_item.item_pack_id, # required by pack_quantity virtualfield
+                              db.inv_send_item.req_item_id, 
+                              )
+                      
+    inv_items = db( ( db.inv_inv_item.site_id == site_id ) & \
+                      ( db.inv_inv_item.deleted == False )  
+                      ).select(db.inv_inv_item.id,
+                               db.inv_inv_item.item_id,
+                               db.inv_inv_item.quantity,
+                               db.inv_inv_item.item_pack_id, # required by pack_quantity virtualfield
+                               ) 
+                      
+    inv_items_dict = inv_items.as_dict(key = "item_id")                      
+                
+    req_items = req_items_for_inv(site_id, "transit")
+    
+    update_req_id = []
+
+    for send_item in send_items:
+        item_id = send_item.inv_inv_item.item_id
+        #All Items received *should* exist in the inv.
+        if item_id in inv_items_dict:
+            # Decrease the inv_item.quantity
+            inv_item = Storage(inv_items_dict[item_id])
+            
+            inv_item_id = inv_item.id     
+            
+            quantity = shn_supply_item_add(inv_item.quantity,
+                                           inv_item.pack_quantity,
+                                           send_item.inv_send_item.quantity,
+                                           send_item.inv_send_item.pack_quantity)           
+
+            item = dict(quantity = quantity)
+        else:
+            # This Value should be added with a negative value
+            inv_item_id = 0
+            item = dict( site_id = site_id,
+                         item_id = item_id,
+                         quantity = send_item.inv_send_item.quantity,
+                         item_pack_id = send_item.inv_send_item.item_pack_id
+                         )    
+                    
+        # Update Inv Item
+        db.inv_inv_item[inv_item_id] = item
+        
+        # Remove the link from the recv_item to the req_item 
+        db.inv_recv_item[send_item.inv_send_item.id] = dict(req_item_id = None)      
+        
+        # reduce any req_item
+        req_item_id = send_item.inv_send_item.req_item_id
+        r_req_item = db((db.req_req_item.id == req_item_id) &
+                        (db.req_req_item.deleted == False)
+                        ).select(db.req_req_item.quantity_fulfil,
+                                 db.req_req_item.item_pack_id, # required by pack_quantity virtualfield
+                                 limitby = (0,1)).first()
+        if r_req_item:
+            quantity_fulfil = shn_supply_item_add(r_req_item.quantity_fulfil,
+                                                  r_req_item.pack_quantity,
+                                                  -send_item.inv_send_item.quantity,
+                                                  send_item.inv_send_item.pack_quantity)   
+            db.req_req_item[req_item_id] = dict(quantity_fulfil=quantity_fulfil)          
+        
+            #Check for req_items (-> fulfil)
+            update_req_id.append(  )         
+        
+    #Update send record & lock for editing 
+    db.inv_send[send_id] = dict(datetime = request.utcnow,
+                                status = SHIP_STATUS_CANCEL,
+                                owned_by_user = None,   
+                                owned_by_role = ADMIN                                
+                                ) 
+    
+    #Update status_fulfil of the req record(s)
+    for req_id in update_req_id:
+        if req_id:
+            session.rcvars.req_req = req_id
+            shn_req_item_onaccept(None)
+
+    session.confirmation = T("Sent Shipment canceled and items returned to Inventory")
+   
+    redirect(URL(r = request,
+                 c = "inv",
+                 f = "send",
+                 args = [send_id],
+                 )
+             )                 
 #==============================================================================
 def recv_sent():
     """ function to copy data from a shipment which was sent to the warehouse to a recv shipment """
@@ -640,7 +913,7 @@ def recv_sent():
                  f = "recv",
                  args = [recv_id]
                  )
-             )     
+             )                      
 #==============================================================================
 def send_commit():
     """ 

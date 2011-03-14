@@ -259,7 +259,7 @@ if deployment_settings.has_module("inv"):
         Adds item quantities together, accounting for different pack quantities.
         Returned quantity according to pack_quantity_1
         """
-        if pack_quantity_1 == pack_quantity+2:
+        if pack_quantity_1 == pack_quantity_2:
             # Faster calculation
             return quantity_1 + quantity_2
         else:

@@ -10,3 +10,4 @@ S3.i18n.ajax_rtr = '{{=T("retry")}}';
 S3.i18n.unsaved_changes = "{{=T("You have unsaved changes. Click Cancel now, then 'Save' to save them. Click OK now to discard them.")}}";			
 S3.i18n.close_map = '{{=T("Close map")}}';	
 S3.i18n.no_packs = '{{=T("No Packs for Item")}}';
+S3.i18n.in_inv = '{{=T("in Inv.")}}';

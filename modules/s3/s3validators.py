@@ -263,7 +263,7 @@ class IS_ONE_OF_EMPTY(Validator):
                     if not self.orderby:
                         dd.update(orderby=_table[self.filterby])
                 if self.not_filterby and self.not_filterby in _table and self.not_filter_opts:
-                    query = query & (~(_table[self.not_filter_opts].belongs(self.not_filter_opts)))
+                    query = query & (~(_table[self.not_filterby].belongs(self.not_filter_opts)))
                     if not self.orderby:
                         dd.update(orderby=_table[self.filterby])
                 records = self.dbset(query).select(*self.fields, **dd)

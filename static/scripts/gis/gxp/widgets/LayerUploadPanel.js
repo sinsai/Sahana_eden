@@ -35,6 +35,9 @@ gxp.LayerUploadPanel = Ext.extend(Ext.FormPanel, {
     workspaceEmptyText: "Default workspace",
     dataStoreLabel: "Store",
     dataStoreEmptyText: "Default datastore",
+    crsLabel: "CRS",
+    crsEmptyText: "Coordinate Reference System ID",
+    invalidCrsText: "CRS identifier should be an EPSG code (e.g. EPSG:4326)",
     
     /** private: property[fileUpload]
      *  ``Boolean``
@@ -59,7 +62,7 @@ gxp.LayerUploadPanel = Ext.extend(Ext.FormPanel, {
     constructor: function(config) {
         // Allow for a custom method to handle upload responses.
         config.errorReader = {
-            read: config.handleUploadResponse || this.handleUploadResponse
+            read: config.handleUploadResponse || this.handleUploadResponse.createDelegate(this)
         };
         gxp.LayerUploadPanel.superclass.constructor.call(this, config);
     },
@@ -102,7 +105,23 @@ gxp.LayerUploadPanel = Ext.extend(Ext.FormPanel, {
             checkboxToggle: true,
             collapsed: true,
             hideMode: "offsets",
-            items: [this.createWorkspacesCombo(), this.createDataStoresCombo()],
+            defaults: {
+                anchor: "97%"
+            },
+            items: [
+                this.createWorkspacesCombo(),
+                this.createDataStoresCombo(),
+                {
+                    xtype: "textfield",
+                    name: "crs",
+                    // anchor: "90%",
+                    fieldLabel: this.crsLabel,
+                    emptyText: this.crsEmptyText,
+                    allowBlank: true,
+                    regex: /^epsg:\d+$/i,
+                    regexText: this.invalidCrsText
+                }
+            ],
             listeners: {
                 collapse: function(fieldset) {
                     // reset all combos
@@ -169,7 +188,7 @@ gxp.LayerUploadPanel = Ext.extend(Ext.FormPanel, {
 
     },
     
-    /** private: method[]
+    /** private: method[fileNameValidator]
      *  :arg name: ``String`` The chosen filename.
      *  :returns: ``Boolean | String``  True if valid, message otherwise.
      */
@@ -185,7 +204,7 @@ gxp.LayerUploadPanel = Ext.extend(Ext.FormPanel, {
         }
         return valid || this.invalidFileExtensionText + this.validFileExtensions.join(", ");
     },
-    
+
     /** private: method[createWorkspacesCombo]
      *  :returns: ``Object`` Combo config.
      */
@@ -275,14 +294,10 @@ gxp.LayerUploadPanel = Ext.extend(Ext.FormPanel, {
     
     /** private: method[handleUploadResponse]
      *  TODO: if response includes errors object, this can be removed
+     *  Though it should only be removed if the server always returns text/html!
      */
     handleUploadResponse: function(response) {
-        var obj = {};
-        try {
-            obj = Ext.decode(response.responseText);
-        } catch (err) {
-            // the "actionfailed" method will be fired
-        }
+        var obj = this.parseResponseText(response.responseText);
         var success = obj && obj.success;
         var records = [];
         if (!success) {
@@ -292,10 +307,35 @@ gxp.LayerUploadPanel = Ext.extend(Ext.FormPanel, {
         return {success: success, records: records};
     },
     
+    /** private: parseResponseText
+     *  :arg text: ``String``
+     *  :returns:  ``Object``
+     *
+     *  Parse the response text.  Assuming a JSON string but allowing for a 
+     *  string wrapped in a <pre> element (given non text/html response type).
+     */
+    parseResponseText: function(text) {
+        var obj;
+        try {
+            obj = Ext.decode(text);
+        } catch (err) {
+            // if response type was text/plain, the text will be wrapped in a <pre>
+            var match = text.match(/^\s*<pre>(.*)<\/pre>\s*/);
+            if (match) {
+                try {
+                    obj = Ext.decode(match[1]);
+                } catch (err) {
+                    // pass
+                }
+            }
+        }
+        return obj;
+    },
+    
     /** private: method[handleUploadSuccess]
      */
     handleUploadSuccess: function(form, action) {
-        var details = Ext.decode(action.response.responseText, true);
+        var details = this.parseResponseText(action.response.responseText);
         this.fireEvent("uploadcomplete", this, details);
     }
 

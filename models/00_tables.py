@@ -9,14 +9,16 @@ Global tables and re-usable fields
 # Representations for Auth Users & Groups
 def shn_user_represent(id):
     table = db.auth_user
-    user = db(table.id == id).select(table.email, limitby=(0, 1), cache=(cache.ram, 10)).first()
+    user = db(table.id == id).select(table.email, limitby=(0, 1),
+                                     cache=(cache.ram, 10)).first()
     if user:
         return user.email
     return None
 
 def shn_role_represent(id):
     table = db.auth_group
-    role = db(table.id == id).select(table.role, limitby=(0, 1), cache=(cache.ram, 10)).first()
+    role = db(table.id == id).select(table.role, limitby=(0, 1),
+                                     cache=(cache.ram, 10)).first()
     if role:
         return role.role
     return None
@@ -81,7 +83,8 @@ meta_record_status = S3ReusableField("v_record_status", "integer",
                                      requires = IS_NULL_OR(IS_IN_SET(v_record_status_opts)),
                                      default = 1,
                                      label = T("Verification Status"),
-                                     represent = lambda opt: v_record_status_opts.get(opt, T("not specified")),
+                                     represent = lambda opt: v_record_status_opts.get(opt,
+                                                                                      T("not specified")),
                                      readable=False,
                                      writable=False)
 
@@ -201,16 +204,26 @@ def s3_meta_fields():
 # Reusable roles fields for map layer permissions management (GIS)
 
 role_required = S3ReusableField("role_required", db.auth_group, sortby="role",
-                                requires = IS_NULL_OR(IS_ONE_OF(db, "auth_group.id", "%(role)s", zero=T("Public"))),
-                                widget = S3AutocompleteWidget(request, "auth", "group", fieldname="role"),
+                                requires = IS_NULL_OR(IS_ONE_OF(db,
+                                                                "auth_group.id",
+                                                                "%(role)s",
+                                                                zero=T("Public"))),
+                                widget = S3AutocompleteWidget(request,
+                                                              "auth",
+                                                              "group",
+                                                              fieldname="role"),
                                 represent = lambda id: shn_role_represent(id),
                                 label = T("Role Required"),
                                 comment = DIV(_class="tooltip",
-                                              _title=T("Role Required") + "|" + T("If this record should be restricted then select which role is required to access the record here.")),
+                                              _title="%s|%s" % (T("Role Required"),
+                                                                T("If this record should be restricted then select which role is required to access the record here."))),
                                 ondelete = "RESTRICT")
 
 roles_permitted = S3ReusableField("roles_permitted", db.auth_group, sortby="role",
-                                  requires = IS_NULL_OR(IS_ONE_OF(db, "auth_group.id", "%(role)s", multiple=True)),
+                                  requires = IS_NULL_OR(IS_ONE_OF(db,
+                                                                  "auth_group.id",
+                                                                  "%(role)s",
+                                                                  multiple=True)),
                                   # @ToDo
                                   #widget = S3CheckboxesWidget(db,
                                   #                            lookup_table_name = "auth_group",
@@ -219,7 +232,8 @@ roles_permitted = S3ReusableField("roles_permitted", db.auth_group, sortby="role
                                   represent = lambda id: shn_role_represent(id),
                                   label = T("Roles Permitted"),
                                   comment = DIV(_class="tooltip",
-                                                _title=T("Roles Permitted") + "|" + T("If this record should be restricted then select which role(s) are permitted to access the record here.")),
+                                                _title="%s|%s" % (T("Roles Permitted"),
+                                                                  T("If this record should be restricted then select which role(s) are permitted to access the record here."))),
                                   ondelete = "RESTRICT")
 
 # =============================================================================
@@ -230,7 +244,8 @@ roles_permitted = S3ReusableField("roles_permitted", db.auth_group, sortby="role
 comments = S3ReusableField("comments", "text",
                            label = T("Comments"),
                            comment = DIV(_class="tooltip",
-                                         _title=T("Comments") + "|" + T("Please use this field to record any additional information, including a history of the record if it is updated.")))
+                                         _title="%s|%s" % (T("Comments"), 
+                                                           T("Please use this field to record any additional information, including a history of the record if it is updated."))))
 
 # -----------------------------------------------------------------------------
 # Reusable currency field to include in other table definitions
@@ -241,7 +256,8 @@ currency_type_opts = {
 }
 currency_type = S3ReusableField("currency_type", "integer",
                                 notnull=True,
-                                requires = IS_IN_SET(currency_type_opts, zero=None),
+                                requires = IS_IN_SET(currency_type_opts,
+                                                     zero=None),
                                 #default = 1,
                                 label = T("Currency"),
                                 represent = lambda opt: \
@@ -326,7 +342,8 @@ table = db.define_table(tablename,
                         migrate=migrate, *s3_timestamp())
 
 table.theme.requires = IS_IN_DB(db, "admin_theme.id", "admin_theme.name", zero=None)
-table.theme.represent = lambda name: db(db.admin_theme.id == name).select(db.admin_theme.name, limitby=(0, 1)).first().name
+table.theme.represent = lambda name: db(db.admin_theme.id == name).select(db.admin_theme.name,
+                                                                          limitby=(0, 1)).first().name
 # Define CRUD strings (NB These apply to all Modules' "settings" too)
 ADD_SETTING = T("Add Setting")
 LIST_SETTINGS = T("List Settings")

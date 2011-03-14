@@ -48,6 +48,7 @@ def atlantico():
 
 def japan():
     env.user = "root"
+    env.database = "postgresql"
     env.hosts = ["japan.sahanafoundation.org"]
 
 def taiwan():
@@ -208,7 +209,7 @@ def db_upgrade():
         if env.database == "mysql":
             run("mysqladmin create sahana", pty=True)
         elif env.database == "postgresql":
-            run("sudo -H -u postgres createdb -O sahana -E UTF8 sahana", pty=True)
+            run("sudo -H -u postgres createdb -O sahana -E UTF8 sahana -T template0", pty=True)
             run("sudo -H -u postgres createlang plpgsql -d sahana", pty=True)
             run("sudo -H -u postgres psql -q -d sahana -f %s" % env.postgis_path, pty=True)
             run("sudo -H -u postgres psql -q -d sahana -f %s" % env.postgis_spatial_ref_path, pty=True)
@@ -239,7 +240,7 @@ def db_upgrade_():
             run("mysqladmin create old", pty=True)
             run("mysql old < backup.sql", pty=True)
         elif env.database == "postgresql":
-            run("sudo -H -u postgres createdb -E UTF8 old", pty=True)
+            run("sudo -H -u postgres createdb -E UTF8 old -T template0", pty=True)
             run("sudo -H -u postgres psql -q -d old -f backup.sql", pty=True)
 
     # Step 7: Run the script: python dbstruct_mysql.py
@@ -455,7 +456,7 @@ def rollback():
             run("pkill -f 'postgres: postgres sahana'", pty=True)
             run("sudo -H -u postgres dropdb sahana", pty=True)
             env.warn_only = False
-            run("sudo -H -u postgres createdb -O sahana -E UTF8 sahana", pty=True)
+            run("sudo -H -u postgres createdb -O sahana -E UTF8 sahana -T template0", pty=True)
             run("sudo -H -u postgres psql -q -d sahana -f backup.sql", pty=True)
         # Restore databases folder
         run("rm -rf databases/*", pty=True)

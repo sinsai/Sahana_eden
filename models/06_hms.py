@@ -221,6 +221,8 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.configure(table,
                           super_entity=db.org_site,
+                          # Create a role for each hospital 
+                          onaccept = shn_staff_join_onaccept_func(tablename),                          
                           list_fields=["id",
                                        "gov_uuid",
                                        "name",

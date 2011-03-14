@@ -14,8 +14,9 @@ if prefix not in deployment_settings.modules:
 # Options Menu (available in all Functions)
 def shn_menu():
     menu = [
-        [T("Home"), False, aURL(r=request, f="index")],
+        #[T("Home"), False, aURL(r=request, f="index")],
         [T("Projects"), False, aURL(r=request, f="project"),[
+            [T("List"), False, aURL(r=request, f="project")],
             [T("Search"), False, aURL(r=request, f="project", args="search_location")],
             [T("Add Project"), False, aURL(p="create", r=request, f="project", args="create")],
         ]],
@@ -55,8 +56,9 @@ def shn_menu():
             menu.extend(menu_teams)
 
     menu_persons = [
-        [T("Volunteers"), False, aURL(r=request, f="person", args=["search"]),[
+        [T("Volunteers"), False, aURL(r=request, f="index"),[
             [T("List"), False, aURL(r=request, f="person")],
+            [T("Search"), False, aURL(r=request, f="person", args=["search"])],
             [T("Add"), False, aURL(p="create", r=request, f="person", args="create")],
             #[T("Find Volunteers"), False, aURL(r=request, f="skillSearch")],
         ]]

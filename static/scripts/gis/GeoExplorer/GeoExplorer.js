@@ -2,6 +2,8 @@
  * Copyright (c) 2009-2011 The Open Planning Project
  */
 
+Ext.USE_NATIVE_JSON = true;
+
 /**
  * api: (define)
  * module = GeoExplorer
@@ -224,17 +226,17 @@ var GeoExplorer = Ext.extend(gxp.Viewer, {
  
         var westPanel = new Ext.Panel({
             border: false,
-            layout: "border",
-            region: "west",
+            layout: 'border',
+            region: 'west',
             width: 250,
             split: true,
             collapsible: true,
-            collapseMode: "mini",
+            collapseMode: 'mini',
             header: false,
             items: [
-                {region: 'center', border: false, id: 'tree', tbar: [], title: this.layersText},
+                {region: 'center', autoScroll: true, tbar: [], border: false, id: 'tree', title: this.layersText}, 
                 searchCombo,
-                {region: 'south', border: false, height: 200, id: 'legend'}
+                {region: 'south', xtype: "container", layout: 'fit', border: false, height: 200, id: 'legend'}
             ]
         });
         

@@ -32,23 +32,26 @@ GeoExplorer.Composer = Ext.extend(GeoExplorer, {
             {
                 ptype: "gxp_layertree",
                 outputConfig: {
-                    id: "layertree",
-                    tbar: []
+                    id: "layertree"
                 },
                 outputTarget: "tree"
             }, {
                 ptype: "gxp_legend",
-                outputTarget: 'legend'
+                outputTarget: 'legend',
+                outputConfig: {autoScroll: true}
             }, {
                 ptype: "gxp_addlayers",
-                actionTarget: "layertree.tbar",
+                actionTarget: "tree.tbar",
                 upload: true
             }, {
                 ptype: "gxp_removelayer",
-                actionTarget: ["layertree.tbar", "layertree.contextMenu"]
+                actionTarget: ["tree.tbar", "layertree.contextMenu"]
             }, {
                 ptype: "gxp_layerproperties",
-                actionTarget: ["layertree.tbar", "layertree.contextMenu"]
+                actionTarget: ["tree.tbar", "layertree.contextMenu"]
+            }, {
+                ptype: "gxp_styler",
+                actionTarget: ["tree.tbar", "layertree.contextMenu"]
             }, {
                 ptype: "gxp_zoomtolayerextent",
                 actionTarget: {target: "layertree.contextMenu", index: 0}
@@ -129,8 +132,18 @@ GeoExplorer.Composer = Ext.extend(GeoExplorer, {
 
     /** private: method[openPreview]
      */
-    openPreview: function() {
-        window.open("viewer.html" + "#maps/" + this.id);
+    openPreview: function(embedMap) {
+        var preview = new Ext.Window({
+            title: this.previewText,
+            layout: "fit",
+            items: [{border: false, html: embedMap.getIframeHTML()}]
+        });
+        preview.show();
+        var body = preview.items.get(0).body;
+        var iframe = body.dom.firstChild;
+        var loading = new Ext.LoadMask(body);
+        loading.show();
+        Ext.get(iframe).on('load', function() { loading.hide(); });
     },
 
     /** private: method[showEmbedWindow]
@@ -159,16 +172,22 @@ GeoExplorer.Composer = Ext.extend(GeoExplorer, {
            }
        };
 
+       var embedMap = new gxp.EmbedMapDialog({
+           id: 'geobuilder-1',
+           url: "viewer" + "#maps/" + this.id
+       });
+
        var wizard = {
-           id:'geobuilder-wizard-panel',
-           layout:'card',
+           id: 'geobuilder-wizard-panel',
+           border: false,
+           layout: 'card',
            activeItem: 0,
-           defaults: {border:false, hideMode:'offsets'},
+           defaults: {border: false, hideMode: 'offsets'},
            bbar: [{
                id: 'preview',
                text: this.previewText,
                handler: function() {
-                   this.save(this.openPreview);
+                   this.save(this.openPreview.createDelegate(this, [embedMap]));
                },
                scope: this
            }, '->', {
@@ -183,14 +202,11 @@ GeoExplorer.Composer = Ext.extend(GeoExplorer, {
                handler: previousNext.createDelegate(this, [1]),
                scope: this
            }],
-           items: [toolsArea, {
-               id: 'geobuilder-1',
-               xtype: "gxp_embedmapdialog", 
-               url: "viewer.html" + "#maps/" + this.id
-           }]
+           items: [toolsArea, embedMap]
        };
 
        new Ext.Window({
+            layout: 'fit',
             width: 500, height: 300,
             title: this.exportMapText,
             items: [wizard]

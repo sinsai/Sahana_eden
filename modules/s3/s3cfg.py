@@ -53,10 +53,20 @@ class S3Config(Storage):
         self.mail = Storage()
         self.twitter = Storage()
         self.L10n = Storage()
+        self.options = Storage()
         self.osm = Storage()
         self.security = Storage()
+        self.aaa = Storage()
         self.ui = Storage()
-        self.T = T
+        self.req = Storage()
+        self.T = T  
+        #These are copied from modules/s3/s3aaa.py
+        self.aaa.acl =  Storage(CREATE = 0x0001,
+                                READ   = 0x0002,
+                                UPDATE = 0x0004,
+                                DELETE = 0x0008,
+                                ALL = 0x000F#CREATE | READ | UPDATE | DELETE
+                                )
 
     # Auth settings
     def get_auth_hmac_key(self):
@@ -268,12 +278,38 @@ class S3Config(Storage):
         return self.security.get("map", False)
     def get_security_self_registration(self):
         return self.security.get("self_registration", True)
+    
+    # AAA Settings
+    def get_aaa_default_acl(self):
+        return self.aaa.get("default_acl", self.aaa.acl.READ)  
+    def get_aaa_default_uacl(self):
+        return self.aaa.get("default_user_acl", self.aaa.acl.READ)  
+    def get_aaa_default_oacl(self):
+        return self.aaa.get("default_user_acl", self.aaa.acl.CREATE | 
+                                                self.aaa.acl.READ | 
+                                                self.aaa.acl.UPDATE)          
+    def get_aaa_has_staff_permissions(self):
+        return self.aaa.get("has_staff_permissions", False)    
+    def get_aaa_staff_acl(self):
+        return self.aaa.get("staff_acl", self.aaa.acl.CREATE | 
+                                         self.aaa.acl.READ | 
+                                         self.aaa.acl.UPDATE ) 
+    def get_aaa_supervisor_acl(self):
+        return self.aaa.get("supervisor_acl", self.aaa.acl.ALL)    
+
+    # Options
+    def get_options_support_requests(self):
+        return self.options.get("support_requests", False)
 
     # UI/Workflow Settings
     def get_ui_navigate_away_confirm(self):
         return self.ui.get("navigate_away_confirm", True)
     def get_ui_autocomplete(self):
         return self.ui.get("autocomplete", False)
+
+    # Request Settings
+    def get_req_status_writable(self):
+        return self.req.get("status_writable", True) 
 
     # Active modules list
     def has_module(self, module_name):
@@ -290,17 +326,16 @@ class S3Config(Storage):
                 "dvi",          # Disaster Victim Identification
                 #"dvr",          # Disaster Victim Registry
                 "hms",          # Hospital Management
-                "importer",     # Spreadsheet Importer
-                "logs",         # Logistics
-                #"lms",          # Logistics
-                "mpr",          # Missing Person Registry
+                "inv",         # Logistics
+                "pf",           # Person Finder
                 "msg",          # Messaging
                 "project",      # Project Tracking
-                "rat",          # Rapid Assessment Tool
+                "assess",       # Assessments Tool
                 "rms",          # Request Management
-                "survey",       # Surveys
-                #"ticket",       # Ticketing
                 "vol",          # Volunteer Management
+                #"importer",     # Spreadsheet Importer
+                #"survey",       # Surveys
+                #"ticket",       # Ticketing
             ]
         else:
             _modules = self.modules

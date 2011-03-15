@@ -995,7 +995,7 @@ class S3XML(object):
                    parent=None,
                    options=False,
                    references=False,
-                   labels=True):
+                   labels=False):
         """
         Get fields in a table as <fields> element
 
@@ -1045,7 +1045,7 @@ class S3XML(object):
                                   len(opts) and True or False)
                 field.set(self.ATTRIBUTE.has_options, has_options)
                 if labels:
-                    field.set(self.ATTRIBUTE.label, table[f].label.encode("utf-8"))
+                    field.set(self.ATTRIBUTE.label, unicode(table[f].label.decode("utf-8")))
                     comment = table[f].comment
                     if comment:
                         comment = str(comment)
@@ -1096,7 +1096,8 @@ class S3XML(object):
             self.get_fields(prefix, name,
                             parent=e,
                             options=options,
-                            references=references)
+                            references=references,
+                            labels=True)
             return e
         else:
             raise AttributeError("No table like %s" % tablename)

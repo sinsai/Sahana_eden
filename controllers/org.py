@@ -58,7 +58,6 @@ def organisation():
                                         tabs = [(T("Basic Details"), None),
                                                 (T("Staff"), "staff"),
                                                 (T("Offices"), "office"),                                                
-                                                (T("Warehouses"), "store"),
                                                 (T("Assessments"), "assess"),
                                                 (T("Projects"), "project"),
                                                 (T("Activities"), "activity"),

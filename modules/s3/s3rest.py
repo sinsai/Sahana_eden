@@ -1740,7 +1740,8 @@ class S3Resource(object):
                options=False,
                references=False,
                stylesheet=None,
-               as_json=False):
+               as_json=False,
+               as_tree=False):
         """
         Get the structure of the resource
 
@@ -1782,7 +1783,11 @@ class S3Resource(object):
             if tree is None:
                 return None
 
-        # Conversion
+        # Return tree if requested
+        if as_tree:
+            return tree
+
+        # Otherwise string-ify it
         if as_json:
             return self.xml.tree2json(tree, pretty_print=True)
         else:

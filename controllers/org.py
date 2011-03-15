@@ -54,17 +54,22 @@ def organisation():
 
     """ RESTful CRUD controller """
 
+    tabs = [(T("Basic Details"), None),
+            (T("Staff"), "staff"),
+            (T("Offices"), "office"),                                                
+            #(T("Donors"), "organisation"),
+            #(T("Sites"), "site"),  # Ticket 195
+           ]
+    
+    if deployment_settings.has_module("assess"):
+        tabs.append((T("Assessments"), "assess"))
+    if deployment_settings.has_module("project"):
+        tabs.append((T("Projects"), "project"))
+        tabs.append((T("Activities"), "activity"))
+        #tabs.append((T("Tasks"), "task"))
+
     rheader = lambda r: shn_org_rheader(r,
-                                        tabs = [(T("Basic Details"), None),
-                                                (T("Staff"), "staff"),
-                                                (T("Offices"), "office"),                                                
-                                                (T("Assessments"), "assess"),
-                                                (T("Projects"), "project"),
-                                                (T("Activities"), "activity"),
-                                                #(T("Tasks"), "task"),
-                                                #(T("Donors"), "organisation"),
-                                                #(T("Sites"), "site"),  # Ticket 195
-                                               ])
+                                        tabs = tabs)
 
     output = s3_rest_controller(prefix, resourcename, rheader=rheader)
     return output

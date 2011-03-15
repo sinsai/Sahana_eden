@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
-""" Data Model Extensions (S3XRC)
+""" S3 Data Model Extensions
 
-    @version: 2.3.4
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{gluon}} <http://web2py.com>}

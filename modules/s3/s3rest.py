@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
-""" RESTful API (S3XRC)
+""" RESTful API
 
-    @version: 2.3.4
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
@@ -55,7 +54,6 @@ from s3import import S3Importer
 
 # *****************************************************************************
 class S3Resource(object):
-
     """
     API for resources
 
@@ -1308,18 +1306,37 @@ class S3Resource(object):
                         source.append((u[0], urllib.urlopen(u[1])))
                 except:
                     source = []
-            else:
+            elif r.http != "GET":
                 source = self.__read_body(r)
         else:
             if filenames:
                 source = filenames
             elif fetchurls:
                 source = fetchurls
-            else:
+            elif r.http != "GET":
                 source = self.__read_body(r)
 
         if not source:
-            r.error(400, "Invalid source")
+            if filenames or fetchurls:
+                # Error: no source found
+                r.error(400, "Invalid source")
+            else:
+                # GET/create without source: return the resource structure
+                opts = vars.get("options", False)
+                refs = vars.get("references", False)
+                stylesheet = self.stylesheet(r)
+                if format in json_formats:
+                    as_json = True
+                else:
+                    as_json = False
+                output = self.struct(options=opts,
+                                     references=refs,
+                                     stylesheet=stylesheet,
+                                     as_json=as_json)
+                if output is None:
+                    # Transformation error
+                    r.error(400, self.xml.error)
+                return output
 
         # Find XSLT stylesheet
         stylesheet = self.stylesheet(r, method="import")
@@ -1718,6 +1735,60 @@ class S3Resource(object):
                 return self.xml.tostring(tree, pretty_print=True)
 
 
+    # -------------------------------------------------------------------------
+    def struct(self,
+               options=False,
+               references=False,
+               stylesheet=None,
+               as_json=False):
+        """
+        Get the structure of the resource
+
+        @param options: include option lists in option fields
+        @param references: include option lists even for reference fields
+        @param stylesheet: the stylesheet to use for transformation
+        @param as_json: convert into JSON after transformation
+
+        """
+
+        # Get the structure of the main resource
+        root = etree.Element(self.xml.TAG.root)
+        main = self.xml.get_struct(self.prefix, self.name,
+                                   parent=root,
+                                   options=options,
+                                   references=references)
+
+        # Include the selected components
+        for c in self.components.values():
+            component = c.resource
+            prefix = component.prefix
+            name = component.name
+            sub = self.xml.get_struct(prefix, name,
+                                      parent=main,
+                                      options=options,
+                                      references=references)
+
+        # Transformation
+        tree = etree.ElementTree(root)
+        if stylesheet is not None:
+            tfmt = self.xml.ISOFORMAT
+            args = dict(domain=self.manager.domain,
+                        base_url=self.manager.s3.base_url,
+                        prefix=self.prefix,
+                        name=self.name,
+                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
+
+            tree = self.xml.transform(tree, stylesheet, **args)
+            if tree is None:
+                return None
+
+        # Conversion
+        if as_json:
+            return self.xml.tree2json(tree, pretty_print=True)
+        else:
+            return self.xml.tostring(tree, pretty_print=True)
+
+
     # Utilities ===============================================================
 
     def readable_fields(self, subset=None):
@@ -1917,7 +1988,6 @@ class S3Resource(object):
 
 # *****************************************************************************
 class S3Request(object):
-
     """
     Class to handle HTTP requests
 
@@ -2297,7 +2367,6 @@ class S3Request(object):
 
 # *****************************************************************************
 class S3Method(object):
-
     """
     REST Method Handler Base Class
 

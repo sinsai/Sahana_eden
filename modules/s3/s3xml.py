@@ -71,7 +71,14 @@ class S3XML(object):
     Lat = "lat"
     Lon = "lon"
 
-    IGNORE_FIELDS = ["deleted", "id", "owned_by_role", "owned_by_user"]
+    IGNORE_FIELDS = [
+            "deleted",
+            "deleted_fk",
+            "v_record_status",
+            "v_duplicate_uid",
+            "id",
+            "owned_by_role",
+            "owned_by_user"]
 
     FIELDS_TO_ATTRIBUTES = [
             "id",
@@ -1014,6 +1021,8 @@ class S3XML(object):
                 if ftype[:9] == "reference" and \
                    not "id" in self.db[ftype[10:]].fields:
                        continue
+                if f in self.IGNORE_FIELDS or ftype == "id":
+                    continue
                 readable = table[f].readable
                 writable = table[f].writable
                 field = etree.SubElement(fields, self.TAG.field)

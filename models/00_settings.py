@@ -176,7 +176,7 @@ s3.l10n_languages = deployment_settings.get_L10n_languages()
 
 # Default strings are in US English
 T.current_languages = ["en", "en-us"]
-language = "en"
+language = deployment_settings.get_L10n_default_language()
 # Check if user has selected a specific language
 if request.vars._language:
     session.s3.language = request.vars._language
@@ -186,6 +186,8 @@ if session.s3.language:
 elif auth.is_logged_in():
     # Use user preference
     language = auth.user.language
+    T.force(language)
+elif language != "en":
     T.force(language)
 #else:
 #    # Use what browser requests (default web2py behaviour)

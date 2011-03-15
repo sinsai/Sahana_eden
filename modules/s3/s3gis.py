@@ -670,6 +670,7 @@ class GIS(object):
                           config=None,
                           marker_id=None,
                           filter=None,
+                          id=None,
                           active=True,
                           polygons=False,
                           opacity=1):
@@ -677,7 +678,8 @@ class GIS(object):
             Return a Feature Layer suitable to display on a map
             @param layername: used as the label in the LayerSwitcher
             @param popup_label: used in Cluster Popups to differentiate between types
-            @param filter: Used by Location Selector
+            @param id: Used by Location Selector to select which gis_location to include on the map
+            @param filter: a filter to e.g. specify a type of resource
         """
         db = self.db
         cache = self.cache
@@ -698,8 +700,13 @@ class GIS(object):
             else:
                 query = (table.id > 0)
 
+            if id:
+                # Which feature to display in the location selector
+                query = query & (table.id == id)
+
             if filter:
-                query = query & (db[filter.tablename].id == filter.id)
+                # e.g. Which type of resource we're interested in
+                query = query & filter
 
             # Hide Resources recorded to Country Locations on the map?
             if not deployment_settings.get_gis_display_l0():
@@ -3453,7 +3460,11 @@ OpenLayers.Util.extend( selectPdfControl, {
         if os.access(cachepath, os.W_OK):
             cacheable = True
         else:
-            cacheable = False
+            try:
+                os.mkdir(cachepath)
+                cacheable = True
+            except:
+                cacheable = False
 
         # Duplicate Features to go across the dateline?
         if deployment_settings.get_gis_duplicate_features():
@@ -3958,16 +3969,20 @@ OpenLayers.Util.extend( selectPdfControl, {
                     name = layer["name"]
                     url = layer["url"]
                     visible = layer["visible"]
-                    geojson_projection = db(db.gis_projection.id == layer["projection_id"]).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
+                    geojson_projection = db(db.gis_projection.id == layer["projection_id"]).select(db.gis_projection.epsg,
+                                                                                                   limitby=(0, 1)).first().epsg
                     if geojson_projection == 4326:
                         projection_str = "projection: proj4326,"
                     else:
-                        projection_str = "projection: new OpenLayers.Projection('EPSG:" + geojson_projection + "'),"
+                        projection_str = "projection: new OpenLayers.Projection('EPSG:%s')," % geojson_projection
                     marker_id = layer["marker_id"]
                     if marker_id:
-                        marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+                        marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image,
+                                                                          db.gis_marker.height,
+                                                                          db.gis_marker.width,
+                                                                          limitby=(0, 1)).first()
                     else:
-                        marker = db(db.gis_marker.id == marker__id_default).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+                        marker = marker_default
                     marker_url = URL(r=request, c="static", f="img", args=["markers", marker.image])
                     height = marker.height
                     width = marker.width
@@ -3975,9 +3990,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                     # Generate HTML snippet
                     name_safe = re.sub("\W", "_", name)
                     if visible:
-                        visibility = "geojsonLayer" + name_safe + ".setVisibility(true);"
+                        visibility = "geojsonLayer%s.setVisibility(true);" % name_safe
                     else:
-                        visibility = "geojsonLayer" + name_safe + ".setVisibility(false);"
+                        visibility = "geojsonLayer%s.setVisibility(false);" % name_safe
                     layers_geojson += """
         iconURL = '""" + marker_url + """';
         // Pre-cache this image
@@ -4186,11 +4201,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                                                   db.gis_marker.width,
                                                   limitby=(0, 1)).first()
                     else:
-                        query = (db.gis_marker.id == marker__id_default)
-                        marker = db(query).select(db.gis_marker.image,
-                                                  db.gis_marker.height,
-                                                  db.gis_marker.width,
-                                                  limitby=(0, 1)).first()
+                        marker = marker_default
                     marker_url = URL(r=request, c="static", f="img",
                                      args=["markers", marker.image])
                     height = marker.height

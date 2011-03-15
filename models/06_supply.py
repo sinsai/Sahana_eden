@@ -250,4 +250,19 @@ if deployment_settings.has_module("inv"):
     #Packs as component of Items
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(supply_item="item_id"))                       
+                              joinby=dict(supply_item="item_id"))      
+    
+     #==============================================================================   
+    def shn_supply_item_add (quantity_1, pack_quantity_1, 
+                             quantity_2, pack_quantity_2,): 
+        """
+        Adds item quantities together, accounting for different pack quantities.
+        Returned quantity according to pack_quantity_1
+        """
+        if pack_quantity_1 == pack_quantity_2:
+            # Faster calculation
+            return quantity_1 + quantity_2
+        else:
+            return ((quantity_1*pack_quantity_1) + 
+                    (quantity_2*pack_quantity_2)
+                    ) / pack_quantity_1

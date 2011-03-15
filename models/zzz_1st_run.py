@@ -139,12 +139,12 @@ if populate:
     # Ensure that the clusters we defined are in the DB ready to be used as a FK
     db.commit()
     if not db(table.id > 0).count():
-        cluster_shelter = db(db.org_cluster.abrv == "Shelter").select(db.org_cluster.id,
-                                                                      limitby=(0, 1)).first().id
-        cluster_nutrition = db(db.org_cluster.abrv == "Nutrition").select(db.org_cluster.id,
-                                                                          limitby=(0, 1)).first().id
-        cluster_wash = db(db.org_cluster.abrv == "WASH").select(db.org_cluster.id,
-                                                                limitby=(0, 1)).first().id
+        cluster_shelter = db(db.org_cluster.abrv == T("Shelter")).select(db.org_cluster.id,
+                                                                         limitby=(0, 1)).first().id
+        cluster_nutrition = db(db.org_cluster.abrv == T("Nutrition")).select(db.org_cluster.id,
+                                                                             limitby=(0, 1)).first().id
+        cluster_wash = db(db.org_cluster.abrv == T("WASH")).select(db.org_cluster.id,
+                                                                   limitby=(0, 1)).first().id
         table.insert(
             cluster_id = cluster_shelter,
             abrv = T("Clothing")
@@ -945,15 +945,16 @@ if populate:
             marker_id = db(db.gis_marker.name == "person").select(db.gis_marker.id,
                                                                     limitby=(0, 1)).first().id
         )
-        #table.insert(
-        #    name = "Warehouses",
-        #    module = "org",
-        #    resource = "office",
-        #    type = 5,
-        #    popup_label = "Warehouse",
-        #    marker_id = db(db.gis_marker.name == "office").select(db.gis_marker.id,
-        #                                                          limitby=(0, 1)).first().id
-        #)
+        table.insert(
+            name = "Warehouses",
+            module = "org",
+            resource = "office",
+            filter_field = "type",
+            filter_value = 5,
+            popup_label = "Warehouse",
+            marker_id = db(db.gis_marker.name == "office").select(db.gis_marker.id,
+                                                                  limitby=(0, 1)).first().id
+        )
     tablename = "gis_layer_coordinate"
     table = db[tablename]
     if not db(table.id > 0).count():

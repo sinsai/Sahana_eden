@@ -138,7 +138,9 @@ class S3XML(object):
         readable="readable",
         writable="writable",
         has_options="has_options",
-        tuid="tuid"
+        tuid="tuid",
+        label="label",
+        comment="comment"
     )
 
     ACTION = Storage(
@@ -992,7 +994,8 @@ class S3XML(object):
     def get_fields(self, prefix, name,
                    parent=None,
                    options=False,
-                   references=False):
+                   references=False,
+                   labels=True):
         """
         Get fields in a table as <fields> element
 
@@ -1041,6 +1044,25 @@ class S3XML(object):
                 has_options = str(opts is not None and
                                   len(opts) and True or False)
                 field.set(self.ATTRIBUTE.has_options, has_options)
+                if labels:
+                    field.set(self.ATTRIBUTE.label, table[f].label.encode("utf-8"))
+                    comment = table[f].comment
+                    if comment:
+                        comment = str(comment)
+                    #if hasattr(comment, "xml"):
+                        #comment = comment.xml()
+                    if comment and "<" in comment:
+                        try:
+                            markup = etree.XML(comment)
+                            comment = markup.xpath(".//text()")
+                            if comment:
+                                comment = " ".join(comment)
+                            else:
+                                comment = ""
+                        except etree.XMLSyntaxError:
+                            comment = comment.replace("<", "<!-- <").replace(">", "> -->")
+                    if comment:
+                        field.set(self.ATTRIBUTE.comment, comment)
         return fields
 
 

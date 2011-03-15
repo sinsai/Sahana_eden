@@ -3,6 +3,7 @@
 """ RESTful Record Merger
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/BluePrintRecordMerger>}
+    @status: work in progress
 
     @author: Dominic König <dominic[at]aidiq.com>
 

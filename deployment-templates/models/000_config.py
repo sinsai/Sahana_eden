@@ -37,6 +37,9 @@ deployment_settings.auth.hmac_key = "akeytochange"
 # registered in order to secure the deployment
 deployment_settings.auth.registration_requires_verification = False
 deployment_settings.auth.registration_requires_approval = False
+
+deployment_settings.auth.registration_requests_mobile_phone = True
+deployment_settings.auth.registration_requests_organisation = False
 deployment_settings.auth.openid = False
 
 # Base settings

@@ -769,6 +769,7 @@ class S3CRUD(S3Method):
         linkto = self._config("linkto", None)
         insertable = self._config("insertable", True)
         listadd = self._config("listadd", True)
+        addbtn = self._config("addbtn", False)
         list_fields = self._config("list_fields")
 
         # Check permission to read in this table
@@ -819,34 +820,30 @@ class S3CRUD(S3Method):
                 limit = 1
                 session.s3.filter = request.get_vars
 
-            # Add hidden add-form (do this before retrieving the list!)
-            if listadd:
-                form = self.create(r, **attr).get("form", None)
-                if form is not None:
-                    output.update(form=form)
-                    addtitle = self.crud_string(tablename, "subtitle_create")
-                    output.update(addtitle=addtitle)
+            # Custom view
+            self.response.view = self._view(r, "list.html")
 
-                    # Show-Add button to activate the form:
-                    showadd_btn = self.crud_button(None,
-                                                   tablename=tablename,
-                                                   name="label_create_button",
-                                                   _id="show-add-btn")
-                    output.update(showadd_btn=showadd_btn)
+            if insertable:
+                if listadd:
+                    # Add a hidden add-form and a button to activate it
+                    form = self.create(r, **attr).get("form", None)
+                    if form is not None:
+                        output.update(form=form)
+                        addtitle = self.crud_string(tablename, "subtitle_create")
+                        output.update(addtitle=addtitle)
+                        showadd_btn = self.crud_button(None,
+                                                       tablename=tablename,
+                                                       name="label_create_button",
+                                                       _id="show-add-btn")
+                        output.update(showadd_btn=showadd_btn)
+                        # Switch to list_create view
+                        self.response.view = self._view(r, "list_create.html")
 
-                    # Switch to list_create view
-                    self.response.view = self._view(r, "list_create.html")
-
-                else:
-                    self.response.view = self._view(r, "list.html")
-
-            elif insertable:
-                buttons = self.insert_buttons(r, "add")
-                if buttons:
-                    output.update(buttons)
-                self.response.view = self._view(r, "list.html")
-            else:
-                self.response.view = self._view(r, "list.html")
+                elif addbtn:
+                    # Add an action-button linked to the create view
+                    buttons = self.insert_buttons(r, "add")
+                    if buttons:
+                        output.update(buttons)
 
             # Get the list
             items = self.sqltable(fields=fields,
@@ -857,7 +854,7 @@ class S3CRUD(S3Method):
                                   download_url=self.download_url,
                                   format=representation)
 
-            # In SSPag, send the first 20 records with the initial response
+            # In SSPag, send the first 20 records together with the initial response
             # (avoids the dataTables Ajax request unless the user tries nagivating around)
             if not response.s3.no_sspag:
                 totalrows = self.resource.count()
@@ -881,7 +878,9 @@ class S3CRUD(S3Method):
                     available_records = self.db(self.table.deleted == False)
                 else:
                     available_records = self.db(self.table.id > 0)
-                if available_records.count():
+                #if available_records.count():
+                # This is faster:
+                if available_records.select(self.table.id, limitby=(0, 1)).first():
                     items = self.crud_string(self.tablename, "msg_no_match")
                 else:
                     items = self.crud_string(self.tablename, "msg_list_empty")

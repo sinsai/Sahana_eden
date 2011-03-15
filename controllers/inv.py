@@ -285,10 +285,32 @@ def shn_send_rheader(r):
                                   )
                     rheader.append(cn_btn)
                     
-                    if recv_record.status != SHIP_STATUS_CANCEL:
+                    if send_record.status != SHIP_STATUS_CANCEL:
                         if auth.s3_has_permission("delete", 
                                                   db.inv_send, 
-                                                  record_id=send_record.id):                    
+                                                  record_id=send_record.id):   
+                            if send_record.status == SHIP_STATUS_SENT:
+                                if "received" in request.vars:
+                                    db.inv_send[send_record.id] = \
+                                        dict(status = SHIP_STATUS_RECEIVED)
+                                else:
+                                    receive_btn = A( T("Confirm Shipment Received"),
+                                                    _href = URL(r = request,
+                                                                c = "inv",
+                                                                f = "send",
+                                                                args = [send_record.id],
+                                                                vars = dict(received = True),
+                                                                ),
+                                                    _id = "send_receive",
+                                                    _class = "action-btn",
+                                                    _title = "Only use this button to confirm that the shipment has been received by the destination, if the destination will not enter this information into the system directly"
+                                                    )
+                                    
+                                    receive_btn_confirm = SCRIPT("S3ConfirmClick('#send_receive', '%s')" 
+                                                                 % T("This shipment will be confirmed as received.") )
+                                    rheader.append(receive_btn)
+                                    rheader.append(receive_btn_confirm)                              
+                                                                    
                             cancel_btn = A( T("Cancel Shipment"),
                                             _href = URL(r = request,
                                                         c = "inv",
@@ -328,6 +350,8 @@ def req_items_for_inv(site_id, quantity_type):
                     ( db.req_req.id == db.req_req_item.req_id) & \
                     ( db.req_req_item.item_pack_id == db.req_req_item.item_pack_id) & \
                     ( db.req_req_item["quantity_%s" % quantity_type] < db.req_req_item.quantity) & \
+                    ( db.req_req.cancel == False ) & \
+                    ( db.req_req.deleted == False ) & \
                     ( db.req_req_item.deleted == False ) 
                    ).select(db.req_req_item.id,
                             db.req_req_item.req_id,

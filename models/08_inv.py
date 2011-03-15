@@ -15,11 +15,11 @@ inv_menu = [
                 [T("List"), False, URL(r=request, c="supply", f="item")],
                 [T("Add"), False, URL(r=request, c="supply", f="item", args="create")],
             ]],            
-            #[T("Sites"), False, URL(r=request, c="org", f="site"),
-            #[
-            #    [T("List"), False, URL(r=request, c="org", f="site")],
-            #    [T("Add"), False, URL(r=request, c="org", f="site", args="create")],
-            #]],
+            [T("Sites"), False, URL(r=request, c="org", f="office"),
+            [
+                [T("List"), False, URL(r=request, c="org", f="office")],
+                [T("Add"), False, URL(r=request, c="org", f="office", args="create")],
+            ]],
             [T("Request"), False, URL(r=request, c="req", f="req"),
             [
                 [T("List"), False, URL(r=request, c="req", f="req")],

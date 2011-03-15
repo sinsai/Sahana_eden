@@ -2626,6 +2626,7 @@
 'Record any use and entry restrictions exactly as written on placard': 'Record any use and entry restrictions exactly as written on placard',
 'Record deleted': 'Record deleted',
 'Record last updated': 'Record last updated',
+'Record not found': 'Record not found',
 'Record not found!': 'Record not found!',
 'Record updated': 'Record updated',
 'Records': 'Records',

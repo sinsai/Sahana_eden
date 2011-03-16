@@ -1045,7 +1045,8 @@ class S3XML(object):
                                   len(opts) and True or False)
                 field.set(self.ATTRIBUTE.has_options, has_options)
                 if labels:
-                    field.set(self.ATTRIBUTE.label, unicode(table[f].label.decode("utf-8")))
+                    label = str(table[f].label).decode("utf-8")
+                    field.set(self.ATTRIBUTE.label, label)
                     comment = table[f].comment
                     if comment:
                         comment = str(comment).decode("utf-8")

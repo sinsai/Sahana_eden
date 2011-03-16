@@ -23,6 +23,10 @@ class SahanaTest(unittest.TestCase):
     """
 
     _seleniumCreated = False
+    ipaddr = ""
+    ipport = ""
+    browser = ""
+    webURL =  ""
     _classDetailsCollected = False
     _sortList = None
     _user = "user@example.com"
@@ -41,12 +45,17 @@ class SahanaTest(unittest.TestCase):
             in this method are shared amongst all subclasses. That is:
             SahanaTest.selenium and SahanaTest.action
         """
-
+        if  (SahanaTest.ipaddr != ipaddr) or (SahanaTest.ipport != ipport) or (SahanaTest.browser != browser) or (SahanaTest.webURL !=  webURL):
+            SahanaTest._seleniumCreated = False
         # Only run once
         if not SahanaTest._seleniumCreated:
             if browser == "*custom":
                 browser += " %s" % path
             print "selenium %s %s %s %s" % (ipaddr, ipport, browser, webURL)
+            SahanaTest.ipaddr = ipaddr
+            SahanaTest.ipport = ipport
+            SahanaTest.browser = browser
+            SahanaTest.webURL =  webURL
             SahanaTest.selenium = selenium(ipaddr, ipport, browser, webURL)
             SahanaTest.action = actions.Action(SahanaTest.selenium)
             SahanaTest._seleniumCreated = True

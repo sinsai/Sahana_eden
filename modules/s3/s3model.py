@@ -400,35 +400,35 @@ class S3ResourceModel(object):
 
     # -------------------------------------------------------------------------
     @staticmethod
-    def super_key(super):
+    def super_key(supertable):
         """
         Get the name of the key for a super-entity
 
-        @param super: the super-entity table
+        @param supertable: the super-entity table
 
         """
 
-        for key in super.fields:
-            if str(super[key].type) == "id":
-                return key
+        try:
+            return supertable._id.name
+        except AttributeError: pass
 
-        raise SyntaxError("No id-type key found in %s" % super._tablename)
+        raise SyntaxError("No id-type key found in %s" % supertable._tablename)
 
 
     # -------------------------------------------------------------------------
-    def super_link(self, super):
+    def super_link(self, supertable):
         """
         Get a foreign key field for a super-entity
 
-        @param super: the super-entity table
+        @param supertable: the super-entity table
 
         """
 
-        key = self.super_key(super)
+        key = self.super_key(supertable)
 
-        return Field(key, super,
+        return Field(key, supertable,
                      requires = IS_EMPTY_OR(IS_IN_DB(self.db, "%s.%s" %
-                                                    (super._tablename, key))),
+                                                    (supertable._tablename, key))),
                      readable = False,
                      writable = False,
                      ondelete = "RESTRICT")
@@ -451,13 +451,13 @@ class S3ResourceModel(object):
             return True
 
         # Get the super-entities of this table
-        super = self.get_config(table, "super_entity")
-        if not super:
+        supertable = self.get_config(table, "super_entity")
+        if not supertable:
             return True
-        elif not isinstance(super, (list, tuple)):
-            super = [super]
+        elif not isinstance(supertable, (list, tuple)):
+            supertable = [supertable]
 
-        for s in super:
+        for s in supertable:
 
             # Get the key
             for key in s.fields:
@@ -507,15 +507,15 @@ class S3ResourceModel(object):
 
         """
 
-        super = self.get_config(table, "super_entity")
-        if not super:
+        supertable = self.get_config(table, "super_entity")
+        if not supertable:
             return True
-        if not isinstance(super, (list, tuple)):
-            super = [super]
+        if not isinstance(supertable, (list, tuple)):
+            supertable = [supertable]
 
         uid = record.get("uuid", None)
         if uid:
-            for s in super:
+            for s in supertable:
                 if "deleted" in s.fields:
                     self.db(s.uuid == uid).update(deleted=True)
 

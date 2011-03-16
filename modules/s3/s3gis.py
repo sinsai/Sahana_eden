@@ -670,6 +670,7 @@ class GIS(object):
                           config=None,
                           marker_id=None,
                           filter=None,
+                          id=None,
                           active=True,
                           polygons=False,
                           opacity=1):
@@ -677,7 +678,8 @@ class GIS(object):
             Return a Feature Layer suitable to display on a map
             @param layername: used as the label in the LayerSwitcher
             @param popup_label: used in Cluster Popups to differentiate between types
-            @param filter: Used by Location Selector
+            @param id: Used by Location Selector to select which gis_location to include on the map
+            @param filter: a filter to e.g. specify a type of resource
         """
         db = self.db
         cache = self.cache
@@ -698,8 +700,13 @@ class GIS(object):
             else:
                 query = (table.id > 0)
 
+            if id:
+                # Which feature to display in the location selector
+                query = query & (table.id == id)
+
             if filter:
-                query = query & (db[filter.tablename].id == filter.id)
+                # e.g. Which type of resource we're interested in
+                query = query & filter
 
             # Hide Resources recorded to Country Locations on the map?
             if not deployment_settings.get_gis_display_l0():

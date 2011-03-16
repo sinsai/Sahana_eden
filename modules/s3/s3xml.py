@@ -1048,9 +1048,7 @@ class S3XML(object):
                     field.set(self.ATTRIBUTE.label, unicode(table[f].label.decode("utf-8")))
                     comment = table[f].comment
                     if comment:
-                        comment = str(comment)
-                    #if hasattr(comment, "xml"):
-                        #comment = comment.xml()
+                        comment = str(comment).decode("utf-8")
                     if comment and "<" in comment:
                         try:
                             markup = etree.XML(comment)

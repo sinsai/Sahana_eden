@@ -16,6 +16,7 @@ import gzip
 downloadfonts = [
     "arabic",    # urdu language support
     "unifont",   # unifont
+    "japanese",  # japanese language support
     ]
 
 
@@ -113,6 +114,45 @@ if fontcategory in downloadfonts:
                                 "w")
                 fontfile.write(fontpack.read())
                 fontfile.close()
+                fontpack.close()
+            except:
+                print "Improperly downloaded file!"
+                print "Download Failed, Proceeding forward!!"
+        else:
+                print "Download Failed, Proceeding forward!!"
+    except(IOError):
+        print "Download Failed, Network Error!! Proceeding forward!!"
+
+
+## japanese fonts
+fontcategory = "japanese"
+if fontcategory in downloadfonts:
+    if not os.path.exists(os.path.join(script_directory, fontcategory)):
+        os.makedirs(os.path.join(script_directory, fontcategory))
+    print "Downloading Japanese Fonts"
+    url = """http://sourceforge.jp/frs/redir.php?m=jaist&f=%2Fefont%2F10087%2Fsazanami-20040629.tar.bz2"""
+    filename = "sazanami-20040629.tar.bz2"
+    filetype = "application/x-bzip2"
+    fontfiles = [
+        "sazanami-20040629/sazanami-mincho.ttf",
+        "sazanami-20040629/sazanami-gothic.ttf"
+        ]
+    print "Downloading Fonts to %s" % filename
+    try:
+        response = urllib.urlretrieve(url, filename)
+        if response[1].type == filetype:
+            print "Download Successful!! Extracting %s" % filename
+            try:
+                fontpack = tarfile.open(os.path.join(temp_downloads_dir,
+                                                     filename))
+                fontpack.extractfile("sazanami-20040629")
+                for font in fontfiles:
+                    fontpack.extract(font, path=temp_downloads_dir)
+                    try:
+                        shutil.move(os.path.join(temp_downloads_dir, font),
+                            os.path.join(script_directory, fontcategory))
+                    except:
+                        pass
                 fontpack.close()
             except:
                 print "Improperly downloaded file!"

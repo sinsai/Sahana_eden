@@ -696,65 +696,95 @@ class AuthS3(Auth):
             return True
         else:
             return False
+
+
     # -------------------------------------------------------------------------
     def s3_group_members(self, group_id):
         """
-        returns a list of the user_ids for members of a group
+        Get a list of members of a group
+
+        @param group_id: the group record ID
+        @returns: a list of the user_ids for members of a group
+
         """
+
         membership = self.settings.table_membership
         members = self.db( membership.group_id == group_id
                           ).select(membership.user_id)
         return [member.user_id for member in members]
-    
+
+
     # -------------------------------------------------------------------------
     def s3_user_to_person(self, user_id):
         """
-        Returns the person_id for a given user_id
-        """ 
+        Get the person_id for a given user_id
+
+        @param user_id: the user record ID
+        @returns: the person record ID for this user ID
+
+        @note: unsafe method - do not expose to users
+
+        """
+
         table_user = self.settings.table_user
         record = db(table_user.id == user_id &
                     table_user.person_uuid == db.pr_person.uuid
                     ).select(db.pr_person.id, limitby=(0,1)).first()
+
         if record:
             return record.id
         else:
             return None
+
+
     # -------------------------------------------------------------------------
     def s3_person_to_user(self, person_id):
-        """   
-        Returns the user_id for a given person_id     
-        """        
+        """
+        Get the user_id for a given person_id
+
+        @param person_id: the person record ID
+        @returns: the user record ID associated with this person record
+
+        @note: unsafe method - do not expose to users
+
+        """
+
         table_user = self.settings.table_user
         record = self.db( (self.db.pr_person.id == person_id) &
-                          (self.db.pr_person.uuid == table_user.person_uuid) 
+                          (self.db.pr_person.uuid == table_user.person_uuid)
                     ).select(table_user.id, limitby=(0,1)).first()
         if record:
             return record.id
         else:
             return None
+
+
     # -------------------------------------------------------------------------
     def person_id(self):
         """
-        Returns the person_id for the current logged in user
-        """ 
+        Get the person record ID for the current logged-in user
+
+        """
+
         if self.s3_logged_in():
             record = self.db(self.db.pr_person.uuid == self.user.person_uuid
-                             ).select(self.db.pr_person.id, 
+                             ).select(self.db.pr_person.id,
                                       limitby=(0,1)
                                       ).first()
             if record:
-                return record.id        
-        return None            
-    
+                return record.id
+        return None
+
+
     # -------------------------------------------------------------------------
     def s3_has_permission(self, method, table, record_id = 0):
-
         """
-            S3 framework function to define whether a user can access a record in manner "method"
-            Designed to be called from the RESTlike controller
-            @note: This is planned to be rewritten: http://eden.sahanafoundation.org/wiki/BluePrintAuthorization
+        S3 framework function to define whether a user can access a record in manner "method"
+        Designed to be called from the RESTlike controller
+        @note: This is planned to be rewritten: http://eden.sahanafoundation.org/wiki/BluePrintAuthorization
 
-            @param table: the table or tablename
+        @param table: the table or tablename
+
         """
 
         db = self.db
@@ -974,7 +1004,6 @@ class AuthS3(Auth):
 
     # -------------------------------------------------------------------------
     def s3_link_to_person(self, user=None):
-
         """
         Links user accounts to person registry entries
 
@@ -1086,7 +1115,7 @@ class AuthS3(Auth):
                 self.s3_update_acl(role_id, **acl)
 
         return role_id
-    
+
     # -------------------------------------------------------------------------
     def s3_update_acl(self, role, c=None, f=None, t=None, oacl=None, uacl=None):
         """
@@ -1169,7 +1198,6 @@ class AuthS3(Auth):
 
 # =============================================================================
 class S3Permission(object):
-
     """
     S3 Class to handle permissions
 

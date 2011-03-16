@@ -188,10 +188,11 @@ def theme_apply(form):
         try:
             proc = check_call([pythonpath, "build.sahana.py", "CSS", "NOGIS"], stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=False)
         except:
+            os.chdir(currentdir)
             session.error = T("Error encountered while applying the theme.")
             redirect(URL(r=request, args=request.args))
-        os.chdir(currentdir)
 
+        os.chdir(currentdir)
         # Don't do standard redirect to List view as we only want this option available
         redirect(URL(r=request, args=[1, "update"]))
     else:
@@ -905,6 +906,8 @@ class TRACEBACK(object):
 @auth.s3_requires_membership(1)
 def ticket():
     """ Ticket handler """
+
+    from gluon.restricted import RestrictedError
 
     if len(request.args) != 2:
         session.error = T("Invalid ticket")

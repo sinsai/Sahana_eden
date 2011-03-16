@@ -721,7 +721,10 @@ class S3LocationSelectorWidget(FormWidget):
             addr_street = this_location.addr_street or ""
             addr_street_encoded = ""
             if addr_street:
-                addr_street_encoded = addr_street.replace("\r\n", "%0d").replace("\r", "%0d").replace("\n", "%0d")
+                addr_street_encoded = addr_street.replace("\r\n",
+                                                          "%0d").replace("\r",
+                                                                         "%0d").replace("\n",
+                                                                                        "%0d")
             postcode = this_location.addr_postcode
             parent = this_location.parent
             path = this_location.path
@@ -761,8 +764,11 @@ class S3LocationSelectorWidget(FormWidget):
 
                 layername = T("Location")
                 popup_label = ""
-                filter = Storage(tablename = "gis_location", id = value)
-                layer = gis.get_feature_layer("gis", "location", layername, popup_label, filter=filter)
+                layer = gis.get_feature_layer("gis",
+                                              "location",
+                                              layername,
+                                              popup_label,
+                                              id=value)
                 if layer:
                     feature_queries = [layer]
                 else:
@@ -833,7 +839,9 @@ class S3LocationSelectorWidget(FormWidget):
                 _type = "int",
                 value =  current,
                 )
-            attr_dropdown = OptionsWidget._attributes(field, default_dropdown, **attributes)
+            attr_dropdown = OptionsWidget._attributes(field,
+                                                      default_dropdown,
+                                                      **attributes)
             requires = IS_ONE_OF(db, "gis_location.id", repr_select,
                                  filterby = "level",
                                  filter_opts = (level,),
@@ -852,7 +860,8 @@ class S3LocationSelectorWidget(FormWidget):
                     # Use the list of countries from deployment_settings instead of from db
                     options = []
                     for country in countries:
-                        options.append((countries[country].id, countries[country].name))
+                        options.append((countries[country].id,
+                                        countries[country].name))
                 else:
                     # Prepopulate top-level dropdown from db
                     if hasattr(requires[0], "options"):
@@ -871,7 +880,8 @@ class S3LocationSelectorWidget(FormWidget):
                 else:
                     _parent = default[max_hierarchy]
 
-                if level == "L1" and ((countries and len(countries) == 1) or response.s3.gis.level1_dropdown):
+                if level == "L1" and ((countries and len(countries) == 1) or \
+                                       response.s3.gis.level1_dropdown):
                     # Prepopulate L1 dropdown from db
                     if hasattr(requires[0], "options"):
                         options = requires[0].options()
@@ -881,7 +891,8 @@ class S3LocationSelectorWidget(FormWidget):
                             # Ensure that the L2 dropdown is opened
                             response.s3.gis.level2_dropdown = True
                     else:
-                        raise SyntaxError, "widget cannot determine options of %s" % field
+                        raise SyntaxError, \
+                              "widget cannot determine options of %s" % field
 
                 elif level == "L2" and response.s3.gis.level2_dropdown:
                     # Prepopulate L2 dropdown from db
@@ -893,7 +904,8 @@ class S3LocationSelectorWidget(FormWidget):
                             # Ensure that the L3 dropdown is opened
                             response.s3.gis.level3_dropdown = True
                     else:
-                        raise SyntaxError, "widget cannot determine options of %s" % field
+                        raise SyntaxError, \
+                              "widget cannot determine options of %s" % field
 
                 elif level == "L3" and response.s3.gis.level3_dropdown:
                     # Prepopulate L3 dropdown from db
@@ -906,7 +918,8 @@ class S3LocationSelectorWidget(FormWidget):
                         #    # Ensure that the L4 dropdown is opened
                         #    response.s3.gis.level4_dropdown = True
                     else:
-                        raise SyntaxError, "widget cannot determine options of %s" % field
+                        raise SyntaxError, \
+                              "widget cannot determine options of %s" % field
 
                 elif current or _parent:
                     # Dropdown or one above this one contains a current value
@@ -937,22 +950,30 @@ class S3LocationSelectorWidget(FormWidget):
                           (level == "L2" and response.s3.gis.level2_dropdown) or \
                           (level == "L3" and response.s3.gis.level3_dropdown):
                 if level:
-                    label = LABEL(location_hierarchy[level], ":", _id="gis_location_label_%s" % level)
+                    label = LABEL(location_hierarchy[level], ":",
+                                  _id="gis_location_label_%s" % level)
                 else:
-                    label = LABEL(T("Specific Location"), ":", _id="gis_location_label_%s" % level)
+                    label = LABEL(T("Specific Location"), ":",
+                                  _id="gis_location_label_%s" % level)
             else:
                 # Hide the Dropdown & the Label
                 attr_dropdown["_class"] = "hidden"
                 if level:
-                    label = LABEL(location_hierarchy[level], ":", _id="gis_location_label_%s" % level, _class="hidden")
+                    label = LABEL(location_hierarchy[level], ":",
+                                  _id="gis_location_label_%s" % level,
+                                  _class="hidden")
                 else:
-                    label = LABEL(T("Specific Location"), ":", _id="gis_location_label_%s" % level, _class="hidden")
+                    label = LABEL(T("Specific Location"), ":",
+                                  _id="gis_location_label_%s" % level,
+                                  _class="hidden")
 
             widget = SELECT(*opts, **attr_dropdown)
             if button:
-                row = DIV(TR(label, _id="gis_location_%s_label__row" % level), TR(TD(widget, _id="gis_location_%s__row" % level), TD(button)))
+                row = DIV(TR(label, _id="gis_location_%s_label__row" % level),
+                          TR(TD(widget, _id="gis_location_%s__row" % level), TD(button)))
             else:
-                row = DIV(TR(label, _id="gis_location_%s_label__row" % level), TR(widget, _id="gis_location_%s__row" % level))
+                row = DIV(TR(label, _id="gis_location_%s_label__row" % level),
+                          TR(widget, _id="gis_location_%s__row" % level))
             return row
 
         dropdowns = DIV()
@@ -965,7 +986,10 @@ class S3LocationSelectorWidget(FormWidget):
                 visible = True
             # @ToDo: Add button, if have rights
             button = ""
-            dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level], button=button))
+            dropdowns.append(level_dropdown(_level,
+                                            visible=visible,
+                                            current=default[_level],
+                                            button=button))
         _level = "L1"
         if _level in location_hierarchy:
             if countries and len(countries) == 1:
@@ -978,7 +1002,10 @@ class S3LocationSelectorWidget(FormWidget):
                 visible = False
             # @ToDo: Add button, if have rights
             button = ""
-            dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level], button=button))
+            dropdowns.append(level_dropdown(_level,
+                                            visible=visible,
+                                            current=default[_level],
+                                            button=button))
         _level = "L2"
         if _level in location_hierarchy:
             if default[_level] or default["L%i" % (int(_level[1:]) - 1)]:
@@ -988,7 +1015,10 @@ class S3LocationSelectorWidget(FormWidget):
                 visible = False
             # @ToDo: Add button, if have rights
             button = ""
-            dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level], button=button))
+            dropdowns.append(level_dropdown(_level,
+                                            visible=visible,
+                                            current=default[_level],
+                                            button=button))
         _level = "L3"
         if _level in location_hierarchy:
             if default[_level] or default["L%i" % (int(_level[1:]) - 1)]:
@@ -998,7 +1028,10 @@ class S3LocationSelectorWidget(FormWidget):
                 visible = False
             # @ToDo: Add button, if have rights
             button = ""
-            dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level], button=button))
+            dropdowns.append(level_dropdown(_level,
+                                            visible=visible,
+                                            current=default[_level],
+                                            button=button))
         _level = "L4"
         if _level in location_hierarchy:
             if default[_level] or default["L%i" % (int(_level[1:]) - 1)]:
@@ -1008,7 +1041,10 @@ class S3LocationSelectorWidget(FormWidget):
                 visible = False
             # @ToDo: Add button, if have rights
             button = ""
-            dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level], button=button))
+            dropdowns.append(level_dropdown(_level,
+                                            visible=visible,
+                                            current=default[_level],
+                                            button=button))
         # L5 not supported by testSuite
         _level = "L5"
         if _level in location_hierarchy:
@@ -1019,7 +1055,10 @@ class S3LocationSelectorWidget(FormWidget):
                 visible = False
             # @ToDo: Add button, if have rights
             button = ""
-            dropdowns.append(level_dropdown(_level, visible=visible, current=default[_level], button=button))
+            dropdowns.append(level_dropdown(_level,
+                                            visible=visible,
+                                            current=default[_level],
+                                            button=button))
         # Finally the level for specific locations
         _level = ""
         if not level and value:
@@ -1039,7 +1078,10 @@ class S3LocationSelectorWidget(FormWidget):
                        _style="cursor:pointer; cursor:hand",
                        _id="gis_location_details-btn",
                        _class="hidden")
-        dropdowns.append(level_dropdown(_level, visible=visible, current=value, button=button))
+        dropdowns.append(level_dropdown(_level,
+                                        visible=visible,
+                                        current=value,
+                                        button=button))
 
 
 
@@ -1084,11 +1126,17 @@ class S3LocationSelectorWidget(FormWidget):
           )
 
         # Labels
-        name_label = DIV(LABEL("%s:" % T("Name")), SPAN("*", _class="req"), _id="gis_location_name_label", _class="hidden")
-        street_label = LABEL("%s:" % T("Street Address"), _id="gis_location_addr_street_label", _class="hidden")
-        postcode_label = LABEL("%s:" % T("Postcode"), _id="gis_location_postcode_label", _class="hidden")
-        lat_label = LABEL("%s:" % T("Latitude"), _id="gis_location_lat_label", _class="hidden")
-        lon_label = LABEL("%s:" % T("Longitude"), _id="gis_location_lon_label", _class="hidden")
+        name_label = DIV(LABEL("%s:" % T("Name")),
+                         SPAN("*", _class="req"),
+                         _id="gis_location_name_label", _class="hidden")
+        street_label = LABEL("%s:" % T("Street Address"),
+                       _id="gis_location_addr_street_label", _class="hidden")
+        postcode_label = LABEL("%s:" % T("Postcode"),
+                         _id="gis_location_postcode_label", _class="hidden")
+        lat_label = LABEL("%s:" % T("Latitude"),
+                    _id="gis_location_lat_label", _class="hidden")
+        lon_label = LABEL("%s:" % T("Longitude"),
+                    _id="gis_location_lon_label", _class="hidden")
 
         # Form Fields
         street_widget = TEXTAREA(addr_street, _id="gis_location_addr_street")
@@ -1137,7 +1185,9 @@ class S3LocationSelectorWidget(FormWidget):
         converter_button = locations.lon.comment
 
         advanced_checkbox = DIV("%s:" % T("Advanced"),
-                                INPUT(_type="checkbox", _id="gis_location_advanced_checkbox", value=""),
+                                INPUT(_type="checkbox",
+                                      _id="gis_location_advanced_checkbox",
+                                      value=""),
                                 _id="gis_location_advanced_div",
                                 _class="hidden")
 

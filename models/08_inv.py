@@ -45,7 +45,7 @@ if s3_has_role(1):
     )
 #==============================================================================
 module = "inv"
-if deployment_settings.has_module("org"):
+if deployment_settings.has_module("inv"):
 
     #==============================================================================
     # Inventory Item

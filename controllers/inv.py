@@ -41,7 +41,17 @@ def wh():
     table.type.writable = False
     
     #Only show warehouses 
-    response.s3.filter = db.org_office.type == 5
+    #response.s3.filter = (db.org_office.type == 5)
+    
+    #Hide Obsolete warehouses
+    def prep(r):
+        # "show_obsolete" var option can be added (btn?) later to 
+        # disable this filter
+        if r.method in [None,"list"] and \
+            not r.request.vars.get("show_obsolete", False):
+            r.resource.add_filter((db.org_office.obsolete != True))
+        return True
+    response.s3.prep = prep 
     
     # CRUD strings
     ADD_WH = T("Add Warehouse")

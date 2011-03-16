@@ -3,6 +3,8 @@ from Tkinter import *
 import os
 from sahanaTest import SahanaTest
 from subprocess import call
+from subprocess import Popen
+import time
 from selectTestsWindow import SelectTestWindow
 
 class TestWindow(Frame):

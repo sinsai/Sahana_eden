@@ -54,18 +54,22 @@ def organisation():
 
     """ RESTful CRUD controller """
 
+    tabs = [(T("Basic Details"), None),
+            (T("Staff"), "staff"),
+            (T("Offices"), "office"),                                                
+            #(T("Donors"), "organisation"),
+            #(T("Sites"), "site"),  # Ticket 195
+           ]
+    
+    if deployment_settings.has_module("assess"):
+        tabs.append((T("Assessments"), "assess"))
+    if deployment_settings.has_module("project"):
+        tabs.append((T("Projects"), "project"))
+        tabs.append((T("Activities"), "activity"))
+        #tabs.append((T("Tasks"), "task"))
+
     rheader = lambda r: shn_org_rheader(r,
-                                        tabs = [(T("Basic Details"), None),
-                                                (T("Staff"), "staff"),
-                                                (T("Offices"), "office"),                                                
-                                                (T("Warehouses"), "store"),
-                                                (T("Assessments"), "assess"),
-                                                (T("Projects"), "project"),
-                                                (T("Activities"), "activity"),
-                                                #(T("Tasks"), "task"),
-                                                #(T("Donors"), "organisation"),
-                                                #(T("Sites"), "site"),  # Ticket 195
-                                               ])
+                                        tabs = tabs)
 
     output = s3_rest_controller(prefix, resourcename, rheader=rheader)
     return output
@@ -141,15 +145,15 @@ def shn_office_rheader(r, tabs=[]):
                 org_name = None
 
             rheader = DIV(TABLE(
-                          TR(TH(T("Name") + ": "),
+                          TR(TH("%s: " % T("Name")),
                              office.name,
-                             TH(T("Type") + ": "),
+                             TH("%s: " % T("Type")),
                              org_office_type_opts.get(office.type, 
                                                       UNKNOWN_OPT),
                              ),
-                          TR(TH(T("Organization") + ": "),
+                          TR(TH("%s: " % T("Organization")),
                              org_name,
-                             TH(T("Location") + ": "),
+                             TH("%s: " % T("Location")),
                              shn_gis_location_represent(office.location_id),
                              ),
                           #TR(#TH(A(T("Edit Office"),
@@ -180,7 +184,9 @@ def staff():
         if r.method == "create":
             # person_id mandatory for a staff? We should allow room for vacant positions
             #table.person_id.requires = IS_ONE_OF_EMPTY(db, "pr_person.id")
-            table.organisation_id.widget = S3AutocompleteWidget(request, "org", "organisation", post_process="load_offices(false);")
+            table.organisation_id.widget = S3AutocompleteWidget(request, "org",
+                                                                "organisation",
+                                                                post_process="load_offices(false);")
         return True
     response.s3.prep = prep
 
@@ -251,15 +257,15 @@ def shn_org_rheader(r, tabs=[]):
 
             rheader = DIV(TABLE(
                 TR(
-                    TH(T("Organization") + ": "),
+                    TH("%s: " % T("Organization")),
                     organisation.name,
-                    TH(T("Cluster(s)") + ": "),
+                    TH("%s: " % T("Cluster(s)")),
                     _sectors
                     ),
                 TR(
                     #TH(A(T("Edit Organization"),
                     #    _href=URL(r=request, c="org", f="organisation", args=[r.id, "update"], vars={"_next": _next})))
-                    TH(T("Type") + ": "),
+                    TH("%s: " % T("Type")),
                     _type,
                     )
             ), rheader_tabs)

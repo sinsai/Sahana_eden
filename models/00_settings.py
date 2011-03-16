@@ -176,7 +176,7 @@ s3.l10n_languages = deployment_settings.get_L10n_languages()
 
 # Default strings are in US English
 T.current_languages = ["en", "en-us"]
-language = "en"
+language = deployment_settings.get_L10n_default_language()
 # Check if user has selected a specific language
 if request.vars._language:
     session.s3.language = request.vars._language
@@ -186,6 +186,8 @@ if session.s3.language:
 elif auth.is_logged_in():
     # Use user preference
     language = auth.user.language
+    T.force(language)
+elif language != "en":
     T.force(language)
 #else:
 #    # Use what browser requests (default web2py behaviour)
@@ -267,6 +269,8 @@ auth.messages.reset_password = "%s %s/%s/default/user/reset_password/%s %s" % (T
                                                                                request.application,
                                                                                "%(key)s",
                                                                                T("to reset your password"))
+auth.messages.label_mobile_phone = T("Mobile Phone")
+auth.messages.help_mobile_phone = T("Entering a phone number is optional, but doing so allows you to subscribe to receive SMS messages.")
 # Require Admin approval for self-registered users
 auth.settings.registration_requires_approval = deployment_settings.get_auth_registration_requires_approval()
 auth.messages.registration_pending = T("Email address verified, however registration is still pending approval - please wait until confirmation received.")
@@ -318,10 +322,12 @@ auth.settings.lock_keys = True
 
 # Languages available in User Profiles
 if len(s3.l10n_languages) > 1:
-    auth.settings.table_user.language.requires = IS_IN_SET(s3.l10n_languages, zero=None)
+    auth.settings.table_user.language.requires = IS_IN_SET(s3.l10n_languages,
+                                                           zero=None)
 else:
     auth.settings.table_user.language.default = s3.l10n_languages.keys()[0]
-    auth.settings.table_user.language.readable = auth.settings.table_user.language.writable = False
+    auth.settings.table_user.language.readable = False
+    auth.settings.table_user.language.writable = False
 
 ######
 # CRUD
@@ -398,7 +404,9 @@ s3xrc.ROWSPERPAGE = 20
 from gluon.storage import Messages
 s3.messages = Messages(T)
 s3.messages.confirmation_email_subject = T("Sahana access granted")
-s3.messages.confirmation_email = T("Welcome to the Sahana Portal at ") + deployment_settings.get_base_public_url() + ". " + T("Thanks for your assistance") + "."
+s3.messages.confirmation_email = "%s %s. %s." % (T("Welcome to the Sahana Portal at"),
+                                                 deployment_settings.get_base_public_url(),
+                                                 T("Thanks for your assistance"))
 
 # -----------------------------------------------------------------------------
 # List of Nations (ISO-3166-1 Country Codes)

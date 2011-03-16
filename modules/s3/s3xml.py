@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
-""" XML Toolkit (S3XML)
+""" S3XML Toolkit
 
-    @version: 2.3.4
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>}
 
     @requires: U{B{I{gluon}} <http://web2py.com>}
@@ -72,7 +71,14 @@ class S3XML(object):
     Lat = "lat"
     Lon = "lon"
 
-    IGNORE_FIELDS = ["deleted", "id", "owned_by_role", "owned_by_user"]
+    IGNORE_FIELDS = [
+            "deleted",
+            "deleted_fk",
+            "v_record_status",
+            "v_duplicate_uid",
+            "id",
+            "owned_by_role",
+            "owned_by_user"]
 
     FIELDS_TO_ATTRIBUTES = [
             "id",
@@ -132,7 +138,9 @@ class S3XML(object):
         readable="readable",
         writable="writable",
         has_options="has_options",
-        tuid="tuid"
+        tuid="tuid",
+        label="label",
+        comment="comment"
     )
 
     ACTION = Storage(
@@ -902,43 +910,49 @@ class S3XML(object):
     # Data model helpers ======================================================
 
     @classmethod
-    def get_field_options(cls, table, fieldname):
+    def get_field_options(cls, table, fieldname, parent=None):
         """
         Get options of a field as <select>
 
         @param table: the table
         @param fieldname: the fieldname
+        @param parent: the parent element in the tree
 
         """
 
-        select = etree.Element(cls.TAG.select)
-
+        options = []
         if fieldname in table.fields:
             field = table[fieldname]
-        else:
-            return select
+            requires = field.requires
+            if not isinstance(requires, (list, tuple)):
+                requires = [requires]
+            if requires:
+                r = requires[0]
+                if isinstance(r, IS_EMPTY_OR):
+                    r = r.other
+                try:
+                    options = r.options()
+                except:
+                    pass
 
-        requires = field.requires
-        select.set(cls.ATTRIBUTE.id, "%s_%s" % (table._tablename, fieldname))
-        select.set(cls.ATTRIBUTE.name, fieldname)
-
-        if not isinstance(requires, (list, tuple)):
-            requires = [requires]
-        if requires:
-            r = requires[0]
-            options = []
-            if isinstance(r, IS_EMPTY_OR):
-                r = r.other
-            try:
-                options = r.options()
-            except:
-                pass
+        if options:
+            if parent is not None:
+                select = etree.SubElement(parent, cls.TAG.select)
+            else:
+                select = etree.Element(cls.TAG.select)
+            select.set(cls.ATTRIBUTE.name, fieldname)
+            select.set(cls.ATTRIBUTE.id,
+                       "%s_%s" % (table._tablename, fieldname))
             for (value, text) in options:
                 value = cls.xml_encode(str(value).decode("utf-8"))
                 text = cls.xml_encode(str(text).decode("utf-8"))
                 option = etree.SubElement(select, cls.TAG.option)
                 option.set(cls.ATTRIBUTE.value, value)
                 option.text = text
+        elif parent is not None:
+            return None
+        else:
+            return etree.Element(cls.TAG.select)
 
         return select
 
@@ -971,20 +985,25 @@ class S3XML(object):
             for f in table.fields:
                 if fields and f not in fields:
                     continue
-                select = self.get_field_options(table, f)
-                if select is not None and len(select):
-                    options.append(select)
+                select = self.get_field_options(table, f, parent=options)
 
         return options
 
 
     # -------------------------------------------------------------------------
-    def get_fields(self, prefix, name):
+    def get_fields(self, prefix, name,
+                   parent=None,
+                   options=False,
+                   references=False,
+                   labels=False):
         """
         Get fields in a table as <fields> element
 
         @param prefix: the application prefix
         @param name: the resource name (without prefix)
+        @param parent: the parent element to append the tree to
+        @param options: include option lists in option fields
+        @param references: include option lists even in reference fields
 
         """
 
@@ -992,22 +1011,96 @@ class S3XML(object):
         tablename = "%s_%s" % (prefix, name)
         table = db.get(tablename, None)
 
-        fields = etree.Element(self.TAG.fields)
+        if parent is not None:
+            fields = parent
+        else:
+            fields = etree.Element(self.TAG.fields)
         if table:
-            fields.set(self.ATTRIBUTE.resource, tablename)
+            if parent is None:
+                fields.set(self.ATTRIBUTE.resource, tablename)
             for f in table.fields:
                 ftype = str(table[f].type)
+                # Skip super entity references without ID
+                if ftype[:9] == "reference" and \
+                   not "id" in self.db[ftype[10:]].fields:
+                       continue
+                if f in self.IGNORE_FIELDS or ftype == "id":
+                    continue
                 readable = table[f].readable
                 writable = table[f].writable
-                options = self.get_field_options(table, f)
                 field = etree.SubElement(fields, self.TAG.field)
+                if options:
+                    p = field
+                    if not references and \
+                       ftype[:9] in ("reference", "list:refe"):
+                           p = None
+                else:
+                    p = None
+                opts = self.get_field_options(table, f, parent=p)
                 field.set(self.ATTRIBUTE.name, f)
                 field.set(self.ATTRIBUTE.type, ftype)
                 field.set(self.ATTRIBUTE.readable, str(readable))
                 field.set(self.ATTRIBUTE.writable, str(writable))
-                field.set(self.ATTRIBUTE.has_options,
-                          str(len(options) and True or False))
+                has_options = str(opts is not None and
+                                  len(opts) and True or False)
+                field.set(self.ATTRIBUTE.has_options, has_options)
+                if labels:
+                    field.set(self.ATTRIBUTE.label, unicode(table[f].label.decode("utf-8")))
+                    comment = table[f].comment
+                    if comment:
+                        comment = str(comment)
+                    #if hasattr(comment, "xml"):
+                        #comment = comment.xml()
+                    if comment and "<" in comment:
+                        try:
+                            markup = etree.XML(comment)
+                            comment = markup.xpath(".//text()")
+                            if comment:
+                                comment = " ".join(comment)
+                            else:
+                                comment = ""
+                        except etree.XMLSyntaxError:
+                            comment = comment.replace("<", "<!-- <").replace(">", "> -->")
+                    if comment:
+                        field.set(self.ATTRIBUTE.comment, comment)
         return fields
+
+
+    # -------------------------------------------------------------------------
+    def get_struct(self, prefix, name,
+                   parent=None,
+                   options=True,
+                   references=False):
+        """
+        Get the table structure as XML tree
+
+        @param prefix: the application prefix
+        @param name: the tablename (without prefix)
+        @param parent: the parent element to append the tree to
+        @param options: include option lists in option fields
+        @param references: include option lists even in reference fields
+
+        @raise AttributeError: in case the table doesn't exist
+        """
+
+        db = self.db
+        tablename = "%s_%s" % (prefix, name)
+        table = db.get(tablename, None)
+
+        if table is not None:
+            if parent is not None:
+                e = etree.SubElement(parent, self.TAG.resource)
+            else:
+                e = etree.Element(self.TAG.resource)
+            e.set(self.ATTRIBUTE.name, tablename)
+            self.get_fields(prefix, name,
+                            parent=e,
+                            options=options,
+                            references=references,
+                            labels=True)
+            return e
+        else:
+            raise AttributeError("No table like %s" % tablename)
 
 
     # JSON toolkit ============================================================

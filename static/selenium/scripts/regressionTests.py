@@ -4,15 +4,15 @@ from Tkinter import *
 #from subprocess import Popen
 
 #import unittest
-#from sahanaTest import SahanaTest
-#import HTMLTestRunner
+from sahanaTest import SahanaTest
+import HTMLTestRunner
 from xmlrunner import *
 from selenium import selenium
 
 #import os
 #import time
 #import sys
-#import StringIO
+import StringIO
 import traceback
 sys.path.append("GUI")
 from mainWindow import TestWindow

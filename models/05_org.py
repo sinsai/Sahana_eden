@@ -603,6 +603,7 @@ s3xrc.model.configure(table,
                         "id",
                         "name",
                         "organisation_id",   # Filtered in Component views
+                        "type",
                         #"L4",
                         "L3",
                         "L2",

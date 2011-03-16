@@ -23,6 +23,50 @@ def index():
     #request.args = []
     #module_name = deployment_settings.modules[module].name_nice
     #return dict(module_name=module_name)
+    
+#==============================================================================
+def wh():
+    """ 
+    RESTful CRUD controller 
+    Fitlered version of the org_office resource
+    """
+    
+    module = "org"
+    resourcename = "office"
+    tablename = "%s_%s" % (module, resourcename)
+    table = db[tablename]
+    
+    #Type is Warehouse
+    table.type.default = 5 #Warehouse  
+    table.type.writable = False
+    
+    #Only show warehouses 
+    #@todo Is there a way to add a filter without having to use prep
+    def prep(r):
+        r.resource.add_filter(db.org_office.type == 5) #Warehouse
+        return True
+    response.s3.prep = prep
+    
+    # CRUD strings
+    ADD_WH = T("Add Warehouse")
+    LIST_WH = T("List Warehouses")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_WH,
+        title_display = T("Warehouse Details"),
+        title_list = LIST_WH,
+        title_update = T("Edit Warehouse"),
+        title_search = T("Search Warehouses"),
+        subtitle_create = T("Add New Warehouse"),
+        subtitle_list = T("Warehouses"),
+        label_list_button = LIST_WH,
+        label_create_button = ADD_WH,
+        label_delete_button = T("Delete Warehouse"),
+        msg_record_created = T("Warehouse added"),
+        msg_record_modified = T("Warehouse updated"),
+        msg_record_deleted = T("Warehouse deleted"),
+        msg_list_empty = T("No Warehouses currently registered"))    
+
+    return s3_rest_controller(module, resourcename)
 
 #==============================================================================
 def inv_item():

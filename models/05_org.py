@@ -524,6 +524,10 @@ table = db.define_table(tablename,
                         Field("number_of_vehicles", "integer"),     # @ToDo: Move to Fixed Assets
                         Field("vehicle_types"),                     # @ToDo: Move to Fixed Assets
                         Field("equipment"),                         # @ToDo: Move to Fixed Assets
+                        Field("obsolete", 
+                              "boolean",
+                              default = False
+                              ),
                         #document_id,   # Not yet defined
                         comments(),
                         migrate=migrate, *s3_meta_fields())
@@ -609,6 +613,7 @@ s3xrc.model.configure(table,
                         "id",
                         "name",
                         "organisation_id",   # Filtered in Component views
+                        "type",
                         #"L4",
                         "L3",
                         "L2",

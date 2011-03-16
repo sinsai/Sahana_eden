@@ -1627,6 +1627,7 @@
 'Invalid Query': 'Invalid Query',
 'Invalid email': 'Invalid email',
 'Invalid login': 'Invalid login',
+'Invalid request': 'Invalid request',
 'Invalid request!': 'Invalid request!',
 'Invalid ticket': 'Invalid ticket',
 'Inventory Item': 'Inventory Item',

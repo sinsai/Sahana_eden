@@ -1,4 +1,3 @@
-{{register_form[0].insert(-4, TR(TD(LABEL("%s:" % T("Mobile Phone")), _class="w2p_fl"), INPUT(_name="mobile", _id="mobile"), TD(DIV(_class="tooltip", _title="%s|%s" % (T("Mobile Phone"), T("Entering a phone number is optional, but doing so allows you to subscribe to receive SMS messages."))))))}}
 {{register_form.attributes["_id"] = "regform"}}
 {{if self_registration:}}
 {{register_form[0][-1][1].append(A(T("Login"), _href=URL(r=request, f="user", args="login"), _id="login-btn", _class="action-lnk"))}}

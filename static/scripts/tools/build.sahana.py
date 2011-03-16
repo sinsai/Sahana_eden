@@ -292,7 +292,7 @@ def main(argv):
         docss()
     else:
         if parameter1 == "CSS":
-            docss(parameter2)
+            docss()
         else:
             dojs(parameter2)
     print "Done."

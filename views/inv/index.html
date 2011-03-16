@@ -5,7 +5,7 @@
 <p>
 {{=T("Inventory functionality is available for:")}}
 </p>
-{{=LI(A("Offices", _href=URL(r=request, c="org", f="office")))}}
+<li>{{=A(T("Warehouses"), _href=URL(r=request, c="inv", f="wh"))}} & {{=A(T("Offices"), _href=URL(r=request, c="org", f="office"))}}</li>
 {{=LI(A("Shelters", _href=URL(r=request, c="cr", f="shelter")))}}
 {{=LI(A("Hospitals", _href=URL(r=request, c="hms", f="hospital")))}}
 

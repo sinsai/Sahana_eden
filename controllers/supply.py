@@ -70,7 +70,7 @@ def item():
 
     tabs = [
             (T("Edit Details"), None),
-            (T("packs"), "item_pack"),
+            (T("Packs"), "item_pack"),
             (T("In Inventories"), "store_item"),
             (T("Requested"), "ritem")            
            ]

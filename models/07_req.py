@@ -64,6 +64,8 @@ if deployment_settings.has_module("inv"):
                             req_status("fulfil_status",
                                        label = T("Fulfil. Status"),
                                        ),
+                            Field("cancel",
+                                  "boolean"),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 

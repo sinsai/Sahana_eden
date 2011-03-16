@@ -5,6 +5,7 @@
 """
 
 module = "admin"
+resourcename = request.function
 
 # Options Menu (available in all Functions' Views)
 # - can Insert/Delete items from default menus within a function, if required.
@@ -27,8 +28,7 @@ def setting():
 
     """ RESTful CRUD controller """
 
-    resourcename = request.function
-    tablename = "s3_" + resourcename
+    tablename = "s3_%s" % resourcename
     table = db[tablename]
 
     table.admin_name.label = T("Admin Name")
@@ -70,8 +70,7 @@ def setting():
 @auth.s3_requires_membership(1)
 def theme():
     """ RESTful CRUD controller """
-    resource = "theme"
-    tablename = module + "_" + resource
+    tablename = "%s_theme" % module
     table = db[tablename]
 
     # Model options
@@ -97,7 +96,7 @@ def theme():
     # CRUD Strings
     ADD_THEME = T("Add Theme")
     LIST_THEMES = T("List Themes")
-    s3.crud_strings[resource] = Storage(
+    s3.crud_strings[resourcename] = Storage(
         title_create = ADD_THEME,
         title_display = T("Theme Details"),
         title_list = LIST_THEMES,
@@ -118,7 +117,7 @@ def theme():
                           list_fields=["id", "name", "col_background"],
                           )
 
-    return s3_rest_controller(module, resource)
+    return s3_rest_controller(module, resourcename)
     s3xrc.model.clear_config(table, "onvalidation")
 
 
@@ -241,13 +240,13 @@ def theme_check(form):
 def user():
     """ RESTful CRUD controller """
     module = "auth"
-    resource = "user"
-    tablename = module + "_" + resource
+    tablename = "auth_user"
     table = db[tablename]
 
     # Model options
     role_manager = s3base.S3RoleManager()
-    s3xrc.model.set_method(module, resource, method="roles", action=role_manager)
+    s3xrc.model.set_method(module, resourcename, method="roles",
+                           action=role_manager)
 
     # CRUD Strings
     ADD_USER = T("Add User")
@@ -269,21 +268,23 @@ def user():
         msg_list_empty = T("No Users currently registered"))
 
     # Allow the ability for admin to Disable logins
-    db.auth_user.registration_key.writable = True
-    db.auth_user.registration_key.readable = True
-    db.auth_user.registration_key.label = T("Disabled?")
+    table.registration_key.writable = True
+    table.registration_key.readable = True
+    table.registration_key.label = T("Disabled?")
 
     # In Controller to allow registration to work with UUIDs - only manual edits need this setting
-    db.auth_user.registration_key.requires = IS_NULL_OR(IS_IN_SET(["disabled", "pending"]))
+    table.registration_key.requires = IS_NULL_OR(IS_IN_SET(["disabled",
+                                                            "pending"]))
 
     # Pre-processor
     def user_prep(jr):
-        if jr.method == "delete" and jr.http=="GET":
+        if jr.method == "delete" and jr.http == "GET":
             if jr.id == jr.session.auth.user.id: # we're trying to delete ourself
                 request.get_vars.update({"user.id":str(jr.id)})
                 jr.id = None
                 s3xrc.model.configure(table,
-                                      delete_next = URL(r=request, c="default", f="user/logout"))
+                                      delete_next = URL(r=request, c="default",
+                                                        f="user/logout"))
                 s3.crud.confirm_delete = T("You are attempting to delete your own account - are you sure you want to proceed?")
 
         elif jr.method == "update":
@@ -301,12 +302,13 @@ def user():
         # Add users to Person Registry & 'Authenticated' role:
         create_onaccept = lambda form: auth.s3_register(form),
         create_onvalidation = lambda form: user_create_onvalidation(form))
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     if response.s3.actions:
         response.s3.actions.insert(1,
                     dict(label=str(T("Roles")), _class="action-btn",
-                         url=str(URL(r=request, c="admin", f="user", args=["[id]", "roles"]))))
+                         url=str(URL(r=request, c="admin", f="user",
+                                     args=["[id]", "roles"]))))
     return output
 
 
@@ -326,7 +328,9 @@ def user_approve(form):
         return
     else:
         # Now blank - lookup old value
-        status = db(db.auth_user.id == request.vars.id).select(db.auth_user.registration_key, limitby=(0, 1)).first().registration_key
+        query = (db.auth_user.id == request.vars.id)
+        status = db(query).select(db.auth_user.registration_key,
+                                  limitby=(0, 1)).first().registration_key
         if status == "pending":
             # Send email to user confirming that they are now able to login
             if not auth.settings.mailer or \
@@ -353,24 +357,28 @@ def usergroup():
         redirect(URL(r=request, f="user"))
         return
 
+    # Shortcut:
+    users = db.auth_user
+
     # gather common variables
     data = {}
     data["user_id"] = user
-    data["username"] = db.auth_user[user].first_name + " " + \
-                       db.auth_user[user].last_name
+    data["username"] = "%s %s" % (users[user].first_name,
+                                  users[user].last_name)
     data["role"] = db.auth_group[user].role
 
     # display the standard user details
-    record = db(db.auth_user.id == user).select().first()
-    db.auth_user.id.readable = False
+    record = db(users.id == user).select().first()
+    users.id.readable = False
 
     # Let admin view and modify the registration key
-    db.auth_user.registration_key.writable = True
-    db.auth_user.registration_key.readable = True
-    db.auth_user.registration_key.label = T("Disabled?")
-    db.auth_user.registration_key.requires = IS_NULL_OR(IS_IN_SET(["disabled", "pending"]))
+    users.registration_key.writable = True
+    users.registration_key.readable = True
+    users.registration_key.label = T("Disabled?")
+    users.registration_key.requires = IS_NULL_OR(IS_IN_SET(["disabled",
+                                                            "pending"]))
 
-    form = SQLFORM(db.auth_user, record, deletable=True)
+    form = SQLFORM(users, record, deletable=True)
 
     # find all groups user belongs to
     query = (db.auth_membership.user_id == user)
@@ -404,7 +412,7 @@ def usergroup():
 
     # Update records for user details
     if form.accepts(request.vars): \
-                    response.flash="User " + data["username"] + " Updated"
+                    response.flash="User %s Updated" % data["username"]
     elif form.errors: \
                     response.flash="There were errors in the form"
 
@@ -422,8 +430,7 @@ def group():
     """ RESTful CRUD controller """
 
     prefix = "auth"
-    resourcename = "group"
-    tablename = "%s_%s" % (prefix, resourcename)
+    tablename = "auth_group"
     table = db[tablename]
 
     # Model options
@@ -458,12 +465,12 @@ def membership():
 
     prefix = "auth"
     resourcename = "membership"
-    tablename = prefix + "_" + resourcename
+    tablename = "auth_membership"
     table = db[tablename]
 
     # Model options
-    db.auth_membership.group_id.represent = shn_role_represent
-    db.auth_membership.user_id.represent = shn_user_represent
+    table.group_id.represent = shn_role_represent
+    table.user_id.represent = shn_user_represent
 
     # CRUD Strings
     ADD_MEMBERSHIP = T("Add Membership")
@@ -505,7 +512,7 @@ def users():
 
     table = db.auth_membership
     query = table.group_id == group
-    title = T("Role") + ": " + db.auth_group[group].role
+    title = "%s: %s" % (T("Role"), db.auth_group[group].role)
     description = db.auth_group[group].description
     # Start building the Return
     output = dict(title=title, description=description, group=group)
@@ -537,19 +544,35 @@ def users():
         item_second = _user.last_name
         item_description = _user[username]
         id_link = A(id, _href=URL(r=request, f="user", args=[id, "read"]))
-        checkbox = INPUT(_type="checkbox", _value="on", _name=id, _class="remove_item")
-        item_list.append(TR(TD(id_link), TD(item_first), TD(item_second), TD(item_description), TD(checkbox), _class=theclass))
+        checkbox = INPUT(_type="checkbox", _value="on", _name=id,
+                         _class="remove_item")
+        item_list.append(TR(TD(id_link),
+                            TD(item_first),
+                            TD(item_second),
+                            TD(item_description),
+                            TD(checkbox),
+                            _class=theclass))
 
     if auth.settings.username:
         username_label = T("Username")
     else:
         username_label = T("Email")
-    table_header = THEAD(TR(TH("ID"), TH(T("First Name")), TH(T("Last Name")), TH(username_label), TH(T("Remove"))))
-    table_footer = TFOOT(TR(TD(_colspan=4), TD(INPUT(_id="submit_delete_button", _type="submit", _value=T("Remove")))))
-    items = DIV(FORM(
-        TABLE(table_header,
-              TBODY(item_list),
-              table_footer, _id="list", _class="display"), _name="custom", _method="post", _enctype="multipart/form-data", _action=URL(r=request, f="group_remove_users", args=[group])))
+    table_header = THEAD(TR(TH("ID"),
+                            TH(T("First Name")),
+                            TH(T("Last Name")),
+                            TH(username_label),
+                            TH(T("Remove"))))
+    table_footer = TFOOT(TR(TD(_colspan=4),
+                            TD(INPUT(_id="submit_delete_button",
+                                     _type="submit",
+                                     _value=T("Remove")))))
+    items = DIV(FORM(TABLE(table_header,
+                           TBODY(item_list),
+                           table_footer, _id="list", _class="display"),
+                     _name="custom", _method="post",
+                     _enctype="multipart/form-data",
+                     _action=URL(r=request, f="group_remove_users",
+                                 args=[group])))
 
     subtitle = T("Users")
     crud.messages.submit_button = T("Add")
@@ -643,12 +666,30 @@ def groups():
         item_first = _group.role
         item_description = _group.description
         id_link = A(id, _href=URL(r=request, f="group", args=[id, "read"]))
-        checkbox = INPUT(_type="checkbox", _value="on", _name=id, _class="remove_item")
-        item_list.append(TR(TD(id_link), TD(item_first), TD(item_description), TD(checkbox), _class=theclass))
+        checkbox = INPUT(_type="checkbox", _value="on", _name=id,
+                         _class="remove_item")
+        item_list.append(TR(TD(id_link),
+                            TD(item_first),
+                            TD(item_description),
+                            TD(checkbox),
+                            _class=theclass))
 
-    table_header = THEAD(TR(TH("ID"), TH(T("Role")), TH(T("Description")), TH(T("Remove"))))
-    table_footer = TFOOT(TR(TD(_colspan=3), TD(INPUT(_id="submit_delete_button", _type="submit", _value=T("Remove")))))
-    items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name="custom", _method="post", _enctype="multipart/form-data", _action=URL(r=request, f="user_remove_groups", args=[user])))
+    table_header = THEAD(TR(TH("ID"),
+                            TH(T("Role")),
+                            TH(T("Description")),
+                            TH(T("Remove"))))
+    table_footer = TFOOT(TR(TD(_colspan=3),
+                            TD(INPUT(_id="submit_delete_button",
+                                     _type="submit",
+                                     _value=T("Remove")))))
+    items = DIV(FORM(TABLE(table_header,
+                           TBODY(item_list),
+                           table_footer,
+                           _id="table-container"),
+                     _name="custom", _method="post",
+                     _enctype="multipart/form-data",
+                     _action=URL(r=request, f="user_remove_groups",
+                                 args=[user])))
 
     subtitle = T("Roles")
     crud.messages.submit_button = T("Add")

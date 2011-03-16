@@ -41,11 +41,7 @@ def wh():
     table.type.writable = False
     
     #Only show warehouses 
-    #@todo Is there a way to add a filter without having to use prep
-    def prep(r):
-        r.resource.add_filter(db.org_office.type == 5) #Warehouse
-        return True
-    response.s3.prep = prep
+    response.s3.filter = db.org_office.type == 5
     
     # CRUD strings
     ADD_WH = T("Add Warehouse")

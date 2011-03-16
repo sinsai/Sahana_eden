@@ -518,6 +518,7 @@ table = db.define_table(tablename,
                         Field("number_of_vehicles", "integer"),     # @ToDo: Move to Fixed Assets
                         Field("vehicle_types"),                     # @ToDo: Move to Fixed Assets
                         Field("equipment"),                         # @ToDo: Move to Fixed Assets
+                        Field("obsolete"),
                         #document_id,   # Not yet defined
                         comments(),
                         migrate=migrate, *s3_meta_fields())

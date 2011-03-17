@@ -818,6 +818,9 @@ class S3OCR(S3Method):
     Generate XForms and PDFs the s3 way
     """
 
+    def __init__(self):
+        pass
+
     def apply_method(self, r, **attr):
         """
         S3Method's abstract method
@@ -853,16 +856,30 @@ class S3OCR(S3Method):
             r.error(501, self.manager.ERROR.BAD_METHOD)
 
     def s3ocr_etree(self):
-        s3ocrxml = self.resource.struct(options=True,
+        s3xml_etree = self.resource.struct(options=True,
                                    references=True,
                                    stylesheet=None,
                                    as_json=False,
                                    as_tree=True)
 
-        for s3xml in s3ocrxml.iter():
-            print dir(s3xml)
-            break
-        return s3ocrxml
+        ## User Defined Configuration will be uploaded here
+        ##
+        #
+        #s3xml = s3xml_etree.getroot() # get element s3xml
+        #
+        #s3resource = s3xml.getchildren()[0] # as s3xml has only one child
+        #
+        #if self.r.component: # if it is a component
+        #    s3resource.attrib.get("name")
+        #else: # if it is main resource
+        #    for s3field in s3resource:
+        #        if s3field.tag == "field":       # main resource fields
+        #            print "field"
+        #        elif s3field.tag == "resource":  # component resource
+        #            print "component"
+        #
+
+        return s3xml_etree
 
     def pdf_manager(self):
         pass

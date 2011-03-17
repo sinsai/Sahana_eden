@@ -124,6 +124,9 @@ s3xrc = s3base.S3ResourceController(globals(), db)
 # MSG
 msg = s3base.S3Msg(globals(), deployment_settings, db, T, mail)
 
+# S3OCR
+s3ocr = s3base.S3OCR()
+
 # -----------------------------------------------------------------------------
 def shn_auth_on_login(form):
     """

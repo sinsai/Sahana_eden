@@ -33,7 +33,7 @@
 
 #========================== import section ====================================
 
-__all__ = ["s3ocr_generate_pdf", "s3ocr_get_languages", "S3XForms"]
+__all__ = ["s3ocr_generate_pdf", "s3ocr_get_languages", "S3OCR"]
 
 # Generic stuff
 import inspect
@@ -813,7 +813,7 @@ def _open_anything(source):
 #================================= OCR API ================================
 #==========================================================================
 
-class S3XForms(S3Method):
+class S3OCR(S3Method):
     """
     Generate XForms and PDFs the s3 way
     """
@@ -823,16 +823,16 @@ class S3XForms(S3Method):
         S3Method's abstract method
         """
         
-        self.response.view = "xml.html"
         xml = self.manager.xml
-        self.error = r.error
+        self.r = r
         
         format = r.representation
         if r.http == "GET":
             if format == "xml":
-                output = self.xforms_create()
+                output = self.s3ocr_etree()
+                self.response.view = "xml.html"
                 self.response.headers["Content-Type"] = "application/xml"
-                return xml.tostring(output)
+                return xml.tostring(output, pretty_print=True)
             elif format == "pdf":
                 output = self.pdf_manager()
                 self.response.view = None
@@ -852,469 +852,21 @@ class S3XForms(S3Method):
         else:
             r.error(501, self.manager.ERROR.BAD_METHOD)
 
-    def xforms_create(self):
-        """
-        Generate Valid XML for XForms
-        """
+    def s3ocr_etree(self):
+        s3ocrxml = self.resource.struct(options=True,
+                                   references=True,
+                                   stylesheet=None,
+                                   as_json=False,
+                                   as_tree=True)
 
-        # variables used in lxml
-        XFORMS_NAMESPACE = "http://www.w3.org/2002/xforms"
-        XHTML_NAMESPACE = "http://www.w3.org/1999/xhtml"
-        XMLEVENTS_NAMESPACE = "http://www.w3.org/2001/xml-events"
-        XMLSCHEMA_NAMESPACE = "http://www.w3.org/2001/XMLSchema"
-        JAVAROSA_NAMESPACE = "http://openrosa.org/javarosa"
-
-        XFORMS = "{%s}" % XFORMS_NAMESPACE
-        XHTML = "{%s}" % XHTML_NAMESPACE
-        XMLEVENTS = "{%s}" % XMLEVENTS_NAMESPACE
-        XMLSCHEMA = "{%s}" % XMLSCHEMA_NAMESPACE
-        JAVAROSA = "{%s}" % JAVAROSA_NAMESPACE
-
-        NSMAP = {
-            None : XFORMS_NAMESPACE,
-            "h" : XHTML_NAMESPACE,
-            "ev": XMLEVENTS_NAMESPACE,
-            "xsd": XMLSCHEMA_NAMESPACE,
-            "jr": JAVAROSA_NAMESPACE,
-            }
-
-        # variables for table
-        _table = self.tablename
-        table = self.db[_table]
-
-        fields = self._get_fields()
-
-
-        # create element tree ------------------------------------------
-        root = etree.Element("%shtml" % XHTML, nsmap=NSMAP)
-        
-        #html
-        head = etree.SubElement(root, "%shead" % XHTML)
-        body = etree.SubElement(root, "%sbody" % XHTML)
-        
-        ##head
-        ###title
-        title = etree.SubElement(head, "%stitle" % XHTML)
-        title.text = self.tablename
-        model = etree.SubElement(head, "%smodel" % XFORMS)
-        ###model
-        instance = etree.SubElement(model, "%sinstance" % XFORMS)
-        ####instance
-        self._generate_instance(fields, instance)
-        ####bind
-        self._generate_bindings(fields, model)
-        ####itext
-        itext = etree.SubElement(model, "%sitext" % XFORMS)
-        #####translation
-        #has to be differed
-        ##body
-        ###controllers
-        translation = self._generate_controllers(fields, body)
-        itext.append(translation) # differed translation tree
-
-        #print str(etree.tostring(root, encoding="UTF-8", pretty_print=True))
-        return root
-
-    def _get_fields(self):
-        """Generate fields for the resource"""
-
-        _table = self.tablename
-        table = self.db[_table]
-        
-        fields_list = []
-        
-        for field in table.fields:
-            if field in [ "id", "created_on", "modified_on",
-                          "uuid", "mci", "deleted", "created_by",
-                          "modified_by", "deleted_fk", "owned_by_role",
-                          "owned_by_user" ]:
-                pass
-            elif table[field].writable == False and table[field].readable == False:
-                pass
-            else:
-                fields_list.append(field)
-
-        return fields_list
-
-    def _generate_instance(self, fields, instance):
-        """
-            Generates etree for instance for the resource
-        """
-
-        _table = self.tablename
-        table = self.db[_table]
-        XFORMS_NAMESPACE = "http://www.w3.org/2002/xforms"
-        XFORMS = XFORMS = "{%s}" % XFORMS_NAMESPACE
-
-        tabletitle = etree.SubElement(instance,
-                                      "%s%s" % (XFORMS, self.tablename),
-                                      xmlns="")
-        for fieldname in fields:
-            instChild = etree.SubElement(tabletitle, "%s%s" % (XFORMS, fieldname))
-            if table[fieldname].default:
-                if inspect.isroutine(table[fieldname].default):
-                    instChild.text = unicode(table[fieldname].default())
-                else:
-                    instChild.text = unicode(table[fieldname].default)
-        
-
-    def _generate_bindings(self, fields, model):
-        """
-            Generates etree for bindings for the resource
-        """
-
-        _table = self.tablename
-        table = self.db[_table]
-        XFORMS_NAMESPACE = "http://www.w3.org/2002/xforms"
-        XFORMS = XFORMS = "{%s}" % XFORMS_NAMESPACE
-
-        for field in fields:
-            required = ""
-            _type = ""
-            constraint = ""
-
-            if "IS_NOT_EMPTY" in str(table[field].requires):
-                required = "true()"
-            else:
-                required = "false()"
-
-            if table[field].type == "string":
-                _type = "string"
-            elif table[field].type == "double":
-                _type = "decimal"
-            elif table[field].type == "date":
-                _type = "date"
-            # Collect doesn't support datetime yet
-            elif table[field].type == "datetime":
-                _type = "datetime"
-            elif table[field].type == "integer":
-                _type = "int"
-            elif table[field].type == "boolean":
-                _type = "boolean"
-            elif table[field].type == "upload": # For images
-                _type = "binary"
-            elif table[field].type == "text":
-                _type = "text"
-            else:
-                # Unknown type
-                _type = "string"
-
-            if self._uses_requirement("IS_INT_IN_RANGE",
-                                      table[field]) \
-                    or self._uses_requirement("IS_FLOAT_IN_RANGE",
-                                              table[field]):
-
-                if hasattr(table[field].requires, "other"):
-                    maximum = table[field].requires.other.maximum
-                    minimum = table[field].requires.other.minimum
-                else:
-                    maximum = table[field].requires.maximum
-                    minimum = table[field].requires.minimum
-                if minimum is None:
-                    constraint = "(. < %s)" % str(maximum)
-                elif maximum is None:
-                    constraint = "(. > %s)" % minimum
-                else:
-                    constraint = "(. > %s and . < %s)" % (minimum,
-                                                          maximum)
-            elif self._uses_requirement("IS_IN_SET", table[field]):
-                _type = ""
-
-            ref = "/%s/%s" % (_table, field)
-
-            if _type != "":
-                if constraint != "":
-                    model.append(etree.Element("%sbind" % XFORMS,
-                                               nodeset=ref,
-                                               required=required,
-                                               type=_type,
-                                               constraint=constraint))
-                else:
-                    model.append(etree.Element("%sbind" % XFORMS,
-                                               nodeset=ref,
-                                               required=required,
-                                               type=_type))
-            else:
-                model.append(etree.Element("%sbind" % XFORMS,
-                                           nodeset=ref,
-                                           required=required))
-
-        return
-
-    def _generate_controllers(self, fields, body):
-        """
-        Generates etree for conntrollers and translation values
-        for the resource
-        """
-
-        _table = self.tablename
-        table = self.db[_table]
-        XFORMS_NAMESPACE = "http://www.w3.org/2002/xforms"
-        XFORMS = XFORMS = "{%s}" % XFORMS_NAMESPACE
-
-        translation = etree.Element("%stranslation" % XFORMS, lang="eng")
-
-        # Store resource title
-        try:
-            translation.append(self._textvalue("title",
-                                               self.manager.s3.crud_strings[_table].subtitle_list.read()))
-        except(KeyError):
-            translation.append(self._textvalue("title", self.tablename))
-        for field in fields:
-            ref = "/%s/%s" % (_table, field)
-
-            translation.append(self._textvalue("%s:label" % ref,
-                                               self._get_str(table[field].label)))
-            translation.append(self._textvalue("%s:hint" % ref,
-                                               self._get_str(table[field].comment)))
-
-            if hasattr(table[field].requires, "option"):
-                item_list = []
-                for option in table[field].requires.theset:
-                    items_list.append(self._itemlabelvalue(valuetext=self._get_str(option),
-                                                           labeltext=self._get_str(option)))
-                controller = self._get_controller("select1",
-                                                  kargs={"items_list":items_list,
-                                                         "ref":ref})
-                #controllers_list.append(TAG["select1"](items_list, _ref=field))
-
-            elif self._uses_requirement("IS_IN_SET",
-                                        table[field]): # Defined below
-                if hasattr(table[field].requires, "other"):
-                    insetrequires = table[field].requires.other
-                else:
-                    insetrequires = table[field].requires
-                theset = insetrequires.theset
-                items_list=[]
-
-                option_num = 0 # for formatting something like "jr:itext('stuff:option0')"
-                for option in theset:
-                    if table[field].type == "integer":
-                        option = int(option)
-                    option_ref = "%s:option%s" % (ref, str(option_num))
-                    items_list.append(self._itemlabelvalue(valuetext=self._get_str(option),
-                                                           labelref="jr:itext('%s')" % option_ref))
-                    translation.append(self._textvalue(option_ref,
-                                                       self._get_str(insetrequires.labels[theset.index(str(option))])))
-                    option_num += 1
-                if insetrequires.multiple:
-                    controller = self._get_controller("select",
-                                                      kargs={"items_list":items_list,
-                                                       "ref":ref,
-                                                       "labelref":"jr:itext('%s:label')" % ref,
-                                                       "hintref":"jr:itext('%s:hint')" % ref,
-                                                       })
-                else:
-                    controller = self._get_controller("select1",
-                                                      kargs={"items_list":items_list,
-                                                       "ref":ref,
-                                                       "labelref":"jr:itext('%s:label')" % ref,
-                                                       "hintref":"jr:itext('%s:hint')" % ref,
-                                                       })
-
-            elif table[field].type == "boolean": # Using select1, is there an easier way to do this?
-                items_list=[]
-                
-                # True option
-                items_list.append(self._itemlabelvalue(valuetext=str(1),
-                                                       labelref="jr:itext('%s:option0')" % ref))
-                translation.append(self._textvalue("%s:option0" % ref,
-                                                   "True"))
-
-                # False option
-                items_list.append(self._itemlabelvalue(valuetext=str(0),
-                                                       labelref="jr:itext('%s:option1')" % ref))
-                translation.append(self._textvalue("%s:option1" % ref,
-                                                   "False"))
-                
-                controller = self._get_controller("select1",
-                                                  kargs={"items_list":items_list,
-                                                   "ref":ref,
-                                                   "labelref":"jr:itext('%s:label')" % ref,
-                                                   "hintref":"jr:itext('%s:hint')" % ref,
-                                                   })
-
-            elif table[field].type == "upload": # For uploading images
-                controller = self._get_controller("upload",
-                                                  kargs={"ref":ref,
-                                                   "labelref":"jr:itext('%s:label')" % ref,
-                                                   "hintref":"jr:itext('%s:hint')" % ref,
-                                                   "mediatype":"image/*",
-                                                   })
-            elif table[field].writable == False:
-                controller = self._get_controller("input",
-                                                  kargs={"ref":ref,
-                                                   "labeltext":self._get_str(table[field].label),
-                                                   "readonly":"true",
-                                                   "default":self._get_str(table[field].default),
-                                                   })
-            else:
-                # Normal Input field
-                controller = self._get_controller("input",
-                                                  kargs={"ref":ref,
-                                                   "labeltext":self._get_str(table[field].label),
-                                                   })
-
-            body.append(controller)
-
-        return translation
-            
-    def _get_str(self, obj):
-        if inspect.isroutine(obj):
-            # This is a function, so call it now
-            obj = obj()
-
-        try:
-            text = obj.read()
-        except(AttributeError):
-            try:
-                # This is a Help Tooltip
-                text = obj.elements()[1].attributes["_title"]
-                try:
-                    text =  text.split("|")[1]
-                except(IndexError):
-                    pass
-            except(AttributeError, IndexError):
-                text = obj
-        if text == None:
-            text = ""
-        return str(text)
-
-    def _textvalue(self, textid, valuetext):
-        """
-        simple helper function
-        """
-
-        XFORMS_NAMESPACE = "http://www.w3.org/2002/xforms"
-        XFORMS = XFORMS = "{%s}" % XFORMS_NAMESPACE
-
-        text = etree.Element("%stext" % XFORMS, id=textid)
-        value = etree.SubElement(text, "%svalue" % XFORMS)
-        value.text = unicode(valuetext, 'utf8')
-
-        return text
-
-    def _itemlabelvalue(self, valuetext, labeltext=None, labelref=None):
-        """
-        simple helper function
-        """
-
-        XFORMS_NAMESPACE = "http://www.w3.org/2002/xforms"
-        XFORMS = XFORMS = "{%s}" % XFORMS_NAMESPACE
-
-        item = etree.Element("%sitem" % XFORMS)
-        if labeltext != None:
-            label = etree.SubElement(item, "%slabel" % XFORMS)
-            value = etree.SubElement(item, "%svalue" % XFORMS)
-            label.text = unicode(labeltext, 'utf8')
-            value.text = unicode(valuetext, 'utf8')
-        elif labelref != None:
-            label = etree.SubElement(item,
-                                     "%slabel" % XFORMS,
-                                     ref=labelref)
-            value = etree.SubElement(item, "%svalue" % XFORMS)
-            value.text = unicode(valuetext, 'utf8')
-        return item
-
-    def _get_controller(self, controller_name, kargs, ref="",
-                        labeltext="", readonly="", default="",
-                        items_list = [], hintref="",
-                        labelref=""):
-        """
-        simple helper function
-        """
-
-        XFORMS_NAMESPACE = "http://www.w3.org/2002/xforms"
-        XFORMS = XFORMS = "{%s}" % XFORMS_NAMESPACE
-
-        ref = str(kargs.get("ref", ""))
-
-        if controller_name == "input":
-            labeltext = str(kargs.get("labeltext", ""))
-            readonly = str(kargs.get("readonly", False))
-            defaulttext = str(kargs.get("default", ""))
-            if readonly == "true":
-                controller = etree.Element("%s%s" % (XFORMS,
-                                                     controller_name),
-                                           ref=ref,
-                                           readonly="true",
-                                           default=defaulttext)
-            else:
-                controller = etree.Element("%s%s" % (XFORMS,
-                                                     controller_name),
-                                           ref=ref)
-            label = etree.SubElement(controller, "%slabel" % XFORMS)
-            label.text = unicode(labeltext, 'utf8')
-        elif controller_name == "select1" or controller_name == "select":
-            items = kargs.get("items_list", [])
-            labelref = str(kargs.get("labelref", ""))
-            hintref = str(kargs.get("hintref", ""))
-            controller = etree.Element("%s%s" % (XFORMS,
-                                                 controller_name),
-                                       ref=ref)
-            if labelref != None:
-                label = etree.SubElement(controller,
-                                         "%slabel" % XFORMS,
-                                         ref=labelref)
-            if hintref != None:
-                hint = etree.SubElement(controller,
-                                        "%shint" % XFORMS,
-                                        ref=hintref)
-            for item in items:
-                controller.append(item)
-        elif controller_name == "upload":
-            labelref = str(kargs.get("labelref", ""))
-            hintref = str(kargs.get("hintref", ""))
-            controller = etree.Element("%s%s" % (XFORMS,
-                                                 controller_name),
-                                       ref=ref)
-            if labelref != None:
-                label = etree.SubElement(controller,
-                                         "%slabel" % XFORMS,
-                                         ref=labelref)
-            if hintref != None:
-                hint = etree.SubElement(controller,
-                                        "%shint" % XFORMS,
-                                        ref=hintref)
-
-        return controller
+        for s3xml in s3ocrxml.iter():
+            print dir(s3xml)
+            break
+        return s3ocrxml
 
     def pdf_manager(self):
-        """
-        Generate PDFs for the resource
-        @TODO: ocr implementation would require
-               if (no pdf) : generate + store(db) + deliver
-               elif (pdf exists) : retrive(db) + deliver
-        """
-        xforms = self.xforms_create()
-        xforms = etree.tostring(xforms,
-                                encoding="UTF-8",
-                                pretty_print=True)
+        pass
 
-        uid = uuid.uuid1()
-        xmls = {}
-        form = Form(pdfname = "%s.pdf" % str(uid))
-        formhandler = FormHandler(form, uid, "eng")
-        saxparser = make_parser()
-        saxparser.setContentHandler(formhandler)
-        saxparser.parse(_open_anything(xforms))
-        pdf, xmls = formhandler.get_files()
-
-        return pdf
-
-    def _uses_requirement(self, requirement, field):
-        """
-        Check if a given database field uses the specified requirement
-        (IS_IN_SET, IS_INT_IN_RANGE, etc)
-        """
-        if hasattr(field.requires, "other") \
-                or requirement in str(field.requires):
-            if hasattr(field.requires, "other"):
-                if requirement in str(field.requires.other):
-                    return True
-            elif requirement in str(field.requires):
-                return True
-        return False
 
 def s3ocr_generate_pdf(xform, pdflang):
     """ Generates pdf/xml files out of xform with language support """

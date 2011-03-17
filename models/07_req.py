@@ -11,7 +11,7 @@
 """
 
 module = "req"
-if deployment_settings.has_module("org"):
+if deployment_settings.has_module("inv"):
     #==========================================================================
     # Request
     REQ_STATUS_NONE       = 0

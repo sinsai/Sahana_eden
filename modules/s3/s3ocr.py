@@ -31,9 +31,9 @@
 
 """
 
-#========================== import section ====================================
+__all__ = ["S3OCR"]
 
-__all__ = ["s3ocr_generate_pdf", "s3ocr_get_languages", "S3OCR"]
+#========================== import section ====================================
 
 # Generic stuff
 import inspect
@@ -62,6 +62,149 @@ except(ImportError):
 from lxml import etree
 from s3rest import S3Method
 
+#==========================================================================
+#================================= OCR API ================================
+#==========================================================================
+
+class S3OCR(S3Method):
+    """
+    Generate XForms and PDFs the s3 way
+    """
+
+    def __init__(self):
+        pass
+
+    def apply_method(self, r, **attr):
+        """
+        S3Method's abstract method
+        """
+        
+        xml = self.manager.xml
+        self.r = r
+
+        if r.request.vars.get("_debug", False) == "1":
+            self.debug = True
+        else:
+            self.debug = False
+
+        if self.debug:
+            content_disposition = "inline"
+        else:
+            content_disposition = "attachment"
+        
+        format = r.representation
+        if r.http == "GET":
+            if format == "xml":
+                output = self.s3ocr_etree()
+                self.response.view = "xml.html"
+                self.response.headers["Content-Type"] = "application/xml"
+                return xml.tostring(output, pretty_print=True)
+            elif format == "pdf":
+                output = self.pdf_manager()
+                self.response.view = None
+                self.response.headers["Content-Type"] = "application/pdf"
+                self.response.headers["Content-disposition"] = \
+                            "%s; filename=\"%s.pdf\"" % (content_disposition, self.tablename)
+                return output
+            else:
+                r.error(501, self.manager.ERROR.BAD_FORMAT)
+        elif r.http in ("POST","PUT"):
+            if format == "xml":
+                raise HTTP(501, body="method not implimented")
+            elif format == "pdf":
+                raise HTTP(501, body="method not implimented")
+            else:
+                r.error(501, self.manager.ERROR.BAD_FORMAT)
+        else:
+            r.error(501, self.manager.ERROR.BAD_METHOD)
+
+    def s3ocr_etree(self):
+        """
+        Optimise & Modifiy s3xml etree to and produce s3ocr etree
+        """
+
+        s3xml_etree = self.resource.struct(options=True,
+                                   references=True,
+                                   stylesheet=None,
+                                   as_json=False,
+                                   as_tree=True)
+
+        # TODO # User Defined Configuration will be added to etree
+        # TODO # Components Localised Text added to the etree
+
+        ## create etree for main resouce + components each and multiplex
+        s3xml = s3xml_etree.getroot() # get element s3xml
+        
+        s3resource = s3xml.getchildren()[0] # as s3xml has only one child
+
+        s3ocr_etree = etree.Element("s3ocr")        
+        if self.r.component:     # if it is a component
+            s3ocr_etree.append(s3resource)
+        else:                    # if it is main resource
+            componentetrees = []
+            mres = etree.Element("resource")
+            for attr in s3resource.attrib.keys():
+                mres.set(attr, s3resource.attrib.get(attr))
+            for s3field in s3resource:
+                if s3field.tag == "field":       # main resource fields
+                    mres.append(s3field)
+                elif s3field.tag == "resource":  # component resource
+                    componentetrees.append(s3field)
+            # TODO - Serialisation of Component List
+            # create s3ocr tree
+            s3ocr_etree.append(mres)
+            for res in componentetrees:
+                s3ocr_etree.append(res)
+
+        return s3ocr_etree
+
+    def pdf_manager(self):
+        """
+        Produces OCR Compatible PDF forms
+        """
+
+        s3ocr_etree = self.s3ocr_etree() # get element s3xml
+
+        # define font size
+        titlefontsize = 18
+        regularfontsize = 13
+        smallfontsize = 11
+        
+        # get pdf title
+        try:
+            pdftitle = \
+                self.manager.s3.crud_strings[self.tablename].subtitle_list.decode("utf-8")
+        except:
+            pdftitle = self.resource.tablename
+        # ocr from filling instructions
+        inst1 = self.T("1. Fill the necessary fields in BLOCK CAPITAL letters.")
+        inst2 = self.T("2. Always use one box per letter and leave one box space to separate words. and yes you have to shout.")
+        inst3 = self.T("3. Fill in the circles completely.")
+
+        # prepare pdf
+        form = Form()
+        form.decorate()
+
+        # set header
+        form.canvas.setTitle(pdftitle) # set pdf meta title
+        form.print_text([pdftitle,],
+                        fontsize=titlefontsize,
+                        nonewline=1,
+                        style="center") # set pdf header title
+        form.print_text(
+            [
+                unicode(inst1.decode("utf-8")),
+                unicode(inst2.decode("utf-8")),
+                unicode(inst3.decode("utf-8"))
+                ],
+            fontsize=regularfontsize, gray=0) # ocr form instructions
+        form.draw_line()
+        # rest of the lines
+        form.linespace(4)
+        form.print_text(["sjkdjkd1"])
+        form.print_text(["slkdjkd2"])
+        form.set_new_page()
+        return form.save()
 
 #==============================================================================
 #==================== unicode support to reportlab ============================
@@ -172,23 +315,22 @@ for eachfont in fontlist:
         fontchecksequence.append(eachfont)
 
 
-
-
 #==========================================================================
 #=============== internal Class Definitions and functions =================
 #==========================================================================
 
 #======================== pdf layout from xform ===========================
 
-class Form:
+class Form(object):
     """ Form class to use reportlab to generate pdf """
 
-    def __init__(self, pdfname="ocrform.pdf", margintop=50, marginsides=50,
+    def __init__(self, pdfname="ocrform.pdf", margintop=65, marginsides=50,
                  **kw):
         """ Form initialization """
 
         self.pdfpath = kw.get("pdfpath", pdfname)
         self.verbose = kw.get("verbose", 0)
+        self.linespacing = kw.get("linespacing", 4)
         self.font = kw.get("typeface", "Helvetica")
         self.fontsize = kw.get("fontsize", 13)
         self.IObuffer = StringIO()
@@ -201,6 +343,8 @@ class Form:
         self.y = self.height - margintop
         self.lasty = self.height - margintop
         self.num = 1
+        self.gray = 0
+        self.put_page_num()
 
     def barcode(self, uuid):
         """ Generate barcode of uuid """
@@ -214,57 +358,115 @@ class Form:
         """ Decorates the the form with the markers needed to align the form later """
 
         c = self.canvas
-        c.rect(20, 20, 20, 20, fill=1)
-        c.rect(self.width - 40, 20, 20, 20, fill=1)
-        c.rect(20, self.height - 40, 20, 20, fill=1)
-        c.rect(self.width/2 - 10, 20, 20, 20, fill=1)
-        c.rect(20, self.height/2 - 10, 20, 20, fill=1)
-        c.rect(self.width - 40, self.height - 40, 20, 20, fill=1)
-        c.rect(self.width - 40, self.height/2 - 10, 20, 20, fill=1)
+        c.rect(20, 20, 20, 20, fill=1)                              # bt lf
+        c.rect(self.width - 40, 20, 20, 20, fill=1)                 # bt rt
+        c.rect(20, self.height - 40, 20, 20, fill=1)                # tp lf
+        c.rect(self.width/2 - 10, 20, 20, 20, fill=1)               # bt md
+        c.rect(20, self.height/2 - 10, 20, 20, fill=1)              # md lf
+        c.rect(self.width - 40, self.height - 40, 20, 20, fill=1)   # tp rt
+        c.rect(self.width - 40, self.height/2 - 10, 20, 20, fill=1) # md rt
 
-    def print_text(self, lines, fontsize=12, gray=0, seek=0, continuetext=0,
+    def print_text(self,
+                   lines,
+                   fontsize=13,
+                   gray=0,
+                   seek=0,
+                   continuetext=0,
+                   nonewline=0,
                    style="default"):
         """ Give the lines to be printed as a list, set the font and grey level """
 
-        c = self.canvas
         self.fontsize = fontsize
-        if style == "center":
-            self.x = self.width / 2
-        if seek > (self.width - (self.marginsides + self.fontsize)):
-            seek = 0
-        if seek != 0:
-            self.x = self.x + seek
-        if continuetext == 1:
-            self.x = self.lastx + seek
-            if seek == 0:
-                self.y = self.y + fontsize
+        self.gray = gray
+
+
+        # seek x cursor
+        self.resetx(seek)
+
         for line in lines:
             line = unicode(line)
+            
+            # alignment
             if style == "center":
-                self.x = self.x - (len(line)) * self.fontsize / 2
-            if style == "right":
-                self.x = self.width - (self.marginsides + len(line) * self.fontsize)
-            if (self.width - self.marginsides - self.lastx) < 200:
-                self.x = self.marginsides
-                if continuetext == 1:
-                    self.y = self.y - 2 * fontsize
+                self.x = \
+                    (self.width - (len(line) * (self.fontsize / 2)))/2
+            elif style == "right":
+                self.x = \
+                    ((self.width - self.marginsides) -\
+                         ((len(line)+3) * (self.fontsize / 2)))
+            if continuetext:
+                # wrapping multiline options
+                if (self.width - self.marginsides - self.lastx) < 200:
+                    self.resetx()
+                    self.nextline()
+                    recentnextline = 1
+                else:
+                    recentnextline = 0
             if (self.y - self.fontsize) < 50:
                 self.set_new_page()
             for char in line:
-                font=self.selectfont(char)
-                t = c.beginText(self.x, self.y)
-                t.setFont(font, fontsize)
-                t.setFillGray(gray)
-                t.textOut(char)
-                c.drawText(t)
+                t = self.writechar(char)
                 self.x = t.getX()
-                self.lastx = t.getX()
-            self.y = self.y - fontsize
-            self.lasty = self.y
-        self.x = self.marginsides
+                self.y = t.getY()
+                # text wrapping -> TODO: word wrapping
+                if self.x > (self.width - self.marginsides - self.fontsize):
+                    self.writechar("-")
+                    self.nextline()
+                    self.resetx(self.fontsize)
+            if not continuetext:
+                self.nextline()
+                self.resetx()
+        self.resetx()
+        if continuetext and not recentnextline:
+            self.nextline()
+
+    def writechar(self, char=" "):
+        """
+        Writes one character on canvas
+        """
+
+        font=self.selectfont(char)
+        t = self.canvas.beginText(self.x, self.y)
+        t.setFont(font, self.fontsize)
+        t.setFillGray(self.gray)
+        t.textOut(char)
+        self.canvas.drawText(t)
+        return t
+
+    def nextline(self):
+        """
+        Moves the y cursor down one line
+        """
+
+        self.y = self.y - (self.fontsize + self.linespacing)
+
+    def resetx(self, offset=0):
+        """
+        Moves the x cursor with offset
+        """
+
+        self.x = self.marginsides + offset
+        lastvalidx = self.width - (self.marginsides + (self.fontsize / 2))
+        writablex = self.width - (2 * self.marginsides)
+        if self.x > lastvalidx:
+            currentx = self.x - self.marginsides
+            remx = currentx % writablex
+            self.x = remx + self.marginsides
+            numlines = int(currentx / writablex)
+            for line in xrange(numlines):
+                self.nextline()
+
+
+    def linespace(self, spacing=2):
+        """
+        Moves the y cursor down by given units
+        """
+
+        self.y -= spacing
 
     def selectfont(self, char):
         """ Select font according to the input character """
+
         charcode = ord(char)
         for font in fontchecksequence:
             for fontrange in fontmapping[font]:
@@ -374,10 +576,10 @@ class Form:
 
         c = self.canvas
         c.setStrokeGray(gray)
-        c.setLineWidth(0.40)
-        self.y = self.y - (self.fontsize)
+        c.setLineWidth(1)
+        #self.y = self.y - (self.fontsize)
         c.line(self.x, self.y, self.width - self.x, self.y)
-        self.y = self.y - (self.fontsize)
+        self.y = self.y - (self.fontsize + self.linespacing)
 
     def set_new_page(self):
         """
@@ -391,11 +593,29 @@ class Form:
         self.x = self.marginsides
         self.lastx = self.marginsides
         self.y = self.height - self.margintop
-        self.print_text(["Page %s" % unicode(self.num)], fontsize=8,
-                        style="right")
+        #self.print_text(["Page %s" % unicode(self.num)], fontsize=8,
+        #                style="right")
+        self.put_page_num()
         self.x = self.marginsides
         self.lastx = self.x
         self.y = self.y - 32
+
+    def put_page_num(self):
+        x, y = self.x, self.y
+        fontsize = self.fontsize
+
+        self.fontsize = 10
+        text = "page%s" % self.num
+        self.x = self.width - \
+            (((len(text)+2)*(self.fontsize/2)) + self.marginsides)
+        self.y = 25
+        for char in text:
+            t = self.writechar(char)
+            self.x = t.getX()
+            self.y = t.getY()
+
+        self.fontsize = fontsize
+        self.x, self.y = x, y
 
     def set_title(self, title = "FORM"):
         """ Sets the title of the pdf. """
@@ -754,185 +974,3 @@ class FormHandler(ContentHandler):
         return self.pdf, self.xmls
 
 
-#== xml.sax.ContentHandler instance to find available languages in xform ==
-
-class LangHandler(ContentHandler):
-    """ To retrieve list of available languages """
-
-    def __init__(self):
-        """ Form initialization and preparation"""
-
-        self.itext = 0
-        self.translation = 0
-        self.lang = []
-
-    def startElement(self, name, attrs):
-        """ Parses the starting element and then check what to read """
-
-        if not str(name).find(":") == -1:
-            name = name.split(":")[1]
-        if name == "translation":
-            if self.translation == 0 and self.itext == 1:
-                self.translation= 1
-                self.lang.append(str(attrs.get("lang")))
-        elif name == "itext":
-            self.itext = 1
-
-    def endElement(self, name):
-        """ It specifies the operations to do on closing the element """
-
-        if not str(name).find(":") == -1:
-            name = name.split(":")[1]
-        if name == "translation":
-            self.translation = 0
-        elif name == "itext":
-            self.itext = 0
-
-    def get_lang(self):
-        """ Return list of available languages in the xform """
-
-        return self.lang
-
-
-def _open_anything(source):
-    """ Read anything link/file/string """
-
-    import urllib
-    try:
-        return urllib.urlopen(source)
-    except (IOError, OSError):
-        pass
-    try:
-        return open(source, "r")
-    except (IOError, OSError):
-        pass
-    return StringIO(str(source))
-
-
-#==========================================================================
-#================================= OCR API ================================
-#==========================================================================
-
-class S3OCR(S3Method):
-    """
-    Generate XForms and PDFs the s3 way
-    """
-
-    def __init__(self):
-        pass
-
-    def apply_method(self, r, **attr):
-        """
-        S3Method's abstract method
-        """
-        
-        xml = self.manager.xml
-        self.r = r
-        
-        format = r.representation
-        if r.http == "GET":
-            if format == "xml":
-                output = self.s3ocr_etree()
-                self.response.view = "xml.html"
-                self.response.headers["Content-Type"] = "application/xml"
-                return xml.tostring(output, pretty_print=True)
-            elif format == "pdf":
-                output = self.pdf_manager()
-                self.response.view = None
-                self.response.headers["Content-Type"] = "application/pdf"
-                self.response.headers["Content-disposition"] = \
-                            "attachment; filename=\"%s.pdf\"" % self.tablename
-                return output
-            else:
-                r.error(501, self.manager.ERROR.BAD_FORMAT)
-        elif r.http in ("POST","PUT"):
-            if format == "xml":
-                raise HTTP(501, body="method not implimented")
-            elif format == "pdf":
-                raise HTTP(501, body="method not implimented")
-            else:
-                r.error(501, self.manager.ERROR.BAD_FORMAT)
-        else:
-            r.error(501, self.manager.ERROR.BAD_METHOD)
-
-    def s3ocr_etree(self):
-        s3xml_etree = self.resource.struct(options=True,
-                                   references=True,
-                                   stylesheet=None,
-                                   as_json=False,
-                                   as_tree=True)
-
-        ## User Defined Configuration will be uploaded here
-        ##
-        #
-        #s3xml = s3xml_etree.getroot() # get element s3xml
-        #
-        #s3resource = s3xml.getchildren()[0] # as s3xml has only one child
-        #
-        #if self.r.component: # if it is a component
-        #    s3resource.attrib.get("name")
-        #else: # if it is main resource
-        #    for s3field in s3resource:
-        #        if s3field.tag == "field":       # main resource fields
-        #            print "field"
-        #        elif s3field.tag == "resource":  # component resource
-        #            print "component"
-        #
-
-        return s3xml_etree
-
-    def pdf_manager(self):
-        pass
-
-
-def s3ocr_generate_pdf(xform, pdflang):
-    """ Generates pdf/xml files out of xform with language support """
-
-    uid = uuid.uuid1()
-    pdfs = {}
-    xmls = {}
-    form = Form(pdfname = "%s.pdf" % str(uid))
-    formhandler = FormHandler(form, uid, pdflang)
-    saxparser = make_parser()
-    saxparser.setContentHandler(formhandler)
-    datasource = _open_anything(xform)
-    saxparser.parse(datasource)
-    pdf, xmls = formhandler.get_files()
-    pdfs["%s_%s/pdf" % (str(uid), str(pdflang))] = pdf
-    return pdfs, xmls
-
-
-def s3ocr_get_languages(xform):
-    """ Shows the languages supported by given xform """
-
-    formhandler = LangHandler()
-    saxparser = make_parser()
-    saxparser.setContentHandler(formhandler)
-    datasource = _open_anything(xform)
-    saxparser.parse(datasource)
-    langlist = formhandler.get_lang()
-    return langlist
-
-
-if __name__ == "__main__":
-
-    if len(sys.argv) == 1:
-        sys.exit("Usage: python xforms2pdf.py filename.xml language")
-
-    xform = sys.argv[1]
-    if len(sys.argv) < 3:
-        lang = "eng"
-    else:
-        lang = str(sys.argv[2])
-        avail_langs = s3ocr_get_languages(xform)
-        if lang not in avail_langs:
-            sys.exit("Required Language '%s' is not available, available languages are:\n%s" % (lang, str(avail_langs)))
-    pdfs, xmls = s3ocr_generate_pdf(xform, "eng")
-    for i in pdfs.keys():
-            f = open(i, "w")
-            f.write(pdfs[i])
-            f.close()
-    for i in xmls.keys():
-            f = open(i, "w")
-            f.write(xmls[i])
-            f.close()

@@ -1,7 +1,7 @@
 {{extend "layout.html"}}
 <div id='home'>
 {{=H2(module_name)}}
-{{=LI(A("Catalog Items", _href=URL(r=request, c="supply", f="item")))}}
+{{=LI(A(T("Catalog Items"), _href=URL(r=request, c="supply", f="item")))}}
 <p>
 {{=T("Inventory functionality is available for:")}}
 </p>

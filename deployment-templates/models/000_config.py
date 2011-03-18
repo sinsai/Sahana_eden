@@ -331,6 +331,12 @@ deployment_settings.modules = OrderedDict([
             restricted = False,
             module_type = 4
         )),
+    ("asset", Storage(
+            name_nice = T("Asset Management"),
+            description = T("Recording and Assigning Assets"),
+            restricted = False,
+            module_type = 10,
+        )),             
     ("vol", Storage(
             name_nice = T("Volunteers"),
             description = T("Manage volunteers by capturing their skills, availability and allocation"),

@@ -870,13 +870,13 @@ if deployment_settings.has_module(module):
                         "organisation_id$name", "organisation_id$acronym"]
                   ),
                   ## for testing:
-                  #s3base.S3SearchMinMaxWidget(
-                    #name="hospital_search_bedcount",
-                    #method="range",
+                  s3base.S3SearchMinMaxWidget(
+                    name="hospital_search_bedcount",
+                    method="range",
                     #label=T("Total Beds"),
-                    #comment=T("Select a range for the number of total beds"),
-                    #field=["total_beds"]
-                  #)
+                    comment=T("Select a range for the number of total beds"),
+                    field=["total_beds"]
+                  )
         ))
 
     # Set as standard search method for hospitals

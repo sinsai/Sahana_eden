@@ -32,7 +32,8 @@ org_menu = [
 
 #==============================================================================
 # Cluster
-# @ToDo Allow easy changing between the term 'Cluster' (UN) & 'Sector' (everywhere else)
+# @ToDo: Allow easy changing between the term 'Cluster' (UN) & 'Sector' (everywhere else)
+# Use Organisation groups?
 resourcename = "cluster"
 tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
@@ -153,7 +154,7 @@ org_organisation_type_opts = {
 }
 
 resourcename = "organisation"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "org_organisation"
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
                         #Field("privacy", "integer", default=0),
@@ -274,8 +275,8 @@ s3xrc.model.configure(table,
 #============================================================================== 
 def shn_staff_join_onaccept_func(tablename):
     """
-    If the setting is enabled, returns an onaccept function to create roles 
-    for a record which can staff as a component join
+        If the setting is enabled, returns an onaccept function to create roles 
+        for a record which can staff as a component join
     """
     if deployment_settings.get_aaa_has_staff_permissions():
         return lambda form, tablename = tablename: \
@@ -285,7 +286,7 @@ def shn_staff_join_onaccept_func(tablename):
 # -----------------------------------------------------------------------------    
 # Create roles for each organisation 
 s3xrc.model.configure(table, 
-                      onaccept = shn_staff_join_onaccept_func(tablename))  
+                      onaccept = shn_staff_join_onaccept_func(tablename))
 
 #==============================================================================
 # Site
@@ -312,7 +313,7 @@ org_site_types = Storage(
 )
 
 resource = "site"
-tablename = "%s_%s" % (module, resource)
+tablename = "org_site"
 table = super_entity(tablename, 
                      "site_id", 
                      org_site_types, 
@@ -354,11 +355,11 @@ def shn_site_represent(id, default_label="[no label]"):
 
     return site_str
 
- # -------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 def shn_site_resource(site_id):
     """
-    Returns the prefix, resource and id which a site refers to 
-    @todo: Should this functionality be shifted to the super entity code?
+        Returns the prefix, resource and id which a site refers to 
+        @ToDo: Should this functionality be shifted to the super entity code?
     """
     r_site = db.org_site[site_id]
     site_type = r_site.instance_type
@@ -366,26 +367,26 @@ def shn_site_resource(site_id):
     prefix = site_type_split[0]
     resourcename = site_type_split[1]
     id = r_site[site_type].select(db[site_type].id,
-                                  limitby=(0,1)
+                                  limitby=(0, 1)
                                   ).first().id
     return (prefix, resourcename, id)
  
- 
+# -----------------------------------------------------------------------------
 def shn_create_record_roles(form, tablename):
     """
-    Function to be called from an onaccept by a record which can have 
-    org_staff as components, eg. Organisations & Site instances (Offices,
-    Hospitals and Shelters).  
-    
-    Creates:
-     - a staff role (acl = deployment_settings.get_aaa_staff_acl())
-     - a supervisor role (acl = deployment_settings.get_aaa_supervisor_acl())
-     
-    The record's owned_by_role = staff role
-    
-    The current user is given membership to both staff & supervisor roles 
-    
-    A new staff component for the current user is created for the record 
+        Function to be called from an onaccept by a record which can have 
+        org_staff as components, eg. Organisations & Site instances (Offices,
+        Hospitals and Shelters).  
+        
+        Creates:
+         - a staff role (acl = deployment_settings.get_aaa_staff_acl())
+         - a supervisor role (acl = deployment_settings.get_aaa_supervisor_acl())
+         
+        The record's owned_by_role = staff role
+        
+        The current user is given membership of both staff & supervisor roles 
+        
+        A new staff component for the current user is created for the record 
     """
     id = session.rcvars[tablename]
     staff_acl = deployment_settings.get_aaa_staff_acl()
@@ -393,33 +394,33 @@ def shn_create_record_roles(form, tablename):
     cf = tablename.split("_")
     c = cf[0]
     f = cf[1]
-    staff_role_id = auth.s3_create_role( "%s_staff_%s" % (tablename,id),
+    staff_role_id = auth.s3_create_role( "%s_staff_%s" % (tablename, id),
                                          "Staff Record Role",
                                          dict(c=c, f=f, 
                                               uacl=acl.NONE, oacl=staff_acl),
                                           )
-    supervisor_role_id = auth.s3_create_role( "%s_supervisor_%s" % (tablename,id),
+    supervisor_role_id = auth.s3_create_role( "%s_supervisor_%s" % (tablename, id),
                                               "Supervisor Record Role",
                                               dict(c=c, f=f, 
                                                   uacl=acl.NONE, oacl=supervisor_acl),                                              
                                               )    
     db[tablename][id] = dict(owned_by_role = staff_role_id)
     
-    #Add user to the role
+    # Add user to the role
     auth.add_membership(staff_role_id)    
     auth.add_membership(supervisor_role_id)
     
     if tablename in org_site_types:
-        #This is a site - add user as org_staff component
+        # This is a site - add user as org_staff component
         person_id = auth.person_id() 
         if person_id:
             
             if tablename == "org_organisation":
-                #This record is an organisation 
+                # This record is an organisation 
                 site_id = None
                 organisation_id = id        
             else:
-                #This record is an instant of a site (office/hospital/shelter)
+                # This record is an instance of a site (office/hospital/shelter)
                 record = db[tablename][id] 
                 site_id = record.site_id
                 organisation_id = record.organisation_id         
@@ -432,16 +433,16 @@ def shn_create_record_roles(form, tablename):
                                 owned_by_role = staff_role_id,                            
                                 )
 
-# -----------------------------------------------------------------------------    
+# -----------------------------------------------------------------------------
 def shn_component_copy_role(form, 
                             component_name, resource_name, fk,  pk  = "id" ):
     """ 
-    Generic onaccept function to copy a component's "owned_by_role" 
-    from the main resource's "owned_by_role" 
-    For example, allowing other components of a record which has staff as a 
-    component (org + site instances) to have the same permissions as the 
-    primary record.
-    @todo: integrate this with s3xrc?
+        Generic onaccept function to copy a component's "owned_by_role" 
+        from the main resource's "owned_by_role" 
+        For example, allowing other components of a record which has staff as a 
+        component (org + site instances) to have the same permissions as the 
+        primary record.
+        @ToDo: integrate this with s3xrc?
     """    
     component_id = session.rcvars[component_name]
     fk_id = db[component_name][component_id][fk]
@@ -451,7 +452,7 @@ def shn_component_copy_role(form,
     else:        
         primary_record = db(db[resource_name][pk] == fk_id
                      ).select(db[resource_name].owned_by_role,
-                              limitby = (0,1)
+                              limitby = (0, 1)
                               ).first()
     try:
         role_id = primary_record.owned_by_role
@@ -461,8 +462,8 @@ def shn_component_copy_role(form,
                               
     
     
-# -----------------------------------------------------------------------------    
-def shn_component_copy_role_func(component_name, resource_name,fk, pk = "id" ):
+# -----------------------------------------------------------------------------
+def shn_component_copy_role_func(component_name, resource_name, fk, pk ="id"):
     """ 
     Wrapper function check settings to return the function
     @todo: this could use a separate deployment_settings
@@ -488,7 +489,7 @@ org_office_type_opts = {
 }
 
 resourcename = "office"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "org_office"
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
                         super_link(db.org_site), # site_id
@@ -497,16 +498,22 @@ table = db.define_table(tablename,
                         Field("type", "integer"),
                         Field("parent", "reference org_office"),   # This form of hierarchy may not work on all Databases
                         location_id(),
-                        Field("address", "text", label=T("Address"), writable=False), # Populated from location_id
-                        Field("L4", label=deployment_settings.get_gis_locations_hierarchy("L4"),
+                        Field("address", "text", label=T("Address"),
                               writable=False), # Populated from location_id
-                        Field("L3", label=deployment_settings.get_gis_locations_hierarchy("L3"),
+                        Field("L4",
+                              label=deployment_settings.get_gis_locations_hierarchy("L4"),
                               writable=False), # Populated from location_id
-                        Field("L2", label=deployment_settings.get_gis_locations_hierarchy("L2"),
+                        Field("L3",
+                              label=deployment_settings.get_gis_locations_hierarchy("L3"),
                               writable=False), # Populated from location_id
-                        Field("L1", label=deployment_settings.get_gis_locations_hierarchy("L1"),
+                        Field("L2",
+                              label=deployment_settings.get_gis_locations_hierarchy("L2"),
                               writable=False), # Populated from location_id
-                        Field("L0", label=deployment_settings.get_gis_locations_hierarchy("L0"),
+                        Field("L1",
+                              label=deployment_settings.get_gis_locations_hierarchy("L1"),
+                              writable=False), # Populated from location_id
+                        Field("L0",
+                              label=deployment_settings.get_gis_locations_hierarchy("L0"),
                               writable=False), # Populated from location_id
                         Field("postcode", label=T("Postcode"), writable=False), # Populated from location_id
                         Field("phone1"),
@@ -518,6 +525,10 @@ table = db.define_table(tablename,
                         Field("number_of_vehicles", "integer"),     # @ToDo: Move to Fixed Assets
                         Field("vehicle_types"),                     # @ToDo: Move to Fixed Assets
                         Field("equipment"),                         # @ToDo: Move to Fixed Assets
+                        Field("obsolete", 
+                              "boolean",
+                              default = False
+                              ),
                         #document_id,   # Not yet defined
                         comments(),
                         migrate=migrate, *s3_meta_fields())
@@ -603,6 +614,7 @@ s3xrc.model.configure(table,
                         "id",
                         "name",
                         "organisation_id",   # Filtered in Component views
+                        "type",
                         #"L4",
                         "L3",
                         "L2",
@@ -636,7 +648,9 @@ donor_id = S3ReusableField("donor_id", db.org_organisation, sortby="name",
                     label = T("Funding Organization"),
                     comment = DIV(A(ADD_DONOR,
                                     _class="colorbox",
-                                    _href=URL(r=request, c="org", f="organisation", args="create", vars=dict(format="popup", child="donor_id")),
+                                    _href=URL(r=request, c="org", f="organisation",
+                                              args="create",
+                                              vars=dict(format="popup", child="donor_id")),
                                     _target="top",
                                     _title=ADD_DONOR),
                               DIV( _class="tooltip",
@@ -654,7 +668,7 @@ donor_id = S3ReusableField("donor_id", db.org_organisation, sortby="name",
 # @ToDo: Build an Organigram out of this data
 #
 resourcename = "staff"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "org_staff"
 
 table = db.define_table(tablename,
                         super_link(db.org_site), # site_id
@@ -757,7 +771,7 @@ table.focal_point.represent = shn_represent_focal_point
 
 def shn_orgs_to_person(person_id):   
     """
-    Returns a list of organisations for which the person is staff
+        Returns a list of organisations for which the person is staff
     """
     orgs = []
     if person_id:
@@ -820,9 +834,9 @@ s3xrc.model.add_component(module, resourcename,
 def shn_update_staff_membership(record,                                
                                 delete = False):
     """
-    Updates the staff's memberships of the roles associated with the 
-    organisation and/or site instance record which the staff is a component of
-    Called from onaccept & ondelete
+        Updates the staff's memberships of the roles associated with the 
+        organisation and/or site instance record which the staff is a component of
+        Called from onaccept & ondelete
     """    
     
     if delete:
@@ -905,7 +919,7 @@ def shn_update_staff_membership(record,
             auth.add_membership(site_staff_role_id, user_id)  
             auth.add_membership(site_supervisor_role_id, user_id)     
                                           
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 def shn_staff_onaccept(form):
     shn_update_staff_membership(form)
     # Staff resources inherit permissions from sites not organisations, 
@@ -914,13 +928,13 @@ def shn_staff_onaccept(form):
                                  resource_name = "org_site", 
                                  fk = "site_id",
                                  pk = "site_id")(form)
-# -----------------------------------------------------------------------------          
+
 s3xrc.model.configure(table, 
                       onaccept = shn_staff_onaccept,
                       ondelete = lambda form, delete = True: 
                                     shn_update_staff_membership(form, delete)
                       )
-# -----------------------------------------------------------------------------  
+# -----------------------------------------------------------------------------
 def shn_staff_prep(r):
     # Filter out people which are already staff for this inventory
     # Make S3PersonAutocompleteWidget work with the filter criteria of the 
@@ -936,3 +950,27 @@ def shn_staff_prep(r):
     person_ids = [r.person_id for r in staff_rows]
     db.org_staff.person_id.requires.set_filter(not_filterby = "id",
                                                not_filter_opts = person_ids)
+
+#==============================================================================
+# Domain table
+# When users register their email address is checked against this list.
+# If the Domain matches, then they are automatically assigned to the Organisation.
+# If there is no Approvals email then the user is automatically approved.
+# If there is an Approvals email then the approval request goes to this address
+# If a user registers for an Organisation & the domain doesn't match (or isn't listed) then the approver gets the request
+resourcename = "domain"
+tablename = "auth_domain"
+table = db.define_table(tablename,
+                        organisation_id(),
+                        Field("domain", label=T("Domain"),
+                              comment = DIV( _class="tooltip",
+                                             _title="%s|%s" % (T("Domain"),
+                                                               T("If a user verifies that they own an Email Address with this domain, then they should automatically be assigned to this Organisation. The Approver field is used to determine whether & by whom further approval is required.")))),
+                        Field("approver", label=T("Approver"),
+                              requires=IS_EMAIL(),
+                              comment = DIV( _class="tooltip",
+                                             _title="%s|%s" % (T("Approver"),
+                                                               T("The Email Address to which approval requests are sent (normally this would be a Group mail rather than an individual). If the field is blank then requests are approved automatically if the domain matches.")))),
+                        comments(),
+                        migrate=migrate, *s3_meta_fields())
+# END -------------------------------------------------------------------------

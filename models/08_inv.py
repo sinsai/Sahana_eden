@@ -15,10 +15,10 @@ inv_menu = [
                 [T("List"), False, URL(r=request, c="supply", f="item")],
                 [T("Add"), False, URL(r=request, c="supply", f="item", args="create")],
             ]],            
-            [T("Sites"), False, URL(r=request, c="org", f="office"),
+            [T("Warehouses"), False, URL(r=request, c="inv", f="wh"),
             [
-                [T("List"), False, URL(r=request, c="org", f="office")],
-                [T("Add"), False, URL(r=request, c="org", f="office", args="create")],
+                [T("List"), False, URL(r=request, c="inv", f="wh")],
+                [T("Add"), False, URL(r=request, c="inv", f="wh", args="create")],
             ]],
             [T("Request"), False, URL(r=request, c="req", f="req"),
             [
@@ -45,7 +45,7 @@ if s3_has_role(1):
     )
 #==============================================================================
 module = "inv"
-if deployment_settings.has_module("org"):
+if deployment_settings.has_module("inv"):
 
     #==============================================================================
     # Inventory Item

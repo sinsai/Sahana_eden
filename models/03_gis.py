@@ -54,15 +54,18 @@ table.name.label = T("Name")
 table.image.label = T("Image")
 
 # Reusable field to include in other table definitions
-ADD_MARKER = T("Add") + " " + MARKER
+ADD_MARKER = T("Add Marker")
 marker_id = S3ReusableField("marker_id", db.gis_marker, sortby="name",
                              requires = IS_NULL_OR(IS_ONE_OF(db, "gis_marker.id", "%(name)s", zero=T("Use default"))),
-                             represent = lambda id: (id and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=db(db.gis_marker.id == id).select(db.gis_marker.image,
-                                                                                                                                                           limitby=(0, 1)).first().image), _height=40))] or [""])[0],
+                             represent = lambda id: (id and [DIV(IMG(_src=URL(r=request, c="default", f="download",
+                                                                              args=db(db.gis_marker.id == id).select(db.gis_marker.image,
+                                                                                                                     limitby=(0, 1)).first().image),
+                                                                     _height=40))] or [""])[0],
                              label = T("Marker"),
                              comment = DIV(A(ADD_MARKER,
                                              _class="colorbox",
-                                             _href=URL(r=request, c="gis", f="marker", args="create", vars=dict(format="popup")),
+                                             _href=URL(r=request, c="gis", f="marker", args="create",
+                                                       vars=dict(format="popup")),
                                              _target="top",
                                              _title=ADD_MARKER),
                                        DIV( _class="tooltip",
@@ -155,7 +158,8 @@ opt_gis_layout = db.Table(db, "opt_gis_layout",
                                 requires = IS_IN_SET(gis_config_layout_opts, zero=None),
                                 default = 1,
                                 label = T("Layout"),
-                                represent = lambda opt: gis_config_layout_opts.get(opt, UNKNOWN_OPT)))
+                                represent = lambda opt: gis_config_layout_opts.get(opt,
+                                                                                   UNKNOWN_OPT)))
 # id=1 = Default settings
 resourcename = "config"
 tablename = "%s_%s" % (module, resourcename)
@@ -175,16 +179,20 @@ table = db.define_table(tablename,
                         Field("min_lat", "double", default=-90),
                         Field("max_lon", "double", default=180),
                         Field("max_lat", "double", default=90),
-                        Field("zoom_levels", "integer", default=22, notnull=True),
-                        Field("cluster_distance", "integer", default=5, notnull=True),
-                        Field("cluster_threshold", "integer", default=2, notnull=True),
+                        Field("zoom_levels", "integer", default=22,
+                              notnull=True),
+                        Field("cluster_distance", "integer", default=5,
+                              notnull=True),
+                        Field("cluster_threshold", "integer", default=2,
+                              notnull=True),
                         opt_gis_layout,
                         Field("wmsbrowser_name", default="Web Map Service"),
                         Field("wmsbrowser_url"),
                         migrate=migrate,
                         *(s3_timestamp() + s3_uid()))
 table.uuid.requires = IS_NOT_ONE_OF(db, "gis_config.uuid")
-table.pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.pe_id", shn_pentity_represent))
+table.pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.pe_id",
+                                            shn_pentity_represent))
 table.pe_id.readable = table.pe_id.writable = False
 table.lat.requires = IS_LAT()
 table.lon.requires = IS_LON()
@@ -295,7 +303,8 @@ table = db.define_table(tablename,
 
 table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
-table.gps_marker.requires = IS_NULL_OR(IS_IN_SET(gis_gps_marker_opts, zero=T("Use default")))
+table.gps_marker.requires = IS_NULL_OR(IS_IN_SET(gis_gps_marker_opts,
+                                                 zero=T("Use default")))
 # Configured in zzz_last.py when all tables are available
 #table.resource.requires = IS_NULL_OR(IS_IN_SET(db.tables))
 table.name.label = T("Name")
@@ -391,7 +400,9 @@ def shn_gis_location_represent_row(location, showlink=True):
                 start = "(%s, " % level_name
             else:
                 start = "("
-            text = "%s %s%s %s %s %s)" % (location.name, start, lat_prefix, lat, lon_prefix, lon)
+            text = "%s %s%s %s %s %s)" % (location.name, start,
+                                          lat_prefix, lat,
+                                          lon_prefix, lon)
         else:
             if location.level:
                 text = "%s (%s)" % (location.name, level_name)
@@ -405,7 +416,8 @@ def shn_gis_location_represent_row(location, showlink=True):
        showlink = False
     if showlink:
         # ToDo: Convert to popup? (HTML again!)
-        represent = A(text, _style="cursor:pointer; cursor:hand", _onclick="s3_viewMap(%i);return false" % location.id)
+        represent = A(text, _style="cursor:pointer; cursor:hand",
+                            _onclick="s3_viewMap(%i);return false" % location.id)
     else:
         represent = text
     return represent
@@ -453,11 +465,16 @@ table = db.define_table(tablename,
                         Field("url"),
                         Field("geonames_id", "integer", unique=True),# Geonames ID (for cross-correlation. OSM cannot take data from Geonames as 'polluted' with unclear sources, so can't use them as UUIDs)
                         Field("osm_id", "integer", unique=True),     # OpenStreetMap ID (for cross-correlation. OSM IDs can change over time, so they also have UUID fields they can store our IDs in)
-                        Field("lon_min", "double", writable=False, readable=False), # bounding-box
-                        Field("lat_min", "double", writable=False, readable=False), # bounding-box
-                        Field("lon_max", "double", writable=False, readable=False), # bounding-box
-                        Field("lat_max", "double", writable=False, readable=False), # bounding-box
-                        Field("elevation", "double", writable=False, readable=False),   # m in height above WGS84 ellipsoid (approximately sea-level). not displayed currently
+                        Field("lon_min", "double", writable=False,
+                              readable=False), # bounding-box
+                        Field("lat_min", "double", writable=False,
+                              readable=False), # bounding-box
+                        Field("lon_max", "double", writable=False,
+                              readable=False), # bounding-box
+                        Field("lat_max", "double", writable=False,
+                              readable=False), # bounding-box
+                        Field("elevation", "double", writable=False,
+                              readable=False),   # m in height above WGS84 ellipsoid (approximately sea-level). not displayed currently
                         Field("ce", "integer", writable=False, readable=False), # Circular 'Error' around Lat/Lon (in m). Needed for CoT.
                         Field("le", "integer", writable=False, readable=False), # Linear 'Error' for the Elevation (in m). Needed for CoT.
                         Field("source", requires=IS_NULL_OR(IS_IN_SET(gis_source_opts))),
@@ -566,10 +583,16 @@ s3.crud_strings[tablename] = Storage(
 repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
 location_id = S3ReusableField("location_id", db.gis_location,
                     sortby="name",
-                    requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True)),
+                    requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id",
+                                                    repr_select,
+                                                    orderby="gis_location.name",
+                                                    sort=True)),
                     represent = lambda id: shn_gis_location_represent(id),
                     label = T("Location"),
-                    widget = S3LocationSelectorWidget(db, gis, deployment_settings, request, response, T),
+                    widget = S3LocationSelectorWidget(db, gis,
+                                                      deployment_settings,
+                                                      request,
+                                                      response, T),
                     # Alternate simple Autocomplete (e.g. used by pr_person_presence)
                     #widget = S3LocationAutocompleteWidget(request, deployment_settings),
                     ondelete = "RESTRICT")
@@ -817,8 +840,10 @@ def gis_location_onvalidation(form):
                 max_lat = _parent.lat_max
                 max_lon = _parent.lon_max
                 base_error = T("Sorry that location appears to be outside the area of the Parent.")
-                lat_error =  "%s: %s & %s" % (T("Latitude should be between"), str(min_lat), str(max_lat))
-                lon_error = "%s: %s & %s" % (T("Longitude should be between"), str(min_lon), str(max_lon))
+                lat_error =  "%s: %s & %s" % (T("Latitude should be between"),
+                                              str(min_lat), str(max_lat))
+                lon_error = "%s: %s & %s" % (T("Longitude should be between"),
+                                             str(min_lon), str(max_lon))
                 if (lat > max_lat) or (lat < min_lat):
                     response.error = base_error
                     form.errors["lat"] = lat_error
@@ -839,8 +864,10 @@ def gis_location_onvalidation(form):
                 max_lat = config.max_lat
                 max_lon = config.max_lon
                 base_error = T("Sorry that location appears to be outside the area supported by this deployment.")
-                lat_error =  "%s: %s & %s" % (T("Latitude should be between"), str(min_lat), str(max_lat))
-                lon_error = "%s: %s & %s" % (T("Longitude should be between"), str(min_lon), str(max_lon))
+                lat_error =  "%s: %s & %s" % (T("Latitude should be between"),
+                                              str(min_lat), str(max_lat))
+                lon_error = "%s: %s & %s" % (T("Longitude should be between"),
+                                             str(min_lon), str(max_lon))
                 if (lat > max_lat) or (lat < min_lat):
                     response.error = base_error
                     form.errors["lat"] = lat_error
@@ -903,7 +930,8 @@ def s3_gis_location_simple(r, **attr):
     return output
 
 # Plug into REST controller
-s3xrc.model.set_method(module, "location", method="simple", action=s3_gis_location_simple )
+s3xrc.model.set_method(module, "location", method="simple",
+                       action=s3_gis_location_simple)
 
 gis_location_search = s3base.S3LocationSearch(
     name="location_search_simple",
@@ -953,7 +981,8 @@ def s3_gis_location_parents(r, **attr):
         raise HTTP(501, body=s3xrc.ERROR.BAD_FORMAT)
 
 # Plug into REST controller
-s3xrc.model.set_method(module, "location", method="parents", action=s3_gis_location_parents )
+s3xrc.model.set_method(module, "location", method="parents",
+                       action=s3_gis_location_parents)
 
 # -----------------------------------------------------------------------------
 # Feature Layers
@@ -968,10 +997,15 @@ table = db.define_table(tablename,
                         #Field("type", "integer"),  # @ToDo: Optional filtering by type (e.g. for Warehouses)
                         Field("popup_label"),       # @ToDo: Replace with s3.crud_strings[tablename]
                         marker_id(),                # Optional Marker to over-ride the values from the Feature Classes
-                        Field("polygons", "boolean", default=False, label=T("Display Polygons?")),
-                        Field("enabled", "boolean", default=True, label=T("Available in Viewer?")),
-                        Field("visible", "boolean", default=True, label=T("On by default?")),
-                        Field("opacity", "double", default=1.0, requires=IS_FLOAT_IN_RANGE(0, 1), label=T("Opacity (1 for opaque, 0 for fully-transparent)")),
+                        Field("polygons", "boolean", default=False,
+                              label=T("Display Polygons?")),
+                        Field("enabled", "boolean", default=True,
+                              label=T("Available in Viewer?")),
+                        Field("visible", "boolean", default=True,
+                              label=T("On by default?")),
+                        Field("opacity", "double", default=1.0,
+                              requires=IS_FLOAT_IN_RANGE(0, 1),
+                              label=T("Opacity (1 for opaque, 0 for fully-transparent)")),
                         # @ToDo Expose the Graphic options
                         # e.g. L1 for Provinces, L2 for Districts, etc
                         # e.g. office type 5 for Warehouses
@@ -1006,7 +1040,8 @@ table = db.define_table(tablename,
 
 # FIXME
 # We want a THIS_NOT_ONE_OF here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_ONE_OF#fc129fd476558944
-table.name.requires = IS_IN_SET(["google", "bing", "multimap", "yahoo"], zero=None)
+table.name.requires = IS_IN_SET(["google", "bing", "multimap", "yahoo"],
+                                zero=None)
 #table.apikey.requires = THIS_NOT_ONE_OF(db(table.name == request.vars.name), "gis_apikey.name", request.vars.name, "Service already in use")
 table.apikey.requires = IS_NOT_EMPTY()
 table.name.label = T("Service")
@@ -1087,7 +1122,9 @@ track_id = S3ReusableField("track_id", db.gis_track, sortby="name",
                 label = T("Track"),
                 comment = DIV(A(ADD_TRACK,
                                 _class="colorbox",
-                                _href=URL(r=request, c="gis", f="track", args="create", vars=dict(format="popup")),
+                                _href=URL(r=request, c="gis", f="track",
+                                          args="create",
+                                          vars=dict(format="popup")),
                                 _target="top",
                                 _title=ADD_TRACK),
                           DIV( _class="tooltip",
@@ -1133,33 +1170,38 @@ for layertype in gis_layer_types:
                      gis_layer,
                      Field("visible", "boolean", default=True,
                            label=T("On by default? (only applicable to Overlays)")),
-                     Field("url1", label=T("Location"), requires = IS_NOT_EMPTY(),
+                     Field("url1", label=T("Location"), requires=IS_NOT_EMPTY(),
                            comment=DIV( _class="tooltip",
                                         _title="%s|%s" % (T("Location"),
                                                           T("The URL to access the service.")))),
                      Field("url2", label=T("Secondary Server (Optional)")),
                      Field("url3", label=T("Tertiary Server (Optional)")),
-                     Field("base", "boolean", default=True, label=T("Base Layer?")),
+                     Field("base", "boolean", default=True,
+                           label=T("Base Layer?")),
                      Field("attribution", label=T("Attribution")),
                     )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "geojson":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("visible", "boolean", default=False, label=T("On by default?")),
-                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     Field("visible", "boolean", default=False,
+                           label=T("On by default?")),
+                     Field("url", label=T("Location"), requires=IS_NOT_EMPTY()),
                      projection_id(default=2,
-                                   requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")),
+                                   requires = IS_ONE_OF(db, "gis_projection.id",
+                                                        "%(name)s")),
                      marker_id()
                     )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "georss":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("visible", "boolean", default=False, label=T("On by default?")),
+                     Field("visible", "boolean", default=False,
+                           label=T("On by default?")),
                      Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
                      projection_id(default=2,
-                                   requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")),
+                                   requires = IS_ONE_OF(db, "gis_projection.id",
+                                                        "%(name)s")),
                      marker_id()
                     )
         table = db.define_table(tablename, t, migrate=migrate)
@@ -1167,19 +1209,24 @@ for layertype in gis_layer_types:
         t = db.Table(db, table,
                      gis_layer,
                      Field("subtype", label=T("Sub-type"),
-                           requires=IS_IN_SET(gis_layer_google_subtypes, zero=None))
+                           requires=IS_IN_SET(gis_layer_google_subtypes,
+                                              zero=None))
                     )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "gpx":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("visible", "boolean", default=False, label=T("On by default?")),
+                     Field("visible", "boolean", default=False,
+                           label=T("On by default?")),
                      #Field("url", label=T("Location"),
                            #comment=DIV( _class="tooltip", _title="%s|%s" % (T("Location", T("The URL to access the service.")))),
                      track_id(), # @ToDo remove this layer of complexity: Inlcude the upload field within the Layer
-                     Field("waypoints", "boolean", default=True, label=T("Display Waypoints?")),
-                     Field("tracks", "boolean", default=True, label=T("Display Tracks?")),
-                     Field("routes", "boolean", default=False, label=T("Display Routes?")),
+                     Field("waypoints", "boolean", default=True,
+                           label=T("Display Waypoints?")),
+                     Field("tracks", "boolean", default=True,
+                           label=T("Display Tracks?")),
+                     Field("routes", "boolean", default=False,
+                           label=T("Display Routes?")),
                      marker_id()
                     )
         table = db.define_table(tablename, t, migrate=migrate)
@@ -1217,11 +1264,12 @@ for layertype in gis_layer_types:
     elif layertype == "tms":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY(),
+                     Field("url", label=T("Location"), requires=IS_NOT_EMPTY(),
                            comment=DIV( _class="tooltip",
                                         _title="%s|%s" % (T("Location"),
                                                           T("The URL to access the service.")))),
-                     Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
+                     Field("layers", label=T("Layers"),
+                           requires=IS_NOT_EMPTY()),
                      Field("img_format", label=T("Format"))
                     )
         table = db.define_table(tablename, t, migrate=migrate)
@@ -1239,7 +1287,8 @@ for layertype in gis_layer_types:
                            comment=DIV( _class="tooltip",
                                         _title="%s|%s" % ("Feature Namespace",
                                                           T("Optional. In GeoServer, this is the Workspace Namespace URI. Within the WFS getCapabilities, this is the FeatureType Name part before the colon(:).")))),
-                     Field("featureType", label=T("Feature Type"), requires = IS_NOT_EMPTY(),
+                     Field("featureType", label=T("Feature Type"),
+                           requires = IS_NOT_EMPTY(),
                            comment=DIV( _class="tooltip",
                                         _title="%s|%s" % (T("Feature Type"),
                                                           T("Mandatory. In GeoServer, this is the Layer Name. Within the WFS getCapabilities, this is the FeatureType Name part after the colon(:).")))),
@@ -1261,16 +1310,22 @@ for layertype in gis_layer_types:
                                                           T("The URL to access the service.")))),
                      Field("version", label=T("Version"), default="1.1.1",
                            requires=IS_IN_SET(["1.1.1", "1.3.0"], zero=None)),
-                     Field("base", "boolean", default=False, label=T("Base Layer?")),
-                     Field("transparent", "boolean", default=True, label=T("Transparent?")),
-                     Field("opacity", "double", default=1.0, requires=IS_FLOAT_IN_RANGE(0, 1), label=T("Opacity (1 for opaque, 0 for fully-transparent)")),
+                     Field("base", "boolean", default=False,
+                           label=T("Base Layer?")),
+                     Field("transparent", "boolean", default=True,
+                           label=T("Transparent?")),
+                     Field("opacity", "double", default=1.0,
+                           requires=IS_FLOAT_IN_RANGE(0, 1),
+                           label=T("Opacity (1 for opaque, 0 for fully-transparent)")),
                      Field("map", label=T("Map")),
-                     Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
+                     Field("layers", label=T("Layers"),
+                           requires=IS_NOT_EMPTY()),
                      Field("img_format", label=T("Format"),
                            requires=IS_NULL_OR(IS_IN_SET(gis_layer_wms_img_formats)),
                            default="img/png"
                            ),
-                     Field("buffer", "integer", label=T("Buffer"), default=0, requires=IS_INT_IN_RANGE(0, 10),
+                     Field("buffer", "integer", label=T("Buffer"), default=0,
+                           requires=IS_INT_IN_RANGE(0, 10),
                            comment=DIV( _class="tooltip",
                                         _title="%s|%s" % (T("Buffer"),
                                                           T("The number of tiles around the visible map to download. Zero means that the 1st page loads faster, higher numbers mean subsequent panning is faster.")))),
@@ -1283,32 +1338,39 @@ for layertype in gis_layer_types:
     elif layertype == "xyz":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY(),
+                     Field("url", label=T("Location"), requires=IS_NOT_EMPTY(),
                            comment=DIV( _class="tooltip",
                                         _title="%s|%s" % (T("Location"),
                                                           T("The URL to access the service.")))),
-                     Field("base", "boolean", default=True, label=T("Base Layer?")),
-                     Field("sphericalMercator", "boolean", default=False, label=T("Spherical Mercator?")),
-                     Field("transitionEffect", requires=IS_NULL_OR(IS_IN_SET(["resize"])),
+                     Field("base", "boolean", default=True,
+                           label=T("Base Layer?")),
+                     Field("sphericalMercator", "boolean", default=False,
+                           label=T("Spherical Mercator?")),
+                     Field("transitionEffect",
+                           requires=IS_NULL_OR(IS_IN_SET(["resize"])),
                            label=T("Transition Effect")),
                      Field("numZoomLevels", "integer", label=T("num Zoom Levels")),
-                     Field("transparent", "boolean", default=False, label=T("Transparent?")),
+                     Field("transparent", "boolean", default=False,
+                           label=T("Transparent?")),
                      Field("visible", "boolean", default=True, label=T("Visible?")),
-                     Field("opacity", "double", default=0.0, label=T("Transparent?"))
+                     Field("opacity", "double", default=0.0,
+                           label=T("Transparent?"))
             )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "yahoo":
         t = db.Table(db, table,
                      gis_layer,
                      Field("subtype", label=T("Sub-type"),
-                           requires = IS_IN_SET(gis_layer_yahoo_subtypes, zero=None))
+                           requires = IS_IN_SET(gis_layer_yahoo_subtypes,
+                                                zero=None))
                     )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "bing":
         t = db.Table(db, table,
                      gis_layer,
                      Field("subtype", label=T("Sub-type"),
-                           requires = IS_IN_SET(gis_layer_bing_subtypes, zero=None))
+                           requires = IS_IN_SET(gis_layer_bing_subtypes,
+                                                zero=None))
                     )
         table = db.define_table(tablename, t, migrate=migrate)
 
@@ -1367,9 +1429,12 @@ table = db.define_table(tablename,
                         Field("lon", "double"), # This is currently 'y' not 'lon'
                         Field("zoom", "integer"),
                         Field("layer_id", "list:reference gis_wmc_layer",
-                              requires=IS_ONE_OF(db, "gis_wmc_layer.id", "%(title)s", multiple=True)),
+                              requires=IS_ONE_OF(db, "gis_wmc_layer.id",
+                                                 "%(title)s",
+                                                 multiple=True)),
                         # Metadata tbc
-                        migrate=migrate, *(s3_authorstamp() + s3_ownerstamp() + s3_timestamp()))
+                        migrate=migrate,
+                        *(s3_authorstamp() + s3_ownerstamp() + s3_timestamp()))
 #table.lat.requires = IS_LAT()
 #table.lon.requires = IS_LON()
 table.zoom.requires = IS_INT_IN_RANGE(1, 20)

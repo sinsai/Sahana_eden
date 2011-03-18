@@ -37,6 +37,9 @@ deployment_settings.auth.hmac_key = "akeytochange"
 # registered in order to secure the deployment
 deployment_settings.auth.registration_requires_verification = False
 deployment_settings.auth.registration_requires_approval = False
+
+deployment_settings.auth.registration_requests_mobile_phone = True
+deployment_settings.auth.registration_requests_organisation = False
 deployment_settings.auth.openid = False
 
 # Base settings
@@ -188,11 +191,11 @@ deployment_settings.security.archive_not_delete = True
 # AAA Settings
 acl = deployment_settings.aaa.acl
 deployment_settings.aaa.default_acl = acl.READ # If not logged in
-deployment_settings.aaa.default_uacl =  acl.READ # If logged in  
+deployment_settings.aaa.default_uacl =  acl.READ # If logged in
 deployment_settings.aaa.default_oacl =  acl.CREATE | acl.READ | acl.UPDATE # If logged in & owner
 deployment_settings.aaa.has_staff_permissions = True
-deployment_settings.aaa.staff_acl = acl.CREATE | acl.READ | acl.UPDATE 
-deployment_settings.aaa.supervisor_acl = acl.ALL 
+deployment_settings.aaa.staff_acl = acl.CREATE | acl.READ | acl.UPDATE
+deployment_settings.aaa.supervisor_acl = acl.ALL
 
 # Audit settings
 # We Audit if either the Global or Module asks us to

@@ -71,12 +71,16 @@ class S3Config(Storage):
     # Auth settings
     def get_auth_hmac_key(self):
         return self.auth.get("hmac_key", "akeytochange")
+    def get_auth_openid(self):
+        return self.auth.get("openid", False)
     def get_auth_registration_requires_verification(self):
         return self.auth.get("registration_requires_verification", False)
     def get_auth_registration_requires_approval(self):
         return self.auth.get("registration_requires_approval", False)
-    def get_auth_openid(self):
-        return self.auth.get("openid", False)
+    def get_auth_registration_requests_mobile_phone(self):
+        return self.auth.get("registration_requests_mobile_phone", True)
+    def get_auth_registration_requests_organisation(self):
+        return self.auth.get("registration_requests_organisation", False)
 
     # Base settings
     def get_base_debug(self):
@@ -326,7 +330,7 @@ class S3Config(Storage):
                 "dvi",          # Disaster Victim Identification
                 #"dvr",          # Disaster Victim Registry
                 "hms",          # Hospital Management
-                "inv",         # Logistics
+                "inv",          # Logistics
                 "pf",           # Person Finder
                 "msg",          # Messaging
                 "project",      # Project Tracking

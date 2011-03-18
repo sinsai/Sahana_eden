@@ -4545,8 +4545,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                     layers_kml += """
         iconURL = '""" + marker_url + """';
         // Pre-cache this image
-        // Need unique names
-        var s3_gis_image = new Image();
+        // Need unique names, but keep scope
+        s3_gis_image = new Image();
         s3_gis_image.onload = scaleImage;
         s3_gis_image.src = iconURL;
         // Needs to be uniquely instantiated

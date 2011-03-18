@@ -1440,7 +1440,7 @@ class S3Resource(object):
         return importer(self, source,
                         files=files,
                         id=id,
-                        template=template,
+                        stylesheet=template,
                         as_json=as_json,
                         ignore_errors=ignore_errors, **args)
 

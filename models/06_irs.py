@@ -368,7 +368,7 @@ if deployment_settings.has_module(module):
 
                 ignore_errors = form.vars.get("ignore_errors", None)
 
-                template = os.path.join(request.folder, "static", "xslt", "import", "ushahidi.xsl")
+                template = os.path.join(request.folder, "static", "formats", "ushahidi", "import.xsl")
 
                 if os.path.exists(template) and ushahidi:
                     try:

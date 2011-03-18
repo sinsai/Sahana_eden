@@ -32,7 +32,8 @@ org_menu = [
 
 #==============================================================================
 # Cluster
-# @ToDo Allow easy changing between the term 'Cluster' (UN) & 'Sector' (everywhere else)
+# @ToDo: Allow easy changing between the term 'Cluster' (UN) & 'Sector' (everywhere else)
+# Use Organisation groups?
 resourcename = "cluster"
 tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
@@ -153,7 +154,7 @@ org_organisation_type_opts = {
 }
 
 resourcename = "organisation"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "org_organisation"
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
                         #Field("privacy", "integer", default=0),
@@ -312,7 +313,7 @@ org_site_types = Storage(
 )
 
 resource = "site"
-tablename = "%s_%s" % (module, resource)
+tablename = "org_site"
 table = super_entity(tablename, 
                      "site_id", 
                      org_site_types, 
@@ -488,7 +489,7 @@ org_office_type_opts = {
 }
 
 resourcename = "office"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "org_office"
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
                         super_link(db.org_site), # site_id
@@ -667,7 +668,7 @@ donor_id = S3ReusableField("donor_id", db.org_organisation, sortby="name",
 # @ToDo: Build an Organigram out of this data
 #
 resourcename = "staff"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "org_staff"
 
 table = db.define_table(tablename,
                         super_link(db.org_site), # site_id
@@ -918,7 +919,7 @@ def shn_update_staff_membership(record,
             auth.add_membership(site_staff_role_id, user_id)  
             auth.add_membership(site_supervisor_role_id, user_id)     
                                           
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 def shn_staff_onaccept(form):
     shn_update_staff_membership(form)
     # Staff resources inherit permissions from sites not organisations, 
@@ -927,13 +928,13 @@ def shn_staff_onaccept(form):
                                  resource_name = "org_site", 
                                  fk = "site_id",
                                  pk = "site_id")(form)
-# -----------------------------------------------------------------------------          
+
 s3xrc.model.configure(table, 
                       onaccept = shn_staff_onaccept,
                       ondelete = lambda form, delete = True: 
                                     shn_update_staff_membership(form, delete)
                       )
-# -----------------------------------------------------------------------------  
+# -----------------------------------------------------------------------------
 def shn_staff_prep(r):
     # Filter out people which are already staff for this inventory
     # Make S3PersonAutocompleteWidget work with the filter criteria of the 
@@ -949,3 +950,27 @@ def shn_staff_prep(r):
     person_ids = [r.person_id for r in staff_rows]
     db.org_staff.person_id.requires.set_filter(not_filterby = "id",
                                                not_filter_opts = person_ids)
+
+#==============================================================================
+# Domain table
+# When users register their email address is checked against this list.
+# If the Domain matches, then they are automatically assigned to the Organisation.
+# If there is no Approvals email then the user is automatically approved.
+# If there is an Approvals email then the approval request goes to this address
+# If a user registers for an Organisation & the domain doesn't match (or isn't listed) then the approver gets the request
+resourcename = "domain"
+tablename = "auth_domain"
+table = db.define_table(tablename,
+                        organisation_id(),
+                        Field("domain", label=T("Domain"),
+                              comment = DIV( _class="tooltip",
+                                             _title="%s|%s" % (T("Domain"),
+                                                               T("If a user verifies that they own an Email Address with this domain, then they should automatically be assigned to this Organisation. The Approver field is used to determine whether & by whom further approval is required.")))),
+                        Field("approver", label=T("Approver"),
+                              requires=IS_EMAIL(),
+                              comment = DIV( _class="tooltip",
+                                             _title="%s|%s" % (T("Approver"),
+                                                               T("The Email Address to which approval requests are sent (normally this would be a Group mail rather than an individual). If the field is blank then requests are approved automatically if the domain matches.")))),
+                        comments(),
+                        migrate=migrate, *s3_meta_fields())
+# END -------------------------------------------------------------------------

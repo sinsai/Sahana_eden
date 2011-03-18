@@ -799,7 +799,7 @@ class S3LocationSelectorWidget(FormWidget):
             if map_selector:
                 map_popup = gis.show_map(
                                          add_feature = True,
-                                         #add_feature_active = True,    # Not working in current OpenLayers!
+                                         add_feature_active = True,    # Not working in current OpenLayers!
                                          toolbar = True,
                                          collapsed = True,
                                          search = True,

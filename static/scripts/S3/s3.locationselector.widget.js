@@ -947,14 +947,13 @@ Ext.onReady(function(){
 
     if (mapButton) {
         mapButton.on('click', function() {
-            // @ToDo: create the window on the first click and reuse on subsequent clicks
             mapWin.show(this);
         });
     }
 
     if (converterButton) {
         converterButton.on('click', function() {
-            // create the window on the first click and reuse on subsequent clicks
+            // Create the window on the first click and reuse on subsequent clicks
             if (!converterWin) {
                 converterWin = new Ext.Window({
                     applyTo: 'gis-convert-win',
@@ -980,7 +979,6 @@ Ext.onReady(function(){
                                 s3_gis_calcDone = false;
                                 $('#DDMMSS_dec').val('');
                                 $('#gps_dec').val('');
-                                //converterWin.hide();
                             }
                         }
                     },{
@@ -990,7 +988,6 @@ Ext.onReady(function(){
                                 s3_gis_calcDone = false;
                                 $('#DDMMSS_dec').val('');
                                 $('#gps_dec').val('');
-                                //converterWin.hide();
                             }
                         }
                     }]

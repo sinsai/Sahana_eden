@@ -200,7 +200,7 @@ class Action(unittest.TestCase):
             time.sleep(1)
             self._diag_sleepTime += 1
         if self._diag:
-            self._diagResults.write("%s\tFAILED\t%s\t\n" % (message, self._diag_sleepTime))
+            self._diagResults.write("findReponse %s\tFAILED\t%s\t\n" % (successMsg, self._diag_sleepTime))
         raise UserWarning("Response not found")
         
     # Methods to manage form manipulation

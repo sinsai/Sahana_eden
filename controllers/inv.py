@@ -27,8 +27,8 @@ def index():
 #==============================================================================
 def wh():
     """ 
-    RESTful CRUD controller 
-    Fitlered version of the org_office resource
+        RESTful CRUD controller 
+        Filtered version of the org_office resource
     """
     
     module = "org"
@@ -36,14 +36,14 @@ def wh():
     tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
     
-    #Type is Warehouse
-    table.type.default = 5 #Warehouse  
+    # Type is Warehouse
+    table.type.default = 5 # Warehouse  
     table.type.writable = False
     
-    #Only show warehouses 
-    #response.s3.filter = (db.org_office.type == 5)
+    # Only show warehouses 
+    response.s3.filter = (db.org_office.type == 5)
     
-    #Hide Obsolete warehouses
+    # Hide Obsolete warehouses
     def prep(r):
         # "show_obsolete" var option can be added (btn?) later to 
         # disable this filter

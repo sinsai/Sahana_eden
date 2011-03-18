@@ -37,7 +37,7 @@
 
 """
 
-#pr_message_method:
+# pr_message_method:
 #1: Email
 #2: SMS
 #4: Twitter
@@ -57,7 +57,7 @@ except ImportError:
 
 IDENTITYTRANS = ALLCHARS = string.maketrans("", "")
 NOTPHONECHARS = ALLCHARS.translate(IDENTITYTRANS, string.digits)
-NOTTWITTERCHARS = ALLCHARS.translate(IDENTITYTRANS, string.digits + string.letters + '_')
+NOTTWITTERCHARS = ALLCHARS.translate(IDENTITYTRANS, string.digits + string.letters + "_")
 
 TWITTER_MAX_CHARS = 140
 TWITTER_HAS_NEXT_SUFFIX = u' \u2026'
@@ -66,7 +66,13 @@ TWITTER_HAS_PREV_PREFIX = u'\u2026 '
 class S3Msg(object):
     """ Toolkit for hooking into the Messaging framework """
 
-    def __init__(self, environment, deployment_settings, db=None, T=None, mail=None, modem=None):
+    def __init__(self,
+                 environment,
+                 deployment_settings,
+                 db=None,
+                 T=None,
+                 mail=None,
+                 modem=None):
         try:
             self.deployment_settings = deployment_settings
             self.db = db
@@ -76,6 +82,7 @@ class S3Msg(object):
         except:
             pass
 
+    # -------------------------------------------------------------------------
     def sanitise_phone(self, phone):
         """
             Strip out unnecessary characters from the string:
@@ -98,6 +105,7 @@ class S3Msg(object):
 
         return clean
 
+    # -------------------------------------------------------------------------
     def send_sms_via_modem(self, mobile, text=""):
         """
             Function to send SMS via locally-attached Modem
@@ -121,11 +129,15 @@ class S3Msg(object):
 
         db = self.db
 
-        sms_api = db(db.msg_gateway_settings.enabled == True).select(limitby=(0, 1)).first()
+        sms_api_post_config = {}
+
+        query = (db.msg_gateway_settings.enabled == True)
+        sms_api = db(query).select(limitby=(0, 1)).first()
         if sms_api:
             tmp_parameters = sms_api.parameters.split("&")
             for tmp_parameter in tmp_parameters:
-                sms_api_post_config[tmp_parameter.split("=")[0]] = tmp_parameter.split("=")[1]
+                sms_api_post_config[tmp_parameter.split("=")[0]] = \
+                                            tmp_parameter.split("=")[1]
 
         mobile = self.sanitise_phone(mobile)
 
@@ -139,6 +151,7 @@ class S3Msg(object):
         except:
             return False
 
+    # -------------------------------------------------------------------------
     def sanitise_twitter_account(self, account):
         """
             Only keep characters that are legal for a twitter account:
@@ -180,7 +193,8 @@ class S3Msg(object):
         db = self.db
         deployment_settings = self.deployment_settings
 
-        twitter_settings = db(db.msg_twitter_settings.id > 0).select(limitby=(0, 1)).first()
+        query = (db.msg_twitter_settings.id > 0)
+        twitter_settings = db(query).select(limitby=(0, 1)).first()
         if twitter_settings and twitter_settings.twitter_account:
             try:
                 oauth = tweepy.OAuthHandler(deployment_settings.twitter.oauth_consumer_key,
@@ -225,12 +239,14 @@ class S3Msg(object):
                 try:
                     # Note: send_direct_message() requires explicit kwargs (at least in tweepy 1.5)
                     # See http://groups.google.com/group/tweepy/msg/790fcab8bc6affb5
-                    twitter_api.send_direct_message(screen_name=recipient, text=c)
+                    twitter_api.send_direct_message(screen_name=recipient,
+                                                    text=c)
                 except tweepy.TweepError:
                     s3_debug("Unable to Tweet DM")
         else:
             prefix = "@%s " % recipient
-            chunks = self.break_to_chunks(text, TWITTER_MAX_CHARS - len(prefix))
+            chunks = self.break_to_chunks(text,
+                                          TWITTER_MAX_CHARS - len(prefix))
             for c in chunks:
                 try:
                     twitter_api.update_status(prefix + c)
@@ -239,7 +255,12 @@ class S3Msg(object):
         return True
 
     #-------------------------------------------------------------------------------------------------
-    def send_text_via_tropo(self, row_id, message_id, recipient, message, network = "SMS"):
+    def send_text_via_tropo(self,
+                            row_id,
+                            message_id,
+                            recipient,
+                            message,
+                            network = "SMS"):
         """
             Send a URL request to Tropo to pick a message up
         """
@@ -249,8 +270,9 @@ class S3Msg(object):
         base_url = "http://api.tropo.com/1.0/sessions"
         action = "create"
 
-        tropo_settings = db(db.msg_tropo_settings.id == 1).select(db.msg_tropo_settings.token_messaging,
-                                                                  limitby=(0, 1)).first()
+        query = (db.msg_tropo_settings.id == 1)
+        tropo_settings = db(query).select(db.msg_tropo_settings.token_messaging,
+                                          limitby=(0, 1)).first()
         if tropo_settings:
             tropo_token_messaging = tropo_settings.token_messaging
             #tropo_token_voice = tropo_settings.token_voice
@@ -286,6 +308,7 @@ class S3Msg(object):
         return False # Returning False because the API needs to ask us for the messsage again.
 
 
+    # -------------------------------------------------------------------------
     def send_email_via_api(self, to, subject, message):
         """
             Function to send Email via API
@@ -387,7 +410,10 @@ class S3Msg(object):
                                   subject=""
                                  )
 
-    def process_outbox(self, contact_method=1, option=1): #pr_message_method dependent
+    # -------------------------------------------------------------------------
+    def process_outbox(self,
+                       contact_method=1,  # pr_message_method dependent
+                       option=1):
         """
             Send Pending Messages from Outbox.
             If succesful then move from Outbox to Sent. A modified copy of send_email
@@ -398,7 +424,8 @@ class S3Msg(object):
         outgoing_sms_handler = settings.outgoing_sms_handler
 
         table = db.msg_outbox
-        query = ((table.status == 1) & (table.pr_message_method == contact_method))
+        query = ((table.status == 1) & \
+                 (table.pr_message_method == contact_method))
         rows = db(query).select()
         chainrun = False # Used to fire process_outbox again - Used when messages are sent to groups
         for row in rows:
@@ -413,31 +440,45 @@ class S3Msg(object):
             entity = row.pe_id
             table2 = db.pr_pentity
             query = table2.id == entity
-            entity_type = db(query).select(table2.instance_type, limitby=(0, 1)).first().instance_type
+            entity_type = db(query).select(table2.instance_type,
+                                           limitby=(0, 1)).first().instance_type
             def dispatch_to_pe_id(pe_id):
                 table3 = db.pr_pe_contact
-                query = (table3.pe_id == pe_id) & (table3.contact_method == contact_method) & (table3.deleted == False)
-                recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
+                query = (table3.pe_id == pe_id) & \
+                        (table3.contact_method == contact_method) & \
+                        (table3.deleted == False)
+                recipient = db(query).select(table3.value,
+                                             orderby = table3.priority,
+                                             limitby=(0, 1)).first()
                 if recipient:
                     if (contact_method == 4):
-                        return self.send_text_via_twitter(recipient.value, message)
+                        return self.send_text_via_twitter(recipient.value,
+                                                          message)
                     if (contact_method == 2 and option == 2):
                         if outgoing_sms_handler == "Modem":
-                            return self.send_sms_via_modem(recipient.value, message)
+                            return self.send_sms_via_modem(recipient.value,
+                                                           message)
                         else:
                             return False
                     if (contact_method == 2 and option == 1):
                         if outgoing_sms_handler == "Gateway":
-                            return self.send_sms_via_api(recipient.value, message)
+                            return self.send_sms_via_api(recipient.value,
+                                                         message)
                         else:
                             return False
                     if (contact_method == 2 and option == 3):
                         if outgoing_sms_handler == "Tropo":
-                            return self.send_text_via_tropo(row.id, message_id, recipient.value, message) # This does not mean the message is sent
+                            # NB This does not mean the message is sent
+                            return self.send_text_via_tropo(row.id,
+                                                            message_id,
+                                                            recipient.value,
+                                                            message)
                         else:
                             return False
                     if (contact_method == 1):
-                        return self.send_email_via_api(recipient.value, subject, message)
+                        return self.send_email_via_api(recipient.value,
+                                                       subject,
+                                                       message)
                 return False
 
             if entity_type == "pr_group":
@@ -446,7 +487,8 @@ class S3Msg(object):
                 # Set system generated = True
                 table3 = db.pr_group
                 query = (table3.pe_id == entity)
-                group_id = db(query).select(table3.id, limitby=(0, 1)).first().id
+                group_id = db(query).select(table3.id,
+                                            limitby=(0, 1)).first().id
                 table4 = db.pr_group_membership
                 query = (table4.group_id == group_id)
                 recipients = db(query).select(table4.person_id)
@@ -454,7 +496,8 @@ class S3Msg(object):
                     person_id = recipient.person_id
                     table5 = db.pr_person
                     query = (table5.id == person_id)
-                    pe_id = db(query).select(table5.pe_id, limitby=(0, 1)).first().pe_id
+                    pe_id = db(query).select(table5.pe_id,
+                                             limitby=(0, 1)).first().pe_id
                     db.msg_outbox.insert(message_id = message_id,
                                          pe_id = pe_id,
                                          pr_message_method = contact_method,
@@ -476,7 +519,8 @@ class S3Msg(object):
                     person_id = recipient.person_id
                     table5 = db.pr_person
                     query = (table5.id == person_id)
-                    pe_id = db(query).select(table5.pe_id, limitby=(0, 1)).first().pe_id
+                    pe_id = db(query).select(table5.pe_id,
+                                             limitby=(0, 1)).first().pe_id
                     db.msg_outbox.insert(message_id = message_id,
                                          pe_id = pe_id,
                                          pr_message_method = contact_method,
@@ -532,15 +576,22 @@ class S3Msg(object):
             query = row.search_query
             try:
                 if recent_time:
-                    search_results = twitter_api.search(query, result_type="recent", show_user=True, since_id=recent_time)
+                    search_results = twitter_api.search(query,
+                                                        result_type="recent",
+                                                        show_user=True,
+                                                        since_id=recent_time)
                 else:
-                    search_results = twitter_api.search(query, result_type="recent", show_user=True)
+                    search_results = twitter_api.search(query,
+                                                        result_type="recent",
+                                                        show_user=True)
 
                 search_results.reverse()
 
                 for result in search_results:
                     # Check if the tweet already exists in the table
-                    tweet_exists = db((results_table.posted_by == result.from_user) & (results_table.posted_at == result.created_at )).select().first()
+                    query = (results_table.posted_by == result.from_user) & \
+                            (results_table.posted_at == result.created_at )
+                    tweet_exists = db(query).select().first()
 
                     if tweet_exists:
                         continue
@@ -592,3 +643,5 @@ class S3Msg(object):
         # Explicitly commit DB operations when running from Cron
         db.commit()
         return True
+
+# END -------------------------------------------------------------------------

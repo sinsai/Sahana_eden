@@ -143,7 +143,10 @@ class S3Trackable(object):
                 if presence.interlock:
                     tablename, record = presence.interlock.split(",", 1)
                     trackable = S3Trackable(self.db, tablename, record)
-                    location = trackable.get_location(timestmp=timestmp)
+                    if trackable.records:
+                        obj = trackable.records[0]
+                        if obj and obj[self.TRACK_ID] != r[self.TRACK_ID]:
+                            location = trackable.get_location(timestmp=timestmp)
                 elif presence.location_id:
                     query = (ltable.id == presence.location_id)
                     location = self.db(query).select(ltable.ALL, limitby=(0, 1)).first()
@@ -288,8 +291,8 @@ class S3Trackable(object):
             if name in r:
                 query = (ltable.id == r[name])
             else:
-                query = (ttable[self.TRACK_ID] == r[self.TRACK_ID])
-                trackable = self.db(query).select(limitby=(0, 1)).first()
+                tquery = (ttable[self.TRACK_ID] == r[self.TRACK_ID])
+                trackable = self.db(tquery).select(limitby=(0, 1)).first()
                 table = self.db[trackable.instance_type]
                 if name in table.fields:
                     query = ((table[self.TRACK_ID] == r[self.TRACK_ID]) &

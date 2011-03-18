@@ -162,7 +162,7 @@ def location():
                                      _title="%s|%s" % (T("Code"),
                                                        T("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode.")))
             table.wkt.comment = DIV(_class="stickytip",
-                                    _title="WKT|%s %s%s %s" % (T("The"),
+                                    _title="WKT|%s %s%s %s%s" % (T("The"),
                                                                "<a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>",
                                                                T("Well-Known Text"),
                                                                "</a>",

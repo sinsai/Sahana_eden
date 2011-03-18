@@ -26,8 +26,8 @@ function s3_gis_dropdown_select(level, force) {
             // Next level = Level + 1
             var this_url  = s3_gis_url + '/search.json?filter=%3D&field=level&value=L' + (level + 1) + '&parent=' + new_id;
         }
+        var options;
         var s3_gis_load_locations = function(data, status) {
-            var options;
             var v = '';
             if (data.length == 0) {
                 options = s3_gis_empty_set;

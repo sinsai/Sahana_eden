@@ -567,7 +567,7 @@ class AuthS3(Auth):
                         error_message=self.messages.mismatched_password)),
                         SPAN("*", _class="req"),
                 "", _class="%s_%s__row" % (user, "password_two")))
-        
+
         if deployment_settings.get_auth_registration_requests_mobile_phone():
             form[0].insert(-4, TR(TD(LABEL("%s:" % self.messages.label_mobile_phone),
                                            _class="w2p_fl"),
@@ -576,7 +576,7 @@ class AuthS3(Auth):
                                          _title="%s|%s" % (self.messages.label_mobile_phone,
                                                            self.messages.help_mobile_phone)))))
 
-        
+
         if self.settings.captcha != None:
             form[0].insert(-1, TR("", self.settings.captcha, ""))
 
@@ -1042,6 +1042,7 @@ class AuthS3(Auth):
         ptable = db.pr_person
         ctable = db.pr_pe_contact
         etable = db.pr_pentity
+        ttable = db.sit_trackable
 
         if user is None:
             users = db(utable.person_uuid == None).select(utable.ALL)
@@ -1072,9 +1073,11 @@ class AuthS3(Auth):
                         continue
 
                 pe_id = etable.insert(instance_type="pr_person", deleted=False)
+                track_id = ttable.insert(instance_type="pr_person", deleted=False)
                 if pe_id:
                     new_id = ptable.insert(
                         pe_id = pe_id,
+                        track_id = track_id,
                         first_name = user.first_name,
                         last_name = user.last_name,
                         owned_by_user = user.id
@@ -1084,6 +1087,7 @@ class AuthS3(Auth):
                         person_uuid = ptable[new_id].uuid
                         db(utable.id == user.id).update(person_uuid=person_uuid)
                         db(etable.id == pe_id).update(uuid=person_uuid)
+                        db(ttable.id == track_id).update(uuid=person_uuid)
                         # Add the email to pr_pe_contact
                         ctable.insert(
                                 pe_id = pe_id,

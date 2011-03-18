@@ -121,9 +121,6 @@ class OrganisationTest(SahanaTest):
         self.action.clickTab("Offices")
         self.action.btnLink ("show-add-btn", "Add Office")
 
-        self.action.clickTab("Warehouses")
-        self.action.btnLink ("show-add-btn", "Add Warehouse")
-
         self.action.clickTab("Assessments")
         self.action.btnLink ("add-btn", "Add Assessment")
 
@@ -151,9 +148,6 @@ class OrganisationTest(SahanaTest):
             
         self.action.clickTab("Offices")
         self.action.noBtnLink ("show-add-btn", "Add Office")
-
-        self.action.clickTab("Warehouses")
-        self.action.noBtnLink ("show-add-btn", "Add Warehouse")
 
         self.action.clickTab("Assessments")
         self.action.noBtnLink ("add-btn", "Add Assessment")

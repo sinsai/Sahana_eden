@@ -10,7 +10,7 @@
 """
 
 module = "supply"
-if deployment_settings.has_module("inv"):
+if deployment_settings.has_module("inv") or deployment_settings.has_module("asset"):
     #==============================================================================
     # Item Category
     #
@@ -53,6 +53,49 @@ if deployment_settings.has_module("inv"):
                                                  T("The list of Item categories are maintained by the Administrators."))),
                 ondelete = "RESTRICT"
                 )
+    
+    #==============================================================================
+    # Brand
+    #
+    resourcename = "brand"
+    tablename = "%s_%s" % (module, resourcename)
+    table = db.define_table(tablename,
+                            Field("name", length=128, notnull=True, unique=True),
+                            comments(),
+                            migrate=migrate, *s3_meta_fields())
+
+
+    # CRUD strings
+    ADD_BRAND = T("Add Brand")
+    LIST_BRAND = T("List Brands")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_BRAND,
+        title_display = T("Brand Details"),
+        title_list = LIST_BRAND,
+        title_update = T("Edit Brand"),
+        title_search = T("Search Brands"),
+        subtitle_create = T("Add New Brand"),
+        subtitle_list = T("Brands"),
+        label_list_button = LIST_BRAND,
+        label_create_button = ADD_BRAND,
+        label_delete_button = T("Delete Brand"),
+        msg_record_created = T("Brand added"),
+        msg_record_modified = T("Brand updated"),
+        msg_record_deleted = T("Brand deleted"),
+        msg_list_empty = T("No Brands currently registered"))
+
+    # Reusable Field
+    brand_id = S3ReusableField("brand_id", db.supply_brand, sortby="name",
+                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_brand.id",
+                                                "%(name)s",
+                                                sort=True)),
+                represent = lambda id: shn_get_db_field_value(db=db, table="supply_brand", field="name", look_up=id),
+                label = T("Category"),
+                comment = DIV( _class="tooltip",
+                               _title="%s|%s" % (T("Brand"),
+                                                 T("The list of Brands are maintained by the Administrators."))),
+                ondelete = "RESTRICT"
+                )    
 
     #==============================================================================
     # Item
@@ -61,7 +104,15 @@ if deployment_settings.has_module("inv"):
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             item_category_id(),
-                            Field("name", length=128, notnull=True, unique=True),
+                            brand_id(),
+                            Field("name", 
+                                  label = T("Name/Model/Type"),
+                                  length=128, 
+                                  notnull=True, 
+                                  unique=True),                            
+                            Field("year",
+                                  "integer", 
+                                  label = T("Year of Manufacture")),
                             Field("um", 
                                   length=128,
                                   label = T("Unit of Measure"),

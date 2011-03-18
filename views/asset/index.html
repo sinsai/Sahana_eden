@@ -1,0 +1,5 @@
+{{extend "layout.html"}}
+<div id='home'>
+{{=H2(module_name)}}
+{{=LI(A(T("Catalog Items"), _href=URL(r=request, c="supply", f="item")))}}
+{{=LI(A(T("Assets"), _href=URL(r=request, c="asset", f="asset")))}}

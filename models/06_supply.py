@@ -148,9 +148,17 @@ if deployment_settings.has_module("inv"):
         advanced=(s3base.S3SearchSimpleWidget(
                     name="item_search_advanced",
                     label=T("Item"),
-                    comment=T("Search for an item."),
+                    comment=T("Search for an item by text."),
                     field=["name", "comment", "item_category_id$name"]
                   ),
+                  s3base.S3SearchSelectWidget(    
+                    name="item_search_category",
+                    label=T("Category"),
+                    comment=T("Search for an item by  category."),
+                    field=["item_category_id"],
+                    represent ="%(name)s",
+                    cols = 3
+                  ),                  
                   ## for testing:
                   #s3base.S3SearchMinMaxWidget(
                     #name="hospital_search_bedcount",

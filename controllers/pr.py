@@ -118,6 +118,8 @@ def person():
 
     def prep(r):
 
+        trackable = s3_trackable("pr_person", record_id=1)
+
         if r.component_name == "config":
             _config = db.gis_config
             defaults = db(_config.id == 1).select(limitby=(0, 1)).first()

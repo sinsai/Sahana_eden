@@ -89,7 +89,7 @@ class S3Exporter(object):
             msince=None,
             show_urls=True,
             dereference=True,
-            template=None,
+            stylesheet=None,
             as_json=False,
             pretty_print=False, **args):
         """
@@ -104,7 +104,7 @@ class S3Exporter(object):
         @param show_urls: add the resource URLs as attribute to
                             <resource> elements
         @param dereference: include referenced resources
-        @param template: path to the XSLT stylesheet (if required)
+        @param stylesheet: path to the XSLT stylesheet (if required)
         @param as_json: represent the XML tree as JSON
         @param pretty_print: insert newlines/indentation in the output
         @param args: dict of arguments to pass to the XSLT stylesheet
@@ -127,7 +127,7 @@ class S3Exporter(object):
                                         dereference=dereference)
 
         # XSLT transformation
-        if tree and template is not None:
+        if tree and stylesheet is not None:
             tfmt = xml.ISOFORMAT
             args.update(domain=self.manager.domain,
                         base_url=self.manager.s3.base_url,
@@ -136,7 +136,7 @@ class S3Exporter(object):
                         utcnow=datetime.datetime.utcnow().strftime(tfmt))
 
             # @todo 2.3: catch transformation errors!
-            tree = xml.transform(tree, template, **args)
+            tree = xml.transform(tree, stylesheet, **args)
 
         # Convert into string
         # (Content Headers are set by the calling function)

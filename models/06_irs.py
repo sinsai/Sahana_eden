@@ -368,12 +368,12 @@ if deployment_settings.has_module(module):
 
                 ignore_errors = form.vars.get("ignore_errors", None)
 
-                template = os.path.join(request.folder, "static", "formats", "ushahidi", "import.xsl")
+                stylesheet = os.path.join(request.folder, "static", "formats", "ushahidi", "import.xsl")
 
-                if os.path.exists(template) and ushahidi:
+                if os.path.exists(stylesheet) and ushahidi:
                     try:
                         success = ireports.import_xml(ushahidi,
-                                                      template=template,
+                                                      stylesheet=stylesheet,
                                                       ignore_errors=ignore_errors)
                     except:
                         import sys

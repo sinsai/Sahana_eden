@@ -8,6 +8,7 @@
 
 prefix = "sit"
 
+# -----------------------------------------------------------------------------
 # Situation super-entity
 situation_types = Storage(
     irs_incident = T("Incident"),
@@ -25,3 +26,57 @@ table = super_entity(tablename, "sit_id", situation_types,
 
 s3xrc.model.configure(table, editable=False, deletable=False, listadd=False)
 
+# -----------------------------------------------------------------------------
+# Trackable super-entity
+# Use:
+#       - add a field with super_link(db.sit_trackable)
+#       - add as super-entity in configure (super_entity=db.sit_trackable)
+#
+trackable_types = Storage(
+    pr_person = T("Person"),
+    dvi_body = T("Dead Body")
+)
+
+resourcename = "trackable"
+tablename = "%s_%s" % (prefix, resourcename)
+
+table = super_entity(tablename, "track_id", trackable_types,
+                     migrate=migrate)
+
+s3xrc.model.configure(table, editable=False, deletable=False, listadd=False)
+
+# -----------------------------------------------------------------------------
+# Universal presence
+# Use:
+#       - will be automatically available to all trackable types
+#
+resourcename = "presence"
+tablename = "%s_%s" % (prefix, resourcename)
+
+table = db.define_table(tablename,
+                        super_link(db.sit_trackable),
+                        Field("timestmp", "datetime"),
+                        location_id(),
+                        Field("base_location", "boolean", default=False),
+                        Field("obsolete", "boolean", default=False),
+                        migrate=migrate, *s3_meta_fields())
+
+# Shared component of all trackable types
+s3xrc.model.add_component(prefix, resourcename,
+                          multiple=True,
+                          joinby=super_key(db.sit_trackable))
+
+# -----------------------------------------------------------------------------
+# Resource super-entity
+resource_types = Storage(
+    hrm_human_resource = T("Human Resource"),
+)
+
+resourcename = "resource"
+tablename = "%s_%s" % (prefix, resourcename)
+
+table = super_entity(tablename, "res_id", resource_types,
+                     migrate=migrate)
+
+s3xrc.model.configure(table, editable=False, deletable=False, listadd=False)
+# -----------------------------------------------------------------------------

@@ -41,6 +41,7 @@ resourcename = "trackable"
 tablename = "%s_%s" % (prefix, resourcename)
 
 table = super_entity(tablename, "track_id", trackable_types,
+                     location_id("base_location"),
                      migrate=migrate)
 
 s3xrc.model.configure(table, editable=False, deletable=False, listadd=False)
@@ -57,8 +58,7 @@ table = db.define_table(tablename,
                         super_link(db.sit_trackable),
                         Field("timestmp", "datetime"),
                         location_id(),
-                        Field("base_location", "boolean", default=False),
-                        Field("obsolete", "boolean", default=False),
+                        Field("interlock"),
                         migrate=migrate, *s3_meta_fields())
 
 # Shared component of all trackable types

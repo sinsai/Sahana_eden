@@ -125,8 +125,7 @@ s3xrc = s3base.S3ResourceController(globals(), db)
 msg = s3base.S3Msg(globals(), deployment_settings, db, T, mail)
 
 # Tracking System
-s3tracking = s3base.S3Tracking(globals())
-s3_trackable = s3tracking.trackable
+s3tracker = s3base.S3Tracking(globals())
 
 # -----------------------------------------------------------------------------
 def shn_auth_on_login(form):

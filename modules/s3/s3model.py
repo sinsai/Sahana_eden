@@ -484,14 +484,24 @@ class S3ResourceModel(object):
             # Update records
             row = self.db(s.uuid == uid).select(s[key], limitby=(0, 1)).first()
             if row:
-                k = {key:row[key]}
+                onaccept = self.get_config(s, "update_onaccept",
+                           self.get_config(s, "onaccept", None))
                 self.db(s[key] == row[key]).update(**data)
+                k = {key:row[key]}
                 if record[key] != row[key]:
                     self.db(table.id == id).update(**k)
+                data.update(k)
+                if onaccept:
+                    onaccept(dict(vars=record).update(data))
             else:
+                onaccept = self.get_config(s, "create_onaccept",
+                           self.get_config(s, "onaccept", None))
                 k = s.insert(**data)
                 if k:
                     self.db(table.id == id).update(**{key:k})
+                data.update({key:k})
+                if onaccept:
+                    onaccept(dict(vars=record).update(data))
 
         return True
 

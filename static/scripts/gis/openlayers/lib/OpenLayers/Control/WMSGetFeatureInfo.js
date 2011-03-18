@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -345,30 +345,38 @@ OpenLayers.Control.WMSGetFeatureInfo = OpenLayers.Class(OpenLayers.Control, {
             layerNames = layerNames.concat(layers[i].params.LAYERS);
             styleNames = styleNames.concat(this.getStyleNames(layers[i]));
         }
+        var firstLayer = layers[0];
+        // use the firstLayer's projection if it matches the map projection -
+        // this assumes that all layers will be available in this projection
+        var projection = this.map.getProjection();
+        var layerProj = firstLayer.projection;
+        if (layerProj && layerProj.equals(this.map.getProjectionObject())) {
+            projection = layerProj.getCode();
+        }
         var params = OpenLayers.Util.extend({
             service: "WMS",
-            version: layers[0].params.VERSION,
+            version: firstLayer.params.VERSION,
             request: "GetFeatureInfo",
             layers: layerNames,
             query_layers: layerNames,
             styles: styleNames,
             bbox: this.map.getExtent().toBBOX(null,
-                layers[0].reverseAxisOrder()),
+                firstLayer.reverseAxisOrder()),
             feature_count: this.maxFeatures,
             height: this.map.getSize().h,
             width: this.map.getSize().w,
             format: format,
             info_format: this.infoFormat
-        }, (parseFloat(layers[0].params.VERSION) >= 1.3) ?
+        }, (parseFloat(firstLayer.params.VERSION) >= 1.3) ?
             {
-                crs: this.map.getProjection(),
-                i: clickPosition.x,
-                j: clickPosition.y
+                crs: projection,
+                i: parseInt(clickPosition.x),
+                j: parseInt(clickPosition.y)
             } :
             {
-                srs: this.map.getProjection(),
-                x: clickPosition.x,
-                y: clickPosition.y
+                srs: projection,
+                x: parseInt(clickPosition.x),
+                y: parseInt(clickPosition.y)
             }
         );
         OpenLayers.Util.applyDefaults(params, this.vendorParams);

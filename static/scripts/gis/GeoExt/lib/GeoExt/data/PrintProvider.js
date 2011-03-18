@@ -106,11 +106,12 @@ GeoExt.data.PrintProvider = Ext.extend(Ext.util.Observable, {
      */
     method: "POST",
 
-    /** api: config[customParams]
-     *  ``Object`` Key-value pairs of custom data to be sent to the print
-     *  service. Optional. This is e.g. useful for complex layout definitions
-     *  on the server side that require additional parameters.
+    /** api: config[timeout]
+     *  ``Number`` Timeout of the POST Ajax request used for the print request
+     *  (in milliseconds). Default of 30 seconds. Has no effect if ``method``
+     *  is set to ``GET``.
      */
+    timeout: 30000,
     
     /** api: property[customParams]
      *  ``Object`` Key-value pairs of custom data to be sent to the print
@@ -403,7 +404,13 @@ GeoExt.data.PrintProvider = Ext.extend(Ext.util.Observable, {
 
         var pagesLayer = pages[0].feature.layer;
         var encodedLayers = [];
-        Ext.each(map.layers, function(layer){
+
+        // ensure that the baseLayer is the first one in the encoded list
+        var layers = map.layers.concat();
+        layers.remove(map.baseLayer);
+        layers.unshift(map.baseLayer);
+
+        Ext.each(layers, function(layer){
             if(layer !== pagesLayer && layer.getVisibility() === true) {
                 var enc = this.encodeLayer(layer);
                 enc && encodedLayers.push(enc);
@@ -460,6 +467,7 @@ GeoExt.data.PrintProvider = Ext.extend(Ext.util.Observable, {
         } else {
             Ext.Ajax.request({
                 url: this.capabilities.createURL,
+                timeout: this.timeout,
                 jsonData: jsonData,
                 success: function(response) {
                     // In IE, using a Content-disposition: attachment header
@@ -483,9 +491,9 @@ GeoExt.data.PrintProvider = Ext.extend(Ext.util.Observable, {
      */
     download: function(url) {
         if (this.fireEvent("beforedownload", this, url) !== false) {
-            if (Ext.isOpera || Ext.isIE) {
-                // Make sure that Opera and IE don't replace the
-                // content tab with the pdf
+            if (Ext.isOpera) {
+                // Make sure that Opera don't replace the content tab with
+                // the pdf
                 window.open(url);
             } else {
                 // This avoids popup blockers for all other browsers

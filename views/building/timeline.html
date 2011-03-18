@@ -4,11 +4,11 @@
 
 <h3>{{=T("Inspection Date")}}:</h3>
 
-<div class="table-container"> 
-<table class="display">
+<div class='table-container'>
+<table class='display'>
 {{include "building/incident_summary.html"}}
 <tbody>
-{{report="inspection"}}
+{{report = "inspection"}}
 {{for details in inspection:}}
 	{{if details[0][1] == "Total":}}
 		{{cnt = 1}}
@@ -23,8 +23,8 @@
 
 <h3>{{=T("When reports were entered")}}:</h3>
 
-<div class="table-container"> 
-<table class="display">
+<div class='table-container'>
+<table class='display'>
 {{include "building/incident_summary.html"}}
 <tbody>
 {{report="creation"}}
@@ -40,7 +40,6 @@
 </table>
 </div>
 
-
 </div>
 
 <script type="text/javascript">
@@ -48,13 +47,13 @@
 	{
 		do
 		{
-			var id = "#" + report + "-" + date + "-" + cnt + "";
+			var id = '#' + report + '-' + date + '-' + cnt + '';
 			$(id).show();
-			cnt = (parseInt(cnt) +1).toString();
+			cnt = (parseInt(cnt) + 1).toString();
 		} while ($(id).length)
-		id = "#" + report + "-" + date + "-plus";
+		id = '#' + report + '-' + date + '-plus';
 		$(id).hide();
-		id = "#" + report + "-" + date + "-minus";
+		id = '#' + report + '-' + date + '-minus';
 		$(id).show();
 	}
 
@@ -62,14 +61,13 @@
 	{
 		do
 		{
-			var id = "#" + report + "-" + date + "-" + cnt + "";
+			var id = '#' + report + '-' + date + '-' + cnt + '';
 			$(id).hide();
-			cnt = (parseInt(cnt) +1).toString();
+			cnt = (parseInt(cnt) + 1).toString();
 		} while ($(id).length)
-		id = "#" + report + "-" + date + "-plus";
+		id = '#' + report + '-' + date + '-plus';
 		$(id).show();
-		id = "#" + report + "-" + date + "-minus";
+		id = '#' + report + '-' + date + '-minus';
 		$(id).hide();
 	}
-
 </script>

@@ -26,13 +26,13 @@ OpenLayers.Layer.Google.v3 = {
      * (code)
      * {
      *     maxExtent: new OpenLayers.Bounds(
-     *         -128 * 156543.0339,
-     *         -128 * 156543.0339,
-     *         128 * 156543.0339,
-     *         128 * 156543.0339
+     *         -128 * 156543.03390625,
+     *         -128 * 156543.03390625,
+     *         128 * 156543.03390625,
+     *         128 * 156543.03390625
      *     ),
      *     sphericalMercator: true,
-     *     maxResolution: 156543.0339,
+     *     maxResolution: 156543.03390625,
      *     units: "m",
      *     projection: "EPSG:900913"
      * }
@@ -40,16 +40,29 @@ OpenLayers.Layer.Google.v3 = {
      */
     DEFAULTS: {
         maxExtent: new OpenLayers.Bounds(
-            -128 * 156543.0339,
-            -128 * 156543.0339,
-            128 * 156543.0339,
-            128 * 156543.0339
+            -128 * 156543.03390625,
+            -128 * 156543.03390625,
+            128 * 156543.03390625,
+            128 * 156543.03390625
         ),
         sphericalMercator: true,
-        maxResolution: 156543.0339,
+        maxResolution: 156543.03390625,
         units: "m",
         projection: "EPSG:900913"
     },
+
+    /**
+     * APIProperty: animationEnabled
+     * {Boolean} If set to true, the transition between zoom levels will be
+     *     animated (if supported by the GMaps API for the device used). Set to
+     *     false to match the zooming experience of other layer types. Default
+     *     is true. Note that the GMaps API does not give us control over zoom
+     *     animation, so if set to false, when zooming, this will make the
+     *     layer temporarily invisible, wait until GMaps reports the map being
+     *     idle, and make it visible again. The result will be a blank layer
+     *     for a few moments while zooming.
+     */
+    animationEnabled: true, 
 
     /** 
      * Method: loadMapObject
@@ -168,15 +181,16 @@ OpenLayers.Layer.Google.v3 = {
         if (this.visibility) {
             google.maps.event.trigger(this.mapObject, "resize");
         } else {
-            if (!this._resized) {
+            var cache = OpenLayers.Layer.Google.cache[this.map.id];
+            if (!cache.resized) {
                 var layer = this;
                 google.maps.event.addListenerOnce(this.mapObject, "tilesloaded", function() {
-                    delete layer._resized;
                     google.maps.event.trigger(layer.mapObject, "resize");
                     layer.moveTo(layer.map.getCenter(), layer.map.getZoom());
+                    delete cache.resized;
                 });
             }
-            this._resized = true;
+            cache.resized = true;
         }
     },
 
@@ -189,7 +203,7 @@ OpenLayers.Layer.Google.v3 = {
      */
     setGMapVisibility: function(visible) {
         var cache = OpenLayers.Layer.Google.cache[this.map.id];
-        if (cache) {
+        if (cache && !cache.resized) {
             var type = this.type;
             var layers = this.map.layers;
             var layer;
@@ -340,6 +354,17 @@ OpenLayers.Layer.Google.v3 = {
      * zoom - {int} MapObject zoom format
      */
     setMapObjectCenter: function(center, zoom) {
+        if (this.animationEnabled === false && zoom != this.mapObject.zoom) {
+            var mapContainer = this.getMapContainer();
+            google.maps.event.addListenerOnce(
+                this.mapObject, 
+                "idle", 
+                function() {
+                    mapContainer.style.visibility = "";
+                }
+            );
+            mapContainer.style.visibility = "hidden";
+        }
         this.mapObject.setOptions({
             center: center,
             zoom: zoom

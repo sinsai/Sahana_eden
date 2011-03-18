@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -65,12 +65,12 @@ OpenLayers.Layer.XYZ = OpenLayers.Class(OpenLayers.Layer.Grid, {
         if (options && options.sphericalMercator || this.sphericalMercator) {
             options = OpenLayers.Util.extend({
                 maxExtent: new OpenLayers.Bounds(
-                    -128 * 156543.0339,
-                    -128 * 156543.0339,
-                    128 * 156543.0339,
-                    128 * 156543.0339
+                    -128 * 156543.03390625,
+                    -128 * 156543.03390625,
+                    128 * 156543.03390625,
+                    128 * 156543.03390625
                 ),
-                maxResolution: 156543.0339,
+                maxResolution: 156543.03390625,
                 numZoomLevels: 19,
                 units: "m",
                 projection: "EPSG:900913"
@@ -151,22 +151,6 @@ OpenLayers.Layer.XYZ = OpenLayers.Class(OpenLayers.Layer.Grid, {
         return {'x': x, 'y': y, 'z': z};
     },
     
-    /**
-     * Method: addTile
-     * addTile creates a tile, initializes it, and adds it to the layer div. 
-     * 
-     * Parameters:
-     * bounds - {<OpenLayers.Bounds>}
-     * position - {<OpenLayers.Pixel>}
-     * 
-     * Returns:
-     * {<OpenLayers.Tile.Image>} The added OpenLayers.Tile.Image
-     */
-    addTile:function(bounds,position) {
-        return new OpenLayers.Tile.Image(this, position, bounds, 
-                                         null, this.tileSize);
-    },
-     
     /* APIMethod: setMap
      * When the layer is added to a map, then we can fetch our origin 
      *    (if we don't have one.) 

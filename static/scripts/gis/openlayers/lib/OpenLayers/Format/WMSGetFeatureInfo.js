@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -56,11 +56,6 @@ OpenLayers.Format.WMSGetFeatureInfo = OpenLayers.Class(OpenLayers.Format.XML, {
      * options - {Object} An optional object whose properties will be set on
      *     this instance.
      */
-    initialize: function(options) {
-        OpenLayers.Format.XML.prototype.initialize.apply(this, arguments);
-        OpenLayers.Util.extend(this, options);
-        this.options = options;
-    },
 
     /**
      * APIMethod: read
@@ -235,12 +230,14 @@ OpenLayers.Format.WMSGetFeatureInfo = OpenLayers.Class(OpenLayers.Format.XML, {
                 var child = children[i];
                 if (child.nodeType == 1) {
                     var grandchildren = child.childNodes;
-                    if (grandchildren.length == 1) {
+                    var name = (child.prefix) ?
+                        child.nodeName.split(":")[1] : child.nodeName;
+                    if (grandchildren.length == 0) {
+                        attributes[name] = null
+                    } else if (grandchildren.length == 1) {
                         var grandchild = grandchildren[0];
                         if (grandchild.nodeType == 3 ||
                             grandchild.nodeType == 4) {
-                            var name = (child.prefix) ? 
-                                child.nodeName.split(":")[1] : child.nodeName;
                             var value = grandchild.nodeValue.replace(
                                 this.regExes.trimSpace, "");
                             attributes[name] = value;

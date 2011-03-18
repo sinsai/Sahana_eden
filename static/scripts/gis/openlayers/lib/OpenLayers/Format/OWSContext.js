@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -23,6 +23,15 @@ OpenLayers.Format.OWSContext = OpenLayers.Class(OpenLayers.Format.Context,{
      * {String} Version number to assume if none found.  Default is "0.3.1".
      */
     defaultVersion: "0.3.1",
+
+    /**
+     * Constructor: OpenLayers.Format.OWSContext
+     * Create a new parser for OWS Context documents.
+     *
+     * Parameters:
+     * options - {Object} An optional object whose properties will be set on
+     *     this instance.
+     */
     
     /**
      * Method: getParser

@@ -497,6 +497,7 @@
 'Budgets': 'Budgets',
 'Buffer': 'Buffer',
 'Bug': 'Bug',
+'Building Assessments': 'Building Assessments',
 'Building Collapsed': 'Building Collapsed',
 'Building Name': 'Building Name',
 'Building Short Name': 'Building Short Name',

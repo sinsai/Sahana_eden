@@ -1,10 +1,12 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
 
 /**
+ * @requires OpenLayers/BaseTypes/Class.js
  * @requires OpenLayers/Console.js
+ * @requires OpenLayers/Lang.js
  */
 
 /**
@@ -258,7 +260,7 @@ OpenLayers.Bounds = OpenLayers.Class({
      *          Default is center.
      *
      * Returns:
-     * {<OpenLayers.Bound>} A new bounds that is scaled by ratio
+     * {<OpenLayers.Bounds>} A new bounds that is scaled by ratio
      *                      from origin.
      */
 
@@ -558,6 +560,8 @@ OpenLayers.Bounds = OpenLayers.Class({
      * Parameters:
      * maxExtent - {<OpenLayers.Bounds>}
      * options - {Object} Some possible options are:
+     *
+     * Allowed Options:
      *                    leftTolerance - {float} Allow for a margin of error 
      *                                            with the 'left' value of this 
      *                                            bound.
@@ -613,14 +617,15 @@ OpenLayers.Bounds = OpenLayers.Class({
  * 
  * Parameters: 
  * str - {String}Comma-separated bounds string. (ex. <i>"5,42,10,45"</i>)
+ * reverseAxisOrder - {Boolean} Does the string use reverse axis order?
  * 
  * Returns:
  * {<OpenLayers.Bounds>} New bounds object built from the 
  *                       passed-in String.
  */
-OpenLayers.Bounds.fromString = function(str) {
+OpenLayers.Bounds.fromString = function(str, reverseAxisOrder) {
     var bounds = str.split(",");
-    return OpenLayers.Bounds.fromArray(bounds);
+    return OpenLayers.Bounds.fromArray(bounds, reverseAxisOrder);
 };
 
 /** 
@@ -630,12 +635,18 @@ OpenLayers.Bounds.fromString = function(str) {
  * 
  * Parameters:
  * bbox - {Array(Float)} Array of bounds values (ex. <i>[5,42,10,45]</i>)
+ * reverseAxisOrder - {Boolean} Does the array use reverse axis order?
  *
  * Returns:
  * {<OpenLayers.Bounds>} New bounds object built from the passed-in Array.
  */
-OpenLayers.Bounds.fromArray = function(bbox) {
-    return new OpenLayers.Bounds(parseFloat(bbox[0]),
+OpenLayers.Bounds.fromArray = function(bbox, reverseAxisOrder) {
+    return reverseAxisOrder === true ?
+           new OpenLayers.Bounds(parseFloat(bbox[1]),
+                                 parseFloat(bbox[0]),
+                                 parseFloat(bbox[3]),
+                                 parseFloat(bbox[2])) :
+           new OpenLayers.Bounds(parseFloat(bbox[0]),
                                  parseFloat(bbox[1]),
                                  parseFloat(bbox[2]),
                                  parseFloat(bbox[3]));

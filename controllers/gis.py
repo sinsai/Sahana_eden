@@ -159,9 +159,14 @@ def location():
             table.wkt.writable = table.wkt.readable = False
         else:
             table.code.comment = DIV(_class="tooltip",
-                                     _title=T("Code") + "|" + T("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
+                                     _title="%s|%s" % (T("Code"),
+                                                       T("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode.")))
             table.wkt.comment = DIV(_class="stickytip",
-                                    _title="WKT|" + T("The" + " <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>" + T("Well-Known Text") + "</a> " + "representation of the Polygon/Line."))
+                                    _title="WKT|%s %s%s %s" % (T("The"),
+                                                               "<a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>",
+                                                               T("Well-Known Text"),
+                                                               "</a>",
+                                                               T("representation of the Polygon/Line.")))
 
         if r.method == "update":
             # We don't allow converting a location group to non-group and

@@ -60,8 +60,13 @@ def maps():
     """ Show a Map of all Rapid Assessments """
 
     reports = db(db.gis_location.id == db.assess_rat.location_id).select()
-    report_popup_url = URL(r=request, f="rat", args="read.popup?rat.location_id=")
-    map = gis.show_map(feature_queries = [{"name":T("Rapid Assessments"), "query":reports, "active":True, "popup_url": report_popup_url}], window=True)
+    report_popup_url = URL(r=request, f="rat",
+                           args="read.popup?rat.location_id=")
+    map = gis.show_map(feature_queries = [{"name":T("Rapid Assessments"),
+                                           "query":reports,
+                                           "active":True,
+                                           "popup_url": report_popup_url}],
+                       window=True)
 
     return dict(map=map)
 
@@ -75,7 +80,8 @@ def rat():
     table = db[tablename]
 
     # Don't send the locations list to client (pulled by AJAX instead)
-    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
+    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db,
+                                                            "gis_location.id"))
 
     # Villages only
     #table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L5"),
@@ -93,62 +99,62 @@ def rat():
     # Subheadings in forms:
     s3xrc.model.configure(db.assess_section2,
         subheadings = {
-            "Population and number of households": "population_total",
-            "Fatalities": "dead_women",
-            "Casualties": "injured_women",
-            "Missing Persons": "missing_women",
-            "General information on demographics": "household_head_elderly",
-            "Comments": "comments"})
+            T("Population and number of households"): "population_total",
+            T("Fatalities"): "dead_women",
+            T("Casualties"): "injured_women",
+            T("Missing Persons"): "missing_women",
+            T("General information on demographics"): "household_head_elderly",
+            T("Comments"): "comments"})
     s3xrc.model.configure(db.assess_section3,
         subheadings = {
-            "Access to Shelter": "houses_total",
-            "Water storage containers in households": "water_containers_available",
-            "Other non-food items": "cooking_equipment_available",
-            "Shelter/NFI Assistance": "nfi_assistance_available",
-            "Comments": "comments"})
+            T("Access to Shelter"): "houses_total",
+            T("Water storage containers in households"): "water_containers_available",
+            T("Other non-food items"): "cooking_equipment_available",
+            T("Shelter/NFI Assistance"): "nfi_assistance_available",
+            T("Comments"): "comments"})
     s3xrc.model.configure(db.assess_section4,
         subheadings = {
-            "Water supply": "water_source_pre_disaster_type",
-            "Water collection": "water_coll_time",
-            "Places for defecation": "defec_place_type",
-            "Environment": "close_industry",
-            "Latrines": "latrines_number",
-            "Comments": "comments"})
+            T("Water supply"): "water_source_pre_disaster_type",
+            T("Water collection"): "water_coll_time",
+            T("Places for defecation"): "defec_place_type",
+            T("Environment"): "close_industry",
+            T("Latrines"): "latrines_number",
+            T("Comments"): "comments"})
     s3xrc.model.configure(db.assess_section5,
         subheadings = {
-            "Health services status": "health_services_pre_disaster",
-            "Current health problems": "health_problems_adults",
-            "Nutrition problems": "malnutrition_present_pre_disaster",
-            "Comments": "comments"})
+            T("Health services status"): "health_services_pre_disaster",
+            T("Current health problems"): "health_problems_adults",
+            T("Nutrition problems"): "malnutrition_present_pre_disaster",
+            T("Comments"): "comments"})
     s3xrc.model.configure(db.assess_section6,
         subheadings = {
-            "Existing food stocks": "food_stocks_main_dishes",
-            "food_sources" : "Food sources",
-            "Food assistance": "food_assistance_available",
-            "Comments": "comments"})
+            T("Existing food stocks"): "food_stocks_main_dishes",
+            T("food_sources") : "Food sources",
+            T("Food assistance"): "food_assistance_available",
+            T("Comments"): "comments"})
     s3xrc.model.configure(db.assess_section7,
         subheadings = {
-            "Sources of income / Major expenses": "income_sources_pre_disaster",
-            "business_damaged" : "Access to cash",
-            "Current community priorities": "rank_reconstruction_assistance",
-            "Comments": "comments"})
+            "%s / %s" % (T("Sources of income"), T("Major expenses")): "income_sources_pre_disaster",
+            T("business_damaged"): "Access to cash",
+            T("Current community priorities"): "rank_reconstruction_assistance",
+            T("Comments"): "comments"})
     s3xrc.model.configure(db.assess_section8,
         subheadings = {
-            "Access to education services": "schools_total",
-            "Alternative places for studying": "alternative_study_places_available",
-            "School activities": "schools_open_pre_disaster",
-            "School attendance": "children_0612_female",
-            "School assistance": "school_assistance_available",
-            "Comments": "comments"})
+            T("Access to education services"): "schools_total",
+            T("Alternative places for studying"): "alternative_study_places_available",
+            T("School activities"): "schools_open_pre_disaster",
+            T("School attendance"): "children_0612_female",
+            T("School assistance"): "school_assistance_available",
+            T("Comments"): "comments"})
     s3xrc.model.configure(db.assess_section9,
         subheadings = {
-            "Physical Safety": "vulnerable_groups_safe_env",
-            "Separated children, caregiving arrangements": "children_separated",
-            "Persons in institutions": "children_in_disabled_homes",
-            "Activities of children": "child_activities_u12f_pre_disaster",
-            "Coping Activities": "coping_activities_elderly",
-            "Current general needs": "current_general_needs",
-            "Comments": "comments"})
+            T("Physical Safety"): "vulnerable_groups_safe_env",
+            T("Separated children, caregiving arrangements"): "children_separated",
+            T("Persons in institutions"): "children_in_disabled_homes",
+            T("Activities of children"): "child_activities_u12f_pre_disaster",
+            T("Coping Activities"): "coping_activities_elderly",
+            T("Current general needs"): "current_general_needs",
+            T("Comments"): "comments"})
 
     # @ToDo  Generalize this and make it available as a function that other
     # component prep methods can call to set the default for a join field.
@@ -222,13 +228,15 @@ def shn_rat_rheader(r, tabs=[]):
                     location = shn_gis_location_represent(location)
                 staff = report.staff_id
                 if staff:
-                    organisation_id = db(db.org_staff.id == staff).select(db.org_staff.organisation_id).first().organisation_id
+                    query = (db.org_staff.id == staff)
+                    organisation_id = db(query).select(db.org_staff.organisation_id).first().organisation_id
                     organisation = shn_organisation_represent(organisation_id)
                 else:
                     organisation = None
                 staff = report.staff2_id
                 if staff:
-                    organisation_id = db(db.org_staff.id == staff).select(db.org_staff.organisation_id).first().organisation_id
+                    query = (db.org_staff.id == staff)
+                    organisation_id = db(query).select(db.org_staff.organisation_id).first().organisation_id
                     organisation2 = shn_organisation_represent(organisation_id)
                 else:
                     organisation2 = None
@@ -237,18 +245,23 @@ def shn_rat_rheader(r, tabs=[]):
                 else:
                     orgs = organisation
                 doc_name = doc_url = None
-                document = db(db.doc_document.id == report.document_id).select(db.doc_document.name, db.doc_document.file, limitby=(0, 1)).first()
+                query = (db.doc_document.id == report.document_id)
+                document = db(query).select(db.doc_document.name,
+                                            db.doc_document.file,
+                                            limitby=(0, 1)).first()
                 if document:
                     doc_name = document.name
-                    doc_url = URL(r=request, c="default", f="download", args=[document.file])
+                    doc_url = URL(r=request, c="default", f="download",
+                                  args=[document.file])
                 rheader = DIV(TABLE(
                                 TR(
-                                    TH(T("Location") + ": "), location,
-                                    TH(T("Date") + ": "), report.date
+                                    TH("%s: " % T("Location")), location,
+                                    TH(": " % T("Date")), report.date
                                   ),
                                 TR(
-                                    TH(T("Organizations") + ": "), orgs,
-                                    TH(T("Document") + ": "), A(doc_name, _href=doc_url)
+                                    TH(": " % T("Organizations")), orgs,
+                                    TH(": " % T("Document")), A(doc_name,
+                                                                _href=doc_url)
                                   )
                                 ),
                               rheader_tabs)
@@ -270,9 +283,12 @@ def shn_assess_rheader(r, tabs=[]):
 
         if assess:
             rheader = DIV(TABLE(TR(
-                                   TH(T("Date & Time") + ": "), assess.datetime,
-                                   TH(T("Location") + ": "), shn_gis_location_represent(assess.location_id),
-                                   TH(T("Assessor") + ": "), shn_pr_person_represent(assess.assessor_person_id),
+                                   TH("%s: " % T("Date & Time")),
+                                   assess.datetime,
+                                   TH("%s: " % T("Location")),
+                                   shn_gis_location_represent(assess.location_id),
+                                   TH("%s: " % T("Assessor")),
+                                   shn_pr_person_represent(assess.assessor_person_id),
                                   ),
                                ),
                           rheader_tabs
@@ -297,7 +313,8 @@ def assess():
     response.s3.prep = shn_assess_prep
 
     table.incident_id.comment = DIV(_class="tooltip",
-                                    _title=T("Incident") + "|" + T("Optional link to an Incident which this Assessment was triggered by."))
+                                    _title="%s|%s" % (T("Incident"),
+                                                      T("Optional link to an Incident which this Assessment was triggered by.")))
 
     tabs = [
             (T("Edit Details"), None),
@@ -378,7 +395,8 @@ def basic_assess():
                                 ("impact", 7),
                                 ("assess", "comments"),
                             )
-        form, form_accepted, assess_id = custom_assess(custom_assess_fields, location_id=irs_location_id)
+        form, form_accepted, assess_id = custom_assess(custom_assess_fields,
+                                                       location_id=irs_location_id)
     else:
         location = None
         custom_assess_fields = (
@@ -424,7 +442,7 @@ def mobile_basic_assess():
     form, form_accepted, assess_id = custom_assess(custom_assess_fields)
 
     if form_accepted:
-        form = FORM(H1("Sahana Eden"),
+        form = FORM(H1(T("Sahana Eden")),
                     H2(T("Short Assessment")),
                     P(T("Assessment Reported")),
                     A(T("Report Another Assessment..."),
@@ -464,7 +482,7 @@ def custom_assess(custom_assess_fields, location_id=None):
             elif field[1] == "location_id":
                 if field[2] == "auto":
                     # HTML5 Geolocate
-                    label = "Location:"
+                    label = "%s:" % T("Location")
                     #widget = db.assess_assess[ field[1] ].widget
                     widget = DIV(INPUT(_name = name,
                                        _type = "text"),
@@ -476,7 +494,7 @@ def custom_assess(custom_assess_fields, location_id=None):
                                    _type = "text"))
                 else:
                     # Locaton Selector
-                    label = "Location:"
+                    label = "%s:" % T("Location")
                     #widget = SELECT(_id = name,
                     #                _class = "reference gis_location",
                     #                _name = "location_id")
@@ -490,16 +508,17 @@ def custom_assess(custom_assess_fields, location_id=None):
                                            field = "name",
                                            look_up = field[1]
                                            )
+            label = T(label)
             widget = INPUT(_name = name,
                            _class = "double",
                            _type = "text")
 
         elif field[0] == "impact":
-            label = "%s:" % shn_get_db_field_value(db = db,
+            label = "%s:" % T(shn_get_db_field_value(db = db,
                                                    table = "impact_type",
                                                    field = "name",
                                                    look_up = field[1]
-                                                   )
+                                                   ))
             value_widget = INPUT(_name = name,
                                  _class = "double",
                                  _type = "text")
@@ -511,12 +530,12 @@ def custom_assess(custom_assess_fields, location_id=None):
                                                          "%s_severity" % name)
 
             widget = DIV(value_widget,
-                         DIV(T("Severity:")),
+                         DIV("%s:" % T("Severity")),
                          severity_widget,
                          XML("&nbsp"))
 
         elif field[0] == "summary":
-            label = "%s:" % shn_org_cluster_subsector_represent( field[1] )
+            label = "%s:" % T(shn_org_cluster_subsector_represent( field[1] ))
             widget = db.assess_summary.value.widget(db.assess_summary.value,
                                                     0,
                                                     _name = name
@@ -527,7 +546,10 @@ def custom_assess(custom_assess_fields, location_id=None):
         if field[0] == "title":
             form_rows.append(TR(H3( field[1] )))
         else:
-            form_rows = form_rows + list( s3_formstyle("%s__row" % name, label, widget, comment) )
+            form_rows = form_rows + list(s3_formstyle("%s__row" % name,
+                                         label,
+                                         widget,
+                                         comment))
 
     form = FORM(TABLE(*form_rows),
                 INPUT(_value = T("Save"),
@@ -612,13 +634,14 @@ def custom_assess(custom_assess_fields, location_id=None):
 
                 db[component_dict[ field[0] ] ].insert(**record_dict)
 
-        # Add Cluster summaries @TODO - make sure that this doesn't happen if there are clusters in the assess
+        # Add Cluster summaries
+        # @ToDo: make sure that this doesn't happen if there are clusters in the assess
         for cluster_id in cluster_summary.keys():
             severity_values = cluster_summary[cluster_id]
             db.assess_summary.insert(assess_id = assess_id,
                                      cluster_id = cluster_id,
                                      # Average severity
-                                     value =sum(severity_values)/len(severity_values)
+                                     value = sum(severity_values) / len(severity_values)
                                      )
 
         # Send Out Notification SMS

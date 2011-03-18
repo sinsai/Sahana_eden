@@ -2066,22 +2066,27 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript",
                                _src=URL(r=request, c="static", f="scripts/gis/openlayers/lib/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript",
-                               _src=URL(r=request, c="static", f="scripts/gis/MP.js")))
-            html.append(SCRIPT(_type="text/javascript",
                                _src=URL(r=request, c="static", f="scripts/gis/cdauth.js")))
-            html.append(SCRIPT(_type="text/javascript",
-                               _src=URL(r=request, c="static", f="scripts/gis/usng2.js")))
             html.append(SCRIPT(_type="text/javascript",
                                _src=URL(r=request, c="static", f="scripts/gis/osm_styles.js")))
             html.append(SCRIPT(_type="text/javascript",
                                _src=URL(r=request, c="static", f="scripts/gis/GeoExt/lib/GeoExt.js")))
             html.append(SCRIPT(_type="text/javascript",
                                _src=URL(r=request, c="static", f="scripts/gis/GeoExt/ux/GeoNamesSearchCombo.js")))
+            if mouse_position == "mgrs":
+                html.append(SCRIPT(_type="text/javascript",
+                                   _src=URL(r=request, c="static", f="scripts/gis/usng2.js")))
+                html.append(SCRIPT(_type="text/javascript",
+                                   _src=URL(r=request, c="static", f="scripts/gis/MP.js")))
         else:
             html.append(SCRIPT(_type="text/javascript",
                                _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript",
                                _src=URL(r=request, c="static", f="scripts/gis/GeoExt.js")))
+            if mouse_position == "mgrs":
+                html.append(SCRIPT(_type="text/javascript",
+                                   _src=URL(r=request, c="static", f="scripts/gis/MGRS.min.js")))
+                
 
         if print_tool:
             url = print_tool["url"] + "info.json?var=printCapabilities"

@@ -1096,7 +1096,7 @@ class S3Resource(object):
         content_type = self.manager.content_type
 
         # Find XSLT stylesheet
-        template = self.stylesheet(r, method="export")
+        stylesheet = self.stylesheet(r, method="export")
 
         # Slicing
         start = r.request.vars.get("start", None)
@@ -1127,7 +1127,7 @@ class S3Resource(object):
 
         # Add stylesheet parameters
         args = Storage()
-        if template is not None:
+        if stylesheet is not None:
             if r.component:
                 args.update(id=r.id, component=r.component.tablename)
             mode = r.request.vars.get("xsltmode", None)
@@ -1151,7 +1151,7 @@ class S3Resource(object):
         # Export the resource
         exporter = self.exporter.xml
         output = exporter(self,
-                          template=template,
+                          stylesheet=stylesheet,
                           as_json=as_json,
                           start=start,
                           limit=limit,
@@ -1386,13 +1386,13 @@ class S3Resource(object):
     # XML functions ===========================================================
 
     def export_xml(self,
-                   template=None,
+                   stylesheet=None,
                    as_json=False,
                    pretty_print=False, **args):
         """
         Export this resource as XML
 
-        @param template: path to the XSLT stylesheet (if not native S3-XML)
+        @param stylesheet: path to the XSLT stylesheet (if not native S3-XML)
         @param as_json: convert the output into JSON
         @param pretty_print: insert newlines/indentation in the output
         @param args: arguments to pass to the XSLT stylesheet
@@ -1403,7 +1403,7 @@ class S3Resource(object):
         exporter = self.exporter.xml
 
         return exporter(self,
-                        template=template,
+                        stylesheet=stylesheet,
                         as_json=as_json,
                         pretty_print=pretty_print, **args)
 
@@ -1412,7 +1412,7 @@ class S3Resource(object):
     def import_xml(self, source,
                    files=None,
                    id=None,
-                   template=None,
+                   stylesheet=None,
                    as_json=False,
                    ignore_errors=False, **args):
         """
@@ -1421,10 +1421,10 @@ class S3Resource(object):
         @param source: the XML source (or ElementTree)
         @param files: file attachments as {filename:file}
         @param id: the ID or list of IDs of records to update (None for all)
-        @param template: the XSLT template
+        @param stylesheet: the XSLT stylesheet
         @param as_json: the source is JSONified XML
         @param ignore_errors: do not stop on errors (skip invalid elements)
-        @param args: arguments to pass to the XSLT template
+        @param args: arguments to pass to the XSLT stylesheet
         @returns: a JSON message as string
 
         @raise SyntaxError: in case of a parser or transformation error
@@ -1440,14 +1440,14 @@ class S3Resource(object):
         return importer(self, source,
                         files=files,
                         id=id,
-                        template=template,
+                        stylesheet=stylesheet,
                         as_json=as_json,
                         ignore_errors=ignore_errors, **args)
 
 
     # -------------------------------------------------------------------------
     def push(self, url,
-             template=None,
+             stylesheet=None,
              as_json=False,
              xsltmode=None,
              start=None,
@@ -1464,7 +1464,7 @@ class S3Resource(object):
         Push (=POST) the current resource to a target URL
 
         @param url: the URL to push to
-        @param template: path to the XSLT stylesheet to be used by the exporter
+        @param stylesheet: path to the XSLT stylesheet to be used by the exporter
         @param as_json: convert the output into JSON before push
         @param xsltmode: "mode" parameter for the XSLT stylesheet
         @param start: index of the first record to export (slicing)
@@ -1484,7 +1484,7 @@ class S3Resource(object):
         """
 
         args = Storage()
-        if template and xsltmode:
+        if stylesheet and xsltmode:
             args.update(mode=xsltmode)
 
         # Use the exporter to produce the XML
@@ -1495,7 +1495,7 @@ class S3Resource(object):
                         msince=msince,
                         show_urls=show_urls,
                         dereference=dereference,
-                        template=template,
+                        stylesheet=stylesheet,
                         as_json=as_json,
                         pretty_print=False,
                         **args)
@@ -1572,7 +1572,7 @@ class S3Resource(object):
               password=None,
               proxy=None,
               as_json=False,
-              template=None,
+              stylesheet=None,
               ignore_errors=False, **args):
         """
         Fetch XML data from a remote URL into the current resource
@@ -1581,7 +1581,7 @@ class S3Resource(object):
         @param username: username to authenticate at the peer site
         @param password: password to authenticate at the peer site
         @param proxy: URL of the proxy server to use
-        @param template: path to the XSLT stylesheet to transform the data
+        @param stylesheet: path to the XSLT stylesheet to transform the data
         @param as_json: source is JSONified XML
         @param ignore_errors: skip invalid records
 
@@ -1663,7 +1663,7 @@ class S3Resource(object):
         # Try to import the response
         try:
             success = self.import_xml(response,
-                                      template=template,
+                                      stylesheet=stylesheet,
                                       as_json=as_json,
                                       ignore_errors=ignore_errors,
                                       args=args)
@@ -2509,10 +2509,10 @@ class S3Method(object):
     @staticmethod
     def _view(r, default, format=None):
         """
-        Get the path to the view template file
+        Get the path to the view stylesheet file
 
         @param r: the S3Request
-        @param default: name of the default view template file
+        @param default: name of the default view stylesheet file
         @param format: format string (optional)
 
         """

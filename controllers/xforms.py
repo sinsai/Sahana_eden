@@ -310,10 +310,10 @@ def submission():
     prefix, name = resource.split("_")
     res = s3xrc.define_resource(prefix, name)
 
-    template = os.path.join(request.folder, "static", "formats", "odk", "import.xsl")
+    stylesheet = os.path.join(request.folder, "static", "formats", "odk", "import.xsl")
 
     try:
-        result = res.import_xml(source=tree, template=template)
+        result = res.import_xml(source=tree, stylesheet=stylesheet)
     except IOError, SyntaxError:
         raise HTTP(500, "Internal server error")
 

@@ -87,7 +87,10 @@ if deployment_settings.has_module("inv"):
         msg_record_created = T("Catalog Item added"),
         msg_record_modified = T("Catalog Item updated"),
         msg_record_deleted = T("Catalog Item deleted"),
-        msg_list_empty = T("No Catalog Items currently registered"))
+        msg_list_empty = T("No Catalog Items currently registered"),
+        msg_match = T("Matching Catalog Items"),
+        msg_no_match = T("No Matching Catalog Items")
+        )
     
     def shn_item_represent(id):
         record = db(db.supply_item.id == id).select(db.supply_item.name,
@@ -133,11 +136,36 @@ if deployment_settings.has_module("inv"):
                                        name = form.vars.um,
                                        quantity = 1,
                                        )
+            
+    # -----------------------------------------------------------------------------
+    # Item Search Method
+    #
+    shn_item_search = s3base.S3Find(
+        #name="shn_item_search",
+        #label=T("Name and/or ID"),
+        #comment=T("To search for a hospital, enter any of the names or IDs of the hospital, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all hospitals."),
+        #field=["gov_uuid", "name", "aka1", "aka2"],
+        advanced=(s3base.S3SearchSimpleWidget(
+                    name="item_search_advanced",
+                    label=T("Item"),
+                    comment=T("Search for an item."),
+                    field=["name", "comment", "item_category_id$name"]
+                  ),
+                  ## for testing:
+                  #s3base.S3SearchMinMaxWidget(
+                    #name="hospital_search_bedcount",
+                    #method="range",
+                    #label=T("Total Beds"),
+                    #comment=T("Select a range for the number of total beds"),
+                    #field=["total_beds"]
+                  #)
+        ))       
 
     #------------------------------------------------------------------------------
     s3xrc.model.configure(
         table, 
-        onaccept = shn_supply_item_onaccept
+        onaccept = shn_supply_item_onaccept,
+        search_method = shn_item_search
     )     
     #==============================================================================
     # Item Pack

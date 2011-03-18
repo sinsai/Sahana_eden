@@ -282,7 +282,8 @@ s3.crud_strings = Storage(
     msg_record_modified = T("Record updated"),
     msg_record_deleted = T("Record deleted"),
     msg_list_empty = T("No Records currently available"),
-    msg_no_match = T("No Records matching the query"))
+    msg_match = T("Matching Records"),
+    msg_no_match = T("No Matching Records"))
 
 # =============================================================================
 # Common tables

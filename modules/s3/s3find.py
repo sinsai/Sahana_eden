@@ -875,13 +875,13 @@ class S3Find(S3CRUD):
                     response.s3.limit = 20
 
             elif not items:
-                items = T("No matching records found.")
+                items = self.crud_string(tablename, "msg_no_match")
 
             output.update(items=items, sortby=sortby)
 
         # Title and subtitle
         title = self.crud_string(tablename, "title_search")
-        subtitle = T("Matching Records")
+        subtitle = self.crud_string(tablename, "msg_match")
         output.update(title=title, subtitle=subtitle)
 
         # View

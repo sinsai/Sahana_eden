@@ -118,7 +118,11 @@ def person():
 
     def prep(r):
 
-        trackable = s3_trackable("pr_person", record_id=1)
+        # Test code (to be removed):
+        #trackable = s3tracker("pr_person", record_id=1)
+        #trackable.check_in(db.hms_hospital, 1)
+        #location = trackable.get_location()
+        #print "Trackable location: %s lat=%s, lon=%s" % (location.name, location.lat, location.lon)
 
         if r.component_name == "config":
             _config = db.gis_config

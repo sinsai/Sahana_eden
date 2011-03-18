@@ -116,7 +116,7 @@ if deployment_settings.has_module(module):
     fields_before_hospital = db.Table(None, None,
                                       super_link(db.org_site),
                                       Field("name", notnull=True),
-                                      organisation_id(),                                      
+                                      organisation_id(),
                                       shelter_type_id(),
                                       shelter_service_id(),
                                       location_id(),
@@ -215,9 +215,9 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.configure(table,
                           #listadd=False,
-                          super_entity=db.org_site,                        
-                          # Create a role for each shelter 
-                          onaccept = shn_staff_join_onaccept_func(tablename),
+                          super_entity=db.org_site,
+                          # Create a role for each shelter
+                          create_onaccept = shn_staff_join_onaccept_func(tablename),
                           list_fields=["id",
                                        "name",
                                        "shelter_type_id",

@@ -289,6 +289,7 @@ s3.crud_strings = Storage(
 
 # -----------------------------------------------------------------------------
 # Theme
+# @ToDo: Fix or remove completely
 module = "admin"
 resource = "theme"
 tablename = "%s_%s" % (module, resource)
@@ -324,13 +325,8 @@ table.col_btn_hover.requires = IS_HTML_COLOUR()
 
 # -----------------------------------------------------------------------------
 # Settings - systemwide
+# @ToDo: Move these to deployment_settings
 module = "s3"
-s3_setting_security_policy_opts = {
-    1:T("simple"),
-    2:T("editor"),
-    3:T("full")
-    }
-# @ToDo Move these to deployment_settings
 resource = "setting"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,

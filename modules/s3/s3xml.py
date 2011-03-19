@@ -206,12 +206,12 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
-    def transform(self, tree, template_path, **args):
+    def transform(self, tree, stylesheet_path, **args):
         """
         Transform an element tree with XSLT
 
         @param tree: the element tree
-        @param template_path: pathname of the XSLT stylesheet
+        @param stylesheet_path: pathname of the XSLT stylesheet
         @param args: dict of arguments to pass to the stylesheet
 
         """
@@ -224,11 +224,11 @@ class S3XML(object):
         else:
             _args = None
         ac = etree.XSLTAccessControl(read_file=True, read_network=True)
-        template = self.parse(template_path)
+        stylesheet = self.parse(stylesheet_path)
 
-        if template:
+        if stylesheet:
             try:
-                transformer = etree.XSLT(template, access_control=ac)
+                transformer = etree.XSLT(stylesheet, access_control=ac)
                 if _args:
                     result = transformer(tree, **_args)
                 else:
@@ -239,7 +239,7 @@ class S3XML(object):
                 self.error = e
                 return None
         else:
-            # Error parsing the XSL template
+            # Error parsing the XSL stylesheet
             return None
 
 
@@ -282,8 +282,8 @@ class S3XML(object):
         """
 
         # For now we do not nsmap, because the default namespace cannot be
-        # matched in XSLT templates (need explicit prefix) and thus this
-        # would require a rework of all existing templates (which is
+        # matched in XSLT stylesheets (need explicit prefix) and thus this
+        # would require a rework of all existing stylesheets (which is
         # however useful)
 
         success = False

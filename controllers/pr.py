@@ -118,6 +118,15 @@ def person():
 
     def prep(r):
 
+        # Test code (to be removed):
+        #trackable = s3tracker("pr_person", record_id=1)
+        #trackable.check_in(db.pr_person, 1)
+        #location = trackable.get_location()
+        #if location:
+            #print "Trackable location: %s lat=%s, lon=%s" % (location.name, location.lat, location.lon)
+        #else:
+            #print "No location found"
+
         if r.component_name == "config":
             _config = db.gis_config
             defaults = db(_config.id == 1).select(limitby=(0, 1)).first()

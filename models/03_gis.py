@@ -37,7 +37,7 @@ else:
 # -----------------------------------------------------------------------------
 # GIS Markers (Icons)
 resourcename = "marker"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_marker"
 table = db.define_table(tablename,
                         #uuidstamp, # Markers don't sync
                         Field("name", length=128, notnull=True, unique=True),
@@ -97,7 +97,7 @@ s3xrc.model.configure(table,
 # -----------------------------------------------------------------------------
 # GIS Projections
 resourcename = "projection"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_projection"
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("epsg", "integer", notnull=True),
@@ -132,7 +132,7 @@ s3xrc.model.configure(table, deletable=False)
 # -----------------------------------------------------------------------------
 # GIS Symbology
 resourcename = "symbology"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_symbology"
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         migrate=migrate,
@@ -155,14 +155,15 @@ gis_config_layout_opts = {
     }
 opt_gis_layout = db.Table(db, "opt_gis_layout",
                           Field("opt_gis_layout", "integer",
-                                requires = IS_IN_SET(gis_config_layout_opts, zero=None),
+                                requires = IS_IN_SET(gis_config_layout_opts,
+                                                     zero=None),
                                 default = 1,
                                 label = T("Layout"),
                                 represent = lambda opt: gis_config_layout_opts.get(opt,
                                                                                    UNKNOWN_OPT)))
 # id=1 = Default settings
 resourcename = "config"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_config"
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
                         Field("lat", "double"),
@@ -289,7 +290,7 @@ s3xrc.model.configure(table,
 gis_gps_marker_opts = gis.gps_symbols
 
 resourcename = "feature_class"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_feature_class"
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("description"),
@@ -444,7 +445,7 @@ def shn_gis_location_represent(id, showlink=True):
     return represent
 
 resourcename = "location"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_location"
 table = db.define_table(tablename,
                         Field("name", notnull=True),    # Primary name
                         #Field("name_short"),           # Secondary name

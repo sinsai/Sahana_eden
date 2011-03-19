@@ -79,7 +79,7 @@ def office():
 
     """ RESTful CRUD controller """
 
-    tablename = "%s_%s" % (prefix, resourcename)
+    tablename = "org_office"
     table = db[tablename]
 
     if isinstance(request.vars.organisation_id, list):
@@ -89,7 +89,9 @@ def office():
 
     # Pre-processor
     def prep(r): 
+        # Filter out people which are already staff for this inventory
         shn_staff_prep(r) 
+        # Filter out items which are already in this inventory
         shn_inv_prep(r)
           
         if r.representation == "popup":
@@ -97,7 +99,7 @@ def office():
             if organisation:
                 table.organisation_id.default = organisation
         
-        #Cascade the organisation_id from the office to the staff
+        # Cascade the organisation_id from the office to the staff
         if r.record:
             db.org_staff.organisation_id.default = r.record.organisation_id
             db.org_staff.organisation_id.writable = False
@@ -106,7 +108,8 @@ def office():
         # the update forms are not ready. when they will - uncomment this and comment the next one
         #if r.method in ("create", "update"):
         if r.method == "create":
-            table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_organisation.id"))
+            table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db,
+                                                                        "org_organisation.id"))
             if request.vars.organisation_id and request.vars.organisation_id != "None":
                 table.organisation_id.default = request.vars.organisation_id
         return True
@@ -168,12 +171,12 @@ def shn_office_rheader(r, tabs=[]):
 #==============================================================================
 def staff():
     """ 
-    RESTful CRUD controller
-    @todo: This function may be removed, to restrict the view of staff to only 
-    as components within site instances and organisations
+        RESTful CRUD controller
+        @ToDo: This function may be removed, to restrict the view of staff to only 
+        as components within site instances and organisations
     """
 
-    tablename = "%s_%s" % (prefix, resourcename)
+    tablename = "org_staff"
     table = db[tablename]
 
     # Pre-processor
@@ -182,8 +185,6 @@ def staff():
         # the update forms are not ready. when they will - uncomment this and comment the next one
         #if r.method in ("create", "update"):
         if r.method == "create":
-            # person_id mandatory for a staff? We should allow room for vacant positions
-            #table.person_id.requires = IS_ONE_OF_EMPTY(db, "pr_person.id")
             table.organisation_id.widget = S3AutocompleteWidget(request, "org",
                                                                 "organisation",
                                                                 post_process="load_offices(false);")
@@ -198,7 +199,7 @@ def donor():
 
     """ RESTful CRUD controller """
 
-    tablename = "%s_%s" % (prefix, resourcename)
+    tablename = "org_donor"
     table = db[tablename]
 
     s3xrc.model.configure(table, listadd=False)
@@ -210,7 +211,7 @@ def donor():
 #==============================================================================
 # Component Resources need these settings to be visible where they are linked from
 # - so we put them outside their controller function
-tablename = "%s_%s" % (prefix, "donor")
+tablename = "org_donor"
 s3.crud_strings[tablename] = Storage(
     title_create = ADD_DONOR,
     title_display = T("Donor Details"),

@@ -59,6 +59,7 @@ if deployment_settings.has_module(module):
                             comments(),
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
+
     ADD_SHELTER_SERVICE = T("Add Shelter Service")
     LIST_SHELTER_SERVICES = T("List Shelter Services")
     s3.crud_strings[tablename] = Storage(

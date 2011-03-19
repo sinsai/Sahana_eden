@@ -40,6 +40,7 @@ import inspect
 import os
 import sys
 import uuid
+import re
 from StringIO import StringIO
 
 # Importing the xml stuff
@@ -60,6 +61,8 @@ except(ImportError):
     print >> sys.stderr, "S3 Debug: WARNING: S3OCR: reportlab has not been installed."
 
 from lxml import etree
+from htmlentitydefs import name2codepoint
+
 from s3rest import S3Method
 
 #==========================================================================
@@ -109,7 +112,11 @@ class S3OCR(S3Method):
             "boolean": {
                 "yes": T("Yes"),
                 "no": T("No"),
-                }
+                },
+            "select": {
+                "multiselect": self.T("Select one or more option(s) that apply"),
+                "singleselect": self.T("Select any one option that apply"),
+                },
             }
 
     def apply_method(self,
@@ -185,7 +192,7 @@ class S3OCR(S3Method):
 
         if self.r.component:     # if it is a component
             component_sequence, components_l10n_dict = \
-                self.rheader_tabs_sequence(self.r.tablename)
+                self.__rheader_tabs_sequence(self.r.tablename)
             s3resource.set(ITEXT,
                            components_l10n_dict.get(None,
                                                     self.resource.tablename))
@@ -206,7 +213,7 @@ class S3OCR(S3Method):
             # Serialisation of Component List and l10n
             serialised_component_etrees = []
             component_sequence, components_l10n_dict = \
-                self.rheader_tabs_sequence(self.r.tablename)
+                self.__rheader_tabs_sequence(self.r.tablename)
 
             mres.set(ITEXT, components_l10n_dict.get(None,
                                                      self.resource.tablename))
@@ -307,8 +314,7 @@ class S3OCR(S3Method):
         titlefontsize = 18
         sectionfontsize = 15
         regularfontsize = 13
-        hintfontsize = 11
-        smallfontsize = 11
+        hintfontsize = 10
         
         # etree labels
         ITEXT = "label"
@@ -357,7 +363,7 @@ class S3OCR(S3Method):
             for eachfield in eachresource.iterchildren():
                 fieldlabel = eachfield.attrib.get(ITEXT)
                 spacing = " " * 5
-                fieldhint = eachfield.attrib.get(HINT)
+                fieldhint = self.__trim(eachfield.attrib.get(HINT))
                 if fieldhint != "" and fieldhint != None:
                     form.print_text(["%s%s( %s )" % \
                                          (fieldlabel,
@@ -369,7 +375,6 @@ class S3OCR(S3Method):
                                      fontsize=regularfontsize)
 
                 if eachfield.attrib.get(HASOPTIONS) == "True":
-                    OPTIONS_TYPE = ["boolean", "multiselect"]
                     fieldtype = eachfield.attrib.get(TYPE)
                     
                     if fieldtype == "boolean":
@@ -377,7 +382,7 @@ class S3OCR(S3Method):
                         form.resetx()
                         bool_text = l10n.get("boolean")
                         form.print_text(
-                            [bool_text.get("yes")],
+                            [bool_text.get("yes").decode("utf-8")],
                             continuetext=1,
                             seek=3,
                             )
@@ -390,7 +395,7 @@ class S3OCR(S3Method):
                             fontsize=12,
                             )
                         form.print_text(
-                            [bool_text.get("no")],
+                            [bool_text.get("no").decode("utf-8")],
                             continuetext=1,
                             seek=10,
                             )
@@ -403,8 +408,41 @@ class S3OCR(S3Method):
                             fontsize=12,
                             )
                     else:
-                        # TODO: multiselect/single select options
-                        pass
+                        if fieldtype == "multiselect":
+                            option_hint = l10n.get("select").get("multiselect")
+                        else:
+                            option_hint = l10n.get("select").get("singleselect")
+                        form.print_text(
+                            [option_hint.decode("utf-8")],
+                            fontsize=hintfontsize,
+                            gray=0.4,
+                            seek=3,
+                            )
+                        s3ocrselect = eachfield.getchildren()[0]
+                        form.nextline(regularfontsize)
+                        form.resetx() # move cursor to the front
+                        optionseek = 10
+                        # resting margin for options
+                        formmargin = form.marginsides
+                        form.marginsides = optionseek + formmargin
+                        for eachoption in s3ocrselect.iterchildren():
+                            form.print_text(
+                                [eachoption.text],
+                                continuetext=1,
+                                fontsize = regularfontsize,
+                                seek = 10,
+                                )
+                            # TODO: Store positions
+                            form.draw_circle(
+                                boxes=1,
+                                continuetext=1,
+                                gray=0.9,
+                                seek=10,
+                                fontsize=12,
+                                )
+                        # restoring orginal margin
+                        form.marginsides = formmargin
+                            
                 else:
                     fieldtype = eachfield.attrib.get(TYPE)
                     BOXES_TYPES = ["string", "textbox", "integer",
@@ -437,7 +475,7 @@ class S3OCR(S3Method):
                                 l10n.get("datetime_hint").get(fieldtype).decode("utf-8")
                             form.print_text(
                                 [hinttext],
-                                fontsize=10,
+                                fontsize=hintfontsize,
                                 gray=0.4,
                                 seek=3,
                                 )
@@ -493,6 +531,17 @@ class S3OCR(S3Method):
                                               fieldtype))
         return form.save()
 
+    def __trim(self, text):
+        """
+        Helper to trim off any enclosing paranthesis
+        """
+
+        if isinstance(text, str) and \
+                text[0] == "(" and \
+                text[-1] == ")":
+            text = text[1:-1]
+        return text
+
     def set_ocr_fieldtype(self,
                           prefix,
                           suffix,
@@ -526,7 +575,7 @@ class S3OCR(S3Method):
         resourcename = "%s_%s" % (prefix, suffix)
         self.rheader_tabs.update({resourcename: tabs,})
 
-    def rheader_tabs_sequence(self, resourcename):
+    def __rheader_tabs_sequence(self, resourcename):
         """
         Sequence of components is returned as a list
         """
@@ -730,7 +779,7 @@ class Form(object):
         loopcounter = 0
         for line in lines:
             loopcounter += 1
-            line = unicode(line)
+            line = unicode(self.__html_unescape(line))
             
             # alignment
             if not continuetext:
@@ -743,7 +792,7 @@ class Form(object):
                              ((len(line)+3) * (self.fontsize / 2)))
             if continuetext:
                 # wrapping multiline options
-                if (self.width - self.marginsides - self.x) < 200:
+                if (self.width - self.marginsides - self.x) < 80:
                     self.resetx()
                     self.nextline()
             if (self.y - self.fontsize) < 50:
@@ -808,6 +857,14 @@ class Form(object):
             for line in xrange(numlines):
                 self.nextline()
 
+    def __html_unescape(self, text):
+        """
+        Helper function, unscape any html special characters
+        """
+
+        return re.sub("&(%s);" % "|".join(name2codepoint),
+                      lambda m: unichr(name2codepoint[m.group(1)]),
+                      text)
 
     def linespace(self, spacing=2):
         """

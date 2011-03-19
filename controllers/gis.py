@@ -2262,7 +2262,7 @@ def geoexplorer():
     cachepath = os.path.join(request.folder, "uploads", "gis_cache")
     if os.access(cachepath, os.W_OK):
         cacheable = True
-        import urllib2      # for error handling
+        import urllib2      # for quoting & error handling
         from gluon.tools import fetch
     else:
         cacheable = False
@@ -2299,8 +2299,8 @@ def geoexplorer():
                 warning = "URLError"
             except urllib2.HTTPError:
                 warning = "HTTPError"
-            _name = name.replace(" ", "_")
-            _name = _name.replace(",", "_")
+            _name = urllib2.quote(name)
+            _name = _name.replace("%", "_")
             filename = "gis_cache.file." + _name + ".rss"
             filepath = os.path.join(cachepath, filename)
             f = open(filepath, "w")
@@ -2477,8 +2477,8 @@ def geoexplorer():
         if cacheable:
             # Download file
             file, warning = gis.download_kml(url, public_url)
-            _name = name.replace(" ", "_")
-            _name = _name.replace(",", "_")
+            _name = urllib2.quote(name)
+            _name = _name.replace("%", "_")
             filename = "gis_cache.file." + _name + ".kml"
             filepath = os.path.join(cachepath, filename)
             f = open(filepath, "w")

@@ -76,6 +76,8 @@ class S3OCR(S3Method):
         self.T = T
         self.rheader_tabs = {}
 
+        self.exclude_component_list = []
+
         self.generic_ocr_field_type = {
             "string": "string", 
             "text": "textbox", 
@@ -209,23 +211,26 @@ class S3OCR(S3Method):
                     componentetrees.append(s3field)
 
             # Serialisation of Component List and l10n
-            serialised_component_etrees = []
             component_sequence, components_l10n_dict = \
                 self.__rheader_tabs_sequence(self.r.tablename)
 
             mres.set(ITEXT, components_l10n_dict.get(None,
                                                      self.resource.tablename))
 
-            for eachcomponent in component_sequence:
-                component_table = "%s_%s" % (self.prefix, eachcomponent)
+            if component_sequence:
+                serialised_component_etrees = []
+                for eachcomponent in component_sequence:
+                    component_table = "%s_%s" % (self.prefix, eachcomponent)
 
-                for eachtree in componentetrees:
-                    if eachtree.attrib.get("name", None) == component_table:
-                        # l10n strings are added and sequencing is done here
-                        eachtree.set(ITEXT,
-                                     components_l10n_dict.get(eachcomponent,
-                                                              component_table))
-                        serialised_component_etrees.append(eachtree)
+                    for eachtree in componentetrees:
+                        if eachtree.attrib.get("name", None) == component_table:
+                            # l10n strings are added and sequencing is done here
+                            eachtree.set(ITEXT,
+                                         components_l10n_dict.get(eachcomponent,
+                                                                  component_table))
+                            serialised_component_etrees.append(eachtree)
+            else:
+                serialised_component_etrees = componentetrees
 
             # create s3ocr tree
             s3ocr_etree.append(mres)
@@ -249,6 +254,10 @@ class S3OCR(S3Method):
         for eachresource in s3ocr_etree.iterchildren():
             resourcetablename = eachresource.attrib.get("name")
 
+            if eachresource.attrib.get("name") in self.exclude_component_list:
+                # excluded components are removed
+                s3ocr_etree.remove(eachresource)
+                continue
             for eachfield in eachresource.iterchildren():
                 fieldname = eachfield.attrib.get("name")
                 # fields which have to be displayed
@@ -283,7 +292,10 @@ class S3OCR(S3Method):
                     if not fieldresource:
                         fieldresource = self.resource
                     fieldname = eachfield.attrib.get("name")
-                    fielddefault = self.r.resource.table[fieldname].default
+                    try:
+                        fielddefault = self.r.resource.table[fieldname].default
+                    except(KeyError):
+                        fielddefault = "None"
                     eachfield.set("default",
                                   fielddefault)
 
@@ -314,7 +326,15 @@ class S3OCR(S3Method):
                 if eachfield.attrib.get("readable", "False") == "False" and \
                         eachfield.attrib.get("writable", "False") == "False":
                     eachresource.remove(eachfield)
-
+                    continue
+            
+                if eachfield.attrib.get(HASOPTIONS, "False") == "True" and \
+                        eachfield.attrib.get(TYPE) != "boolean":
+                    s3ocrselect = eachfield.getchildren()[0]
+                    for eachoption in s3ocrselect.iterchildren():
+                        if eachoption.text == "" or eachoption.text == None:
+                            s3ocrselect.remove(eachoption)
+                            continue
         return s3ocr_etree
 
     def pdf_manager(self):
@@ -370,7 +390,10 @@ class S3OCR(S3Method):
         # printing the etree
         for eachresource in s3ocr_etree:
             form.draw_line()
-            form.print_text([eachresource.attrib.get(ITEXT)],
+            form.print_text([
+                    eachresource.attrib.get(ITEXT,
+                                            eachresource.attrib.get("name"))
+                    ],
                             fontsize=sectionfontsize)
             form.draw_line(nextline=1)
             form.linespace(12) # line spacing between each field
@@ -447,8 +470,6 @@ class S3OCR(S3Method):
                         formmargin = form.marginsides
                         form.marginsides = optionseek + formmargin
                         for eachoption in s3ocrselect.iterchildren():
-                            if eachoption.text == "" or eachoption.text == None:
-                                continue
                             form.print_text(
                                 [eachoption.text],
                                 continuetext=1,
@@ -573,8 +594,8 @@ class S3OCR(S3Method):
         """
         Set custom individual fieldtypes
         Note: if two different options contradict each other
-        then s3ocr will do give more priority to:
-        readable==writable > has_options > newfieldtype > (lines > boxes)
+         then s3ocr will do give more priority to:
+         readable==writable > has_options > newfieldtype > (lines > boxes)
         """
 
         key = "%s_%s__%s" % (prefix, suffix, fieldname)
@@ -607,8 +628,8 @@ class S3OCR(S3Method):
         """
         User Defined Custom Field Types
         Note: if two different options contradict each other
-        then s3ocr will do give more priority to:
-        readable==writable > has_options > newfieldtype > (lines > boxes)
+         then s3ocr will do give more priority to:
+         readable==writable > has_options > newfieldtype > (lines > boxes)
         """
 
         if newfieldtype not in generic_ocr_field_type.keys():
@@ -636,6 +657,16 @@ class S3OCR(S3Method):
 
         resourcename = "%s_%s" % (prefix, suffix)
         self.rheader_tabs.update({resourcename: tabs,})
+
+    def exclude_components(self, componentlist):
+        """
+        Exclude the given components completely from the main OCR pdf
+        Note: can also be used to exclude the main resource,
+         component resources will be still displayed unless they are in
+         the list
+        """
+
+        self.exclude_component_list.extend(componentlist)
 
     def __update_custom_fieldtype_settings(self,
                                        eachfield, #field etree
@@ -963,7 +994,7 @@ class Form(object):
         loopcounter = 0
         for line in lines:
             loopcounter += 1
-            line = unicode(self.__html_unescape(line))
+            line = self.__html_unescape(unicode(line))
             
             # alignment
             if not continuetext:

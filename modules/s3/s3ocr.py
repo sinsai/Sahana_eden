@@ -300,16 +300,17 @@ class S3OCR(S3Method):
                                   fielddefault)
 
                 # load custom fieldtype specific settings
-                if fieldtype not in self.generic_ocr_field_type.keys() \
+                if fieldtype not in self.generic_ocr_field_type.values() \
                         and fieldtype in self.db2ocr_type_mapping.keys():
                     self.__update_custom_fieldtype_settings(eachfield)
                     # refresh fieldtypes after update
                     fieldtype = eachfield.attrib.get(TYPE)
-
+                
                 # for unknown field types
-                if fieldtype not in self.generic_ocr_field_type.keys():
+                if fieldtype not in self.generic_ocr_field_type.values():
                     eachfield.set(TYPE, "string")
                     eachfield.set(HASOPTIONS, "False")
+                    eachfield.set(LINES, "2")
                     # refresh fieldtypes after update
                     fieldtype = eachfield.attrib.get(TYPE)
                 
@@ -1007,7 +1008,7 @@ class Form(object):
                              ((len(line)+3) * (self.fontsize / 2)))
             if continuetext:
                 # wrapping multiline options
-                if (self.width - self.marginsides - self.x) < 80:
+                if (self.width - self.marginsides - self.x) < 100:
                     self.resetx()
                     self.nextline()
             if (self.y - self.fontsize) < 50:

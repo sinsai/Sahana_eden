@@ -447,6 +447,8 @@ class S3OCR(S3Method):
                         formmargin = form.marginsides
                         form.marginsides = optionseek + formmargin
                         for eachoption in s3ocrselect.iterchildren():
+                            if eachoption.text == "" or eachoption.text == None:
+                                continue
                             form.print_text(
                                 [eachoption.text],
                                 continuetext=1,

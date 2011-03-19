@@ -92,11 +92,11 @@ class S3OCR(S3Method):
             "list:text": "multiselect",
             }
 
-        self.db2ocr_type_mapping = {
-            } # will be updated by self.set_db2ocr_fieldtype()
+        self.custom_fieldtype_properties = {
+            } # will be updated by self.set_fieldtype_properties()
 
-        self.custom_field_types = {
-            } # will be update by self.set_ocr_fieldtype()
+        self.custom_field_properties = {
+            } # will be update by self.set_field_properties()
 
         #text for localisation
         self.l10n = {
@@ -301,7 +301,7 @@ class S3OCR(S3Method):
 
                 # load custom fieldtype specific settings
                 if fieldtype not in self.generic_ocr_field_type.values() \
-                        and fieldtype in self.db2ocr_type_mapping.keys():
+                        and fieldtype in self.custom_fieldtype_properties.keys():
                     self.__update_custom_fieldtype_settings(eachfield)
                     # refresh fieldtypes after update
                     fieldtype = eachfield.attrib.get(TYPE)
@@ -587,21 +587,21 @@ class S3OCR(S3Method):
 
         self.pdftitle = pdftitle
 
-    def set_ocr_fieldtype(self,
-                          prefix,
-                          suffix,
-                          fieldname,
-                          fieldtype=None,
-                          readable=None,
-                          writable=None,
-                          label=None,
-                          hint=None,
-                          default=None,
-                          lines=None,
-                          boxes=None,
-                          has_options=None,
-                          options=None,
-                          ):
+    def set_field_properties(self,
+                             prefix,
+                             suffix,
+                             fieldname,
+                             fieldtype=None,
+                             readable=None,
+                             writable=None,
+                             label=None,
+                             hint=None,
+                             default=None,
+                             lines=None,
+                             boxes=None,
+                             has_options=None,
+                             options=None,
+                             ):
         """
         Set custom individual fieldtypes
         Note: if two different options contradict each other
@@ -610,7 +610,7 @@ class S3OCR(S3Method):
         """
 
         key = "%s_%s__%s" % (prefix, suffix, fieldname)
-        self.custom_field_types.update({key: (fieldtype,
+        self.custom_field_properties.update({key: (fieldtype,
                                               readable,
                                               writable,
                                               label,
@@ -623,7 +623,7 @@ class S3OCR(S3Method):
                                               )
                                         })
 
-    def set_db2ocr_fieldtype(self,
+    def set_fieldtype_properties(self,
                              fieldtype,
                              newfieldtype=None,
                              readable=None,
@@ -644,22 +644,22 @@ class S3OCR(S3Method):
         """
 
         if newfieldtype not in generic_ocr_field_type.keys():
-            raise HTTP(501, body="s3ocr.set_db2ocr_fieldtype expects\
+            raise HTTP(501, body="s3ocr.set_fieldtype_properties expects\
  a valid field type\n i.e field type which is available in\
  s3ocr.generic_ocr_field_type.keys()")
-        self.db2ocr_type_mapping.update({fieldtype:
-                                             (newfieldtype,
-                                              readable,
-                                              writable,
-                                              label,
-                                              hint,
-                                              default,
-                                              lines,
-                                              boxes,
-                                              has_options,
-                                              options,
-                                              )
-                                         })
+        self.custom_fieldtype_properties.update({fieldtype:
+                                                     (newfieldtype,
+                                                      readable,
+                                                      writable,
+                                                      label,
+                                                      hint,
+                                                      default,
+                                                      lines,
+                                                      boxes,
+                                                      has_options,
+                                                      options,
+                                                      )
+                                                 })
 
     def put_rheader_tabs(self, prefix, suffix, tabs):
         """
@@ -702,11 +702,11 @@ class S3OCR(S3Method):
         cust_fieldtype, cust_readable, \
             cust_writable, cust_label, cust_hint, cust_default, \
             cust_lines, cust_boxes, cust_has_options, cust_options = \
-            self.db2ocr_type_mapping.get(fieldtype, (None, None, None,
-                                                     None, None, None,
-                                                     None, None, None,
-                                                     None))
-
+            self.custom_fieldtype_properties.get(fieldtype, (None, None, None,
+                                                             None, None, None,
+                                                             None, None, None,
+                                                             None))
+            
         if cust_fieldtype:
             if cust_fieldtype != None:
                 eachfield.set(TYPE, cust_fieldtype)
@@ -758,7 +758,7 @@ class S3OCR(S3Method):
         cust_fieldtype, cust_readable, \
             cust_writable, cust_label, cust_hint, cust_default, \
             cust_lines, cust_boxes, cust_has_options, cust_options = \
-            self.custom_field_types.get(unikey, (None, None, None,
+            self.custom_field_properties.get(unikey, (None, None, None,
                                                  None, None, None,
                                                  None, None, None,
                                                  None))

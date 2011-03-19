@@ -71,10 +71,50 @@ class S3OCR(S3Method):
     Generate XForms and PDFs the s3 way
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, T):
+        """
+        Instialisting s3ocr
+        """
 
-    def apply_method(self, r, **attr):
+        self.T = T
+        self.rheader_tabs = {}
+        self.db2ocr_type_mapping = {
+            "string": "string", 
+            "text": "textbox", 
+            "boolean" : "boolean",
+            "double": "double",
+            "date": "date",
+            "datetime": "datetime",
+            "integer": "integer",
+            "list:integer": "multiselect",
+            "list:string": "multiselect",
+            "list:double": "multiselect",
+            "list:text": "multiselect",
+            }
+
+        self.custom_field_types = {
+            }
+
+        #text for localisation
+        self.l10n = {
+            "datetime_hint": {
+                "date": self.T("fill in order: day(2) month(2) year(4)"),
+                "datetime": self.T("fill in order: hour(2) min(2) day(2) month(2) year(4)"),
+                },
+            "ocr_inst": {
+                "inst1": self.T("1. Fill the necessary fields in BLOCK CAPITAL letters."),
+                "inst2": self.T("2. Always use one box per letter and leave one box space to separate words."),
+                "inst3": self.T("3. Fill in the circles completely."),
+                },
+            "boolean": {
+                "yes": T("Yes"),
+                "no": T("No"),
+                }
+            }
+
+    def apply_method(self,
+                     r,
+                     **attr):
         """
         S3Method's abstract method
         """
@@ -104,7 +144,8 @@ class S3OCR(S3Method):
                 self.response.view = None
                 self.response.headers["Content-Type"] = "application/pdf"
                 self.response.headers["Content-disposition"] = \
-                            "%s; filename=\"%s.pdf\"" % (content_disposition, self.tablename)
+                            "%s; filename=\"%s.pdf\"" % (content_disposition,
+                                                         self.tablename)
                 return output
             else:
                 r.error(501, self.manager.ERROR.BAD_FORMAT)
@@ -128,20 +169,31 @@ class S3OCR(S3Method):
                                    stylesheet=None,
                                    as_json=False,
                                    as_tree=True)
+        # xml tags
+        ITEXT = "label"
+        HINT = "comment"
+        TYPE = "type"
+        HASOPTIONS = "has_options"
+        LINES = "lines"
+        BOXES = "boxes"
 
-        # TODO # User Defined Configuration will be added to etree
-        # TODO # Components Localised Text added to the etree
+        # Components Localised Text added to the etree
+        # Convering s3xml to s3ocr_xml (nicer to traverse)
+        s3xml = s3xml_etree.getroot()
+        s3resource = s3xml.getchildren()[0]
+        s3ocr_etree = etree.Element("s3ocr")
 
-        ## create etree for main resouce + components each and multiplex
-        s3xml = s3xml_etree.getroot() # get element s3xml
-        
-        s3resource = s3xml.getchildren()[0] # as s3xml has only one child
-
-        s3ocr_etree = etree.Element("s3ocr")        
         if self.r.component:     # if it is a component
+            component_sequence, components_l10n_dict = \
+                self.rheader_tabs_sequence(self.r.tablename)
+            s3resource.set(ITEXT,
+                           components_l10n_dict.get(None,
+                                                    self.resource.tablename))
             s3ocr_etree.append(s3resource)
+
         else:                    # if it is main resource
             componentetrees = []
+            # mres is main resource etree
             mres = etree.Element("resource")
             for attr in s3resource.attrib.keys():
                 mres.set(attr, s3resource.attrib.get(attr))
@@ -150,11 +202,97 @@ class S3OCR(S3Method):
                     mres.append(s3field)
                 elif s3field.tag == "resource":  # component resource
                     componentetrees.append(s3field)
-            # TODO - Serialisation of Component List
+
+            # Serialisation of Component List and l10n
+            serialised_component_etrees = []
+            component_sequence, components_l10n_dict = \
+                self.rheader_tabs_sequence(self.r.tablename)
+
+            mres.set(ITEXT, components_l10n_dict.get(None,
+                                                     self.resource.tablename))
+
+            for eachcomponent in component_sequence:
+                component_table = "%s_%s" % (self.prefix, eachcomponent)
+
+                for eachtree in componentetrees:
+                    if eachtree.attrib.get("name", None) == component_table:
+                        # l10n strings are added and sequencing is done here
+                        eachtree.set(ITEXT,
+                                     components_l10n_dict.get(eachcomponent,
+                                                              component_table))
+                        serialised_component_etrees.append(eachtree)
+
             # create s3ocr tree
             s3ocr_etree.append(mres)
-            for res in componentetrees:
+            for res in serialised_component_etrees:
                 s3ocr_etree.append(res)
+
+        # remove fields which are not required
+        # loading user defined configuartions
+        FIELD_TYPE_LINES = { # mapping types with number of lines
+            "string": 2,
+            "textbox": 4,
+            "integer": 1,
+            "double": 1,
+            "date": 1,
+            "datetime": 1,
+            }
+        FIELD_TYPE_BOXES = { # mapping type with numboxes
+            "integer": 9,
+            "double": 16,
+            }
+        for eachresource in s3ocr_etree.iterchildren():
+            resourcetablename = eachresource.attrib.get("name")
+
+            for eachfield in eachresource.iterchildren():
+                fieldname = eachfield.attrib.get("name")
+                if eachfield.attrib.get("readable", "False") == "False" and \
+                        eachfield.attrib.get("writable", "False") == "False":
+                    # fields which need not be displayed
+                    eachresource.remove(eachfield)
+                else:
+                    # fields which have to be displayed
+                    fieldtype = eachfield.attrib.get(TYPE)
+
+                    # loading custom fieldtype specific settings
+                    eachfield.set(TYPE,
+                                  self.db2ocr_type_mapping.get(fieldtype,
+                                                               "unknown"))
+                    # refresh fieldtypes after update
+                    fieldtype = eachfield.attrib.get(TYPE)
+
+                    # for unknown field types
+                    if fieldtype == "unknown":
+                        eachfield.set(TYPE, "string")
+                        eachfield.set(HASOPTIONS, "False")
+
+                    # refresh fieldtypes after update
+                    fieldtype = eachfield.attrib.get(TYPE)
+
+                    # in ocr boolean fields should be shown as options
+                    if fieldtype == "boolean":
+                        eachfield.set(HASOPTIONS, "True")
+
+                    # set num boxes and lines
+                    fieldhasoptions = eachfield.attrib.get(HASOPTIONS)
+                    if fieldhasoptions == "False":
+                        eachfield.set(LINES,
+                                      str(FIELD_TYPE_LINES.get(fieldtype,
+                                                               1)))
+                        if fieldtype in FIELD_TYPE_BOXES.keys():
+                            eachfield.set(BOXES,
+                                          str(FIELD_TYPE_BOXES.get(fieldtype)))
+
+                    # loading custom field specific settings
+                    unikey = "%s__%s" % (resourcetablename, fieldname)
+                    cust_fieldtype, lines, has_options  = \
+                        self.custom_field_types.get(unikey, (None,
+                                                             None,
+                                                             None))
+                    if cust_fieldtype:
+                        eachfield.set(TYPE, cust_fieldtype)
+                        eachfield.set(LINES, lines)
+                        eachfield.set(HASOPTIONS, has_options)
 
         return s3ocr_etree
 
@@ -167,19 +305,28 @@ class S3OCR(S3Method):
 
         # define font size
         titlefontsize = 18
+        sectionfontsize = 15
         regularfontsize = 13
+        hintfontsize = 11
         smallfontsize = 11
         
+        # etree labels
+        ITEXT = "label"
+        HINT = "comment"
+        TYPE = "type"
+        HASOPTIONS = "has_options"
+        LINES = "lines"
+        BOXES = "boxes"
+
+        #l10n
+        l10n = self.l10n
+
         # get pdf title
         try:
             pdftitle = \
                 self.manager.s3.crud_strings[self.tablename].subtitle_list.decode("utf-8")
         except:
             pdftitle = self.resource.tablename
-        # ocr from filling instructions
-        inst1 = self.T("1. Fill the necessary fields in BLOCK CAPITAL letters.")
-        inst2 = self.T("2. Always use one box per letter and leave one box space to separate words. and yes you have to shout.")
-        inst3 = self.T("3. Fill in the circles completely.")
 
         # prepare pdf
         form = Form()
@@ -189,22 +336,210 @@ class S3OCR(S3Method):
         form.canvas.setTitle(pdftitle) # set pdf meta title
         form.print_text([pdftitle,],
                         fontsize=titlefontsize,
-                        nonewline=1,
                         style="center") # set pdf header title
+
         form.print_text(
             [
-                unicode(inst1.decode("utf-8")),
-                unicode(inst2.decode("utf-8")),
-                unicode(inst3.decode("utf-8"))
+                unicode(l10n.get("ocr_inst").get("inst1").decode("utf-8")),
+                unicode(l10n.get("ocr_inst").get("inst2").decode("utf-8")),
+                unicode(l10n.get("ocr_inst").get("inst3").decode("utf-8"))
                 ],
-            fontsize=regularfontsize, gray=0) # ocr form instructions
-        form.draw_line()
-        # rest of the lines
-        form.linespace(4)
-        form.print_text(["sjkdjkd1"])
-        form.print_text(["slkdjkd2"])
-        form.set_new_page()
+            fontsize=regularfontsize,
+            gray=0)
+        form.linespace(3)
+        # printing the etree
+        for eachresource in s3ocr_etree:
+            form.draw_line()
+            form.print_text([eachresource.attrib.get(ITEXT)],
+                            fontsize=sectionfontsize)
+            form.draw_line(nextline=1)
+            form.linespace(12) # line spacing between each field
+            for eachfield in eachresource.iterchildren():
+                fieldlabel = eachfield.attrib.get(ITEXT)
+                spacing = " " * 5
+                fieldhint = eachfield.attrib.get(HINT)
+                if fieldhint != "" and fieldhint != None:
+                    form.print_text(["%s%s( %s )" % \
+                                         (fieldlabel,
+                                          spacing,
+                                          fieldhint)],
+                                     fontsize=regularfontsize)
+                else:
+                    form.print_text([fieldlabel],
+                                     fontsize=regularfontsize)
+
+                if eachfield.attrib.get(HASOPTIONS) == "True":
+                    OPTIONS_TYPE = ["boolean", "multiselect"]
+                    fieldtype = eachfield.attrib.get(TYPE)
+                    
+                    if fieldtype == "boolean":
+                        form.nextline()
+                        form.resetx()
+                        bool_text = l10n.get("boolean")
+                        form.print_text(
+                            [bool_text.get("yes")],
+                            continuetext=1,
+                            seek=3,
+                            )
+                        # TODO: Store positions
+                        form.draw_circle(
+                            boxes=1,
+                            continuetext=1,
+                            gray=0.9,
+                            seek=10,
+                            fontsize=12,
+                            )
+                        form.print_text(
+                            [bool_text.get("no")],
+                            continuetext=1,
+                            seek=10,
+                            )
+                        # TODO: Store positions
+                        form.draw_circle(
+                            boxes=1,
+                            continuetext=1,
+                            gray=0.9,
+                            seek=10,
+                            fontsize=12,
+                            )
+                    else:
+                        # TODO: multiselect/single select options
+                        pass
+                else:
+                    fieldtype = eachfield.attrib.get(TYPE)
+                    BOXES_TYPES = ["string", "textbox", "integer",
+                                   "double", "date", "datetime",]
+                    if fieldtype in BOXES_TYPES:
+                        if fieldtype in ["string", "textbox"]:
+                            form.linespace(3)
+                            num_lines = int(eachfield.attrib.get("lines",
+                                                                     1))
+                            for eachline in xrange(num_lines):
+                                # TODO: Store positions
+                                form.draw_check_boxes(
+                                    completeline=1,
+                                    gray=0.9,
+                                    seek=3,
+                                    )
+                        elif fieldtype in ["integer", "double"]:
+                            num_boxes = int(eachfield.attrib.get("boxes",
+                                                                 9))
+                            form.linespace(3)
+                            # TODO: Store positions
+                            form.draw_check_boxes(
+                                boxes = num_boxes,
+                                gray=0.9,
+                                seek=3,
+                                )
+                        elif fieldtype in ["date", "datetime"]:
+                            # print hint
+                            hinttext = \
+                                l10n.get("datetime_hint").get(fieldtype).decode("utf-8")
+                            form.print_text(
+                                [hinttext],
+                                fontsize=10,
+                                gray=0.4,
+                                seek=3,
+                                )
+                            form.linespace(8)
+                            datetime_continuetext = 0
+                            datetime_seek = 3
+                            if fieldtype == "datetime":
+                                datetime_continuetext = 1
+                                datetime_seek = 6
+                                #HH
+                                # TODO: Store positions
+                                form.draw_check_boxes(
+                                    boxes = 2,
+                                    gray=0.9,
+                                    seek = 3,
+                                    )
+                                #MM
+                                # TODO: Store positions
+                                form.draw_check_boxes(
+                                    boxes = 2,
+                                    gray=0.9,
+                                    continuetext=1,
+                                    seek = 4,
+                                    )
+                            # DD
+                            # TODO: Store positions
+                            form.draw_check_boxes(
+                                boxes = 2,
+                                gray=0.9,
+                                continuetext = datetime_continuetext,
+                                seek = datetime_seek,
+                                )
+                            # MM
+                            # TODO: Store positions
+                            form.draw_check_boxes(
+                                boxes = 2,
+                                gray=0.9,
+                                continuetext=1,
+                                seek = 4,
+                                )
+                            # YYYY
+                            # TODO: Store positions
+                            form.draw_check_boxes(
+                                boxes = 4,
+                                gray=0.9,
+                                continuetext=1,
+                                seek = 4,
+                                )
+                    else:
+                        self.r.error(501, self.manager.PARSE_ERROR)
+                        print sys.stderr("%s :invalid field type: %s" %\
+                                             (eachfield.attrib.get("name"),
+                                              fieldtype))
         return form.save()
+
+    def set_ocr_fieldtype(self,
+                          prefix,
+                          suffix,
+                          fieldname,
+                          fieldtype="string",
+                          lines=2,
+                          has_options=False
+                          ):
+        """
+        Set custom individual fieldtypes
+        """
+
+        key = "%s_%s__%s" % (prefix, suffix, fieldname)
+        self.custom_field_types.update({key: (fieldtype,
+                                              lines,
+                                              has_options)
+                                        })
+
+    def set_db2ocr_fieldtype(self, typedict):
+        """
+        User Defined Custom Field Types
+        """
+
+        self.db2ocr_type_mapping.update(typedict)
+
+    def put_rheader_tabs(self, prefix, suffix, tabs):
+        """
+        Put component names for l10n
+        """
+
+        resourcename = "%s_%s" % (prefix, suffix)
+        self.rheader_tabs.update({resourcename: tabs,})
+
+    def rheader_tabs_sequence(self, resourcename):
+        """
+        Sequence of components is returned as a list
+        """
+
+        component_seq = []
+        component_l10n_dict = {}
+        rtabs = self.rheader_tabs.get(resourcename,[])
+        for eachel in rtabs:
+            if eachel[1] != None:
+                component_seq.append(eachel[1])
+            component_l10n_dict[eachel[1]] = eachel[0].decode("utf-8")
+        return component_seq, component_l10n_dict
+
 
 #==============================================================================
 #==================== unicode support to reportlab ============================
@@ -344,6 +679,7 @@ class Form(object):
         self.lasty = self.height - margintop
         self.num = 1
         self.gray = 0
+        self.pagebegin = 1
         self.put_page_num()
 
     def barcode(self, uuid):
@@ -372,36 +708,44 @@ class Form(object):
                    gray=0,
                    seek=0,
                    continuetext=0,
-                   nonewline=0,
                    style="default"):
-        """ Give the lines to be printed as a list, set the font and grey level """
+        """
+        Give the lines to be printed as a list,
+        set the font and grey level 
+        """
 
         self.fontsize = fontsize
         self.gray = gray
 
+        if not continuetext and not self.pagebegin:
+                self.resetx()
+                self.nextline()
 
-        # seek x cursor
-        self.resetx(seek)
+        self.pagebegin = 0
 
+        if seek:
+            self.resetx(seek=seek)
+
+        numlines = len(lines)
+        loopcounter = 0
         for line in lines:
+            loopcounter += 1
             line = unicode(line)
             
             # alignment
-            if style == "center":
-                self.x = \
-                    (self.width - (len(line) * (self.fontsize / 2)))/2
-            elif style == "right":
-                self.x = \
-                    ((self.width - self.marginsides) -\
-                         ((len(line)+3) * (self.fontsize / 2)))
+            if not continuetext:
+                if style == "center":
+                    self.x = \
+                        (self.width - (len(line) * (self.fontsize / 2)))/2
+                elif style == "right":
+                    self.x = \
+                        ((self.width - self.marginsides) -\
+                             ((len(line)+3) * (self.fontsize / 2)))
             if continuetext:
                 # wrapping multiline options
-                if (self.width - self.marginsides - self.lastx) < 200:
+                if (self.width - self.marginsides - self.x) < 200:
                     self.resetx()
                     self.nextline()
-                    recentnextline = 1
-                else:
-                    recentnextline = 0
             if (self.y - self.fontsize) < 50:
                 self.set_new_page()
             for char in line:
@@ -413,12 +757,9 @@ class Form(object):
                     self.writechar("-")
                     self.nextline()
                     self.resetx(self.fontsize)
-            if not continuetext:
+            if not continuetext and loopcounter != numlines:
                 self.nextline()
                 self.resetx()
-        self.resetx()
-        if continuetext and not recentnextline:
-            self.nextline()
 
     def writechar(self, char=" "):
         """
@@ -433,19 +774,30 @@ class Form(object):
         self.canvas.drawText(t)
         return t
 
-    def nextline(self):
+    def nextline(self, fontsize=0):
         """
         Moves the y cursor down one line
         """
 
-        self.y = self.y - (self.fontsize + self.linespacing)
+        if fontsize != 0:
+            self.fontsize = fontsize
 
-    def resetx(self, offset=0):
+        if self.pagebegin == 0:
+            self.y = self.y - (self.fontsize + self.linespacing)
+            if self.y < self.margintop:
+                self.set_new_page()
+
+        self.pagebegin = 0
+
+    def resetx(self, offset=0, seek=None):
         """
         Moves the x cursor with offset
         """
 
-        self.x = self.marginsides + offset
+        if seek == None:
+            self.x = self.marginsides + offset
+        else:
+            self.x += seek
         lastvalidx = self.width - (self.marginsides + (self.fontsize / 2))
         writablex = self.width - (2 * self.marginsides)
         if self.x > lastvalidx:
@@ -461,8 +813,9 @@ class Form(object):
         """
         Moves the y cursor down by given units
         """
-
-        self.y -= spacing
+        if self.pagebegin == 0:
+            self.y -= spacing
+        self.pagebegin = 0
 
     def selectfont(self, char):
         """ Select font according to the input character """
@@ -474,11 +827,23 @@ class Form(object):
                     return font
         return "Helvetica"  # fallback, if no thirdparty font is installed
 
-    def draw_check_boxes(self, boxes=1, completeline=0, lines=0, seek=0,
-                         continuetext=0, fontsize=0, gray=0, style="",
-                         isdate=0, isdatetime=0):
+    def draw_check_boxes(self,
+                         boxes=1,
+                         completeline=0,
+                         lines=0,
+                         seek=0,
+                         continuetext=0,
+                         fontsize=15,
+                         gray=0,
+                         style="",
+                         ):
         """ Function to draw check boxes default no of boxes = 1 """
 
+        if not continuetext and not self.pagebegin:
+            self.resetx()
+            self.nextline()
+        self.pagebegin = 0
+        self.fontsize = fontsize
         c = self.canvas
         c.setLineWidth(0.90)
         c.setStrokeGray(gray)
@@ -490,11 +855,11 @@ class Form(object):
             seek = 0
         if (self.y - self.fontsize) < 40:
             self.set_new_page()
-        if continuetext == 1:
-            self.y = self.y + self.fontsize
-            self.x = self.lastx
-        else:
-            self.x = self.marginsides
+        #if continuetext == 1:
+        #    self.y = self.y + self.fontsize
+        #    self.x = self.lastx
+        #else:
+        #    self.x = self.marginsides
         if seek != 0:
             self.x = self.x + seek
         if fontsize == 0:
@@ -509,77 +874,90 @@ class Form(object):
             if self.x > (self.width - (self.marginsides + self.fontsize)):
                 break
         self.lastx = self.x
-        self.x = self.marginsides
-        self.y = self.y - self.fontsize
-        if isdate:
-            t = c.beginText(self.x, self.y)
-            t.setFont(Helvetica, 13)
-            t.setFillGray(0)
-            t.textOut("   D  D  M  M  Y  Y  Y  Y")
-            c.drawText(t)
-            self.y = self.y - fontsize
-            self.lastx = t.getX()
-            self.lasty = self.y
-        if isdatetime:
-            t = c.beginText(self.x, self.y)
-            t.setFont(Helvetica, 12.5)
-            t.setFillGray(0.4)
-            t.textOut("   D  D  M  M  Y  Y  Y  Y -H  H :M  M")
-            c.drawText(t)
-            self.y = self.y - fontsize
-            self.lastx = t.getX()
-            self.lasty = self.y
+        #self.x = self.marginsides
+        #self.y = self.y - self.fontsize
+        #if isdate:
+        #    t = c.beginText(self.x, self.y)
+        #    t.setFont(Helvetica, 13)
+        #    t.setFillGray(0)
+        #    t.textOut("   D  D  M  M  Y  Y  Y  Y")
+        #    c.drawText(t)
+        #    self.y = self.y - fontsize
+        #    self.lastx = t.getX()
+        #    self.lasty = self.y
+        #if isdatetime:
+        #    t = c.beginText(self.x, self.y)
+        #    t.setFont(Helvetica, 12.5)
+        #    t.setFillGray(0.4)
+        #    t.textOut("   D  D  M  M  Y  Y  Y  Y -H  H :M  M")
+        #    c.drawText(t)
+        #    self.y = self.y - fontsize
+        #    self.lastx = t.getX()
+        #    self.lasty = self.y
         self.lastx = self.x
-        self.x = self.marginsides
-        self.y = self.y - 13
 
-    def draw_circle(self, boxes=1, completeline=0, lines=0, seek=0,
-                    continuetext=0, fontsize=0, gray=0, style=""):
+    def draw_circle(self,
+                    boxes=1,
+                    completeline=0,
+                    lines=0,
+                    seek=0,
+                    continuetext=0,
+                    fontsize=0,
+                    gray=0,
+                    style=""):
         """ Draw circles on the form """
 
         c = self.canvas
         c.setLineWidth(0.90)
         c.setStrokeGray(gray)
-        if style == "center":
-            self.x = self.width / 2
-        elif style == "right":
-            self.x = self.width - self.marginsides - self.fontsize
-        if seek > (self.width - (self.marginsides + self.fontsize)):
-            seek = 0
-        if (self.y - self.fontsize) < 40:
-            self.set_new_page()
-        if continuetext == 1:
-            self.y = self.y + self.fontsize
-            self.x = self.lastx
-        else:
-            self.x = self.marginsides
-        if seek != 0:
-            self.x = self.x + seek
-        if fontsize == 0:
-            fontsize = self.fontsize
-        else:
-            self.fontsize = fontsize
-        if completeline == 1:
-            boxes = int(self.width / self.fontsize)
-        for i in range(boxes):
+        self.resetx(seek=seek)
+        #if style == "center":
+        #    self.x = self.width / 2
+        #elif style == "right":
+        #    self.x = self.width - self.marginsides - self.fontsize
+        #if seek > (self.width - (self.marginsides + self.fontsize)):
+        #    seek = 0
+        #if (self.y - self.fontsize) < 40:
+        #    self.set_new_page()
+        #if continuetext == 1:
+        #    self.y = self.y + self.fontsize
+        #    self.x = self.lastx
+        #else:
+        #    self.x = self.marginsides
+        #if seek != 0:
+        #    self.x = self.x + seek
+        #if fontsize == 0:
+        #    fontsize = self.fontsize
+        #else:
+        #    self.fontsize = fontsize
+        #if completeline == 1:
+        #    boxes = int(self.width / self.fontsize)
+        for eachcircle in xrange(boxes):
             c.circle(self.x + self.fontsize/2, self.y + self.fontsize/2,
                      self.fontsize/2, fill = 0)
-            self.x = self.x + self.fontsize
-            if self.x > (self.width - (self.marginsides + self.fontsize)):
-                break
-        self.lastx = self.x
-        self.x = self.marginsides
-        self.y = self.y - self.fontsize
+            self.resetx(seek=self.fontsize)
+            self.resetx(seek=seek)
+        #    if self.x > (self.width - (self.marginsides + self.fontsize)):
+        #        break
+        #self.lastx = self.x
+        #self.x = self.marginsides
+        #self.y = self.y - self.fontsize
 
-    def draw_line(self, gray=0):
+    def draw_line(self, gray=0, nextline=0):
         """ Function to draw a straight line """
 
+        self.fontsize = 4
+        if nextline:
+            self.nextline()
+        else:
+            self.linespace(8)
+        self.resetx()
         c = self.canvas
         c.setStrokeGray(gray)
         c.setLineWidth(1)
-        #self.y = self.y - (self.fontsize)
+        #self.y = self.y + self.linespacing + (self.fontsize/2)
         c.line(self.x, self.y, self.width - self.x, self.y)
-        self.y = self.y - (self.fontsize + self.linespacing)
+        self.y = self.y + (self.linespacing)
 
     def set_new_page(self):
         """
@@ -596,9 +974,10 @@ class Form(object):
         #self.print_text(["Page %s" % unicode(self.num)], fontsize=8,
         #                style="right")
         self.put_page_num()
-        self.x = self.marginsides
-        self.lastx = self.x
-        self.y = self.y - 32
+        #self.x = self.marginsides
+        #self.lastx = self.x
+        #self.y = self.y - 32
+        self.pagebegin = 1
 
     def put_page_num(self):
         x, y = self.x, self.y

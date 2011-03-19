@@ -75,7 +75,7 @@ class S3OCR(S3Method):
 
         self.T = T
         self.rheader_tabs = {}
-
+        self.pdftitle = None
         self.exclude_component_list = []
 
         self.generic_ocr_field_type = {
@@ -363,11 +363,14 @@ class S3OCR(S3Method):
         l10n = self.l10n
 
         # get pdf title
-        try:
-            pdftitle = \
-                self.manager.s3.crud_strings[self.tablename].subtitle_list.decode("utf-8")
-        except:
-            pdftitle = self.resource.tablename
+        if self.pdftitle == None or self.pdftitle == "":
+            try:
+                pdftitle = self.manager.s3.crud_strings[\
+                    self.tablename].subtitle_list.decode("utf-8")
+            except:
+                pdftitle = self.resource.tablename
+        else:
+            pdftitle = self.pdftitle
 
         # prepare pdf
         form = Form()
@@ -576,6 +579,13 @@ class S3OCR(S3Method):
                                              (eachfield.attrib.get("name"),
                                               fieldtype))
         return form.save()
+
+    def set_pdf_title(self, pdftitle):
+        """
+        set custom pdf title
+        """
+
+        self.pdftitle = pdftitle
 
     def set_ocr_fieldtype(self,
                           prefix,

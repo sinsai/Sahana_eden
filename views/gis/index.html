@@ -6,11 +6,11 @@
 
     {{include "gis/legend.html"}}
 
-    <div class='col3left' style='font-size:large;'>
+    <div class='col3left'>
     {{if 1 in session.s3.roles or s3_has_role("MapAdmin"):}}
       <ol style='list-style-type: none;'>
-        {{=LI(SPAN(A(T("View Fullscreen Map"), _href=URL(r=request, c="gis", f="map_viewing_client")),_style="font-weight:bold;"), _style="margin-top:1em;")}}
-        {{=LI(SPAN(A(T("Edit Map Services"), _href=URL(r=request, c="gis", f="map_service_catalogue")),_style="font-weight:bold;"), P(T("Allows authorized users to control which layers are available to the situation map.")), _style="margin-top:1em;")}}
+        {{=LI(SPAN(A(T("View Fullscreen Map"), _href=URL(r=request, c="gis", f="map_viewing_client")),_style="font-weight: bold;"), _style="margin-top:1em;")}}
+        {{=LI(SPAN(A(T("Edit Map Services"), _href=URL(r=request, c="gis", f="map_service_catalogue")),_style="font-weight: bold;"), P(T("Allows authorized users to control which layers are available to the situation map.")), _style="margin-top:1em;")}}
       </ol>
     {{else:}}
       <ol style='list-style-type: none;'>

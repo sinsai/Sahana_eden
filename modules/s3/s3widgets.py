@@ -797,8 +797,9 @@ class S3LocationSelectorWidget(FormWidget):
             addr_street_encoded = ""
             postcode = ""
             if map_selector:
-                map_popup = gis.show_map(add_feature = True,
-                                         add_feature_active = True,
+                map_popup = gis.show_map(
+                                         add_feature = True,
+                                         add_feature_active = True,    # http://trac.osgeo.org/openlayers/ticket/3179
                                          toolbar = True,
                                          collapsed = True,
                                          search = True,

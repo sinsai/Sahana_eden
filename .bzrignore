@@ -9,6 +9,10 @@ sessions/*
 static/scripts/tools/httpserver.log
 uploads/*
 .raw/*
+static/fonts/*
+!static/fonts/setfonts.py
+!static/fonts/generatefontmapping.py
+*.ttf
 static/scripts/ext/.docs/*
 static/scripts/ext/.examples/*
 static/scripts/ext/.test/*
@@ -24,6 +28,7 @@ static/scripts/gis/GeoExt/.docs/*
 static/scripts/gis/GeoExt/.examples/*
 static/scripts/gis/GeoExt/.tests/*
 static/scripts/gis/mapfish/.tests/*
+static/scripts/tools/compiler.jar
 static/selenium/results/*
 static/selenium/scripts/diagTestResults.txt
 static/selenium/tests/*
@@ -34,7 +39,3 @@ tests/.cherrypy/*
 languages/*.po
 __init__.pyc
 *.log
-*.ttf
-static/fonts/*
-!static/fonts/setfonts.py
-!static/fonts/generatefontmapping.py

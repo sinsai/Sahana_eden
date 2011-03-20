@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -22,6 +22,15 @@ OpenLayers.Format.WMC = OpenLayers.Class(OpenLayers.Format.Context, {
      * {String} Version number to assume if none found.  Default is "1.1.0".
      */
     defaultVersion: "1.1.0",
+
+    /**
+     * Constructor: OpenLayers.Format.WMC
+     * Create a new parser for Web Map Context documents.
+     *
+     * Parameters:
+     * options - {Object} An optional object whose properties will be set on
+     *     this instance.
+     */
     
     /**
      * Method: getParser

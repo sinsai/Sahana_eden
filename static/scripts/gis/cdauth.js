@@ -19,7 +19,7 @@
 */
 
 /**
- * @requires OpenLayers/Layer/Vector.js
+ * requires OpenLayers/Layer/Vector.js
  */
 
 OpenLayers.Layer.cdauth = { };

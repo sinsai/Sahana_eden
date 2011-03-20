@@ -45,6 +45,16 @@ def wh():
     
     # Hide Obsolete warehouses
     def prep(r):
+        # Filter out people which are already staff for this warehouse
+        shn_staff_prep(r) 
+        # Filter out items which are already in this inventory
+        shn_inv_prep(r)
+          
+        # Cascade the organisation_id from the Warehouse to the staff
+        if r.record:
+            db.org_staff.organisation_id.default = r.record.organisation_id
+            db.org_staff.organisation_id.writable = False
+            
         # "show_obsolete" var option can be added (btn?) later to 
         # disable this filter
         if r.method in [None,"list"] and \
@@ -72,7 +82,9 @@ def wh():
         msg_record_deleted = T("Warehouse deleted"),
         msg_list_empty = T("No Warehouses currently registered"))    
 
-    return s3_rest_controller(module, resourcename)
+    rheader = shn_office_rheader
+    
+    return s3_rest_controller(module, resourcename, rheader=rheader)
 
 #==============================================================================
 def inv_item():

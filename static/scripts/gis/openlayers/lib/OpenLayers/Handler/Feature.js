@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -29,7 +29,8 @@ OpenLayers.Handler.Feature = OpenLayers.Class(OpenLayers.Handler, {
         'mousemove': {'in': 'over', 'out': 'out'},
         'dblclick': {'in': 'dblclick', 'out': null},
         'mousedown': {'in': null, 'out': null},
-        'mouseup': {'in': null, 'out': null}
+        'mouseup': {'in': null, 'out': null},
+        'touchstart': {'in': 'click', 'out': 'clickout'}
     },
 
     /**
@@ -117,6 +118,19 @@ OpenLayers.Handler.Feature = OpenLayers.Class(OpenLayers.Handler, {
         this.layer = layer;
     },
 
+    /**
+     * Method: touchstart
+     * Handle touchmove events
+     *
+     * Parameters:
+     * evt - {Event}
+     *
+     * Returns:
+     * {Boolean} Let the event propagate.
+     */
+    touchstart: function(evt) {
+        return this.mousedown(evt);
+    },
 
     /**
      * Method: mousedown

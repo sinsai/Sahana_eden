@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -108,18 +108,20 @@ OpenLayers.Format.Filter.v1_1_0 = OpenLayers.Class(
                 var node = this.createElementNSPlus("ogc:PropertyIsEqualTo", {
                     attributes: {matchCase: filter.matchCase}
                 });
-                // no ogc:expression handling for now
+                // no ogc:expression handling for PropertyName for now
                 this.writeNode("PropertyName", filter, node);
-                this.writeNode("Literal", filter.value, node);
+                // handle Literals or Functions for now
+                this.writeOgcExpression(filter.value, node);
                 return node;
             },
             "PropertyIsNotEqualTo": function(filter) {
                 var node = this.createElementNSPlus("ogc:PropertyIsNotEqualTo", {
                     attributes: {matchCase: filter.matchCase}
                 });
-                // no ogc:expression handling for now
+                // no ogc:expression handling for PropertyName for now
                 this.writeNode("PropertyName", filter, node);
-                this.writeNode("Literal", filter.value, node);
+                // handle Literals or Functions for now
+                this.writeOgcExpression(filter.value, node);
                 return node;
             },
             "PropertyIsLike": function(filter) {
@@ -164,6 +166,9 @@ OpenLayers.Format.Filter.v1_1_0 = OpenLayers.Class(
     writeSpatial: function(filter, name) {
         var node = this.createElementNSPlus("ogc:"+name);
         this.writeNode("PropertyName", filter, node);
+        if(filter.value instanceof OpenLayers.Filter.Function) {
+            this.writeNode("Function", filter.value, node);
+        } else {
         var child;
         if(filter.value instanceof OpenLayers.Geometry) {
             child = this.writeNode("feature:_geometry", filter.value).firstChild;
@@ -174,6 +179,7 @@ OpenLayers.Format.Filter.v1_1_0 = OpenLayers.Class(
             child.setAttribute("srsName", filter.projection);
         }
         node.appendChild(child);
+        }
         return node;
     },
 

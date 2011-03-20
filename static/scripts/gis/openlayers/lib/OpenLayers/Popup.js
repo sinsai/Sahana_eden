@@ -1,7 +1,11 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
+
+/**
+ * @requires OpenLayers/BaseTypes/Class.js
+ */
 
 
 /**
@@ -337,7 +341,7 @@ OpenLayers.Popup = OpenLayers.Class({
         }
         
         //listen to movestart, moveend to disable overflow (FF bug)
-        if (!this.disableFirefoxOverflowHack && OpenLayers.Util.getBrowserName() == 'firefox') {
+        if (!this.disableFirefoxOverflowHack && OpenLayers.BROWSER_NAME == 'firefox') {
             this.map.events.register("movestart", this, function() {
                 var style = document.defaultView.getComputedStyle(
                     this.contentDiv, null
@@ -427,7 +431,7 @@ OpenLayers.Popup = OpenLayers.Class({
      * Makes the popup visible.
      */
     show: function() {
-        OpenLayers.Element.show(this.div);
+        this.div.style.display = '';
 
         if (this.panMapIfOutOfView) {
             this.panIntoView();
@@ -439,7 +443,7 @@ OpenLayers.Popup = OpenLayers.Class({
      * Makes the popup invisible.
      */
     hide: function() {
-        OpenLayers.Element.hide(this.div);
+        this.div.style.display = 'none';
     },
 
     /**
@@ -478,7 +482,7 @@ OpenLayers.Popup = OpenLayers.Class({
         //now if our browser is IE, we need to actually make the contents 
         // div itself bigger to take its own padding into effect. this makes 
         // me want to shoot someone, but so it goes.
-        if (OpenLayers.Util.getBrowserName() == "msie") {
+        if (OpenLayers.BROWSER_NAME == "msie") {
             this.contentSize.w += 
                 contentDivPadding.left + contentDivPadding.right;
             this.contentSize.h += 

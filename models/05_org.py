@@ -998,7 +998,8 @@ def shn_update_staff_membership(record,
         db.org_staff[org_staff_id] = staff_ownership
 
     if site_id:
-        tablename = "%(controller)s_%(function)s" % (request)   # This is fragile! Doesn't work for inv/wh
+        prefix, resourcename, id = shn_site_resource(site_id)
+        tablename = "%s_%s" % (prefix, resourcename)
         if tablename in org_site_types:
             # This staff is a component of a site instance
             table = db[tablename]
@@ -1044,8 +1045,8 @@ def shn_staff_onaccept(form):
 
 s3xrc.model.configure(table,
                       onaccept = shn_staff_onaccept,
-                      ondelete = lambda form, delete = True:
-                                    shn_update_staff_membership(form, delete)
+                      ondelete = lambda form: shn_update_staff_membership(form,
+                                                                          delete=True)
                       )
 # -----------------------------------------------------------------------------
 def shn_staff_prep(r):
@@ -1057,9 +1058,9 @@ def shn_staff_prep(r):
         site_id = r.record.site_id
     except:
         site_id = None
-    staff_rows =  db((db.org_staff.site_id == site_id) &
-                     (db.org_staff.deleted == False)
-                     ).select(db.org_staff.person_id)
+    query = (db.org_staff.site_id == site_id) & \
+            (db.org_staff.deleted == False)
+    staff_rows = db(query).select(db.org_staff.person_id)
     person_ids = [r.person_id for r in staff_rows]
     db.org_staff.person_id.requires.set_filter(not_filterby = "id",
                                                not_filter_opts = person_ids)

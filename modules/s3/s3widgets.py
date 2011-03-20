@@ -231,10 +231,9 @@ class S3UploadWidget(UploadWidget):
 class S3AutocompleteWidget(FormWidget):
 
     """
-    Renders a SELECT as an INPUT field with AJAX Autocomplete
+        Renders a SELECT as an INPUT field with AJAX Autocomplete
 
-    @author: Fran Boon (fran@aidiq.com)
-
+        @author: Fran Boon (fran@aidiq.com)
     """
 
     def __init__(self,
@@ -340,19 +339,18 @@ class S3AutocompleteWidget(FormWidget):
 class S3LocationAutocompleteWidget(FormWidget):
 
     """
-    Renders a gis_location SELECT as an INPUT field with AJAX Autocomplete
+        Renders a gis_location SELECT as an INPUT field with AJAX Autocomplete
 
-    @note: differs from the S3AutocompleteWidget:
-        - needs to have deployment_settings passed-in
-        - excludes unreliable imported records (Level 'XX')
+        @note: differs from the S3AutocompleteWidget:
+            - needs to have deployment_settings passed-in
+            - excludes unreliable imported records (Level 'XX')
 
-    NB Currently not used. The LocationSelector widget include
-    this functionality & more.
+        NB Currently not used. The LocationSelector widget include
+        this functionality & more.
 
-    @author: Fran Boon (fran@aidiq.com)
-    @todo: .represent for the returned data
-    @todo: Refreshes any dropdowns as-necessary (post_process)
-
+        @author: Fran Boon (fran@aidiq.com)
+        @todo: .represent for the returned data
+        @todo: Refreshes any dropdowns as-necessary (post_process)
     """
 
     def __init__(self,
@@ -477,11 +475,10 @@ class S3LocationAutocompleteWidget(FormWidget):
 class S3PersonAutocompleteWidget(FormWidget):
 
     """
-    Renders a pr_person SELECT as an INPUT field with AJAX Autocomplete.
-    Differs from the S3AutocompleteWidget in that it uses 3 name fields
+        Renders a pr_person SELECT as an INPUT field with AJAX Autocomplete.
+        Differs from the S3AutocompleteWidget in that it uses 3 name fields
 
-    @author: Fran Boon (fran@aidiq.com)
-
+        @author: Fran Boon (fran@aidiq.com)
     """
 
     def __init__(self,
@@ -611,17 +608,16 @@ class S3PersonAutocompleteWidget(FormWidget):
 class S3LocationSelectorWidget(FormWidget):
 
     """
-    Renders a gis_location SELECT as a hierarchical dropdown with the ability to add a new location from within the main form
-        - new location can be specified as:
-            - a simple name (hopefully within hierarchy)
-            - manual Lat/Lon entry (with optional GPS Coordinate Converter)
-            - Geocoder lookup
-            - Select location from Map
+        Renders a gis_location SELECT as a hierarchical dropdown with the ability to add a new location from within the main form
+            - new location can be specified as:
+                - a simple name (hopefully within hierarchy)
+                - manual Lat/Lon entry (with optional GPS Coordinate Converter)
+                - Geocoder lookup
+                - Select location from Map
 
-    @author: Fran Boon (fran@aidiq.com)
+        @author: Fran Boon (fran@aidiq.com)
 
-    @see: http://eden.sahanafoundation.org/wiki/BluePrintGISLocationSelector
-
+        @see: http://eden.sahanafoundation.org/wiki/BluePrintGISLocationSelector
     """
 
     def __init__(self,
@@ -1301,29 +1297,28 @@ class S3LocationSelectorWidget(FormWidget):
 class S3CheckboxesWidget(OptionsWidget):
 
     """
-    Generates a TABLE tag with <num_column> columns of INPUT
-    checkboxes (multiple allowed)
+        Generates a TABLE tag with <num_column> columns of INPUT
+        checkboxes (multiple allowed)
 
-    @author: Michael Howden (michael@aidiq.com)
+        @author: Michael Howden (michael@aidiq.com)
 
-    help_lookup_table_name_field will display tooltip help
+        help_lookup_table_name_field will display tooltip help
 
-    :param db: int -
-    :param lookup_table_name: int -
-    :param lookup_field_name: int -
-    :param multple: int -
+        :param db: int -
+        :param lookup_table_name: int -
+        :param lookup_field_name: int -
+        :param multple: int -
 
-    :param options: list - optional -
-    value,text pairs for the Checkboxs -
-    If options = None,  use options from self.requires.options().
-    This argument is useful for displaying a sub-set of the self.requires.options()
+        :param options: list - optional -
+        value,text pairs for the Checkboxs -
+        If options = None,  use options from self.requires.options().
+        This argument is useful for displaying a sub-set of the self.requires.options()
 
-    :param num_column: int -
+        :param num_column: int -
 
-    :param help_lookup_field_name: string - optional -
+        :param help_lookup_field_name: string - optional -
 
-    :param help_footer: string -
-
+        :param help_footer: string -
     """
 
     def __init__(self,
@@ -1442,25 +1437,24 @@ class S3CheckboxesWidget(OptionsWidget):
 # -----------------------------------------------------------------------------
 class JSON(INPUT):
     """
-    Extends INPUT() from gluon/html.py
+        Extends INPUT() from gluon/html.py
 
-    @author: Michael Howden (michael@aidiq.com)
+        @author: Michael Howden (michael@aidiq.com)
 
-    :param json_table: Table - The table where the data in the JSON will be saved to
+        :param json_table: Table - The table where the data in the JSON will be saved to
 
-    Required for S3MultiSelectWidget JSON input
-    :param link_field_name: A field in the json_table which will will be automatically po
-    :param table_name: The table in which the Element appears
-    existing_value: The existing values for
+        Required for S3MultiSelectWidget JSON input
+        :param link_field_name: A field in the json_table which will will be automatically po
+        :param table_name: The table in which the Element appears
+        existing_value: The existing values for
 
-    _name - If JSON inside S3MultiSelectWidget _name = None
+        _name - If JSON inside S3MultiSelectWidget _name = None
 
-    @todo: Better error handling
-    @todo: Make this compatible with the Multi Rows widget -> this would include a command to delete AND have to set the record of the field at the end
-    @todo: Save multiple ids as X|X|X|X
-    @todo: have postprocessing to convert 'id' -> '{"id":X}'
-    @todo: Why are JSON attributes being saved?
-
+        @todo: Better error handling
+        @todo: Make this compatible with the Multi Rows widget -> this would include a command to delete AND have to set the record of the field at the end
+        @todo: Save multiple ids as X|X|X|X
+        @todo: have postprocessing to convert 'id' -> '{"id":X}'
+        @todo: Why are JSON attributes being saved?
     """
 
     def _validate(self):
@@ -1636,13 +1630,12 @@ class JSON(INPUT):
 class S3MultiSelectWidget(FormWidget):
 
     """
-    This widget will return a table which can have rows added or
-    deleted (not currently edited). This widget can be added to a
-    table using a XXXX_dummy field. This field will only store the
-    ID of the record and serve as a placeholder.
+        This widget will return a table which can have rows added or
+        deleted (not currently edited). This widget can be added to a
+        table using a XXXX_dummy field. This field will only store the
+        ID of the record and serve as a placeholder.
 
-    @author: Michael Howden (michael@aidiq.com)
-
+        @author: Michael Howden (michael@aidiq.com)
     """
 
     def __init__ (self,
@@ -1926,13 +1919,12 @@ class S3MultiSelectWidget(FormWidget):
 class S3ACLWidget(CheckboxesWidget):
 
     """
-    Widget class for ACLs
+        Widget class for ACLs
 
-    @author: Dominic König <dominic@aidiq.com>
+        @author: Dominic König <dominic@aidiq.com>
 
-    @todo: add option dependency logic (JS)
-    @todo: configurable vertical/horizontal alignment
-
+        @todo: add option dependency logic (JS)
+        @todo: configurable vertical/horizontal alignment
     """
 
     @staticmethod
@@ -2002,7 +1994,5 @@ class S3ACLWidget(CheckboxesWidget):
             #else:
                 #raise SyntaxError, 'widget cannot determine options of %s' \
                     #% field
-
-
 
 # -----------------------------------------------------------------------------

@@ -147,8 +147,8 @@ def hospital():
     def postp(r, output):
         if r.component_name == "staff" and \
                 deployment_settings.get_aaa_has_staff_permissions():
-            addheader = "%s %s" % (STAFF_HELP,
-                                   T("Hospital"))
+            addheader = "%s %s." % (STAFF_HELP,
+                                    T("Hospital"))
             output.update(addheader=addheader)
         return output
     response.s3.postp = postp

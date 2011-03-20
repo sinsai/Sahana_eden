@@ -152,7 +152,7 @@ GERALDO_ERROR = T("Geraldo module not available within the running Python - this
 REPORTLAB_ERROR = T("ReportLab module not available within the running Python - this needs installing for PDF output!")
 
 # Common Labels
-BREADCRUMB = ">> "
+#BREADCRUMB = ">> "
 UNKNOWN_OPT = T("Unknown")
 NONE = "-"
 READ = T("Open")

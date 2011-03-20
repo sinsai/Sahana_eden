@@ -127,7 +127,7 @@ meta_created_by = S3ReusableField("created_by", db.auth_user,
                                   writable=False,
                                   requires=None,
                                   default=session.auth.user.id if auth.is_logged_in() else None,
-                                  represent=lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
+                                  represent=shn_user_represent,
                                   ondelete="RESTRICT")
 
 # Last author of a record
@@ -137,7 +137,7 @@ meta_modified_by = S3ReusableField("modified_by", db.auth_user,
                                    requires=None,
                                    default=session.auth.user.id if auth.is_logged_in() else None,
                                    update=session.auth.user.id if auth.is_logged_in() else None,
-                                   represent=lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
+                                   represent=shn_user_represent,
                                    ondelete="RESTRICT")
 
 # Last verified by
@@ -145,7 +145,7 @@ meta_verified_by = S3ReusableField("verified_by", db.auth_user,
                                    readable=False, # Enable when needed, not by default
                                    writable=False,
                                    requires=None,
-                                   represent=lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
+                                   represent=shn_user_represent,
                                    ondelete="RESTRICT")
 
 def s3_authorstamp():
@@ -172,7 +172,7 @@ meta_owned_by_role = S3ReusableField("owned_by_role", db.auth_group,
                                      writable=False,
                                      requires=None,
                                      default=None,
-                                     represent=lambda id: id and shn_role_represent(id) or UNKNOWN_OPT,
+                                     represent=shn_role_represent,
                                      ondelete="RESTRICT")
 
 def s3_ownerstamp():
@@ -212,7 +212,7 @@ role_required = S3ReusableField("role_required", db.auth_group, sortby="role",
                                                               "auth",
                                                               "group",
                                                               fieldname="role"),
-                                represent = lambda id: shn_role_represent(id),
+                                represent = shn_role_represent,
                                 label = T("Role Required"),
                                 comment = DIV(_class="tooltip",
                                               _title="%s|%s" % (T("Role Required"),
@@ -229,7 +229,7 @@ roles_permitted = S3ReusableField("roles_permitted", db.auth_group, sortby="role
                                   #                            lookup_table_name = "auth_group",
                                   #                            lookup_field_name = "role",
                                   #                            multiple = True),
-                                  represent = lambda id: shn_role_represent(id),
+                                  represent = shn_role_represent,
                                   label = T("Roles Permitted"),
                                   comment = DIV(_class="tooltip",
                                                 _title="%s|%s" % (T("Roles Permitted"),

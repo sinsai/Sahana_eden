@@ -919,7 +919,7 @@ table = db.define_table(tablename,
 table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 
 table.datetime.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
-table.datetime.represent = lambda value: shn_as_local_time(value)
+table.datetime.represent = shn_as_local_time
 table.datetime.label = T("Date/Time")
 table.datetime.default = request.utcnow
 

@@ -217,8 +217,10 @@ if deployment_settings.has_module(module):
     s3xrc.model.configure(table,
                           #listadd=False,
                           super_entity=db.org_site,
-                          # Create a role for each shelter
-                          create_onaccept = shn_staff_join_onaccept_func(tablename),
+                          # Create roles for each shelter
+                          create_onaccept = staff_roles_create_func(tablename),
+                          # Rename roles if record name changes
+                          update_onaccept = staff_roles_update_func(tablename),
                           list_fields=["id",
                                        "name",
                                        "shelter_type_id",

@@ -72,7 +72,9 @@ def wh():
         msg_record_deleted = T("Warehouse deleted"),
         msg_list_empty = T("No Warehouses currently registered"))    
 
-    return s3_rest_controller(module, resourcename)
+    rheader = shn_office_rheader
+    
+    return s3_rest_controller(module, resourcename, rheader=rheader)
 
 #==============================================================================
 def inv_item():

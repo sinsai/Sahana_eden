@@ -311,10 +311,10 @@ donor_id = S3ReusableField("donor_id", db.org_organisation, sortby="name",
                            )
 
 #==============================================================================
-def shn_staff_join_onaccept_func(tablename):
+def staff_roles_create_func(tablename):
     """
         If the setting is enabled, returns an onaccept function to create roles
-        for a record which can staff as a component join
+        for a record which can have staff as a component join
     """
     if deployment_settings.get_aaa_has_staff_permissions():
         return lambda form, tablename = tablename: \
@@ -322,9 +322,22 @@ def shn_staff_join_onaccept_func(tablename):
     else:
         return None
 # -----------------------------------------------------------------------------
-# Create roles for each organisation
+def staff_roles_update_func(tablename):
+    """
+        If the setting is enabled, returns an onaccept function to rename roles
+        for a record which can have staff as a component join
+    """
+    if deployment_settings.get_aaa_has_staff_permissions():
+        return lambda form, tablename = tablename: \
+                   shn_update_record_roles(form, tablename)
+    else:
+        return None
+# -----------------------------------------------------------------------------
 s3xrc.model.configure(table,
-                      create_onaccept = shn_staff_join_onaccept_func(tablename))
+                      # Create roles for each organisation
+                      create_onaccept = staff_roles_create_func(tablename),
+                      # Rename roles if record name changes
+                      update_onaccept = staff_roles_update_func(tablename))
 
 #==============================================================================
 # Site
@@ -424,7 +437,6 @@ def shn_create_record_roles(form, tablename):
         The current user is given membership of both staff & supervisor roles
     """
 
-    #id = session.rcvars[tablename] # Not reliable
     id = form.vars.id
     table = db[tablename]
     try:
@@ -486,6 +498,41 @@ def shn_create_record_roles(form, tablename):
     #                        owned_by_role = staff_role_id,
     #                        )
 
+def shn_update_record_roles(form, tablename):
+    """
+        Function to be called at update_onaccept by a record which can have
+        org_staff as components, eg. Organisations & Site instances (Offices,
+        Hospitals and Shelters).
+
+        Ensures that the Role names are kept synced to Record names
+    """
+
+    try:
+        name = form.vars.name
+    except:
+        # No Name field in the table
+        return
+
+    id = form.vars.id
+    table = db[tablename]
+    record = db(table.id == id).select(table.owned_by_role,
+                                       limitby=(0, 1)).first()
+    owned_by_role = record.owned_by_role
+    
+    table = db[auth.settings.table_group]
+    staff_role_id = owned_by_role
+    staff_role_name_old = table[staff_role_id].role
+    prefix, throw = staff_role_name_old.split(" Staff of ", 1)
+    staff_role_name = "%s Staff of %s" % (prefix,
+                                          name)
+    supervisor_role_name_old = staff_role_name_old.replace("Staff",
+                                                           "Supervisors")
+    supervisor_role_name = "%s Supervisors of %s" % (prefix,
+                                                     name)
+    # Rename the roles
+    db(table.id == staff_role_id).update(role=staff_role_name)
+    db(table.role == supervisor_role_name_old).update(role=supervisor_role_name)
+    
 # -----------------------------------------------------------------------------
 def shn_component_copy_role(form,
                             component_name, resource_name, fk,  pk  = "id" ):
@@ -535,7 +582,7 @@ org_office_type_opts = {
     2:T("Regional"),
     3:T("Country"),
     4:T("Satellite Office"),
-    5:T("Warehouse"),       # Don't change this number, as it affects the Warehouse module
+    5:T("Warehouse"),       # Don't change this number, as it affects the Inv module
 }
 
 resourcename = "office"
@@ -656,8 +703,10 @@ s3xrc.model.add_component(module, resourcename,
 s3xrc.model.configure(table,
                       super_entity=(db.pr_pentity, db.org_site),
                       onvalidation=address_onvalidation,
-                      # Create a role for each office
-                      create_onaccept = shn_staff_join_onaccept_func(tablename),
+                      # Create roles for each office
+                      create_onaccept = staff_roles_create_func(tablename),
+                      # Rename roles if record name changes
+                      update_onaccept = staff_roles_update_func(tablename),
                       list_fields=[
                         "id",
                         "name",
@@ -672,7 +721,56 @@ s3xrc.model.configure(table,
                         "email"
                     ])
 
-#==============================================================================
+# -----------------------------------------------------------------------------
+def shn_office_rheader(r, tabs=[]):
+
+    """ Office/Warehouse page headers """
+
+    if r.representation == "html":
+
+        if r.record is None:
+            # List or Create form: rheader makes no sense here
+            return None
+        
+        tabs = [(T("Basic Details"), None),
+                (T("Contact Data"), "pe_contact"),
+                (T("Staff"), "staff"),                
+                ]        
+
+        rheader_tabs = shn_rheader_tabs(r, tabs + shn_show_inv_tabs(r))
+
+        office = r.record
+        if office:
+            organisation = db(db.org_organisation.id == office.organisation_id
+                              ).select(db.org_organisation.name, 
+                                       limitby=(0, 1)
+                                       ).first()
+            if organisation:
+                org_name = organisation.name
+            else:
+                org_name = None
+
+            rheader = DIV(TABLE(
+                          TR(TH("%s: " % T("Name")),
+                             office.name,
+                             TH("%s: " % T("Type")),
+                             org_office_type_opts.get(office.type, 
+                                                      UNKNOWN_OPT),
+                             ),
+                          TR(TH("%s: " % T("Organization")),
+                             org_name,
+                             TH("%s: " % T("Location")),
+                             shn_gis_location_represent(office.location_id),
+                             ),
+                          #TR(#TH(A(T("Edit Office"),
+                          #   #    _href=URL(r=request, c="org", f="office", args=[r.id, "update"], vars={"_next": _next})))
+                          #   )
+                              ),
+                          rheader_tabs)
+
+            return rheader
+
+    return None
 
 #==============================================================================
 # Staff
@@ -788,8 +886,9 @@ def shn_orgs_to_person(person_id):
     """
     orgs = []
     if person_id:
-        staff = db((db.org_staff.person_id == person_id) &
-                      (db.org_staff.deleted == False)).select(db.org_staff.organisation_id)
+        query = (db.org_staff.person_id == person_id) & \
+                (db.org_staff.deleted == False)
+        staff = db(query).select(db.org_staff.organisation_id)
         if staff:
             for s in staff:
                 orgs.append(s.organisation_id)

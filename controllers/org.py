@@ -118,56 +118,7 @@ def office():
     rheader = shn_office_rheader
 
     return s3_rest_controller(prefix, resourcename, rheader=rheader)
-# -----------------------------------------------------------------------------
-def shn_office_rheader(r, tabs=[]):
 
-    """ Office page headers """
-
-    if r.representation == "html":
-
-        if r.record is None:
-            # List or Create form: rheader makes no sense here
-            return None
-        
-        tabs = [(T("Basic Details"), None),
-                (T("Contact Data"), "pe_contact"),
-                (T("Staff"), "staff"),                
-                ]        
-
-        rheader_tabs = shn_rheader_tabs(r, tabs + shn_show_inv_tabs(r))
-
-        office = r.record
-        if office:
-            organisation = db(db.org_organisation.id == office.organisation_id
-                              ).select(db.org_organisation.name, 
-                                       limitby=(0, 1)
-                                       ).first()
-            if organisation:
-                org_name = organisation.name
-            else:
-                org_name = None
-
-            rheader = DIV(TABLE(
-                          TR(TH("%s: " % T("Name")),
-                             office.name,
-                             TH("%s: " % T("Type")),
-                             org_office_type_opts.get(office.type, 
-                                                      UNKNOWN_OPT),
-                             ),
-                          TR(TH("%s: " % T("Organization")),
-                             org_name,
-                             TH("%s: " % T("Location")),
-                             shn_gis_location_represent(office.location_id),
-                             ),
-                          #TR(#TH(A(T("Edit Office"),
-                          #   #    _href=URL(r=request, c="org", f="office", args=[r.id, "update"], vars={"_next": _next})))
-                          #   )
-                              ),
-                          rheader_tabs)
-
-            return rheader
-
-    return None
 #==============================================================================
 def staff():
     """ 

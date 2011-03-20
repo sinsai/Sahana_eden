@@ -2152,6 +2152,7 @@
 'No Locations currently available': 'No Locations currently available',
 'No Locations currently registered': 'No Locations currently registered',
 'No Markers currently available': 'No Markers currently available',
+'No Matching Records': 'No Matching Records',
 'No Members currently registered': 'No Members currently registered',
 'No Memberships currently defined': 'No Memberships currently defined',
 'No Memberships currently registered': 'No Memberships currently registered',

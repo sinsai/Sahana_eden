@@ -89,7 +89,7 @@ def office():
 
     # Pre-processor
     def prep(r): 
-        # Filter out people which are already staff for this inventory
+        # Filter out people which are already staff for this office
         shn_staff_prep(r) 
         # Filter out items which are already in this inventory
         shn_inv_prep(r)

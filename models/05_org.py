@@ -998,7 +998,7 @@ def shn_update_staff_membership(record,
         db.org_staff[org_staff_id] = staff_ownership
 
     if site_id:
-        tablename = "%(controller)s_%(function)s" % (request)   # This is fragile! Won't work for inv/wh
+        tablename = "%(controller)s_%(function)s" % (request)   # This is fragile! Doesn't work for inv/wh
         if tablename in org_site_types:
             # This staff is a component of a site instance
             table = db[tablename]

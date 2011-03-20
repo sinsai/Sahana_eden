@@ -645,8 +645,6 @@ class S3LocationSelectorWidget(FormWidget):
 
     def __call__(self, field, value, **attributes):
 
-        #db = field._db  # old DAL
-        #db = field.db   # new DAL
         db = self.db
         gis = self.gis
         deployment_settings = self.deployment_settings
@@ -666,11 +664,12 @@ class S3LocationSelectorWidget(FormWidget):
         map_selector = deployment_settings.get_gis_map_selector()
         # Which Levels do we have in our hierarchy & what are their Labels?
         location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
-        try:
-            # Ignore the bad bulk-imported data
-            del location_hierarchy["XX"]
-        except KeyError:
-            pass
+        # No longer needed
+        #try:
+        #    # Ignore the bad bulk-imported data
+        #    del location_hierarchy["XX"]
+        #except KeyError:
+        #    pass
         # What is the maximum level of hierarchy?
         max_hierarchy = deployment_settings.get_gis_max_hierarchy()
         # Is full hierarchy mandatory?

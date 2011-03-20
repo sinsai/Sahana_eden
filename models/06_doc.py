@@ -7,7 +7,7 @@
 module = "doc"
 #==============================================================================
 resourcename = "document"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "doc_document"
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True, label=T("Name")),
                         Field("file", "upload", autodelete=True,),
@@ -146,7 +146,7 @@ s3xrc.model.configure(table,
                       onvalidation=document_onvalidation)
 #==============================================================================
 resourcename = "image"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "doc_image"
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("image", "upload", autodelete=True),

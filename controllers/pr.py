@@ -119,8 +119,14 @@ def person():
     def prep(r):
 
         # Test code (to be removed):
-        #trackable = s3tracker("pr_person", record_id=1)
-        #trackable.check_in(db.pr_person, 1)
+        #trackable = s3tracker(db.pr_person.id==1)
+        #trackable.check_in(db.hms_hospital, 1)
+        #location = trackable.get_location()
+        #if location:
+            #print "Trackable location: %s lat=%s, lon=%s" % (location.name, location.lat, location.lon)
+        #else:
+            #print "No location found"
+        #trackable.check_out(db.hms_hospital)
         #location = trackable.get_location()
         #if location:
             #print "Trackable location: %s lat=%s, lon=%s" % (location.name, location.lat, location.lon)

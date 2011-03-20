@@ -143,17 +143,28 @@ def hospital():
         return True
     response.s3.prep = prep
 
+    # Post-processor
+    def postp(r, output):
+        if r.component_name == "staff" and \
+                deployment_settings.get_aaa_has_staff_permissions():
+            addheader = "%s %s" % (STAFF_HELP,
+                                   T("Hospital"))
+            output.update(addheader=addheader)
+        return output
+    response.s3.postp = postp
+
+    tabs = [(T("Status Report"), ""),
+            (T("Bed Capacity"), "bed_capacity"),
+            (T("Activity Report"), "activity"),
+            (T("Requests"), "req"),
+            (T("Images"), "image"),
+            (T("Services"), "services"),
+            (T("Contacts"), "contact"),
+            (T("Cholera Treatment Capability"), "ctc_capability"),
+            (T("Staff"), "staff")]
+
     rheader = lambda r: shn_hms_hospital_rheader(r,
-                                                 tabs=[(T("Status Report"), ""),
-                                                       (T("Bed Capacity"), "bed_capacity"),
-                                                       (T("Activity Report"), "activity"),
-                                                       (T("Requests"), "req"),
-                                                       (T("Images"), "image"),
-                                                       (T("Services"), "services"),
-                                                       (T("Contacts"), "contact"),
-                                                       (T("Cholera Treatment Capability"), "ctc_capability"),
-                                                       (T("Staff"), "staff"),
-                                                      ] + shn_show_inv_tabs(r))
+                                                 tabs=tabs + shn_show_inv_tabs(r))
 
     output = s3_rest_controller(module, resourcename, rheader=rheader)
     shn_menu()

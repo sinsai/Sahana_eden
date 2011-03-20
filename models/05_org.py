@@ -574,6 +574,7 @@ def shn_component_copy_role_func(component_name, resource_name, fk, pk = "id"):
     else:
         return None
 
+STAFF_HELP = T("If Staff have login accounts then they are given access to edit the details of the")
 #==============================================================================
 # Offices
 #

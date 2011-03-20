@@ -59,8 +59,7 @@ from s3import import S3Importer
 class S3ResourceController(object):
 
     """
-    Resource Controller
-
+        Resource Controller
     """
 
     UID = "uuid"
@@ -84,11 +83,10 @@ class S3ResourceController(object):
     # -------------------------------------------------------------------------
     def __init__(self, environment, db):
         """
-        Constructor
+            Constructor
 
-        @param environment: the environment of this run
-        @param db: the database
-
+            @param environment: the environment of this run
+            @param db: the database
         """
 
         self.db = db

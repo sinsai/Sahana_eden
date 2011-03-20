@@ -1165,6 +1165,7 @@
 'Enter your firstname': 'Enter your firstname',
 'Entered': 'Entered',
 'Entering a phone number is optional, but doing so allows you to subscribe to receive SMS messages.': 'Entering a phone number is optional, but doing so allows you to subscribe to receive SMS messages.',
+'Entering an Organisation is optional, but doing so directs you to the appropriate approver & means you automatically get the appropriate permissions.': 'Entering an Organisation is optional, but doing so directs you to the appropriate approver & means you automatically get the appropriate permissions.',
 'Entry deleted': 'Entry deleted',
 'Equipment': 'Equipment',
 'Error encountered while applying the theme.': 'Error encountered while applying the theme.',

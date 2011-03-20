@@ -8,6 +8,7 @@
 # @ToDo Associate persons with shelters (via presence loc == shelter loc?)
 
 module = request.controller
+resourcename = request.function
 
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
@@ -49,53 +50,38 @@ def index():
 def shelter_type():
 
     """
-    RESTful CRUD controller
-    List / add shelter types (e.g. NGO-operated, Government evacuation center,
-    School, Hospital -- see Agasti opt_camp_type.)
+        RESTful CRUD controller
+        List / add shelter types (e.g. NGO-operated, Government evacuation center,
+        School, Hospital -- see Agasti opt_camp_type.)
     """
 
-    resource = request.function
-
-    # Post-processor
-    def postp(r, output):
-        if r.representation in shn_interactive_view_formats:
-            shn_action_buttons(r)
-        return output
-    response.s3.postp = postp
+    tabs = [(T("Basic Details"), None),
+            (T("Shelters"), "shelter")]
 
     rheader = lambda r: shn_shelter_rheader(r,
-                                            tabs = [(T("Basic Details"), None),
-                                                    (T("Shelters"), "shelter")
-                                                   ])
+                                            tabs=tabs)
 
-    # @ToDo Shelters per type display is broken -- always returns none.
-    output = s3_rest_controller(module, resource,
-                                 rheader=rheader)
+    # @ToDo: Shelters per type display is broken -- always returns none.
+    output = s3_rest_controller(module, resourcename,
+                                rheader=rheader)
     return output
 
 # -----------------------------------------------------------------------------
 def shelter_service():
 
     """
-    RESTful CRUD controller
-    List / add shelter services (e.g. medical, housing, food,...)
+        RESTful CRUD controller
+        List / add shelter services (e.g. medical, housing, food,...)
     """
 
-    resource = request.function
-
-    # Post-processor
-    def postp(r, output):
-        if r.representation in shn_interactive_view_formats:
-            shn_action_buttons(r)
-        return output
-    response.s3.postp = postp
+    tabs = [(T("Basic Details"), None),
+            (T("Shelters"), "shelter")]
 
     rheader = lambda r: shn_shelter_rheader(r,
-                                            tabs = [(T("Basic Details"), None),
-                                                    (T("Shelters"), "shelter")])
+                                            tabs=tabs)
 
-    output = s3_rest_controller(module, resource,
-                                 rheader=rheader)
+    output = s3_rest_controller(module, resourcename,
+                                rheader=rheader)
     return output
 
 # -----------------------------------------------------------------------------
@@ -124,8 +110,8 @@ def shelter():
 
     """
 
-    resourcename = request.function
-    tablename = module + "_" + resourcename
+    tablename = "%s_%s" % (module,
+                           resourcename)
     table = db[tablename]
 
     # Make pr_presence.pe_id visible:
@@ -141,38 +127,47 @@ def shelter():
                                               shn_pentity_represent,
                                               filterby="instance_type",
                                               orderby="instance_type",
-                                              filter_opts=("pr_person", "pr_group"))
+                                              filter_opts=("pr_person",
+                                                           "pr_group"))
     
-    # Pre-processor
-    def prep(r):                
-        #Cascade the organisation_id from the shelter to the staff
-        db.org_staff.organisation_id.default = r.record.organisation_id
-        db.org_staff.organisation_id.writable = False
-        return True
-    response.s3.prep = prep    
-
     s3xrc.model.configure(db.pr_presence,
         # presence not deletable in this view! (need to register a check-out
         # for the same person instead):
         deletable=False,
-        list_fields=["id", "pe_id", "datetime", "presence_condition", "proc_desc"])
+        list_fields=["id",
+                     "pe_id",
+                     "datetime",
+                     "presence_condition",
+                     "proc_desc"])
+
+    s3xrc.model.configure(table,
+        # Go to People check-in for this shelter after creation
+        create_next = URL(r=request, c="cr", f="shelter",
+                          args=["[id]", "presence"]),
+        create_onvalidation = shn_shelter_onvalidation,
+        update_onvalidation = shn_shelter_onvalidation)
 
     # Pre-processor
     response.s3.prep = shn_shelter_prep
 
-    s3xrc.model.configure(table,
-        # Go to People check-in for this shelter after creation
-        create_next = URL(r=request, c="cr", f="shelter", args=["[id]", "presence"]),
-        create_onvalidation = shn_shelter_onvalidation,
-        update_onvalidation = shn_shelter_onvalidation)
+    # Post-processor
+    def postp(r, output):
+        if r.component_name == "staff" and \
+                deployment_settings.get_aaa_has_staff_permissions():
+            addheader = "%s %s." % (STAFF_HELP,
+                                    T("Shelter"))
+            output.update(addheader=addheader)
+        return output
+    response.s3.postp = postp
 
-    shelter_tabs = [(T("Basic Details"), None),
-                    (T("People"), "presence"),
-                    (T("Staff"), "staff"),
-                    (T("Assessments"), "rat"),
-                    (T("Requests"), "req")]
+    tabs = [(T("Basic Details"), None),
+            (T("People"), "presence"),
+            (T("Staff"), "staff"),
+            (T("Assessments"), "rat"),
+            (T("Requests"), "req")]
 
-    rheader = lambda r: shn_shelter_rheader(r, tabs=shelter_tabs + shn_show_inv_tabs(r))
+    rheader = lambda r: shn_shelter_rheader(r,
+                                            tabs=tabs + shn_show_inv_tabs(r))
     output = s3_rest_controller(module, resourcename, rheader=rheader)
 
     return output
@@ -180,34 +175,34 @@ def shelter():
 
 # -----------------------------------------------------------------------------
 """
-The school- and hospital-specific fields are guarded by checkboxes in
-the form.  If the "is_school" or "is_hospital" checkbox was checked,
-we use the corresponding field values, else we discard them.  Presence
-of a non-empty value for school_code or hospital_id is what determines
-later whether a shelter record is a school or hospital, as the is_school
-and is_hospital values are not in the table.
+    The school- and hospital-specific fields are guarded by checkboxes in
+    the form.  If the "is_school" or "is_hospital" checkbox was checked,
+    we use the corresponding field values, else we discard them.  Presence
+    of a non-empty value for school_code or hospital_id is what determines
+    later whether a shelter record is a school or hospital, as the is_school
+    and is_hospital values are not in the table.
 
-Note we clear the unused hospital value *before* validation, because
-there is a (small) possibility that someone deleted the chosen hospital
-record while this request was in flight.  If the user doesn't want the
-hospital they selected, there's no reason to make sure it's in the database.
+    Note we clear the unused hospital value *before* validation, because
+    there is a (small) possibility that someone deleted the chosen hospital
+    record while this request was in flight.  If the user doesn't want the
+    hospital they selected, there's no reason to make sure it's in the database.
 
-The check for a missing school code or hospital id value is in an
-onvalidation function.  Web2py short-circuits validation, so if there are
-other errors, the check on school code and hospital id won't be called.
-If the user corrects their other errors but has a mistake in school code
-or hospital id, they'll do another round trip through fixing an error.
+    The check for a missing school code or hospital id value is in an
+    onvalidation function.  Web2py short-circuits validation, so if there are
+    other errors, the check on school code and hospital id won't be called.
+    If the user corrects their other errors but has a mistake in school code
+    or hospital id, they'll do another round trip through fixing an error.
 
-We don't just clear the fields in the form if the user unchecks the
-checkbox because they might do that accidentally, and it would not be
-nice to make them re-enter the info.
+    We don't just clear the fields in the form if the user unchecks the
+    checkbox because they might do that accidentally, and it would not be
+    nice to make them re-enter the info.
 """
 
 def shn_shelter_prep(r):
     """
-    If the "is_school" or "is_hospital" checkbox was checked, we use the
-    corresponding field values, else we clear them so no attempt is made
-    to validate them.
+        If the "is_school" or "is_hospital" checkbox was checked, we use the
+        corresponding field values, else we clear them so no attempt is made
+        to validate them.
     """
 
     # Note the checkbox inputs that guard the optional data are inserted in
@@ -226,7 +221,12 @@ def shn_shelter_prep(r):
 
     if r.interactive:
         # Don't send the locations list to client (pulled by AJAX instead)
-        r.table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
+        r.table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db,
+                                                                  "gis_location.id"))
+
+        # Cascade the organisation_id from the shelter to the staff
+        db.org_staff.organisation_id.default = r.record.organisation_id
+        db.org_staff.organisation_id.writable = False
 
         # Remember this is html or popup.
         response.cr_shelter_request_was_html_or_popup = True
@@ -239,9 +239,10 @@ def shn_shelter_prep(r):
                 db.assess_rat.location_id.comment = ""
                 # Set defaults
                 if auth.is_logged_in():
-                    staff_id = db((db.pr_person.uuid == session.auth.user.person_uuid) & \
-                                  (db.org_staff.person_id == db.pr_person.id)).select(
-                                   db.org_staff.id, limitby=(0, 1)).first()
+                    query = (db.pr_person.uuid == session.auth.user.person_uuid) & \
+                            (db.org_staff.person_id == db.pr_person.id)
+                    staff_id = db(query).select(db.org_staff.id,
+                                                limitby=(0, 1)).first()
                     if staff_id:
                         db.assess_rat.staff_id.default = staff_id.id
 
@@ -293,7 +294,8 @@ def shn_shelter_prep(r):
             #    request.post_vars.school_code = None
             #    request.post_vars.school_pf = None
 
-            if not "is_hospital" in request.vars and "hospital_id" in request.post_vars:
+            if not "is_hospital" in request.vars and \
+               "hospital_id" in request.post_vars:
                 request.post_vars.hospital_id = None
 
     elif r.representation == "aadata" and r.component and r.component.name == "req":
@@ -305,9 +307,9 @@ def shn_shelter_prep(r):
 # -----------------------------------------------------------------------------
 def shn_shelter_onvalidation(form):
     """
-    If the user checked is_school, but there is no school_code, add a
-    form.error for that field, to fail the submission and get an error
-    message into the page.  Likewise for is_hospital and hospital_id.
+        If the user checked is_school, but there is no school_code, add a
+        form.error for that field, to fail the submission and get an error
+        message into the page.  Likewise for is_hospital and hospital_id.
     """
 
     if response.cr_shelter_request_was_html_or_popup:
@@ -341,17 +343,17 @@ def shn_shelter_rheader(r, tabs=[]):
 
                 rheader = DIV(TABLE(
                                     TR(
-                                        TH(T("Name") + ": "), record.name
+                                        TH("%s: " % T("Name")), record.name
                                       ),
                                     TR(
-                                        TH(T("Location") + ": "), location
+                                        TH("%s: " % T("Location")), location
                                       ),
                                     ),
                               rheader_tabs)
             else:
                 rheader = DIV(TABLE(
                                     TR(
-                                        TH(T("Name") + ": "), record.name
+                                        TH("%s: " % T("Name")), record.name
                                       ),
                                     ),
                               rheader_tabs)

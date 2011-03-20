@@ -62,6 +62,16 @@ def wh():
         return True
     response.s3.prep = prep 
     
+    # Post-processor
+    def postp(r, output):
+        if r.component_name == "staff" and \
+                deployment_settings.get_aaa_has_staff_permissions():
+            addheader = "%s %s." % (STAFF_HELP,
+                                    T("Warehouse"))
+            output.update(addheader=addheader)
+        return output
+    response.s3.postp = postp
+
     # CRUD strings
     ADD_WH = T("Add Warehouse")
     LIST_WH = T("List Warehouses")
@@ -567,7 +577,7 @@ def recv_process():
     session.confirmation = T("Shipment Items received by Inventory")
 
     # Go to the Site which has received these items
-    (prefix, resourcename, id) = shn_site_resource(site_id)
+    (prefix, resourcename, id) = auth.s3_site_resource(site_id)
     
     redirect(URL(r = request,
                  c = prefix,
@@ -800,7 +810,7 @@ def send_process():
                 shn_req_item_onaccept(None)        
                
         # Go to the Site which has sent these items
-        (prefix, resourcename, id) = shn_site_resource(site_id)
+        (prefix, resourcename, id) = auth.s3_site_resource(site_id)
 
         redirect(URL(r = request,
                      c = prefix,
@@ -1005,7 +1015,7 @@ def send_commit():
     r_commit = db.req_commit[commit_id]
     
     # User must have permissions over site which is sending 
-    (prefix, resourcename, id) = shn_site_resource(site_id)        
+    (prefix, resourcename, id) = auth.s3_site_resource(site_id)        
     if not auth.s3_has_permission("update", 
                                   db["%s_%s" % (prefix, resourcename)], 
                                   record_id=id):    

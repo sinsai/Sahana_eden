@@ -123,7 +123,7 @@ def shn_pr_person_represent(id):
 
 # -----------------------------------------------------------------------------
 resourcename = "person"
-tablename = "%s_%s" % (prefix, resourcename)
+tablename = "pr_person"
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
                         super_link(db.sit_trackable), # track_id
@@ -187,7 +187,8 @@ table.age_group.label = T("Age group")
 
 table.tags.label = T("Personal impact of disaster")
 table.tags.comment = DIV(DIV(_class="tooltip",
-    _title=T("Personal impact of disaster") + "|" + T("How is this person affected by the disaster? (Select all that apply)")))
+    _title="%s|%s" % (T("Personal impact of disaster"),
+                      T("How is this person affected by the disaster? (Select all that apply)"))))
 table.tags.requires = IS_EMPTY_OR(IS_IN_SET(pr_impact_tags, zero=None, multiple=True))
 table.tags.represent = lambda opt: opt and \
                        ", ".join([str(pr_impact_tags.get(o, UNKNOWN_OPT)) for o in opt]) or ""
@@ -216,7 +217,8 @@ s3.crud_strings[tablename] = Storage(
 shn_person_comment = lambda title, comment: \
     DIV(A(ADD_PERSON,
         _class="colorbox",
-        _href=URL(r=request, c="pr", f="person", args="create", vars=dict(format="popup")),
+        _href=URL(r=request, c="pr", f="person", args="create",
+                  vars=dict(format="popup")),
         _target="top",
         _title=ADD_PERSON),
     DIV(DIV(_class="tooltip",
@@ -301,15 +303,17 @@ pr_group_type_opts = {
 }
 
 pr_group_type = S3ReusableField("group_type", "integer",
-                                requires = IS_IN_SET(pr_group_type_opts, zero=None),
+                                requires = IS_IN_SET(pr_group_type_opts,
+                                                     zero=None),
                                 default = 4,
                                 label = T("Group Type"),
                                 represent = lambda opt: \
-                                            pr_group_type_opts.get(opt, UNKNOWN_OPT))
+                                            pr_group_type_opts.get(opt,
+                                                                   UNKNOWN_OPT))
 
 # -----------------------------------------------------------------------------
 resourcename = "group"
-tablename = "%s_%s" % (prefix, resourcename)
+tablename = "pr_group"
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
                         pr_group_type(),
@@ -366,8 +370,8 @@ group_id = S3ReusableField("group_id", db.pr_group,
                                     _target="top",
                                     _title=s3.crud_strings.pr_group.label_create_button),
                                 DIV(DIV(_class="tooltip",
-                                    _title="%s|%s" % (T("Create Group Entry"),
-                                                      T("Create a group entry in the registry."))))),
+                                        _title="%s|%s" % (T("Create Group Entry"),
+                                                          T("Create a group entry in the registry."))))),
                            ondelete = "RESTRICT")
 
 # -----------------------------------------------------------------------------
@@ -405,7 +409,7 @@ s3xrc.model.configure(db.pr_person, search_method=pr_person_search)
 # Group membership
 #
 resourcename = "group_membership"
-tablename = "%s_%s" % (prefix, resourcename)
+tablename = "pr_group_membership"
 table = db.define_table(tablename,
                         group_id(),
                         person_id(),
@@ -551,7 +555,7 @@ pr_address_type_opts = {
 
 # -----------------------------------------------------------------------------
 resourcename = "address"
-tablename = "%s_%s" % (prefix, resourcename)
+tablename = "pr_address"
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
                         Field("type",
@@ -673,16 +677,18 @@ pr_contact_method_opts = {
 
 # -----------------------------------------------------------------------------
 resourcename = "pe_contact"
-tablename = "%s_%s" % (prefix, resourcename)
+tablename = "pr_pe_contact"
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
                         Field("contact_method",
                               "integer",
-                              requires = IS_IN_SET(pr_contact_method_opts, zero=None),
+                              requires = IS_IN_SET(pr_contact_method_opts,
+                                                   zero=None),
                               default = 99,
                               label = T("Contact Method"),
                               represent = lambda opt: \
-                                          pr_contact_method_opts.get(opt, UNKNOWN_OPT)),
+                                          pr_contact_method_opts.get(opt,
+                                                                     UNKNOWN_OPT)),
                         Field("value", notnull=True),
                         Field("priority"),
                         Field("contact_person"),
@@ -703,7 +709,8 @@ table.priority.requires = IS_IN_SET(range(1, 10), zero=None)
 
 
 pe_contact_id = S3ReusableField("pe_contact_id", db.pr_pe_contact,
-                                requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pe_contact.id")),
+                                requires = IS_NULL_OR(IS_ONE_OF(db,
+                                                                "pr_pe_contact.id")),
                                 ondelete = "RESTRICT")
 
 
@@ -769,14 +776,15 @@ pr_image_type_opts = {
 
 # -----------------------------------------------------------------------------
 resourcename = "image"
-tablename = "%s_%s" % (prefix, resourcename)
+tablename = "pr_image"
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
                         Field("type", "integer",
                               requires = IS_IN_SET(pr_image_type_opts, zero=None),
                               default = 1,
                               label = T("Image Type"),
-                              represent = lambda opt: pr_image_type_opts.get(opt, UNKNOWN_OPT)),
+                              represent = lambda opt: pr_image_type_opts.get(opt,
+                                                                             UNKNOWN_OPT)),
                         Field("title"),
                         Field("image", "upload", autodelete=True),
                         Field("url"),
@@ -789,20 +797,25 @@ table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 
 table.title.requires = IS_NOT_EMPTY()
 table.title.comment = DIV(_class="tooltip",
-    _title=T("Title") + "|" + T("Specify a descriptive title for the image."))
+    _title="%s|%s" % (T("Title"),
+                      T("Specify a descriptive title for the image.")))
 
 table.url.label = T("URL")
 table.url.represent = lambda url: url and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None")
 table.url.comment =  DIV(_class="tooltip",
-    _title=T("URL") + "|" + T("The URL of the image file. If you don't upload an image file, then you must specify its location here."))
+    _title="%s|%s" % (T("URL"),
+                      T("The URL of the image file. If you don't upload an image file, then you must specify its location here.")))
 table.image.comment =  DIV(_class="tooltip",
-    _title=T("Image") + "|" + T("Upload an image file here. If you don't upload an image file, then you must specify its location in the URL field."))
+    _title="%s|%s" % (T("Image"),
+                      T("Upload an image file here. If you don't upload an image file, then you must specify its location in the URL field.")))
 table.image.represent = lambda image: image and \
-        DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=image),_height=60, _alt=T("View Image")),
+        DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=image),
+                  _height=60, _alt=T("View Image")),
               _href=URL(r=request, c="default", f="download", args=image))) or \
         T("No Image")
 table.description.comment =  DIV(_class="tooltip",
-    _title=T("Description") + "|" + T("Give a brief description of the image, e.g. what can be seen where on the picture (optional)."))
+    _title="%s|%s" % (T("Description"),
+                      T("Give a brief description of the image, e.g. what can be seen where on the picture (optional).")))
 
 
 # -----------------------------------------------------------------------------
@@ -816,7 +829,8 @@ def shn_pr_image_onvalidation(form):
     if not hasattr(image, "file"):
         id = request.post_vars.id
         if id:
-            record = db(table.id == id).select(table.image, limitby=(0, 1)).first()
+            record = db(table.id == id).select(table.image,
+                                               limitby=(0, 1)).first()
             if record:
                 image = record.image
 
@@ -872,7 +886,7 @@ pr_presence_condition_opts = vita.presence_conditions
 
 # -----------------------------------------------------------------------------
 resourcename = "presence"
-tablename = "%s_%s" % (prefix, resourcename)
+tablename = "pr_presence"
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
                         super_link(db.sit_situation), # sit_id
@@ -929,7 +943,8 @@ table.closed.writable = False
 
 table.proc_desc.label = T("Procedure")
 table.proc_desc.comment = DIV(DIV(_class="tooltip",
-        _title=T("Procedure") + "|" + T('Describe the procedure which this record relates to (e.g. "medical examination")')))
+        _title="%s|%s" % (T("Procedure"),
+                          T('Describe the procedure which this record relates to (e.g. "medical examination")'))))
 
 table.shelter_id.readable = False
 table.shelter_id.writable = False
@@ -1132,7 +1147,7 @@ s3.crud_strings[tablename] = Storage(
 # Subscription (pe_subscription)
 #
 resourcename = "pe_subscription"
-tablename = "%s_%s" % (prefix, resourcename)
+tablename = "pr_pe_subscription"
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
                         Field("resource"),
@@ -1194,7 +1209,7 @@ pr_id_type_opts = {
 
 # -----------------------------------------------------------------------------
 resourcename = "identity"
-tablename = "%s_%s" % (prefix, resourcename)
+tablename = "pr_identity"
 table = db.define_table(tablename,
                         person_id(),
                         Field("type", "integer",
@@ -1350,7 +1365,7 @@ if deployment_settings.has_module("dvi") or \
 
 # -----------------------------------------------------------------------------
     resourcename = "physical_description"
-    tablename = "%s_%s" % (prefix, resourcename)
+    tablename = "pr_physical_description"
     table = db.define_table(tablename,
                             super_link(db.pr_pentity), # pe_id
 
@@ -1453,9 +1468,11 @@ if deployment_settings.has_module("dvi") or \
 
 
     table.height_cm.comment = DIV(DIV(_class="tooltip",
-        _title=T("Height") + "|" + T("The body height (crown to heel) in cm.")))
+                                      _title="%s|%s" % (T("Height"),
+                                                        T("The body height (crown to heel) in cm."))))
     table.weight_kg.comment = DIV(DIV(_class="tooltip",
-        _title=T("Weight") + "|" + T("The weight in kg.")))
+                                      _title="%s|%s" % (T("Weight"),
+                                                        T("The weight in kg."))))
 
     table.pe_id.readable = False
     table.pe_id.writable = False

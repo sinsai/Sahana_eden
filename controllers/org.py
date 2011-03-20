@@ -68,8 +68,18 @@ def organisation():
         tabs.append((T("Activities"), "activity"))
         #tabs.append((T("Tasks"), "task"))
 
+    # Post-processor
+    def postp(r, output):
+        if r.component_name == "staff" and \
+                deployment_settings.get_aaa_has_staff_permissions():
+            addheader = "%s %s." % (STAFF_HELP,
+                                    T("Organization"))
+            output.update(addheader=addheader)
+        return output
+    response.s3.postp = postp
+
     rheader = lambda r: shn_org_rheader(r,
-                                        tabs = tabs)
+                                        tabs=tabs)
 
     output = s3_rest_controller(prefix, resourcename, rheader=rheader)
     return output
@@ -114,6 +124,16 @@ def office():
                 table.organisation_id.default = request.vars.organisation_id
         return True
     response.s3.prep = prep
+
+    # Post-processor
+    def postp(r, output):
+        if r.component_name == "staff" and \
+                deployment_settings.get_aaa_has_staff_permissions():
+            addheader = "%s %s." % (STAFF_HELP,
+                                    T("Office"))
+            output.update(addheader=addheader)
+        return output
+    response.s3.postp = postp
 
     rheader = shn_office_rheader
 

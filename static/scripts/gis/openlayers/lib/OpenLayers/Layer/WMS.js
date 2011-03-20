@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -203,22 +203,6 @@ OpenLayers.Layer.WMS = OpenLayers.Class(OpenLayers.Layer.Grid, {
     },
 
     /**
-     * Method: addTile
-     * addTile creates a tile, initializes it, and adds it to the layer div. 
-     *
-     * Parameters:
-     * bounds - {<OpenLayers.Bounds>}
-     * position - {<OpenLayers.Pixel>}
-     * 
-     * Returns:
-     * {<OpenLayers.Tile.Image>} The added OpenLayers.Tile.Image
-     */
-    addTile:function(bounds,position) {
-        return new OpenLayers.Tile.Image(this, position, bounds, 
-                                         null, this.tileSize);
-    },
-
-    /**
      * APIMethod: mergeNewParams
      * Catch changeParams and uppercase the new params to be merged in
      *     before calling changeParams on the super class.
@@ -252,8 +236,11 @@ OpenLayers.Layer.WMS = OpenLayers.Class(OpenLayers.Layer.Grid, {
      * {String} 
      */
     getFullRequestString:function(newParams, altUrl) {
-        var projectionCode = this.map.getProjection();
-        var value = (projectionCode == "none") ? null : projectionCode
+        var mapProjection = this.map.getProjectionObject();
+        var projectionCode = this.projection.equals(mapProjection) ?
+            this.projection.getCode() :
+            mapProjection.getCode();
+        var value = (projectionCode == "none") ? null : projectionCode;
         if (parseFloat(this.params.VERSION) >= 1.3) {
             this.params.CRS = value;
         } else {

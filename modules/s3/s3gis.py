@@ -47,7 +47,7 @@ import re
 import sys
 import random           # Needed when feature_queries are passed in without a name
 import urllib           # Needed for urlencoding
-import urllib2          # Needed for error handling on fetch
+import urllib2          # Needed for quoting & error handling on fetch
 import uuid
 import Cookie           # Needed for Sessions on Internal KML feeds
 try:
@@ -2066,22 +2066,27 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript",
                                _src=URL(r=request, c="static", f="scripts/gis/openlayers/lib/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript",
-                               _src=URL(r=request, c="static", f="scripts/gis/MP.js")))
-            html.append(SCRIPT(_type="text/javascript",
                                _src=URL(r=request, c="static", f="scripts/gis/cdauth.js")))
-            html.append(SCRIPT(_type="text/javascript",
-                               _src=URL(r=request, c="static", f="scripts/gis/usng2.js")))
             html.append(SCRIPT(_type="text/javascript",
                                _src=URL(r=request, c="static", f="scripts/gis/osm_styles.js")))
             html.append(SCRIPT(_type="text/javascript",
                                _src=URL(r=request, c="static", f="scripts/gis/GeoExt/lib/GeoExt.js")))
             html.append(SCRIPT(_type="text/javascript",
                                _src=URL(r=request, c="static", f="scripts/gis/GeoExt/ux/GeoNamesSearchCombo.js")))
+            if mouse_position == "mgrs":
+                html.append(SCRIPT(_type="text/javascript",
+                                   _src=URL(r=request, c="static", f="scripts/gis/usng2.js")))
+                html.append(SCRIPT(_type="text/javascript",
+                                   _src=URL(r=request, c="static", f="scripts/gis/MP.js")))
         else:
             html.append(SCRIPT(_type="text/javascript",
                                _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript",
                                _src=URL(r=request, c="static", f="scripts/gis/GeoExt.js")))
+            if mouse_position == "mgrs":
+                html.append(SCRIPT(_type="text/javascript",
+                                   _src=URL(r=request, c="static", f="scripts/gis/MGRS.min.js")))
+                
 
         if print_tool:
             url = print_tool["url"] + "info.json?var=printCapabilities"
@@ -4216,8 +4221,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                             warning = "URLError"
                         except urllib2.HTTPError:
                             warning = "HTTPError"
-                        _name = name.replace(" ", "_")
-                        _name = _name.replace(",", "_")
+                        _name = urllib2.quote(name)
+                        _name = _name.replace("%", "_")
                         filename = "gis_cache.file.%s.rss" % _name
                         filepath = os.path.join(cachepath, filename)
                         f = open(filepath, "w")
@@ -4477,8 +4482,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                     if cacheable:
                         # Download file
                         file, warning = self.download_kml(url, public_url)
-                        _name = name.replace(" ", "_")
-                        _name = _name.replace(",", "_")
+                        _name = urllib2.quote(name)
+                        _name = _name.replace("%", "_")
                         filename = "gis_cache.file.%s.kml" % _name
                         filepath = os.path.join(cachepath, filename)
                         f = open(filepath, "w")

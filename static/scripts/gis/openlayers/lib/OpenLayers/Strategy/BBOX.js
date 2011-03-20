@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -68,9 +68,6 @@ OpenLayers.Strategy.BBOX = OpenLayers.Class(OpenLayers.Strategy, {
      * options - {Object} Optional object whose properties will be set on the
      *     instance.
      */
-    initialize: function(options) {
-        OpenLayers.Strategy.prototype.initialize.apply(this, [options]);
-    },
     
     /**
      * Method: activate
@@ -90,6 +87,14 @@ OpenLayers.Strategy.BBOX = OpenLayers.Class(OpenLayers.Strategy, {
                 "refresh": this.update,
                 scope: this
             });
+            if(this.layer.visibility == true) {
+                this.update();
+            } else {
+                this.layer.events.on({
+                    "visibilitychanged": this.update,
+                    scope: this
+                });
+            }
         }
         return activated;
     },
@@ -106,10 +111,8 @@ OpenLayers.Strategy.BBOX = OpenLayers.Class(OpenLayers.Strategy, {
         if(deactivated) {
             this.layer.events.un({
                 "moveend": this.update,
-                scope: this
-            });
-            this.layer.events.un({
                 "refresh": this.update,
+                "visibilitychanged": this.update,
                 scope: this
             });
         }
@@ -127,7 +130,8 @@ OpenLayers.Strategy.BBOX = OpenLayers.Class(OpenLayers.Strategy, {
      */
     update: function(options) {
         var mapBounds = this.getMapBounds();
-        if ((options && options.force) || this.invalidBounds(mapBounds)) {
+        if (mapBounds !== null && ((options && options.force) ||
+                                   this.invalidBounds(mapBounds))) {
             this.calculateBounds(mapBounds);
             this.resolution = this.layer.map.getResolution(); 
             this.triggerRead();
@@ -142,8 +146,12 @@ OpenLayers.Strategy.BBOX = OpenLayers.Class(OpenLayers.Strategy, {
      * {<OpenLayers.Bounds>} Map bounds in the projection of the layer.
      */
     getMapBounds: function() {
+        if (this.layer.map === null) {
+            return null;
+        }
         var bounds = this.layer.map.getExtent();
-        if(!this.layer.projection.equals(this.layer.map.getProjectionObject())) {
+        if(bounds && !this.layer.projection.equals(
+                this.layer.map.getProjectionObject())) {
             bounds = bounds.clone().transform(
                 this.layer.map.getProjectionObject(), this.layer.projection
             );

@@ -184,7 +184,7 @@ def s3_include_debug():
 
     # Get list of script files
     sys.path.append( "%s/tools" % scripts_dir_path)
-    import mergejs
+    import mergejsmf
 
     configDictCore = {
         "web2py": scripts_dir_path,
@@ -192,7 +192,7 @@ def s3_include_debug():
         "S3":     scripts_dir_path
     }
     configFilename = "%s/tools/sahana.js.cfg"  % scripts_dir_path
-    (fs, files) = mergejs.getFiles(configDictCore, configFilename)
+    (fs, files) = mergejsmf.getFiles(configDictCore, configFilename)
 
     # Enable print
     sys.stdout = save_stdout

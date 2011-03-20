@@ -182,7 +182,7 @@ deployment_settings.osm.oauth_consumer_secret = ""
 #deployment_settings.security.map = True
 # Security Policy (defaults to 1 = Simple)
 # http://eden.sahanafoundation.org/wiki/S3AAA#System-widePolicy
-#deployment_settings.security.policy = 3 # Controller-ACLs
+#deployment_settings.security.policy = 4 # Function-ACLs
 # Should users be allowed to register themselves?
 deployment_settings.security.self_registration = True
 # Use 'soft' deletes
@@ -331,6 +331,12 @@ deployment_settings.modules = OrderedDict([
             restricted = False,
             module_type = 4
         )),
+    ("asset", Storage(
+            name_nice = T("Asset Management"),
+            description = T("Recording and Assigning Assets"),
+            restricted = False,
+            module_type = 10,
+        )),             
     ("vol", Storage(
             name_nice = T("Volunteers"),
             description = T("Manage volunteers by capturing their skills, availability and allocation"),
@@ -373,14 +379,14 @@ deployment_settings.modules = OrderedDict([
         )),
     # Assess currently depends on CR & IRS
     ("assess", Storage(
-            name_nice = "Assessments",
-            description = "Rapid Assessments & Flexible Impact Assessments",
+            name_nice = T("Assessments"),
+            description = T("Rapid Assessments & Flexible Impact Assessments"),
             restricted = False,
             module_type = 2,
         )),
     ("building", Storage(
-            name_nice = "Building Assessments",
-            description = "Building Safety Assessments",
+            name_nice = T("Building Assessments"),
+            description = T("Building Safety Assessments"),
             restricted = False,
             module_type = 10,
         )),
@@ -391,14 +397,14 @@ deployment_settings.modules = OrderedDict([
     #        module_type = 10,
     #    )),
     #("survey", Storage(
-    #        name_nice = "Survey Module",
-    #        description = "Create, enter, and manage surveys.",
+    #        name_nice = T("Survey Module"),
+    #        description = T("Create, enter, and manage surveys."),
     #        restricted = False,
     #        module_type = 10,
     #    )),
     #("importer", Storage(
-    #        name_nice = "Spreadsheet Importer",
-    #        description = "Used to import data from spreadsheets into the database",
+    #        name_nice = T("Spreadsheet Importer"),
+    #        description = T("Used to import data from spreadsheets into the database"),
     #        restricted = False,
     #        module_type = 10,
     #    )),

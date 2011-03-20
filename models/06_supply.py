@@ -10,7 +10,7 @@
 """
 
 module = "supply"
-if deployment_settings.has_module("inv"):
+if deployment_settings.has_module("inv") or deployment_settings.has_module("asset"):
     #==============================================================================
     # Item Category
     #
@@ -53,6 +53,49 @@ if deployment_settings.has_module("inv"):
                                                  T("The list of Item categories are maintained by the Administrators."))),
                 ondelete = "RESTRICT"
                 )
+    
+    #==============================================================================
+    # Brand
+    #
+    resourcename = "brand"
+    tablename = "%s_%s" % (module, resourcename)
+    table = db.define_table(tablename,
+                            Field("name", length=128, notnull=True, unique=True),
+                            comments(),
+                            migrate=migrate, *s3_meta_fields())
+
+
+    # CRUD strings
+    ADD_BRAND = T("Add Brand")
+    LIST_BRAND = T("List Brands")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_BRAND,
+        title_display = T("Brand Details"),
+        title_list = LIST_BRAND,
+        title_update = T("Edit Brand"),
+        title_search = T("Search Brands"),
+        subtitle_create = T("Add New Brand"),
+        subtitle_list = T("Brands"),
+        label_list_button = LIST_BRAND,
+        label_create_button = ADD_BRAND,
+        label_delete_button = T("Delete Brand"),
+        msg_record_created = T("Brand added"),
+        msg_record_modified = T("Brand updated"),
+        msg_record_deleted = T("Brand deleted"),
+        msg_list_empty = T("No Brands currently registered"))
+
+    # Reusable Field
+    brand_id = S3ReusableField("brand_id", db.supply_brand, sortby="name",
+                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_brand.id",
+                                                "%(name)s",
+                                                sort=True)),
+                represent = lambda id: shn_get_db_field_value(db=db, table="supply_brand", field="name", look_up=id),
+                label = T("Category"),
+                comment = DIV( _class="tooltip",
+                               _title="%s|%s" % (T("Brand"),
+                                                 T("The list of Brands are maintained by the Administrators."))),
+                ondelete = "RESTRICT"
+                )    
 
     #==============================================================================
     # Item
@@ -61,7 +104,15 @@ if deployment_settings.has_module("inv"):
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             item_category_id(),
-                            Field("name", length=128, notnull=True, unique=True),
+                            brand_id(),
+                            Field("name", 
+                                  label = T("Name/Model/Type"),
+                                  length=128, 
+                                  notnull=True, 
+                                  unique=True),                            
+                            Field("year",
+                                  "integer", 
+                                  label = T("Year of Manufacture")),
                             Field("um", 
                                   length=128,
                                   label = T("Unit of Measure"),
@@ -87,7 +138,10 @@ if deployment_settings.has_module("inv"):
         msg_record_created = T("Catalog Item added"),
         msg_record_modified = T("Catalog Item updated"),
         msg_record_deleted = T("Catalog Item deleted"),
-        msg_list_empty = T("No Catalog Items currently registered"))
+        msg_list_empty = T("No Catalog Items currently registered"),
+        msg_match = T("Matching Catalog Items"),
+        msg_no_match = T("No Matching Catalog Items")
+        )
     
     def shn_item_represent(id):
         record = db(db.supply_item.id == id).select(db.supply_item.name,
@@ -133,11 +187,44 @@ if deployment_settings.has_module("inv"):
                                        name = form.vars.um,
                                        quantity = 1,
                                        )
+            
+    # -----------------------------------------------------------------------------
+    # Item Search Method
+    #
+    shn_item_search = s3base.S3Find(
+        #name="shn_item_search",
+        #label=T("Name and/or ID"),
+        #comment=T("To search for a hospital, enter any of the names or IDs of the hospital, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all hospitals."),
+        #field=["gov_uuid", "name", "aka1", "aka2"],
+        advanced=(s3base.S3SearchSimpleWidget(
+                    name="item_search_advanced",
+                    label=T("Item"),
+                    comment=T("Search for an item by text."),
+                    field=["name", "comment", "item_category_id$name"]
+                  ),
+                  s3base.S3SearchSelectWidget(    
+                    name="item_search_category",
+                    label=T("Category"),
+                    comment=T("Search for an item by  category."),
+                    field=["item_category_id"],
+                    represent ="%(name)s",
+                    cols = 3
+                  ),                  
+                  ## for testing:
+                  #s3base.S3SearchMinMaxWidget(
+                    #name="hospital_search_bedcount",
+                    #method="range",
+                    #label=T("Total Beds"),
+                    #comment=T("Select a range for the number of total beds"),
+                    #field=["total_beds"]
+                  #)
+        ))       
 
     #------------------------------------------------------------------------------
     s3xrc.model.configure(
         table, 
-        onaccept = shn_supply_item_onaccept
+        onaccept = shn_supply_item_onaccept,
+        search_method = shn_item_search
     )     
     #==============================================================================
     # Item Pack

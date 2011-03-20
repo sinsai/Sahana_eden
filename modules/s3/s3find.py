@@ -81,7 +81,7 @@ class S3SearchWidget(object):
 
         self.attr = Storage(attr)
         if name is not None:
-            self.attr["_name"] = name
+            self.attr["_name"] = name   
 
         self.master_query = None
         self.search_field = None
@@ -486,6 +486,7 @@ class S3SearchSelectWidget(S3SearchWidget):
     """
     Option select widget for option or boolean fields
 
+    Field must be a integer or reference
     """
 
     def widget(self, resource, vars):
@@ -494,13 +495,55 @@ class S3SearchSelectWidget(S3SearchWidget):
 
         @param resource: the resource to search in
         @param vars: the URL GET variables as dict
-
         """
+        
+        if "_name" not in self.attr:
+            self.attr.update(_name="%s_search_simple" % resource.name)
+        self.name = self.attr._name        
+        
+        # Find unique values for the field  
+        field = self.field[0]        
+        rows = resource.select(field, groupby = resource.table[field] )
+        opt_keys = [row[field] for row in rows if row[field]]
+                  
+        field_type = resource.table[field].type
+        # Get the representations for these values
+        if type == "integer":
+            represent = resource.table[field].represent
+            # For integers, use the represent function
+            opt_list = [[represent(opt_key), opt_key] for opt_key in opt_keys]
+        else:
+            # For reference's use the represent string to reduce db calls
+            db = resource.db
+            component_table = db[field_type[10:]] 
+            
+            import re
+            fieldnames = re.findall("%\(([a-zA-Z0-9_]*)\)s",self.attr.represent)
+            fieldnames += ["id"]
+            represent_fields = [component_table[fieldname] 
+                                for fieldname in fieldnames]            
+            
+            represent_rows = db(component_table.id.belongs(opt_keys) & 
+                                component_table.deleted  == False 
+                                ).select(*represent_fields).as_dict()
+            opt_list = []                    
+            for opt_key in opt_keys:
+                opt_list.append([self.attr.represent % represent_rows[opt_key], opt_key])           
+            
+        opt_list.sort() # Alphabetise (this may not work as it is converted to a dict), look at IS_IN_SET validator
+        
+        options = {}
+        for opt in opt_list:
+            options[opt[1]] = opt[0]
 
-        self.attr = Storage(attr)
-
-        raise NotImplementedError
-
+        # Dummy field to Create check boxes 
+        field = Storage(name = self.name,
+                        requires = IS_IN_SET(options,
+                                             multiple = True)
+                        )
+        from sqlhtml import CheckboxesWidget
+        widget = CheckboxesWidget().widget(field, None, cols = self.attr.cols)
+        return widget
 
     def query(self, resource, value):
         """
@@ -510,6 +553,7 @@ class S3SearchSelectWidget(S3SearchWidget):
         @param value: the value returned from the widget
 
         """
+        return (resource.table[self.field[0]].belongs(value))
         raise NotImplementedError
 
 
@@ -875,13 +919,13 @@ class S3Find(S3CRUD):
                     response.s3.limit = 20
 
             elif not items:
-                items = T("No matching records found.")
+                items = self.crud_string(tablename, "msg_no_match")
 
             output.update(items=items, sortby=sortby)
 
         # Title and subtitle
         title = self.crud_string(tablename, "title_search")
-        subtitle = T("Matching Records")
+        subtitle = self.crud_string(tablename, "msg_match")
         output.update(title=title, subtitle=subtitle)
 
         # View

@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -64,6 +64,28 @@ OpenLayers.Control.DragFeature = OpenLayers.Class(OpenLayers.Control, {
      * pixel - {<OpenLayers.Pixel>} The pixel location of the mouse.
      */
     onComplete: function(feature, pixel) {},
+
+    /**
+     * APIProperty: onEnter
+     * {Function} Define this function if you want to know when the mouse
+     *     goes over a feature and thereby makes this feature a candidate
+     *     for dragging.
+     *
+     * Parameters:
+     * feature - {<OpenLayers.Feature.Vector>} The feature that is ready
+     *     to be dragged.
+     */
+    onEnter: function(feature) {},
+
+    /**
+     * APIProperty: onLeave
+     * {Function} Define this function if you want to know when the mouse
+     *     goes out of the feature that was dragged.
+     *
+     * Parameters:
+     * feature - {<OpenLayers.Feature.Vector>} The feature that was dragged.
+     */
+    onLeave: function(feature) {},
 
     /**
      * APIProperty: documentDrag
@@ -192,6 +214,7 @@ OpenLayers.Control.DragFeature = OpenLayers.Class(OpenLayers.Control, {
             this.handlers.drag.activate();
             this.over = true;
             OpenLayers.Element.addClass(this.map.viewPortDiv, this.displayClass + "Over");
+            this.onEnter(feature);
         } else {
             if(this.feature.id == feature.id) {
                 this.over = true;
@@ -269,6 +292,7 @@ OpenLayers.Control.DragFeature = OpenLayers.Class(OpenLayers.Control, {
             OpenLayers.Element.removeClass(
                 this.map.viewPortDiv, this.displayClass + "Over"
             );
+            this.onLeave(feature);
             this.feature = null;
         } else {
             if(this.feature.id == feature.id) {

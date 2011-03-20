@@ -159,9 +159,14 @@ def location():
             table.wkt.writable = table.wkt.readable = False
         else:
             table.code.comment = DIV(_class="tooltip",
-                                     _title=T("Code") + "|" + T("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
+                                     _title="%s|%s" % (T("Code"),
+                                                       T("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode.")))
             table.wkt.comment = DIV(_class="stickytip",
-                                    _title="WKT|" + T("The" + " <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>" + T("Well-Known Text") + "</a> " + "representation of the Polygon/Line."))
+                                    _title="WKT|%s %s%s %s%s" % (T("The"),
+                                                               "<a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>",
+                                                               T("Well-Known Text"),
+                                                               "</a>",
+                                                               T("representation of the Polygon/Line.")))
 
         if r.method == "update":
             # We don't allow converting a location group to non-group and
@@ -405,7 +410,10 @@ def location_duplicates():
         return output
     else:
         # Don't load records except via dataTables (saves duplicate loading & less confusing for user)
-        items = DIV((TABLE(table_header, TBODY(), _id="list", _class="display")))
+        items = DIV((TABLE(table_header,
+                           TBODY(),
+                           _id="list",
+                           _class="display")))
         return(dict(items=items))
 
 def delete_location():
@@ -560,12 +568,17 @@ def map_service_catalogue():
                     description = row.description
                 else:
                     description = ""
-                label = type + "_" + str(row.id)
+                label = "%s_%s" % (type, str(row.id))
                 if row.enabled:
                     enabled = INPUT(_type="checkbox", value=True, _name=label)
                 else:
                     enabled = INPUT(_type="checkbox", _name=label)
-                item_list.append(TR(TD(A(row.name, _href=URL(r=request, f="layer_%s" % type, args=row.id))), TD(description), TD(enabled), _class=theclass))
+                item_list.append(TR(TD(A(row.name,
+                                         _href=URL(r=request, f="layer_%s" % type,
+                                                   args=row.id))),
+                                    TD(description),
+                                    TD(enabled),
+                                    _class=theclass))
         # Feature Layers
         type = "feature"
         for row in db(db.gis_layer_feature.id > 0).select():
@@ -579,16 +592,34 @@ def map_service_catalogue():
                     description = row.comments
             else:
                 description = ""
-            label = type + "_" + str(row.id)
+            label = "%s_%s" % (type, str(row.id))
             if row.enabled:
                 enabled = INPUT(_type="checkbox", value=True, _name=label)
             else:
                 enabled = INPUT(_type="checkbox", _name=label)
-            item_list.append(TR(TD(A(row.name, _href=URL(r=request, f="layer_feature", args=row.id))), TD(description), TD(enabled), _class=theclass))
+            item_list.append(TR(TD(A(row.name,
+                                     _href=URL(r=request, f="layer_feature",
+                                               args=row.id))),
+                                TD(description),
+                                TD(enabled),
+                                _class=theclass))
 
-        table_header = THEAD(TR(TH("Layer"), TH("Description"), TH("Enabled?")))
-        table_footer = TFOOT(TR(TD(INPUT(_id="submit_button", _type="submit", _value=T("Update")), _colspan=3)), _align="right")
-        items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name="custom", _method="post", _enctype="multipart/form-data", _action=URL(r=request, f="layers_enable")))
+        table_header = THEAD(TR(TH("Layer"),
+                                TH("Description"),
+                                TH("Enabled?")))
+        table_footer = TFOOT(TR(TD(INPUT(_id="submit_button",
+                                         _type="submit",
+                                         _value=T("Update")),
+                                   _colspan=3)),
+                             _align="right")
+        items = DIV(FORM(TABLE(table_header,
+                               TBODY(item_list),
+                               table_footer,
+                               _id="table-container"),
+                    _name="custom",
+                    _method="post",
+                    _enctype="multipart/form-data",
+                    _action=URL(r=request, f="layers_enable")))
 
     else:
         # Simple List View
@@ -608,10 +639,18 @@ def map_service_catalogue():
                 else:
                     description = ""
                 if row.enabled:
-                    enabled = INPUT(_type="checkbox", value="on", _disabled="disabled")
+                    enabled = INPUT(_type="checkbox",
+                                    value="on",
+                                    _disabled="disabled")
                 else:
-                    enabled = INPUT(_type="checkbox", _disabled="disabled")
-                item_list.append(TR(TD(A(row.name, _href=URL(r=request, f="layer_%s" % type, args=row.id))), TD(description), TD(enabled), _class=theclass))
+                    enabled = INPUT(_type="checkbox",
+                                    _disabled="disabled")
+                item_list.append(TR(TD(A(row.name,
+                                         _href=URL(r=request, f="layer_%s" % type,
+                                                   args=row.id))),
+                                    TD(description),
+                                    TD(enabled),
+                                    _class=theclass))
         # Feature Layers
         type = "feature"
         table = db["gis_layer_%s" % type]
@@ -629,10 +668,17 @@ def map_service_catalogue():
             else:
                 description = ""
             if row.enabled:
-                enabled = INPUT(_type="checkbox", value="on", _disabled="disabled")
+                enabled = INPUT(_type="checkbox",
+                                value="on",
+                                _disabled="disabled")
             else:
                 enabled = INPUT(_type="checkbox", _disabled="disabled")
-            item_list.append(TR(TD(A(row.name, _href=URL(r=request, f="layer_feature", args=row.id))), TD(description), TD(enabled), _class=theclass))
+            item_list.append(TR(TD(A(row.name,
+                                     _href=URL(r=request, f="layer_feature",
+                                               args=row.id))),
+                                TD(description),
+                                TD(enabled),
+                                _class=theclass))
 
         table_header = THEAD(TR(TH("Layer"), TH("Description"), TH("Enabled?")))
         items = DIV(TABLE(table_header, TBODY(item_list), _id="table-container"))
@@ -658,7 +704,8 @@ def layers_enable():
                 query_inner = (table.id == row.id)
                 var = "%s_%i" % (type, row.id)
                 # Read current state
-                if db(query_inner).select(table.enabled, limitby=(0, 1)).first().enabled:
+                if db(query_inner).select(table.enabled,
+                                          limitby=(0, 1)).first().enabled:
                     # Old state: Enabled
                     if var in request.vars:
                         # Do nothing
@@ -667,14 +714,16 @@ def layers_enable():
                         # Disable
                         db(query_inner).update(enabled=False)
                         # Audit
-                        s3_audit("update", module, resourcename, record=row.id, representation="html")
+                        s3_audit("update", module, resourcename, record=row.id,
+                                 representation="html")
                 else:
                     # Old state: Disabled
                     if var in request.vars:
                         # Enable
                         db(query_inner).update(enabled=True)
                         # Audit
-                        s3_audit("update", module, resourcename, record=row.id, representation="html")
+                        s3_audit("update", module, resourcename, record=row.id,
+                                 representation="html")
                     else:
                         # Do nothing
                         pass
@@ -686,7 +735,8 @@ def layers_enable():
             query_inner = (table.id == row.id)
             var = "feature_%i" % (row.id)
             # Read current state
-            if db(query_inner).select(table.enabled, limitby=(0, 1)).first().enabled:
+            if db(query_inner).select(table.enabled,
+                                      limitby=(0, 1)).first().enabled:
                 # Old state: Enabled
                 if var in request.vars:
                     # Do nothing
@@ -695,14 +745,16 @@ def layers_enable():
                     # Disable
                     db(query_inner).update(enabled=False)
                     # Audit
-                    s3_audit("update", module, resourcename, record=row.id, representation="html")
+                    s3_audit("update", module, resourcename, record=row.id,
+                             representation="html")
             else:
                 # Old state: Disabled
                 if var in request.vars:
                     # Enable
                     db(query_inner).update(enabled=True)
                     # Audit
-                    s3_audit("update", module, resourcename, record=row.id, representation="html")
+                    s3_audit("update", module, resourcename, record=row.id,
+                             representation="html")
                 else:
                     # Do nothing
                     pass
@@ -787,11 +839,22 @@ def config():
     output["list_btn"] = ""
 
     if auth.is_logged_in():
-        personalised = db((db.pr_person.uuid == auth.user.person_uuid) & (table.pe_id == db.pr_person.pe_id)).select(table.id, limitby=(0, 1)).first()
+        query = (db.pr_person.uuid == auth.user.person_uuid) & \
+                (table.pe_id == db.pr_person.pe_id)
+        personalised = db(query).select(table.id,
+                                        limitby=(0, 1)).first()
         if personalised:
-            output["rheader"] = P(T("You have personalised settings, so changes made here won't be visible to you. To change your personalised settings, click "), A(T("here"), _href=URL(r=request, c="pr", f="person", args=["config"], vars={"person.uid":auth.user.person_uuid})))
+            output["rheader"] = P(T("You have personalised settings, so changes made here won't be visible to you. To change your personalised settings, click "),
+                                  A(T("here"),
+                                    _href=URL(r=request, c="pr", f="person",
+                                              args=["config"],
+                                              vars={"person.uid":auth.user.person_uuid})))
         else:
-            output["rheader"] = P(T("These are the default settings for all users. To change settings just for you, click "), A(T("here"), _href=URL(r=request, c="pr", f="person", args=["config"], vars={"person.uid":auth.user.person_uuid})))
+            output["rheader"] = P(T("These are the default settings for all users. To change settings just for you, click "),
+                                  A(T("here"),
+                                    _href=URL(r=request, c="pr", f="person",
+                                              args=["config"],
+                                              vars={"person.uid":auth.user.person_uuid})))
 
     return output
 
@@ -808,7 +871,9 @@ def feature_class():
     table = db[tablename]
 
     # Model options
-    table.gps_marker.comment = DIV( _class="tooltip", _title=T("GPS Marker") + "|" + T("Defines the icon used for display of features on handheld GPS."))
+    table.gps_marker.comment = DIV( _class="tooltip",
+                                    _title="%s|%s" % (T("GPS Marker"),
+                                                      T("Defines the icon used for display of features on handheld GPS.")))
 
     # CRUD Strings
     LIST_FEATURE_CLASS = T("List Feature Classes")
@@ -2257,7 +2322,7 @@ def geoexplorer():
     cachepath = os.path.join(request.folder, "uploads", "gis_cache")
     if os.access(cachepath, os.W_OK):
         cacheable = True
-        import urllib2      # for error handling
+        import urllib2      # for quoting & error handling
         from gluon.tools import fetch
     else:
         cacheable = False
@@ -2294,8 +2359,8 @@ def geoexplorer():
                 warning = "URLError"
             except urllib2.HTTPError:
                 warning = "HTTPError"
-            _name = name.replace(" ", "_")
-            _name = _name.replace(",", "_")
+            _name = urllib2.quote(name)
+            _name = _name.replace("%", "_")
             filename = "gis_cache.file." + _name + ".rss"
             filepath = os.path.join(cachepath, filename)
             f = open(filepath, "w")
@@ -2472,8 +2537,8 @@ def geoexplorer():
         if cacheable:
             # Download file
             file, warning = gis.download_kml(url, public_url)
-            _name = name.replace(" ", "_")
-            _name = _name.replace(",", "_")
+            _name = urllib2.quote(name)
+            _name = _name.replace("%", "_")
             filename = "gis_cache.file." + _name + ".kml"
             filepath = os.path.join(cachepath, filename)
             f = open(filepath, "w")

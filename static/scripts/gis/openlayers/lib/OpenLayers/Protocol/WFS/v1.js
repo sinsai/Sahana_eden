@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -77,7 +77,13 @@ OpenLayers.Protocol.WFS.v1 = OpenLayers.Class(OpenLayers.Protocol, {
      *     the response with the default format (WFST) and we need a different 
      *     format for reading. 
      */ 
-    readFormat: null,     
+    readFormat: null,
+    
+    /**
+     * Property: readOptions
+     * {Object} Optional object to pass to format's read.
+     */
+    readOptions: null,
     
     /**
      * Constructor: OpenLayers.Protocol.WFS
@@ -136,12 +142,40 @@ OpenLayers.Protocol.WFS.v1 = OpenLayers.Class(OpenLayers.Protocol, {
     },
 
     /**
-     * Method: read
+     * APIMethod: read
      * Construct a request for reading new features.  Since WFS splits the
      *     basic CRUD operations into GetFeature requests (for read) and
      *     Transactions (for all others), this method does not make use of the
      *     format's read method (that is only about reading transaction
      *     responses).
+     *
+     * Parameters:
+     * options - {Object} Options for the read operation, in addition to the
+     *     options set on the instance (options set here will take precedence).
+     *
+     * To use a configured protocol to get e.g. a WFS hit count, applications
+     * could do the following:
+     *
+     * (code)
+     * protocol.read({
+     *     readOptions: {output: "object"},
+     *     resultType: "hits",
+     *     maxFeatures: null,
+     *     callback: function(resp) {
+     *         // process resp.numberOfFeatures here
+     *     }
+     * });
+     * (end)
+     *
+     * To limit the attributes returned by the GetFeature request, applications
+     * can use the propertyNames option to specify the properties to include in
+     * the response:
+     *
+     * (code)
+     * protocol.read({
+     *     propertyNames: ["DURATION", "INTENSITY"]
+     * });
+     * (end)
      */
     read: function(options) {
         OpenLayers.Protocol.prototype.read.apply(this, arguments);
@@ -163,6 +197,30 @@ OpenLayers.Protocol.WFS.v1 = OpenLayers.Class(OpenLayers.Protocol, {
 
         return response;
     },
+
+    /**
+     * APIMethod: setFeatureType
+     * Change the feature type on the fly.
+     *
+     * Parameters:
+     * featureType - {String} Local (without prefix) feature typeName.
+     */
+    setFeatureType: function(featureType) {
+        this.featureType = featureType;
+        this.format.featureType = featureType;
+    },
+ 
+    /**
+     * APIMethod: setGeometryName
+     * Sets the geometryName option after instantiation.
+     *
+     * Parameters:
+     * geometryName - {String} Name of geometry attribute.
+     */
+    setGeometryName: function(geometryName) {
+        this.geometryName = geometryName;
+        this.format.geometryName = geometryName;
+    },
     
     /**
      * Method: handleRead
@@ -174,11 +232,19 @@ OpenLayers.Protocol.WFS.v1 = OpenLayers.Class(OpenLayers.Protocol, {
      * options - {Object} The user options passed to the read call.
      */
     handleRead: function(response, options) {
+        options = OpenLayers.Util.extend({}, options);
+        OpenLayers.Util.applyDefaults(options, this.options);
+
         if(options.callback) {
             var request = response.priv;
             if(request.status >= 200 && request.status < 300) {
                 // success
-                response.features = this.parseFeatures(request);
+                if (options.readOptions && options.readOptions.output == "object") {
+                    OpenLayers.Util.extend(response, 
+                        this.parseResponse(request, options.readOptions));
+                } else {
+                    response.features = this.parseResponse(request, options.readOptions);
+                }
                 response.code = OpenLayers.Protocol.Response.SUCCESS;
             } else {
                 // failure
@@ -189,17 +255,20 @@ OpenLayers.Protocol.WFS.v1 = OpenLayers.Class(OpenLayers.Protocol, {
     },
 
     /**
-     * Method: parseFeatures
+     * Method: parseResponse
      * Read HTTP response body and return features
      *
      * Parameters:
      * request - {XMLHttpRequest} The request object
+     * options - {Object} Optional object to pass to format's read
      *
      * Returns:
-     * {Array({<OpenLayers.Feature.Vector>})} or
-     *     {<OpenLayers.Feature.Vector>} Array of features or a single feature.
+     * {Object} or {Array({<OpenLayers.Feature.Vector>})} or
+     *     {<OpenLayers.Feature.Vector>} 
+     * An object with a features property, an array of features or a single 
+     * feature.
      */
-    parseFeatures: function(request) {
+    parseResponse: function(request, options) {
         var doc = request.responseXML;
         if(!doc || !doc.documentElement) {
             doc = request.responseText;
@@ -208,7 +277,7 @@ OpenLayers.Protocol.WFS.v1 = OpenLayers.Class(OpenLayers.Protocol, {
             return null;
         }
         return (this.readFormat !== null) ? this.readFormat.read(doc) : 
-            this.format.read(doc);
+            this.format.read(doc, options);
     },
 
     /**
@@ -219,7 +288,7 @@ OpenLayers.Protocol.WFS.v1 = OpenLayers.Class(OpenLayers.Protocol, {
      *     is used.
      *
      * Parameters:
-     * features - {Array(<OpenLayers.Feature.Vector>}
+     * features - {Array(<OpenLayers.Feature.Vector>)}
      *
      * Returns:
      * {<OpenLayers.Protocol.Response>} A response object with a features

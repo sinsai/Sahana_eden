@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -43,33 +43,36 @@ OpenLayers.Handler.Box = OpenLayers.Class(OpenLayers.Handler, {
      *
      * Parameters:
      * control - {<OpenLayers.Control>} 
-     * callbacks - {Object} An object containing a single function to be
-     *                          called when the drag operation is finished.
-     *                          The callback should expect to recieve a single
-     *                          argument, the point geometry.
+     * callbacks - {Object} An object with a "done" property whose value is a
+     *     callback to be called when the box drag operation is finished.  
+     *     The callback should expect to recieve a single argument, the box 
+     *     bounds or a pixel. If the box dragging didn't span more than a 5 
+     *     pixel distance, a pixel will be returned instead of a bounds object.
      * options - {Object} 
      */
     initialize: function(control, callbacks, options) {
         OpenLayers.Handler.prototype.initialize.apply(this, arguments);
-        var callbacks = {
-            "down": this.startBox, 
-            "move": this.moveBox, 
-            "out":  this.removeBox,
-            "up":   this.endBox
-        };
         this.dragHandler = new OpenLayers.Handler.Drag(
-                                this, callbacks, {keyMask: this.keyMask});
+            this, 
+            {
+                down: this.startBox, 
+                move: this.moveBox, 
+                out: this.removeBox,
+                up: this.endBox
+            }, 
+            {keyMask: this.keyMask}
+        );
     },
 
     /**
      * Method: destroy
      */
     destroy: function() {
+        OpenLayers.Handler.prototype.destroy.apply(this, arguments);
         if (this.dragHandler) {
             this.dragHandler.destroy();
             this.dragHandler = null;
         }            
-        OpenLayers.Handler.prototype.destroy.apply(this, arguments);
     },
 
     /**
@@ -90,13 +93,13 @@ OpenLayers.Handler.Box = OpenLayers.Class(OpenLayers.Handler, {
     */
     startBox: function (xy) {
         this.zoomBox = OpenLayers.Util.createDiv('zoomBox',
-                                                 this.dragHandler.start);
+             new OpenLayers.Pixel(-9999, -9999));
         this.zoomBox.className = this.boxDivClassName;                                         
         this.zoomBox.style.zIndex = this.map.Z_INDEX_BASE["Popup"] - 1;
-        this.map.viewPortDiv.appendChild(this.zoomBox);
+        this.map.eventsDiv.appendChild(this.zoomBox);
 
         OpenLayers.Element.addClass(
-            this.map.viewPortDiv, "olDrawBox"
+            this.map.eventsDiv, "olDrawBox"
         );
     },
 
@@ -154,11 +157,11 @@ OpenLayers.Handler.Box = OpenLayers.Class(OpenLayers.Handler, {
      * Remove the zoombox from the screen and nullify our reference to it.
      */
     removeBox: function() {
-        this.map.viewPortDiv.removeChild(this.zoomBox);
+        this.map.eventsDiv.removeChild(this.zoomBox);
         this.zoomBox = null;
         this.boxCharacteristics = null;
         OpenLayers.Element.removeClass(
-            this.map.viewPortDiv, "olDrawBox"
+            this.map.eventsDiv, "olDrawBox"
         );
 
     },
@@ -206,7 +209,7 @@ OpenLayers.Handler.Box = OpenLayers.Class(OpenLayers.Handler, {
                 "border-top-width")) + parseInt(OpenLayers.Element.getStyle(
                 this.zoomBox, "border-bottom-width")) + 1;
             // all browsers use the new box model, except IE in quirks mode
-            var newBoxModel = OpenLayers.Util.getBrowserName() == "msie" ?
+            var newBoxModel = OpenLayers.BROWSER_NAME == "msie" ?
                 document.compatMode != "BackCompat" : true;
             this.boxCharacteristics = {
                 xOffset: xOffset,

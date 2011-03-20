@@ -81,7 +81,6 @@ if deployment_settings.has_module(module):
     resourcename = "hospital"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                    super_link(db.sit_trackable),
                     super_link(db.org_site),
                     # PAHO UID
                     Field("paho_uuid", unique=True, length=128),
@@ -221,9 +220,11 @@ if deployment_settings.has_module(module):
                                   ondelete = "RESTRICT")
 
     s3xrc.model.configure(table,
-                          super_entity=(db.org_site, db.sit_trackable),
+                          super_entity=db.org_site,
                           # Create a role for each hospital
-                          create_onaccept = shn_staff_join_onaccept_func(tablename),
+                          create_onaccept = staff_roles_create_func(tablename),
+                          # Rename roles if record name changes
+                          update_onaccept = staff_roles_update_func(tablename),
                           list_fields=["id",
                                        "gov_uuid",
                                        "name",
@@ -871,13 +872,13 @@ if deployment_settings.has_module(module):
                         "organisation_id$name", "organisation_id$acronym"]
                   ),
                   ## for testing:
-                  #s3base.S3SearchMinMaxWidget(
-                    #name="hospital_search_bedcount",
-                    #method="range",
+                  s3base.S3SearchMinMaxWidget(
+                    name="hospital_search_bedcount",
+                    method="range",
                     #label=T("Total Beds"),
-                    #comment=T("Select a range for the number of total beds"),
-                    #field=["total_beds"]
-                  #)
+                    comment=T("Select a range for the number of total beds"),
+                    field=["total_beds"]
+                  )
         ))
 
     # Set as standard search method for hospitals

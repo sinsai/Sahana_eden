@@ -81,7 +81,6 @@ if deployment_settings.has_module(module):
     resourcename = "hospital"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                    super_link(db.sit_trackable),
                     super_link(db.org_site),
                     # PAHO UID
                     Field("paho_uuid", unique=True, length=128),
@@ -221,7 +220,7 @@ if deployment_settings.has_module(module):
                                   ondelete = "RESTRICT")
 
     s3xrc.model.configure(table,
-                          super_entity=(db.org_site, db.sit_trackable),
+                          super_entity=db.org_site,
                           # Create a role for each hospital
                           create_onaccept = shn_staff_join_onaccept_func(tablename),
                           list_fields=["id",

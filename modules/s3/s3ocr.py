@@ -56,6 +56,7 @@ try:
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
     import reportlab
+    reportlab.rl_config.warnOnMissingFontGlyphs = 0
 except(ImportError):
     print >> sys.stderr, "S3 Debug: WARNING: S3OCR: reportlab has not been installed."
 
@@ -67,7 +68,6 @@ from s3rest import S3Method
 #==================== unicode support to reportlab ============================
 #==============================================================================
 
-reportlab.rl_config.warnOnMissingFontGlyphs = 0
 fonts_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                "../../static/fonts")
 

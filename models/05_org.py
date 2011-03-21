@@ -503,7 +503,7 @@ def shn_update_record_roles(form, tablename):
     record = db(table.id == id).select(table.owned_by_role,
                                        limitby=(0, 1)).first()
     owned_by_role = record.owned_by_role
-    
+
     table = db[auth.settings.table_group]
     staff_role_id = owned_by_role
     staff_role_name_old = table[staff_role_id].role
@@ -517,7 +517,7 @@ def shn_update_record_roles(form, tablename):
     # Rename the roles
     db(table.id == staff_role_id).update(role=staff_role_name)
     db(table.role == supervisor_role_name_old).update(role=supervisor_role_name)
-    
+
 # -----------------------------------------------------------------------------
 def shn_component_copy_role(form,
                             component_name, resource_name, fk,  pk  = "id" ):
@@ -717,18 +717,18 @@ def shn_office_rheader(r, tabs=[]):
         if r.record is None:
             # List or Create form: rheader makes no sense here
             return None
-        
+
         tabs = [(T("Basic Details"), None),
                 (T("Contact Data"), "pe_contact"),
-                (T("Staff"), "staff"),                
-                ]        
+                (T("Staff"), "staff"),
+                ]
 
         rheader_tabs = shn_rheader_tabs(r, tabs + shn_show_inv_tabs(r))
 
         office = r.record
         if office:
             organisation = db(db.org_organisation.id == office.organisation_id
-                              ).select(db.org_organisation.name, 
+                              ).select(db.org_organisation.name,
                                        limitby=(0, 1)
                                        ).first()
             if organisation:
@@ -740,7 +740,7 @@ def shn_office_rheader(r, tabs=[]):
                           TR(TH("%s: " % T("Name")),
                              office.name,
                              TH("%s: " % T("Type")),
-                             org_office_type_opts.get(office.type, 
+                             org_office_type_opts.get(office.type,
                                                       UNKNOWN_OPT),
                              ),
                           TR(TH("%s: " % T("Organization")),
@@ -978,4 +978,24 @@ table = db.define_table(tablename,
                                                             APPROVER_HELP))),
                         comments(),
                         migrate=migrate, *s3_meta_fields())
+
+#==============================================================================
+# Resource super-entity
+#   - to link availability, deployment as common components
+
+#org_resource_types = dict(
+    #"hrm_human_resource": T("Human Resource")
+#)
+
+#resource = "resource"
+#tablename = "org_resource"
+#table = super_entity(tablename, "rsc_id", org_resource_types,
+                     #organisation_id(), # mirrored field
+                     #migrate=migrate)
+
+#s3xrc.model.configure(table,
+                      #editable=False,
+                      #deletable=False,
+                      #listadd=False)
+
 # END -------------------------------------------------------------------------

@@ -1531,6 +1531,7 @@
 'If no, specify why': 'If no, specify why',
 'If the location is a geographic area, then state at what level here.': 'If the location is a geographic area, then state at what level here.',
 "If this field is populated then a user who specifies this Organization when signing up will be assigned as a Staff of this Organization unless their domain doesn't match the domain field.": "If this field is populated then a user who specifies this Organization when signing up will be assigned as a Staff of this Organization unless their domain doesn't match the domain field.",
+'If this field is populated then a user with the Domain specified will automatically be assigned as a Staff of this Organization': 'If this field is populated then a user with the Domain specified will automatically be assigned as a Staff of this Organization',
 'If this is set to True then mails will be deleted from the server after downloading.': 'If this is set to True then mails will be deleted from the server after downloading.',
 'If this record should be restricted then select which role is required to access the record here.': 'If this record should be restricted then select which role is required to access the record here.',
 'If this record should be restricted then select which role(s) are permitted to access the record here.': 'If this record should be restricted then select which role(s) are permitted to access the record here.',

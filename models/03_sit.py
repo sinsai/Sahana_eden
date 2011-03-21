@@ -41,10 +41,12 @@ resourcename = "trackable"
 tablename = "sit_trackable"
 
 table = super_entity(tablename, "track_id", trackable_types,
-                     location_id("base_location"),
                      migrate=migrate)
 
-s3xrc.model.configure(table, editable=False, deletable=False, listadd=False)
+s3xrc.model.configure(table,
+                      editable=False,
+                      deletable=False,
+                      listadd=False)
 
 # -----------------------------------------------------------------------------
 # Universal presence
@@ -66,17 +68,4 @@ s3xrc.model.add_component(prefix, resourcename,
                           multiple=True,
                           joinby=super_key(db.sit_trackable))
 
-# -----------------------------------------------------------------------------
-# Resource super-entity
-resource_types = Storage(
-    hrm_human_resource = T("Human Resource"),
-)
-
-resourcename = "resource"
-tablename = "sit_resource"
-
-table = super_entity(tablename, "res_id", resource_types,
-                     migrate=migrate)
-
-s3xrc.model.configure(table, editable=False, deletable=False, listadd=False)
 # -----------------------------------------------------------------------------

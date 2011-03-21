@@ -640,6 +640,12 @@ div#rheader_tabs span.rheader_tab_other a { color: #000000;
 div#rheader_tabs span.rheader_tab_here a { color: #006699;
                                          text-decoration: None; }
 
+/* Last Update Meta-data */
+div#last_update { text-align: right;
+                font-style: italic;
+                font-size: 80%;
+                color: #bbb; }
+
 /* Used to diplay the list-add with the list-add-btn */
 #list-add { display: none }
 

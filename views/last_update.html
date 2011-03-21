@@ -1,0 +1,11 @@
+<div id="last_update">
+{{=T("Last updated ")}}
+{{try:}}
+ <span id="modified_on">{{=modified_on}}</span>
+{{except:}}
+{{pass}}
+{{try:}}
+ <span id="modified_by">{{=modified_by}}</span>
+{{except:}}
+{{pass}}
+</div>

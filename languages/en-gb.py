@@ -1159,6 +1159,7 @@
 'Enter a new support request.': 'Enter a new support request.',
 'Enter a summary of the request here.': 'Enter a summary of the request here.',
 'Enter a unique label!': 'Enter a unique label!',
+'Enter a valid date': 'Enter a valid date',
 'Enter a valid email': 'Enter a valid email',
 'Enter some characters to bring up a list of possible matches.': 'Enter some characters to bring up a list of possible matches.',
 'Enter tags separated by commas.': 'Enter tags separated by commas.',

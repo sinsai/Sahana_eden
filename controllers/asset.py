@@ -14,7 +14,7 @@ resourcename = request.function
 
 #==============================================================================
 response.menu_options = [
-    #[T("Home"), False, URL(r=request, c="inv", f="index")],
+    #[T("Home"), False, URL(r=request, c="asset", f="index")],
     [T("Assets"), False, URL(r=request, c="asset", f="asset"),
     [
         [T("List"), False, URL(r=request, c="asset", f="asset")],
@@ -30,7 +30,7 @@ response.menu_options = [
 def index():
     """
     """
-    module_name = deployment_settings.modules[module].name_nice
+    module_name = deployment_settings.modules[prefix].name_nice
     response.title = module_name
     return dict(module_name=module_name)
 
@@ -49,8 +49,9 @@ def shn_asset_rheader(r):
             rheader_tabs = shn_rheader_tabs(r, tabs)
             
             item = db.asset_asset.item_id.represent(asset.item_id)
-            rheader = DIV(TABLE(TR( TH(T("Asset Number") + ": "), asset.number,
-                                    TH(T("Item") + ": "), item,
+            rheader = DIV(TABLE(TR( TH("%s: " % T("Asset Number")),
+                                    asset.number,
+                                    TH("%s: " % T("Item")), item,
                                   ),
                                ),
                           rheader_tabs
@@ -67,3 +68,5 @@ def asset():
     table = db[tablename]
 
     return s3_rest_controller(prefix, resourcename, rheader=shn_asset_rheader)
+
+# END =========================================================================

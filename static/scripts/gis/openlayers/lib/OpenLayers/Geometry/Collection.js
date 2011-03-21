@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -108,11 +108,18 @@ OpenLayers.Geometry.Collection = OpenLayers.Class(OpenLayers.Geometry, {
      */
     calculateBounds: function() {
         this.bounds = null;
-        if ( this.components && this.components.length > 0) {
-            this.setBounds(this.components[0].getBounds());
-            for (var i=1, len=this.components.length; i<len; i++) {
-                this.extendBounds(this.components[i].getBounds());
+        var bounds = new OpenLayers.Bounds();
+        var components = this.components;
+        if (components) {
+            for (var i=0, len=components.length; i<len; i++) {
+                bounds.extend(components[i].getBounds());
             }
+        }
+        // to preserve old behavior, we only set bounds if non-null
+        // in the future, we could add bounds.isEmpty()
+        if (bounds.left != null && bounds.bottom != null && 
+            bounds.right != null && bounds.top != null) {
+            this.setBounds(bounds);
         }
     },
 

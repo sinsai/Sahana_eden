@@ -58,12 +58,14 @@ if deployment_settings.has_module("inv"):
                             item_pack_id(),
                             Field("quantity", 
                                   "double",
+                                  label = T("Quantity"),
                                   notnull = True),
                             #Field("pack_quantity",
                             #      "double",
                             #      compute = shn_record_pack_quantity),   
                             Field("expiry_date",
-                                  "date"),                            
+                                  "date",
+                                  label = T("Expiry Date")),                            
                             comments(),
                             migrate=migrate, *s3_meta_fields())
     
@@ -168,7 +170,7 @@ if deployment_settings.has_module("inv"):
     table = db.define_table(tablename,
                             Field("datetime",
                                   "datetime",
-                                  label = "Date Received",
+                                  label = T("Date Received"),
                                   writable = False,
                                   readable = False #unless the record is locked
                                   ),
@@ -176,6 +178,7 @@ if deployment_settings.has_module("inv"):
                                   "integer",
                                   requires = IS_NULL_OR(IS_IN_SET(inv_recv_type)),
                                   represent = lambda type: inv_recv_type[type] if type else NONE,
+                                  label = T("Type"),
                                   default = 0,
                                   ),                                  
                             super_link(db.org_site), #(label = T("By Warehouse")),
@@ -189,6 +192,7 @@ if deployment_settings.has_module("inv"):
                                   requires = IS_NULL_OR(IS_IN_SET(shipment_status)),
                                   represent = lambda status: shipment_status.get(status),       
                                   default = SHIP_STATUS_IN_PROCESS,                           
+                                  label = T("Status"),
                                   writable = False,
                                   ),
                             person_id(name = "recipient_id",
@@ -473,6 +477,7 @@ if deployment_settings.has_module("inv"):
                             item_id(),
                             item_pack_id(),
                             Field("quantity", "double",
+                                  label = T("Quantity"),
                                   notnull = True),
                             comments(),
                             req_item_id(readable = False,
@@ -553,6 +558,7 @@ if deployment_settings.has_module("inv"):
                                   requires = IS_NULL_OR(IS_IN_SET(shipment_status)),
                                   represent = lambda status: shipment_status.get(status),       
                                   default = SHIP_STATUS_IN_PROCESS,                           
+                                  label = T("Status"),
                                   writable = False,
                                   ),
                             person_id(name = "recipient_id",
@@ -640,7 +646,7 @@ if deployment_settings.has_module("inv"):
                                    **attr)
         
     s3xrc.model.set_method(module, resourcename, 
-                           method='form', action=shn_inv_send_form ) 
+                           method="form", action=shn_inv_send_form ) 
     
     #==============================================================================
     # Send (Outgoing / Dispatch / etc) Items
@@ -661,13 +667,13 @@ if deployment_settings.has_module("inv"):
                             Field("status",
                                   "integer",
                                   requires = IS_NULL_OR(IS_IN_SET(log_sent_item_status)),
-                                  represent = lambda status: log_sent_item_status[status] if status else log_sent_item_status[0],
+                                  represent = lambda opt: log_sent_item_status[opt] if opt else log_sent_item_status[0],
                                   writable = False),
                             req_item_id(readable = False,
                                         writable = False),      
                             migrate=migrate, *s3_meta_fields())
     
-    #pack_quantity virtual field
+    # pack_quantity virtual field
     table.virtualfields.append(item_pack_virtualfields(tablename = tablename))       
 
     # CRUD strings
@@ -712,8 +718,8 @@ if deployment_settings.has_module("inv"):
     #------------------------------------------------------------------------------
     def shn_add_dynamic_inv_components():
         """
-        Add inv_send as component joinby field according to tab selected
-        and returns prep function 
+            Add inv_send as component joinby field according to tab selected
+            and returns prep function 
         """
         if "send" in request.args:
             if request.get_vars.get("select","sent") == "incoming":
@@ -756,28 +762,28 @@ if deployment_settings.has_module("inv"):
                     msg_list_empty = T("No Sent Shipments"))    
             
     #------------------------------------------------------------------------------   
-    def shn_inv_prep(r):      
+    def shn_inv_prep(r):
         if "inv_item" in request.args:
-            #Filter out items which are already  in this inventory            
+            # Filter out items which are already in this inventory
             inv_item_rows =  db((db.inv_inv_item.site_id == r.record.site_id) &
-                                (db.inv_inv_item.deleted == False)           
+                                (db.inv_inv_item.deleted == False)
                                 ).select(db.inv_inv_item.item_id)
             item_ids = [row.item_id for row in inv_item_rows]
             
-            #Ensure that the current item CAN be selected
+            # Ensure that the current item CAN be selected
             if r.method == "update":
                 item_ids.remove(db.inv_inv_item[r.request.args[2]].item_id)
             db.inv_inv_item.item_id.requires.set_filter(not_filterby = "id",
-                                                        not_filter_opts = item_ids)       
+                                                        not_filter_opts = item_ids)
         
         if "send" in request.args and \
-            request.get_vars.get("select","sent") == "incoming":        
-            #Display only incoming shipments which haven't been received yet
+            request.get_vars.get("select", "sent") == "incoming":
+            # Display only incoming shipments which haven't been received yet
             filter = (db.inv_send.status == SHIP_STATUS_SENT)
-            r.resource.add_component_filter("send", filter)  
+            r.resource.add_component_filter("send", filter)
 
     #------------------------------------------------------------------------------
-    #Session dictionary to indicate if a site inv should be shown
+    # Session dictionary to indicate if a site inv should be shown
     if session.s3.show_inv == None:
         session.s3.show_inv = {}
         
@@ -789,9 +795,9 @@ if deployment_settings.has_module("inv"):
         except:
             show_inv = None
         if show_inv == True or show_inv == False:
-            session.s3.show_inv["%s_%s" %  (r.name,r.id)] = show_inv
+            session.s3.show_inv["%s_%s" %  (r.name, r.id)] = show_inv
         else:
-            show_inv = session.s3.show_inv.get("%s_%s" %  (r.name,r.id))
+            show_inv = session.s3.show_inv.get("%s_%s" %  (r.name, r.id))
             
         if show_inv:
             inv_btn = A(T("Hide Inventory"),
@@ -807,9 +813,9 @@ if deployment_settings.has_module("inv"):
                         (T("Receive" ), "recv"),
                         (T("Send"), "send", dict(select="sent")),
                         (T("Commit"), "commit"),
-                        (T("- Inventory"), None, dict(show_inv="False")),
+                        ("- %s" % T("Inventory"), None, dict(show_inv="False")),
                         ]                        
         else:
-            inv_tabs = [(T("+ Inventory"), None, dict(show_inv="True"))]
+            inv_tabs = [("+ %s" % T("Inventory"), None, dict(show_inv="True"))]
                         
         return inv_tabs 

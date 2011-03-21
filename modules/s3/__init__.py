@@ -83,3 +83,6 @@ from s3vita import *
 
 # OCR functions
 from s3ocr import *
+
+# Tracking System
+from s3track import *

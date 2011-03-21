@@ -37,7 +37,7 @@ else:
 # -----------------------------------------------------------------------------
 # GIS Markers (Icons)
 resourcename = "marker"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_marker"
 table = db.define_table(tablename,
                         #uuidstamp, # Markers don't sync
                         Field("name", length=128, notnull=True, unique=True),
@@ -70,7 +70,7 @@ marker_id = S3ReusableField("marker_id", db.gis_marker, sortby="name",
                                              _title=ADD_MARKER),
                                        DIV( _class="tooltip",
                                             _title="%s|%s" % (MARKER,
-                                                             T("Defines the icon used for display of features on interactive map & KML exports. A Marker assigned to an individual Location is set if there is a need to override the Marker assigned to the Feature Class. If neither are defined, then the Default Marker is used.")))),
+                                                              T("Defines the icon used for display of features on interactive map & KML exports. A Marker assigned to an individual Location is set if there is a need to override the Marker assigned to the Feature Class. If neither are defined, then the Default Marker is used.")))),
                              ondelete = "RESTRICT"
                             )
 
@@ -97,7 +97,7 @@ s3xrc.model.configure(table,
 # -----------------------------------------------------------------------------
 # GIS Projections
 resourcename = "projection"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_projection"
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("epsg", "integer", notnull=True),
@@ -132,7 +132,7 @@ s3xrc.model.configure(table, deletable=False)
 # -----------------------------------------------------------------------------
 # GIS Symbology
 resourcename = "symbology"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_symbology"
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         migrate=migrate,
@@ -155,14 +155,15 @@ gis_config_layout_opts = {
     }
 opt_gis_layout = db.Table(db, "opt_gis_layout",
                           Field("opt_gis_layout", "integer",
-                                requires = IS_IN_SET(gis_config_layout_opts, zero=None),
+                                requires = IS_IN_SET(gis_config_layout_opts,
+                                                     zero=None),
                                 default = 1,
                                 label = T("Layout"),
                                 represent = lambda opt: gis_config_layout_opts.get(opt,
                                                                                    UNKNOWN_OPT)))
 # id=1 = Default settings
 resourcename = "config"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_config"
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
                         Field("lat", "double"),
@@ -289,7 +290,7 @@ s3xrc.model.configure(table,
 gis_gps_marker_opts = gis.gps_symbols
 
 resourcename = "feature_class"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_feature_class"
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("description"),
@@ -444,7 +445,7 @@ def shn_gis_location_represent(id, showlink=True):
     return represent
 
 resourcename = "location"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_location"
 table = db.define_table(tablename,
                         Field("name", notnull=True),    # Primary name
                         #Field("name_short"),           # Secondary name
@@ -506,7 +507,7 @@ table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, UN
 # Full WKT validation is done in the onvalidation callback
 # All we do here is allow longer fields than the default (2 ** 16)
 table.wkt.requires = IS_LENGTH(2 ** 24)
-table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
+table.wkt.represent = gis.abbreviate_wkt
 table.lat.requires = IS_NULL_OR(IS_LAT())
 table.lon.requires = IS_NULL_OR(IS_LON())
 table.url.requires = IS_NULL_OR(IS_URL())
@@ -587,7 +588,7 @@ location_id = S3ReusableField("location_id", db.gis_location,
                                                     repr_select,
                                                     orderby="gis_location.name",
                                                     sort=True)),
-                    represent = lambda id: shn_gis_location_represent(id),
+                    represent = shn_gis_location_represent,
                     label = T("Location"),
                     widget = S3LocationSelectorWidget(db, gis,
                                                       deployment_settings,
@@ -616,7 +617,7 @@ if response.s3.countries:
 # -----------------------------------------------------------------------------
 # Local Names
 resourcename = "location_name"
-tablename = module + "_" + resourcename
+tablename = "gis_location_name"
 table = db.define_table(tablename,
                         location_id(),
                         Field("language"),
@@ -674,8 +675,9 @@ def gis_location_onvalidation(form):
     # Check if this has already been called and use the existing info.
     def get_location_info():
         if "id" in request:
-            return db(db.gis_location.id == request.id).select(
-                db.gis_location.level, limitby=(0, 1)).first()
+            query = (db.gis_location.id == request.id)
+            return db(query).select(db.gis_location.level,
+                                    limitby=(0, 1)).first()
         else:
             return None
 
@@ -771,15 +773,16 @@ def gis_location_onvalidation(form):
         return
 
     if parent:
-        _parent = db(db.gis_location.id == parent).select(db.gis_location.level,
-                                                          db.gis_location.gis_feature_type,
-                                                          db.gis_location.lat_min,
-                                                          db.gis_location.lon_min,
-                                                          db.gis_location.lat_max,
-                                                          db.gis_location.lon_max,
-                                                          #db.gis_location.level,
-                                                          limitby=(0, 1),
-                                                          cache=(cache.ram, 3600)).first()
+        query = (db.gis_location.id == parent)
+        _parent = db(query).select(db.gis_location.level,
+                                   db.gis_location.gis_feature_type,
+                                   db.gis_location.lat_min,
+                                   db.gis_location.lon_min,
+                                   db.gis_location.lat_max,
+                                   db.gis_location.lon_max,
+                                   #db.gis_location.level,
+                                   limitby=(0, 1),
+                                   cache=(cache.ram, 3600)).first()
 
     # Don't allow a group as parent (that way lies madness!).
     # (Check not needed here -- enforced in requires validator.)
@@ -989,7 +992,7 @@ s3xrc.model.set_method(module, "location", method="parents",
 # Used to select a set of Features for either Display or Export
 # (replaces feature_group)
 resourcename = "layer_feature"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_layer_feature"
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("module"),
@@ -1031,7 +1034,7 @@ table.resource.label = T("Resource")
 # -----------------------------------------------------------------------------
 # GIS Keys - needed for commercial mapping services
 resourcename = "apikey" # Can't use 'key' as this has other meanings for dicts!
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_apikey"
 table = db.define_table(tablename,
                         Field("name", notnull=True),
                         Field("apikey", length=128, notnull=True),
@@ -1052,7 +1055,7 @@ s3xrc.model.configure(table, listadd=False, deletable=False)
 # -----------------------------------------------------------------------------
 # GPS Waypoints
 resourcename = "waypoint"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_waypoint"
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True),
                         Field("description", length=128),
@@ -1068,7 +1071,7 @@ table.category.label = T("Category")
 # -----------------------------------------------------------------------------
 # GPS Tracks (stored as 1 record per point)
 resourcename = "trackpoint"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_trackpoint"
 table = db.define_table(tablename,
                         location_id(),
                         #track_id(),        # link to the uploaded file?
@@ -1078,7 +1081,7 @@ table = db.define_table(tablename,
 # -----------------------------------------------------------------------------
 # GPS Tracks (files in GPX format)
 resourcename = "track"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_track"
 table = db.define_table(tablename,
                         #uuidstamp, # Tracks don't sync
                         Field("name", length=128, notnull=True, unique=True),
@@ -1155,8 +1158,8 @@ gis_layer = db.Table(db, "gis_layer",
                      #roles_permitted(),    # Multiple Roles (needs implementing in modules/s3gis.py)
                      migrate=migrate, *s3_timestamp())
 for layertype in gis_layer_types:
-    resourcename = "layer_" + layertype
-    tablename = "%s_%s" % (module, resourcename)
+    resourcename = "layer_%s" % layertype
+    tablename = "gis_%s" % resourcename
     # Create Type-specific Layer tables
     if layertype == "coordinate":
         t = db.Table(db, table,
@@ -1378,7 +1381,7 @@ for layertype in gis_layer_types:
 # GIS Cache
 # (Store downloaded KML & GeoRSS feeds)
 resourcename = "cache"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_cache"
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("file", "upload", autodelete = True),
@@ -1393,7 +1396,7 @@ table.file.uploadfolder = os.path.join(request.folder, "uploads/gis_cache")
 
 # @ToDo Unify WMC Layers with the rest of the Layers system
 resourcename = "wmc_layer"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_wmc_layer"
 table = db.define_table(tablename,
                         Field("source"),
                         Field("name"),
@@ -1421,7 +1424,7 @@ table = db.define_table(tablename,
 
 # @ToDo add security
 resourcename = "wmc"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "gis_wmc"
 table = db.define_table(tablename,
                         #uuidstamp, # WMCs don't sync
                         projection_id(),
@@ -1447,7 +1450,7 @@ table.zoom.label = T("Zoom")
 
 # GIS Styles: SLD
 #resourcename = "style"
-#tablename = "%s_%s" % (module, resourcename)
+#tablename = "gis_style"
 #table = db.define_table(tablename,
 #                        Field("name", notnull=True, unique=True)
 #                        migrate=migrate, *s3_timestamp())

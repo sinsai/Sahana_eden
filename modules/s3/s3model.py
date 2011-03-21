@@ -44,16 +44,14 @@ from gluon.validators import IS_EMPTY_OR, IS_IN_DB
 class S3ResourceModel(object):
 
     """
-    S3 Model extensions
-
+        S3 Model extensions
     """
 
     def __init__(self, db):
         """
-        Constructor
+            Constructor
 
-        @param db: the database
-
+            @param db: the database
         """
 
         self.db = db
@@ -62,17 +60,15 @@ class S3ResourceModel(object):
         self.methods = {}
         self.cmethods = {}
 
-
     # Components ==============================================================
 
     def add_component(self, prefix, name, joinby=None, multiple=True):
         """
-        Define a component join
+            Define a component join
 
-        @param prefix: prefix of the component name (=module name)
-        @param name: name of the component (=without prefix)
-        @param joinby: join key, or dict of join keys
-
+            @param prefix: prefix of the component name (=module name)
+            @param name: name of the component (=without prefix)
+            @param joinby: join key, or dict of join keys
         """
 
         if joinby:
@@ -111,12 +107,11 @@ class S3ResourceModel(object):
     # -------------------------------------------------------------------------
     def get_component(self, prefix, name, component_name):
         """
-        Retrieve a component join
+            Retrieve a component join
 
-        @param prefix: prefix of the resource name (=module name)
-        @param name: name of the resource (=without prefix)
-        @param component_name: name of the component (=without prefix)
-
+            @param prefix: prefix of the resource name (=module name)
+            @param name: name of the resource (=without prefix)
+            @param component_name: name of the component (=without prefix)
         """
 
         tablename = "%s_%s" % (prefix, name)
@@ -141,11 +136,10 @@ class S3ResourceModel(object):
     # -------------------------------------------------------------------------
     def get_components(self, prefix, name):
         """
-        Retrieves all component joins for a table
+            Retrieves all component joins for a table
 
-        @param prefix: prefix of the resource name (=module name)
-        @param name: name of the resource (=without prefix)
-
+            @param prefix: prefix of the resource name (=module name)
+            @param name: name of the resource (=without prefix)
         """
 
         tablename = "%s_%s" % (prefix, name)
@@ -171,11 +165,10 @@ class S3ResourceModel(object):
     # -------------------------------------------------------------------------
     def has_components(self, prefix, name):
         """
-        Check whether the specified resource has components
+            Check whether the specified resource has components
 
-        @param prefix: prefix of the resource name (=module name)
-        @param name: name of the resource (=without prefix)
-
+            @param prefix: prefix of the resource name (=module name)
+            @param name: name of the resource (=without prefix)
         """
 
         tablename = "%s_%s" % (prefix, name)
@@ -201,8 +194,7 @@ class S3ResourceModel(object):
     # -------------------------------------------------------------------------
     def primary_resources(self, prefixes=[]):
         """
-        Get primay resources (tablenames)
-
+            Get primay resources (tablenames)
         """
 
         tablenames = []
@@ -241,14 +233,13 @@ class S3ResourceModel(object):
                    method=None,
                    action=None):
         """
-        Adds a custom method for a resource or component
+            Adds a custom method for a resource or component
 
-        @param prefix: prefix of the resource name (=module name)
-        @param name: name of the resource (=without prefix)
-        @param component_name: name of the component (=without prefix)
-        @param method: name of the method
-        @param action: function to invoke for this method
-
+            @param prefix: prefix of the resource name (=module name)
+            @param name: name of the resource (=without prefix)
+            @param component_name: name of the component (=without prefix)
+            @param method: name of the method
+            @param action: function to invoke for this method
         """
 
         if not method:
@@ -273,13 +264,12 @@ class S3ResourceModel(object):
     # -------------------------------------------------------------------------
     def get_method(self, prefix, name, component_name=None, method=None):
         """
-        Retrieves a custom method for a resource or component
+            Retrieves a custom method for a resource or component
 
-        @param prefix: prefix of the resource name (=module name)
-        @param name: name of the resource (=without prefix)
-        @param component_name: name of the component (=without prefix)
-        @param method: name of the method
-
+            @param prefix: prefix of the resource name (=module name)
+            @param name: name of the resource (=without prefix)
+            @param component_name: name of the component (=without prefix)
+            @param method: name of the method
         """
 
         if not method:
@@ -307,11 +297,10 @@ class S3ResourceModel(object):
 
     def configure(self, table, **attr):
         """
-        Update the extra configuration of a table
+            Update the extra configuration of a table
 
-        @param table: the table
-        @param attr: dict of attributes to update
-
+            @param table: the table
+            @param attr: dict of attributes to update
         """
 
         cfg = self.config.get(table._tablename, Storage())
@@ -322,11 +311,10 @@ class S3ResourceModel(object):
     # -------------------------------------------------------------------------
     def get_config(self, table, key, default=None):
         """
-        Reads a configuration attribute of a resource
+            Reads a configuration attribute of a resource
 
-        @param table: the resource DB table
-        @param key: the key (name) of the attribute
-
+            @param table: the resource DB table
+            @param key: the key (name) of the attribute
         """
 
         if table._tablename in self.config:
@@ -338,11 +326,10 @@ class S3ResourceModel(object):
     # -------------------------------------------------------------------------
     def clear_config(self, table, *keys):
         """
-        Removes configuration attributes of a resource
+            Removes configuration attributes of a resource
 
-        @param table: the resource DB table
-        @param keys: keys of attributes to remove (maybe multiple)
-
+            @param table: the resource DB table
+            @param keys: keys of attributes to remove (maybe multiple)
         """
 
         if not keys:
@@ -359,14 +346,13 @@ class S3ResourceModel(object):
 
     def super_entity(self, tablename, key, types, *fields, **args):
         """
-        Define a super-entity table
+            Define a super-entity table
 
-        @param tablename: the tablename
-        @param key: name of the primary key
-        @param types: a dictionary of instance types
-        @param fields: any shared fields
-        @param args: table arguments (e.g. migrate)
-
+            @param tablename: the tablename
+            @param key: name of the primary key
+            @param types: a dictionary of instance types
+            @param fields: any shared fields
+            @param args: table arguments (e.g. migrate)
         """
 
         # postgres workaround
@@ -401,10 +387,9 @@ class S3ResourceModel(object):
     @staticmethod
     def super_key(supertable):
         """
-        Get the name of the key for a super-entity
+            Get the name of the key for a super-entity
 
-        @param supertable: the super-entity table
-
+            @param supertable: the super-entity table
         """
 
         try:
@@ -417,10 +402,9 @@ class S3ResourceModel(object):
     # -------------------------------------------------------------------------
     def super_link(self, supertable):
         """
-        Get a foreign key field for a super-entity
+            Get a foreign key field for a super-entity
 
-        @param supertable: the super-entity table
-
+            @param supertable: the super-entity table
         """
 
         key = self.super_key(supertable)
@@ -436,11 +420,10 @@ class S3ResourceModel(object):
     # -------------------------------------------------------------------------
     def update_super(self, table, record):
         """
-        Updates the super-entity links of an instance record
+            Updates the super-entity links of an instance record
 
-        @param table: the instance table
-        @param record: the instance record
-
+            @param table: the instance table
+            @param record: the instance record
         """
 
         # Get the record
@@ -484,14 +467,24 @@ class S3ResourceModel(object):
             # Update records
             row = self.db(s.uuid == uid).select(s[key], limitby=(0, 1)).first()
             if row:
-                k = {key:row[key]}
+                onaccept = self.get_config(s, "update_onaccept",
+                           self.get_config(s, "onaccept", None))
                 self.db(s[key] == row[key]).update(**data)
+                k = {key:row[key]}
                 if record[key] != row[key]:
                     self.db(table.id == id).update(**k)
+                data.update(k)
+                if onaccept:
+                    onaccept(dict(vars=record).update(data))
             else:
+                onaccept = self.get_config(s, "create_onaccept",
+                           self.get_config(s, "onaccept", None))
                 k = s.insert(**data)
                 if k:
                     self.db(table.id == id).update(**{key:k})
+                data.update({key:k})
+                if onaccept:
+                    onaccept(dict(vars=record).update(data))
 
         return True
 
@@ -499,11 +492,10 @@ class S3ResourceModel(object):
     # -------------------------------------------------------------------------
     def delete_super(self, table, record):
         """
-        Removes the super-entity links of an instance record
+            Removes the super-entity links of an instance record
 
-        @param table: the instance table
-        @param record: the instance record
-
+            @param table: the instance table
+            @param record: the instance record
         """
 
         supertable = self.get_config(table, "super_entity")
@@ -525,16 +517,14 @@ class S3ResourceModel(object):
 class S3ResourceLinker(object):
 
     """
-    Hyperlinks between resources
-
+        Hyperlinks between resources
     """
 
     def __init__(self, manager):
         """
-        Constructor
+            Constructor
 
-        @param manager: the S3ResourceController
-
+            @param manager: the S3ResourceController
         """
 
         self.db = manager.db
@@ -555,16 +545,15 @@ class S3ResourceLinker(object):
     # -------------------------------------------------------------------------
     def link(self, from_table, from_id, to_table, to_id, link_class=None):
         """
-        Create a hyperlink between resources
+            Create a hyperlink between resources
 
-        @param from_table: the originating table
-        @param from_id: ID or list of IDs of the originating record(s)
-        @param to_table: the target table
-        @param to_id: ID or list of IDs of the target record(s)
-        @param link_class: link class name
+            @param from_table: the originating table
+            @param from_id: ID or list of IDs of the originating record(s)
+            @param to_table: the target table
+            @param to_id: ID or list of IDs of the target record(s)
+            @param link_class: link class name
 
-        @returns: a list of record IDs of the created links
-
+            @returns: a list of record IDs of the created links
         """
 
         o_tn = from_table._tablename
@@ -611,16 +600,15 @@ class S3ResourceLinker(object):
     # -------------------------------------------------------------------------
     def unlink(self, from_table, from_id, to_table, to_id, link_class=None):
         """
-        Remove a hyperlink between resources
+            Remove a hyperlink between resources
 
-        @param from_table: the originating table
-        @param from_id: ID or list of IDs of the originating record(s)
-        @param to_table: the target table
-        @param to_id: ID or list of IDs of the target record(s)
-        @param link_class: link class name
+            @param from_table: the originating table
+            @param from_id: ID or list of IDs of the originating record(s)
+            @param to_table: the target table
+            @param to_id: ID or list of IDs of the target record(s)
+            @param link_class: link class name
 
-        @note: None for from_id or to_id means *any* record
-
+            @note: None for from_id or to_id means *any* record
         """
 
         o_tn = from_table._tablename
@@ -673,18 +661,17 @@ class S3ResourceLinker(object):
                          link_class=None,
                          union=False):
         """
-        Get a query for the origin table to retrieve records that are
-        linked to a set of target table records.
+            Get a query for the origin table to retrieve records that are
+            linked to a set of target table records.
 
-        @param from_table: the origin table
-        @param to_table: the target table
-        @param to_id: target record ID or list of target record IDs
-        @param link_class: link class name
-        @param union: retrieve a union (True) or an intersection (False, default)
-                        of all sets of links (in case of multiple target records)
+            @param from_table: the origin table
+            @param to_table: the target table
+            @param to_id: target record ID or list of target record IDs
+            @param link_class: link class name
+            @param union: retrieve a union (True) or an intersection (False, default)
+                            of all sets of links (in case of multiple target records)
 
-        @note: None for to_id means *any* record
-
+            @note: None for to_id means *any* record
         """
 
         o_tn = from_table._tablename
@@ -724,18 +711,17 @@ class S3ResourceLinker(object):
                          link_class=None,
                          union=False):
         """
-        Get a query for the target table to retrieve records that are
-        linked to a set of origin table records.
+            Get a query for the target table to retrieve records that are
+            linked to a set of origin table records.
 
-        @param from_table: the origin table
-        @param from_id: origin record ID or list of origin record IDs
-        @param to_table: the target table
-        @param link_class: link class name
-        @param union: retrieve a union (True) or an intersection (False, default)
-                        of all sets of links (in case of multiple origin records)
+            @param from_table: the origin table
+            @param from_id: origin record ID or list of origin record IDs
+            @param to_table: the target table
+            @param link_class: link class name
+            @param union: retrieve a union (True) or an intersection (False, default)
+                            of all sets of links (in case of multiple origin records)
 
-        @note: None for from_id means *any* record
-
+            @note: None for from_id means *any* record
         """
 
         o_tn = from_table._tablename

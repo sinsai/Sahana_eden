@@ -11,7 +11,7 @@
 
 module = "asset"
 if deployment_settings.has_module("asset"):
-    #==============================================================================
+    #==========================================================================
     # Asset 
     #
     resourcename = "asset"
@@ -65,7 +65,7 @@ if deployment_settings.has_module("asset"):
                 ondelete = "RESTRICT"
                 )
         
-    #==============================================================================
+    #==========================================================================
     # Asset Assignment
     #
     resourcename = "assign"
@@ -116,7 +116,8 @@ if deployment_settings.has_module("asset"):
         msg_record_deleted = T("Asset Assignments deleted"),
         msg_list_empty = T("No Asset Assignments currently registered"))
 
-    #assign as component of asset
+    # assign as component of asset
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(asset_asset="asset_id"))          
+                              joinby=dict(asset_asset="asset_id"))
+# END =========================================================================

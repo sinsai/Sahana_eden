@@ -8,12 +8,12 @@
 """
 
 module = request.controller
+resourcename = request.function
 
 response.menu_options = inv_menu
 
 #==============================================================================
 def req():
-    resourcename = request.function
     tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
     
@@ -98,7 +98,6 @@ def shn_req_rheader(r):
 
 #==============================================================================
 def commit():
-    resourcename = request.function
     tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
     output = s3_rest_controller( module,
@@ -153,30 +152,29 @@ def shn_commit_rheader(r):
                         
                 return rheader
     return None
-#==============================================================================
+#------------------------------------------------------------------------------
 def commit_item():
-    resourcename = request.function
     tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
     output = s3_rest_controller( module,
                                  resourcename
                                  )
     return output
-#==============================================================================
+#------------------------------------------------------------------------------
 def commit_req():
     """ 
-    function to commit items according to a request.
-    copy data from a req into a commitment 
-    arg: req_id
-    vars: site_id
+        function to commit items according to a request.
+        copy data from a req into a commitment 
+        arg: req_id
+        vars: site_id
     """    
     
     req_id = request.args[0]
     r_req = db.req_req[req_id]
     site_id = request.vars.get("site_id")
     
-    #User must have permissions over site which is sending 
-    (prefix, resourcename, id) = shn_site_resource(site_id)        
+    # User must have permissions over site which is sending 
+    (prefix, resourcename, id) = auth.s3_site_resource(site_id)        
     if not site or not auth.s3_has_permission("update", 
                                               db["%s_%s" % (prefix,
                                                             resourcename)], 
@@ -196,9 +194,9 @@ def commit_req():
                                        for_site_id = r_req.site_id
                                       )
     
-    #Only populate commit items if we know the site committing 
+    # Only populate commit items if we know the site committing 
     if site_id:
-        #Only select items which are in the warehouse
+        # Only select items which are in the warehouse
         req_items = db( (db.req_req_item.req_id == req_id) & \
                         (db.req_req_item.quantity_fulfil < db.req_req_item.quantity) & \
                         (db.inv_inv_item.site_id == site_id) & \
@@ -232,7 +230,7 @@ def commit_req():
                                             quantity = commit_item_quantity
                                            ) 
                 
-                #Update the req_item.commit_quantity  & req.commit_status   
+                # Update the req_item.commit_quantity  & req.commit_status   
                 session.rcvars.req_commit_item = commit_item_id
                 shn_commit_item_onaccept(None)
                                              
@@ -244,7 +242,7 @@ def commit_req():
                  )
              )   
     
-#==============================================================================#    
+#==============================================================================
 def commit_item_json():
     response.headers["Content-Type"] = "application/json"
     db.req_commit.datetime.represent = lambda dt: dt[:10]
@@ -262,4 +260,5 @@ def commit_item_json():
                             records.json()[1:] 
                            )   
     return json_str
-    
+
+# END =========================================================================

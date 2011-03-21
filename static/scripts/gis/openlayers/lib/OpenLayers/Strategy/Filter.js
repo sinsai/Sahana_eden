@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -45,15 +45,8 @@ OpenLayers.Strategy.Filter = OpenLayers.Class(OpenLayers.Strategy, {
      *
      * Parameters:
      * options - {Object} Optional object whose properties will be set on the
-     *     instance.  Strategy must be constructed with at least a <filter> 
-     *     property.
+     *     instance.
      */
-    initialize: function(options) {
-        OpenLayers.Strategy.prototype.initialize.apply(this, [options]);
-        if (!this.filter || !(this.filter instanceof OpenLayers.Filter)) {
-            throw new Error("Filter strategy must be constructed with a filter");
-        }
-    },
 
     /**
      * APIMethod: activate
@@ -102,7 +95,7 @@ OpenLayers.Strategy.Filter = OpenLayers.Class(OpenLayers.Strategy, {
      * Method: handleAdd
      */
     handleAdd: function(event) {
-        if (!this.caching) {
+        if (!this.caching && this.filter) {
             var features = event.features;
             event.features = [];
             var feature;

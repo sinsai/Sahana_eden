@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -143,6 +143,7 @@ OpenLayers.Control.Panel = OpenLayers.Class(OpenLayers.Control, {
                 control = this.controls[i];
                 this.activeState[control.id] = control.deactivate();
             }    
+            this.redraw();
             return true;
         } else {
             return false;
@@ -165,10 +166,8 @@ OpenLayers.Control.Panel = OpenLayers.Class(OpenLayers.Control, {
      * Method: redraw
      */
     redraw: function() {
-        if (this.div.children.length>0) {
-            for (var l=this.div.children.length, i=l-1 ; i>=0 ; i--) {
-                this.div.removeChild(this.div.children[i]);
-            }
+        for (var l=this.div.childNodes.length, i=l-1; i>=0; i--) {
+            this.div.removeChild(this.div.childNodes[i]);
         }
         this.div.innerHTML = "";
         if (this.active) {
@@ -205,7 +204,6 @@ OpenLayers.Control.Panel = OpenLayers.Class(OpenLayers.Control, {
             } else {
                 control.activate();
             }
-            this.redraw();
             return;
         }
         var c;

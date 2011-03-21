@@ -1,18 +1,18 @@
-<tr class="date_summary">
+<tr class='date_summary'>
 <td>{{=details[0][0]}}</td>
 <td>
-<img id={{="%s-%s-plus" % (report, details[0][0].replace(' ','-'))}}
+<img id={{="%s-%s-plus" % (report, details[0][0].replace(" ", "-"))}}
      src="/eden/static/img/icon_blue_plus15px.png"
      onclick="showStuff('{{=report}}',
                         '{{=details[0][0].replace(' ','-')}}'
                         ,'{{=cnt}}'
                         );
     return true;"
-<img id={{="%s-%s-minus" % (report, details[0][0].replace(' ','-'))}}
+<img id={{="%s-%s-minus" % (report, details[0][0].replace(" ", "-"))}}
      src="/eden/static/img/icon_blue_minus15px.png"
      style="display: none;"
      onclick="hideStuff('{{=report}}',
-                        '{{=details[0][0].replace(' ','-')}}'
+                        '{{=details[0][0].replace(" ", "-")}}'
                         ,'{{=cnt}}'
                         );
     return true;"

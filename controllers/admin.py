@@ -298,10 +298,10 @@ def user():
     response.s3.prep = user_prep
 
     s3xrc.model.configure(table,
-        main="first_name",
-        # Add users to Person Registry & 'Authenticated' role:
-        create_onaccept = lambda form: auth.s3_register(form),
-        create_onvalidation = lambda form: user_create_onvalidation(form))
+                          main="first_name",
+                          # Add users to Person Registry & 'Authenticated' role:
+                          create_onaccept = auth.s3_register,
+                          create_onvalidation = user_create_onvalidation)
     output = s3_rest_controller(module, resourcename)
 
     if response.s3.actions:
@@ -418,7 +418,7 @@ def usergroup():
 
     # Update records for group membership details
     for key in request.vars.keys():
-        data["m_" + key] = request.vars[key]
+        data["m_%s" % key] = request.vars[key]
 
     return dict(data=data, records=records, form=form)
 
@@ -523,10 +523,13 @@ def users():
         username = "email"
 
     # Audit
-    crud.settings.create_onaccept = lambda form: s3_audit("create", module, "membership",
+    crud.settings.create_onaccept = lambda form: s3_audit("create", module,
+                                                          "membership",
                                                           form=form,
                                                           representation="html")
-    crud.settings.create_onvalidation = lambda form: group_dupes(form, "users", [group])
+    crud.settings.create_onvalidation = lambda form: group_dupes(form,
+                                                                 "users",
+                                                                 [group])
     # Many<>Many selection (Deletable, no Quantity)
     item_list = []
     sqlrows = db(query).select()
@@ -579,7 +582,8 @@ def users():
     crud.messages.record_created = T("Role Updated")
     form = crud.create(table, next=URL(r=request, args=[group]))
     addtitle = T("Add New User to Role")
-    output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form=form))
+    output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle,
+                       form=form))
     return output
 
 
@@ -638,18 +642,22 @@ def groups():
 
     table = db.auth_membership
     query = table.user_id == user
-    title = db.auth_user[user].first_name + " " + db.auth_user[user].last_name
+    title = "%s %s" % (db.auth_user[user].first_name,
+                       db.auth_user[user].last_name)
     description = db.auth_user[user].email
     # Start building the Return
     output = dict(title=title, description=description, user=user)
 
     # Audit
-    crud.settings.create_onaccept = lambda form: s3_audit("create", module, "membership",
+    crud.settings.create_onaccept = lambda form: s3_audit("create", module,
+                                                          "membership",
                                                           form=form,
                                                           representation="html")
 
 
-    crud.settings.create_onvalidation = lambda form: group_dupes(form, "groups", [user])
+    crud.settings.create_onvalidation = lambda form: group_dupes(form,
+                                                                 "groups",
+                                                                 [user])
     # Many<>Many selection (Deletable, no Quantity)
     item_list = []
     sqlrows = db(query).select()
@@ -696,7 +704,8 @@ def groups():
     crud.messages.record_created = T("User Updated")
     form = crud.create(table, next=URL(r=request, args=[user]))
     addtitle = T("Add New Role to User")
-    output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form=form))
+    output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle,
+                       form=form))
     return output
 
 
@@ -970,10 +979,11 @@ def ticket():
 @auth.s3_requires_membership(1)
 def role():
     """
-    Role Manager
+        Role Manager
 
-    @author: Dominic König <dominic@aidiq.com>
+        @author: Dominic König <dominic@aidiq.com>
 
+        @ToDo: Prevent (or warn?) users from renaming Staff Roles
     """
 
     prefix = "auth"
@@ -1016,9 +1026,8 @@ def role():
 @auth.s3_requires_membership(1)
 def acl():
     """
-    Preliminary controller for ACLs
-    for testing purposes, not for production use!
-
+        Preliminary controller for ACLs
+        for testing purposes, not for production use!
     """
 
     prefix = "s3"
@@ -1028,23 +1037,29 @@ def acl():
     table.group_id.requires = IS_ONE_OF(db, "auth_group.id", "%(role)s")
     table.group_id.represent = lambda opt: opt and db.auth_group[opt].role or opt
 
-    table.controller.requires = IS_EMPTY_OR(IS_IN_SET(auth.permission.modules.keys(), zero="ANY"))
-    table.controller.represent = lambda opt: opt and "%s (%s)" % (opt, auth.permission.modules.get(opt, {}).get("name_nice", opt)) or "ANY"
+    table.controller.requires = IS_EMPTY_OR(IS_IN_SET(auth.permission.modules.keys(),
+                                                      zero="ANY"))
+    table.controller.represent = lambda opt: opt and \
+        "%s (%s)" % (opt,
+                     auth.permission.modules.get(opt, {}).get("name_nice", opt)) or "ANY"
 
     table.function.represent = lambda val: val and val or T("ANY")
 
-    table.tablename.requires = IS_EMPTY_OR(IS_IN_SET([t._tablename for t in db], zero=T("ANY")))
+    table.tablename.requires = IS_EMPTY_OR(IS_IN_SET([t._tablename for t in db],
+                                                     zero=T("ANY")))
     table.tablename.represent = lambda val: val and val or T("ANY")
 
     table.uacl.label = T("All Resources")
     table.uacl.widget = S3ACLWidget.widget
     table.uacl.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
-    table.uacl.represent = lambda val: acl_represent(val, auth.permission.PERMISSION_OPTS)
+    table.uacl.represent = lambda val: acl_represent(val,
+                                                     auth.permission.PERMISSION_OPTS)
 
     table.oacl.label = T("Owned Resources")
     table.oacl.widget = S3ACLWidget.widget
     table.oacl.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
-    table.oacl.represent = lambda val: acl_represent(val, auth.permission.PERMISSION_OPTS)
+    table.oacl.represent = lambda val: acl_represent(val,
+                                                     auth.permission.PERMISSION_OPTS)
 
     s3xrc.model.configure(table,
         create_next = URL(r=request),
@@ -1061,9 +1076,8 @@ def acl():
 # -----------------------------------------------------------------------------
 def acl_represent(acl, options):
     """
-    Represent ACLs in tables
-    for testing purposes, not for production use!
-
+        Represent ACLs in tables
+        for testing purposes, not for production use!
     """
 
     values = []

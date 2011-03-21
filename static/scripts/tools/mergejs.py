@@ -1,32 +1,4 @@
 #!/usr/bin/env python
-
-# 
-# Copyright (C) 2007-2008  Camptocamp
-#  
-# This file is part of MapFish Client
-#  
-# MapFish Client is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#  
-# MapFish Client is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#  
-# You should have received a copy of the GNU General Public License
-# along with MapFish Client.  If not, see <http://www.gnu.org/licenses/>.
-#
-
-#
-# Code taken from the OpenLayers code base
-#
-# Copyright (c) 2006-2007 MetaCarta, Inc., published under the Clear BSD
-# license.  See http://svn.openlayers.org/trunk/openlayers/license.txt for the
-# full text of the license.
-#
-
 #
 # Merge multiple JavaScript source code files into one.
 #
@@ -40,14 +12,6 @@
 #  e.g.
 #
 #    // @requires Geo/DataSource.js
-#
-#  or (ideally) within a class comment definition
-#
-#     /**
-#      * @class
-#      *
-#      * @requires lib/openlayers/OpenLayers/Layer.js
-#      */
 #
 # This script should be executed like so:
 #
@@ -67,7 +31,7 @@
 #
 # Note: This is a very rough initial version of this code.
 #
-# -- Copyright 2005-2007 MetaCarta, Inc. / OpenLayers project --
+# -- Copyright 2005-2011 OpenLayers contributors / OpenLayers project --
 #
 
 # TODO: Allow files to be excluded. e.g. `Crossbrowser/DebugMode.js`?
@@ -79,7 +43,11 @@ import sys
 
 SUFFIX_JAVASCRIPT = ".js"
 
-RE_REQUIRE = "@requires (.*)\n" # TODO: Ensure in comment?
+RE_REQUIRE = "@requires:? (.*)\n" # TODO: Ensure in comment?
+
+class MissingImport(Exception):
+    """Exception raised when a listed import is not found in the lib."""
+
 class SourceFile:
     """
     Represents a Javascript source code file.
@@ -123,12 +91,14 @@ class Config:
         3rd/prototype.js
         core/application.js
         core/params.js
+        # A comment
 
         [last]
-        core/api.js
+        core/api.js # Another comment
 
         [exclude]
         3rd/logger.js
+        exclude/this/dir
 
     All headings are required.
 
@@ -138,6 +108,8 @@ class Config:
     order listed).
 
     The files list in the `exclude` section will not be imported.
+
+    Any text appearing after a # symbol indicates a comment.
     
     """
 
@@ -145,9 +117,9 @@ class Config:
         """
         Parses the content of the named file and stores the values.
         """
-        lines = [line.strip() # Assumes end-of-line character is present
+        lines = [re.sub("#.*?$", "", line).strip() # Assumes end-of-line character is present
                  for line in open(filename)
-                 if line.strip()] # Skip blank lines
+                 if line.strip() and not line.strip().startswith("#")] # Skip blank lines and comments
 
         self.forceFirst = lines[lines.index("[first]") + 1:lines.index("[last]")]
 
@@ -155,41 +127,49 @@ class Config:
         self.include =  lines[lines.index("[include]") + 1:lines.index("[exclude]")]
         self.exclude =  lines[lines.index("[exclude]") + 1:]
 
-def getFiles(configDict, configFile = None):
+def undesired(filepath, excludes):
+    # exclude file if listed
+    exclude = filepath in excludes
+    if not exclude:
+        # check if directory is listed
+        for excludepath in excludes:
+            if not excludepath.endswith("/"):
+                excludepath += "/"
+            if filepath.startswith(excludepath):
+                exclude = True
+                break
+    return exclude
+            
+
+def run (sourceDirectory, outputFilename = None, configFile = None):
     cfg = None
     if configFile:
         cfg = Config(configFile)
 
-    ## Build array of directories
-    allDirs = []
-    for k, v in configDict.iteritems():
-        if not v in allDirs:
-            allDirs.append(v)
-
     allFiles = []
 
     ## Find all the Javascript source files
-    for sourceDirectory in allDirs:
-        for root, dirs, files in os.walk(sourceDirectory):
-            for filename in files:
-                if filename.endswith(SUFFIX_JAVASCRIPT) and not filename.startswith("."):
-                    filepath = os.path.join(root, filename)[len(sourceDirectory)+1:]
-                    filepath = filepath.replace("\\", "/")
-                    if cfg and cfg.include:
-                        if filepath in cfg.include or filepath in cfg.forceFirst:
-                            allFiles.append(filepath)
-                    elif (not cfg) or (filepath not in cfg.exclude):
+    for root, dirs, files in os.walk(sourceDirectory):
+        for filename in files:
+            if filename.endswith(SUFFIX_JAVASCRIPT) and not filename.startswith("."):
+                filepath = os.path.join(root, filename)[len(sourceDirectory)+1:]
+                filepath = filepath.replace("\\", "/")
+                if cfg and cfg.include:
+                    if filepath in cfg.include or filepath in cfg.forceFirst:
                         allFiles.append(filepath)
+                elif (not cfg) or (not undesired(filepath, cfg.exclude)):
+                    allFiles.append(filepath)
+
+    ## Header inserted at the start of each file in the output
+    HEADER = "/* " + "=" * 70 + "\n    %s\n" + "   " + "=" * 70 + " */\n\n"
 
     files = {}
-    order = [] # List of filepaths to output, in a dependency satisfying order 
 
     ## Import file source code
     ## TODO: Do import when we walk the directories above?
     for filepath in allFiles:
         print "Importing: %s" % filepath
-        filekey = filepath.replace("\\", "/").split("/")[0]
-        fullpath = os.path.join(configDict[filekey], filepath)
+        fullpath = os.path.join(sourceDirectory, filepath).strip()
         content = open(fullpath, "U").read() # TODO: Ensure end of line @ EOF?
         files[filepath] = SourceFile(filepath, content) # TODO: Chop path?
 
@@ -201,40 +181,31 @@ def getFiles(configDict, configFile = None):
     resolution_pass = 1
 
     while not complete:
-        order = [] # List of filepaths to output, in a dependency satisfying order 
-        nodes = []
-        routes = []
+        complete = True
+
         ## Resolve the dependencies
         print "Resolution pass %s... " % resolution_pass
         resolution_pass += 1 
 
         for filepath, info in files.items():
-            nodes.append(filepath)
-            for neededFilePath in info.requires:
-                routes.append((neededFilePath, filepath))
-
-        for dependencyLevel in toposort(nodes, routes):
-            for filepath in dependencyLevel:
-                order.append(filepath)
-                if not files.has_key(filepath):
-                    print "Importing: %s" % filepath
-                    filekey = filepath.replace("\\", "/").split("/")[0]
-                    fullpath = os.path.join(configDict[filekey], filepath)
-                    content = open(fullpath, "U").read() # TODO: Ensure end of line @ EOF?
-                    files[filepath] = SourceFile(filepath, content) # TODO: Chop path?
-
-        # Double check all dependencies have been met
-        complete = True
-        try:
-            for fp in order:
-                if max([order.index(rfp) for rfp in files[fp].requires] +
-                       [order.index(fp)]) != order.index(fp):
+            for path in info.requires:
+                if not files.has_key(path):
                     complete = False
-        except:
-            complete = False
+                    fullpath = os.path.join(sourceDirectory, path).strip()
+                    if os.path.exists(fullpath):
+                        print "Importing: %s" % path
+                        content = open(fullpath, "U").read() # TODO: Ensure end of line @ EOF?
+                        files[path] = SourceFile(path, content) # TODO: Chop path?
+                    else:
+                        raise MissingImport("File '%s' not found (required by '%s')." % (path, filepath))
         
-        print    
+    # create dictionary of dependencies
+    dependencies = {}
+    for filepath, info in files.items():
+        dependencies[filepath] = info.requires
 
+    print "Sorting..."
+    order = toposort(dependencies) #[x for x in toposort(dependencies)]
 
     ## Move forced first and last files to the required position
     if cfg:
@@ -243,15 +214,10 @@ def getFiles(configDict, configFile = None):
                      for item in order
                      if ((item not in cfg.forceFirst) and
                          (item not in cfg.forceLast))] + cfg.forceLast
-
-    return (files, order)
-
-def run (files, order, outputFilename = None):
+    
+    print
     ## Output the files in the determined order
     result = []
-
-    ## Header inserted at the start of each file in the output
-    HEADER = "/* " + "=" * 70 + "\n    %s\n" + "   " + "=" * 70 + " */\n\n"
 
     for fp in order:
         f = files[fp]
@@ -285,11 +251,9 @@ if __name__ == "__main__":
             usage(sys.argv[0])
             raise SystemExit
 
-    configDict = { 'OpenLayers': sourceDirectory }
-
     configFile = None
     if options and options[0][0] == "-c":
         configFile = options[0][1]
         print "Parsing configuration file: %s" % filename
 
-    run(configDict, outputFilename, configFile)
+    run( sourceDirectory, outputFilename, configFile )

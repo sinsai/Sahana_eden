@@ -127,8 +127,11 @@ tablename = "pr_person"
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
                         super_link(db.sit_trackable), # track_id
+                        location_id(readable=False,
+                                    writable=False), # base location
                         pe_label(),
-                        Field("missing", "boolean", default=False),
+                        Field("missing", "boolean",
+                              default=False),
                         Field("first_name", notnull=True),
                         Field("middle_name"),
                         Field("last_name"),
@@ -152,7 +155,7 @@ table.last_name.label = T("Last Name")
 table.local_name.label = T("Local Name")
 
 table.date_of_birth.label = T("Date of Birth")
-table.date_of_birth.requires = [IS_EMPTY_OR(IS_DATE(error_message = "%s" % T("Enter a valid date"))), 
+table.date_of_birth.requires = [IS_EMPTY_OR(IS_DATE(error_message = "%s" % T("Enter a valid date"))),
  	                            IS_EMPTY_OR(IS_DATE_IN_RANGE(maximum=request.utcnow.date(),
                                error_message="%s %%(max)s!" %
                                              T("Enter a date before")))]

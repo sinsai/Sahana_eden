@@ -54,14 +54,24 @@ def human_resource():
 def person():
     """ Person Controller """
 
-    return dict()
+    s3xrc.model.add_component("hrm", "human_resource",
+        joinby=dict(pr_person="person_id"),
+        multiple=True)
+
+    output = s3_rest_controller("pr", resourcename, native=False)
+    return output
 
 
 # =============================================================================
-def organization():
+def organisation():
     """ Organization Controller """
 
-    return dict()
+    s3xrc.model.add_component("hrm", "human_resource",
+        joinby=dict(org_organisation="organisation_id"),
+        multiple=True)
+
+    output = s3_rest_controller("org", resourcename, native=False)
+    return output
 
 
 # =============================================================================

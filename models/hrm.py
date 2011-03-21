@@ -53,6 +53,7 @@ if deployment_settings.has_module(prefix):
                                         label = T("Human Resource"),
                                         ondelete = "RESTRICT")
 
+
     # =========================================================================
     # Skills
     #

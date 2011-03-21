@@ -17,7 +17,7 @@ situation_types = Storage(
 )
 
 resourcename = "situation"
-tablename = "%s_%s" % (prefix, resourcename)
+tablename = "sit_situation"
 
 table = super_entity(tablename, "sit_id", situation_types,
                      Field("datetime", "datetime"),
@@ -38,13 +38,15 @@ trackable_types = Storage(
 )
 
 resourcename = "trackable"
-tablename = "%s_%s" % (prefix, resourcename)
+tablename = "sit_trackable"
 
 table = super_entity(tablename, "track_id", trackable_types,
-                     location_id("base_location"),
                      migrate=migrate)
 
-s3xrc.model.configure(table, editable=False, deletable=False, listadd=False)
+s3xrc.model.configure(table,
+                      editable=False,
+                      deletable=False,
+                      listadd=False)
 
 # -----------------------------------------------------------------------------
 # Universal presence
@@ -52,7 +54,7 @@ s3xrc.model.configure(table, editable=False, deletable=False, listadd=False)
 #       - will be automatically available to all trackable types
 #
 resourcename = "presence"
-tablename = "%s_%s" % (prefix, resourcename)
+tablename = "sit_presence"
 
 table = db.define_table(tablename,
                         super_link(db.sit_trackable),
@@ -66,17 +68,4 @@ s3xrc.model.add_component(prefix, resourcename,
                           multiple=True,
                           joinby=super_key(db.sit_trackable))
 
-# -----------------------------------------------------------------------------
-# Resource super-entity
-resource_types = Storage(
-    hrm_human_resource = T("Human Resource"),
-)
-
-resourcename = "resource"
-tablename = "%s_%s" % (prefix, resourcename)
-
-table = super_entity(tablename, "res_id", resource_types,
-                     migrate=migrate)
-
-s3xrc.model.configure(table, editable=False, deletable=False, listadd=False)
 # -----------------------------------------------------------------------------

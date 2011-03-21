@@ -354,14 +354,8 @@ s3xrc.model.configure(table,
 # to inventory_store, or attempting to join on location_id.  It is in
 # org because that's relatively generic and has one of the site types.
 # You'll note that it is a slavish copy of pentity with the names changed.
-#
-# MH: Site has been extended to support inventorys and staff for any site type
 
-org_site_types = Storage(
-    cr_shelter = T("Shelter"),
-    org_office = T("Office"),
-    hms_hospital = T("Hospital"),
-)
+org_site_types = auth.org_site_types
 
 resource = "site"
 tablename = "org_site"
@@ -405,21 +399,6 @@ def shn_site_represent(id, default_label="[no label]"):
         site_str = "[site %d] (%s)" % (id, instance_type_nice)
 
     return site_str
-
-# -----------------------------------------------------------------------------
-def shn_site_resource(site_id):
-    """
-        Returns the prefix, resource and id which a site refers to
-        @ToDo: Should this functionality be shifted to the super entity code?
-    """
-    r_site = db.org_site[site_id]
-    site_type = r_site.instance_type
-    site_type_split = site_type.split("_")
-    prefix = site_type_split[0]
-    resourcename = site_type_split[1]
-    id = r_site[site_type].select(db[site_type].id,
-                                  limitby=(0, 1)).first().id
-    return (prefix, resourcename, id)
 
 # -----------------------------------------------------------------------------
 def shn_create_record_roles(form, tablename):
@@ -518,7 +497,7 @@ def shn_update_record_roles(form, tablename):
     record = db(table.id == id).select(table.owned_by_role,
                                        limitby=(0, 1)).first()
     owned_by_role = record.owned_by_role
-    
+
     table = db[auth.settings.table_group]
     staff_role_id = owned_by_role
     staff_role_name_old = table[staff_role_id].role
@@ -532,7 +511,7 @@ def shn_update_record_roles(form, tablename):
     # Rename the roles
     db(table.id == staff_role_id).update(role=staff_role_name)
     db(table.role == supervisor_role_name_old).update(role=supervisor_role_name)
-    
+
 # -----------------------------------------------------------------------------
 def shn_component_copy_role(form,
                             component_name, resource_name, fk,  pk  = "id" ):
@@ -574,6 +553,7 @@ def shn_component_copy_role_func(component_name, resource_name, fk, pk = "id"):
     else:
         return None
 
+STAFF_HELP = T("If Staff have login accounts then they are given access to edit the details of the")
 #==============================================================================
 # Offices
 #
@@ -731,18 +711,18 @@ def shn_office_rheader(r, tabs=[]):
         if r.record is None:
             # List or Create form: rheader makes no sense here
             return None
-        
+
         tabs = [(T("Basic Details"), None),
                 (T("Contact Data"), "pe_contact"),
-                (T("Staff"), "staff"),                
-                ]        
+                (T("Staff"), "staff"),
+                ]
 
         rheader_tabs = shn_rheader_tabs(r, tabs + shn_show_inv_tabs(r))
 
         office = r.record
         if office:
             organisation = db(db.org_organisation.id == office.organisation_id
-                              ).select(db.org_organisation.name, 
+                              ).select(db.org_organisation.name,
                                        limitby=(0, 1)
                                        ).first()
             if organisation:
@@ -754,7 +734,7 @@ def shn_office_rheader(r, tabs=[]):
                           TR(TH("%s: " % T("Name")),
                              office.name,
                              TH("%s: " % T("Type")),
-                             org_office_type_opts.get(office.type, 
+                             org_office_type_opts.get(office.type,
                                                       UNKNOWN_OPT),
                              ),
                           TR(TH("%s: " % T("Organization")),
@@ -784,7 +764,7 @@ resourcename = "staff"
 tablename = "org_staff"
 
 table = db.define_table(tablename,
-                        super_link(db.org_site), # site_id
+                        super_link(db.org_site),    # site_id
                         person_id(label=T("Name"),
                                   comment = shn_person_comment(T("Person"),
                                                                T("The Person currently filling this Role."))),
@@ -928,113 +908,8 @@ s3xrc.model.add_component(module, resourcename,
                           )
 
 # -----------------------------------------------------------------------------
-def shn_update_staff_membership(record,
-                                delete = False):
-    """
-        Updates the staff's memberships of the roles associated with the
-        organisation and/or site instance record which the staff is a component of
-        Called from onaccept & ondelete
-    """
-
-    if delete:
-        org_staff_id     = record.id
-        org_staff_record = db.org_staff[org_staff_id]
-        deleted_fks      = Storage()
-        for fk in eval(org_staff_record.deleted_fk):
-            deleted_fks[fk["f"]] = fk["k"]
-        organisation_id  = deleted_fks.organisation_id
-        person_id        = deleted_fks.person_id
-        site_id          = deleted_fks.site_id
-    else:
-        org_staff_id     = session.rcvars.org_staff
-        org_staff_record = db.org_staff[org_staff_id]
-        organisation_id  = org_staff_record.organisation_id
-        person_id        = org_staff_record.person_id
-        site_id          = org_staff_record.site_id
-
-    supervisor = org_staff_record.supervisor
-    no_access = org_staff_record.no_access
-
-    user_id = auth.s3_person_to_user(person_id)
-
-    if organisation_id:
-        # This staff is a component of an organisation
-        # This should always be true
-        organisation_staff_role_id = \
-            db.org_organisation[organisation_id].owned_by_role
-        tablename = "org_organisation"
-        table = db[tablename]
-        try:
-            id = organisation_id
-            record = db(table.id == id).select(table.name,
-                                               limitby=(0, 1)).first()
-            recordname = record.name
-        except:
-            recordname = ""
-        organisation_supervisor_role = \
-                        "%s_%s Supervisors of %s" % (tablename,
-                                                     organisation_id,
-                                                     recordname)
-        table = db[auth.settings.table_group]
-        query = (table.role == organisation_supervisor_role)
-        organisation_supervisor_role_id = db(query).select(table.id,
-                                                           limitby=(0, 1)).first().id
-        if no_access or delete:
-            auth.del_membership(organisation_staff_role_id, user_id)
-            auth.del_membership(organisation_supervisor_role_id, user_id)
-        elif not supervisor:
-            auth.add_membership(organisation_staff_role_id, user_id)
-            auth.del_membership(organisation_supervisor_role_id, user_id)
-        else:
-            auth.add_membership(organisation_staff_role_id, user_id)
-            auth.add_membership(organisation_supervisor_role_id, user_id)
-
-        # The organisation staff role owns the org_staff
-        # (This is more inclusive that site staff role)
-        staff_ownership = dict(owned_by_role = organisation_staff_role_id)
-        if no_access or delete:
-            # Current user has no permissions
-            staff_ownership["owned_by_user"] = None
-        db.org_staff[org_staff_id] = staff_ownership
-
-    if site_id:
-        tablename = "%(controller)s_%(function)s" % (request)   # This is fragile! Doesn't work for inv/wh
-        if tablename in org_site_types:
-            # This staff is a component of a site instance
-            table = db[tablename]
-            query = (table.site_id == site_id)
-            site_staff_role_id = db(query).select(table.owned_by_role,
-                                                  limitby=(0, 1)).first().owned_by_role
-            try:
-                table = db.org_site
-                id = site_id
-                record = db(table.id == id).select(table.name,
-                                                   limitby=(0, 1)).first()
-                recordname = record.name
-            except:
-                recordname = ""
-            site_supervisor_role = "%s_%s Supervisors of %s" % (tablename,
-                                                                site_id,
-                                                                recordname)
-            table = db[auth.settings.table_group]
-            query = (table.role == site_supervisor_role)
-            site_supervisor_role_id = db(query).select(table.id,
-                                                       limitby=(0, 1)).first().id
-            if no_access or delete:
-                auth.del_membership(site_staff_role_id, user_id)
-                auth.del_membership(site_supervisor_role_id, user_id)
-
-            elif not supervisor:
-                auth.add_membership(site_staff_role_id, user_id)
-                auth.del_membership(site_supervisor_role_id, user_id)
-
-            else:
-                auth.add_membership(site_staff_role_id, user_id)
-                auth.add_membership(site_supervisor_role_id, user_id)
-
-# -----------------------------------------------------------------------------
 def shn_staff_onaccept(form):
-    shn_update_staff_membership(form)
+    auth.s3_update_staff_membership(form)
     # Staff resources inherit permissions from sites not organisations,
     # because this is LESS permissive. This may need to be a deployment setting
     shn_component_copy_role_func(component_name = "org_staff",
@@ -1044,8 +919,8 @@ def shn_staff_onaccept(form):
 
 s3xrc.model.configure(table,
                       onaccept = shn_staff_onaccept,
-                      ondelete = lambda form, delete = True:
-                                    shn_update_staff_membership(form, delete)
+                      ondelete = lambda form: auth.s3_update_staff_membership(form,
+                                                                              delete=True)
                       )
 # -----------------------------------------------------------------------------
 def shn_staff_prep(r):
@@ -1057,9 +932,9 @@ def shn_staff_prep(r):
         site_id = r.record.site_id
     except:
         site_id = None
-    staff_rows =  db((db.org_staff.site_id == site_id) &
-                     (db.org_staff.deleted == False)
-                     ).select(db.org_staff.person_id)
+    query = (db.org_staff.site_id == site_id) & \
+            (db.org_staff.deleted == False)
+    staff_rows = db(query).select(db.org_staff.person_id)
     person_ids = [r.person_id for r in staff_rows]
     db.org_staff.person_id.requires.set_filter(not_filterby = "id",
                                                not_filter_opts = person_ids)
@@ -1086,4 +961,24 @@ table = db.define_table(tablename,
                                                                T("The Email Address to which approval requests are sent (normally this would be a Group mail rather than an individual). If the field is blank then requests are approved automatically if the domain matches.")))),
                         comments(),
                         migrate=migrate, *s3_meta_fields())
+
+#==============================================================================
+# Resource super-entity
+#   - to link availability, deployment as common components
+
+#org_resource_types = dict(
+    #"hrm_human_resource": T("Human Resource")
+#)
+
+#resource = "resource"
+#tablename = "org_resource"
+#table = super_entity(tablename, "rsc_id", org_resource_types,
+                     #organisation_id(), # mirrored field
+                     #migrate=migrate)
+
+#s3xrc.model.configure(table,
+                      #editable=False,
+                      #deletable=False,
+                      #listadd=False)
+
 # END -------------------------------------------------------------------------

@@ -325,33 +325,38 @@ if deployment_settings.has_module(module):
     table.date.label = T("Date & Time")
     table.date.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
                                           allow_future=False)
-    table.date.represent = lambda value: shn_as_local_time(value)
+    table.date.represent = shn_as_local_time
     table.date.comment = DIV(DIV(_class="tooltip",
-        _title=T("Date & Time") + "|" + T("Date and time this report relates to.")))
+                                 _title="%s|%s" % (T("Date & Time"),
+                                                   T("Date and time this report relates to."))))
 
     table.patients.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
     table.patients.default = 0
     table.patients.label = T("Number of Patients")
     table.patients.comment = DIV(DIV(_class="tooltip",
-        _title=T("Patients") + "|" + T("Number of in-patients at the time of reporting.")))
+                                     _title="%s|%s" % (T("Patients"),
+                                                       T("Number of in-patients at the time of reporting."))))
 
     table.admissions24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
     table.admissions24.default = 0
     table.admissions24.label = T("Admissions/24hrs")
     table.admissions24.comment = DIV(DIV(_class="tooltip",
-        _title=T("Admissions/24hrs") + "|" + T("Number of newly admitted patients during the past 24 hours.")))
+                                         _title="%s|%s" % (T("Admissions/24hrs"),
+                                                           T("Number of newly admitted patients during the past 24 hours."))))
 
     table.discharges24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
     table.discharges24.default = 0
     table.discharges24.label = T("Discharges/24hrs")
     table.discharges24.comment = DIV(DIV(_class="tooltip",
-        _title=T("Discharges/24hrs") + "|" + T("Number of discharged patients during the past 24 hours.")))
+                                         _title="%s|%s" % (T("Discharges/24hrs"),
+                                                           T("Number of discharged patients during the past 24 hours."))))
 
     table.deaths24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
     table.deaths24.default = 0
     table.deaths24.label = T("Deaths/24hrs")
     table.deaths24.comment = DIV(DIV(_class="tooltip",
-        _title=T("Deaths/24hrs") + "|" + T("Number of deaths during the past 24 hours.")))
+                                     _title="%s|%s" % (T("Deaths/24hrs"),
+                                                       T("Number of deaths during the past 24 hours."))))
 
     def hms_activity_onaccept(form):
 
@@ -439,12 +444,13 @@ if deployment_settings.has_module(module):
     table.unit_id.writable = False
 
     table.bed_type.comment =  DIV(DIV(_class="tooltip",
-        _title=T("Bed Type") + "|" + T("Specify the bed type of this unit.")))
+                                      _title="%s|%s" % (T("Bed Type"),
+                                                        T("Specify the bed type of this unit."))))
 
     table.date.label = T("Date of Report")
     table.date.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
                                           allow_future=False)
-    table.date.represent = lambda value: shn_as_local_time(value)
+    table.date.represent = shn_as_local_time
 
     table.beds_baseline.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
     table.beds_baseline.default = 0
@@ -457,11 +463,14 @@ if deployment_settings.has_module(module):
     table.beds_add24.label = T("Additional Beds / 24hrs")
 
     table.beds_baseline.comment = DIV(DIV(_class="tooltip",
-        _title=T("Baseline Number of Beds") + "|" + T("Baseline number of beds of that type in this unit.")))
+                                          _title="%s|%s" % (T("Baseline Number of Beds"),
+                                                            T("Baseline number of beds of that type in this unit."))))
     table.beds_available.comment = DIV(DIV(_class="tooltip",
-        _title=T("Available Beds") + "|" + T("Number of available/vacant beds of that type in this unit at the time of reporting.")))
+                                           _title="%s|%s" % (T("Available Beds"),
+                                                             T("Number of available/vacant beds of that type in this unit at the time of reporting."))))
     table.beds_add24.comment = DIV(DIV(_class="tooltip",
-        _title=T("Additional Beds / 24hrs") + "|" + T("Number of additional beds of that type expected to become available in this unit within the next 24 hours.")))
+                                       _title="%s|%s" % (T("Additional Beds / 24hrs"),
+                                                         T("Number of additional beds of that type expected to become available in this unit within the next 24 hours."))))
 
     def hms_bed_capacity_onvalidation(form):
 
@@ -658,62 +667,74 @@ if deployment_settings.has_module(module):
     table.ctc.label = T("Cholera-Treatment-Center")
     table.ctc.represent = lambda opt: opt and T("yes") or T("no")
     table.ctc.comment = DIV(DIV(_class="tooltip",
-        _title=T("Cholera Treatment Center") + "|" + T("Does this facility provide a cholera treatment center?")))
+                                _title="%s|%s" % (T("Cholera Treatment Center"),
+                                                  T("Does this facility provide a cholera treatment center?"))))
 
     table.number_of_patients.label = T("Current number of patients")
     table.number_of_patients.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999999))
     table.number_of_patients.comment = DIV(DIV(_class="tooltip",
-        _title=T("Current number of patients") + "|" + T("How many patients with the disease are currently hospitalized at this facility?")))
+                                               _title="%s|%s" % (T("Current number of patients"),
+                                                                 T("How many patients with the disease are currently hospitalized at this facility?"))))
 
     table.cases_24.label = T("New cases in the past 24h")
     table.cases_24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999999))
     table.cases_24.comment = DIV(DIV(_class="tooltip",
-        _title=T("New cases in the past 24h") + "|" + T("How many new cases have been admitted to this facility in the past 24h?")))
+                                     _title="%s|%s" % (T("New cases in the past 24h"),
+                                                       T("How many new cases have been admitted to this facility in the past 24h?"))))
 
     table.deaths_24.label = T("Deaths in the past 24h")
     table.deaths_24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999999))
     table.deaths_24.comment = DIV(DIV(_class="tooltip",
-        _title=T("Deaths in the past 24h") + "|" + T("How many of the patients with the disease died in the past 24h at this facility?")))
+                                      _title="%s|%s" % (T("Deaths in the past 24h"),
+                                                        T("How many of the patients with the disease died in the past 24h at this facility?"))))
 
     table.icaths_available.label = T("Infusion catheters available")
     table.icaths_available.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999999))
     table.icaths_available.comment = DIV(DIV(_class="tooltip",
-        _title=T("Infusion catheters available") + "|" + T("Specify the number of available sets")))
+                                             _title="%s|%s" % (T("Infusion catheters available"),
+                                                               T("Specify the number of available sets"))))
 
     table.icaths_needed_24.label = T("Infusion catheters needed per 24h")
     table.icaths_needed_24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999999))
     table.icaths_needed_24.comment = DIV(DIV(_class="tooltip",
-        _title=T("Infusion catheters need per 24h") + "|" + T("Specify the number of sets needed per 24h")))
+                                             _title="%s|%s" % (T("Infusion catheters need per 24h"),
+                                                               T("Specify the number of sets needed per 24h"))))
 
     table.infusions_available.label = T("Infusions available")
     table.infusions_available.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999999))
     table.infusions_available.comment = DIV(DIV(_class="tooltip",
-        _title=T("Infusions available") + "|" + T("Specify the number of available units (litres) of Ringer-Lactate or equivalent solutions")))
+                                                _title="%s|%s" % (T("Infusions available"),
+                                                                  T("Specify the number of available units (litres) of Ringer-Lactate or equivalent solutions"))))
 
     table.infusions_needed_24.label = T("Infusions needed per 24h")
     table.infusions_needed_24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999999))
     table.infusions_needed_24.comment = DIV(DIV(_class="tooltip",
-        _title=T("Infusions needed per 24h") + "|" + T("Specify the number of units (litres) of Ringer-Lactate or equivalent solutions needed per 24h")))
+                                                _title="%s|%s" % (T("Infusions needed per 24h"),
+                                                                  T("Specify the number of units (litres) of Ringer-Lactate or equivalent solutions needed per 24h"))))
 
     table.antibiotics_available.label = T("Antibiotics available")
     table.antibiotics_available.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999999))
     table.antibiotics_available.comment = DIV(DIV(_class="tooltip",
-        _title=T("Antibiotics available") + "|" + T("Specify the number of available units (adult doses)")))
+                                                  _title="%s|%s" % (T("Antibiotics available"),
+                                                                    T("Specify the number of available units (adult doses)"))))
 
     table.antibiotics_needed_24.label = T("Antibiotics needed per 24h")
     table.antibiotics_needed_24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999999))
     table.antibiotics_needed_24.comment = DIV(DIV(_class="tooltip",
-        _title=T("Antibiotics needed per 24h") + "|" + T("Specify the number of units (adult doses) needed per 24h")))
+                                                  _title="%s|%s" % (T("Antibiotics needed per 24h"),
+                                                                    T("Specify the number of units (adult doses) needed per 24h"))))
 
     table.problem_types.label = T("Current problems, categories")
     table.problem_types.requires = IS_EMPTY_OR(IS_IN_SET(hms_problem_types, zero=None, multiple=True))
     table.problem_types.represent = lambda optlist: optlist and ", ".join(map(str,optlist)) or T("N/A")
     table.problem_types.comment = DIV(DIV(_class="tooltip",
-        _title=T("Current problems, categories") + "|" + T("Select all that apply")))
+                                          _title="%s|%s" % (T("Current problems, categories"),
+                                                            T("Select all that apply"))))
 
     table.problem_details.label = T("Current problems, details")
     table.problem_details.comment = DIV(DIV(_class="tooltip",
-        _title=T("Current problems, details") + "|" + T("Please specify any problems and obstacles with the proper handling of the disease, in detail (in numbers, where appropriate). You may also add suggestions the situation could be improved.")))
+                                            _title="%s|%s" % (T("Current problems, details"),
+                                                              T("Please specify any problems and obstacles with the proper handling of the disease, in detail (in numbers, where appropriate). You may also add suggestions the situation could be improved."))))
 
     s3.crud_strings[tablename] = Storage(
         title_create = T("Add Cholera Treatment Capability Information"),
@@ -759,10 +780,12 @@ if deployment_settings.has_module(module):
                             hospital_id(),
                             #Field("title"),
                             Field("type", "integer",
-                                requires = IS_IN_SET(hms_image_type_opts, zero=None),
+                                requires = IS_IN_SET(hms_image_type_opts,
+                                                     zero=None),
                                 default = 1,
                                 label = T("Image Type"),
-                                represent = lambda opt: hms_image_type_opts.get(opt, T("not specified"))),
+                                represent = lambda opt: hms_image_type_opts.get(opt,
+                                                                                T("not specified"))),
                             Field("image", "upload", autodelete=True),
                             Field("url"),
                             Field("description"),
@@ -775,16 +798,19 @@ if deployment_settings.has_module(module):
 
     table.image.label = T("Image Upload")
     table.image.represent = lambda image: image and \
-            DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=image),_height=60, _alt=T("View Image")),
-                _href=URL(r=request, c="default", f="download", args=image))) or \
+            DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=image),
+                      _height=60, _alt=T("View Image")),
+                  _href=URL(r=request, c="default", f="download", args=image))) or \
             T("No Image")
 
     table.url.label = T("URL")
-    table.url.represent = lambda url: url and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None")
+    table.url.represent = lambda url: url and DIV(A(IMG(_src=url, _height=60),
+                                                    _href=url)) or T("None")
 
     table.tags.label = T("Tags")
     table.tags.comment = DIV(DIV(_class="tooltip",
-                            _title=T("Image Tags") + "|" + T("Enter tags separated by commas.")))
+                                 _title="%s|%s" % (T("Image Tags"),
+                                                   T("Enter tags separated by commas."))))
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(

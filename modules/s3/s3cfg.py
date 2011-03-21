@@ -41,8 +41,7 @@ from gluon.contrib.simplejson.ordered_dict import OrderedDict
 class S3Config(Storage):
 
     """
-    Deployment Settings Helper Class
-
+        Deployment Settings Helper Class
     """
 
     def __init__(self, T):
@@ -60,12 +59,12 @@ class S3Config(Storage):
         self.ui = Storage()
         self.req = Storage()
         self.T = T  
-        #These are copied from modules/s3/s3aaa.py
+        # These are copied from modules/s3/s3aaa.py
         self.aaa.acl =  Storage(CREATE = 0x0001,
                                 READ   = 0x0002,
                                 UPDATE = 0x0004,
                                 DELETE = 0x0008,
-                                ALL = 0x000F#CREATE | READ | UPDATE | DELETE
+                                ALL = 0x000F    # CREATE | READ | UPDATE | DELETE
                                 )
 
     # Auth settings

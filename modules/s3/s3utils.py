@@ -161,12 +161,11 @@ def s3_debug(message, value=None):
 
 def shn_split_multi_value(value):
     """
-    @author: Michael Howden (michael@aidiq.com)
+        @author: Michael Howden (michael@aidiq.com)
 
-    Converts a series of numbers delimited by |, or already in a string into a list
+        Converts a series of numbers delimited by |, or already in a string into a list
 
-    If value = None, returns []
-
+        If value = None, returns []
     """
 
     if not value:
@@ -193,28 +192,26 @@ def shn_get_db_field_value(db,
                            look_up_field = "id",
                            match_case = True):
     """
+        @author: Michael Howden (michael@aidiq.com)
 
-    @author: Michael Howden (michael@aidiq.com)
+        @summary:
+            Returns the value of <field> from the first record in <table_name>
+            with <look_up_field> = <look_up>
 
-    @summary:
-        Returns the value of <field> from the first record in <table_name>
-        with <look_up_field> = <look_up>
+        @param table: The name of the table
+        @param field: the field to find the value from
+        @param look_up: the value to find
+        @param look_up_field: the field to find <look_up> in
+        @type match_case: boolean
 
-    @param table: The name of the table
-    @param field: the field to find the value from
-    @param look_up: the value to find
-    @param look_up_field: the field to find <look_up> in
-    @type match_case: boolean
+        @returns:
+            - Field Value if there is a record
+            - None - if there is no matching record
 
-    @returns:
-        - Field Value if there is a record
-        - None - if there is no matching record
-
-    Example::
-        shn_get_db_field_value("or_organisation", "id",
-                               look_up = "UNDP",
-                               look_up_field = "name" )
-
+        Example::
+            shn_get_db_field_value("or_organisation", "id",
+                                   look_up = "UNDP",
+                                   look_up_field = "name" )
     """
     lt = db[table]
     lf = lt[look_up_field]
@@ -230,17 +227,16 @@ def shn_get_db_field_value(db,
 
 def jaro_winkler(str1, str2):
     """
-    Return Jaro_Winkler distance of two strings (between 0.0 and 1.0)
+        Return Jaro_Winkler distance of two strings (between 0.0 and 1.0)
 
-    Used as a measure of similarity between two strings
+        Used as a measure of similarity between two strings
 
-    @see http://en.wikipedia.org/wiki/Jaro-Winkler_distance
+        @see http://en.wikipedia.org/wiki/Jaro-Winkler_distance
 
-    @param str1: the first string
-    @param str2: the second string
+        @param str1: the first string
+        @param str2: the second string
 
-    @author: Pradnya Kulkarni
-
+        @author: Pradnya Kulkarni
     """
 
     jaro_winkler_marker_char = chr(1)
@@ -368,10 +364,9 @@ def jaro_winkler(str1, str2):
 
 def jaro_winkler_distance_row(row1, row2):
     """
-    Calculate the percentage match for two db records
+        Calculate the percentage match for two db records
 
-    @author: Pradnya Kulkarni
-
+        @author: Pradnya Kulkarni
     """
 
     dw = 0
@@ -391,10 +386,9 @@ def jaro_winkler_distance_row(row1, row2):
 
 def soundex(name, len=4):
     """
-    Code referenced from http://code.activestate.com/recipes/52213-soundex-algorithm/
+        Code referenced from http://code.activestate.com/recipes/52213-soundex-algorithm/
 
-    @author: Pradnya Kulkarni
-
+        @author: Pradnya Kulkarni
     """
 
     # digits holds the soundex values for the alphabet
@@ -425,8 +419,7 @@ def soundex(name, len=4):
 
 def docChecksum(docStr):
     """
-    Calculate a checksum for a file
-
+        Calculate a checksum for a file
     """
 
     converted = hashlib.sha1(docStr).hexdigest()

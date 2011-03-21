@@ -42,9 +42,12 @@ if deployment_settings.has_module(module):
 
     river_id = S3ReusableField("river_id", table,
                                requires = IS_NULL_OR(IS_ONE_OF(db, "flood_river.id", "%(name)s")),
-                               represent = lambda id: (id and [db(db.flood_river.id == id).select(db.flood_river.name, limitby=(0, 1)).first().name] or ["None"])[0],
+                               represent = lambda id: (id and [db(db.flood_river.id == id).select(db.flood_river.name,
+                                                                                                  limitby=(0, 1)).first().name] or ["None"])[0],
                                label = T("River"),
-                               comment = A(ADD_RIVER, _class="colorbox", _href=URL(r=request, c="flood", f="river", args="create", vars=dict(format="popup")), _target="top", _title=ADD_RIVER),
+                               comment = A(ADD_RIVER, _class="colorbox",
+                                           _href=URL(r=request, c="flood", f="river", args="create", vars=dict(format="popup")),
+                                           _target="top", _title=ADD_RIVER),
                                ondelete = "RESTRICT")
 
     # -----------------------------------------------------------------------------
@@ -60,8 +63,9 @@ if deployment_settings.has_module(module):
 
 
     #table.document.represent = lambda document, table=table: A(table.document.retrieve(document)[0], _href=URL(r=request, f="download", args=[document]))
-    table.datetime.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
-    table.datetime.represent = lambda value: shn_as_local_time(value)
+    table.datetime.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
+                                              allow_future=False)
+    table.datetime.represent = shn_as_local_time
     table.datetime.label = T("Date/Time")
     table.datetime.default = request.utcnow
 

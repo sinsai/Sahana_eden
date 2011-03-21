@@ -10,19 +10,18 @@
 """
 
 module = request.controller
+resourcename = request.function
 
 response.menu_options = inv_menu
 
 def index():
     """
+        Application Home page
+        - custom View
     """
     module_name = deployment_settings.modules[module].name_nice
     response.title = module_name
     return dict(module_name=module_name)
-
-    #request.args = []
-    #module_name = deployment_settings.modules[module].name_nice
-    #return dict(module_name=module_name)
     
 #==============================================================================
 def wh():
@@ -63,6 +62,16 @@ def wh():
         return True
     response.s3.prep = prep 
     
+    # Post-processor
+    def postp(r, output):
+        if r.component_name == "staff" and \
+                deployment_settings.get_aaa_has_staff_permissions():
+            addheader = "%s %s." % (STAFF_HELP,
+                                    T("Warehouse"))
+            output.update(addheader=addheader)
+        return output
+    response.s3.postp = postp
+
     # CRUD strings
     ADD_WH = T("Add Warehouse")
     LIST_WH = T("List Warehouses")
@@ -91,9 +100,8 @@ def inv_item():
 
     """ RESTful CRUD controller """
 
-    resourcename = request.function
-    tablename = "%s_%s" % (module, resourcename)
-    table = db[tablename]
+    #tablename = "%s_%s" % (module, resourcename)
+    #table = db[tablename]
 
     return s3_rest_controller(module, resourcename)
 #------------------------------------------------------------------------------
@@ -117,9 +125,8 @@ def inv_item_packs():
 #==============================================================================
 def recv():
     """ RESTful CRUD controller """
-    resourcename = request.function
-    tablename = "%s_%s" % (module, resourcename)
-    table = db[tablename]
+    #tablename = "%s_%s" % (module, resourcename)
+    #table = db[tablename]
     output = s3_rest_controller(module,
                                 resourcename,
                                 rheader=shn_recv_rheader)
@@ -218,12 +225,9 @@ def shn_recv_rheader(r):
 #------------------------------------------------------------------------------
 def recv_item():
     """ RESTful CRUD controller """
-    resourcename = request.function
-    tablename = "%s_%s" % (module, resourcename)
-    table = db[tablename]
-    output = s3_rest_controller(module,
-                                resourcename,
-                                )
+    #tablename = "%s_%s" % (module, resourcename)
+    #table = db[tablename]
+    output = s3_rest_controller(module, resourcename)
     return output
 
 #==============================================================================
@@ -265,9 +269,8 @@ class QUANTITY_INV_ITEM:
 #------------------------------------------------------------------------------
 def send():
     """ RESTful CRUD controller """
-    resourcename = request.function
-    tablename = "%s_%s" % (module, resourcename)
-    table = db[tablename]
+    #tablename = "%s_%s" % (module, resourcename)
+    #table = db[tablename]
     
     #Set Validator for checking against the number of items in the warehouse
     if (request.vars.inv_item_id):
@@ -304,15 +307,15 @@ def shn_send_rheader(r):
             send_record = r.record
             if send_record:
                 rheader = DIV( TABLE(
-                                   TR( TH( T("Date") + ": "),
+                                   TR( TH("%s: " % T("Date")),
                                        send_record.datetime,
                                       ),
-                                   TR( TH( T( "From" ) + ": "),
+                                   TR( TH("%s: " % T("From")),
                                        shn_site_represent(send_record.site_id),
-                                       TH( T( "To" ) + ": "),
+                                       TH("%s: " % T("To")),
                                        shn_site_represent(send_record.to_site_id),
                                       ),
-                                   TR( TH( T("Comments") + ": "),
+                                   TR( TH("%s: " % T("Comments")),
                                        TD(send_record.comments, _colspan=3)
                                       )
                                      )                              
@@ -433,7 +436,7 @@ def req_items_for_inv(site_id, quantity_type):
     unique_req_items = Storage()
     for req_item in req_items:
         if req_item.item_id not in req_item_ids:
-            #This item is not already in the dict 
+            # This item is not already in the dict 
             unique_req_items[req_item.item_id] = Storage( req_item.as_dict() )
             req_item_ids.append(req_item.item_id)    
             
@@ -444,8 +447,8 @@ def req_item_in_shipment( shipment_item,
                           req_items,
                          ):
     """
-    Checks if a shipment item is in a request and updates req_item
-    and the shipment.
+        Checks if a shipment item is in a request and updates req_item
+        and the shipment.
     """    
   
     shipment_item_table = "inv_%s_item" % shipment_type
@@ -454,16 +457,16 @@ def req_item_in_shipment( shipment_item,
     except:
         item_id = shipment_item.inv_inv_item.item_id
     
-    #Check for req_items
+    # Check for req_items
     if item_id in req_items:      
         quantity_req_type = "quantity_%s" % shn_shipment_to_req_type[shipment_type]
               
-        #This item has been requested from this inv
+        # This item has been requested from this inv
         req_item = req_items[item_id]
         req_item_id = req_item.id
         
-        #Update the req quantity             
-        #convert the shipment items quantity into the req_tem.quantity_fulfil (according to pack)
+        # Update the req quantity             
+        # convert the shipment items quantity into the req_tem.quantity_fulfil (according to pack)
         quantity = req_item[quantity_req_type] + \
                    (shipment_item[shipment_item_table].pack_quantity / \
                     req_item.pack_quantity) * \
@@ -471,10 +474,10 @@ def req_item_in_shipment( shipment_item,
         quantity = min(quantity, req_item.quantity)  #Cap at req. quantity  
         db.req_req_item[req_item_id] = {quantity_req_type: quantity}      
                           
-        #link the shipment_item to the req_item    
+        # Link the shipment_item to the req_item    
         db[shipment_item_table][shipment_item[shipment_item_table].id] = dict(req_item_id = req_item_id)
         
-        #Flag req record to update status_fulfil 
+        # Flag req record to update status_fulfil 
         return req_item.req_id
     else:
         return None
@@ -503,7 +506,7 @@ def recv_process():
     
     site_id = recv_record.site_id
     
-    #Get Recv & Inv Items 
+    # Get Recv & Inv Items 
     recv_items = db( ( db.inv_recv_item.recv_id == recv_id ) & \
                      ( db.inv_recv_item.deleted == False )  
                      ).select(db.inv_recv_item.id,     
@@ -529,7 +532,7 @@ def recv_process():
     for recv_item in recv_items:
         item_id = recv_item.item_id
         if item_id in inv_items_dict:
-            #This item already exists in the inv, and the quantity must be incremented
+            # This item already exists in the inv, and the quantity must be incremented
             inv_item = Storage(inv_items_dict[item_id])
             
             inv_item_id = inv_item.id        
@@ -551,21 +554,21 @@ def recv_process():
         # Update Inv Item
         db.inv_inv_item[inv_item_id] = item
         
-        #Check for req_items (-> fulfil)
+        # Check for req_items (-> fulfil)
         update_req_id.append( req_item_in_shipment(shipment_item = Storage(inv_recv_item = recv_item),
                                                        shipment_type = "recv",
                                                        req_items = req_items,
                                                        )   
                                  )         
         
-    #Update recv record & lock for editing 
+    # Update recv record & lock for editing 
     db.inv_recv[recv_id] = dict(datetime = request.utcnow,
                                  status = SHIP_STATUS_RECEIVED,
                                  owned_by_user = None,   
                                  owned_by_role = ADMIN                                
                                  ) 
     
-    #Update status_fulfil of the req record(s)
+    # Update status_fulfil of the req record(s)
     for req_id in update_req_id:
         if req_id:
             session.rcvars.req_req = req_id
@@ -574,7 +577,7 @@ def recv_process():
     session.confirmation = T("Shipment Items received by Inventory")
 
     # Go to the Site which has received these items
-    (prefix, resourcename, id) = shn_site_resource(site_id)
+    (prefix, resourcename, id) = auth.s3_site_resource(site_id)
     
     redirect(URL(r = request,
                  c = prefix,
@@ -607,7 +610,7 @@ def recv_cancel():
     
     site_id = recv_record.site_id
     
-    #Get Recv & Inv Items 
+    # Get Recv & Inv Items 
     recv_items = db( ( db.inv_recv_item.recv_id == recv_id ) & \
                      ( db.inv_recv_item.deleted == False )  
                      ).select(db.inv_recv_item.id,     
@@ -633,7 +636,7 @@ def recv_cancel():
 
     for recv_item in recv_items:
         item_id = recv_item.item_id
-        #All Items received *should* exist in the inv.
+        # All Items received *should* exist in the inv.
         if item_id in inv_items_dict:
             # Decrease the inv_item.quantity
             inv_item = Storage(inv_items_dict[item_id])
@@ -661,7 +664,7 @@ def recv_cancel():
         # Remove the link from the recv_item to the req_item 
         db.inv_recv_item[recv_item.id] = dict(req_item_id = None)
         
-        # reduce any req_item
+        # Reduce any req_item
         req_item_id = recv_item.req_item_id
         r_req_item = db((db.req_req_item.id == recv_item.req_item_id) &
                         (db.req_req_item.deleted == False)
@@ -675,17 +678,17 @@ def recv_cancel():
                                                   recv_item.pack_quantity)   
             db.req_req_item[req_item_id] = dict(quantity_fulfil=quantity_fulfil)          
         
-            #Check for req_items (-> fulfil)
+            # Check for req_items (-> fulfil)
             update_req_id.append(  )         
         
-    #Update recv record & lock for editing 
+    # Update recv record & lock for editing 
     db.inv_recv[recv_id] = dict(datetime = request.utcnow,
                                 status = SHIP_STATUS_CANCEL,
                                 owned_by_user = None,   
                                 owned_by_role = ADMIN                                
                                 ) 
     
-    #Update status_fulfil of the req record(s)
+    # Update status_fulfil of the req record(s)
     for req_id in update_req_id:
         if req_id:
             session.rcvars.req_req = req_id
@@ -726,7 +729,7 @@ def send_process():
     cancel_send = False
     invalid_send_item_ids = []
 
-    #Get Send & Inv Items
+    # Get Send & Inv Items
     send_items = db( ( db.inv_send_item.send_id == send_id ) & \
                      ( db.inv_send_item.deleted == False ) )\
                  .select( db.inv_send_item.id,                         
@@ -735,13 +738,13 @@ def send_process():
                           db.inv_inv_item.id,
                           db.inv_inv_item.item_id,
                           db.inv_inv_item.quantity,
-                          db.inv_inv_item.item_pack_id, #required by pack_quantity virtualfield
+                          db.inv_inv_item.item_pack_id, # required by pack_quantity virtualfield
                           db.inv_inv_item.deleted,
                           left=db.inv_inv_item.on(db.inv_send_item.inv_item_id == db.inv_inv_item.id),
-                          #To ensure that all send items are selected, even if the inv item has been deleted.
+                          # To ensure that all send items are selected, even if the inv item has been deleted.
                           )   
                  
-    #Filter for inv site records (separate due to left-join                   
+    # Filter for inv site records (separate due to left-join                   
     send_items.exclude(lambda row: row.inv_inv_item.id and \
                                    row.inv_inv_item.deleted == True
                        )                    
@@ -772,7 +775,7 @@ def send_process():
             # Update the Inv Item Quantity
             db.inv_inv_item[inv_item_id] = dict(quantity = new_inv_quantity)
         
-        #Check for req_items (-> transit)
+        # Check for req_items (-> transit)
         update_req_id.append(req_item_in_shipment(shipment_item = send_item,
                                                       shipment_type = "send",   
                                                       req_items = req_items
@@ -800,14 +803,14 @@ def send_process():
                                      )          
         session.confirmation = T("Shipment Items sent from Inventory")           
         
-        #Update status_fulfil of the req record(s)
+        # Update status_fulfil of the req record(s)
         for req_id in update_req_id:
             if req_id:
                 session.rcvars.req_req = req_id
                 shn_req_item_onaccept(None)        
                
         # Go to the Site which has sent these items
-        (prefix, resourcename, id) = shn_site_resource(site_id)
+        (prefix, resourcename, id) = auth.s3_site_resource(site_id)
 
         redirect(URL(r = request,
                      c = prefix,
@@ -874,7 +877,7 @@ def send_cancel():
 
     for send_item in send_items:
         item_id = send_item.inv_inv_item.item_id
-        #All Items received *should* exist in the inv.
+        # All Items received *should* exist in the inv.
         if item_id in inv_items_dict:
             # Decrease the inv_item.quantity
             inv_item = Storage(inv_items_dict[item_id])
@@ -902,7 +905,7 @@ def send_cancel():
         # Remove the link from the recv_item to the req_item 
         db.inv_recv_item[send_item.inv_send_item.id] = dict(req_item_id = None)      
         
-        # reduce any req_item
+        # Reduce any req_item
         req_item_id = send_item.inv_send_item.req_item_id
         r_req_item = db((db.req_req_item.id == req_item_id) &
                         (db.req_req_item.deleted == False)
@@ -916,17 +919,17 @@ def send_cancel():
                                                   send_item.inv_send_item.pack_quantity)   
             db.req_req_item[req_item_id] = dict(quantity_fulfil=quantity_fulfil)          
         
-            #Check for req_items (-> fulfil)
+            # Check for req_items (-> fulfil)
             update_req_id.append(  )         
         
-    #Update send record & lock for editing 
+    # Update send record & lock for editing 
     db.inv_send[send_id] = dict(datetime = request.utcnow,
                                 status = SHIP_STATUS_CANCEL,
                                 owned_by_user = None,   
                                 owned_by_role = ADMIN                                
                                 ) 
     
-    #Update status_fulfil of the req record(s)
+    # Update status_fulfil of the req record(s)
     for req_id in update_req_id:
         if req_id:
             session.rcvars.req_req = req_id
@@ -990,7 +993,7 @@ def recv_sent():
                                 item_pack_id = sent_item.inv_send_item.item_pack_id,
                                 quantity = sent_item.inv_send_item.quantity)
 
-    #Flag shipment as received as received
+    # Flag shipment as received as received
     db.inv_send[send_id] = dict(status = SHIP_STATUS_RECEIVED)
 
     # Redirect to rec
@@ -1003,16 +1006,16 @@ def recv_sent():
 #==============================================================================
 def send_commit():
     """ 
-    function to send items according to a commit.
-    copy data from a commit into a send 
-    arg: req_id
+        function to send items according to a commit.
+        copy data from a commit into a send 
+        arg: req_id
     """    
     
     commit_id = request.args[0]
     r_commit = db.req_commit[commit_id]
     
-    #User must have permissions over site which is sending 
-    (prefix, resourcename, id) = shn_site_resource(site_id)        
+    # User must have permissions over site which is sending 
+    (prefix, resourcename, id) = auth.s3_site_resource(site_id)        
     if not auth.s3_has_permission("update", 
                                   db["%s_%s" % (prefix, resourcename)], 
                                   record_id=id):    
@@ -1033,7 +1036,7 @@ def send_commit():
                                    
                                    )
     
-    #Only select items which are in the warehouse
+    # Only select items which are in the warehouse
     commit_items = db( (db.req_commit_item.commit_id == commit_id) & \
                        (db.req_commit_item.req_item_id == db.req_req_item.id) & \
                        (db.req_req_item.item_id == db.inv_inv_item.item_id) & \

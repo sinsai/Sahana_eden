@@ -21,7 +21,7 @@ pr_pe_types = Storage(
 )
 
 resourcename = "pentity"
-tablename = "%s_%s" % (prefix, resourcename)
+tablename = "pr_pentity"
 table = super_entity(tablename, "pe_id", pr_pe_types,
                      Field("pe_label", length=128),
                      migrate=migrate)

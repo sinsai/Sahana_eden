@@ -12,7 +12,11 @@
  {{=H3(subtitle)}}
 {{except:}}
 {{pass}}
-{{include 'last_update.html'}}
+{{try:}}
+ {{=delete_btn}}
+{{except:}}
+{{pass}}
+{{include "last_update.html"}}
 {{try:}}
  {{include}}
 {{except:}}
@@ -30,11 +34,6 @@
 {{except:}}
 {{pass}}
 </div>
-{{try:}}
- {{=delete_btn}}
-{{except:}}
-{{pass}}
-<p>&nbsp;</p>
 {{try:}}
  {{=list_btn}}
 {{except:}}

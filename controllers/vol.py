@@ -342,8 +342,8 @@ def person():
         tab_set = request.vars["vol_tabs"]
         tabs = [
                 (T("Basic Details"), None),
-                (T("Identity"), "identity"),
                 (T("Address"), "address"),
+                (T("Identity"), "identity"),
                 (T("Contact Data"), "pe_contact"),
                 (T("Images"), "image"),
                 (T("Presence Log"), "presence")

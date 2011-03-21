@@ -114,6 +114,7 @@ class AuthS3(Auth):
         self.messages.email_approver_failed = "Failed to send mail to Approver - see if you can notify them manually!"
         self.messages.email_sent = "Verification Email sent - please check your email to validate. If you do not receive this email please check you junk email or spam filters"
         self.messages.email_verified = "Email verified - you can now login"
+        self.messages.duplicate_email = "This email address is already in use"
         self.messages.registration_disabled = "Registration Disabled!'"
         self.messages.label_utc_offset = "UTC Offset"
         self.messages.help_utc_offset = "The time difference between UTC and your timezone, specify as +HHMM for eastern or -HHMM for western timezones."
@@ -167,18 +168,20 @@ class AuthS3(Auth):
 
         db = self.db
         request = self.environment.request
+        settings = self.settings
+        messages = self.messages
 
         # User table
-        if not self.settings.table_user:
-            passfield = self.settings.password_field
-            if self.settings.username_field:
+        if not settings.table_user:
+            passfield = settings.password_field
+            if settings.username_field:
                 # with username
-                self.settings.table_user = db.define_table(
-                    self.settings.table_user_name,
+                settings.table_user = db.define_table(
+                    settings.table_user_name,
                     Field("first_name", length=128, default="",
-                          label=self.messages.label_first_name),
+                          label=messages.label_first_name),
                     Field("last_name", length=128, default="",
-                          label=self.messages.label_last_name),
+                          label=messages.label_last_name),
                     Field("person_uuid", length=64, default="",
                           readable=False, writable=False),
                     Field("utc_offset", length=16,
@@ -186,147 +189,148 @@ class AuthS3(Auth):
                     Field("username", length=128, default=""),
                     Field("language", length=16),
                     Field("email", length=512, default="",
-                          label=self.messages.label_email),
+                          label=messages.label_email),
                     Field(passfield, "password", length=512,
-                          readable=False, label=self.messages.label_password),
+                          readable=False, label=messages.label_password),
                     Field("registration_key", length=512,
                           writable=False, readable=False, default="",
-                          label=self.messages.label_registration_key),
+                          label=messages.label_registration_key),
                     Field("reset_password_key", length=512,
                           writable=False, readable=False, default="",
-                          label=self.messages.label_registration_key),
+                          label=messages.label_registration_key),
                     Field("timestmp", "datetime", writable=False,
                           readable=False, default=""),
-                    migrate = self.__get_migrate(self.settings.table_user_name,
+                    migrate = self.__get_migrate(settings.table_user_name,
                                                  migrate))
             else:
                 # with email-address
-                self.settings.table_user = db.define_table(
-                    self.settings.table_user_name,
+                settings.table_user = db.define_table(
+                    settings.table_user_name,
                     Field("first_name", length=128, default="",
-                          label=self.messages.label_first_name),
+                          label=messages.label_first_name),
                     Field("last_name", length=128, default="",
-                          label=self.messages.label_last_name),
+                          label=messages.label_last_name),
                     Field("person_uuid", length=64, default="",
                           readable=False, writable=False),
                     Field("utc_offset", length=16,
-                          readable=False, writable=False, label=self.messages.label_utc_offset),
+                          readable=False, writable=False, label=messages.label_utc_offset),
                     Field("language", length=16),
                     Field("email", length=512, default="",
-                          label=self.messages.label_email),
+                          label=messages.label_email),
                     Field(passfield, "password", length=512,
-                          readable=False, label=self.messages.label_password),
+                          readable=False, label=messages.label_password),
                     Field("registration_key", length=512,
                           writable=False, readable=False, default="",
-                          label=self.messages.label_registration_key),
+                          label=messages.label_registration_key),
                     Field("reset_password_key", length=512,
                           writable=False, readable=False, default="",
-                          label=self.messages.label_registration_key),
+                          label=messages.label_registration_key),
                     Field("timestmp", "datetime", writable=False,
                           readable=False, default=""),
-                    migrate = self.__get_migrate(self.settings.table_user_name,
+                    migrate = self.__get_migrate(settings.table_user_name,
                                                  migrate))
-            table = self.settings.table_user
+            table = settings.table_user
             table.first_name.requires = \
-                IS_NOT_EMPTY(error_message=self.messages.is_empty)
+                IS_NOT_EMPTY(error_message=messages.is_empty)
             #table.last_name.requires = \
-                #IS_NOT_EMPTY(error_message=self.messages.is_empty)
+                #IS_NOT_EMPTY(error_message=messages.is_empty)
             table.utc_offset.comment = A(SPAN("[Help]"),
                                          _class="tooltip",
-                                         _title="%s|%s" % (self.messages.label_utc_offset,
-                                                           self.messages.help_utc_offset))
+                                         _title="%s|%s" % (messages.label_utc_offset,
+                                                           messages.help_utc_offset))
             try:
                 from s3validators import IS_UTC_OFFSET
                 table.utc_offset.requires = IS_EMPTY_OR(IS_UTC_OFFSET())
             except:
                 pass
-            table[passfield].requires = [CRYPT(key=self.settings.hmac_key,
+            table[passfield].requires = [CRYPT(key=settings.hmac_key,
                                                digest_alg="sha512")]
-            if self.settings.username_field:
+            if settings.username_field:
                 table.username.requires = IS_NOT_IN_DB(db,
-                                                       "%s.username" % self.settings.table_user._tablename)
+                                                       "%s.username" % settings.table_user._tablename)
             table.email.requires = \
-                [IS_EMAIL(error_message=self.messages.invalid_email),
+                [IS_EMAIL(error_message=messages.invalid_email),
                  IS_NOT_IN_DB(db,
-                              "%s.email" % self.settings.table_user._tablename)]
+                              "%s.email" % settings.table_user._tablename,
+                              error_message=messages.duplicate_email)]
             table.registration_key.default = ""
 
         # Group table (roles)
-        if not self.settings.table_group:
-            self.settings.table_group = db.define_table(
-                self.settings.table_group_name,
+        if not settings.table_group:
+            settings.table_group = db.define_table(
+                settings.table_group_name,
                 Field("role", length=512, default="",
-                      label=self.messages.label_role),
+                      label=messages.label_role),
                 Field("description", "text",
-                      label=self.messages.label_description),
-                migrate = self.__get_migrate(self.settings.table_group_name,
+                      label=messages.label_description),
+                migrate = self.__get_migrate(settings.table_group_name,
                                              migrate))
-            table = self.settings.table_group
+            table = settings.table_group
             table.role.requires = IS_NOT_IN_DB(db, "%s.role"
-                 % self.settings.table_group._tablename)
+                 % settings.table_group._tablename)
 
         # Group membership table (user<->role)
-        if not self.settings.table_membership:
-            self.settings.table_membership = db.define_table(
-                self.settings.table_membership_name,
-                Field("user_id", self.settings.table_user,
-                      label=self.messages.label_user_id),
-                Field("group_id", self.settings.table_group,
-                      label=self.messages.label_group_id),
-                migrate = self.__get_migrate(self.settings.table_membership_name,
+        if not settings.table_membership:
+            settings.table_membership = db.define_table(
+                settings.table_membership_name,
+                Field("user_id", settings.table_user,
+                      label=messages.label_user_id),
+                Field("group_id", settings.table_group,
+                      label=messages.label_group_id),
+                migrate = self.__get_migrate(settings.table_membership_name,
                                              migrate))
-            table = self.settings.table_membership
+            table = settings.table_membership
             table.user_id.requires = IS_IN_DB(db, "%s.id" %
-                    self.settings.table_user._tablename,
+                    settings.table_user._tablename,
                     "%(id)s: %(first_name)s %(last_name)s")
             table.group_id.requires = IS_IN_DB(db, "%s.id" %
-                    self.settings.table_group._tablename,
+                    settings.table_group._tablename,
                     "%(id)s: %(role)s")
 
         # Permissions table (group<->permission)
         # NB This Web2Py table is deprecated / replaced in Eden by S3Permission
-        if not self.settings.table_permission:
-            self.settings.table_permission = db.define_table(
-                self.settings.table_permission_name,
-                Field("group_id", self.settings.table_group,
-                      label=self.messages.label_group_id),
+        if not settings.table_permission:
+            settings.table_permission = db.define_table(
+                settings.table_permission_name,
+                Field("group_id", settings.table_group,
+                      label=messages.label_group_id),
                 Field("name", default="default", length=512,
-                      label=self.messages.label_name),
+                      label=messages.label_name),
                 Field("table_name", length=512,
-                      label=self.messages.label_table_name),
+                      label=messages.label_table_name),
                 Field("record_id", "integer",
-                      label=self.messages.label_record_id),
+                      label=messages.label_record_id),
                 migrate = self.__get_migrate(
-                    self.settings.table_permission_name, migrate))
-            table = self.settings.table_permission
+                    settings.table_permission_name, migrate))
+            table = settings.table_permission
             table.group_id.requires = IS_IN_DB(db, "%s.id" %
-                    self.settings.table_group._tablename,
+                    settings.table_group._tablename,
                     "%(id)s: %(role)s")
             table.name.requires = IS_NOT_EMPTY()
             table.table_name.requires = IS_IN_SET(self.db.tables)
             table.record_id.requires = IS_INT_IN_RANGE(0, 10 ** 9)
 
         # Event table (auth log)
-        if not self.settings.table_event:
-            self.settings.table_event = db.define_table(
-                self.settings.table_event_name,
+        if not settings.table_event:
+            settings.table_event = db.define_table(
+                settings.table_event_name,
                 Field("time_stamp", "datetime",
                       default=self.environment.request.now,
-                      label=self.messages.label_time_stamp),
+                      label=messages.label_time_stamp),
                 Field("client_ip",
                       default=self.environment.request.client,
-                      label=self.messages.label_client_ip),
-                Field("user_id", self.settings.table_user, default=None,
-                      label=self.messages.label_user_id),
+                      label=messages.label_client_ip),
+                Field("user_id", settings.table_user, default=None,
+                      label=messages.label_user_id),
                 Field("origin", default="auth", length=512,
-                      label=self.messages.label_origin),
+                      label=messages.label_origin),
                 Field("description", "text", default="",
-                      label=self.messages.label_description),
-                migrate = self.__get_migrate(self.settings.table_event_name,
+                      label=messages.label_description),
+                migrate = self.__get_migrate(settings.table_event_name,
                                              migrate))
-            table = self.settings.table_event
+            table = settings.table_event
             table.user_id.requires = IS_IN_DB(db, "%s.id" %
-                    self.settings.table_user._tablename,
+                    settings.table_user._tablename,
                     "%(id)s: %(first_name)s %(last_name)s")
             table.origin.requires = IS_NOT_EMPTY()
             table.description.requires = IS_NOT_EMPTY()

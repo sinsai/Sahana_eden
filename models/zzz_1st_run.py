@@ -910,6 +910,8 @@ if populate:
             module = "org",
             resource = "office",
             popup_label = "Office",
+            filter_field = "type",
+            filter_value = "/1/2/3/4",
             marker_id = db(db.gis_marker.name == "office").select(db.gis_marker.id,
                                                                   limitby=(0, 1)).first().id
         )

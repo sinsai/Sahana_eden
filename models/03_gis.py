@@ -1023,8 +1023,11 @@ table.name.label = T("Name")
 table.resource.label = T("Resource")
 # In Controller (to ensure all tables visible)
 #table.resource.requires = IS_IN_SET(db.tables)
-#table.filter_field.label = T("Filter Field")
-#table.filter_value.label = T("Filter Value")
+table.filter_field.label = T("Filter Field")
+table.filter_value.label = T("Filter Value")
+table.filter_value.comment = DIV(_class="tooltip",
+                                 _title="%s|%s /" % (T("Filter Value"),
+                                                     T("If you want several values, then separate with")))
 #table.query.label = T("Query")
 
 # -----------------------------------------------------------------------------

@@ -1308,8 +1308,7 @@ class S3CRUD(S3Method):
     # -----------------------------------------------------------------------------
     def last_update(self):
         """
-        Get the last update meta-data
-
+            Get the last update meta-data
         """
 
         db = self.db
@@ -1329,8 +1328,13 @@ class S3CRUD(S3Method):
 
             record = db(table.id==record_id).select(limitby=(0, 1), *fields).first()
 
-            # @todo: "on" and "by" particles are problematic in translations
-            represent = table.modified_by.represent
+            try:
+                # @todo: "on" and "by" particles are problematic in translations
+                represent = table.modified_by.represent
+            except:
+                # Table doesn't have a modified_by field
+                represent = ""
+
             if "modified_by" in record and represent:
                 if not record.modified_by:
                     modified_by = T("anonymous user")

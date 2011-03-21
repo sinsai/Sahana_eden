@@ -26,7 +26,7 @@ def shn_menu():
         selection = db.project_project[project_id]
         if selection:
             menu_project = [
-                    ["%s %s" % (T("Project") + ":", selection.code), False, aURL(r=request, f="project", args=[project_id]),[
+                    ["%s: %s" % (T("Project"), selection.code), False, aURL(r=request, f="project", args=[project_id]),[
                         [T("Tasks"), False, aURL(r=request, f="project", args=[project_id, "task"])],
                         # Staff cannot be a component of Project since staff may be assigned to many projects
                         #[T("Staff"), False, URL(r=request, f="project", args=[project_id, "staff"])],
@@ -47,7 +47,7 @@ def shn_menu():
         if selection:
             team_name = shn_pr_group_represent(group_id)
             menu_teams = [
-                ["%s %s" % (T("Team") + ":", team_name), False, aURL(r=request, f="group", args=[group_id, "read"]),[
+                ["%s: %s" % (T("Team"), team_name), False, aURL(r=request, f="group", args=[group_id, "read"]),[
                     [T("View On Map"), False, aURL(r=request, f="view_team_map", args=[group_id])],
                     [T("Send Notification"), False, aURL(r=request, f="compose_group", vars={"group_id":group_id})],
                     #[T("Find Volunteers"), False, aURL(r=request, f="skillSearch")],
@@ -72,7 +72,7 @@ def shn_menu():
             # ?vol_tabs=person and ?vol_tabs=volunteer are used by the person
             # controller to select which set of tabs to display.
             menu_person = [
-                ["%s %s" % (T("Person") + ":", person_name), False, aURL(r=request, f="person", args=[person_id, "read"]),[
+                ["%s: %s" % (T("Person"), person_name), False, aURL(r=request, f="person", args=[person_id, "read"]),[
                     # The arg "volunteer" causes this to display the
                     # vol_volunteer tab initially.
                     [T("Volunteer Data"), False, aURL(r=request, f="person", args=[person_id, "volunteer"], vars={"vol_tabs":"volunteer"})],
@@ -340,15 +340,14 @@ def person():
     tab_set = "person"
     if "vol_tabs" in request.vars:
         tab_set = request.vars["vol_tabs"]
-    if tab_set == "person":
-        #table.pr_impact_tags.readable=False
-        table.missing.default = False
-        tabs = [(T("Basic Details"), None),
-                (T("Images"), "image"),
+        tabs = [
+                (T("Basic Details"), None),
                 (T("Identity"), "identity"),
                 (T("Address"), "address"),
                 (T("Contact Data"), "pe_contact"),
-                (T("Presence Log"), "presence")]
+                (T("Images"), "image"),
+                (T("Presence Log"), "presence")
+               ]
     else:
         db.pr_group_membership.group_id.label = T("Team Id")
         db.pr_group_membership.group_head.label = T("Team Leader")
@@ -366,6 +365,13 @@ def person():
     # Pre-process
     def prep(r):
         if r.representation in s3.interactive_view_formats:
+
+            # Hide fields
+            table.pe_label.readable = table.pe_label.writable = False
+            table.missing.readable = table.missing.writable = False
+            table.tags.readable = table.tags.writable = False
+            table.age_group.readable = table.age_group.writable = False
+
             # CRUD strings
             ADD_VOL = T("Add Volunteer")
             LIST_VOLS = T("List Volunteers")
@@ -399,7 +405,8 @@ def person():
                 db.pr_presence.proc_desc.writable = False
         else:
             # Only display active volunteers
-            response.s3.filter = (table.id == db.vol_volunteer.person_id) & (db.vol_volunteer.status == 1)
+            response.s3.filter = (table.id == db.vol_volunteer.person_id) & \
+                                 (db.vol_volunteer.status == 1)
 
         return True
 

@@ -330,6 +330,8 @@ def person():
     tablename = "%s_%s" % (_prefix, resourcename)
     table = db[tablename]
 
+    table.missing.default = False
+
     # Configure redirection and list fields
     register_url = str(URL(r=request, f=resourcename,
                            args=["[id]", "volunteer"],
@@ -340,6 +342,7 @@ def person():
     tab_set = "person"
     if "vol_tabs" in request.vars:
         tab_set = request.vars["vol_tabs"]
+    if tab_set == "person":
         tabs = [
                 (T("Basic Details"), None),
                 (T("Address"), "address"),

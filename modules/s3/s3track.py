@@ -95,14 +95,14 @@ class S3Trackable(object):
             fields = self.__get_fields(trackable)
             if not fields:
                 raise SyntaxError("Required fields not present in the row")
-            rows = Rows(records=[trackable])
+            rows = Rows(records=[trackable], compact=False)
 
         elif isinstance(trackable, Rows):
             rows = [r for r in trackable if self.__get_fields(r)]
             fail = len(trackable) - len(rows)
             if fail:
                 raise SyntaxError("Required fields not present in %d of the rows" % fail)
-            rows = Rows(records=rows)
+            rows = Rows(records=rows, compact=False)
 
         elif isinstance(trackable, (Query, Expression)):
             tablename = self.db._adapter.get_table(trackable)
@@ -127,17 +127,48 @@ class S3Trackable(object):
         else:
             raise SyntaxError("Invalid parameter type %s" % type(trackable))
 
-        self.records = rows
+        records = []
+        for r in rows:
+            if self.__super_entity(r):
+                table = self.db[r.instance_type]
+                fields = self.__get_fields(table, super_entity=False)
+                if not fields:
+                    raise SyntaxError("No trackable type: %s" % table._tablename)
+                fields = [table[f] for f in fields]
+                query = table[self.UID] == r[self.UID]
+                row = self.db(query).select(limitby=(0, 1), *fields).first()
+                if row:
+                    records.append(row)
+            else:
+                records.append(r)
+
+        self.records = Rows(records=records, compact=False)
 
 
     # -------------------------------------------------------------------------
     @classmethod
-    def __get_fields(cls, trackable):
+    def __super_entity(cls, trackable):
         """
-        Check a trackable for presence of required fields
+            Check whether a trackable is a super-entity
 
-        @param: the trackable object
+            @param trackable: the trackable object
+        """
 
+        if hasattr(trackable, "fields"):
+            keys = trackable.fields
+        else:
+            keys = trackable
+
+        return "instance_type" in keys
+
+
+    # -------------------------------------------------------------------------
+    @classmethod
+    def __get_fields(cls, trackable, super_entity=True):
+        """
+            Check a trackable for presence of required fields
+
+            @param: the trackable object
         """
 
         fields = []
@@ -148,6 +179,9 @@ class S3Trackable(object):
             keys = trackable
 
         try:
+            if super_entity and \
+               cls.__super_entity(trackable) and cls.UID in keys:
+                return ("instance_type", cls.UID)
             if cls.LOCATION_ID in keys:
                 fields.append(cls.LOCATION_ID)
             if cls.TRACK_ID in keys:
@@ -288,6 +322,13 @@ class S3Trackable(object):
             record = record.first()
         if not isinstance(record, Row):
             record = table[record]
+        if self.__super_entity(record):
+            table = self.db[record.instance_type]
+            fields = self.__get_fields(table, super_entity=False)
+            if not fields:
+                raise SyntaxError("No trackable type: %s" % table._tablename)
+            query = table[self.UID] == record[self.UID]
+            record = self.db(query).select(limitby=(0, 1)).first()
         if record and table._id.name in record:
             record = record[table._id.name]
             if record:
@@ -338,10 +379,21 @@ class S3Trackable(object):
                 table = self.db[table]
             if isinstance(record, Rows):
                 record = record.first()
+            if self.__super_entity(table):
+                if not isinstance(record, Row):
+                    record = table[record]
+                table = self.db[record.instance_type]
+                fields = self.__get_fields(table, super_entity=False)
+                if not fields:
+                    raise SyntaxError("No trackable type: %s" % table._tablename)
+                query = table[self.UID] == record[self.UID]
+                record = self.db(query).select(limitby=(0, 1)).first()
             if isinstance(record, Row) and table._id.name in record:
                 record = record[table._id.name]
             if record:
                 interlock = "%s,%s" % (table, record)
+            else:
+                return
 
         q = ((ptable.deleted == False) & (ptable.timestmp <= timestmp))
 
@@ -376,7 +428,7 @@ class S3Trackable(object):
         Remove a location from the presence log of the instance(s)
 
         @todo: implement
-        
+
         """
         raise NotImplementedError
 

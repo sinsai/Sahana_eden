@@ -152,10 +152,10 @@ table.last_name.label = T("Last Name")
 table.local_name.label = T("Local Name")
 
 table.date_of_birth.label = T("Date of Birth")
-table.date_of_birth.requires = IS_NULL_OR(IS_DATE_IN_RANGE(
-                               maximum=request.utcnow.date(),
+table.date_of_birth.requires = [IS_EMPTY_OR(IS_DATE(error_message = "%s" % T("Enter a valid date"))), 
+ 	                            IS_EMPTY_OR(IS_DATE_IN_RANGE(maximum=request.utcnow.date(),
                                error_message="%s %%(max)s!" %
-                                             T("Enter a date before")))
+                                             T("Enter a date before")))]
 
 table.first_name.requires = IS_NOT_EMPTY(error_message = T("Please enter a First Name"))
 # NB Not possible to have an IS_NAME() validator here

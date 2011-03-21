@@ -11,10 +11,6 @@ MARKER = T("Marker")
 gis_location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
 # Expose settings to views/modules
 _gis = response.s3.gis
-# @ToDo: These 3 are deprecated by the new Location Selector
-_gis.location_hierarchy = gis_location_hierarchy
-_gis.location_id = False    # Don't display the Location Selector in Views unless the location_id field is present
-_gis.map_selector = deployment_settings.get_gis_map_selector()
 
 # This is needed for Location represents & Location Selector
 _gis.countries = Storage()
@@ -1027,8 +1023,11 @@ table.name.label = T("Name")
 table.resource.label = T("Resource")
 # In Controller (to ensure all tables visible)
 #table.resource.requires = IS_IN_SET(db.tables)
-#table.filter_field.label = T("Filter Field")
-#table.filter_value.label = T("Filter Value")
+table.filter_field.label = T("Filter Field")
+table.filter_value.label = T("Filter Value")
+table.filter_value.comment = DIV(_class="tooltip",
+                                 _title="%s|%s /" % (T("Filter Value"),
+                                                     T("If you want several values, then separate with")))
 #table.query.label = T("Query")
 
 # -----------------------------------------------------------------------------

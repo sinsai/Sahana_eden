@@ -1166,7 +1166,7 @@ class S3LocationSelectorWidget(FormWidget):
                              _class="hidden")
 
         if map_selector:
-            map_button = A(T("Show Map"),
+            map_button = A(T("Place on Map"),
                            _style="cursor:pointer; cursor:hand",
                            _id="gis_location_map-btn",
                            _class="hidden")

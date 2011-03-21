@@ -25,7 +25,7 @@ s3.menu_help = [ T("Help"), True, "#",
 # Auth Menu (available in all screens)
 if not auth.is_logged_in():
 
-    login_next = URL(r=request)
+    login_next = URL(r=request, args=request.args, vars=request.vars)
     if request.controller == "default" and \
        request.function == "user" and \
        "_next" in request.get_vars:

@@ -278,7 +278,7 @@ auth.messages.registration_pending_approval = T("Account registered, however reg
 # Notify UserAdmin of new pending user registration to action
 if deployment_settings.get_auth_registration_requires_approval():
     auth.settings.verify_email_onaccept = lambda form: \
-        auth.settings.mailer.send(to=deployment_settings.get_mail_approver(),
+        auth.settings.mailer.send(to=form.approver,
                                   subject=T("Sahana Login Approval Pending"),
                                   message="%s %s: %s/%s/admin/user" % (T("Your action is required. Please approve user"),
                                                                        form.email,

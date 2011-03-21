@@ -18,3 +18,8 @@ def membership():
     "Defined in admin module, so redirect there"
     
     redirect(URL(r=request, c="admin", args=request.args, vars=request.vars))
+
+def domain():
+    "Defined in admin module, so redirect there"
+    
+    redirect(URL(r=request, c="admin", args=request.args, vars=request.vars))

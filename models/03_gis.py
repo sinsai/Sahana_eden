@@ -11,10 +11,6 @@ MARKER = T("Marker")
 gis_location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
 # Expose settings to views/modules
 _gis = response.s3.gis
-# @ToDo: These 3 are deprecated by the new Location Selector
-_gis.location_hierarchy = gis_location_hierarchy
-_gis.location_id = False    # Don't display the Location Selector in Views unless the location_id field is present
-_gis.map_selector = deployment_settings.get_gis_map_selector()
 
 # This is needed for Location represents & Location Selector
 _gis.countries = Storage()

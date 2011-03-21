@@ -452,6 +452,11 @@ class S3CRUD(S3Method):
             if buttons:
                 output.update(buttons)
 
+            # Last update
+            last_update = self.last_update()
+            if last_update:
+                output.update(last_update)
+
         elif representation == "plain":
             # Hide empty fields from popups on map
             for field in table:
@@ -618,6 +623,11 @@ class S3CRUD(S3Method):
                                           record_id=record_id)
             if buttons:
                 output.update(buttons)
+
+            # Last update
+            last_update = self.last_update()
+            if last_update:
+                output.update(last_update)
 
             # Redirection
             if representation in ("popup", "iframe"):
@@ -1293,6 +1303,45 @@ class S3CRUD(S3Method):
         not_found = s3.crud_strings.get(name, None)
 
         return crud_strings.get(name, not_found)
+
+
+    # -----------------------------------------------------------------------------
+    def last_update(self):
+        """
+        Get the last update meta-data
+
+        """
+
+        db = self.db
+        table = self.table
+        record_id = self.record
+
+        T = self.T
+
+        output = dict()
+
+        if record_id:
+            fields = []
+            if "modified_on" in table.fields:
+                fields.append(table.modified_on)
+            if "modified_by" in table.fields:
+                fields.append(table.modified_by)
+
+            record = db(table.id==record_id).select(limitby=(0, 1), *fields).first()
+
+            # @todo: "on" and "by" particles are problematic in translations
+            represent = table.modified_by.represent
+            if "modified_by" in record and represent:
+                if not record.modified_by:
+                    modified_by = T("anonymous user")
+                else:
+                    modified_by = represent(record.modified_by)
+                output.update(modified_by="%s %s" % (T("by"), modified_by))
+            if "modified_on" in record:
+                output.update(modified_on="%s %s" % (T("on"),
+                              record.modified_on))
+
+        return output
 
 
     # -----------------------------------------------------------------------------

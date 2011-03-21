@@ -211,7 +211,7 @@ deployment_settings.aaa.supervisor_acl = acl.ALL
 # (unused currently)
 #deployment_settings.ui.autocomplete = True
 
-# Request 
+# Request
 #Allow the status for requests to be set manually,
 #rather than just automatically from commitments and shipments
 deployment_settings.req.status_writable = True
@@ -336,13 +336,19 @@ deployment_settings.modules = OrderedDict([
             description = T("Recording and Assigning Assets"),
             restricted = False,
             module_type = 10,
-        )),             
+        )),
     ("vol", Storage(
             name_nice = T("Volunteers"),
             description = T("Manage volunteers by capturing their skills, availability and allocation"),
             restricted = False,
             module_type = 3,
         )),
+    #("hrm", Storage(
+            #name_nice = T("Human Resources"),
+            #description = T("Human Resource Management"),
+            #restricted = False,
+            #module_type = 10,
+        #)),
     # NB RMS module depends on HMS, CR & Project
     ("rms", Storage(
             name_nice = T("Requests"),

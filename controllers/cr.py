@@ -225,8 +225,9 @@ def shn_shelter_prep(r):
                                                                   "gis_location.id"))
 
         # Cascade the organisation_id from the shelter to the staff
-        db.org_staff.organisation_id.default = r.record.organisation_id
-        db.org_staff.organisation_id.writable = False
+        if r.record:
+            db.org_staff.organisation_id.default = r.record.organisation_id
+            db.org_staff.organisation_id.writable = False
 
         # Remember this is html or popup.
         response.cr_shelter_request_was_html_or_popup = True

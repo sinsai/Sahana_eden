@@ -250,7 +250,8 @@ class S3Trackable(object):
                     trackable = self
                 location = trackable.get_base_location()
 
-            locations.append(location)
+            if location:
+                locations.append(location)
 
         if as_rows:
             return Rows(records=locations, compact=False)

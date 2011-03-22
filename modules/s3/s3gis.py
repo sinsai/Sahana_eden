@@ -716,7 +716,7 @@ class GIS(object):
             if polygons:
                # Only retrieve the bulky polygons if-required
                fields.append(_locations.wkt)
-               
+
             # Hide Resources recorded to Country Locations on the map?
             _filter = None
             if not deployment_settings.get_gis_display_l0():
@@ -2061,7 +2061,7 @@ class GIS(object):
             if mouse_position == "mgrs":
                 html.append(SCRIPT(_type="text/javascript",
                                    _src=URL(r=request, c="static", f="scripts/gis/MGRS.min.js")))
-                
+
 
         if print_tool:
             url = print_tool["url"] + "info.json?var=printCapabilities"
@@ -2209,7 +2209,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         });
         """ % T("Add Point")
 
-        
+
             if None:
                 draw_feature += """
         // Controls for Draft Features
@@ -2294,7 +2294,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    toggleGroup: 'controls'
         //});
         """
-            
+
             draw_feature2 = """
         // Draw Controls
         //toolbar.add(selectButton);

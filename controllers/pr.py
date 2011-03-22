@@ -233,6 +233,8 @@ def presence():
     """
         RESTful CRUD controller
         - needed for Map Popups (no Menu entry for direct access)
+
+        @deprecated - People now use Base Location pr_person.location_id
     """
 
     table = db.pr_presence

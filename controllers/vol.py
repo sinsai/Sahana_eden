@@ -367,7 +367,7 @@ def person():
 
     # Pre-process
     def prep(r):
-        if r.representation in s3.interactive_view_formats:
+        if r.interactive:
 
             # Hide fields
             table.pe_label.readable = table.pe_label.writable = False
@@ -395,7 +395,6 @@ def person():
                 msg_list_empty = T("No Volunteers currently registered"))
 
         if r.component:
-            # Allow users to be registered as volunteers
             if r.component.name == "presence":
                 db.pr_presence.presence_condition.default = vita.CONFIRMED
                 db.pr_presence.presence_condition.readable = False
@@ -406,6 +405,21 @@ def person():
                 db.pr_presence.dest_id.writable = False
                 db.pr_presence.proc_desc.readable = False
                 db.pr_presence.proc_desc.writable = False
+
+            if r.component.name == "address":
+                if r.method != "read":
+                    db.pr_address.type.default = 1 # Home Address
+                    # Don't want to see in Create forms
+                    # inc list_create (list_fields over-rides)
+                    db.pr_address.address.readable = False
+                    db.pr_address.L4.readable = False
+                    db.pr_address.L3.readable = False
+                    db.pr_address.L2.readable = False
+                    db.pr_address.L1.readable = False
+                    db.pr_address.L0.readable = False
+                    db.pr_address.postcode.readable = False
+                    s3xrc.model.configure(db.pr_address,
+                                          onaccept=address_onaccept)
         else:
             # Only display active volunteers
             response.s3.filter = (table.id == db.vol_volunteer.person_id) & \
@@ -413,9 +427,37 @@ def person():
 
         return True
 
+        
+    # Post-process
+    def postp(r, output):
 
+        if r.interactive and r.component and r.component.name == "address":
+            if r.method != "read":
+                try:
+                    # Inject a flag to say whether this address should be set as the user's Base Location
+                    HELP = T("If this is ticked, then this will become the user's Base Location & hence where the user is shown on the Map")
+                    output['form'][0].insert(2,
+                                             TR(TD(LABEL("%s:" % T("Base Location?")),
+                                                   INPUT(_name="base_location",
+                                                         _id="base_location",
+                                                         _class="boolean",
+                                                         _type="checkbox",
+                                                         _value="on"),
+                                                    _class="w2p_fl"),
+                                                TD(DIV(_class="tooltip",
+                                                       _title="%s|%s" % (T("Base Location"),
+                                                                         HELP)))))
+                except:
+                    # No form to inject into
+                    pass
+
+        return output
+
+    # Set hooks
     response.s3.prep = prep
+    response.s3.postp = postp
 
+        
     output = s3_rest_controller(_prefix, resourcename,
                                 rheader=lambda r: shn_pr_rheader(r, tabs))
 

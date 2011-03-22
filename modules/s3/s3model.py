@@ -39,6 +39,7 @@ __all__ = ["S3ResourceModel", "S3ResourceLinker"]
 from gluon.storage import Storage
 from gluon.sql import Table, Field
 from gluon.validators import IS_EMPTY_OR, IS_IN_DB
+from s3validators import IS_ONE_OF
 
 # *****************************************************************************
 class S3ResourceModel(object):
@@ -404,7 +405,13 @@ class S3ResourceModel(object):
                    label=None,
                    comment=None,
                    represent=None,
-                   readable=False):
+                   orderby=None,
+                   sort=True,
+                   filterby=None,
+                   filter_opts=None,
+                   groupby=None,
+                   readable=False,
+                   writable=False):
         """
             Get a foreign key field for a super-entity
 
@@ -418,10 +425,16 @@ class S3ResourceModel(object):
         key = self.super_key(supertable)
 
         return Field(key, supertable,
-                     requires = IS_EMPTY_OR(IS_IN_DB(self.db, "%s.%s" %
-                                                    (supertable._tablename, key))),
+                     requires = IS_EMPTY_OR(IS_ONE_OF(self.db, "%s.%s" %
+                                                      (supertable._tablename, key),
+                                                      represent,
+                                                      orderby=orderby,
+                                                      sort=sort,
+                                                      groupby=groupby,
+                                                      filterby=filterby,
+                                                      filter_opts=filter_opts)),
                      readable = readable,
-                     writable = False,
+                     writable = writable,
                      label=label,
                      comment=comment,
                      represent=represent,

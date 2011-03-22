@@ -1952,7 +1952,8 @@ def geoexplorer():
     """
         Embedded GeoExplorer: https://github.com/opengeo/GeoExplorer
 
-        # @ToDo: Refctor to avoid code duplication with define_map() & gis.show_map()
+        @ToDo: Refactor to avoid code duplication with define_map() & 
+                                                       gis.show_map()
     """
 
     _cache = (cache.ram, 60)

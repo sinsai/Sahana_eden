@@ -36,8 +36,6 @@
 
 """
 
-__name__ = "S3GIS"
-
 __all__ = ["GIS", "GoogleGeocoder", "YahooGeocoder"]
 
 #import logging
@@ -57,14 +55,10 @@ except:
 import zipfile          # Needed to unzip KMZ files
 from lxml import etree  # Needed to follow NetworkLinks
 KML_NAMESPACE = "http://earth.google.com/kml/2.2"
-# Which resources have a different icon per-category
-#gis_categorised_resources = ["irs_ireport"]
-# Use different layer_feature definitions instead
 
 from gluon.dal import Rows
 from gluon.storage import Storage, Messages
 from gluon.html import *
-#from gluon.http import HTTP
 from gluon.tools import fetch
 
 from s3track import S3Trackable

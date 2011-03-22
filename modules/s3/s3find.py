@@ -35,6 +35,8 @@
 
 """
 
+import re
+
 from gluon.storage import Storage
 from gluon.http import HTTP
 from gluon.html import *
@@ -524,7 +526,7 @@ class S3SearchSelectWidget(S3SearchWidget):
             component_table = db[field_type[10:]]
 
             # Find the fields which are needed to represent
-            import re
+
             fieldnames = re.findall("%\(([a-zA-Z0-9_]*)\)s",self.attr.represent)
             fieldnames += ["id"]
             represent_fields = [component_table[fieldname]

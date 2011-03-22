@@ -568,7 +568,7 @@ table = db.define_table(tablename,
                               label = T("Address Type"),
                               represent = lambda opt: \
                                           pr_address_type_opts.get(opt, UNKNOWN_OPT)),
-                        Field("co_name", label=T("c/o Name")),
+                        #Field("co_name", label=T("c/o Name")),
                         location_id(),
                         Field("address", "text", label=T("Address"), writable=False), # Populated from location_id
                         Field("L4", label=deployment_settings.get_gis_locations_hierarchy("L4"), writable=False), # Populated from location_id
@@ -649,13 +649,12 @@ s3xrc.model.add_component(prefix, resourcename,
                           joinby=super_key(db.pr_pentity))
 
 s3xrc.model.configure(table,
-                      onvalidation=lambda form: address_onvalidation(form),
+                      onvalidation=address_onvalidation,
                       list_fields = [
                         "id",
                         "type",
                         "address",
                         "postcode",
-                        #"co_name",
                         #"L4",
                         "L3",
                         "L2",
@@ -663,7 +662,21 @@ s3xrc.model.configure(table,
                         "L0"
                     ])
 
-# *****************************************************************************
+def address_onaccept(form):
+    """
+        Updates the Base Location to be the same as the Address
+
+        NB This doesn't apply globally but is only activated for specific
+           parts of the workflow
+    """
+
+    if "location_id" in form.vars and \
+       "base_location" in request.vars and request.vars.base_location == "on":
+        location_id = form.vars.location_id
+        pe_id = request.post_vars.pe_id
+        s3tracker(db.pr_pentity, pe_id).set_base_location(location_id)
+
+# -----------------------------------------------------------------------------
 # Contact (pe_contact)
 #
 pr_contact_method_opts = {

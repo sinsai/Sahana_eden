@@ -60,10 +60,9 @@ repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
 class S3DateWidget(FormWidget):
 
     """
-    Standard Date widget, but with a modified yearRange to support Birth dates
+        Standard Date widget, but with a modified yearRange to support Birth dates
 
-    @author: Fran Boon (fran@aidiq.com)
-
+        @author: Fran Boon (fran@aidiq.com)
     """
 
     def __init__(self,
@@ -102,11 +101,10 @@ class S3DateWidget(FormWidget):
 class S3DateTimeWidget(FormWidget):
 
     """
-    Standard DateTime widget, based on the widget above, but instead of using
-    jQuery datepicker we use the DHTML datetime calendar.
+        Standard DateTime widget, based on the widget above, but instead of using
+        jQuery datepicker we use the DHTML datetime calendar.
 
-    @author: Fernando Brito (email@fernandobrito.com)
-
+        @author: Fernando Brito (email@fernandobrito.com)
     """
 
     def __init__(self,
@@ -175,13 +173,14 @@ class S3DateTimeWidget(FormWidget):
 class S3UploadWidget(UploadWidget):
 
     """
-    Subclassed to not show the delete checkbox when field is mandatory
-        - This now been included as standard within Web2Py from r2867
-        - Leaving this unused example in the codebase so that we can easily amend this if we wish to later
+        Subclassed to not show the delete checkbox when field is mandatory
+            - This now been included as standard within Web2Py from r2867
+            - Leaving this unused example in the codebase so that we can easily
+              amend this if we wish to later
 
-    @author: Fran Boon (fran@aidiq.com)
+        @author: Fran Boon (fran@aidiq.com)
 
-    @ToDo: Add support for allow_future=False
+        @ToDo: Add support for allow_future=False
     """
 
     @staticmethod
@@ -1826,14 +1825,13 @@ class S3MultiSelectWidget(FormWidget):
                       is_dummy_row = False):
 
         """
-        This widget is not yet complete!
+            This widget is not yet complete!
 
-        @param id: for the row
-        @param column_fields: provides the order
-        @param column_fields_represent: functions to find the values
-            of the fields in the row
-        @type column_fields_represent: dict of {fieldname: function}
-
+            @param id: for the row
+            @param column_fields: provides the order
+            @param column_fields_represent: functions to find the values
+                of the fields in the row
+            @type column_fields_represent: dict of {fieldname: function}
         """
 
         row_field_cells = []

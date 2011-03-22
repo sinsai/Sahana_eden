@@ -783,17 +783,17 @@ class GIS(object):
                                                              _markers.id,
                                                              limitby=(0, 1),
                                                              cache=cache).first()
-                layer = {"name":layername,
-                         "query":locations,
-                         "active":active,
-                         "marker":marker,
+                layer = {"name": layername,
+                         "query": locations,
+                         "active": active,
+                         "marker": marker,
                          "opacity": opacity,
                          "popup_url": popup_url,
                          "polygons": polygons}
             except:
-                layer = {"name":layername,
-                         "query":locations,
-                         "active":active,
+                layer = {"name": layername,
+                         "query": locations,
+                         "active": active,
                          "opacity": opacity,
                          "popup_url": popup_url,
                          "polygons": polygons}

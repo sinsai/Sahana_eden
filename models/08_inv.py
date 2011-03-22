@@ -14,16 +14,21 @@ inv_menu = [
             [
                 [T("List"), False, URL(r=request, c="supply", f="item")],
                 [T("Add"), False, URL(r=request, c="supply", f="item", args="create")],
+                [T("Search"), False, URL(r=request, c="supply", f="item", args="search")],
             ]],            
             [T("Warehouses"), False, URL(r=request, c="inv", f="wh"),
             [
                 [T("List"), False, URL(r=request, c="inv", f="wh")],
                 [T("Add"), False, URL(r=request, c="inv", f="wh", args="create")],
+                [T("Search Inventory Items"), False, URL(r=request, c="inv", f="inv_item", args="search")],
+                [T("Search Received Shipments"), False, URL(r=request, c="inv", f="recv", args="search")],
             ]],
+      
             [T("Request"), False, URL(r=request, c="req", f="req"),
             [
                 [T("List"), False, URL(r=request, c="req", f="req")],
-          #      [T("Add"), False, URL(r=request, c="inv", f="req", args="create")],
+                #[T("Search Requested Items"), False, URL(r=request, c="req", f="req_item", args="search")],
+                #[T("Add"), False, URL(r=request, c="req", f="req", args="create")],
             ]],
            # [T("Receive"), False, URL(r=request, c="inv", f="recv"),
            # [
@@ -68,6 +73,10 @@ if deployment_settings.has_module("inv"):
                                   label = T("Expiry Date")),                            
                             comments(),
                             migrate=migrate, *s3_meta_fields())
+    
+    db.inv_inv_item.site_id.readable = True
+    db.inv_inv_item.site_id.represent = shn_site_represent
+    db.inv_inv_item.site_id.label = T("Site")
     
     db.inv_inv_item.virtualfields.append(item_pack_virtualfields(tablename = "inv_inv_item"))    
 
@@ -115,7 +124,7 @@ if deployment_settings.has_module("inv"):
                                                                      T("Select Items from this Inventory"))),
                                     ondelete = "RESTRICT"
                                     )    
-
+    #------------------------------------------------------------------------------
     # Inv item as component of Sites
     s3xrc.model.add_component(module, 
                               resourcename,
@@ -133,7 +142,38 @@ if deployment_settings.has_module("inv"):
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(supply_item_pack = "item_pack_id")) 
-    
+    #------------------------------------------------------------------------------
+    # Recv Search Method
+    #
+    shn_inv_item_search = s3base.S3Find(
+        #name="shn_item_search",
+        #label=T("Name and/or ID"),
+        #comment=T("To search for a hospital, enter any of the names or IDs of the hospital, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all hospitals."),
+        #field=["gov_uuid", "name", "aka1", "aka2"],
+        advanced=(s3base.S3SearchSimpleWidget(
+                    name="inv_item_search_text",
+                    label=T("Search"),
+                    comment=T("Search for an item by text."),
+                    field=[ "item_id$name",
+                            #"item_id$category_id$name",
+                            "site_id$name"
+                            ]
+                  ),
+                  s3base.S3SearchSelectWidget(    
+                    name="recv_search_site",
+                    label=T("Site"),
+                    field=["site_id"],
+                    represent ="%(name)s",
+                    cols = 2
+                  ),                   
+                  s3base.S3SearchMinMaxWidget(
+                    name="inv_item_search_expiry_date",
+                    method="range",
+                    label=T("Expiry_Date"),
+                    field=["expiry_date"]
+                  ),                  
+        ))       
+        
     #------------------------------------------------------------------------------
     # Update owned_by_role to the site's owned_by_role    
     s3xrc.model.configure(
@@ -141,7 +181,8 @@ if deployment_settings.has_module("inv"):
         onaccept = shn_component_copy_role_func(component_name = tablename, 
                                                 resource_name = "org_site", 
                                                 fk = "site_id",
-                                                pk = "site_id")
+                                                pk = "site_id"),
+        search_method = shn_inv_item_search
     )      
 
 
@@ -157,14 +198,23 @@ if deployment_settings.has_module("inv"):
     SHIP_STATUS_IN_PROCESS = 0
     SHIP_STATUS_RECEIVED   = 1
     SHIP_STATUS_SENT       = 2
-    SHIP_STATUS_CANCEL     = 3
-    
+    SHIP_STATUS_CANCEL     = 3   
     shipment_status = { SHIP_STATUS_IN_PROCESS: T("In Process"),
                         SHIP_STATUS_RECEIVED:   T("Received"),
                         SHIP_STATUS_SENT:       T("Sent"),
                         SHIP_STATUS_CANCEL:     T("Canceled")
-                        }    
-     
+                        }  
+      
+    SHIP_DOC_PENDING  = 0    
+    SHIP_DOC_COMPLETE = 1    
+    ship_doc_status = {SHIP_DOC_PENDING: T("Pending"),
+                       SHIP_DOC_COMPLETE: T("Complete")
+                       }   
+    
+    from sqlhtml import RadioWidget
+    radio_widget = lambda field, value: \
+                            RadioWidget().widget(field, value, cols = 2)
+                            
     resourcename = "recv"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
@@ -172,7 +222,7 @@ if deployment_settings.has_module("inv"):
                                   "datetime",
                                   label = T("Date Received"),
                                   writable = False,
-                                  readable = False #unless the record is locked
+                                  #readable = False #unless the record is locked
                                   ),
                             Field("type",
                                   "integer",
@@ -195,6 +245,22 @@ if deployment_settings.has_module("inv"):
                                   label = T("Status"),
                                   writable = False,
                                   ),
+                            Field("grn_status", 
+                                  "integer",
+                                  requires = IS_NULL_OR(IS_IN_SET(ship_doc_status)),
+                                  represent = lambda status: ship_doc_status.get(status,NONE),       
+                                  default = None,  
+                                  widget = radio_widget,                         
+                                  label = T("GRN Status"),
+                                  ),  
+                            Field("cert_status", 
+                                  "integer",
+                                  requires = IS_NULL_OR(IS_IN_SET(ship_doc_status)),
+                                  represent = lambda status: ship_doc_status.get(status,NONE),       
+                                  default = None,           
+                                  widget = radio_widget,             
+                                  label = T("Certificate Status"),
+                                  ),                                                                    
                             person_id(name = "recipient_id",
                                       label = T("Received By")),
                             comments(),
@@ -257,24 +323,79 @@ if deployment_settings.has_module("inv"):
                               multiple = True,
                               joinby = super_key(db.org_site)
                               )
+    #------------------------------------------------------------------------------
+    # Recv Search Method
+    #
+    shn_recv_search = s3base.S3Find(
+        #name="shn_item_search",
+        #label=T("Name and/or ID"),
+        #comment=T("To search for a hospital, enter any of the names or IDs of the hospital, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all hospitals."),
+        #field=["gov_uuid", "name", "aka1", "aka2"],
+        
+        simple=(s3base.S3SearchSimpleWidget(
+                    name="recv_search_text",
+                    label=T("Search"),
+                    comment=T("Search for an item by text."),
+                    field=[ "from_person",
+                            "comments",
+                            "from_organisation_id#name",
+                            "from_organisation_id#acronym",
+                            "from_location_id#name",
+                            "from_location_id",
+                            "recipient_id#first_name",
+                            "recipient_id#middle_name",
+                            "recipient_id#last_name",
+                            "site_id#name"
+                            ]
+                  )),
+        advanced=(s3base.S3SearchMinMaxWidget(
+                    name="recv_search_date",
+                    method="range",
+                    label=T("Date"),
+                    comment=T("Search for a shipment received between these dates"),
+                    field=["datetime"]
+                  ),    
+                  s3base.S3SearchSelectWidget(    
+                    name="recv_search_site",
+                    label=T("Site"),
+                    field=["site_id"],
+                    represent ="%(name)s",
+                    cols = 2
+                  ),                    
+                  s3base.S3SearchSelectWidget(    
+                    name="recv_search_status",
+                    label=T("Status"),
+                    field=["status"],
+                    cols = 2
+                  ),             
+                  s3base.S3SearchSelectWidget(    
+                    name="recv_search_grn",
+                    label=T("GRN Status"),
+                    field=["grn_status"],
+                    cols = 2
+                  ),
+                  s3base.S3SearchSelectWidget(    
+                    name="recv_search_cert",
+                    label=T("Certificate Status"),
+                    field=["grn_status"],
+                    cols = 2
+                  ),   
+        ))       
 
     #------------------------------------------------------------------------------
     # Redirect to the Items tabs after creation
     recv_item_url = URL(r=request, c="inv", f="recv", args=["[id]", "recv_item"])
+    #------------------------------------------------------------------------------
     s3xrc.model.configure(table,
                           create_next = recv_item_url,
-                          update_next = recv_item_url)
-    
-    #------------------------------------------------------------------------------
-    # Update owned_by_role to the site's owned_by_role    
-    s3xrc.model.configure(
-        table, 
-        onaccept = shn_component_copy_role_func(component_name = tablename, 
-                                                resource_name = "org_site", 
-                                                fk = "site_id",
-                                                pk = "site_id")
-    )    
-      
+                          update_next = recv_item_url,
+                          # Update owned_by_role to the site's owned_by_role
+                          onaccept = shn_component_copy_role_func(component_name = tablename, 
+                                        resource_name = "org_site", 
+                                        fk = "site_id",
+                                        pk = "site_id"),
+                          search_method = shn_recv_search
+                          )    
     # -------------------------------------------------------------------------        
     def shn_inv_recv_form (xrequest, **attr):   
         db.inv_recv.datetime.readable = True  
@@ -799,13 +920,7 @@ if deployment_settings.has_module("inv"):
         else:
             show_inv = session.s3.show_inv.get("%s_%s" %  (r.name, r.id))
             
-        if show_inv:
-            inv_btn = A(T("Hide Inventory"),
-                        _href = URL(r = request, 
-                                    args = r.id,
-                                    vars = dict(show_inv = False)),
-                        _class = "action-btn"
-                        )
+        if show_inv or r.request.function == "wh":
             inv_tabs = [(T("Inventory Items"), "inv_item"),
                         (T("Request"), "req"),
                         (T("Match Requests"), "match_req"),
@@ -813,8 +928,11 @@ if deployment_settings.has_module("inv"):
                         (T("Receive" ), "recv"),
                         (T("Send"), "send", dict(select="sent")),
                         (T("Commit"), "commit"),
-                        ("- %s" % T("Inventory"), None, dict(show_inv="False")),
-                        ]                        
+                        ]    
+            if r.request.function != "wh":
+                inv_tabs.append(("- %s" % T("Inventory"), 
+                                 None, dict(show_inv="False")))             
+                                
         else:
             inv_tabs = [("+ %s" % T("Inventory"), None, dict(show_inv="True"))]
                         

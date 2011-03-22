@@ -12,6 +12,11 @@
  {{=H3(subtitle)}}
 {{except:}}
 {{pass}}
+{{try:}}
+ {{=delete_btn}}
+{{except:}}
+{{pass}}
+{{include "last_update.html"}}
 {{include "key.html"}}
 <div class='form-container'>
 {{try:}}
@@ -22,9 +27,5 @@
 <p>&nbsp;</p>
 {{try:}}
  {{=list_btn}}
-{{except:}}
-{{pass}}
-{{try:}}
- {{=delete_btn}}
 {{except:}}
 {{pass}}

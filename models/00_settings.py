@@ -155,10 +155,10 @@ REPORTLAB_ERROR = T("ReportLab module not available within the running Python - 
 #BREADCRUMB = ">> "
 UNKNOWN_OPT = T("Unknown")
 NONE = "-"
-READ = T("Open")
-#READ = T("Details")
-UPDATE = T("Open")
-#UPDATE = T("Edit")
+#READ = T("Open")
+READ = T("Details")
+#UPDATE = T("Open")
+UPDATE = T("Edit")
 #UPDATE = T("Update")
 DELETE = T("Delete")
 COPY = T("Copy")
@@ -259,8 +259,8 @@ auth.settings.registration_requires_verification = deployment_settings.get_auth_
 auth.settings.mailer = mail
 auth.messages.verify_email = "%s %s/%s/default/user/verify_email/%s %s" % (T("Click on the link"),
                                                                            deployment_settings.get_base_public_url(),
-                                                                           request.application, 
-                                                                           "%(key)s", 
+                                                                           request.application,
+                                                                           "%(key)s",
                                                                            T("to verify your email"))
 auth.settings.on_failed_authorization = URL(r=request, c="default", f="user", args="not_authorized")
 auth.settings.reset_password_requires_verification = True
@@ -278,7 +278,7 @@ auth.messages.registration_pending_approval = T("Account registered, however reg
 # Notify UserAdmin of new pending user registration to action
 if deployment_settings.get_auth_registration_requires_approval():
     auth.settings.verify_email_onaccept = lambda form: \
-        auth.settings.mailer.send(to=deployment_settings.get_mail_approver(),
+        auth.settings.mailer.send(to=form.approver,
                                   subject=T("Sahana Login Approval Pending"),
                                   message="%s %s: %s/%s/admin/user" % (T("Your action is required. Please approve user"),
                                                                        form.email,

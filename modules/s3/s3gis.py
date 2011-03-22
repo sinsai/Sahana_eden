@@ -58,13 +58,16 @@ import zipfile          # Needed to unzip KMZ files
 from lxml import etree  # Needed to follow NetworkLinks
 KML_NAMESPACE = "http://earth.google.com/kml/2.2"
 # Which resources have a different icon per-category
-gis_categorised_resources = ["irs_ireport"]
+#gis_categorised_resources = ["irs_ireport"]
+# Use different layer_feature definitions instead
 
 from gluon.dal import Rows
 from gluon.storage import Storage, Messages
 from gluon.html import *
 #from gluon.http import HTTP
 from gluon.tools import fetch
+
+from s3track import S3Trackable
 
 def s3_debug(message, value=None):
     """
@@ -669,21 +672,23 @@ class GIS(object):
                           popup_label,
                           config=None,
                           marker_id=None,
-                          filter=None,
+                          _filter=None,
                           id=None,
                           active=True,
                           polygons=False,
                           opacity=1):
         """
             Return a Feature Layer suitable to display on a map
+
             @param layername: used as the label in the LayerSwitcher
             @param popup_label: used in Cluster Popups to differentiate between types
             @param id: Used by Location Selector to select which gis_location to include on the map
-            @param filter: a filter to e.g. specify a type of resource
+            @param _filter: a filter to e.g. specify a type of resource
         """
         db = self.db
         cache = self.cache
         auth = self.auth
+        T = self.T
         deployment_settings = self.deployment_settings
         request = self.request
 
@@ -704,65 +709,39 @@ class GIS(object):
                 # Which feature to display in the location selector
                 query = query & (table.id == id)
 
-            if filter:
+            if _filter:
                 # e.g. Which type of resource we're interested in
-                query = query & filter
+                query = query & _filter
 
+            fields = [_locations.id,
+                      _locations.uuid,
+                      _locations.parent,
+                      _locations.name,
+                      _locations.lat,
+                      _locations.lon]
+            if polygons:
+               # Only retrieve the bulky polygons if-required
+               fields.append(_locations.wkt)
+               
             # Hide Resources recorded to Country Locations on the map?
+            _filter = None
             if not deployment_settings.get_gis_display_l0():
-                query = query & ((_locations.level != "L0") | (_locations.level == None))
+                _filter = (_locations.level != "L0") | (_locations.level == None)
 
-            query = query & (_locations.id == db["%s_%s" % (prefix, resourcename)].location_id)
-            if not polygons and not resourcename in gis_categorised_resources:
-                # Only retrieve the bulky polygons if-required
-                locations = db(query).select(_locations.id,
-                                             _locations.uuid,
-                                             _locations.parent,
-                                             _locations.name,
-                                             _locations.lat,
-                                             _locations.lon)
-            elif not polygons and resourcename in gis_categorised_resources:
-                locations = db(query).select(_locations.id,
-                                             _locations.uuid,
-                                             _locations.parent,
-                                             _locations.name,
-                                             _locations.lat,
-                                             _locations.lon,
-                                             table.category)
-            elif polygons and not resourcename in gis_categorised_resources:
-                locations = db(query).select(_locations.id,
-                                             _locations.uuid,
-                                             _locations.parent,
-                                             _locations.name,
-                                             _locations.wkt,
-                                             _locations.lat,
-                                             _locations.lon)
-            else:
-                # Polygons & Categorised resources
-                locations = db(query).select(_locations.id,
-                                             _locations.uuid,
-                                             _locations.parent,
-                                             _locations.name,
-                                             _locations.wkt,
-                                             _locations.lat,
-                                             _locations.lon,
-                                             table.category)
+            # Get the Current Location for the resource
+            # If Tracking isn't enabled, then this will be the Base Location
+            locations = S3Trackable(db, query).get_location(_fields=fields,
+                                                            _filter=_filter,
+                                                            as_rows=True)
 
-            if resourcename in gis_categorised_resources:
-                for i in range(0, len(locations)):
-                    locations[i].popup_label = "%s-%s" % (locations[i].name,
-                                                          popup_label)
-                    locations[i].marker = self.get_marker(tablename,
-                                                          locations[i][tablename].category)
-            else:
-                for i in range(0, len(locations)):
-                    locations[i].popup_label = "%s-%s" % (locations[i].name,
-                                                          popup_label)
+            for i in range(0, len(locations)):
+                locations[i].popup_label = "%s-%s" % (locations[i].name,
+                                                      T(popup_label))
 
             popup_url = URL(r=request, c=prefix, f=resourcename,
                             args="read.plain?%s.location_id=" % resourcename)
 
-            if not marker_id and not resourcename in gis_categorised_resources:
+            if not marker_id:
                 # Add the marker here so that we calculate once/layer not once/feature
                 table_fclass = db.gis_feature_class
                 if not config:
@@ -1121,7 +1100,9 @@ class GIS(object):
                 marker.height
                 marker.width
 
-            Used by s3xrc for Feeds export and by get_feature_layer for Categorised Resources
+            Used by s3xrc for Feeds export
+
+            @ToDo: Get Feeds to use the gis_feature_layer table?
 
             @param tablename
             @param category

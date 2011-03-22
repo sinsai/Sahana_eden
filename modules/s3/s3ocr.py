@@ -59,6 +59,7 @@ except(ImportError):
     print >> sys.stderr, "S3 Debug: WARNING: S3OCR: reportlab has not been installed."
 
 from s3rest import S3Method
+from s3cfg import S3Config
 
 #==========================================================================
 #================================= OCR API ================================
@@ -69,16 +70,54 @@ class S3OCR(S3Method):
     Generate XForms and PDFs the s3 way
     """
 
-    def __init__(self, T):
+    def apply_method(self,
+                     r,
+                     **attr):
         """
-        Initialising s3ocr
+        S3Method's abstract method
         """
+        
+        xml = self.manager.xml
+        self.r = r
 
-        self.T = T
-        self.rheader_tabs = {}
-        self.pdftitle = None
-        self.exclude_component_list = []
+        # s3ocr - dict which stores ocr configuration
+        #                     settings for a resource)
+        s3ocr = attr.get("s3ocr", {})
 
+        # storing localised names of components
+        self.rheader_tabs = s3ocr.get("tabs", [])
+
+        # store custom pdf title (if any)
+        self.pdftitle = s3ocr.get("pdftitle", None)
+
+        # store components which have to be excluded
+        self.exclude_component_list = s3ocr.get("exclude_components", [])
+
+        # store individual field specific properties
+        self.custom_field_properties = s3ocr.get("field_properties", {})
+
+        # example field_properties
+        # field_properties = {
+        #     "%s_%s__%s" % (prefix, resourcename, fieldname): { fieldtype="",
+        #                                                        .
+        #                                                        .
+        #                                                        }
+        #     }
+
+        # store individual fieldtype specific properties
+        s3config = S3Config(self.T)
+        self.custom_fieldtype_properties = \
+            s3config.get_s3ocr_fieldtype_properties()
+
+        # example field_properties
+        # field_properties = {
+        #     fieldtype : { fieldtype="",
+        #                   .
+        #                   .
+        #                   }
+        #     }
+
+        # field type convention mapping from resource to pdf forms
         self.generic_ocr_field_type = {
             "string": "string", 
             "text": "textbox", 
@@ -93,13 +132,7 @@ class S3OCR(S3Method):
             "list:text": "multiselect",
             }
 
-        self.custom_fieldtype_properties = {
-            } # will be updated by self.set_fieldtype_properties()
-
-        self.custom_field_properties = {
-            } # will be update by self.set_field_properties()
-
-        #text for localisation
+        # text for localisation
         self.l10n = {
             "datetime_hint": {
                 "date": self.T("fill in order: day(2) month(2) year(4)"),
@@ -111,8 +144,8 @@ class S3OCR(S3Method):
                 "inst3": self.T("3. Fill in the circles completely."),
                 },
             "boolean": {
-                "yes": T("Yes"),
-                "no": T("No"),
+                "yes": self.T("Yes"),
+                "no": self.T("No"),
                 },
             "select": {
                 "multiselect": self.T("Select one or more option(s) that apply"),
@@ -120,16 +153,7 @@ class S3OCR(S3Method):
                 },
             }
 
-    def apply_method(self,
-                     r,
-                     **attr):
-        """
-        S3Method's abstract method
-        """
-        
-        xml = self.manager.xml
-        self.r = r
-
+        # check if debug mode is enabled
         if r.request.vars.get("_debug", False) == "1":
             self.debug = True
         else:
@@ -140,6 +164,7 @@ class S3OCR(S3Method):
         else:
             content_disposition = "attachment"
         
+        # serve the request
         format = r.representation
         if r.http == "GET":
             if format == "xml":
@@ -187,29 +212,29 @@ class S3OCR(S3Method):
 
         # Components Localised Text added to the etree
         # Convering s3xml to s3ocr_xml (nicer to traverse)
-        s3xml = s3xml_etree.getroot()
-        s3resource = s3xml.getchildren()[0]
-        s3ocr_etree = etree.Element("s3ocr")
+        s3xml_root = s3xml_etree.getroot()
+        resource_element = s3xml_root.getchildren()[0]
+        s3ocr_root = etree.Element("s3ocr")
 
         if self.r.component:     # if it is a component
             component_sequence, components_l10n_dict = \
                 self.__rheader_tabs_sequence(self.r.tablename)
-            s3resource.set(ITEXT,
-                           components_l10n_dict.get(None,
-                                                    self.resource.tablename))
-            s3ocr_etree.append(s3resource)
+            resource_element.set(ITEXT,
+                                 components_l10n_dict.get(None,
+                                                          self.resource.tablename))
+            s3ocr_root.append(resource_element)
 
         else:                    # if it is main resource
             componentetrees = []
             # mres is main resource etree
             mres = etree.Element("resource")
-            for attr in s3resource.attrib.keys():
-                mres.set(attr, s3resource.attrib.get(attr))
-            for s3field in s3resource:
-                if s3field.tag == "field":       # main resource fields
-                    mres.append(s3field)
-                elif s3field.tag == "resource":  # component resource
-                    componentetrees.append(s3field)
+            for attr in resource_element.attrib.keys():
+                mres.set(attr, resource_element.attrib.get(attr))
+            for field_element in resource_element:
+                if field_element.tag == "field":       # main resource fields
+                    mres.append(field_element)
+                elif field_element.tag == "resource":  # component resource
+                    componentetrees.append(field_element)
 
             # Serialisation of Component List and l10n
             component_sequence, components_l10n_dict = \
@@ -234,9 +259,9 @@ class S3OCR(S3Method):
                 serialised_component_etrees = componentetrees
 
             # create s3ocr tree
-            s3ocr_etree.append(mres)
+            s3ocr_root.append(mres)
             for res in serialised_component_etrees:
-                s3ocr_etree.append(res)
+                s3ocr_root.append(res)
 
         # remove fields which are not required
         # loading user defined configuartions
@@ -252,12 +277,12 @@ class S3OCR(S3Method):
             "integer": 9,
             "double": 16,
             }
-        for eachresource in s3ocr_etree.iterchildren():
+        for eachresource in s3ocr_root.iterchildren():
             resourcetablename = eachresource.attrib.get("name")
 
             if eachresource.attrib.get("name") in self.exclude_component_list:
                 # excluded components are removed
-                s3ocr_etree.remove(eachresource)
+                s3ocr_root.remove(eachresource)
                 continue
             for eachfield in eachresource.iterchildren():
                 fieldname = eachfield.attrib.get("name")
@@ -337,14 +362,14 @@ class S3OCR(S3Method):
                         if eachoption.text == "" or eachoption.text == None:
                             s3ocrselect.remove(eachoption)
                             continue
-        return s3ocr_etree
+        return s3ocr_root
 
     def pdf_manager(self):
         """
         Produces OCR Compatible PDF forms
         """
 
-        s3ocr_etree = self.s3ocr_etree() # get element s3xml
+        s3ocr_root = self.s3ocr_etree() # get element s3xml
 
         # define font size
         titlefontsize = 18
@@ -393,7 +418,7 @@ class S3OCR(S3Method):
             gray=0)
         form.linespace(3)
         # printing the etree
-        for eachresource in s3ocr_etree:
+        for eachresource in s3ocr_root:
             form.draw_line()
             form.print_text([
                     eachresource.attrib.get(ITEXT,
@@ -581,105 +606,6 @@ class S3OCR(S3Method):
                                               fieldtype))
         return form.save()
 
-    def set_pdf_title(self, pdftitle):
-        """
-        set custom pdf title
-        """
-
-        self.pdftitle = pdftitle
-
-    def set_field_properties(self,
-                             prefix,
-                             suffix,
-                             fieldname,
-                             fieldtype=None,
-                             readable=None,
-                             writable=None,
-                             label=None,
-                             hint=None,
-                             default=None,
-                             lines=None,
-                             boxes=None,
-                             has_options=None,
-                             options=None,
-                             ):
-        """
-        Set custom individual fieldtypes
-        Note: if two different options contradict each other
-         then s3ocr will do give more priority to:
-         readable==writable > has_options > newfieldtype > (lines > boxes)
-        """
-
-        key = "%s_%s__%s" % (prefix, suffix, fieldname)
-        self.custom_field_properties.update({key: (fieldtype,
-                                              readable,
-                                              writable,
-                                              label,
-                                              hint,
-                                              default,
-                                              lines,
-                                              boxes,
-                                              has_options,
-                                              options,
-                                              )
-                                        })
-
-    def set_fieldtype_properties(self,
-                             fieldtype,
-                             newfieldtype=None,
-                             readable=None,
-                             writable=None,
-                             label=None,
-                             hint=None,
-                             default=None,
-                             lines=None,
-                             boxes=None,
-                             has_options=None,
-                             options=None,
-                             ):
-        """
-        User Defined Custom Field Types
-        Note: if two different options contradict each other
-         then s3ocr will do give more priority to:
-         readable==writable > has_options > newfieldtype > (lines > boxes)
-        """
-
-        if newfieldtype not in generic_ocr_field_type.keys():
-            raise HTTP(501, body="s3ocr.set_fieldtype_properties expects\
- a valid field type\n i.e field type which is available in\
- s3ocr.generic_ocr_field_type.keys()")
-        self.custom_fieldtype_properties.update({fieldtype:
-                                                     (newfieldtype,
-                                                      readable,
-                                                      writable,
-                                                      label,
-                                                      hint,
-                                                      default,
-                                                      lines,
-                                                      boxes,
-                                                      has_options,
-                                                      options,
-                                                      )
-                                                 })
-
-    def put_rheader_tabs(self, prefix, suffix, tabs):
-        """
-        Put component names for l10n
-        """
-
-        resourcename = "%s_%s" % (prefix, suffix)
-        self.rheader_tabs.update({resourcename: tabs,})
-
-    def exclude_components(self, componentlist):
-        """
-        Exclude the given components completely from the main OCR pdf
-        Note: can also be used to exclude the main resource,
-         component resources will be still displayed unless they are in
-         the list
-        """
-
-        self.exclude_component_list.extend(componentlist)
-
     def __update_custom_fieldtype_settings(self,
                                        eachfield, #field etree
                                        ):
@@ -699,14 +625,18 @@ class S3OCR(S3Method):
         HASOPTIONS = "has_options"
 
         fieldtype = eachfield.attrib.get(TYPE)
+        field_property = self.custom_fieldtype_properties.get(fieldtype,  {})
 
-        cust_fieldtype, cust_readable, \
-            cust_writable, cust_label, cust_hint, cust_default, \
-            cust_lines, cust_boxes, cust_has_options, cust_options = \
-            self.custom_fieldtype_properties.get(fieldtype, (None, None, None,
-                                                             None, None, None,
-                                                             None, None, None,
-                                                             None))
+        cust_fieldtype = fieldtype_property.get("fieldtype", None)
+        cust_readable = fieldtype_property.get("readable", None)
+        cust_writable = fieldtype_property.get("writable", None)
+        cust_label = fieldtype_property.get("label", None)
+        cust_hint = fieldtype_property.get("hint", None)
+        cust_default = fieldtype_property.get("default", None)
+        cust_lines = fieldtype_property.get("lines", None)
+        cust_boxes = fieldtype_property.get("boxes", None)
+        cust_has_options = fieldtype_property.get("has_options", None)
+        cust_options = fieldtype_property.get("options", None)
             
         if cust_fieldtype:
             if cust_fieldtype != None:
@@ -756,13 +686,18 @@ class S3OCR(S3Method):
         HASOPTIONS = "has_options"
 
         unikey = "%s__%s" % (resourcetablename, fieldname)
-        cust_fieldtype, cust_readable, \
-            cust_writable, cust_label, cust_hint, cust_default, \
-            cust_lines, cust_boxes, cust_has_options, cust_options = \
-            self.custom_field_properties.get(unikey, (None, None, None,
-                                                 None, None, None,
-                                                 None, None, None,
-                                                 None))
+        field_property = self.custom_field_properties.get(unikey,  {})
+
+        cust_fieldtype = field_property.get("fieldtype", None)
+        cust_readable = field_property.get("readable", None)
+        cust_writable = field_property.get("writable", None)
+        cust_label = field_property.get("label", None)
+        cust_hint = field_property.get("hint", None)
+        cust_default = field_property.get("default", None)
+        cust_lines = field_property.get("lines", None)
+        cust_boxes = field_property.get("boxes", None)
+        cust_has_options = field_property.get("has_options", None)
+        cust_options = field_property.get("options", None)
 
         if cust_fieldtype:
             if cust_fieldtype != None:
@@ -798,7 +733,7 @@ class S3OCR(S3Method):
 
         component_seq = []
         component_l10n_dict = {}
-        rtabs = self.rheader_tabs.get(resourcename,[])
+        rtabs = self.rheader_tabs
         for eachel in rtabs:
             if eachel[1] != None:
                 component_seq.append(eachel[1])

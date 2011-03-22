@@ -124,9 +124,6 @@ s3xrc = s3base.S3ResourceController(globals(), db)
 # MSG
 msg = s3base.S3Msg(globals(), deployment_settings, db, T, mail)
 
-# S3OCR
-s3ocr = s3base.S3OCR(T)
-
 # Tracking System
 s3tracker = s3base.S3Tracking(globals())
 

@@ -209,8 +209,7 @@ def rat():
     rheader = lambda r: shn_rat_rheader(r,
                                         tabs)
 
-    s3ocr.put_rheader_tabs(prefix, resourcename, tabs) # this will provide l10n to ocr forms
-    output = s3_rest_controller(prefix, resourcename, rheader=rheader)
+    output = s3_rest_controller(prefix, resourcename, rheader=rheader, s3ocr={"tabs": tabs})
 
     response.extra_styles = ["S3/rat.css"]
     return output

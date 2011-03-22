@@ -344,3 +344,8 @@ class S3Config(Storage):
             _modules = self.modules
 
         return module_name in _modules
+
+    # S3OCR
+    def get_s3ocr_fieldtype_properties(self):
+        fieldtype_properties = {}
+        return fieldtype_properties

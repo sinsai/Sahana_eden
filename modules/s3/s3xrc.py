@@ -957,6 +957,9 @@ class S3ResourceController(object):
             if jobs:
                 job = jobs[-1]
             else:
+                if self.error:
+                    error = self.error
+                    self.error = None
                 continue
 
             # Import components

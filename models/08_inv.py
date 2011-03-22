@@ -75,6 +75,8 @@ if deployment_settings.has_module("inv"):
                             migrate=migrate, *s3_meta_fields())
     
     db.inv_inv_item.site_id.readable = True
+    db.inv_inv_item.site_id.represent = shn_site_represent
+    db.inv_inv_item.site_id.label = T("Site")
     
     db.inv_inv_item.virtualfields.append(item_pack_virtualfields(tablename = "inv_inv_item"))    
 

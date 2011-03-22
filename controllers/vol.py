@@ -2,8 +2,6 @@
 
 """ Volunteer Management System """
 
-#from gluon.sql import Rows
-
 prefix = request.controller
 resourcename = request.function
 
@@ -327,7 +325,7 @@ def person():
     # If we Register a volunteer, then we can assume they're not Missing
     table.missing.default = False
 
-    # Configure Redirection
+    # Direct to the Volunteer Availability tab after registration
     register_url = str(URL(r=request, f=resourcename,
                            args=["[id]", "volunteer"]))
     s3xrc.model.configure(table,

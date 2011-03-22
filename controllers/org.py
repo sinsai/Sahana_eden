@@ -68,6 +68,25 @@ def organisation():
         tabs.append((T("Activities"), "activity"))
         #tabs.append((T("Tasks"), "task"))
 
+    # Pre-process
+    def prep(r):
+        if r.interactive:
+            if r.method != "read":
+                # Don't want to see in Create forms
+                # inc list_create (list_fields over-rides)
+                table.address.readable = False
+                table.L4.readable = False
+                table.L3.readable = False
+                table.L2.readable = False
+                table.L1.readable = False
+                table.L0.readable = False
+                table.postcode.readable = False
+                # Process Base Location
+                #s3xrc.model.configure(table,
+                #                      onaccept=address_onaccept)
+
+        return True
+        
     # Post-processor
     def postp(r, output):
         if r.component_name == "staff" and \
@@ -76,6 +95,9 @@ def organisation():
                                     T("Organization"))
             output.update(addheader=addheader)
         return output
+
+    # Set hooks
+    response.s3.prep = prep
     response.s3.postp = postp
 
     rheader = lambda r: shn_org_rheader(r,

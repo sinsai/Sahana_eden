@@ -605,7 +605,7 @@ s3.crud_strings[tablename] = Storage(
     msg_record_created = T("Address added"),
     msg_record_modified = T("Address updated"),
     msg_record_deleted = T("Address deleted"),
-    msg_list_empty = T("No Addresses currently registered"))
+    msg_list_empty = T("There is no address for this person yet. Add new address."))
 
 def address_onvalidation(form):
     """

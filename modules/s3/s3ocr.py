@@ -71,7 +71,7 @@ class S3OCR(S3Method):
 
     def __init__(self, T):
         """
-        Instialisting s3ocr
+        Initialising s3ocr
         """
 
         self.T = T

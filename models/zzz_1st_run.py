@@ -942,10 +942,10 @@ if populate:
         table.insert(
             name = "People",
             module = "pr",
-            resource = "presence",
+            resource = "person",
             popup_label = "Person",
             marker_id = db(db.gis_marker.name == "person").select(db.gis_marker.id,
-                                                                    limitby=(0, 1)).first().id
+                                                                  limitby=(0, 1)).first().id
         )
         table.insert(
             name = "Warehouses",

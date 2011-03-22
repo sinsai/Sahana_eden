@@ -38,8 +38,7 @@ __all__ = ["S3Tracking"]
 # =============================================================================
 class S3Trackable(object):
     """
-    Trackable types instance(s)
-
+        Trackable types instance(s)
     """
 
     UID = "uuid" # field name for UIDs
@@ -52,13 +51,12 @@ class S3Trackable(object):
 
     def __init__(self, db, trackable, record_id=None, uid=None):
         """
-        Constructor:
+            Constructor:
 
-        @param db: the database (DAL)
-        @param trackable: the trackable object
-        @param record_id: the record ID(s) (if object is a table or tablename)
-        @param uid: the record UID(s) (if object is a table or tablename)
-
+            @param db: the database (DAL)
+            @param trackable: the trackable object
+            @param record_id: the record ID(s) (if object is a table or tablename)
+            @param uid: the record UID(s) (if object is a table or tablename)
         """
 
         self.db = db
@@ -196,14 +194,19 @@ class S3Trackable(object):
 
 
     # -------------------------------------------------------------------------
-    def get_location(self, timestmp=None):
+    def get_location(self, timestmp=None,
+                     _fields=None,
+                     _filter=None,
+                     as_rows=False):
         """
-        Get the current location of the instance(s) (at the given time)
+            Get the current location of the instance(s) (at the given time)
 
-        @param timestmp: last datetime for presence (defaults to current time)
+            @param timestmp: last datetime for presence (defaults to current time)
+            @param _fields: fields to retrieve from the location records (None for ALL)
+            @param _filter: filter for the locations
+            @param as_rows: return the result as Rows object
 
-        @returns: a location record, or a list of location records (if multiple)
-
+            @returns: a location record, or a list of location records (if multiple)
         """
 
         ptable = self.db[self.PRESENCE]
@@ -231,8 +234,14 @@ class S3Trackable(object):
                             location = trackable.get_location(timestmp=timestmp)
                     elif presence.location_id:
                         query = (ltable.id == presence.location_id)
-                        location = self.db(query).select(ltable.ALL,
-                                                         limitby=(0, 1)).first()
+                        if _filter is not None:
+                            query = query & _filter
+                        if _fields is None:
+                            location = self.db(query).select(ltable.ALL,
+                                                             limitby=(0, 1)).first()
+                        else:
+                            location = self.db(query).select(limitby=(0, 1),
+                                                             *_fields).first()
 
             if not location:
                 if len(self.records) > 1:
@@ -241,7 +250,11 @@ class S3Trackable(object):
                     trackable = self
                 location = trackable.get_base_location()
 
-            locations.append(location)
+            if location:
+                locations.append(location)
+
+        if as_rows:
+            return Rows(records=locations, compact=False)
 
         if not locations:
             return None
@@ -254,13 +267,12 @@ class S3Trackable(object):
     # -------------------------------------------------------------------------
     def set_location(self, location, timestmp=None):
         """
-        Set the current location of instance(s) (at the given time)
+            Set the current location of instance(s) (at the given time)
 
-        @param location: the location (as Row or record ID)
-        @param timestmp: the datetime of the presence (defaults to current time)
+            @param location: the location (as Row or record ID)
+            @param timestmp: the datetime of the presence (defaults to current time)
 
-        @returns: nothing
-
+            @returns: nothing
         """
 
         ptable = self.db[self.PRESENCE]
@@ -299,14 +311,13 @@ class S3Trackable(object):
     # -------------------------------------------------------------------------
     def check_in(self, table, record, timestmp=None):
         """
-        Bind the presence of the instance(s) to another instance
+            Bind the presence of the instance(s) to another instance
 
-        @param table: table name of the other resource
-        @param record: record in the other resource (as Row or record ID)
-        @param timestmp: datetime of the check-in
+            @param table: table name of the other resource
+            @param record: record in the other resource (as Row or record ID)
+            @param timestmp: datetime of the check-in
 
-        @returns: nothing
-
+            @returns: nothing
         """
 
         ptable = self.db[self.PRESENCE]
@@ -360,11 +371,11 @@ class S3Trackable(object):
     # -------------------------------------------------------------------------
     def check_out(self, table=None, record=None, timestmp=None):
         """
-        Make the last log entry before timestmp independent from
-        the referenced entity (if any)
+            Make the last log entry before timestmp independent from
+            the referenced entity (if any)
 
-        @param timestmp: the date/time of the check-out, defaults
-                         to current time
+            @param timestmp: the date/time of the check-out, defaults
+                             to current time
 
         """
 
@@ -425,21 +436,26 @@ class S3Trackable(object):
     # -------------------------------------------------------------------------
     def remove_location(self, location=None):
         """
-        Remove a location from the presence log of the instance(s)
+            Remove a location from the presence log of the instance(s)
 
-        @todo: implement
-
+            @todo: implement
         """
         raise NotImplementedError
 
 
     # -------------------------------------------------------------------------
-    def get_base_location(self):
+    def get_base_location(self,
+                          _fields=None,
+                          _filter=None,
+                          as_rows=False):
         """
-        Get the base location of the instance(s)
+            Get the base location of the instance(s)
 
-        @returns: the base location(s) of the current instance
+            @param _fields: fields to retrieve from the location records (None for ALL)
+            @param _filter: filter for the locations
+            @param as_rows: return the result as Rows object
 
+            @returns: the base location(s) of the current instance
         """
 
         ltable = self.db[self.LOCATION]
@@ -458,10 +474,19 @@ class S3Trackable(object):
                     query = ((table[self.TRACK_ID] == r[self.TRACK_ID]) &
                              (table[self.LOCATION_ID] == ltable.id))
             if query:
-                location = self.db(query).select(ltable.ALL,
-                                                 limitby=(0, 1)).first()
+                if _filter is not None:
+                    query = query & _filter
+                if not _fields:
+                    location = self.db(query).select(ltable.ALL,
+                                                     limitby=(0, 1)).first()
+                else:
+                    location = self.db(query).select(limitby=(0, 1),
+                                                     *_fields).first()
             if location:
                 locations.append(location)
+
+        if as_rows:
+            return Rows(records=locations, compact=False)
 
         if not locations:
             return None
@@ -474,14 +499,13 @@ class S3Trackable(object):
     # -------------------------------------------------------------------------
     def set_base_location(self, location=None):
         """
-        Set the base location of the instance(s)
+            Set the base location of the instance(s)
 
-        @param location: the location for the base location as Row or record ID
+            @param location: the location for the base location as Row or record ID
 
-        @returns: nothing
+            @returns: nothing
 
-        @note: instance tables without a location_id field will be ignored
-
+            @note: instance tables without a location_id field will be ignored
         """
 
         if isinstance(location, S3Trackable):

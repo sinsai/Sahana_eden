@@ -97,7 +97,7 @@ def define_map(window=False, toolbar=False, config=None):
             # Check for multiples
             filter_values = layer.filter_value.split("/")
             if len(filter_values) == 1:
-                filter = (table[layer.filter_field] == filter_values[0])
+                _filter = (table[layer.filter_field] == filter_values[0])
             else:
                 null = False
                 for i in range(len(filter_values)):
@@ -105,20 +105,20 @@ def define_map(window=False, toolbar=False, config=None):
                         # Catch NULLs
                         null = True
                 if null:
-                    filter = ((table[layer.filter_field].belongs(filter_values)) | \
+                    _filter = ((table[layer.filter_field].belongs(filter_values)) | \
                               (table[layer.filter_field] == None))
                 else:
-                    filter = (table[layer.filter_field].belongs(filter_values))
+                    _filter = (table[layer.filter_field].belongs(filter_values))
 
         else:
-            filter = None
+            _filter = None
         _layer = gis.get_feature_layer(layer.module,
                                        layer.resource,
                                        layer.name,
                                        layer.popup_label,
                                        config=config,
                                        marker_id=layer.marker_id,
-                                       filter=filter,
+                                       _filter=_filter,
                                        active=layer.visible,
                                        polygons=layer.polygons,
                                        opacity=layer.opacity)
@@ -1846,8 +1846,8 @@ def geocode_manual():
     # @ToDo: make this role-dependent
     # - Normal users do the Lat/Lons
     # - Special users do the Codes
-    filter = (table.lat == None)
-    response.s3.filter = (query & filter)
+    _filter = (table.lat == None)
+    response.s3.filter = (query & _filter)
 
     # Hide unnecessary fields
     table.name_dummy.readable = table.name_dummy.writable = False
@@ -1951,6 +1951,9 @@ def geoexplorer():
 
     """
         Embedded GeoExplorer: https://github.com/opengeo/GeoExplorer
+
+        @ToDo: Refactor to avoid code duplication with define_map() & 
+                                                       gis.show_map()
     """
 
     _cache = (cache.ram, 60)
@@ -1986,13 +1989,35 @@ def geoexplorer():
     feature_layers = db(db.gis_layer_feature.enabled == True).select()
     for layer in feature_layers:
         if layer.role_required and not auth.s3_has_role(layer.role_required):
+            # Skip layer is it i srestricted & we don't have the required role
             continue
+        if layer.filter_field and layer.filter_value:
+            table = db["%s_%s" % (layer.module, layer.resource)]
+            # Check for multiples
+            filter_values = layer.filter_value.split("/")
+            if len(filter_values) == 1:
+                _filter = (table[layer.filter_field] == filter_values[0])
+            else:
+                null = False
+                for i in range(len(filter_values)):
+                    if filter_values[i] == "":
+                        # Catch NULLs
+                        null = True
+                if null:
+                    _filter = ((table[layer.filter_field].belongs(filter_values)) | \
+                              (table[layer.filter_field] == None))
+                else:
+                    _filter = (table[layer.filter_field].belongs(filter_values))
+
+        else:
+            _filter = None
         _layer = gis.get_feature_layer(layer.module,
                                        layer.resource,
                                        layer.name,
                                        layer.popup_label,
                                        config=config,
                                        marker_id=layer.marker_id,
+                                       _filter=_filter,
                                        active=layer.visible,
                                        polygons=layer.polygons,
                                        opacity=layer.opacity)

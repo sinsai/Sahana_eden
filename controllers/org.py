@@ -56,11 +56,11 @@ def organisation():
 
     tabs = [(T("Basic Details"), None),
             (T("Staff"), "staff"),
-            (T("Offices"), "office"),                                                
+            (T("Offices"), "office"),
             #(T("Donors"), "organisation"),
             #(T("Sites"), "site"),  # Ticket 195
            ]
-    
+
     if deployment_settings.has_module("assess"):
         tabs.append((T("Assessments"), "assess"))
     if deployment_settings.has_module("project"):
@@ -71,9 +71,10 @@ def organisation():
     # Pre-process
     def prep(r):
         if r.interactive:
-            if r.method != "read":
+            if r.component_name == "office" and r.method and r.method != "read":
                 # Don't want to see in Create forms
                 # inc list_create (list_fields over-rides)
+                table = r.component.table
                 table.address.readable = False
                 table.L4.readable = False
                 table.L3.readable = False
@@ -86,7 +87,7 @@ def organisation():
                 #                      onaccept=address_onaccept)
 
         return True
-        
+
     # Post-processor
     def postp(r, output):
         if r.component_name == "staff" and \
@@ -120,30 +121,44 @@ def office():
     shn_add_dynamic_inv_components()
 
     # Pre-processor
-    def prep(r): 
+    def prep(r):
         # Filter out people which are already staff for this office
-        shn_staff_prep(r) 
+        shn_staff_prep(r)
         # Filter out items which are already in this inventory
         shn_inv_prep(r)
-          
+
         if r.representation == "popup":
             organisation = request.vars.organisation_id or session.s3.organisation_id or ""
             if organisation:
                 table.organisation_id.default = organisation
-        
+
         # Cascade the organisation_id from the office to the staff
         if r.record:
             db.org_staff.organisation_id.default = r.record.organisation_id
             db.org_staff.organisation_id.writable = False
-            
+
         # No point in downloading large dropdowns which we hide, so provide a smaller represent
         # the update forms are not ready. when they will - uncomment this and comment the next one
         #if r.method in ("create", "update"):
         if r.method == "create":
+            table = r.table
             table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db,
                                                                         "org_organisation.id"))
             if request.vars.organisation_id and request.vars.organisation_id != "None":
                 table.organisation_id.default = request.vars.organisation_id
+
+        if r.interactive and r.method and r.method != "read":
+            # Don't want to see in Create forms
+            # inc list_create (list_fields over-rides)
+            table = r.table
+            table.address.readable = False
+            table.L4.readable = False
+            table.L3.readable = False
+            table.L2.readable = False
+            table.L1.readable = False
+            table.L0.readable = False
+            table.postcode.readable = False
+
         return True
     response.s3.prep = prep
 
@@ -164,9 +179,9 @@ def office():
 
 #==============================================================================
 def staff():
-    """ 
+    """
         RESTful CRUD controller
-        @ToDo: This function may be removed, to restrict the view of staff to only 
+        @ToDo: This function may be removed, to restrict the view of staff to only
         as components within site instances and organisations
     """
 

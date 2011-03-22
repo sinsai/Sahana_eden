@@ -27,8 +27,15 @@ if deployment_settings.has_module(prefix):
     table = db.define_table(tablename,
                             #super_link(db.sit_resource), # is a resource
 
-                            organisation_id(),
+                            organisation_id(empty=False),
                             person_id(),
+                            super_link(db.org_site,
+                                       label=T("Site"),
+                                       readable=True,
+                                       writable=True,
+                                       sort=True,
+                                       groupby="instance_type",
+                                       represent=shn_site_represent),
 
                             Field("type", "integer",
                                   requires = IS_IN_SET(hrm_type_opts, zero=None),
@@ -41,6 +48,8 @@ if deployment_settings.has_module(prefix):
                                   default = 1,
                                   label = T("Status"),
                                   represent = lambda opt: hrm_status_opts.get(opt, UNKNOWN_OPT)),
+
+                            Field("role"),
 
                             migrate=migrate, *s3_meta_fields())
 

@@ -411,6 +411,10 @@ div.form-container form p.note { font-style: italic;
 div.form-container form input,
 div.form-container form select { padding: 1px;
                                  margin: 2px 0 2px 0; }
+div.form-container form input[type="checkbox"],
+div.form-container form input[type="radio"] { padding: 1px;
+                                 			  margin: 2px 5px 2px 5px; }	   
+                                   				                           
 div.form-container form fieldset { margin:0 0 10px 0;
                                    padding: 10px;
                                    border: #ddd 1px solid;

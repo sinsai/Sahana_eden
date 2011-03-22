@@ -90,7 +90,7 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
                                                 "%(name)s",
                                                 sort=True)),
                 represent = lambda id: shn_get_db_field_value(db=db, table="supply_brand", field="name", look_up=id),
-                label = T("Category"),
+                label = T("Brand"),
                 comment = DIV( _class="tooltip",
                                _title="%s|%s" % (T("Brand"),
                                                  T("The list of Brands are maintained by the Administrators."))),
@@ -197,8 +197,8 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
         #comment=T("To search for a hospital, enter any of the names or IDs of the hospital, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all hospitals."),
         #field=["gov_uuid", "name", "aka1", "aka2"],
         advanced=(s3base.S3SearchSimpleWidget(
-                    name="item_search_advanced",
-                    label=T("Item"),
+                    name="item_search_text",
+                    label=T("Search"),
                     comment=T("Search for an item by text."),
                     field=["name", "comment", "item_category_id$name"]
                   ),

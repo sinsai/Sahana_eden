@@ -117,13 +117,14 @@ if deployment_settings.has_module(module):
     resourcename = "skill"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            Field("name",  length=128, notnull=True, label=T("Name")),
+                            Field("name",  length=128, notnull=True,
+                                  label=T("Name")),
                             Field("category",
                                   requires=IS_IN_SET(vol_skill_category_opts),
                                   label=T("Category"),
                                   notnull=True,
-                                  represent = lambda opt: vol_skill_category_opts(opt,
-                                                                                  UNKNOWN_OPT)
+                                  represent = lambda opt: vol_skill_category_opts.get(opt,
+                                                                                      UNKNOWN_OPT)
                                   ),
                             Field("description"),
                             migrate=migrate, *s3_meta_fields())
@@ -195,7 +196,8 @@ if deployment_settings.has_module(module):
                                   requires=IS_IN_SET(vol_credential_status_opts),
                                   label=T("Status"),
                                   notnull=True,
-                                  represent = lambda opt: vol_credential_status_opts.get(opt, UNKNOWN_OPT),
+                                  represent = lambda opt: vol_credential_status_opts.get(opt,
+                                                                                         UNKNOWN_OPT),
                                   default=1),   # pending
                             migrate=migrate, *s3_meta_fields())
 
@@ -269,7 +271,8 @@ if deployment_settings.has_module(module):
             if request.vars._next:
                 next = str.lower(request.vars._next)
             else:
-                next = str.lower(URL(r=request, c="project", f="project", args="[id]"))
+                next = str.lower(URL(r=request, c="project", f="project",
+                                     args="[id]"))
 
             # Title and subtitle
             title = T("Search for a Project")
@@ -284,7 +287,8 @@ if deployment_settings.has_module(module):
             form = FORM(TABLE(
                     TR("%s: " % T("Location"),
                        SELECT(_name="location", *l_opts, **dict(name="location",
-                                                                requires=IS_NULL_OR(IS_IN_DB(db, "gis_location.id"))))),
+                                                                requires=IS_NULL_OR(IS_IN_DB(db,
+                                                                                             "gis_location.id"))))),
                     TR("", INPUT(_type="submit", _value=T("Search")))
                     ))
 

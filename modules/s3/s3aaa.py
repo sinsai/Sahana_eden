@@ -842,6 +842,7 @@ class AuthS3(Auth):
 
         # Default Approver
         approver = deployment_settings.get_mail_approver()
+        organisation_id = None
         # Check for Domain: Whitelist or specific Approver
         table = db.auth_organisation
         address, domain = user.email.split("@", 1)

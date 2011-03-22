@@ -28,7 +28,7 @@ if deployment_settings.has_module(module):
                             # @ToDo: A person may volunteer for more than one org.
                             # Remove this -- the org can be inferred from the project
                             # or team in which the person participates.
-                            organisation_id(),
+                            #organisation_id(),
                             Field("date_avail_start", "date", label=T("Available from")),
                             Field("date_avail_end", "date", label=T("Available until")),
                             Field("hrs_avail_start", "time", label=T("Working hours start")),
@@ -122,7 +122,8 @@ if deployment_settings.has_module(module):
                                   requires=IS_IN_SET(vol_skill_category_opts),
                                   label=T("Category"),
                                   notnull=True,
-                                  represent = lambda opt: vol_skill_category_opts(opt, UNKNOWN_OPT)
+                                  represent = lambda opt: vol_skill_category_opts(opt,
+                                                                                  UNKNOWN_OPT)
                                   ),
                             Field("description"),
                             migrate=migrate, *s3_meta_fields())
@@ -168,7 +169,9 @@ if deployment_settings.has_module(module):
 
     skill_id = S3ReusableField("skill_id", db.vol_skill,
                                sortby = ["category", "name"],
-                               requires = IS_ONE_OF(db, "vol_skill.id", vol_skill_represent, orderby="vol_skill.name"),
+                               requires = IS_ONE_OF(db, "vol_skill.id",
+                                                    vol_skill_represent,
+                                                    orderby="vol_skill.name"),
                                represent = vol_skill_represent,
                                label = T("Skill"),
                                ondelete = "RESTRICT")
@@ -257,7 +260,9 @@ if deployment_settings.has_module(module):
 
         if not s3_has_permission("read", db.project_project):
             session.error = UNAUTHORISED
-            redirect(URL(r=request, c="default", f="user", args="login", vars={"_next":URL(r=request, args="search_location", vars=request.vars)}))
+            redirect(URL(r=request, c="default", f="user", args="login",
+                         vars={"_next":URL(r=request, args="search_location",
+                                           vars=request.vars)}))
 
         if xrequest.representation=="html":
             # Check for redirection
@@ -271,12 +276,15 @@ if deployment_settings.has_module(module):
             subtitle = T("Matching Records")
 
             # Select form:
+            query = (db.gis_location.deleted == False)
             l_opts = [OPTION(_value="")]
             l_opts += [OPTION(location.name, _value=location.id)
-                    for location in db(db.gis_location.deleted == False).select(db.gis_location.ALL, cache=(cache.ram, 3600))]
+                       for location in db(query).select(db.gis_location.ALL,
+                                                        cache=(cache.ram, 3600))]
             form = FORM(TABLE(
-                    TR(T("Location: "),
-                    SELECT(_name="location", *l_opts, **dict(name="location", requires=IS_NULL_OR(IS_IN_DB(db, "gis_location.id"))))),
+                    TR("%s: " % T("Location"),
+                       SELECT(_name="location", *l_opts, **dict(name="location",
+                                                                requires=IS_NULL_OR(IS_IN_DB(db, "gis_location.id"))))),
                     TR("", INPUT(_type="submit", _value=T("Search")))
                     ))
 
@@ -321,7 +329,10 @@ if deployment_settings.has_module(module):
             except:
                 label_create_button = s3.crud_strings.label_create_button
 
-            add_btn = A(label_create_button, _href=URL(r=request, c="project", f="project", args="create"), _class="action-btn")
+            add_btn = A(label_create_button,
+                        _href=URL(r=request, c="project", f="project",
+                                  args="create"),
+                        _class="action-btn")
 
             output.update(dict(items=items, add_btn=add_btn))
 
@@ -332,5 +343,7 @@ if deployment_settings.has_module(module):
             redirect(URL(r=request))
 
     # Plug into REST controller
-    s3xrc.model.set_method(module, "project", method="search_location", action=shn_vol_project_search_location )
+    s3xrc.model.set_method(module, "project",
+                           method="search_location",
+                           action=shn_vol_project_search_location)
 # -----------------------------------------------------------------------------

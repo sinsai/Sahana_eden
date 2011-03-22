@@ -409,6 +409,7 @@ def person():
                     table.L1.readable = False
                     table.L0.readable = False
                     table.postcode.readable = False
+                    # Process Base Location
                     s3xrc.model.configure(table,
                                           onaccept=address_onaccept)
         else:

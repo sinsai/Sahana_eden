@@ -482,20 +482,20 @@ elif request.function == "group":
 
 # -----------------------------------------------------------------------------
 #
-def shn_pr_rheader(jr, tabs=[]):
+def shn_pr_rheader(r, tabs=[]):
 
     """ Person Registry page headers """
 
-    if jr.representation == "html":
+    if r.representation == "html":
 
-        rheader_tabs = shn_rheader_tabs(jr, tabs)
+        rheader_tabs = shn_rheader_tabs(r, tabs)
 
-        if jr.name == "person":
+        if r.name == "person":
 
-            _next = jr.here()
-            _same = jr.same()
+            #_next = r.here()
+            #_same = r.same()
 
-            person = jr.record
+            person = r.record
 
             if person:
                 rheader = DIV(TABLE(
@@ -520,12 +520,12 @@ def shn_pr_rheader(jr, tabs=[]):
 
                 return rheader
 
-        elif jr.name == "group":
+        elif r.name == "group":
 
-            _next = jr.here()
-            _same = jr.same()
+            #_next = r.here()
+            #_same = r.same()
 
-            group = jr.record
+            group = r.record
 
             if group:
                 rheader = DIV(TABLE(
@@ -552,7 +552,7 @@ pr_address_type_opts = {
     1:T("Home Address"),
     2:T("Office Address"),
     3:T("Holiday Address"),
-    99:T("other")
+    9:T("other")
 }
 
 

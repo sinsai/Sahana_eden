@@ -69,15 +69,10 @@ def shn_menu():
         selection = db.pr_person[person_id]
         if selection:
             person_name = shn_pr_person_represent(person_id)
-            # ?vol_tabs=person and ?vol_tabs=volunteer are used by the person
-            # controller to select which set of tabs to display.
             menu_person = [
                 ["%s: %s" % (T("Person"), person_name), False, aURL(r=request, f="person", args=[person_id, "read"]),[
-                    # The arg "volunteer" causes this to display the
-                    # vol_volunteer tab initially.
-                    [T("Volunteer Data"), False, aURL(r=request, f="person", args=[person_id, "volunteer"], vars={"vol_tabs":"volunteer"})],
                     # The default tab is pr_person, which is fine here.
-                    [T("Person Data"), False, aURL(r=request, f="person", args=[person_id], vars={"vol_tabs":"person"})],
+                    [T("Show Details"), False, aURL(r=request, f="person", args=[person_id])],
                     [T("View On Map"), False, aURL(r=request, f="view_map", args=[person_id])],
                     [T("Send Notification"), False, URL(r=request, f="compose_person", vars={"person_id":person_id})],
                 ]],
@@ -149,8 +144,8 @@ def index():
         response.s3.actions = []
 
         # Button labels
-        REGISTER = str(T("Register"))
-        DETAILS = str(T("Details"))
+        REGISTER = T("Register")
+        DETAILS = T("Details")
 
         if not r.component:
             open_button_label = DETAILS
@@ -318,9 +313,8 @@ def register():
 def person():
 
     """
-        This controller produces either generic person component tabs or
-        volunteer-specific person component tabs, depending on whether "vol_tabs"
-        in the URL's vars is "person" or "volunteer".
+        RESTful CRUD Controller
+        Configures options for Persons relevant to a Volunteer context
     """
 
     # Override prefix
@@ -330,46 +324,32 @@ def person():
     tablename = "%s_%s" % (_prefix, resourcename)
     table = db[tablename]
 
+    # If we Register a volunteer, then we can assume they're not Missing
     table.missing.default = False
 
-    # Configure redirection and list fields
+    # Configure Redirection
     register_url = str(URL(r=request, f=resourcename,
-                           args=["[id]", "volunteer"],
-                           vars={"vol_tabs":1}))
+                           args=["[id]", "volunteer"]))
     s3xrc.model.configure(table,
                           create_next=register_url)
 
-    tab_set = "person"
-    if "vol_tabs" in request.vars:
-        tab_set = request.vars["vol_tabs"]
-    if tab_set == "person":
-        tabs = [
-                (T("Basic Details"), None),
-                (T("Address"), "address"),
-                (T("Identity"), "identity"),
-                (T("Contact Data"), "pe_contact"),
-                (T("Images"), "image"),
-                (T("Presence Log"), "presence")
-               ]
-    else:
-        db.pr_group_membership.group_id.label = T("Team Id")
-        db.pr_group_membership.group_head.label = T("Team Leader")
-        s3xrc.model.configure(db.pr_group_membership,
-                              list_fields=["id",
-                                           "group_id",
-                                           "group_head",
-                                           "description"])
-        tabs = [
-                (T("Availability"), "volunteer"),
-                (T("Teams"), "group_membership"),
-                (T("Skills"), "credential"),
-               ]
+    tabs = [
+            (T("Basic Details"), None),
+            (T("Address"), "address"),
+            (T("Identity"), "identity"),
+            (T("Contact Data"), "pe_contact"),
+            #(T("Teams"), "group_membership"),
+            (T("Skills"), "credential"),
+            (T("Availability"), "volunteer"),
+            (T("Images"), "image"),
+           ]
 
     # Pre-process
     def prep(r):
         if r.interactive:
 
             # Hide fields
+            table = db.pr_person
             table.pe_label.readable = table.pe_label.writable = False
             table.missing.readable = table.missing.writable = False
             table.tags.readable = table.tags.writable = False
@@ -396,29 +376,42 @@ def person():
 
         if r.component:
             if r.component.name == "presence":
-                db.pr_presence.presence_condition.default = vita.CONFIRMED
-                db.pr_presence.presence_condition.readable = False
-                db.pr_presence.presence_condition.writable = False
-                db.pr_presence.orig_id.readable = False
-                db.pr_presence.orig_id.writable = False
-                db.pr_presence.dest_id.readable = False
-                db.pr_presence.dest_id.writable = False
-                db.pr_presence.proc_desc.readable = False
-                db.pr_presence.proc_desc.writable = False
+                table = db.pr_presence
+                table.presence_condition.default = vita.CONFIRMED
+                table.presence_condition.readable = False
+                table.presence_condition.writable = False
+                table.orig_id.readable = False
+                table.orig_id.writable = False
+                table.dest_id.readable = False
+                table.dest_id.writable = False
+                table.proc_desc.readable = False
+                table.proc_desc.writable = False
 
-            if r.component.name == "address":
+            elif r.component.name == "group_membership":
+                table = db.pr_group_membership
+                table.group_id.label = T("Team Id")
+                table.group_head.label = T("Team Leader")
+                s3xrc.model.configure(table,
+                                      list_fields=["id",
+                                                   "group_id",
+                                                   "group_head",
+                                                   "description"])
+    
+
+            elif r.component.name == "address":
                 if r.method != "read":
-                    db.pr_address.type.default = 1 # Home Address
+                    table = db.pr_address
+                    table.type.default = 1 # Home Address
                     # Don't want to see in Create forms
                     # inc list_create (list_fields over-rides)
-                    db.pr_address.address.readable = False
-                    db.pr_address.L4.readable = False
-                    db.pr_address.L3.readable = False
-                    db.pr_address.L2.readable = False
-                    db.pr_address.L1.readable = False
-                    db.pr_address.L0.readable = False
-                    db.pr_address.postcode.readable = False
-                    s3xrc.model.configure(db.pr_address,
+                    table.address.readable = False
+                    table.L4.readable = False
+                    table.L3.readable = False
+                    table.L2.readable = False
+                    table.L1.readable = False
+                    table.L0.readable = False
+                    table.postcode.readable = False
+                    s3xrc.model.configure(table,
                                           onaccept=address_onaccept)
         else:
             # Only display active volunteers
@@ -459,10 +452,43 @@ def person():
 
         
     output = s3_rest_controller(_prefix, resourcename,
-                                rheader=lambda r: shn_pr_rheader(r, tabs))
+                                rheader=lambda r: vol_rheader(r, tabs))
 
     shn_menu()
     return output
+
+# -----------------------------------------------------------------------------
+#
+def vol_rheader(r, tabs=[]):
+
+    """ Volunteer page headers """
+
+    if r.representation == "html":
+
+        rheader_tabs = shn_rheader_tabs(r, tabs)
+
+        if r.name == "person":
+
+            person = r.record
+
+            if person:
+                rheader = DIV(TABLE(
+
+                    TR(TH("%s: " % T("Name")),
+                       vita.fullname(person),
+                       TH("%s: " % T("Gender")),
+                       "%s" % pr_gender_opts.get(person.gender, T("unknown"))),
+
+                    TR(TH("%s: " % T("Nationality")),
+                       "%s" % pr_nations.get(person.nationality, T("unknown")),
+                       TH("%s: " % T("Date of Birth")),
+                       "%s" % (person.date_of_birth or T("unknown"))),
+
+                    ), rheader_tabs)
+
+                return rheader
+
+    return None
 
 # -----------------------------------------------------------------------------
 # Skills

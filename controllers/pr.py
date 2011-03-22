@@ -118,10 +118,11 @@ def person():
 
     def prep(r):
 
-        # Test code (to be removed):
+        #Test code (to be removed):
         #trackable = s3tracker(db.pr_pentity, 1)
         #print "Original location"
-        #location = trackable.get_base_location()
+        #location = trackable.get_base_location(_fields=(db.gis_location.name, db.gis_location.lat, db.gis_location.lon),
+                                               #_filter=(db.gis_location.lon>0))
         #if location:
             #print "Base location: %s lat=%s, lon=%s" % (location.name, location.lat, location.lon)
         #else:

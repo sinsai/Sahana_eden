@@ -50,7 +50,7 @@ from gluon.validators import *
 #except ImportError:
 from gluon.dal import Field, Row, Query, Set, Table, Expression
 from gluon.sqlhtml import SQLFORM, SQLTABLE, CheckboxesWidget
-from gluon.tools import Auth
+from gluon.tools import Auth, callback
 from gluon.contrib.simplejson.ordered_dict import OrderedDict
 
 from s3rest import S3Method
@@ -70,6 +70,7 @@ class AuthS3(Auth):
                 define_tables()
                 login()
                 register()
+                verify_email()
                 requires_membership()
 
             - add:
@@ -104,6 +105,7 @@ class AuthS3(Auth):
         self.messages.email_approver_failed = "Failed to send mail to Approver - see if you can notify them manually!"
         self.messages.email_sent = "Verification Email sent - please check your email to validate. If you do not receive this email please check you junk email or spam filters"
         self.messages.email_verified = "Email verified - you can now login"
+        self.messages.duplicate_email = "This email address is already in use"
         self.messages.registration_disabled = "Registration Disabled!'"
         self.messages.label_utc_offset = "UTC Offset"
         self.messages.help_utc_offset = "The time difference between UTC and your timezone, specify as +HHMM for eastern or -HHMM for western timezones."
@@ -114,7 +116,7 @@ class AuthS3(Auth):
         self.messages.lock_keys = True
 
         self.permission = S3Permission(self, environment)
-        
+
         T = self.environment.T
         self.org_site_types = Storage(
                                 cr_shelter = T("Shelter"),
@@ -157,18 +159,20 @@ class AuthS3(Auth):
 
         db = self.db
         request = self.environment.request
+        settings = self.settings
+        messages = self.messages
 
         # User table
-        if not self.settings.table_user:
-            passfield = self.settings.password_field
-            if self.settings.username_field:
+        if not settings.table_user:
+            passfield = settings.password_field
+            if settings.username_field:
                 # with username
-                self.settings.table_user = db.define_table(
-                    self.settings.table_user_name,
+                settings.table_user = db.define_table(
+                    settings.table_user_name,
                     Field("first_name", length=128, default="",
-                          label=self.messages.label_first_name),
+                          label=messages.label_first_name),
                     Field("last_name", length=128, default="",
-                          label=self.messages.label_last_name),
+                          label=messages.label_last_name),
                     Field("person_uuid", length=64, default="",
                           readable=False, writable=False),
                     Field("utc_offset", length=16,
@@ -176,147 +180,148 @@ class AuthS3(Auth):
                     Field("username", length=128, default=""),
                     Field("language", length=16),
                     Field("email", length=512, default="",
-                          label=self.messages.label_email),
+                          label=messages.label_email),
                     Field(passfield, "password", length=512,
-                          readable=False, label=self.messages.label_password),
+                          readable=False, label=messages.label_password),
                     Field("registration_key", length=512,
                           writable=False, readable=False, default="",
-                          label=self.messages.label_registration_key),
+                          label=messages.label_registration_key),
                     Field("reset_password_key", length=512,
                           writable=False, readable=False, default="",
-                          label=self.messages.label_registration_key),
+                          label=messages.label_registration_key),
                     Field("timestmp", "datetime", writable=False,
                           readable=False, default=""),
-                    migrate = self.__get_migrate(self.settings.table_user_name,
+                    migrate = self.__get_migrate(settings.table_user_name,
                                                  migrate))
             else:
                 # with email-address
-                self.settings.table_user = db.define_table(
-                    self.settings.table_user_name,
+                settings.table_user = db.define_table(
+                    settings.table_user_name,
                     Field("first_name", length=128, default="",
-                          label=self.messages.label_first_name),
+                          label=messages.label_first_name),
                     Field("last_name", length=128, default="",
-                          label=self.messages.label_last_name),
+                          label=messages.label_last_name),
                     Field("person_uuid", length=64, default="",
                           readable=False, writable=False),
                     Field("utc_offset", length=16,
-                          readable=False, writable=False, label=self.messages.label_utc_offset),
+                          readable=False, writable=False, label=messages.label_utc_offset),
                     Field("language", length=16),
                     Field("email", length=512, default="",
-                          label=self.messages.label_email),
+                          label=messages.label_email),
                     Field(passfield, "password", length=512,
-                          readable=False, label=self.messages.label_password),
+                          readable=False, label=messages.label_password),
                     Field("registration_key", length=512,
                           writable=False, readable=False, default="",
-                          label=self.messages.label_registration_key),
+                          label=messages.label_registration_key),
                     Field("reset_password_key", length=512,
                           writable=False, readable=False, default="",
-                          label=self.messages.label_registration_key),
+                          label=messages.label_registration_key),
                     Field("timestmp", "datetime", writable=False,
                           readable=False, default=""),
-                    migrate = self.__get_migrate(self.settings.table_user_name,
+                    migrate = self.__get_migrate(settings.table_user_name,
                                                  migrate))
-            table = self.settings.table_user
+            table = settings.table_user
             table.first_name.requires = \
-                IS_NOT_EMPTY(error_message=self.messages.is_empty)
+                IS_NOT_EMPTY(error_message=messages.is_empty)
             #table.last_name.requires = \
-                #IS_NOT_EMPTY(error_message=self.messages.is_empty)
+                #IS_NOT_EMPTY(error_message=messages.is_empty)
             table.utc_offset.comment = A(SPAN("[Help]"),
                                          _class="tooltip",
-                                         _title="%s|%s" % (self.messages.label_utc_offset,
-                                                           self.messages.help_utc_offset))
+                                         _title="%s|%s" % (messages.label_utc_offset,
+                                                           messages.help_utc_offset))
             try:
                 from s3validators import IS_UTC_OFFSET
                 table.utc_offset.requires = IS_EMPTY_OR(IS_UTC_OFFSET())
             except:
                 pass
-            table[passfield].requires = [CRYPT(key=self.settings.hmac_key,
+            table[passfield].requires = [CRYPT(key=settings.hmac_key,
                                                digest_alg="sha512")]
-            if self.settings.username_field:
+            if settings.username_field:
                 table.username.requires = IS_NOT_IN_DB(db,
-                                                       "%s.username" % self.settings.table_user._tablename)
+                                                       "%s.username" % settings.table_user._tablename)
             table.email.requires = \
-                [IS_EMAIL(error_message=self.messages.invalid_email),
+                [IS_EMAIL(error_message=messages.invalid_email),
                  IS_NOT_IN_DB(db,
-                              "%s.email" % self.settings.table_user._tablename)]
+                              "%s.email" % settings.table_user._tablename,
+                              error_message=messages.duplicate_email)]
             table.registration_key.default = ""
 
         # Group table (roles)
-        if not self.settings.table_group:
-            self.settings.table_group = db.define_table(
-                self.settings.table_group_name,
+        if not settings.table_group:
+            settings.table_group = db.define_table(
+                settings.table_group_name,
                 Field("role", length=512, default="",
-                      label=self.messages.label_role),
+                      label=messages.label_role),
                 Field("description", "text",
-                      label=self.messages.label_description),
-                migrate = self.__get_migrate(self.settings.table_group_name,
+                      label=messages.label_description),
+                migrate = self.__get_migrate(settings.table_group_name,
                                              migrate))
-            table = self.settings.table_group
+            table = settings.table_group
             table.role.requires = IS_NOT_IN_DB(db, "%s.role"
-                 % self.settings.table_group._tablename)
+                 % settings.table_group._tablename)
 
         # Group membership table (user<->role)
-        if not self.settings.table_membership:
-            self.settings.table_membership = db.define_table(
-                self.settings.table_membership_name,
-                Field("user_id", self.settings.table_user,
-                      label=self.messages.label_user_id),
-                Field("group_id", self.settings.table_group,
-                      label=self.messages.label_group_id),
-                migrate = self.__get_migrate(self.settings.table_membership_name,
+        if not settings.table_membership:
+            settings.table_membership = db.define_table(
+                settings.table_membership_name,
+                Field("user_id", settings.table_user,
+                      label=messages.label_user_id),
+                Field("group_id", settings.table_group,
+                      label=messages.label_group_id),
+                migrate = self.__get_migrate(settings.table_membership_name,
                                              migrate))
-            table = self.settings.table_membership
+            table = settings.table_membership
             table.user_id.requires = IS_IN_DB(db, "%s.id" %
-                    self.settings.table_user._tablename,
+                    settings.table_user._tablename,
                     "%(id)s: %(first_name)s %(last_name)s")
             table.group_id.requires = IS_IN_DB(db, "%s.id" %
-                    self.settings.table_group._tablename,
+                    settings.table_group._tablename,
                     "%(id)s: %(role)s")
 
         # Permissions table (group<->permission)
         # NB This Web2Py table is deprecated / replaced in Eden by S3Permission
-        if not self.settings.table_permission:
-            self.settings.table_permission = db.define_table(
-                self.settings.table_permission_name,
-                Field("group_id", self.settings.table_group,
-                      label=self.messages.label_group_id),
+        if not settings.table_permission:
+            settings.table_permission = db.define_table(
+                settings.table_permission_name,
+                Field("group_id", settings.table_group,
+                      label=messages.label_group_id),
                 Field("name", default="default", length=512,
-                      label=self.messages.label_name),
+                      label=messages.label_name),
                 Field("table_name", length=512,
-                      label=self.messages.label_table_name),
+                      label=messages.label_table_name),
                 Field("record_id", "integer",
-                      label=self.messages.label_record_id),
+                      label=messages.label_record_id),
                 migrate = self.__get_migrate(
-                    self.settings.table_permission_name, migrate))
-            table = self.settings.table_permission
+                    settings.table_permission_name, migrate))
+            table = settings.table_permission
             table.group_id.requires = IS_IN_DB(db, "%s.id" %
-                    self.settings.table_group._tablename,
+                    settings.table_group._tablename,
                     "%(id)s: %(role)s")
             table.name.requires = IS_NOT_EMPTY()
             table.table_name.requires = IS_IN_SET(self.db.tables)
             table.record_id.requires = IS_INT_IN_RANGE(0, 10 ** 9)
 
         # Event table (auth log)
-        if not self.settings.table_event:
-            self.settings.table_event = db.define_table(
-                self.settings.table_event_name,
+        if not settings.table_event:
+            settings.table_event = db.define_table(
+                settings.table_event_name,
                 Field("time_stamp", "datetime",
                       default=self.environment.request.now,
-                      label=self.messages.label_time_stamp),
+                      label=messages.label_time_stamp),
                 Field("client_ip",
                       default=self.environment.request.client,
-                      label=self.messages.label_client_ip),
-                Field("user_id", self.settings.table_user, default=None,
-                      label=self.messages.label_user_id),
+                      label=messages.label_client_ip),
+                Field("user_id", settings.table_user, default=None,
+                      label=messages.label_user_id),
                 Field("origin", default="auth", length=512,
-                      label=self.messages.label_origin),
+                      label=messages.label_origin),
                 Field("description", "text", default="",
-                      label=self.messages.label_description),
-                migrate = self.__get_migrate(self.settings.table_event_name,
+                      label=messages.label_description),
+                migrate = self.__get_migrate(settings.table_event_name,
                                              migrate))
-            table = self.settings.table_event
+            table = settings.table_event
             table.user_id.requires = IS_IN_DB(db, "%s.id" %
-                    self.settings.table_user._tablename,
+                    settings.table_user._tablename,
                     "%(id)s: %(first_name)s %(last_name)s")
             table.origin.requires = IS_NOT_EMPTY()
             table.description.requires = IS_NOT_EMPTY()
@@ -416,7 +421,8 @@ class AuthS3(Auth):
                             onvalidation=onvalidation):
                 accepted_form = True
                 # check for username in db
-                users = self.db(table_user[username] == form.vars[username]).select()
+                query = (table_user[username] == form.vars[username])
+                users = self.db(query).select()
                 if users:
                     # user in db, check if registration pending or disabled
                     temp_user = users[0]
@@ -519,11 +525,15 @@ class AuthS3(Auth):
                 - Allow form to be embedded in other pages
                 - Optional addition of Mobile Phone field to the Register form
                 - Optional addition of Organisation field to the Register form
+                - Lookup Domains/Organisations to check for Whitelists
+                  &/or custom Approver
 
             @returns: a registration form
         """
 
         db = self.db
+        settings = self.settings
+        messages = self.messages
         request = self.environment.request
         response = self.environment.response
         session = self.environment.session
@@ -532,114 +542,144 @@ class AuthS3(Auth):
         # S3: Don't allow registration if disabled
         self_registration = deployment_settings.get_security_self_registration()
         if not self_registration:
-            session.error = self.messages.registration_disabled
+            session.error = messages.registration_disabled
             redirect(URL(r=request, args=["login"]))
 
         if self.is_logged_in() and request.function != "index":
-            redirect(self.settings.logged_url)
+            redirect(settings.logged_url)
 
         if next == DEFAULT:
-            next = request.vars._next or self.settings.register_next
+            next = request.vars._next or settings.register_next
         if onvalidation == DEFAULT:
-            onvalidation = self.settings.register_onvalidation
+            onvalidation = settings.register_onvalidation
         if onaccept == DEFAULT:
-            onaccept = self.settings.register_onaccept
+            onaccept = settings.register_onaccept
         if log == DEFAULT:
-            log = self.messages.register_log
+            log = messages.register_log
 
-        user = self.settings.table_user
+        user = settings.table_user
 
-        passfield = self.settings.password_field
+        passfield = settings.password_field
         form = SQLFORM(user, hidden=dict(_next=request.vars._next),
-                       showid=self.settings.showid,
-                       submit_button=self.messages.submit_button,
-                       delete_label=self.messages.delete_label)
+                       showid=settings.showid,
+                       submit_button=messages.submit_button,
+                       delete_label=messages.delete_label)
         for i, row in enumerate(form[0].components):
             item = row[1][0]
             if isinstance(item, INPUT) and item["_name"] == passfield:
                 form[0].insert(i + 1, TR(
-                        TD(LABEL("%s:" % self.messages.verify_password),
+                        TD(LABEL("%s:" % messages.verify_password),
                                  _class="w2p_fl"),
                         INPUT(_name="password_two",
                               _type="password",
                               requires=IS_EXPR("value==%s" % \
                                repr(request.vars.get(passfield, None)),
-                        error_message=self.messages.mismatched_password)),
+                        error_message=messages.mismatched_password)),
                         SPAN("*", _class="req"),
                 "", _class="%s_%s__row" % (user, "password_two")))
 
+        # S3: Insert Mobile phone field into form
         if deployment_settings.get_auth_registration_requests_mobile_phone():
-            form[0].insert(-4, TR(TD(LABEL("%s:" % self.messages.label_mobile_phone),
-                                           _class="w2p_fl"),
-                                  INPUT(_name="mobile", _id="mobile"),
-                                  TD(DIV(_class="tooltip",
-                                         _title="%s|%s" % (self.messages.label_mobile_phone,
-                                                           self.messages.help_mobile_phone)))))
+            form[0].insert(-4,
+                           TR(TD(LABEL("%s:" % messages.label_mobile_phone),
+                                       _class="w2p_fl"),
+                                 INPUT(_name="mobile", _id="mobile"),
+                              TD(DIV(_class="tooltip",
+                                     _title="%s|%s" % (messages.label_mobile_phone,
+                                                       messages.help_mobile_phone)))))
 
+        # S3: Insert Organisation field into form
+        # @ToDo: Widget (ideally Combobox for < 50 entries)
         if deployment_settings.get_auth_registration_requests_organisation():
-            form[0].insert(-4, TR(TD(LABEL("%s:" % self.messages.label_organisation),
-                                           _class="w2p_fl"),
-                                  INPUT(_name="organisation", _id="organisation"),
-                                  TD(DIV(_class="tooltip",
-                                         _title="%s|%s" % (self.messages.label_organisation,
-                                                           self.messages.help_organisation)))))
+            form[0].insert(-4,
+                           TR(TD(LABEL("%s:" % messages.label_organisation),
+                                       _class="w2p_fl"),
+                                 INPUT(_name="organisation", _id="organisation"),
+                              TD(DIV(_class="tooltip",
+                                     _title="%s|%s" % (messages.label_organisation,
+                                                       messages.help_organisation)))))
 
-        if self.settings.captcha != None:
-            form[0].insert(-1, TR("", self.settings.captcha, ""))
+        if settings.captcha != None:
+            form[0].insert(-1, TR("", settings.captcha, ""))
 
         user.registration_key.default = key = str(uuid.uuid4())
 
         if form.accepts(request.vars, session, formname="register",
                         onvalidation=onvalidation):
-            description = \
-                "group uniquely assigned to %(first_name)s %(last_name)s"\
-                 % form.vars
-            if self.settings.create_user_groups:
-                group_id = self.add_group("user_%s" % form.vars.id, description)
-                self.add_membership(group_id, form.vars.id)
-            if self.settings.registration_requires_verification and \
-                    self.db(self.settings.table_user.id > 0).count() > 1:
-                if not self.settings.mailer or \
-                   not self.settings.mailer.send(to=form.vars.email,
-                                                 subject=self.messages.verify_email_subject,
-                                                 message=self.messages.verify_email % dict(key=key)):
-                    self.db.rollback()
-                    response.error = self.messages.invalid_email
-                    return form
-                session.confirmation = self.messages.email_sent
-            elif self.settings.registration_requires_approval and \
-                    self.db(self.settings.table_user.id > 0).count() > 1:
-                if not self.settings.mailer or \
-                   not self.settings.verify_email_onaccept(form.vars):
-                    # We don't wish to prevent registration if the approver mail fails to send
-                    #self.db.rollback()
-                    session.error = self.messages.email_approver_failed
-                    #return form
-                user[form.vars.id] = dict(registration_key="pending")
-                session.warning = self.messages.registration_pending_approval
-            else:
-                user[form.vars.id] = dict(registration_key="")
-                session.confirmation = self.messages.registration_successful
 
-                table_user = self.settings.table_user
+            if settings.create_user_groups:
+                # Not used in S3
+                description = \
+                    "group uniquely assigned to %(first_name)s %(last_name)s"\
+                     % form.vars
+                group_id = self.add_group("user_%s" % form.vars.id,
+                                          description)
+                self.add_membership(group_id, form.vars.id)
+
+            approved = False
+            users = db(settings.table_user.id > 0).count()
+            if users == 1:
+                # 1st user to register shouldn't need verification/approval
+                approved = True
+
+            elif settings.registration_requires_verification:
+                # Ensure that we add to the correct Organisation
+                approver, organisation_id = self.s3_approver(form.vars)
+                form.vars.organisation = organisation_id
+
+                # Send the Verification email
+                if not settings.mailer or \
+                   not settings.mailer.send(to=form.vars.email,
+                                            subject=messages.verify_email_subject,
+                                            message=messages.verify_email % dict(key=key)):
+                    db.rollback()
+                    response.error = messages.invalid_email
+                    return form
+                session.confirmation = messages.email_sent
+
+            elif settings.registration_requires_approval:
+                # Identify the Approver &
+                # ensure that we add to the correct Organisation
+                approver, organisation_id = self.s3_approver(form.vars)
+                form.vars.organisation = organisation_id
+
+                if approver:
+                    # Send the Authorisation email
+                    form.vars.approver = approver
+                    if not settings.mailer or \
+                        not settings.verify_email_onaccept(form.vars):
+                        # We don't wish to prevent registration if the approver mail fails to send
+                        #db.rollback()
+                        session.error = messages.email_approver_failed
+                        #return form
+                    user[form.vars.id] = dict(registration_key="pending")
+                    session.warning = messages.registration_pending_approval
+                else:
+                    # The domain is Whitelisted
+                    approved = True
+
+            if approved:
+                user[form.vars.id] = dict(registration_key="")
+                session.confirmation = messages.registration_successful
+
+                table_user = settings.table_user
                 if "username" in table_user.fields:
                     username = "username"
                 else:
                     username = "email"
                 query = (table_user[username] == form.vars[username])
-                user = self.db(query).select(limitby=(0, 1)).first()
+                user = db(query).select(limitby=(0, 1)).first()
                 user = Storage(table_user._filter_fields(user, id=True))
 
-                # Add the first user to admin group
-                # Installers should create a default user with random password to make this safe
-                if self.db(table_user.id > 0).count() == 1:
+                if users == 1:
+                    # Add the first user to admin group
                     admin_group_id = 1
                     self.add_membership(admin_group_id, user.id)
 
                 session.auth = Storage(user=user, last_visit=request.now,
-                                   expiration=self.settings.expiration)
+                                       expiration=settings.expiration)
                 self.user = user
-                session.flash = self.messages.logged_in
+                session.flash = messages.logged_in
 
             if log:
                 self.log_event(log % form.vars)
@@ -650,11 +690,10 @@ class AuthS3(Auth):
             elif isinstance(next, (list, tuple)):
                 # fix issue with 2.6
                 next = next[0]
-
             elif next and not next[0] == "/" and next[:4] != "http":
                 next = self.url(next.replace("[id]", str(form.vars.id)))
-
             redirect(next)
+
         return form
 
 
@@ -668,6 +707,7 @@ class AuthS3(Auth):
             Whenever someone registers, it:
                 - adds them to the 'Authenticated' role
                 - adds their name to the Person Registry
+                - creates an entry in the Org_Staff table
         """
 
         db = self.db
@@ -679,18 +719,17 @@ class AuthS3(Auth):
 
         # Add to Person Registry and Email/Mobile to pr_pe_contact
         person_id = self.s3_link_to_person(user=form.vars)
-        
-        if deployment_settings.get_auth_registration_requests_organisation():
+
+        organisation_id = form.vars.get("organisation",
+                                        None)
+        if organisation_id:
             # Create an Org_Staff entry
-            organisation_id = form.vars.get("organisation",
-                                            None)
-            if organisation_id:
-                table = db.pr_person
-                staff_id = db.org_staff.insert(person_id=person_id,
-                                               organisation_id=organisation_id)
-                if deployment_settings.get_aaa_has_staff_permissions():
-                    # Add to the Staff Roles
-                    self.s3_update_staff_membership(record=Storage(id=staff_id))
+            table = db.pr_person
+            staff_id = db.org_staff.insert(person_id=person_id,
+                                           organisation_id=organisation_id)
+            if deployment_settings.get_aaa_has_staff_permissions():
+                # Add to the Staff Roles
+                self.s3_update_staff_membership(record=Storage(id=staff_id))
 
     # -------------------------------------------------------------------------
     def s3_link_to_person(self, user=None):
@@ -779,8 +818,6 @@ class AuthS3(Auth):
                                     priority = 2,
                                     value = mobile)
 
-                        
-
                 if self.user and self.user.id == user.id:
                     self.user.person_uuid = person_uuid
 
@@ -788,6 +825,93 @@ class AuthS3(Auth):
             return person_ids[0]
         else:
             return person_ids
+
+
+    # -------------------------------------------------------------------------
+    def s3_approver(self,
+                    user):
+        """
+            Returns the Approver for a new Registration &
+            the organisation_id field
+
+            @param: user - the user record (form.vars when done direct)
+        """
+
+        db = self.db
+        deployment_settings = self.deployment_settings
+
+        # Default Approver
+        approver = deployment_settings.get_mail_approver()
+        # Check for Domain: Whitelist or specific Approver
+        table = db.auth_organisation
+        address, domain = user.email.split("@", 1)
+        query = (table.domain == domain)
+        record = db(query).select(table.organisation_id,
+                                  table.approver,
+                                  limitby=(0, 1)).first()
+        if record:
+            organisation_id = record.organisation_id
+            approver = record.approver
+
+        elif deployment_settings.get_auth_registration_requests_organisation():
+            # Check for an Organisation-specific Approver
+            organisation_id = user.get("organisation",
+                                       None)
+            if organisation_id:
+                query = (table.organisation_id == organisation_id)
+                record = db(query).select(table.approver,
+                                          limitby=(0, 1)).first()
+                if record and record.approver:
+                    approver = record.approver
+
+        return approver, organisation_id
+
+
+    # -------------------------------------------------------------------------
+    def verify_email(self,
+                     next=DEFAULT,
+                     onaccept=DEFAULT,
+                     log=DEFAULT):
+        """
+            action user to verify the registration email, XXXXXXXXXXXXXXXX
+
+            .. method:: Auth.verify_email([next=DEFAULT [, onvalidation=DEFAULT
+                [, onaccept=DEFAULT [, log=DEFAULT]]]])
+        """
+
+        db = self.db
+        environment = self.environment
+        settings = self.settings
+        messages = self.messages
+        deployment_settings = self.deployment_settings
+
+        key = environment.request.args[-1]
+        table_user = settings.table_user
+        user = db(table_user.registration_key == key).select().first()
+        if not user:
+            raise HTTP(404)
+        # S3: Lookup the Approver
+        approver, organisation_id = self.s3_approver(user)
+        if settings.registration_requires_approval and approver:
+            user.update_record(registration_key = "pending")
+            environment.session.flash = messages.registration_pending
+        else:
+            user.update_record(registration_key = "")
+            environment.session.flash = messages.email_verified
+        if log == DEFAULT:
+            log = messages.verify_email_log
+        if next == DEFAULT:
+            next = settings.verify_email_next
+        if onaccept == DEFAULT:
+            onaccept = settings.verify_email_onaccept
+        if log:
+            self.log_event(log % user)
+
+        if approver:
+            user.approver = approver
+            callback(onaccept, user)
+
+        redirect(next)
 
 
     # -------------------------------------------------------------------------
@@ -854,17 +978,17 @@ class AuthS3(Auth):
                                                          recordname)
             table = db[self.settings.table_group]
             query = (table.role == organisation_supervisor_role)
-            organisation_supervisor_role_id = db(query).select(table.id,
-                                                               limitby=(0, 1)).first().id
+            org_supervisor_role_id = db(query).select(table.id,
+                                                      limitby=(0, 1)).first().id
             if no_access or delete:
                 self.del_membership(organisation_staff_role_id, user_id)
-                self.del_membership(organisation_supervisor_role_id, user_id)
+                self.del_membership(org_supervisor_role_id, user_id)
             elif not supervisor:
                 self.add_membership(organisation_staff_role_id, user_id)
-                self.del_membership(organisation_supervisor_role_id, user_id)
+                self.del_membership(org_supervisor_role_id, user_id)
             else:
                 self.add_membership(organisation_staff_role_id, user_id)
-                self.add_membership(organisation_supervisor_role_id, user_id)
+                self.add_membership(org_supervisor_role_id, user_id)
 
             # The organisation staff role owns the org_staff
             # (This is more inclusive that site staff role)
@@ -896,19 +1020,19 @@ class AuthS3(Auth):
                                                                     recordname)
                 table = db[self.settings.table_group]
                 query = (table.role == site_supervisor_role)
-                site_supervisor_role_id = db(query).select(table.id,
-                                                           limitby=(0, 1)).first().id
+                site_super_role_id = db(query).select(table.id,
+                                                      limitby=(0, 1)).first().id
                 if no_access or delete:
                     self.del_membership(site_staff_role_id, user_id)
-                    self.del_membership(site_supervisor_role_id, user_id)
+                    self.del_membership(site_super_role_id, user_id)
 
                 elif not supervisor:
                     self.add_membership(site_staff_role_id, user_id)
-                    self.del_membership(site_supervisor_role_id, user_id)
+                    self.del_membership(site_super_role_id, user_id)
 
                 else:
                     self.add_membership(site_staff_role_id, user_id)
-                    self.add_membership(site_supervisor_role_id, user_id)
+                    self.add_membership(site_super_role_id, user_id)
 
     # -------------------------------------------------------------------------
     def s3_site_resource(self, site_id):
@@ -928,7 +1052,7 @@ class AuthS3(Auth):
         id = r_site[site_type].select(db[site_type].id,
                                       limitby=(0, 1)).first().id
         return (prefix, resourcename, id)
-    
+
 
     # -------------------------------------------------------------------------
     def s3_logged_in(self):
@@ -970,8 +1094,9 @@ class AuthS3(Auth):
         except:
             #role = deployment_settings.auth.roles[role]
             try:
-                role = db(db.auth_group.role == role).select(db.auth_group.id,
-                                                             limitby=(0, 1)).first().id
+                query = (db.auth_group.role == role)
+                role = db(query).select(db.auth_group.id,
+                                        limitby=(0, 1)).first().id
             except:
                 # Role doesn't exist in the Database
                 return False
@@ -992,8 +1117,8 @@ class AuthS3(Auth):
         """
 
         membership = self.settings.table_membership
-        members = self.db( membership.group_id == group_id
-                          ).select(membership.user_id)
+        query = (membership.group_id == group_id)
+        members = self.db(query).select(membership.user_id)
         return [member.user_id for member in members]
 
 
@@ -1009,9 +1134,10 @@ class AuthS3(Auth):
         """
 
         table_user = self.settings.table_user
-        record = db(table_user.id == user_id &
-                    table_user.person_uuid == db.pr_person.uuid
-                    ).select(db.pr_person.id, limitby=(0,1)).first()
+        query = (table_user.id == user_id) & \
+                (table_user.person_uuid == db.pr_person.uuid)
+        record = db(query).select(db.pr_person.id,
+                                  limitby=(0,1)).first()
 
         if record:
             return record.id
@@ -1189,10 +1315,10 @@ class AuthS3(Auth):
         membership = self.settings.table_membership
         permission = self.settings.table_permission
         return table.id.belongs(db(membership.user_id == user_id)\
-                           (membership.group_id == permission.group_id)\
-                           (permission.name == method)\
-                           (permission.table_name == table)\
-                           ._select(permission.record_id))
+                                  (membership.group_id == permission.group_id)\
+                                  (permission.name == method)\
+                                  (permission.table_name == table)\
+                                  ._select(permission.record_id))
 
 
     # -------------------------------------------------------------------------
@@ -1366,7 +1492,7 @@ class AuthS3(Auth):
         return False
 
 
-    
+
 
 
 # =============================================================================

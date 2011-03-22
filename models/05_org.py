@@ -37,8 +37,10 @@ org_menu = [
 resourcename = "cluster"
 tablename = "org_cluster"
 table = db.define_table(tablename,
-                        Field("abrv", length=64, notnull=True, unique=True),
-                        Field("name", length=128, notnull=True, unique=True),
+                        Field("abrv", length=64, notnull=True, unique=True,
+                              label=T("Abbreviation")),
+                        Field("name", length=128, notnull=True, unique=True,
+                              label=T("Name")),
                         migrate=migrate, *s3_meta_fields()
                         )
 
@@ -81,8 +83,9 @@ resourcename = "cluster_subsector"
 tablename = "org_cluster_subsector"
 table = db.define_table(tablename,
                         cluster_id(),
-                        Field("abrv", length=64, notnull=True, unique=True),
-                        Field("name", length=128),
+                        Field("abrv", length=64, notnull=True, unique=True,
+                              label=T("Abbreviation")),
+                        Field("name", length=128, label=T("Name")),
                         migrate=migrate, *s3_meta_fields()
                         )
 
@@ -354,6 +357,12 @@ s3xrc.model.configure(table,
 # to inventory_store, or attempting to join on location_id.  It is in
 # org because that's relatively generic and has one of the site types.
 # You'll note that it is a slavish copy of pentity with the names changed.
+#
+# @ToDo: Move the staff_roles_onaccept here:
+#   # Create roles for each sitee
+#   create_onaccept = staff_roles_create_func(tablename),
+#   # Rename roles if record name changes
+#   update_onaccept = staff_roles_update_func(tablename),
 
 org_site_types = auth.org_site_types
 
@@ -362,7 +371,7 @@ tablename = "org_site"
 table = super_entity(tablename,
                      "site_id",
                      org_site_types,
-                     Field("name"),
+                     Field("name", label=T("Name")),
                      location_id(),
                      organisation_id(),
                      *s3_ownerstamp(),
@@ -946,19 +955,30 @@ def shn_staff_prep(r):
 # If there is no Approvals email then the user is automatically approved.
 # If there is an Approvals email then the approval request goes to this address
 # If a user registers for an Organisation & the domain doesn't match (or isn't listed) then the approver gets the request
-resourcename = "domain"
-tablename = "auth_domain"
+resourcename = "organisation"
+tablename = "auth_organisation"
+
+if deployment_settings.get_auth_registration_requests_organisation():
+    ORG_HELP = T("If this field is populated then a user who specifies this Organization when signing up will be assigned as a Staff of this Organization unless their domain doesn't match the domain field.")
+else:
+    ORG_HELP = T("If this field is populated then a user with the Domain specified will automatically be assigned as a Staff of this Organization")
+
+DOMAIN_HELP = T("If a user verifies that they own an Email Address with this domain, the Approver field is used to determine whether & by whom further approval is required.")
+APPROVER_HELP = T("The Email Address to which approval requests are sent (normally this would be a Group mail rather than an individual). If the field is blank then requests are approved automatically if the domain matches.")
+    
 table = db.define_table(tablename,
-                        organisation_id(),
+                        organisation_id(comment=DIV(_class="tooltip",
+                                                    _title="%s|%s" % (T("Organization"),
+                                                                      ORG_HELP))),
                         Field("domain", label=T("Domain"),
-                              comment = DIV( _class="tooltip",
-                                             _title="%s|%s" % (T("Domain"),
-                                                               T("If a user verifies that they own an Email Address with this domain, then they should automatically be assigned to this Organisation. The Approver field is used to determine whether & by whom further approval is required.")))),
+                              comment=DIV(_class="tooltip",
+                                          _title="%s|%s" % (T("Domain"),
+                                                            DOMAIN_HELP))),
                         Field("approver", label=T("Approver"),
-                              requires=IS_EMAIL(),
-                              comment = DIV( _class="tooltip",
-                                             _title="%s|%s" % (T("Approver"),
-                                                               T("The Email Address to which approval requests are sent (normally this would be a Group mail rather than an individual). If the field is blank then requests are approved automatically if the domain matches.")))),
+                              requires=IS_NULL_OR(IS_EMAIL()),
+                              comment=DIV(_class="tooltip",
+                                          _title="%s|%s" % (T("Approver"),
+                                                            APPROVER_HELP))),
                         comments(),
                         migrate=migrate, *s3_meta_fields())
 

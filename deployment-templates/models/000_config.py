@@ -39,7 +39,8 @@ deployment_settings.auth.registration_requires_verification = False
 deployment_settings.auth.registration_requires_approval = False
 
 deployment_settings.auth.registration_requests_mobile_phone = True
-deployment_settings.auth.registration_requests_organisation = False
+# There isn't a Widget for this yet, but otherwise it works fine:
+#deployment_settings.auth.registration_requests_organisation = False
 deployment_settings.auth.openid = False
 
 # Base settings
@@ -78,7 +79,8 @@ deployment_settings.mail.server = "127.0.0.1:25"
 #deployment_settings.mail.login = "username:password"
 # From Address
 deployment_settings.mail.sender = "'Sahana' <sahana@your.org>"
-# Address to which mails get sent to approve new users
+# Default email address to which requests to approve new user accounts gets sent
+# This can be overridden for specific domains/organisations via the auth_domain table
 deployment_settings.mail.approver = "useradmin@your.org"
 
 # Twitter settings:

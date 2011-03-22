@@ -400,11 +400,19 @@ class S3ResourceModel(object):
 
 
     # -------------------------------------------------------------------------
-    def super_link(self, supertable):
+    def super_link(self, supertable,
+                   label=None,
+                   comment=None,
+                   represent=None,
+                   readable=False):
         """
             Get a foreign key field for a super-entity
 
             @param supertable: the super-entity table
+            @param label: label for the field
+            @param comment: comment for the field
+            @param readable: set the field readable
+            @param represent: set a representation function for the field
         """
 
         key = self.super_key(supertable)
@@ -412,8 +420,11 @@ class S3ResourceModel(object):
         return Field(key, supertable,
                      requires = IS_EMPTY_OR(IS_IN_DB(self.db, "%s.%s" %
                                                     (supertable._tablename, key))),
-                     readable = False,
+                     readable = readable,
                      writable = False,
+                     label=label,
+                     comment=comment,
+                     represent=represent,
                      ondelete = "RESTRICT")
 
 

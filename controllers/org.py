@@ -68,18 +68,8 @@ def organisation():
         tabs.append((T("Activities"), "activity"))
         #tabs.append((T("Tasks"), "task"))
 
-    # Post-processor
-    def postp(r, output):
-        if r.component_name == "staff" and \
-                deployment_settings.get_aaa_has_staff_permissions():
-            addheader = "%s %s." % (STAFF_HELP,
-                                    T("Organization"))
-            output.update(addheader=addheader)
-        return output
-    response.s3.postp = postp
-
     rheader = lambda r: shn_org_rheader(r,
-                                        tabs=tabs)
+                                        tabs = tabs)
 
     output = s3_rest_controller(prefix, resourcename, rheader=rheader)
     return output
@@ -89,7 +79,7 @@ def office():
 
     """ RESTful CRUD controller """
 
-    tablename = "org_office"
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     if isinstance(request.vars.organisation_id, list):
@@ -99,9 +89,7 @@ def office():
 
     # Pre-processor
     def prep(r): 
-        # Filter out people which are already staff for this office
         shn_staff_prep(r) 
-        # Filter out items which are already in this inventory
         shn_inv_prep(r)
           
         if r.representation == "popup":
@@ -109,7 +97,7 @@ def office():
             if organisation:
                 table.organisation_id.default = organisation
         
-        # Cascade the organisation_id from the office to the staff
+        #Cascade the organisation_id from the office to the staff
         if r.record:
             db.org_staff.organisation_id.default = r.record.organisation_id
             db.org_staff.organisation_id.writable = False
@@ -118,36 +106,74 @@ def office():
         # the update forms are not ready. when they will - uncomment this and comment the next one
         #if r.method in ("create", "update"):
         if r.method == "create":
-            table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db,
-                                                                        "org_organisation.id"))
+            table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_organisation.id"))
             if request.vars.organisation_id and request.vars.organisation_id != "None":
                 table.organisation_id.default = request.vars.organisation_id
         return True
     response.s3.prep = prep
 
-    # Post-processor
-    def postp(r, output):
-        if r.component_name == "staff" and \
-                deployment_settings.get_aaa_has_staff_permissions():
-            addheader = "%s %s." % (STAFF_HELP,
-                                    T("Office"))
-            output.update(addheader=addheader)
-        return output
-    response.s3.postp = postp
-
     rheader = shn_office_rheader
 
     return s3_rest_controller(prefix, resourcename, rheader=rheader)
+# -----------------------------------------------------------------------------
+def shn_office_rheader(r, tabs=[]):
 
+    """ Office page headers """
+
+    if r.representation == "html":
+
+        if r.record is None:
+            # List or Create form: rheader makes no sense here
+            return None
+        
+        tabs = [(T("Basic Details"), None),
+                (T("Contact Data"), "pe_contact"),
+                (T("Staff"), "staff"),                
+                ]        
+
+        rheader_tabs = shn_rheader_tabs(r, tabs + shn_show_inv_tabs(r))
+
+        office = r.record
+        if office:
+            organisation = db(db.org_organisation.id == office.organisation_id
+                              ).select(db.org_organisation.name, 
+                                       limitby=(0, 1)
+                                       ).first()
+            if organisation:
+                org_name = organisation.name
+            else:
+                org_name = None
+
+            rheader = DIV(TABLE(
+                          TR(TH("%s: " % T("Name")),
+                             office.name,
+                             TH("%s: " % T("Type")),
+                             org_office_type_opts.get(office.type, 
+                                                      UNKNOWN_OPT),
+                             ),
+                          TR(TH("%s: " % T("Organization")),
+                             org_name,
+                             TH("%s: " % T("Location")),
+                             shn_gis_location_represent(office.location_id),
+                             ),
+                          #TR(#TH(A(T("Edit Office"),
+                          #   #    _href=URL(r=request, c="org", f="office", args=[r.id, "update"], vars={"_next": _next})))
+                          #   )
+                              ),
+                          rheader_tabs)
+
+            return rheader
+
+    return None
 #==============================================================================
 def staff():
     """ 
-        RESTful CRUD controller
-        @ToDo: This function may be removed, to restrict the view of staff to only 
-        as components within site instances and organisations
+    RESTful CRUD controller
+    @todo: This function may be removed, to restrict the view of staff to only 
+    as components within site instances and organisations
     """
 
-    tablename = "org_staff"
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     # Pre-processor
@@ -156,6 +182,8 @@ def staff():
         # the update forms are not ready. when they will - uncomment this and comment the next one
         #if r.method in ("create", "update"):
         if r.method == "create":
+            # person_id mandatory for a staff? We should allow room for vacant positions
+            #table.person_id.requires = IS_ONE_OF_EMPTY(db, "pr_person.id")
             table.organisation_id.widget = S3AutocompleteWidget(request, "org",
                                                                 "organisation",
                                                                 post_process="load_offices(false);")
@@ -170,7 +198,7 @@ def donor():
 
     """ RESTful CRUD controller """
 
-    tablename = "org_donor"
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     s3xrc.model.configure(table, listadd=False)
@@ -182,7 +210,7 @@ def donor():
 #==============================================================================
 # Component Resources need these settings to be visible where they are linked from
 # - so we put them outside their controller function
-tablename = "org_donor"
+tablename = "%s_%s" % (prefix, "donor")
 s3.crud_strings[tablename] = Storage(
     title_create = ADD_DONOR,
     title_display = T("Donor Details"),

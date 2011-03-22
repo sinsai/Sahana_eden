@@ -94,7 +94,22 @@ def define_map(window=False, toolbar=False, config=None):
             continue
         if layer.filter_field and layer.filter_value:
             table = db["%s_%s" % (layer.module, layer.resource)]
-            filter = (table[layer.filter_field] == layer.filter_value)
+            # Check for multiples
+            filter_values = layer.filter_value.split("/")
+            if len(filter_values) == 1:
+                filter = (table[layer.filter_field] == filter_values[0])
+            else:
+                null = False
+                for i in range(len(filter_values)):
+                    if filter_values[i] == "":
+                        # Catch NULLs
+                        null = True
+                if null:
+                    filter = ((table[layer.filter_field].belongs(filter_values)) | \
+                              (table[layer.filter_field] == None))
+                else:
+                    filter = (table[layer.filter_field].belongs(filter_values))
+
         else:
             filter = None
         _layer = gis.get_feature_layer(layer.module,

@@ -268,17 +268,20 @@ class S3Trackable(object):
         if timestmp is None:
             timestmp = datetime.utcnow()
 
+        if isinstance(location, S3Trackable):
+            location = location.get_base_location()
         if isinstance(location, Rows):
             location = location.first()
         if isinstance(location, Row):
             if "location_id" in location:
                 location = location.location_id
-            elif "base_location" in location:
-                location = location.base_location
             else:
                 location = location.id
 
-        # @todo: validate the location?
+        if not location:
+            return
+        else:
+            data = dict(location_id=location, timestmp=timestmp)
 
         for r in self.records:
             if self.TRACK_ID not in r:
@@ -289,9 +292,6 @@ class S3Trackable(object):
                     trackable = self
                 trackable.set_base_location(location)
             elif r[self.TRACK_ID]:
-                # Track ID => create new presence entry
-                data = dict(location_id=location,
-                            timestmp=timestmp)
                 data.update({self.TRACK_ID:r[self.TRACK_ID]})
                 ptable.insert(**data)
 
@@ -484,6 +484,8 @@ class S3Trackable(object):
 
         """
 
+        if isinstance(location, S3Trackable):
+            location = location.get_base_location()
         if isinstance(location, Rows):
             location = location.first()
         if isinstance(location, Row):
@@ -492,7 +494,6 @@ class S3Trackable(object):
         if not location:
             return
         else:
-            # @todo: validate location?
             data = {self.LOCATION_ID:location}
 
         # Update records without track ID
@@ -510,7 +511,7 @@ class S3Trackable(object):
         tables = []
         for r in rows:
             instance_type = r.instance_type
-            table = db[instance_type]
+            table = self.db[instance_type]
             if instance_type not in tables and \
                self.LOCATION_ID in table.fields:
                    tables.append(table)
@@ -521,6 +522,11 @@ class S3Trackable(object):
         # Location specified => update all base locations
         for table in tables:
             self.db(table[self.TRACK_ID].belongs(track_ids)).update(**data)
+
+        # Refresh records
+        for r in self.records:
+            if self.LOCATION_ID in r:
+                r[self.LOCATION_ID] = location
 
 
 # =============================================================================

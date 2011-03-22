@@ -121,23 +121,16 @@ def person():
         # Test code (to be removed):
         #trackable = s3tracker(db.pr_pentity, 1)
         #print "Original location"
-        #location = trackable.get_location()
+        #location = trackable.get_base_location()
         #if location:
-            #print "Trackable location: %s lat=%s, lon=%s" % (location.name, location.lat, location.lon)
+            #print "Base location: %s lat=%s, lon=%s" % (location.name, location.lat, location.lon)
         #else:
             #print "No location found"
-        #trackable.check_in(db.hms_hospital, 1)
-        #location = trackable.get_location()
-        #print "After check-in"
+        #trackable.set_base_location(s3tracker(db.org_site, 2))
+        #location = trackable.get_base_location()
+        #print "After updating base location"
         #if location:
-            #print "Trackable location: %s lat=%s, lon=%s" % (location.name, location.lat, location.lon)
-        #else:
-            #print "No location found"
-        #trackable.check_out(db.hms_hospital)
-        #location = trackable.get_location()
-        #print "After check-out"
-        #if location:
-            #print "Trackable location: %s lat=%s, lon=%s" % (location.name, location.lat, location.lon)
+            #print "Base location: %s lat=%s, lon=%s" % (location.name, location.lat, location.lon)
         #else:
             #print "No location found"
 

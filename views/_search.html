@@ -15,6 +15,26 @@
 {{except:}}
 {{pass}}
 </div>
+<script type="text/javascript">//<![CDATA[
+$(document).ready(function(){
+    $('#advanced-form').hide()
+    $('#advanced-lnk').click(function() {
+        $('#simple-form').hide()
+        $('#advanced-form').show()
+    });
+    $('#simple-lnk').click(function() {
+        $('#advanced-form').hide()
+        $('#simple-form').show()
+    });
+    {{try:}}
+        {{if not simple:}}
+            $('#simple-form').hide()
+            $('#advanced-form').show()
+        {{pass}}
+    {{except:}}
+    {{pass}}
+});
+//]]></script>
 <div><br /></div>
 <div id='table-container'>
 {{try:}}

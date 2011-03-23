@@ -54,7 +54,7 @@ __all__ = ["S3SearchWidget",
            "S3SearchMinMaxWidget",
            "S3SearchSelectWidget",
            "S3SearchLocationWidget",
-           "S3Find",
+           "S3Search",
            "S3LocationSearch",
            "S3PersonSearch"]
 
@@ -599,7 +599,7 @@ class S3SearchLocationWidget(S3SearchWidget):
 
 
 # *****************************************************************************
-class S3Find(S3CRUD):
+class S3Search(S3CRUD):
     """
     RESTful Search Method for S3Resources
 
@@ -938,7 +938,7 @@ class S3Find(S3CRUD):
         output.update(title=title, subtitle=subtitle)
 
         # View
-        response.view = "find.html"
+        response.view = "search.html"
         return output
 
 
@@ -1018,7 +1018,7 @@ class S3Find(S3CRUD):
 
 
 # *****************************************************************************
-class S3LocationSearch(S3Find):
+class S3LocationSearch(S3Search):
     """
     Search method with specifics for location records (hierarchy search)
 
@@ -1155,7 +1155,7 @@ class S3LocationSearch(S3Find):
 
 
 # *****************************************************************************
-class S3PersonSearch(S3Find):
+class S3PersonSearch(S3Search):
     """
     Search method with specifics for person records (full name search)
 

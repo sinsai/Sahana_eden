@@ -27,8 +27,15 @@ if deployment_settings.has_module(prefix):
     table = db.define_table(tablename,
                             #super_link(db.sit_resource), # is a resource
 
-                            organisation_id(),
+                            organisation_id(empty=False),
                             person_id(),
+                            super_link(db.org_site,
+                                       label=T("Site"),
+                                       readable=True,
+                                       writable=True,
+                                       sort=True,
+                                       groupby="instance_type",
+                                       represent=shn_site_represent),
 
                             Field("type", "integer",
                                   requires = IS_IN_SET(hrm_type_opts, zero=None),
@@ -42,6 +49,9 @@ if deployment_settings.has_module(prefix):
                                   label = T("Status"),
                                   represent = lambda opt: hrm_status_opts.get(opt, UNKNOWN_OPT)),
 
+                            Field("job_title",
+                                  label=T("Job Title")),
+
                             migrate=migrate, *s3_meta_fields())
 
     human_resource_id = S3ReusableField("human_resource_id", db.hrm_human_resource,
@@ -53,6 +63,17 @@ if deployment_settings.has_module(prefix):
                                         label = T("Human Resource"),
                                         ondelete = "RESTRICT")
 
+    human_resource_search = s3base.S3Find(
+                                name="human_resource_search_simple",
+                                label=T("Name"),
+                                comment=T("To search for a person, enter any of the first, middle or last names, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons."),
+                                field=["job_title",
+                                       "person_id$first_name",
+                                       "person_id$middle_name",
+                                       "person_id$last_name"])
+
+    s3xrc.model.configure(table,
+                          search_method=human_resource_search)
 
     # =========================================================================
     # Skills

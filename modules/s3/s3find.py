@@ -35,9 +35,12 @@
 
 """
 
+import re
+
 from gluon.storage import Storage
 from gluon.http import HTTP
 from gluon.html import *
+from gluon.sqlhtml import CheckboxesWidget
 from gluon.validators import *
 from gluon.serializers import json
 
@@ -81,7 +84,7 @@ class S3SearchWidget(object):
 
         self.attr = Storage(attr)
         if name is not None:
-            self.attr["_name"] = name   
+            self.attr["_name"] = name
 
         self.master_query = None
         self.search_field = None
@@ -485,9 +488,9 @@ class S3SearchMinMaxWidget(S3SearchWidget):
 class S3SearchSelectWidget(S3SearchWidget):
     """
     Option select widget for option or boolean fields
-    
-    Displays a search widget which allows the user to search for records 
-    with fields matching a certain criteria. 
+
+    Displays a search widget which allows the user to search for records
+    with fields matching a certain criteria.
 
     Field must be a integer or reference
     """
@@ -498,57 +501,56 @@ class S3SearchSelectWidget(S3SearchWidget):
 
         @param resource: the resource to search in
         @param vars: the URL GET variables as dict
-        """    
-         
-        field = self.field[0]       
-        
+        """
+
+        field = self.field[0]
+
         if "_name" not in self.attr:
             self.attr.update(_name="%s_search_select_%s" % (resource.name, field))
-        self.name = self.attr._name             
-        
-        # Find unique values of options for that field 
+        self.name = self.attr._name
+
+        # Find unique values of options for that field
         rows = resource.select(field, groupby = resource.table[field] )
         opt_keys = [row[field] for row in rows if row[field] != None]
-                  
+
         field_type = resource.table[field].type
-        
+
         # Get the representations for these values
         if field_type == "integer":
             # For integers, use the represent function
-            represent = resource.table[field].represent            
+            represent = resource.table[field].represent
             opt_list = [[opt_key, represent(opt_key)] for opt_key in opt_keys]
         else:
             # For reference's use the represent string to reduce db calls
             db = resource.db
-            component_table = db[field_type[10:]] 
-            
+            component_table = db[field_type[10:]]
+
             # Find the fields which are needed to represent
-            import re
+
             fieldnames = re.findall("%\(([a-zA-Z0-9_]*)\)s",self.attr.represent)
             fieldnames += ["id"]
-            represent_fields = [component_table[fieldname] 
-                                for fieldname in fieldnames]            
-            
-            represent_rows = db(component_table.id.belongs(opt_keys) & 
-                                component_table.deleted  == False 
+            represent_fields = [component_table[fieldname]
+                                for fieldname in fieldnames]
+
+            represent_rows = db(component_table.id.belongs(opt_keys) &
+                                component_table.deleted  == False
                                 ).select(*represent_fields).as_dict()
-            opt_list = []                    
+            opt_list = []
             for opt_key in opt_keys:
-                opt_list.append([opt_key, self.attr.represent % represent_rows[opt_key]])           
-            
-        # Alphabetise (this will not work as it is converted to a dict), look at IS_IN_SET validator or CheckboxesWidget to ensure that the list 
-        #opt_list.sort() 
-        
+                opt_list.append([opt_key, self.attr.represent % represent_rows[opt_key]])
+
+        # Alphabetise (this will not work as it is converted to a dict), look at IS_IN_SET validator or CheckboxesWidget to ensure that the list
+        #opt_list.sort()
+
         options = dict(opt_list)
         #for opt in opt_list:
         #    options[opt[1]] = opt[0]
 
-        # Dummy field to Create check boxes 
+        # Dummy field to Create check boxes
         field = Storage(name = self.name,
                         requires = IS_IN_SET(options,
                                              multiple = True)
                         )
-        from sqlhtml import CheckboxesWidget
         widget = CheckboxesWidget().widget(field, None, cols = self.attr.cols)
         return widget
 

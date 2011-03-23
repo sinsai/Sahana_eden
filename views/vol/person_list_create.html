@@ -1,7 +1,7 @@
 {{extend "layout.html"}}
 {{if not jr.component:}}
   <br />
-  {{=H5(T("Note that this list only shows active volunteers. To see all people registered in the system, do a search from the home screen instead."))}}
+  <h5>{{=T("Note that this list only shows active volunteers. To see all people registered in the system, do a search from the home screen instead")}}: <a href="/{{=request.application}}/vol/index">Home</a></h5>
 {{else:}}
 {{pass}}
 {{include "_list_create.html"}}

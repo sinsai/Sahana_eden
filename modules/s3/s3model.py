@@ -39,6 +39,7 @@ __all__ = ["S3ResourceModel", "S3ResourceLinker"]
 from gluon.storage import Storage
 from gluon.sql import Table, Field
 from gluon.validators import IS_EMPTY_OR, IS_IN_DB
+from s3validators import IS_ONE_OF
 
 # *****************************************************************************
 class S3ResourceModel(object):
@@ -400,20 +401,43 @@ class S3ResourceModel(object):
 
 
     # -------------------------------------------------------------------------
-    def super_link(self, supertable):
+    def super_link(self, supertable,
+                   label=None,
+                   comment=None,
+                   represent=None,
+                   orderby=None,
+                   sort=True,
+                   filterby=None,
+                   filter_opts=None,
+                   groupby=None,
+                   readable=False,
+                   writable=False):
         """
             Get a foreign key field for a super-entity
 
             @param supertable: the super-entity table
+            @param label: label for the field
+            @param comment: comment for the field
+            @param readable: set the field readable
+            @param represent: set a representation function for the field
         """
 
         key = self.super_key(supertable)
 
         return Field(key, supertable,
-                     requires = IS_EMPTY_OR(IS_IN_DB(self.db, "%s.%s" %
-                                                    (supertable._tablename, key))),
-                     readable = False,
-                     writable = False,
+                     requires = IS_EMPTY_OR(IS_ONE_OF(self.db, "%s.%s" %
+                                                      (supertable._tablename, key),
+                                                      represent,
+                                                      orderby=orderby,
+                                                      sort=sort,
+                                                      groupby=groupby,
+                                                      filterby=filterby,
+                                                      filter_opts=filter_opts)),
+                     readable = readable,
+                     writable = writable,
+                     label=label,
+                     comment=comment,
+                     represent=represent,
                      ondelete = "RESTRICT")
 
 

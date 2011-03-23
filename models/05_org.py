@@ -37,8 +37,10 @@ org_menu = [
 resourcename = "cluster"
 tablename = "org_cluster"
 table = db.define_table(tablename,
-                        Field("abrv", length=64, notnull=True, unique=True),
-                        Field("name", length=128, notnull=True, unique=True),
+                        Field("abrv", length=64, notnull=True, unique=True,
+                              label=T("Abbreviation")),
+                        Field("name", length=128, notnull=True, unique=True,
+                              label=T("Name")),
                         migrate=migrate, *s3_meta_fields()
                         )
 
@@ -81,8 +83,9 @@ resourcename = "cluster_subsector"
 tablename = "org_cluster_subsector"
 table = db.define_table(tablename,
                         cluster_id(),
-                        Field("abrv", length=64, notnull=True, unique=True),
-                        Field("name", length=128),
+                        Field("abrv", length=64, notnull=True, unique=True,
+                              label=T("Abbreviation")),
+                        Field("name", length=128, label=T("Name")),
                         migrate=migrate, *s3_meta_fields()
                         )
 
@@ -368,7 +371,7 @@ tablename = "org_site"
 table = super_entity(tablename,
                      "site_id",
                      org_site_types,
-                     Field("name"),
+                     Field("name", label=T("Name")),
                      location_id(),
                      organisation_id(),
                      *s3_ownerstamp(),

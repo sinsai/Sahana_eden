@@ -139,7 +139,8 @@ table = db.define_table(tablename,
                         Field("local_name"),
                         pr_gender(),
                         pr_age_group(),
-                        Field("date_of_birth", "date", widget=S3DateWidget(before=110, after=0)),
+                        Field("date_of_birth", "date",
+                              widget=S3DateWidget(before=110, after=0)),
                         pr_country("nationality", label = T("Nationality")),
                         pr_country("country"),
                         pr_religion(),
@@ -157,8 +158,8 @@ table.local_name.label = T("Local Name")
 table.date_of_birth.label = T("Date of Birth")
 table.date_of_birth.requires = [IS_EMPTY_OR(IS_DATE(error_message = "%s" % T("Enter a valid date"))),
  	                            IS_EMPTY_OR(IS_DATE_IN_RANGE(maximum=request.utcnow.date(),
-                               error_message="%s %%(max)s!" %
-                                             T("Enter a date before")))]
+                                                             error_message="%s %%(max)s!" %
+                                                                           T("Enter a date before")))]
 
 table.first_name.requires = IS_NOT_EMPTY(error_message = T("Please enter a First Name"))
 # NB Not possible to have an IS_NAME() validator here
@@ -610,7 +611,7 @@ s3.crud_strings[tablename] = Storage(
 def address_onvalidation(form):
     """
         Write the Postcode & Street Address fields from the Location
-        - also used by org_office
+        - also used by org_office & cr_shelter
 
         @ToDo: Allow the reverse operation.
         If these fields are populated then create an appropriate location
@@ -634,7 +635,9 @@ def address_onvalidation(form):
             elif location.level == "L1":
                 form.vars.L1 = location.name
                 if location.parent:
-                    country = db(locations.id == location.parent).select(locations.name, limitby=(0, 1)).first()
+                    query = (locations.id == location.parent)
+                    country = db(query).select(locations.name,
+                                               limitby=(0, 1)).first()
                     if country:
                         form.vars.L0 = country.name
             else:

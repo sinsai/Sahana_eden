@@ -232,6 +232,17 @@ def shn_shelter_prep(r):
         # Remember this is html or popup.
         response.cr_shelter_request_was_html_or_popup = True
 
+        if r.method != "read":
+            # Don't want to see in Create forms
+            # inc list_create (list_fields over-rides)
+            r.table.address.readable = False
+            r.table.L4.readable = False
+            r.table.L3.readable = False
+            r.table.L2.readable = False
+            r.table.L1.readable = False
+            r.table.L0.readable = False
+            r.table.postcode.readable = False
+
         if r.component:
             if r.component.name == "rat":
                 # Hide the Implied fields

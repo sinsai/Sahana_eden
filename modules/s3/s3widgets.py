@@ -78,7 +78,7 @@ class S3DateWidget(FormWidget):
 
         default = dict(
             _type = "text",
-            value = (value!=None and str(value)) or "",
+            value = (value != None and str(value)) or "",
             )
         attr = StringWidget._attributes(field, default, **attributes)
 
@@ -118,7 +118,7 @@ class S3DateTimeWidget(FormWidget):
         default = dict(
             _type = "text",
             _class = "datetime_widget",  # Prevent default "datetime" calendar from showing up
-            value = (value!=None and str(value)) or "",
+            value = (value != None and str(value)) or "",
             )
         attr = StringWidget._attributes(field, default, **attributes)
 

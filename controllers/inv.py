@@ -42,7 +42,6 @@ def wh():
     # Only show warehouses 
     response.s3.filter = (db.org_office.type == 5)
     
-    # Hide Obsolete warehouses
     def prep(r):
         if r.interactive:
             # CRUD strings

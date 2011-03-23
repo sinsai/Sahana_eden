@@ -68,8 +68,6 @@ def organisation():
         tabs.append((T("Activities"), "activity"))
         #tabs.append((T("Tasks"), "task"))
 
-<<<<<<< TREE
-=======
     # Pre-process
     def prep(r):
         if r.interactive:
@@ -90,7 +88,6 @@ def organisation():
 
         return True
 
->>>>>>> MERGE-SOURCE
     # Post-processor
     def postp(r, output):
         if r.component_name == "staff" and \
@@ -99,12 +96,9 @@ def organisation():
                                     T("Organization"))
             output.update(addheader=addheader)
         return output
-<<<<<<< TREE
-=======
 
     # Set hooks
     response.s3.prep = prep
->>>>>>> MERGE-SOURCE
     response.s3.postp = postp
 
     rheader = lambda r: shn_org_rheader(r,
@@ -127,17 +121,9 @@ def office():
     shn_add_dynamic_inv_components()
 
     # Pre-processor
-<<<<<<< TREE
-    def prep(r): 
-=======
     def prep(r):
->>>>>>> MERGE-SOURCE
         # Filter out people which are already staff for this office
-<<<<<<< TREE
-        shn_staff_prep(r) 
-=======
         shn_staff_prep(r)
->>>>>>> MERGE-SOURCE
         # Filter out items which are already in this inventory
         shn_inv_prep(r)
 
@@ -145,11 +131,7 @@ def office():
             organisation = request.vars.organisation_id or session.s3.organisation_id or ""
             if organisation:
                 table.organisation_id.default = organisation
-<<<<<<< TREE
-        
-=======
 
->>>>>>> MERGE-SOURCE
         # Cascade the organisation_id from the office to the staff
         if r.record:
             db.org_staff.organisation_id.default = r.record.organisation_id
@@ -159,10 +141,7 @@ def office():
         # the update forms are not ready. when they will - uncomment this and comment the next one
         #if r.method in ("create", "update"):
         if r.method == "create":
-<<<<<<< TREE
-=======
             table = r.table
->>>>>>> MERGE-SOURCE
             table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db,
                                                                         "org_organisation.id"))
             if request.vars.organisation_id and request.vars.organisation_id != "None":
@@ -197,23 +176,12 @@ def office():
 
     return s3_rest_controller(prefix, resourcename, rheader=rheader)
 
-<<<<<<< TREE
-=======
 
->>>>>>> MERGE-SOURCE
 #==============================================================================
 def staff():
-<<<<<<< TREE
-    """ 
-=======
     """
->>>>>>> MERGE-SOURCE
         RESTful CRUD controller
-<<<<<<< TREE
-        @ToDo: This function may be removed, to restrict the view of staff to only 
-=======
         @ToDo: This function may be removed, to restrict the view of staff to only
->>>>>>> MERGE-SOURCE
         as components within site instances and organisations
     """
 

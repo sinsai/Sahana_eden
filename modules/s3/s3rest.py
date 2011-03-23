@@ -288,7 +288,6 @@ class S3Resource(object):
                 component.filter = (component.filter) & (filter)
             else:
                 component.filter = filter
-            print component.filter
 
 
     # -------------------------------------------------------------------------

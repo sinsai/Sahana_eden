@@ -680,6 +680,9 @@ class S3Search(S3CRUD):
 
         format = r.representation
 
+        if r.component and self != self.resource.search:
+            return self.resource.search(r, **attr)
+
         if r.interactive and self.__interactive:
             return self.search_interactive(r, **attr)
         elif format == "aadata" and self.__interactive:

@@ -405,16 +405,9 @@ def person():
             elif r.component.name == "address":
                 if r.method != "read":
                     table = db.pr_address
-                    table.type.default = 1 # Home Address
                     # Don't want to see in Create forms
                     # inc list_create (list_fields over-rides)
-                    table.address.readable = False
-                    table.L4.readable = False
-                    table.L3.readable = False
-                    table.L2.readable = False
-                    table.L1.readable = False
-                    table.L0.readable = False
-                    table.postcode.readable = False
+                    pr_address_hide(table)
                     # Process Base Location
                     s3xrc.model.configure(table,
                                           onaccept=address_onaccept)
@@ -434,14 +427,14 @@ def person():
                 try:
                     # Inject a flag to say whether this address should be set as the user's Base Location
                     HELP = T("If this is ticked, then this will become the user's Base Location & hence where the user is shown on the Map")
-                    output["form"][0].insert(2,
-                                             TR(TD(LABEL("%s:" % T("Base Location?")),
+                    output["form"][0].insert(0,
+                                             TR(TD(LABEL("%s: " % T("Base Location?")),
                                                    INPUT(_name="base_location",
                                                          _id="base_location",
                                                          _class="boolean",
                                                          _type="checkbox",
                                                          _value="on"),
-                                                    _class="w2p_fl"),
+                                                   _class="w2p_fl"),
                                                 TD(DIV(_class="tooltip",
                                                        _title="%s|%s" % (T("Base Location"),
                                                                          HELP)))))

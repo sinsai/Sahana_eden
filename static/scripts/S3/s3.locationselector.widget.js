@@ -9,11 +9,21 @@ var s3_gis_pullNext;
 function s3_gis_dropdown_select(level, force) {
     s3_gis_pullNext = false;
 
-    // Clear any values in the specific location field
-    $('#gis_location_lat').val('');
-    $('#gis_location_lon').val('');
-    $('#gis_location_addr_street').val('');
-    $('#gis_location_postcode').val('');
+    // Clear any values in the specific location fields
+    //$('#gis_location_name').val('');
+    //$('#gis_location_addr_street').val('');
+    //$('#gis_location_postcode').val('');
+    //$('#gis_location_lat').val('');
+    //$('#gis_location_lon').val('');
+
+    // Check whether any detail values have been filled-in
+    var name = $('#gis_location_name').val();
+    var lat = $('#gis_location_lat').val();
+    var lon = $('#gis_location_lon').val();
+    var addr_street = $('#gis_location_addr_street').val();
+    var postcode = $('#gis_location_postcode').val();
+
+    var details = name && lat && lon && addr_street && postcode;
 
     // Read the new value of the dropdown
     var new_id = $('#gis_location_L' + level).val();
@@ -75,12 +85,15 @@ function s3_gis_dropdown_select(level, force) {
             // We just had a single value
             // Read the new value of the dropdown
             new_id = $('#gis_location_L' + (level + 1)).val();
-            $('#' + s3_gis_location_id).val(new_id);
+             // Populate the real location_id field (unless detail fields are already defined)
+            if ( !details ) {
+                $('#' + s3_gis_location_id).val(new_id);
+            }
             // Trigger the subsequent dropdown
             s3_gis_dropdown_select(level + 1);
         } else {
-            // Populate the real location_id field (unless a name is already present)
-            if ( '' == $('#gis_location_name').val() ) {
+            // Populate the real location_id field (unless detail fields are already defined)
+            if ( !details ) {
                 $('#' + s3_gis_location_id).val(new_id);
             }
         }
@@ -89,8 +102,8 @@ function s3_gis_dropdown_select(level, force) {
         // Zero selected: Hide other levels & reset their contents
         s3_gis_dropdown_hide(level + 1);
         
-        // If we're the top-level selector & there is no name defined
-        if (( 0 == level ) && ( '' == $('#gis_location_name').val() )) {
+        // If we're the top-level selector & there are no detail fields already defined
+        if (( 0 == level ) && ( !details )) {
             // Clear the real location_id field
             $('#' + s3_gis_location_id).val('');
             // Clear the Lat/Lon fields to avoid thinking that a new location is being created
@@ -885,56 +898,23 @@ $(function(){
             // http://api.jquery.com/bind/
             S3ClearNavigateAwayConfirm();
 
-            // Check if a new location should be created
+            // Read current form values
             var name = $('#gis_location_name').val();
             var lat = $('#gis_location_lat').val();
             var lon = $('#gis_location_lon').val();
             var addr_street = $('#gis_location_addr_street').val();
             var addr_postcode = $('#gis_location_postcode').val();
+            var L0 = $('#gis_location_L0').val();
 
-            // Only save a new Location if we have data
-            if ('' == name) {
-                if (('' == lat || '' == lon) && ('' == addr_street) && ('' == addr_postcode)) {
-                    // There are no specific location details specified
-                    // (Hierarchy may have been done but that's not our issue here)
-                    // Allow the Form's save to continue
-                    return true;
-                } else {
-                    // We don't have a name, but we do have details
-                    
-                    // Should we update the existing location?
-                    name = $('#gis_location_ :selected').text();
-                    if ( s3_gis_loading_locations.search(name) ) {
-                        // This is an Update form where the Location hasn't been changed
-                        // Allow the Form's save to continue
-                        return true
-                        // @ToDo: Need to distinguish between details from hierarchy & real details
-                        // Prompt the user for a name
-                    //    $('#gis_location_name').after('<div id="type__error" class="error" style="display: block;">Name field is required!</div>');
-                        // Move focus to this field
-                    //    $('#gis_location_name').focus();
-                    //    if (s3_navigate_away_confirm) {
-                            // Reset the Navigation protection
-                    //        S3SetNavigateAwayConfirm()
-                    //    }
-                        // Prevent the Form's save from continuing
-                    //    return false;
-                    } else {
-                        // Check if any details have changed
-                        if ((S3.gis.lat == $('#gis_location_lat').val()) && (S3.gis.lon == $('#gis_location_lon').val()) && (S3.gis.addr_street == $('#gis_location_addr_street').val().replace(/\n/g, '%0d')) && (S3.gis.postcode == $('#gis_location_postcode').val())) {
-                            // Skip: Nothing has been changed
-                        } else {
-                            // Update the location
-                            s3_gis_save_location(name, lat, lon, addr_street, addr_postcode);
-                        }
-
-                        // Allow the Form's save to continue
-                        return true;
-                    }
-                }
+            // Check if there are Location changes to save
+            if (('' == name) && ('' == lat || '' == lon) && ('' == addr_street) && ('' == addr_postcode) && ('' == L0)) {
+                // Skip: There are no location details specified
+            //} else if ((S3.gis.name == name) && (S3.gis.lat == lat) && (S3.gis.lon == lon) && (S3.gis.addr_street == addr_street.replace(/\n/g, '%0d')) && (S3.gis.postcode == addr_postcode)) {
+                // Skip: Nothing has been changed
+            } else {
+                // Save the location
+                s3_gis_save_location(name, lat, lon, addr_street, addr_postcode);
             }
-            // Save the new location
-            s3_gis_save_location(name, lat, lon, addr_street, addr_postcode);
 
             // Allow the Form's save to continue
             return true;

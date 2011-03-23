@@ -59,6 +59,7 @@ KML_NAMESPACE = "http://earth.google.com/kml/2.2"
 from gluon.dal import Rows
 from gluon.storage import Storage, Messages
 from gluon.html import *
+from gluon.http import redirect
 from gluon.tools import fetch
 
 from s3track import S3Trackable
@@ -1957,6 +1958,18 @@ class GIS(object):
             zoom = config.zoom
         if not projection:
             projection = config.epsg
+
+        
+        if projection != "900913" and projection != "4326":
+            # Test for Valid Projection file in Proj4JS library
+            projpath = os.path.join(request.folder, "static", "scripts", "gis", "proj4js", "lib", "defs", "EPSG%s.js" % projection)
+            try:
+                f = open(projpath, "r")
+                f.close()
+            except:
+                session.error = "%s /static/scripts/gis/proj4js/lib/defs" % T("Projection not supported - please add definition to")
+                redirect(URL(r=request, c="gis", f="projection"))
+            
         units = config.units
         maxResolution = config.maxResolution
         maxExtent = config.maxExtent
@@ -2038,6 +2051,11 @@ class GIS(object):
         # Scripts
         #########
         if session.s3.debug:
+            if projection != "900913" and projection != "4326":
+                html.append(SCRIPT(_type="text/javascript",
+                                   _src=URL(r=request, c="static", f="scripts/gis/proj4js/lib/proj4js.js")))
+                html.append(SCRIPT(_type="text/javascript",
+                                   _src=URL(r=request, c="static", f="scripts/gis/proj4js/lib/defs/EPSG%s.js" % projection)))
             html.append(SCRIPT(_type="text/javascript",
                                _src=URL(r=request, c="static", f="scripts/gis/openlayers/lib/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript",
@@ -2054,6 +2072,11 @@ class GIS(object):
                 html.append(SCRIPT(_type="text/javascript",
                                    _src=URL(r=request, c="static", f="scripts/gis/MP.js")))
         else:
+            if projection != "900913" and projection != "4326":
+                html.append(SCRIPT(_type="text/javascript",
+                                   _src=URL(r=request, c="static", f="scripts/gis/proj4js/lib/proj4js-compressed.js")))
+                html.append(SCRIPT(_type="text/javascript",
+                                   _src=URL(r=request, c="static", f="scripts/gis/proj4js/lib/defs/EPSG%s.js" % projection)))
             html.append(SCRIPT(_type="text/javascript",
                                _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript",

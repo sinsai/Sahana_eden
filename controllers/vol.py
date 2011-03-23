@@ -348,10 +348,14 @@ def person():
 
             # Hide fields
             table = db.pr_person
+            #table.preferred_name.readable = table.preferred_name.writable = False
+            table.local_name.readable = table.local_name.writable = False
             table.pe_label.readable = table.pe_label.writable = False
             table.missing.readable = table.missing.writable = False
             table.tags.readable = table.tags.writable = False
             table.age_group.readable = table.age_group.writable = False
+            table.religion.readable = table.religion.writable = False
+            table.marital_status.readable = table.marital_status.writable = False
 
             # CRUD strings
             ADD_VOL = T("Add Volunteer")

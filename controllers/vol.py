@@ -110,8 +110,7 @@ def index():
 
     # Configure redirection and list fields
     register_url = str(URL(r=request, f=resourcename,
-                           args=["[id]", "volunteer"],
-                           vars={"vol_tabs":1}))
+                           args=["[id]", "volunteer"]))
     s3xrc.model.configure(table,
                           create_next=register_url,
                           list_fields=["id",
@@ -142,8 +141,8 @@ def index():
         response.s3.actions = []
 
         # Button labels
-        REGISTER = T("Register")
-        DETAILS = T("Details")
+        REGISTER = str(T("Register"))
+        DETAILS = str(T("Details"))
 
         if not r.component:
             open_button_label = DETAILS
@@ -401,7 +400,7 @@ def person():
                                                    "group_id",
                                                    "group_head",
                                                    "description"])
-    
+
 
             elif r.component.name == "address":
                 if r.method != "read":
@@ -426,7 +425,7 @@ def person():
 
         return True
 
-        
+
     # Post-process
     def postp(r, output):
 
@@ -498,7 +497,7 @@ def person():
     response.s3.prep = prep
     response.s3.postp = postp
 
-        
+
     output = s3_rest_controller(_prefix, resourcename,
                                 rheader=lambda r: vol_rheader(r, tabs))
 

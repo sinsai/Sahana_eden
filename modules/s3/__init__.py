@@ -71,6 +71,7 @@ from s3rest import S3Resource, S3Method
 from s3crud import S3CRUD
 from s3search import *
 from s3merge import *
+from s3ocr import *
 
 # GIS Mapping
 from s3gis import *
@@ -80,9 +81,6 @@ from s3msg import *
 
 # VITA Person Data Toolkit
 from s3vita import *
-
-# OCR functions
-from s3ocr import *
 
 # Tracking System
 from s3track import *

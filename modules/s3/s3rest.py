@@ -161,8 +161,18 @@ class S3Resource(object):
         # Store CRUD and other method handlers
         self.crud = self.manager.crud
         # Get default search method for this resource
-        self.search = model.get_config(self.table, "search_method",
-                                       self.manager.search)
+        self.search = model.get_config(self.table, "search_method", None)
+        if not self.search:
+            if "name" in self.table:
+                T = self.manager.T
+                self.search = self.manager.search(
+                                name="search_simple",
+                                label=T("Name"),
+                                comment=T("Enter a name to search for. You may use % as wildcard. Press 'Search' without input to list all items."),
+                                field=["name"])
+            else:
+                self.search = self.manager.search()
+
         # Store internal handlers
         self._handler = Storage(options=self.__get_options,
                                 fields=self.__get_fields,
@@ -278,7 +288,6 @@ class S3Resource(object):
                 component.filter = (component.filter) & (filter)
             else:
                 component.filter = filter
-            print component.filter
 
 
     # -------------------------------------------------------------------------

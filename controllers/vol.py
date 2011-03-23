@@ -346,8 +346,11 @@ def person():
     def prep(r):
         if r.interactive:
 
+            table = r.table
+            # Assume volunteers only between 12-81
+            #table.date_of_birth.widget = S3DateWidget(past=972, future=-144)
+
             # Hide fields
-            table = db.pr_person
             #table.preferred_name.readable = table.preferred_name.writable = False
             table.local_name.readable = table.local_name.writable = False
             table.pe_label.readable = table.pe_label.writable = False

@@ -66,12 +66,12 @@ class S3DateWidget(FormWidget):
     """
 
     def __init__(self,
-                 before=10,  # How many years to show before the current one
-                 after=10    # How many years to show after the current one
+                 past=1440,     # how many months into the past the date can be set to
+                 future=1440    # how many months into the future the date can be set to
                 ):
 
-        self.min = before
-        self.max = after
+        self.past = past
+        self.future = future
 
 
     def __call__(self, field, value, **attributes):
@@ -86,9 +86,11 @@ class S3DateWidget(FormWidget):
 
         date_options = """
     $(function() {
-        $( '#%s' ).datepicker( 'option', 'yearRange', 'c-%s:c+%s' );
+        $( '#%s' ).datepicker( 'option', 'minDate', '-%sm' );
+        $( '#%s' ).datepicker( 'option', 'maxDate', '+%sm' );
+        $( '#%s' ).datepicker( 'option', 'yearRange', 'c-100:c+100' );
     });
-    """ % (selector, self.min, self.max)
+    """ % (selector, self.past, selector, self.future, selector)
 
         return TAG[""](
                         INPUT(**attr),

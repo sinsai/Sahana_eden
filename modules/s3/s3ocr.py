@@ -80,21 +80,21 @@ class S3OCR(S3Method):
         xml = self.manager.xml
         self.r = r
 
-        # s3ocr - dict which stores ocr configuration
-        #                     settings for a resource)
-        s3ocr = attr.get("s3ocr", {})
+        # s3ocr_config - dict which stores ocr configuration
+        #                            settings for a resource)
+        s3ocr_config = attr.get("s3ocr_config", {})
 
         # storing localised names of components
-        self.rheader_tabs = s3ocr.get("tabs", [])
+        self.rheader_tabs = s3ocr_config.get("tabs", [])
 
         # store custom pdf title (if any)
-        self.pdftitle = s3ocr.get("pdftitle", None)
+        self.pdftitle = s3ocr_config.get("pdftitle", None)
 
         # store components which have to be excluded
-        self.exclude_component_list = s3ocr.get("exclude_components", [])
+        self.exclude_component_list = s3ocr_config.get("exclude_components", [])
 
         # store individual field specific properties
-        self.custom_field_properties = s3ocr.get("field_properties", {})
+        self.custom_field_properties = s3ocr_config.get("field_properties", {})
 
         # example field_properties
         # field_properties = {
@@ -310,9 +310,14 @@ class S3OCR(S3Method):
                 # if field is readable but not writable set default value
                 if eachfield.attrib.get("readable", "False") == "True" and \
                         eachfield.attrib.get("writable", "False") == "False":
-                    fieldresourcename = \
-                        eachresource.attrib.get("name").split("%s_" %\
-                                                                  self.prefix)[1]
+                    try:
+                        fieldresourcename = \
+                            eachresource.attrib.get("name").split("%s_" %\
+                                                                      self.prefix)[1]
+                    except:
+                        fieldresourcename = \
+                            eachresource.attrib.get("name").split("_")[1]
+
                     fieldresource = \
                         self.resource.components.get(fieldresourcename, None)
                     if not fieldresource:

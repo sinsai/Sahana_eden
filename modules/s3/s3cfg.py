@@ -347,5 +347,13 @@ class S3Config(Storage):
 
     # S3OCR
     def get_s3ocr_fieldtype_properties(self):
-        fieldtype_properties = {}
+        fieldtype_properties = {
+        # Example configuration
+        #    "reference document_id": {
+        #        "fieldtype"="string",
+        #        "readable"="True",
+        #        .
+        #        .
+        #        }
+            }
         return fieldtype_properties

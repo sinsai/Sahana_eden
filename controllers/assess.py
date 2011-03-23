@@ -209,7 +209,7 @@ def rat():
     rheader = lambda r: shn_rat_rheader(r,
                                         tabs)
 
-    output = s3_rest_controller(prefix, resourcename, rheader=rheader, s3ocr={"tabs": tabs})
+    output = s3_rest_controller(prefix, resourcename, rheader=rheader, s3ocr_config={"tabs": tabs})
 
     response.extra_styles = ["S3/rat.css"]
     return output

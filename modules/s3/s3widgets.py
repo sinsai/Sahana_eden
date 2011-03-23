@@ -1124,7 +1124,7 @@ class S3LocationSelectorWidget(FormWidget):
 
         # Labels
         name_label = DIV(LABEL("%s:" % T("Name")),
-                         SPAN("*", _class="req"),
+                         #SPAN("*", _class="req"),
                          _id="gis_location_name_label", _class="hidden")
         street_label = LABEL("%s:" % T("Street Address"),
                        _id="gis_location_addr_street_label", _class="hidden")

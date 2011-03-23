@@ -443,25 +443,33 @@ def shn_gis_location_represent(id, showlink=True):
 resourcename = "location"
 tablename = "gis_location"
 table = db.define_table(tablename,
-                        Field("name", notnull=True),    # Primary name
-                        #Field("name_short"),           # Secondary name
-                        Field("name_dummy"),            # Dummy field to provide Widget (real data is stored in the separate table which links back to this one)
-                        Field("code"), # Christchurch: 'prupi', label=T("Property reference in the council system")
-                        #Field("code2"), # Christchurch: 'gisratingid', label=T("Polygon reference of the rating unit")
-                        Field("level", length=2),
-                        Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
-                        Field("path", length=500, readable=False, writable=False),  # Materialised Path
+                        Field("name", label = T("Primary Name")),       # Primary name
+                        #Field("name_short"),                           # Secondary name
+                        Field("name_dummy", label = T("Local Names")),  # Dummy field to provide Widget (real data is stored in the separate table which links back to this one)
+                        Field("code", label = T("Code")),               # Christchurch: 'prupi', label=T("Property reference in the council system")
+                        #Field("code2"),                                # Christchurch: 'gisratingid', label=T("Polygon reference of the rating unit")
+                        Field("level", length=2, label = T("Level")),
+                        Field("parent", "reference gis_location",
+                              label = T("Parent"),
+                              ondelete = "RESTRICT"),                   # This form of hierarchy may not work on all Databases
+                        Field("path", length=500,
+                              label = T("Path"),
+                              readable=False, writable=False),          # Materialised Path
                         Field("members", "list:reference gis_location"),
                         # Street Address (other address fields come from hierarchy)
-                        Field("addr_street", "text"),
-                        Field("addr_postcode"),
-                        Field("gis_feature_type", "integer", default=1, notnull=True),
-                        Field("lat", "double"), # Points or Centroid for Polygons
-                        Field("lon", "double"), # Points or Centroid for Polygons
-                        Field("wkt", "text"),   # WKT is auto-calculated from lat/lon for Points
-                        Field("url"),
-                        Field("geonames_id", "integer", unique=True),# Geonames ID (for cross-correlation. OSM cannot take data from Geonames as 'polluted' with unclear sources, so can't use them as UUIDs)
-                        Field("osm_id", "integer", unique=True),     # OpenStreetMap ID (for cross-correlation. OSM IDs can change over time, so they also have UUID fields they can store our IDs in)
+                        Field("addr_street", "text", label = T("Street Address")),
+                        Field("addr_postcode", label = T("Postcode")),
+                        Field("gis_feature_type", "integer",
+                              default=1, notnull=True,
+                              label = T("Feature Type")),
+                        Field("lat", "double", label = T("Latitude")),                      # Points or Centroid for Polygons
+                        Field("lon", "double", label = T("Longitude")),                     # Points or Centroid for Polygons
+                        Field("wkt", "text", label = "WKT (%s)" % T("Well-Known Text")),    # WKT is auto-calculated from lat/lon for Points
+                        Field("url", label = "URL"),
+                        Field("geonames_id", "integer", unique=True,
+                              label = "Geonames ID"),               # Geonames ID (for cross-correlation. OSM cannot take data from Geonames as 'polluted' with unclear sources, so can't use them as UUIDs)
+                        Field("osm_id", "integer", unique=True,
+                              label = "OpenStreetMap ID"),          # OpenStreetMap ID (for cross-correlation. OSM IDs can change over time, so they also have UUID fields they can store our IDs in)
                         Field("lon_min", "double", writable=False,
                               readable=False), # bounding-box
                         Field("lat_min", "double", writable=False,
@@ -474,17 +482,16 @@ table = db.define_table(tablename,
                               readable=False),   # m in height above WGS84 ellipsoid (approximately sea-level). not displayed currently
                         Field("ce", "integer", writable=False, readable=False), # Circular 'Error' around Lat/Lon (in m). Needed for CoT.
                         Field("le", "integer", writable=False, readable=False), # Linear 'Error' for the Elevation (in m). Needed for CoT.
-                        Field("source", requires=IS_NULL_OR(IS_IN_SET(gis_source_opts))),
+                        Field("source",
+                              requires=IS_NULL_OR(IS_IN_SET(gis_source_opts))),
                         comments(),
                         migrate=migrate,
                         format=shn_gis_location_represent_row,
                         *s3_meta_fields())
 
 table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % table)
-table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
+#table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique. Waypoints don't need to have a name at all.
 
-table.name.label = T("Primary Name")
-table.name_dummy.label = T("Local Names")
 table.name_dummy.comment = DIV(_class="tooltip",
                                _title="%s|%s" % (T("Local Names"),
                                                  T("Names can be added in multiple languages")))
@@ -510,18 +517,6 @@ table.url.requires = IS_NULL_OR(IS_URL())
 table.osm_id.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999999999))
 table.geonames_id.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999999))
 
-table.level.label = T("Level")
-table.code.label = T("Code")
-table.parent.label = T("Parent")
-table.addr_street.label = T("Street Address")
-table.addr_postcode.label = T("Postcode")
-table.gis_feature_type.label = T("Feature Type")
-table.lat.label = T("Latitude")
-table.lon.label = T("Longitude")
-table.wkt.label = "WKT (%s)" % T("Well-Known Text")
-table.url.label = "URL"
-table.geonames_id.label = "Geonames ID"
-table.osm_id.label = "OpenStreetMap ID"
 # We want these visible from forms which reference the Location
 CONVERSION_TOOL = T("Conversion Tool")
 table.lat.comment = DIV(_class="tooltip",

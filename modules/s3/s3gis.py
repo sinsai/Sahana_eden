@@ -4838,7 +4838,7 @@ var s3_gis_max_h = %i;
             nodeType: 'gx_baselayercontainer',
             layerStore: mapPanel.layers,
             leaf: false,
-            expanded: false
+            expanded: true
         };
 
         var layerTreeFeaturesExternal = {

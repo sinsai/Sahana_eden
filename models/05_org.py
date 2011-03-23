@@ -243,7 +243,9 @@ shn_organisation_comment = DIV(A(ADD_ORGANIZATION,
                            _title=ADD_ORGANIZATION),
                          DIV(DIV(_class="tooltip",
                                  _title="%s|%s" % (ADD_ORGANIZATION,
-                                                   T("The Organization this record is associated with.")))))
+                                                   T("Enter some characters to bring up a list of possible matches.")))))
+                                                   # Replace with this one if using dropdowns & not autocompletes
+                                                   #T("If you don’t see the Organization in the list, you can add a new one by clicking link 'Add Organization'.")))))
 
 organisation_id = S3ReusableField("organisation_id", db.org_organisation, sortby="name",
                                   requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id",
@@ -255,6 +257,7 @@ organisation_id = S3ReusableField("organisation_id", db.org_organisation, sortby
                                   label = T("Organization"),
                                   comment = shn_organisation_comment,
                                   ondelete = "RESTRICT",
+                                  # Comment this to use a Dropdown & not an Autocomplete
                                   widget = S3AutocompleteWidget(request, module, resourcename)
                                  )
 
@@ -678,7 +681,7 @@ office_id = S3ReusableField("office_id", db.org_office, sortby="default/indexnam
                                 _title=ADD_OFFICE),
                           DIV( _class="tooltip",
                                _title="%s|%s" % (ADD_OFFICE,
-                                                 T("The Office this record is associated with.")))),    # Should be over-ridden in the context wherever possible
+                                                 T("If you don’t see the Office in the list, you can add a new one by clicking link 'Add Office'.")))),
                 ondelete = "RESTRICT"
                 )
 
@@ -778,9 +781,7 @@ table = db.define_table(tablename,
                                   comment = shn_person_comment(T("Person"),
                                                                T("The Person currently filling this Role."))),
                         Field("title", label = T("Job Title")),
-                        organisation_id(comment = DIV( _class="tooltip",
-                                                       _title="%s|%s" % (T("Organization"),
-                                                                         T("Enter some characters to bring up a list of possible matches.")))),
+                        organisation_id(),
                         # This form of hierarchy may not work on all DBs
                         Field("manager_id",
                               "reference org_staff",

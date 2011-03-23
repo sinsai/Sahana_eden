@@ -1227,7 +1227,8 @@ table = db.define_table(tablename,
                               default = 1,
                               label = T("ID type"),
                               represent = lambda opt: \
-                                          pr_id_type_opts.get(opt, UNKNOWN_OPT)),
+                                          pr_id_type_opts.get(opt,
+                                                              UNKNOWN_OPT)),
                         Field("value"),
                         Field("description"),
                         Field("country_code", length=4),
@@ -1240,7 +1241,8 @@ table = db.define_table(tablename,
 
 table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 table.person_id.label = T("Person")
-table.value.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.value" % tablename)]
+table.value.requires = [IS_NOT_EMPTY(),
+                        IS_NOT_ONE_OF(db, "%s.value" % tablename)]
 table.ia_name.label = T("Issuing Authority")
 
 # Identity as component of persons

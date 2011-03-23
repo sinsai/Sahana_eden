@@ -107,6 +107,7 @@ class AuthS3(Auth):
         self.messages.email_verified = "Email verified - you can now login"
         self.messages.duplicate_email = "This email address is already in use"
         self.messages.registration_disabled = "Registration Disabled!'"
+        self.messages.registration_verifying = "You haven't yet Verified your account - please check your email"
         self.messages.label_utc_offset = "UTC Offset"
         self.messages.help_utc_offset = "The time difference between UTC and your timezone, specify as +HHMM for eastern or -HHMM for western timezones."
         self.messages.label_mobile_phone = "Mobile Phone"
@@ -657,6 +658,9 @@ class AuthS3(Auth):
                 else:
                     # The domain is Whitelisted
                     approved = True
+            else:
+                # No verification or approval needed
+                approved = True
 
             if approved:
                 user[form.vars.id] = dict(registration_key="")

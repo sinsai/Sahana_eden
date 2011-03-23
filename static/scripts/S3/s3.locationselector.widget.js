@@ -904,18 +904,21 @@ $(function(){
                     
                     // Should we update the existing location?
                     name = $('#gis_location_ :selected').text();
-                    if ( s3_gis_loading_locations.search(name)) {
+                    if ( s3_gis_loading_locations.search(name) ) {
+                        // This is an Update form where the Location hasn't been changed
+                        // Allow the Form's save to continue
+                        return true
                         // @ToDo: Need to distinguish between details from hierarchy & real details
                         // Prompt the user for a name
-                        $('#gis_location_name').after('<div id="type__error" class="error" style="display: block;">Name field is required!</div>');
+                    //    $('#gis_location_name').after('<div id="type__error" class="error" style="display: block;">Name field is required!</div>');
                         // Move focus to this field
-                        $('#gis_location_name').focus();
-                        if (s3_navigate_away_confirm) {
+                    //    $('#gis_location_name').focus();
+                    //    if (s3_navigate_away_confirm) {
                             // Reset the Navigation protection
-                            S3SetNavigateAwayConfirm()
-                        }
+                    //        S3SetNavigateAwayConfirm()
+                    //    }
                         // Prevent the Form's save from continuing
-                        return false;
+                    //    return false;
                     } else {
                         // Check if any details have changed
                         if ((S3.gis.lat == $('#gis_location_lat').val()) && (S3.gis.lon == $('#gis_location_lon').val()) && (S3.gis.addr_street == $('#gis_location_addr_street').val().replace(/\n/g, '%0d')) && (S3.gis.postcode == $('#gis_location_postcode').val())) {

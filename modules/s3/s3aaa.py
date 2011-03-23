@@ -657,6 +657,9 @@ class AuthS3(Auth):
                 else:
                     # The domain is Whitelisted
                     approved = True
+            else:
+                # No verification or approval needed
+                approved = True
 
             if approved:
                 user[form.vars.id] = dict(registration_key="")

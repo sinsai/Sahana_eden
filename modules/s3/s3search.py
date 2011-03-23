@@ -44,7 +44,6 @@ from gluon.sqlhtml import CheckboxesWidget
 from gluon.validators import *
 from gluon.serializers import json
 
-from s3rest import S3Method
 from s3crud import S3CRUD
 from s3validators import *
 
@@ -688,7 +687,7 @@ class S3Search(S3CRUD):
         elif format == "json":
             return self.search_json(r, **attr)
         else:
-            raise HTTP(501, body=self.manager.ERROR.BAD_FORMAT)
+            r.error(501, self.manager.ERROR.BAD_FORMAT)
 
         return dict()
 

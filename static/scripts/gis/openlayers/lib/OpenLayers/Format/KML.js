@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -12,6 +12,7 @@
  * @requires OpenLayers/Geometry/Collection.js
  * @requires OpenLayers/Request/XMLHttpRequest.js
  * @requires OpenLayers/Console.js
+ * @requires OpenLayers/Lang.js
  * @requires OpenLayers/Projection.js
  */
 
@@ -353,11 +354,10 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
         
         var types = ["LineStyle", "PolyStyle", "IconStyle", "BalloonStyle", 
                      "LabelStyle"];
-        var type, nodeList, geometry, parser;
+        var type, styleTypeNode, nodeList, geometry, parser;
         for(var i=0, len=types.length; i<len; ++i) {
             type = types[i];
-            styleTypeNode = this.getElementsByTagNameNS(node, 
-                                                   "*", type)[0];
+            styleTypeNode = this.getElementsByTagNameNS(node, "*", type)[0];
             if(!styleTypeNode) { 
                 continue;
             }
@@ -1125,7 +1125,7 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
      * Accept Feature Collection, and return a string. 
      * 
      * Parameters:
-     * features - {Array(<OpenLayers.Feature.Vector>} An array of features.
+     * features - {Array(<OpenLayers.Feature.Vector>)} An array of features.
      *
      * Returns:
      * {String} A KML string.
@@ -1222,7 +1222,8 @@ OpenLayers.Format.KML = OpenLayers.Class(OpenLayers.Format.XML, {
      * {DOMElement}
      */
     buildGeometryNode: function(geometry) {
-        if (this.internalProjection && this.externalProjection) {
+        if (this.internalProjection && this.externalProjection && 
+            !(geometry instanceof OpenLayers.Geometry.Collection)) {
             geometry = geometry.clone();
             geometry.transform(this.internalProjection, 
                                this.externalProjection);

@@ -20,6 +20,10 @@
  {{=H3(addtitle)}}
 {{except:}}
 {{pass}}
+{{try:}}
+ {{=addheader}}
+{{except:}}
+{{pass}}
 {{include "key.html"}}
 <div class='form-container'>
 {{try:}}
@@ -33,13 +37,14 @@
  {{=H3(subtitle)}}
 {{except:}}
 {{pass}}
-{{include "formats.html"}}
-<div id='table-container'>
 {{try:}}
- {{=items}}
+ {{items = items}}
+ {{include "formats.html"}}
+ <div id='table-container'>
+  {{=items}}
+ </div>
 {{except:}}
 {{pass}}
-</div>
 {{include "pagenav.html"}}
 {{include "searchbox.html"}}
 <p>&nbsp;</p>

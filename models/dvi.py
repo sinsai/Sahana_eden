@@ -55,7 +55,7 @@ if deployment_settings.has_module(module):
     table.date.default = request.utcnow
     table.date.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
                                           allow_future=False)
-    table.date.represent = lambda value: shn_as_local_time(value)
+    table.date.represent = shn_as_local_time
 
     table.site_id.label = T("Site ID")
     #table.site_id.requires = IS_EMPTY_OR(IS_NOT_ONE_OF(db, table.site_id))
@@ -136,7 +136,7 @@ if deployment_settings.has_module(module):
     table.date_of_recovery.requires = IS_UTC_DATETIME(
                                         utc_offset=shn_user_utc_offset(),
                                         allow_future=False)
-    table.date_of_recovery.represent = lambda value: shn_as_local_time(value)
+    table.date_of_recovery.represent = shn_as_local_time
 
     # Labels
     table.dvi_recreq_id.label = T("Recovery Request")
@@ -182,7 +182,7 @@ if deployment_settings.has_module(module):
                                        "date_of_recovery",
                                        "location_id"])
 
-    dvi_body_search = s3base.S3Find(
+    dvi_body_search = s3base.S3Search(
             name = "body_search_simple",
             label = T("ID Tag"),
             comment = T("To search for a body, enter the ID tag number of the body. You may use % as wildcard. Press 'Search' without input to list all bodies."),

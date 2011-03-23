@@ -4,7 +4,7 @@
 
 
 /**
- * @requires OpenLayers/Control.js
+ * requires OpenLayers/Control.js
  */
 
 /**

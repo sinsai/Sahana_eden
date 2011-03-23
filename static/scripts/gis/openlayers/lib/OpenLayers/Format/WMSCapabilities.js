@@ -51,10 +51,6 @@ OpenLayers.Format.WMSCapabilities = OpenLayers.Class(OpenLayers.Format.XML, {
      * options - {Object} An optional object whose properties will be set on
      *     this instance.
      */
-    initialize: function(options) {
-        OpenLayers.Format.XML.prototype.initialize.apply(this, [options]);
-        this.options = options;
-    },
 
     /**
      * APIMethod: read

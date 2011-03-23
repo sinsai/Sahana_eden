@@ -358,7 +358,7 @@ if deployment_settings.has_module(module):
     # contains Section 1: Identification Information
     #
     resourcename = "rat"
-    tablename = "%s_%s" % (module, resourcename)
+    tablename = "assess_rat"
     table = db.define_table(tablename,
                             Field("date", "date"),
                             location_id(),
@@ -376,21 +376,27 @@ if deployment_settings.has_module(module):
     table.date.default = datetime.datetime.today()
 
     table.interview_location.label = T("Interview taking place at")
-    table.interview_location.requires = IS_NULL_OR(IS_IN_SET(rat_interview_location_opts, multiple=True, zero=None))
+    table.interview_location.requires = IS_NULL_OR(IS_IN_SET(rat_interview_location_opts,
+                                                             multiple=True,
+                                                             zero=None))
     table.interview_location.represent = lambda opt, set=rat_interview_location_opts: \
                                          shn_rat_represent_multiple(set, opt)
-    table.interview_location.comment = "(" + T("Select all that apply") + ")"
+    table.interview_location.comment = "(%s)" % T("Select all that apply")
     #table.interview_location.widget = SQLFORM.widgets.checkboxes.widget
 
     table.interviewee.label = T("Person interviewed")
-    table.interviewee.requires = IS_NULL_OR(IS_IN_SET(rat_interviewee_opts, multiple=True, zero=None))
+    table.interviewee.requires = IS_NULL_OR(IS_IN_SET(rat_interviewee_opts,
+                                                      multiple=True,
+                                                      zero=None))
     table.interviewee.represent = lambda opt, set=rat_interviewee_opts: \
                                          shn_rat_represent_multiple(set, opt)
-    table.interviewee.comment = "(" + T("Select all that apply") + ")"
+    table.interviewee.comment = "(%s)" % T("Select all that apply")
     #table.interviewee.widget = SQLFORM.widgets.checkboxes.widget
 
-    table.accessibility.requires = IS_NULL_OR(IS_IN_SET(rat_accessibility_opts, zero=None))
-    table.accessibility.represent = lambda opt: rat_accessibility_opts.get(opt, opt)
+    table.accessibility.requires = IS_NULL_OR(IS_IN_SET(rat_accessibility_opts,
+                                                        zero=None))
+    table.accessibility.represent = lambda opt: rat_accessibility_opts.get(opt,
+                                                                           opt)
     table.accessibility.label = T("Accessibility of Affected Location")
 
 
@@ -473,7 +479,9 @@ if deployment_settings.has_module(module):
                                     label = T("Rapid Assessment"),
                                     comment = A(ADD_ASSESSMENT,
                                                 _class="colorbox",
-                                                _href=URL(r=request, c="assess", f="rat", args="create", vars=dict(format="popup")),
+                                                _href=URL(r=request, c="assess", f="rat",
+                                                          args="create",
+                                                          vars=dict(format="popup")),
                                                 _target="top",
                                                 _title=ADD_ASSESSMENT),
                                     ondelete = "RESTRICT")
@@ -679,7 +687,9 @@ if deployment_settings.has_module(module):
         "Salvage material usable from destroyed houses",
         "What type of salvage material can be used from destroyed houses?",
         multiple=True)
-    table.houses_salvmat.requires = IS_NULL_OR(IS_IN_SET(rat_houses_salvmat_types, multiple=True, zero=None))
+    table.houses_salvmat.requires = IS_NULL_OR(IS_IN_SET(rat_houses_salvmat_types,
+                                                         multiple=True,
+                                                         zero=None))
     table.houses_salvmat.represent = lambda opt, set=rat_houses_salvmat_types: \
         shn_rat_represent_multiple(set, opt)
 
@@ -693,7 +703,9 @@ if deployment_settings.has_module(module):
         "Types of water storage containers available",
         "What types of household water storage containers are available?",
         multiple=True)
-    table.water_containers_types.requires = IS_EMPTY_OR(IS_IN_SET(rat_water_container_types, zero=None, multiple=True))
+    table.water_containers_types.requires = IS_EMPTY_OR(IS_IN_SET(rat_water_container_types,
+                                                                  zero=None,
+                                                                  multiple=True))
     table.water_containers_types.represents = lambda opt, set=rat_water_container_types: \
                                               shn_rat_represent_multiple(set, opt)
     table.water_containers_types_other.label = T("Other types of water storage containers")
@@ -807,15 +819,19 @@ if deployment_settings.has_module(module):
     table.assessment_id.readable = table.assessment_id.writable = False
 
     table.water_source_pre_disaster_type.label = T("Type of water source before the disaster")
-    table.water_source_pre_disaster_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_water_source_types, zero=None))
-    table.water_source_pre_disaster_type.represent = lambda opt: rat_water_source_types.get(opt, UNKNOWN_OPT)
+    table.water_source_pre_disaster_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_water_source_types,
+                                                                          zero=None))
+    table.water_source_pre_disaster_type.represent = lambda opt: rat_water_source_types.get(opt,
+                                                                                            UNKNOWN_OPT)
     table.water_source_pre_disaster_description.label = T("Description of water source before the disaster")
 
     shn_rat_label_and_tooltip(table.dwater_source_type,
         "Current type of source for drinking water",
         "What is your major source of drinking water?")
-    table.dwater_source_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_water_source_types, zero=None))
-    table.dwater_source_type.represent = lambda opt: rat_water_source_types.get(opt, UNKNOWN_OPT)
+    table.dwater_source_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_water_source_types,
+                                                              zero=None))
+    table.dwater_source_type.represent = lambda opt: rat_water_source_types.get(opt,
+                                                                                UNKNOWN_OPT)
     table.dwater_source_description.label = T("Description of drinking water source")
 
     shn_rat_label_and_tooltip(table.dwater_reserve,
@@ -825,8 +841,10 @@ if deployment_settings.has_module(module):
     shn_rat_label_and_tooltip(table.swater_source_type,
         "Current type of source for sanitary water",
         "What is your major source of clean water for daily use (ex: washing, cooking, bathing)?")
-    table.swater_source_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_water_source_types, zero=None))
-    table.swater_source_type.represent = lambda opt: rat_water_source_types.get(opt, UNKNOWN_OPT)
+    table.swater_source_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_water_source_types,
+                                                              zero=None))
+    table.swater_source_type.represent = lambda opt: rat_water_source_types.get(opt,
+                                                                                UNKNOWN_OPT)
     table.swater_source_description.label = T("Description of sanitary water source")
     shn_rat_label_and_tooltip(table.swater_reserve,
         "How long will this water resource last?",
@@ -835,27 +853,36 @@ if deployment_settings.has_module(module):
     shn_rat_label_and_tooltip(table.water_coll_time,
         "Time needed to collect water",
         "How long does it take you to reach the available water resources? Specify the time required to go there and back, including queuing time, by foot.")
-    table.water_coll_time.requires = IS_EMPTY_OR(IS_IN_SET(rat_walking_time_opts, zero=None))
-    table.water_coll_time.represent = lambda opt: rat_walking_time_opts.get(opt, UNKNOWN_OPT)
+    table.water_coll_time.requires = IS_EMPTY_OR(IS_IN_SET(rat_walking_time_opts,
+                                                           zero=None))
+    table.water_coll_time.represent = lambda opt: rat_walking_time_opts.get(opt,
+                                                                            UNKNOWN_OPT)
     table.water_coll_safe.label = T("Is it safe to collect water?")
     table.water_coll_safe.default = True
     table.water_coll_safety_problems.label = T("If no, specify why")
     table.water_coll_person.label = T("Who usually collects water for the family?")
-    table.water_coll_person.requires = IS_EMPTY_OR(IS_IN_SET(rat_water_coll_person_opts, zero=None))
-    table.water_coll_person.represent = lambda opt: rat_water_coll_person_opts.get(opt, UNKNOWN_OPT)
+    table.water_coll_person.requires = IS_EMPTY_OR(IS_IN_SET(rat_water_coll_person_opts,
+                                                             zero=None))
+    table.water_coll_person.represent = lambda opt: rat_water_coll_person_opts.get(opt,
+                                                                                   UNKNOWN_OPT)
 
     shn_rat_label_and_tooltip(table.defec_place_type,
         "Type of place for defecation",
         "Where do the majority of people defecate?",
         multiple=True)
-    table.defec_place_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_defec_place_types, zero=None, multiple=True))
-    table.defec_place_type.represent = lambda opt: rat_defec_place_types.get(opt, UNKNOWN_OPT)
+    table.defec_place_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_defec_place_types,
+                                                            zero=None,
+                                                            multiple=True))
+    table.defec_place_type.represent = lambda opt: rat_defec_place_types.get(opt,
+                                                                             UNKNOWN_OPT)
     table.defec_place_description.label = T("Description of defecation area")
     table.defec_place_distance.label = T("Distance between defecation area and water source")
     table.defec_place_distance.comment = T("meters")
     table.defec_place_animals.label = T("Defecation area for animals")
-    table.defec_place_animals.requires = IS_EMPTY_OR(IS_IN_SET(rat_defec_place_animals_opts, zero = None))
-    table.defec_place_animals.represent = lambda opt: rat_defec_place_animals_opts.get(opt, UNKNOWN_OPT)
+    table.defec_place_animals.requires = IS_EMPTY_OR(IS_IN_SET(rat_defec_place_animals_opts,
+                                                               zero = None))
+    table.defec_place_animals.represent = lambda opt: rat_defec_place_animals_opts.get(opt,
+                                                                                       UNKNOWN_OPT)
 
     shn_rat_label_and_tooltip(table.close_industry,
         "Industry close to village/camp",
@@ -873,8 +900,10 @@ if deployment_settings.has_module(module):
     shn_rat_label_and_tooltip(table.latrines_type,
         "Type of latrines",
         "What type of latrines are available in the village/IDP centre/Camp?")
-    table.latrines_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_latrine_types, zero=None))
-    table.latrines_type.represent = lambda opt: rat_latrine_types.get(opt, UNKNOWN_OPT)
+    table.latrines_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_latrine_types,
+                                                         zero=None))
+    table.latrines_type.represent = lambda opt: rat_latrine_types.get(opt,
+                                                                      UNKNOWN_OPT)
 
     shn_rat_label_and_tooltip(table.latrines_separation,
         "Separate latrines for women and men",
@@ -996,14 +1025,18 @@ if deployment_settings.has_module(module):
     shn_rat_label_and_tooltip(table.health_service_walking_time,
         "Walking time to the health service",
         "How long does it take you to walk to the health service?")
-    table.health_service_walking_time.requires = IS_EMPTY_OR(IS_IN_SET(rat_walking_time_opts, zero=None))
-    table.health_service_walking_time.represent = lambda opt: rat_walking_time_opts.get(opt, UNKNOWN_OPT)
+    table.health_service_walking_time.requires = IS_EMPTY_OR(IS_IN_SET(rat_walking_time_opts,
+                                                                       zero=None))
+    table.health_service_walking_time.represent = lambda opt: rat_walking_time_opts.get(opt,
+                                                                                        UNKNOWN_OPT)
 
     shn_rat_label_and_tooltip(table.health_problems_adults,
         "Current type of health problems, adults",
         "What types of health problems do people currently have?",
         multiple=True)
-    table.health_problems_adults.requires = IS_EMPTY_OR(IS_IN_SET(rat_health_problems_opts, zero=None, multiple=True))
+    table.health_problems_adults.requires = IS_EMPTY_OR(IS_IN_SET(rat_health_problems_opts,
+                                                                  zero=None,
+                                                                  multiple=True))
     table.health_problems_adults.represent = lambda opt, set=rat_health_problems_opts: \
                                              shn_rat_represent_multiple(set, opt)
     table.health_problems_adults_other.label = T("Other current health problems, adults")
@@ -1012,7 +1045,9 @@ if deployment_settings.has_module(module):
         "Current type of health problems, children",
         "What types of health problems do children currently have?",
         multiple=True)
-    table.health_problems_children.requires = IS_EMPTY_OR(IS_IN_SET(rat_health_problems_opts, zero=None, multiple=True))
+    table.health_problems_children.requires = IS_EMPTY_OR(IS_IN_SET(rat_health_problems_opts,
+                                                                    zero=None,
+                                                                    multiple=True))
     table.health_problems_children.represent = lambda opt, set=rat_health_problems_opts: \
                                                shn_rat_represent_multiple(set, opt)
     table.health_problems_children_other.label = T("Other current health problems, children")
@@ -1052,8 +1087,9 @@ if deployment_settings.has_module(module):
         "Alternative infant nutrition in use",
         "Babies who are not being breastfed, what are they being fed on?",
         multiple=True)
-    table.infant_nutrition_alternative.requires = \
-        IS_EMPTY_OR(IS_IN_SET(rat_infant_nutrition_alternative_opts, zero=None, multiple=True))
+    table.infant_nutrition_alternative.requires = IS_EMPTY_OR(IS_IN_SET(rat_infant_nutrition_alternative_opts,
+                                                                        zero=None,
+                                                                        multiple=True))
     table.infant_nutrition_alternative.represent = lambda opt, set=rat_infant_nutrition_alternative_opts: \
         shn_rat_represent_multiple(set, opt)
 
@@ -1134,26 +1170,34 @@ if deployment_settings.has_module(module):
         "Existing food stocks, main dishes",
         "What food stocks exist? (main dishes)",
         multiple=True)
-    table.food_stocks_main_dishes.requires = IS_EMPTY_OR(IS_IN_SET(rat_main_dish_types, zero=None, multiple=True))
+    table.food_stocks_main_dishes.requires = IS_EMPTY_OR(IS_IN_SET(rat_main_dish_types,
+                                                                   zero=None,
+                                                                   multiple=True))
     table.food_stocks_main_dishes.represent = lambda opt, set=rat_main_dish_types: \
                                               shn_rat_represent_multiple(set, opt)
     shn_rat_label_and_tooltip(table.food_stocks_side_dishes,
         "Existing food stocks, side dishes",
         "What food stocks exist? (side dishes)",
         multiple=True)
-    table.food_stocks_side_dishes.requires = IS_EMPTY_OR(IS_IN_SET(rat_side_dish_types, zero=None, multiple=True))
+    table.food_stocks_side_dishes.requires = IS_EMPTY_OR(IS_IN_SET(rat_side_dish_types,
+                                                                   zero=None,
+                                                                   multiple=True))
     table.food_stocks_side_dishes.represent = lambda opt, set=rat_side_dish_types: \
                                               shn_rat_represent_multiple(set, opt)
     table.food_stocks_other_side_dishes.label = T("Other side dishes in stock")
     table.food_stocks_reserve.label = T("How long will the food last?")
-    table.food_stocks_reserve.requires = IS_EMPTY_OR(IS_IN_SET(rat_food_stock_reserve_opts, zero=None))
-    table.food_stocks_reserve.represent = lambda opt: rat_food_stock_reserve_opts.get(opt, UNKNOWN_OPT)
+    table.food_stocks_reserve.requires = IS_EMPTY_OR(IS_IN_SET(rat_food_stock_reserve_opts,
+                                                               zero=None))
+    table.food_stocks_reserve.represent = lambda opt: rat_food_stock_reserve_opts.get(opt,
+                                                                                      UNKNOWN_OPT)
 
     shn_rat_label_and_tooltip(table.food_sources,
         "Usual food sources in the area",
         "What are the people's normal ways to obtain food in this area?",
         multiple=True)
-    table.food_sources.requires = IS_EMPTY_OR(IS_IN_SET(rat_food_source_types, zero=None, multiple=True))
+    table.food_sources.requires = IS_EMPTY_OR(IS_IN_SET(rat_food_source_types,
+                                                        zero=None,
+                                                        multiple=True))
     table.food_sources.represent = lambda opt, set=rat_food_source_types: \
                                    shn_rat_represent_multiple(set, opt)
     table.food_sources_other.label = T("Other ways to obtain food")
@@ -1241,21 +1285,27 @@ if deployment_settings.has_module(module):
         "Main income sources before disaster",
         "What were your main sources of income before the disaster?",
         multiple=True)
-    table.income_sources_pre_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_income_source_opts, zero=None, multiple=True))
+    table.income_sources_pre_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_income_source_opts,
+                                                                       zero=None,
+                                                                       multiple=True))
     table.income_sources_pre_disaster.represent =  lambda opt, set=rat_income_source_opts: \
                                                    shn_rat_represent_multiple(set, opt)
     shn_rat_label_and_tooltip(table.income_sources_post_disaster,
         "Current main income sources",
         "What are your main sources of income now?",
         multiple=True)
-    table.income_sources_post_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_income_source_opts, zero=None, multiple=True))
+    table.income_sources_post_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_income_source_opts,
+                                                                        zero=None,
+                                                                        multiple=True))
     table.income_sources_post_disaster.represent = lambda opt, set=rat_income_source_opts: \
                                                    shn_rat_represent_multiple(set, opt)
     shn_rat_label_and_tooltip(table.main_expenses,
         "Current major expenses",
         "What do you spend most of your income on now?",
         multiple=True)
-    table.main_expenses.requires = IS_EMPTY_OR(IS_IN_SET(rat_expense_types, zero=None, multiple=True))
+    table.main_expenses.requires = IS_EMPTY_OR(IS_IN_SET(rat_expense_types,
+                                                         zero=None,
+                                                         multiple=True))
     table.main_expenses.represent = lambda opt, set=rat_expense_types: \
                                     shn_rat_represent_multiple(set, opt)
     table.main_expenses_other.label = T("Other major expenses")
@@ -1269,25 +1319,33 @@ if deployment_settings.has_module(module):
     shn_rat_label_and_tooltip(table.business_cash_source,
         "Main cash source",
         "What are your main sources of cash to restart your business?")
-    table.business_cash_source.requires = IS_EMPTY_OR(IS_IN_SET(rat_cash_source_opts, zero=None, multiple=True))
+    table.business_cash_source.requires = IS_EMPTY_OR(IS_IN_SET(rat_cash_source_opts,
+                                                                zero=None,
+                                                                multiple=True))
     table.business_cash_source.represent = lambda opt, set=rat_cash_source_opts: \
                                            shn_rat_represent_multiple(set, opt)
 
     shn_rat_label_and_tooltip(table.rank_reconstruction_assistance,
         "Immediate reconstruction assistance, Rank",
         "Assistance for immediate repair/reconstruction of houses")
-    table.rank_reconstruction_assistance.requires = IS_EMPTY_OR(IS_IN_SET(rat_ranking_opts, zero=None))
+    table.rank_reconstruction_assistance.requires = IS_EMPTY_OR(IS_IN_SET(rat_ranking_opts,
+                                                                          zero=None))
     table.rank_farmland_fishing_assistance.label = T("Farmland/fishing material assistance, Rank")
-    table.rank_farmland_fishing_assistance.requires = IS_EMPTY_OR(IS_IN_SET(rat_ranking_opts, zero=None))
+    table.rank_farmland_fishing_assistance.requires = IS_EMPTY_OR(IS_IN_SET(rat_ranking_opts,
+                                                                            zero=None))
     table.rank_poultry_restocking.label = T("Poultry restocking, Rank")
-    table.rank_poultry_restocking.requires = IS_EMPTY_OR(IS_IN_SET(rat_ranking_opts, zero=None))
+    table.rank_poultry_restocking.requires = IS_EMPTY_OR(IS_IN_SET(rat_ranking_opts,
+                                                                   zero=None))
     table.rank_health_care_assistance.label = T("Health care assistance, Rank")
-    table.rank_health_care_assistance.requires = IS_EMPTY_OR(IS_IN_SET(rat_ranking_opts, zero=None))
+    table.rank_health_care_assistance.requires = IS_EMPTY_OR(IS_IN_SET(rat_ranking_opts,
+                                                                       zero=None))
     table.rank_transportation_assistance.label = T("Transportation assistance, Rank")
-    table.rank_transportation_assistance.requires = IS_EMPTY_OR(IS_IN_SET(rat_ranking_opts, zero=None))
+    table.rank_transportation_assistance.requires = IS_EMPTY_OR(IS_IN_SET(rat_ranking_opts,
+                                                                          zero=None))
     table.other_assistance_needed.label = T("Other assistance needed")
     table.rank_other_assistance.label = T("Other assistance, Rank")
-    table.rank_other_assistance.requires = IS_EMPTY_OR(IS_IN_SET(rat_ranking_opts, zero=None))
+    table.rank_other_assistance.requires = IS_EMPTY_OR(IS_IN_SET(rat_ranking_opts,
+                                                                 zero=None))
 
     # CRUD strings
     s3.crud_strings[tablename] = rat_section_crud_strings
@@ -1408,7 +1466,9 @@ if deployment_settings.has_module(module):
         "Salvage material usable from destroyed schools",
         "What type of salvage material can be used from destroyed schools?",
         multiple=True)
-    table.schools_salvmat.requires = IS_EMPTY_OR(IS_IN_SET(rat_schools_salvmat_types, zero=None, multiple=True))
+    table.schools_salvmat.requires = IS_EMPTY_OR(IS_IN_SET(rat_schools_salvmat_types,
+                                                           zero=None,
+                                                           multiple=True))
     table.schools_salvmat.represent = lambda opt, set=rat_schools_salvmat_types: \
                                       shn_rat_represent_multiple(set, opt)
 
@@ -1624,8 +1684,10 @@ if deployment_settings.has_module(module):
     shn_rat_label_and_tooltip(table.children_separated,
         "Children separated from their parents/caregivers",
         "Do you know of children separated from their parents or caregivers?")
-    table.children_separated.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts, zero=None))
-    table.children_separated.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt, UNKNOWN_OPT)
+    table.children_separated.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts,
+                                                              zero=None))
+    table.children_separated.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt,
+                                                                                 UNKNOWN_OPT)
 
     shn_rat_label_and_tooltip(table.children_separated_origin,
         "Origin of the separated children",
@@ -1634,20 +1696,26 @@ if deployment_settings.has_module(module):
     shn_rat_label_and_tooltip(table.children_missing,
         "Parents/Caregivers missing children",
         "Do you know of parents/caregivers missing children?")
-    table.children_missing.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts, zero=None))
-    table.children_missing.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt, UNKNOWN_OPT)
+    table.children_missing.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts,
+                                                            zero=None))
+    table.children_missing.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt,
+                                                                               UNKNOWN_OPT)
 
     shn_rat_label_and_tooltip(table.children_orphaned,
         "Children orphaned by the disaster",
         "Do you know of children that have been orphaned by the disaster?")
-    table.children_orphaned.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts, zero=None))
-    table.children_orphaned.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt, UNKNOWN_OPT)
+    table.children_orphaned.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts,
+                                                             zero=None))
+    table.children_orphaned.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt,
+                                                                                UNKNOWN_OPT)
 
     shn_rat_label_and_tooltip(table.children_evacuated,
         "Children that have been sent to safe places",
         "Do you know of children that have been sent to safe places?")
-    table.children_evacuated.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts, zero=None))
-    table.children_evacuated.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt, UNKNOWN_OPT)
+    table.children_evacuated.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts,
+                                                              zero=None))
+    table.children_evacuated.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt,
+                                                                                 UNKNOWN_OPT)
     shn_rat_label_and_tooltip(table.children_evacuated_to,
         "Places the children have been sent to",
         "Where have the children been sent?")
@@ -1655,20 +1723,26 @@ if deployment_settings.has_module(module):
     shn_rat_label_and_tooltip(table.children_unattended,
         "Children living on their own (without adults)",
         "Do you know of children living on their own (without adults)?")
-    table.children_unattended.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts, zero=None))
-    table.children_unattended.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt, UNKNOWN_OPT)
+    table.children_unattended.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts,
+                                                               zero=None))
+    table.children_unattended.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt,
+                                                                                  UNKNOWN_OPT)
 
     shn_rat_label_and_tooltip(table.children_disappeared,
         "Children who have disappeared since the disaster",
         "Do you know of children that have disappeared without explanation in the period since the disaster?")
-    table.children_disappeared.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts, zero=None))
-    table.children_disappeared.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt, UNKNOWN_OPT)
+    table.children_disappeared.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts,
+                                                                zero=None))
+    table.children_disappeared.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt,
+                                                                                   UNKNOWN_OPT)
 
     shn_rat_label_and_tooltip(table.children_with_older_caregivers,
         "Older people as primary caregivers of children",
         "Do you know of older people who are primary caregivers of children?")
-    table.children_with_older_caregivers.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts, zero=None))
-    table.children_with_older_caregivers.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt, UNKNOWN_OPT)
+    table.children_with_older_caregivers.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts,
+                                                                          zero=None))
+    table.children_with_older_caregivers.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt,
+                                                                                             UNKNOWN_OPT)
 
     shn_rat_label_and_tooltip(table.children_in_disabled_homes,
         "Children in homes for disabled children",
@@ -1695,8 +1769,10 @@ if deployment_settings.has_module(module):
     shn_rat_label_and_tooltip(table.people_in_institutions_est_total,
         "Estimated total number of people in institutions",
         "What is the estimated total number of people in all of these institutions?")
-    table.people_in_institutions_est_total.requires = IS_EMPTY_OR(IS_IN_SET(rat_quantity_opts, zero=None))
-    table.people_in_institutions_est_total.represent = lambda opt: rat_quantity_opts.get(opt, UNKNOWN_OPT)
+    table.people_in_institutions_est_total.requires = IS_EMPTY_OR(IS_IN_SET(rat_quantity_opts,
+                                                                            zero=None))
+    table.people_in_institutions_est_total.represent = lambda opt: rat_quantity_opts.get(opt,
+                                                                                         UNKNOWN_OPT)
 
     shn_rat_label_and_tooltip(table.staff_in_institutions_present,
         "Staff present and caring for residents",

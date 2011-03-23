@@ -25,23 +25,29 @@ s3.menu_help = [ T("Help"), True, "#",
 # Auth Menu (available in all screens)
 if not auth.is_logged_in():
 
+    login_next = URL(r=request, args=request.args, vars=request.vars)
+    if request.controller == "default" and \
+       request.function == "user" and \
+       "_next" in request.get_vars:
+           login_next = request.get_vars["_next"]
+
     self_registration = deployment_settings.get_security_self_registration()
 
     if self_registration:
         s3.menu_auth = [T("Login"), True,
-                        URL(request.application, "default", "user/login"),
+                        URL(request.application, "default", "user/login", vars=dict(_next=login_next)),
                 [
                     [T("Login"), False,
-                     URL(request.application, "default", "user/login")],
+                     URL(request.application, "default", "user/login", vars=dict(_next=login_next))],
                     [T("Register"), False,
-                     URL(request.application, "default", "user/register")],
+                     URL(request.application, "default", "user/register", vars=dict(_next=login_next))],
                     [T("Lost Password"), False,
                      URL(request.application, "default", "user/retrieve_password")]
                 ]
             ]
     else:
         s3.menu_auth = [T("Login"), True,
-                        URL(request.application, "default", "user/login"),
+                        URL(request.application, "default", "user/login", vars=dict(_next=login_next)),
                 [
                     [T("Lost Password"), False,
                      URL(request.application, "default", "user/retrieve_password")]
@@ -93,6 +99,7 @@ admin_menu_options = [
     [T("User Management"), False, URL(r=request, c="admin", f="user"), [
         [T("Users"), False, URL(r=request, c="admin", f="user")],
         [T("Roles"), False, URL(r=request, c="admin", f="role")],
+        [T("Organisations"), False, URL(r=request, c="admin", f="organisation")],
         #[T("Roles"), False, URL(r=request, c="admin", f="group")],
         #[T("Membership"), False, URL(r=request, c="admin", f="membership")],
     ]],

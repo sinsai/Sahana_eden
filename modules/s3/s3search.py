@@ -35,13 +35,15 @@
 
 """
 
+import re
+
 from gluon.storage import Storage
 from gluon.http import HTTP
 from gluon.html import *
+from gluon.sqlhtml import CheckboxesWidget
 from gluon.validators import *
 from gluon.serializers import json
 
-from s3rest import S3Method
 from s3crud import S3CRUD
 from s3validators import *
 
@@ -51,7 +53,7 @@ __all__ = ["S3SearchWidget",
            "S3SearchMinMaxWidget",
            "S3SearchSelectWidget",
            "S3SearchLocationWidget",
-           "S3Find",
+           "S3Search",
            "S3LocationSearch",
            "S3PersonSearch"]
 
@@ -486,6 +488,10 @@ class S3SearchSelectWidget(S3SearchWidget):
     """
     Option select widget for option or boolean fields
 
+    Displays a search widget which allows the user to search for records
+    with fields matching a certain criteria.
+
+    Field must be a integer or reference
     """
 
     def widget(self, resource, vars):
@@ -494,13 +500,58 @@ class S3SearchSelectWidget(S3SearchWidget):
 
         @param resource: the resource to search in
         @param vars: the URL GET variables as dict
-
         """
 
-        self.attr = Storage(attr)
+        field = self.field[0]
 
-        raise NotImplementedError
+        if "_name" not in self.attr:
+            self.attr.update(_name="%s_search_select_%s" % (resource.name, field))
+        self.name = self.attr._name
 
+        # Find unique values of options for that field
+        rows = resource.select(field, groupby = resource.table[field] )
+        opt_keys = [row[field] for row in rows if row[field] != None]
+
+        field_type = resource.table[field].type
+
+        # Get the representations for these values
+        if field_type == "integer":
+            # For integers, use the represent function
+            represent = resource.table[field].represent
+            opt_list = [[opt_key, represent(opt_key)] for opt_key in opt_keys]
+        else:
+            # For reference's use the represent string to reduce db calls
+            db = resource.db
+            component_table = db[field_type[10:]]
+
+            # Find the fields which are needed to represent
+
+            fieldnames = re.findall("%\(([a-zA-Z0-9_]*)\)s",self.attr.represent)
+            fieldnames += ["id"]
+            represent_fields = [component_table[fieldname]
+                                for fieldname in fieldnames]
+
+            represent_rows = db(component_table.id.belongs(opt_keys) &
+                                component_table.deleted  == False
+                                ).select(*represent_fields).as_dict()
+            opt_list = []
+            for opt_key in opt_keys:
+                opt_list.append([opt_key, self.attr.represent % represent_rows[opt_key]])
+
+        # Alphabetise (this will not work as it is converted to a dict), look at IS_IN_SET validator or CheckboxesWidget to ensure that the list
+        #opt_list.sort()
+
+        options = dict(opt_list)
+        #for opt in opt_list:
+        #    options[opt[1]] = opt[0]
+
+        # Dummy field to Create check boxes
+        field = Storage(name = self.name,
+                        requires = IS_IN_SET(options,
+                                             multiple = True)
+                        )
+        widget = CheckboxesWidget().widget(field, None, cols = self.attr.cols)
+        return widget
 
     def query(self, resource, value):
         """
@@ -510,6 +561,7 @@ class S3SearchSelectWidget(S3SearchWidget):
         @param value: the value returned from the widget
 
         """
+        return (resource.table[self.field[0]].belongs(value))
         raise NotImplementedError
 
 
@@ -546,7 +598,7 @@ class S3SearchLocationWidget(S3SearchWidget):
 
 
 # *****************************************************************************
-class S3Find(S3CRUD):
+class S3Search(S3CRUD):
     """
     RESTful Search Method for S3Resources
 
@@ -628,6 +680,9 @@ class S3Find(S3CRUD):
 
         format = r.representation
 
+        if r.component and self != self.resource.search:
+            return self.resource.search(r, **attr)
+
         if r.interactive and self.__interactive:
             return self.search_interactive(r, **attr)
         elif format == "aadata" and self.__interactive:
@@ -635,7 +690,7 @@ class S3Find(S3CRUD):
         elif format == "json":
             return self.search_json(r, **attr)
         else:
-            raise HTTP(501, body=self.manager.ERROR.BAD_FORMAT)
+            r.error(501, self.manager.ERROR.BAD_FORMAT)
 
         return dict()
 
@@ -875,17 +930,17 @@ class S3Find(S3CRUD):
                     response.s3.limit = 20
 
             elif not items:
-                items = T("No matching records found.")
+                items = self.crud_string(tablename, "msg_no_match")
 
             output.update(items=items, sortby=sortby)
 
         # Title and subtitle
         title = self.crud_string(tablename, "title_search")
-        subtitle = T("Matching Records")
+        subtitle = self.crud_string(tablename, "msg_match")
         output.update(title=title, subtitle=subtitle)
 
         # View
-        response.view = "find.html"
+        response.view = "search.html"
         return output
 
 
@@ -965,7 +1020,7 @@ class S3Find(S3CRUD):
 
 
 # *****************************************************************************
-class S3LocationSearch(S3Find):
+class S3LocationSearch(S3Search):
     """
     Search method with specifics for location records (hierarchy search)
 
@@ -1102,7 +1157,7 @@ class S3LocationSearch(S3Find):
 
 
 # *****************************************************************************
-class S3PersonSearch(S3Find):
+class S3PersonSearch(S3Search):
     """
     Search method with specifics for person records (full name search)
 

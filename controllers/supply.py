@@ -40,13 +40,19 @@ def item_pack():
 
 
 #==============================================================================
-def shn_item_rheader(r, tabs=[]):
+def shn_item_rheader(r):
 
     """ Resource Header for Items """
 
     if r.representation == "html":
         item = r.record
         if item:
+            tabs = [
+                    (T("Edit Details"), None),
+                    (T("Packs"), "item_pack"),
+                    (T("In Inventories"), "store_item"),
+                    (T("Requested"), "ritem")            
+                   ]            
             rheader_tabs = shn_rheader_tabs(r, tabs)
             category = db(db.supply_item_category.id == item.item_category_id).select(db.supply_item_category.name,
                                                                                       limitby=(0, 1)).first().name
@@ -68,14 +74,6 @@ def item():
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    tabs = [
-            (T("Edit Details"), None),
-            (T("Packs"), "item_pack"),
-            (T("In Inventories"), "store_item"),
-            (T("Requested"), "ritem")            
-           ]
-
-    rheader = lambda r: shn_item_rheader(r, tabs)
-    return s3_rest_controller(prefix, resourcename, rheader=rheader)
+    return s3_rest_controller(prefix, resourcename, rheader=shn_item_rheader)
 
 #==============================================================================

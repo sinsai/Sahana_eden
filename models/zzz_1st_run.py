@@ -910,6 +910,8 @@ if populate:
             module = "org",
             resource = "office",
             popup_label = "Office",
+            filter_field = "type",
+            filter_value = "/1/2/3/4",
             marker_id = db(db.gis_marker.name == "office").select(db.gis_marker.id,
                                                                   limitby=(0, 1)).first().id
         )
@@ -940,10 +942,10 @@ if populate:
         table.insert(
             name = "People",
             module = "pr",
-            resource = "presence",
+            resource = "person",
             popup_label = "Person",
             marker_id = db(db.gis_marker.name == "person").select(db.gis_marker.id,
-                                                                    limitby=(0, 1)).first().id
+                                                                  limitby=(0, 1)).first().id
         )
         table.insert(
             name = "Warehouses",
@@ -973,28 +975,32 @@ if populate:
                 url1 = "http://a.tile.openstreetmap.org/",
                 url2 = "http://b.tile.openstreetmap.org/",
                 url3 = "http://c.tile.openstreetmap.org/",
-                attribution = '<a href="http://www.openstreetmap.org/" target="_blank">OpenStreetMap</a>'
+                attribution = '<a href="http://www.openstreetmap.org/" target="_blank">OpenStreetMap</a>',
+                enabled = False
             )
         table.insert(
                 name = "OpenStreetMap (CycleMap)",
                 url1 = "http://a.tile.opencyclemap.org/cycle/",
                 url2 = "http://b.tile.opencyclemap.org/cycle/",
                 url3 = "http://c.tile.opencyclemap.org/cycle/",
-                attribution = '<a href="http://www.opencyclemap.org/" target="_blank">OpenCycleMap</a>'
+                attribution = '<a href="http://www.opencyclemap.org/" target="_blank">OpenCycleMap</a>',
+                enabled = False
             )
         table.insert(
                 name = "OpenStreetMap (Labels)",
                 url1 = "http://tiler1.censusprofiler.org/labelsonly/",
                 attribution = 'Labels overlay CC-by-SA by <a href="http://oobrien.com/oom/" target="_blank">OpenOrienteeringMap</a>/<a href="http://www.openstreetmap.org/">OpenStreetMap</a> data',
                 base = False,
-                visible = False
+                visible = False,
+                enabled = False
             )
         table.insert(
                 name = "OpenStreetMap (Relief)",
                 url1 = "http://toolserver.org/~cmarqu/hill/",
                 attribution = 'Relief by <a href="http://hikebikemap.de/" target="_blank">Hike &amp; Bike Map</a>',
                 base = False,
-                visible = False
+                visible = False,
+                enabled = False
             )
         table.insert(
                 name = "OpenStreetMap (MapQuest)",
@@ -1002,7 +1008,7 @@ if populate:
                 url2 = "http://otile2.mqcdn.com/tiles/1.0.0/osm/",
                 url3 = "http://otile3.mqcdn.com/tiles/1.0.0/osm/",
                 attribution = 'Tiles Courtesy of <a href="http://open.mapquest.co.uk/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png" border="0">',
-                enabled = False
+                enabled = True
             )
         table.insert(
                 name = "OpenStreetMap (Osmarender)",

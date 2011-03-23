@@ -1,16 +1,10 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
 
 /**
- * @requires OpenLayers/BaseTypes/Class.js
- * @requires OpenLayers/BaseTypes/LonLat.js
- * @requires OpenLayers/BaseTypes/Size.js
- * @requires OpenLayers/BaseTypes/Pixel.js
- * @requires OpenLayers/BaseTypes/Bounds.js
- * @requires OpenLayers/BaseTypes/Element.js
- * @requires OpenLayers/Lang/en.js
+ * requires OpenLayers/Lang.js
  * @requires OpenLayers/Console.js
  */
  
@@ -31,7 +25,7 @@ OpenLayers.String = {
      * 
      * Parameters:
      * str - {String} The string to test.
-     * sub - {Sring} The substring to look for.
+     * sub - {String} The substring to look for.
      *  
      * Returns:
      * {Boolean} The first string starts with the second.
@@ -210,7 +204,7 @@ if (!String.prototype.startsWith) {
      * *Deprecated*. Whether or not a string starts with another string. 
      * 
      * Parameters:
-     * sStart - {Sring} The string we're testing for.
+     * sStart - {String} The string we're testing for.
      *  
      * Returns:
      * {Boolean} Whether or not this string starts with the string passed in.
@@ -464,7 +458,17 @@ OpenLayers.Function = {
      */
     True : function() {
         return true;
-    }
+    },
+    
+    /**
+     * APIFunction: Void
+     * A reusable function that returns ``undefined``.
+     *
+     * Returns:
+     * {undefined}
+     */
+    Void: function() {}
+
 };
 
 if (!Function.prototype.bind) {
@@ -593,7 +597,7 @@ OpenLayers.Date = {
         if ("toISOString" in Date.prototype) {
             return function(date) {
                 return date.toISOString();
-            }
+            };
         } else {
             function pad(num, len) {
                 var str = num + "";
@@ -619,7 +623,7 @@ OpenLayers.Date = {
                         pad(date.getUTCMilliseconds(), 3) + "Z";
                 }
                 return str;
-            }
+            };
         }
 
     })(),
@@ -628,9 +632,11 @@ OpenLayers.Date = {
      * APIMethod: parse
      * Generate a date object from a string.  The format for the string follows
      *     the profile of ISO 8601 for date and time on the Internet (see 
-     *     http://tools.ietf.org/html/rfc3339).  If the parse method on 
-     *     the Date constructor returns a valid date for the given string,
-     *     that method is used.
+     *     http://tools.ietf.org/html/rfc3339).  We don't call the native
+     *     Date.parse because of inconsistency between implmentations.  In 
+     *     Chrome, calling Date.parse with a string that doesn't contain any
+     *     indication of the timezone (e.g. "2011"), the date is interpreted
+     *     in local time.  On Firefox, the assumption is UTC.
      *
      * Parameters:
      * str - {String} A string representing the date (e.g. 
@@ -643,38 +649,31 @@ OpenLayers.Date = {
      */
     parse: function(str) {
         var date;
-        // first check if the native parse method can parse it
-        var elapsed = Date.parse(str);
-        if (!isNaN(elapsed)) {
-            date = new Date(elapsed);
-        } else {
-            var match = str.match(/^(?:(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?)?(?:T(\d{1,2}):(\d{2}):(\d{2}(?:\.\d+)?)(Z|(?:[+-]\d{1,2}(?::(\d{2}))?)))?$/);
-            var date;
-            if (match && (match[1] || match[7])) { // must have at least year or time
-                var year = parseInt(match[1], 10) || 0;
-                var month = (parseInt(match[2], 10) - 1) || 0;
-                var day = parseInt(match[3], 10) || 1;
-                date = new Date(Date.UTC(year, month, day));
-                // optional time
-                var type = match[7];
-                if (type) {
-                    var hours = parseInt(match[4], 10);
-                    var minutes = parseInt(match[5], 10);
-                    var secFrac = parseFloat(match[6]);
-                    var seconds = secFrac | 0;
-                    var milliseconds = Math.round(1000 * (secFrac - seconds));
-                    date.setUTCHours(hours, minutes, seconds, milliseconds);
-                    // check offset
-                    if (type !== "Z") {
-                        var hoursOffset = parseInt(type, 10);
-                        var minutesOffset = parseInt(match[8]) || 0;
-                        var offset = -1000 * (60 * (hoursOffset * 60) + minutesOffset * 60);
-                        date = new Date(date.getTime() + offset);
-                    }
+        var match = str.match(/^(?:(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?)?(?:T(\d{1,2}):(\d{2}):(\d{2}(?:\.\d+)?)(Z|(?:[+-]\d{1,2}(?::(\d{2}))?)))?$/);
+        if (match && (match[1] || match[7])) { // must have at least year or time
+            var year = parseInt(match[1], 10) || 0;
+            var month = (parseInt(match[2], 10) - 1) || 0;
+            var day = parseInt(match[3], 10) || 1;
+            date = new Date(Date.UTC(year, month, day));
+            // optional time
+            var type = match[7];
+            if (type) {
+                var hours = parseInt(match[4], 10);
+                var minutes = parseInt(match[5], 10);
+                var secFrac = parseFloat(match[6]);
+                var seconds = secFrac | 0;
+                var milliseconds = Math.round(1000 * (secFrac - seconds));
+                date.setUTCHours(hours, minutes, seconds, milliseconds);
+                // check offset
+                if (type !== "Z") {
+                    var hoursOffset = parseInt(type, 10);
+                    var minutesOffset = parseInt(match[8], 10) || 0;
+                    var offset = -1000 * (60 * (hoursOffset * 60) + minutesOffset * 60);
+                    date = new Date(date.getTime() + offset);
                 }
-            } else {
-                date = new Date("invalid");
             }
+        } else {
+            date = new Date("invalid");
         }
         return date;
     }

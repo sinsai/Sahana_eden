@@ -26,8 +26,8 @@ function s3_gis_dropdown_select(level, force) {
             // Next level = Level + 1
             var this_url  = s3_gis_url + '/search.json?filter=%3D&field=level&value=L' + (level + 1) + '&parent=' + new_id;
         }
+        var options;
         var s3_gis_load_locations = function(data, status) {
-            var options;
             var v = '';
             if (data.length == 0) {
                 options = s3_gis_empty_set;
@@ -904,18 +904,21 @@ $(function(){
                     
                     // Should we update the existing location?
                     name = $('#gis_location_ :selected').text();
-                    if ( s3_gis_loading_locations.search(name)) {
+                    if ( s3_gis_loading_locations.search(name) ) {
+                        // This is an Update form where the Location hasn't been changed
+                        // Allow the Form's save to continue
+                        return true
                         // @ToDo: Need to distinguish between details from hierarchy & real details
                         // Prompt the user for a name
-                        $('#gis_location_name').after('<div id="type__error" class="error" style="display: block;">Name field is required!</div>');
+                    //    $('#gis_location_name').after('<div id="type__error" class="error" style="display: block;">Name field is required!</div>');
                         // Move focus to this field
-                        $('#gis_location_name').focus();
-                        if (s3_navigate_away_confirm) {
+                    //    $('#gis_location_name').focus();
+                    //    if (s3_navigate_away_confirm) {
                             // Reset the Navigation protection
-                            S3SetNavigateAwayConfirm()
-                        }
+                    //        S3SetNavigateAwayConfirm()
+                    //    }
                         // Prevent the Form's save from continuing
-                        return false;
+                    //    return false;
                     } else {
                         // Check if any details have changed
                         if ((S3.gis.lat == $('#gis_location_lat').val()) && (S3.gis.lon == $('#gis_location_lon').val()) && (S3.gis.addr_street == $('#gis_location_addr_street').val().replace(/\n/g, '%0d')) && (S3.gis.postcode == $('#gis_location_postcode').val())) {
@@ -947,14 +950,13 @@ Ext.onReady(function(){
 
     if (mapButton) {
         mapButton.on('click', function() {
-            // @ToDo: create the window on the first click and reuse on subsequent clicks
             mapWin.show(this);
         });
     }
 
     if (converterButton) {
         converterButton.on('click', function() {
-            // create the window on the first click and reuse on subsequent clicks
+            // Create the window on the first click and reuse on subsequent clicks
             if (!converterWin) {
                 converterWin = new Ext.Window({
                     applyTo: 'gis-convert-win',
@@ -980,7 +982,6 @@ Ext.onReady(function(){
                                 s3_gis_calcDone = false;
                                 $('#DDMMSS_dec').val('');
                                 $('#gps_dec').val('');
-                                //converterWin.hide();
                             }
                         }
                     },{
@@ -990,7 +991,6 @@ Ext.onReady(function(){
                                 s3_gis_calcDone = false;
                                 $('#DDMMSS_dec').val('');
                                 $('#gps_dec').val('');
-                                //converterWin.hide();
                             }
                         }
                     }]

@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -32,7 +32,7 @@ OpenLayers.Control.Navigation = OpenLayers.Class(OpenLayers.Control, {
     dragPan: null,
 
     /**
-     * APIProprety: dragPanOptions
+     * APIProperty: dragPanOptions
      * {Object} Options passed to the DragPan control.
      */
     dragPanOptions: null,
@@ -163,6 +163,7 @@ OpenLayers.Control.Navigation = OpenLayers.Class(OpenLayers.Control, {
         }
 
         var clickCallbacks = { 
+            'click': this.defaultClick,
             'dblclick': this.defaultDblClick, 
             'dblrightclick': this.defaultDblRightClick 
         };
@@ -187,6 +188,18 @@ OpenLayers.Control.Navigation = OpenLayers.Class(OpenLayers.Control, {
                                     this, {"up"  : this.wheelUp,
                                            "down": this.wheelDown},
                                     this.mouseWheelOptions );
+    },
+
+    /**
+     * Method: defaultClick
+     *
+     * Parameters:
+     * evt - {Event}
+     */
+    defaultClick: function (evt) {
+        if (evt.lastTouches && evt.lastTouches.length == 2) {
+            this.map.zoomOut();
+        }
     },
 
     /**

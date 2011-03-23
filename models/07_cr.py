@@ -59,6 +59,7 @@ if deployment_settings.has_module(module):
                             comments(),
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
+
     ADD_SHELTER_SERVICE = T("Add Shelter Service")
     LIST_SHELTER_SERVICES = T("List Shelter Services")
     s3.crud_strings[tablename] = Storage(
@@ -115,23 +116,33 @@ if deployment_settings.has_module(module):
 
     fields_before_hospital = db.Table(None, None,
                                       super_link(db.org_site),
-                                      Field("name", notnull=True),
+                                      Field("name", notnull=True,
+                                            label = T("Shelter Name")),
                                       organisation_id(),
                                       shelter_type_id(),
                                       shelter_service_id(),
                                       location_id(),
-                                      Field("phone"),
-                                      person_id(),
-                                      # Don't show this field -- it will be going away in favor of
-                                      # location -- but preserve it for converting to a location.
-                                      # @ToDo This address field is free format.  If we don't
-                                      # want to try to parse it, could let users convert it to a
-                                      # location by providing a special (temporary) update form.
-                                      Field("address", "text", readable=False, writable=False),
-                                      Field("capacity", "integer"),
-                                      Field("dwellings", "integer"),
-                                      Field("persons_per_dwelling", "integer"),
-                                      Field("area"),
+                                      Field("phone", label = T("Phone"),
+                                            requires = shn_phone_requires),
+                                      Field("address", "text", label=T("Address"), writable=False), # Populated from location_id
+                                      Field("L4", label=deployment_settings.get_gis_locations_hierarchy("L4"), writable=False), # Populated from location_id
+                                      Field("L3", label=deployment_settings.get_gis_locations_hierarchy("L3"), writable=False), # Populated from location_id
+                                      Field("L2", label=deployment_settings.get_gis_locations_hierarchy("L2"), writable=False), # Populated from location_id
+                                      Field("L1", label=deployment_settings.get_gis_locations_hierarchy("L1"), writable=False), # Populated from location_id
+                                      Field("L0", label=deployment_settings.get_gis_locations_hierarchy("L0"), writable=False), # Populated from location_id
+                                      Field("postcode", label=T("Postcode"), writable=False), # Populated from location_id
+                                      person_id(label = T("Contact Person")),
+                                      Field("population", "integer",
+                                            label = T("Population"),
+                                            requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 999999))),
+                                      Field("capacity", "integer",
+                                            label = T("Capacity (Max Persons)"),
+                                            requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 999999))),
+                                      #Field("dwellings", "integer"),
+                                      #Field("persons_per_dwelling", "integer"),
+                                      #Field("area"),
+                                      Field("source",
+                                            label = T("Source")),
                                       document_id())
 
     fields_after_hospital = db.Table(None, None,
@@ -157,18 +168,11 @@ if deployment_settings.has_module(module):
     # they apply to shelters, then we may need to reconsider whether names
     # can be non-unique, *especially* since location is not required.
     table.name.requires = IS_NOT_EMPTY()
-    table.name.label = T("Shelter Name")
-    table.person_id.label = T("Contact Person")
-    table.address.label = T("Address")
-    table.capacity.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 999999))
-    table.capacity.label = T("Capacity (Max Persons)")
-    table.dwellings.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
-    table.dwellings.label = T("Dwellings")
-    table.persons_per_dwelling.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 999))
-    table.persons_per_dwelling.label = T("Max Persons per Dwelling")
-    table.area.label = T("Area")
-    table.phone.label = T("Phone")
-    table.phone.requires = shn_phone_requires
+    #table.dwellings.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
+    #table.dwellings.label = T("Dwellings")
+    #table.persons_per_dwelling.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 999))
+    #table.persons_per_dwelling.label = T("Max Persons per Dwelling")
+    #table.area.label = T("Area")
 
     ADD_SHELTER = T("Add Shelter")
     LIST_SHELTERS = T("List Shelters")
@@ -216,8 +220,12 @@ if deployment_settings.has_module(module):
     s3xrc.model.configure(table,
                           #listadd=False,
                           super_entity=db.org_site,
-                          # Create a role for each shelter
-                          create_onaccept = shn_staff_join_onaccept_func(tablename),
+                          # Update the Address Fields
+                          onvalidation=address_onvalidation,
+                          # Create roles for each shelter
+                          create_onaccept = staff_roles_create_func(tablename),
+                          # Rename roles if record name changes
+                          update_onaccept = staff_roles_update_func(tablename),
                           list_fields=["id",
                                        "name",
                                        "shelter_type_id",
@@ -227,17 +235,21 @@ if deployment_settings.has_module(module):
 
     # Link to shelter from pr_presence
     table = db.pr_presence
-    table.shelter_id.requires = IS_NULL_OR(IS_ONE_OF(db, "cr_shelter.id", "%(name)s", sort=True))
+    table.shelter_id.requires = IS_NULL_OR(IS_ONE_OF(db, "cr_shelter.id",
+                                                     "%(name)s",
+                                                     sort=True))
     table.shelter_id.represent = lambda id: (id and [db.cr_shelter[id].name] or ["None"])[0]
     table.shelter_id.ondelete = "RESTRICT"
     table.shelter_id.comment = DIV(A(ADD_SHELTER,
                                      _class="colorbox",
-                                     _href=URL(r=request, c="cr", f="shelter", args="create", vars=dict(format="popup")),
+                                     _href=URL(r=request, c="cr", f="shelter",
+                                               args="create",
+                                               vars=dict(format="popup")),
                                      _target="top",
                                      _title=ADD_SHELTER),
                                    DIV( _class="tooltip",
                                         _title="%s|%s" % (T("Shelter"),
-                                                          T("The Shelter this Request is from (optional)."))))
+                                                          T("The Shelter this person is checking into."))))
     table.shelter_id.label = T("Shelter")
     table.shelter_id.readable = True
     table.shelter_id.writable = True

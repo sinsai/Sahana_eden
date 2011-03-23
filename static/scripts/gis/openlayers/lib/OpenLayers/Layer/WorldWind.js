@@ -1,4 +1,4 @@
-/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+/* Copyright (c) 2006-2011 by OpenLayers Contributors (see authors.txt for 
  * full list of contributors). Published under the Clear BSD license.  
  * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
@@ -58,20 +58,6 @@ OpenLayers.Layer.WorldWind = OpenLayers.Class(OpenLayers.Layer.Grid, {
         this.params = OpenLayers.Util.applyDefaults(
             this.params, this.DEFAULT_PARAMS
         );
-    },
-    /**
-     * Method: addTile
-     * 
-     * Parameters:
-     * bounds - {<OpenLayers.Bounds>}
-     * position - {<OpenLayers.Pixel>}
-     * 
-     * Returns:
-     * {<OpenLayers.Tile.Image>} The added OpenLayers.Tile.Image
-     */
-    addTile:function(bounds,position) {
-        return new OpenLayers.Tile.Image(this, position, bounds, 
-                                             null, this.tileSize);
     },
 
     /**

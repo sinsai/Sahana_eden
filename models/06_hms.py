@@ -885,7 +885,7 @@ if deployment_settings.has_module(module):
     # -----------------------------------------------------------------------------
     # Hospital Search Method
     #
-    hms_hospital_search = s3base.S3Find(
+    hms_hospital_search = s3base.S3Search(
         #name="hospital_search_simple",
         #label=T("Name and/or ID"),
         #comment=T("To search for a hospital, enter any of the names or IDs of the hospital, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all hospitals."),

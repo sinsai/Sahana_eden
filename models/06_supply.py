@@ -53,7 +53,7 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
                                                  T("The list of Item categories are maintained by the Administrators."))),
                 ondelete = "RESTRICT"
                 )
-    
+
     #==============================================================================
     # Brand
     #
@@ -95,7 +95,7 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
                                _title="%s|%s" % (T("Brand"),
                                                  T("The list of Brands are maintained by the Administrators."))),
                 ondelete = "RESTRICT"
-                )    
+                )
 
     #==============================================================================
     # Item
@@ -105,15 +105,15 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
     table = db.define_table(tablename,
                             item_category_id(),
                             brand_id(),
-                            Field("name", 
+                            Field("name",
                                   label = T("Name/Model/Type"),
-                                  length=128, 
-                                  notnull=True, 
-                                  unique=True),                            
+                                  length=128,
+                                  notnull=True,
+                                  unique=True),
                             Field("year",
-                                  "integer", 
+                                  "integer",
                                   label = T("Year of Manufacture")),
-                            Field("um", 
+                            Field("um",
                                   length=128,
                                   label = T("Unit of Measure"),
                                   notnull=True),
@@ -142,11 +142,11 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
         msg_match = T("Matching Catalog Items"),
         msg_no_match = T("No Matching Catalog Items")
         )
-    
+
     def shn_item_represent(id):
         record = db(db.supply_item.id == id).select(db.supply_item.name,
                                                     db.supply_item.um,
-                                                    limitby=(0, 1)).first()    
+                                                    limitby=(0, 1)).first()
         if not record:
             return NONE
         elif not record.um:
@@ -170,28 +170,28 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
                                _title="%s|%s" % (T("Catalog Item"),
                                                  ADD_ITEM))),
                 ondelete = "RESTRICT"
-                )    
-    
+                )
+
     #------------------------------------------------------------------------------
-    # Update the UM in the supply_item_pack table   
+    # Update the UM in the supply_item_pack table
     def shn_supply_item_onaccept(form):
         item_id = session.rcvars.supply_item
-        
+
         # try to update the existing record
         if db((db.supply_item_pack.item_id == item_id) &
               (db.supply_item_pack.quantity == 1 ) &
-              (db.supply_item_pack.deleted == False ) 
+              (db.supply_item_pack.deleted == False )
               ).update(name = form.vars.um) == 0:
             #Create a new item packet
             db.supply_item_pack.insert(item_id = item_id,
                                        name = form.vars.um,
                                        quantity = 1,
                                        )
-            
+
     # -----------------------------------------------------------------------------
     # Item Search Method
     #
-    shn_item_search = s3base.S3Find(
+    shn_item_search = s3base.S3Search(
         #name="shn_item_search",
         #label=T("Name and/or ID"),
         #comment=T("To search for a hospital, enter any of the names or IDs of the hospital, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all hospitals."),
@@ -202,14 +202,14 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
                     comment=T("Search for an item by text."),
                     field=["name", "comment", "item_category_id$name"]
                   ),
-                  s3base.S3SearchSelectWidget(    
+                  s3base.S3SearchSelectWidget(
                     name="item_search_category",
                     label=T("Category"),
                     comment=T("Search for an item by  category."),
                     field=["item_category_id"],
                     represent ="%(name)s",
                     cols = 3
-                  ),                  
+                  ),
                   ## for testing:
                   #s3base.S3SearchMinMaxWidget(
                     #name="hospital_search_bedcount",
@@ -218,14 +218,14 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
                     #comment=T("Select a range for the number of total beds"),
                     #field=["total_beds"]
                   #)
-        ))       
+        ))
 
     #------------------------------------------------------------------------------
     s3xrc.model.configure(
-        table, 
+        table,
         onaccept = shn_supply_item_onaccept,
         search_method = shn_item_search
-    )     
+    )
     #==============================================================================
     # Item Pack
     #
@@ -258,59 +258,59 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
 
     def shn_item_pack_represent(id):
         record = db((db.supply_item_pack.id == id) &
-                    (db.supply_item_pack.item_id == db.supply_item.id) 
+                    (db.supply_item_pack.item_id == db.supply_item.id)
                     ).select( db.supply_item_pack.name,
                               db.supply_item_pack.quantity,
                               db.supply_item.um,
                               limitby = (0,1)
                              ).first()
-        if record:            
+        if record:
             if record.supply_item_pack.quantity == 1:
-                return record.supply_item_pack.name            
-            else:                
-                return "%s (%s x %s)" % ( record.supply_item_pack.name, 
-                                          record.supply_item_pack.quantity, 
+                return record.supply_item_pack.name
+            else:
+                return "%s (%s x %s)" % ( record.supply_item_pack.name,
+                                          record.supply_item_pack.quantity,
                                           record.supply_item.um )
         else:
             return NONE
 
     # Reusable Field
     item_pack_id = S3ReusableField("item_pack_id", db.supply_item_pack, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, 
+                requires = IS_NULL_OR(IS_ONE_OF(db,
                                                 "supply_item_pack.id",
                                                 shn_item_pack_represent,
                                                 sort=True)),
                 represent = shn_item_pack_represent,
-                label = T("Pack"),    
+                label = T("Pack"),
                 comment = DIV(DIV( _class="tooltip",
                                    _title="%s|%s" % (T("Item Packs"),
                                                      T("The way in which an item is normally distributed"))),
-                              A( ADD_ITEM_PACKET, 
-                                 _class="colorbox", 
-                                 _href=URL(r=request, 
-                                           c="supply", 
-                                           f="item_pack", 
-                                           args="create", 
+                              A( ADD_ITEM_PACKET,
+                                 _class="colorbox",
+                                 _href=URL(r=request,
+                                           c="supply",
+                                           f="item_pack",
+                                           args="create",
                                            vars=dict(format="popup")
-                                           ), 
-                                 _target="top", 
+                                           ),
+                                 _target="top",
                                  _id = "item_pack_add",
                                  _style = "display: none",
-                                 ),                               
+                                 ),
                               ),
                 ondelete = "RESTRICT"
-                )    
-    
+                )
+
     def shn_record_pack_quantity(r):
         item_pack_id = r.get("item_pack_id", None)
         if item_pack_id:
             return shn_get_db_field_value(db,
                                           "supply_item_pack",
                                           "quantity",
-                                          item_pack_id)  
+                                          item_pack_id)
         else:
-            return None  
-        
+            return None
+
     # Virtual Field for pack_quantity
     class item_pack_virtualfields(dict, object):
         def __init__(self,
@@ -322,26 +322,26 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
             elif self.tablename == "req_req_item":
                 item_pack = self.req_req_item.item_pack_id
             elif self.tablename == "req_commit_item":
-                item_pack = self.req_commit_item.item_pack_id       
+                item_pack = self.req_commit_item.item_pack_id
             elif self.tablename == "inv_recv_item":
-                item_pack = self.inv_recv_item.item_pack_id     
+                item_pack = self.inv_recv_item.item_pack_id
             elif self.tablename == "inv_send_item":
-                item_pack = self.inv_send_item.item_pack_id                                                           
+                item_pack = self.inv_send_item.item_pack_id
             else:
                 item_pack = None
             if item_pack:
-                return item_pack.quantity 
+                return item_pack.quantity
             else:
                 return None
-    
+
     #Packs as component of Items
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(supply_item="item_id"))      
-    
-     #==============================================================================   
-    def shn_supply_item_add (quantity_1, pack_quantity_1, 
-                             quantity_2, pack_quantity_2,): 
+                              joinby=dict(supply_item="item_id"))
+
+     #==============================================================================
+    def shn_supply_item_add (quantity_1, pack_quantity_1,
+                             quantity_2, pack_quantity_2,):
         """
         Adds item quantities together, accounting for different pack quantities.
         Returned quantity according to pack_quantity_1
@@ -350,6 +350,6 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
             # Faster calculation
             return quantity_1 + quantity_2
         else:
-            return ((quantity_1*pack_quantity_1) + 
+            return ((quantity_1*pack_quantity_1) +
                     (quantity_2*pack_quantity_2)
                     ) / pack_quantity_1

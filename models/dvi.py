@@ -182,7 +182,7 @@ if deployment_settings.has_module(module):
                                        "date_of_recovery",
                                        "location_id"])
 
-    dvi_body_search = s3base.S3Find(
+    dvi_body_search = s3base.S3Search(
             name = "body_search_simple",
             label = T("ID Tag"),
             comment = T("To search for a body, enter the ID tag number of the body. You may use % as wildcard. Press 'Search' without input to list all bodies."),

@@ -428,7 +428,7 @@ def person():
                     # Inject a flag to say whether this address should be set as the user's Base Location
                     HELP = T("If this is ticked, then this will become the user's Base Location & hence where the user is shown on the Map")
                     output["form"][0].insert(0,
-                                             TR(TD(LABEL("%s: " % T("Base Location?")),
+                                             TR(TD(LABEL("%s?: " % T("Base Location")),
                                                    INPUT(_name="base_location",
                                                          _id="base_location",
                                                          _class="boolean",

@@ -110,8 +110,7 @@ def index():
 
     # Configure redirection and list fields
     register_url = str(URL(r=request, f=resourcename,
-                           args=["[id]", "volunteer"],
-                           vars={"vol_tabs":1}))
+                           args=["[id]", "volunteer"]))
     s3xrc.model.configure(table,
                           create_next=register_url,
                           list_fields=["id",
@@ -406,16 +405,9 @@ def person():
             elif r.component.name == "address":
                 if r.method != "read":
                     table = db.pr_address
-                    table.type.default = 1 # Home Address
                     # Don't want to see in Create forms
                     # inc list_create (list_fields over-rides)
-                    table.address.readable = False
-                    table.L4.readable = False
-                    table.L3.readable = False
-                    table.L2.readable = False
-                    table.L1.readable = False
-                    table.L0.readable = False
-                    table.postcode.readable = False
+                    pr_address_hide(table)
                     # Process Base Location
                     s3xrc.model.configure(table,
                                           onaccept=address_onaccept)
@@ -432,65 +424,23 @@ def person():
 
         if r.interactive and r.component and r.method != "read":
             if r.component.name == "address":
-                query = (db.pr_address.pe_id == r.record.pe_id)
-                if not db(query).select(db.pr_address.id,
-                                        limitby=(0, 1)).first():
-                    # If there are no records yet
-                    # Ensure the 'Add' form is opened by default
-                    del output["showadd_btn"]
-                    # Remove the List part
-                    del output["subtitle"]
-                    del output["items"]
                 try:
                     # Inject a flag to say whether this address should be set as the user's Base Location
                     HELP = T("If this is ticked, then this will become the user's Base Location & hence where the user is shown on the Map")
-                    output["form"][0].insert(2,
-                                             TR(TD(LABEL("%s:" % T("Base Location?")),
+                    output["form"][0].insert(0,
+                                             TR(TD(LABEL("%s?: " % T("Base Location")),
                                                    INPUT(_name="base_location",
                                                          _id="base_location",
                                                          _class="boolean",
                                                          _type="checkbox",
                                                          _value="on"),
-                                                    _class="w2p_fl"),
+                                                   _class="w2p_fl"),
                                                 TD(DIV(_class="tooltip",
                                                        _title="%s|%s" % (T("Base Location"),
                                                                          HELP)))))
                 except:
                     # No form to inject into
                     pass
-
-            elif r.component.name == "identity":
-                query = (db.pr_identity.person_id == r.record.id)
-                if not db(query).select(db.pr_identity.id,
-                                        limitby=(0, 1)).first():
-                    # If there are no records yet
-                    # Ensure the 'Add' form is opened by default
-                    del output["showadd_btn"]
-                    # Remove the List part
-                    del output["subtitle"]
-                    del output["items"]
-
-            elif r.component.name == "pe_contact":
-                query = (db.pr_pe_contact.pe_id == r.record.pe_id)
-                if not db(query).select(db.pr_pe_contact.id,
-                                        limitby=(0, 1)).first():
-                    # If there are no records yet
-                    # Ensure the 'Add' form is opened by default
-                    del output["showadd_btn"]
-                    # Remove the List part
-                    del output["subtitle"]
-                    del output["items"]
-
-            elif r.component.name == "image":
-                query = (db.pr_image.pe_id == r.record.pe_id)
-                if not db(query).select(db.pr_image.id,
-                                        limitby=(0, 1)).first():
-                    # If there are no records yet
-                    # Ensure the 'Add' form is opened by default
-                    del output["showadd_btn"]
-                    # Remove the List part
-                    del output["subtitle"]
-                    del output["items"]
 
         return output
 

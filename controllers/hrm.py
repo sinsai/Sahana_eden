@@ -40,7 +40,7 @@ def index():
     except:
         module_name = T("Volunteer Management")
 
-    return dict()
+    return dict(module_name=module_name)
 
 # =============================================================================
 def human_resource():

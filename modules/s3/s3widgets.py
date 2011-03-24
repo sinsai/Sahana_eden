@@ -43,7 +43,8 @@ __all__ = ["S3DateWidget",
            "S3LocationSelectorWidget",
            "S3CheckboxesWidget",
            "S3MultiSelectWidget",
-           "S3ACLWidget"]
+           "S3ACLWidget",
+           "CheckboxesWidgetS3"]
 
 import copy
 
@@ -1994,5 +1995,58 @@ class S3ACLWidget(CheckboxesWidget):
             #else:
                 #raise SyntaxError, 'widget cannot determine options of %s' \
                     #% field
+
+# -----------------------------------------------------------------------------
+class CheckboxesWidgetS3(OptionsWidget):
+    """
+        S3 version of gluon.sqlhtml.CheckboxesWidget:
+        - supports also integer-type keys in option sets
+    """
+
+    @staticmethod
+    def widget(field, value, **attributes):
+        """
+        generates a TABLE tag, including INPUT checkboxes (multiple allowed)
+
+        see also: :meth:`FormWidget.widget`
+        """
+
+        # was values = re.compile('[\w\-:]+').findall(str(value))
+        values = not isinstance(value,(list,tuple)) and [value] or value
+        values = [str(v) for v in values]
+
+        attr = OptionsWidget._attributes(field, {}, **attributes)
+
+        requires = field.requires
+        if not isinstance(requires, (list, tuple)):
+            requires = [requires]
+        if requires:
+            if hasattr(requires[0], 'options'):
+                options = requires[0].options()
+            else:
+                raise SyntaxError, 'widget cannot determine options of %s' \
+                    % field
+
+        options = [(k, v) for k, v in options if k!='']
+        opts = []
+        cols = attributes.get('cols',1)
+        totals = len(options)
+        mods = totals%cols
+        rows = totals/cols
+        if mods:
+            rows += 1
+
+        for r_index in range(rows):
+            tds = []
+            for k, v in options[r_index*cols:(r_index+1)*cols]:
+                tds.append(TD(INPUT(_type='checkbox', _name=field.name,
+                         requires=attr.get('requires',None),
+                         hideerror=True, _value=k,
+                         value=(str(k) in values)), v))
+            opts.append(TR(tds))
+
+        if opts:
+            opts[-1][0][0]['hideerror'] = False
+        return TABLE(*opts, **attr)
 
 # -----------------------------------------------------------------------------

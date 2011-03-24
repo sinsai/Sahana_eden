@@ -588,6 +588,8 @@ table = db.define_table(tablename,
                         Field("parent", "reference org_office", # This form of hierarchy may not work on all Databases
                               label = T("Parent Office")),
                         location_id(),
+                        Field("building_name", "text", label=T("Building Name"),
+                              writable=False), # Populated from location_id
                         Field("address", "text", label=T("Address"),
                               writable=False), # Populated from location_id
                         Field("L4",

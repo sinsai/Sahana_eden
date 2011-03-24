@@ -619,7 +619,7 @@ class S3CRUD(S3Method):
             output.update(form=form)
 
             # Add delete and list buttons
-            buttons = self.insert_buttons(r, "delete", "list",
+            buttons = self.insert_buttons(r, "delete",
                                           record_id=record_id)
             if buttons:
                 output.update(buttons)

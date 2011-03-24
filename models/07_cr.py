@@ -124,12 +124,25 @@ if deployment_settings.has_module(module):
                                       location_id(),
                                       Field("phone", label = T("Phone"),
                                             requires = shn_phone_requires),
-                                      Field("address", "text", label=T("Address"), writable=False), # Populated from location_id
-                                      Field("L4", label=deployment_settings.get_gis_locations_hierarchy("L4"), writable=False), # Populated from location_id
-                                      Field("L3", label=deployment_settings.get_gis_locations_hierarchy("L3"), writable=False), # Populated from location_id
-                                      Field("L2", label=deployment_settings.get_gis_locations_hierarchy("L2"), writable=False), # Populated from location_id
-                                      Field("L1", label=deployment_settings.get_gis_locations_hierarchy("L1"), writable=False), # Populated from location_id
-                                      Field("L0", label=deployment_settings.get_gis_locations_hierarchy("L0"), writable=False), # Populated from location_id
+                                      Field("building_name", "text", label=T("Building Name"),
+                                            writable=False), # Populated from location_id
+                                      Field("address", "text", label=T("Address"),
+                                            writable=False), # Populated from location_id
+                                      Field("L4",
+                                            label=deployment_settings.get_gis_locations_hierarchy("L4"),
+                                            writable=False), # Populated from location_id
+                                      Field("L3",
+                                            label=deployment_settings.get_gis_locations_hierarchy("L3"),
+                                            writable=False), # Populated from location_id
+                                      Field("L2",
+                                            label=deployment_settings.get_gis_locations_hierarchy("L2"),
+                                            writable=False), # Populated from location_id
+                                      Field("L1",
+                                            label=deployment_settings.get_gis_locations_hierarchy("L1"),
+                                            writable=False), # Populated from location_id
+                                      Field("L0",
+                                            label=deployment_settings.get_gis_locations_hierarchy("L0"),
+                                            writable=False), # Populated from location_id
                                       Field("postcode", label=T("Postcode"), writable=False), # Populated from location_id
                                       person_id(label = T("Contact Person")),
                                       Field("population", "integer",

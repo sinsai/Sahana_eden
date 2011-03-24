@@ -1091,6 +1091,7 @@ class S3LocationSelectorWidget(FormWidget):
     var s3_gis_select_location = '<option value="" selected>%s...</option>';
     var s3_gis_url = '%s';
     S3.gis.uuid = '%s';
+    S3.gis.name = '%s';
     S3.gis.addr_street = '%s';
     S3.gis.postcode = '%s';
     S3.gis.lat = '%s';
@@ -1109,6 +1110,7 @@ class S3LocationSelectorWidget(FormWidget):
            select_location,
            url,
            uuid,
+           represent,
            addr_street_encoded,
            postcode,
            lat or "",
@@ -1148,7 +1150,7 @@ class S3LocationSelectorWidget(FormWidget):
                            _class="hidden")
 
         # Buttons
-        search_button = A(T("Search Locations"),
+        search_button = A(T("Search Existing Locations"),
                           _style="cursor:pointer; cursor:hand",
                           _id="gis_location_search-btn")
 
@@ -1258,7 +1260,7 @@ class S3LocationSelectorWidget(FormWidget):
         #                    TR(INPUT(_id="gis_location_name", _value=represent)))
         #else:
         name_rows = DIV(TR(name_label),
-                        TR(INPUT(_id="gis_location_name", _class="hidden")))
+                        TR(INPUT(_id="gis_location_name", _value=represent, _class="hidden")))
         street_rows = DIV(TR(street_label),
                           # @ToDo: Enable Geocoder here when ready
                           #TR(street_widget, geocoder_button, _id="gis_location_addr_street_row", _class="hidden"))
@@ -1275,8 +1277,8 @@ class S3LocationSelectorWidget(FormWidget):
         return TAG[""](
                         #divider,           # This is in the widget, so underneath the label :/ Add in JS? 'Sections'?
                         TR(INPUT(**attr)),  # Real input, which is hidden
-                        dropdowns,
                         TR(TD(search_button, autocomplete)),
+                        dropdowns,
                         TR(TD(add_button, cancel_button)),
                         TR(gps_converter_popup),
                         TR(map_popup),

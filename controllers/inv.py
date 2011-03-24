@@ -66,13 +66,7 @@ def wh():
             if r.method != "read":
                 # Don't want to see in Create forms
                 # inc list_create (list_fields over-rides)
-                table.address.readable = False
-                table.L4.readable = False
-                table.L3.readable = False
-                table.L2.readable = False
-                table.L1.readable = False
-                table.L0.readable = False
-                table.postcode.readable = False
+                pr_address_hide(table)
                 # Process Base Location
                 #s3xrc.model.configure(table,
                 #                      onaccept=address_onaccept)

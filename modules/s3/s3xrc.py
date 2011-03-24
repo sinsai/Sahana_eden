@@ -514,9 +514,12 @@ class S3ResourceController(object):
             text = val = value
 
         # Always XML-escape content markup
-        if not xml_escape and val is not None and \
-           str(field.type) in ("string", "list:string", "text"):
-            val = text = self.xml.xml_encode(str(val))
+        if not xml_escape and val is not None:
+            ftype = str(field.type)
+            if ftype in ("string", "text"):
+                val = text = self.xml.xml_encode(str(val))
+            elif ftype == "list:string":
+                val = text = [self.xml.xml_encode(str(v)) for v in val]
 
         # Get text representation
         if field.represent:

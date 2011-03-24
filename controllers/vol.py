@@ -332,12 +332,12 @@ def person():
 
     tabs = [
             (T("Basic Details"), None),
+            (T("Availability"), "volunteer"),
             (T("Address"), "address"),
             (T("Identity"), "identity"),
             (T("Contact Data"), "pe_contact"),
             #(T("Teams"), "group_membership"),
             (T("Skills"), "credential"),
-            (T("Availability"), "volunteer"),
             (T("Images"), "image"),
            ]
 
@@ -415,6 +415,12 @@ def person():
             # Only display active volunteers
             response.s3.filter = (table.id == db.vol_volunteer.person_id) & \
                                  (db.vol_volunteer.status == 1)
+            # Alternate approach: Don't display Staff
+            #query = (db.org_staff.id > 0)
+            #if db(query).select(db.org_staff.id,
+            #                    limitby=(0, 1)).first():
+            #    # The filter fails if there are no records in org_staff!
+            #    response.s3.filter = (table.id != db.org_staff.person_id)
 
         return True
 

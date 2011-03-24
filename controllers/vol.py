@@ -307,6 +307,12 @@ def register():
     return dict(form=form)
 
 # -----------------------------------------------------------------------------
+def vol_onaccept(form):
+    """ Create a vol/volunteer record """
+    db.vol_volunteer.insert(person_id=form.vars.id,
+                            status=1)
+    return
+
 def person():
 
     """
@@ -328,6 +334,7 @@ def person():
     register_url = str(URL(r=request, f=resourcename,
                            args=["[id]", "volunteer"]))
     s3xrc.model.configure(table,
+                          create_onaccept=vol_onaccept,
                           create_next=register_url)
 
     tabs = [
@@ -415,7 +422,7 @@ def person():
             # Only display active volunteers
             response.s3.filter = (table.id == db.vol_volunteer.person_id) & \
                                  (db.vol_volunteer.status == 1)
-            # Alternate approach: Don't display Staff
+            # Alternate approach: Don't display Staff (Creates Duplicate Rows!)
             #query = (db.org_staff.id > 0)
             #if db(query).select(db.org_staff.id,
             #                    limitby=(0, 1)).first():

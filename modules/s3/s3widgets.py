@@ -620,6 +620,8 @@ class S3LocationSelectorWidget(FormWidget):
         @author: Fran Boon (fran@aidiq.com)
 
         @see: http://eden.sahanafoundation.org/wiki/BluePrintGISLocationSelector
+
+        @ToDo: Need to allow Projects/Documents to be linked to a generic Lx Location.
     """
 
     def __init__(self,
@@ -629,7 +631,6 @@ class S3LocationSelectorWidget(FormWidget):
                  request,
                  response,
                  T,
-                 #hierarchy=True    # @ToDo: Force selection of the hierarchy (useful when we have that data fully-populated)
                  #level=None        # @ToDo: Support forcing which level of the hierarchy is expected to be entered for this instance of the field
                  ):
 
@@ -639,6 +640,13 @@ class S3LocationSelectorWidget(FormWidget):
         self.request = request
         self.response = response
         self.T = T
+
+        # Options
+        # some will be deployment_settings & some will be set by the Modes
+
+        # Mode: Site/Address
+        self.open_details = True        # have the 'Location Details' options open by default
+        #self.specific_required = True   # Prevent saving to an Lx location (This is the current default anyway)
 
 
     def __call__(self, field, value, **attributes):
@@ -657,6 +665,13 @@ class S3LocationSelectorWidget(FormWidget):
         locations = db.gis_location
 
         # Read Options
+        if self.open_details:
+            details_hidden = ""
+            details_button_hidden = "hidden"
+        else:
+            details_hidden = "hidden"
+            details_button_hidden = ""
+        
         countries = response.s3.gis.countries  # Also needed by location_represent hence want to keep in model, so useful not to repeat
         # Should we use a Map-based selector?
         map_selector = deployment_settings.get_gis_map_selector()
@@ -671,7 +686,8 @@ class S3LocationSelectorWidget(FormWidget):
         # What is the maximum level of hierarchy?
         max_hierarchy = deployment_settings.get_gis_max_hierarchy()
         # Is full hierarchy mandatory?
-        strict = deployment_settings.get_gis_strict_hierarchy()
+        #strict = deployment_settings.get_gis_strict_hierarchy()
+        # @ToDo: Do soem client-side validation based on this flag
 
         # Navigate Away Confirm?
         if deployment_settings.get_ui_navigate_away_confirm():
@@ -944,34 +960,28 @@ class S3LocationSelectorWidget(FormWidget):
             attr_dropdown["_id"] = "gis_location_%s" % level
             # Need to blank the name to prevent it from appearing in form.vars & requiring validation
             attr_dropdown["_name"] = ""
+            widget = SELECT(*opts, **attr_dropdown)
+            if level:
+                label = LABEL(location_hierarchy[level], ":",
+                              _id="gis_location_label_%s" % level)
+            else:
+                label = LABEL(T("Specific Location"), ":",
+                              _id="gis_location_label_%s" % level)
+
             if visible or (level == "L1" and response.s3.gis.level1_dropdown) or \
                           (level == "L2" and response.s3.gis.level2_dropdown) or \
                           (level == "L3" and response.s3.gis.level3_dropdown):
-                if level:
-                    label = LABEL(location_hierarchy[level], ":",
-                                  _id="gis_location_label_%s" % level)
-                else:
-                    label = LABEL(T("Specific Location"), ":",
-                                  _id="gis_location_label_%s" % level)
+                row_hidden = ""
             else:
-                # Hide the Dropdown & the Label
-                attr_dropdown["_class"] = "hidden"
-                if level:
-                    label = LABEL(location_hierarchy[level], ":",
-                                  _id="gis_location_label_%s" % level,
-                                  _class="hidden")
-                else:
-                    label = LABEL(T("Specific Location"), ":",
-                                  _id="gis_location_label_%s" % level,
-                                  _class="hidden")
+                row_hidden = "hidden"
+            row = DIV(TR(TD(label),
+                         _id="gis_location_%s_label__row" % level,
+                         _class=row_hidden),
+                      TR(TD(widget),
+                         TD(button),
+                         _id="gis_location_%s__row" % level,
+                         _class=row_hidden))
 
-            widget = SELECT(*opts, **attr_dropdown)
-            if button:
-                row = DIV(TR(label, _id="gis_location_%s_label__row" % level),
-                          TR(TD(widget, _id="gis_location_%s__row" % level), TD(button)))
-            else:
-                row = DIV(TR(label, _id="gis_location_%s_label__row" % level),
-                          TR(widget, _id="gis_location_%s__row" % level))
             return row
 
         dropdowns = DIV()
@@ -1067,6 +1077,8 @@ class S3LocationSelectorWidget(FormWidget):
             visible = True
         else:
             visible = False
+        if self.open_details:
+            visible = False
         if visible:
             button = A(T("Location Details"),
                        _style="cursor:pointer; cursor:hand",
@@ -1126,17 +1138,21 @@ class S3LocationSelectorWidget(FormWidget):
           )
 
         # Labels
-        name_label = DIV(LABEL("%s:" % T("Name")),
+        name_label = DIV(LABEL("%s:" % T("Building Name")),
                          #SPAN("*", _class="req"),
-                         _id="gis_location_name_label", _class="hidden")
-        street_label = LABEL("%s:" % T("Street Address"),
-                       _id="gis_location_addr_street_label", _class="hidden")
-        postcode_label = LABEL("%s:" % T("Postcode"),
-                         _id="gis_location_postcode_label", _class="hidden")
-        lat_label = LABEL("%s:" % T("Latitude"),
-                    _id="gis_location_lat_label", _class="hidden")
-        lon_label = LABEL("%s:" % T("Longitude"),
-                    _id="gis_location_lon_label", _class="hidden")
+                         _id="gis_location_name_label", _class=details_hidden)
+        street_label = TR(LABEL("%s:" % T("Street Address")),
+                          _id="gis_location_addr_street_label",
+                          _class=details_hidden)
+        postcode_label = TR(LABEL("%s:" % T("Postcode")),
+                            _id="gis_location_postcode_label",
+                            _class=details_hidden)
+        lat_label = TR(LABEL("%s:" % T("Latitude")),
+                       _id="gis_location_lat_label",
+                       _class="hidden")
+        lon_label = TR(LABEL("%s:" % T("Longitude")),
+                       _id="gis_location_lon_label",
+                       _class="hidden")
 
         # Form Fields
         street_widget = TEXTAREA(addr_street, _id="gis_location_addr_street")
@@ -1155,25 +1171,31 @@ class S3LocationSelectorWidget(FormWidget):
                           _style="cursor:pointer; cursor:hand",
                           _id="gis_location_search-btn")
 
-        add_button = A(T("Add New Location"),
+        add_button = A(T("Create New Location"),
                        _style="cursor:pointer; cursor:hand",
-                       _id="gis_location_add-btn")
+                       _id="gis_location_add-btn",
+                       _class=details_button_hidden)
 
         cancel_button = A(T("Cancel Add"),
                           _style="cursor:pointer; cursor:hand",
                           _id="gis_location_cancel-btn",
                           _class="hidden")
 
+        details_hide_button = A(T("Hide Details"),
+                                _style="cursor:pointer; cursor:hand",
+                                _id="gis_location_details_hide-btn",
+                                _class="hidden")
+
         geolocate_button = A(T("Use Current Location"),
                              _style="cursor:pointer; cursor:hand",
                              _id="gis_location_geolocate-btn",
-                             _class="hidden")
+                             _class=details_hidden)
 
         if map_selector:
             map_button = A(T("Place on Map"),
                            _style="cursor:pointer; cursor:hand",
                            _id="gis_location_map-btn",
-                           _class="hidden")
+                           _class=details_hidden)
         else:
             map_button = ""
 
@@ -1189,7 +1211,7 @@ class S3LocationSelectorWidget(FormWidget):
                                       _id="gis_location_advanced_checkbox",
                                       value=""),
                                 _id="gis_location_advanced_div",
-                                _class="hidden")
+                                _class=details_hidden)
 
         # @ToDo: Replace with simple alternate input forms: Radio button defaults to decimal degrees (real inputs), but can select GPS or DDMMSS
         gps_converter_popup = DIV(
@@ -1261,17 +1283,24 @@ class S3LocationSelectorWidget(FormWidget):
         #                    TR(INPUT(_id="gis_location_name", _value=represent)))
         #else:
         name_rows = DIV(TR(name_label),
-                        TR(INPUT(_id="gis_location_name", _value=represent, _class="hidden")))
-        street_rows = DIV(TR(street_label),
+                        TR(INPUT(_id="gis_location_name", _value=represent,
+                                 _class=details_hidden),
+                           details_hide_button))
+        street_rows = DIV(street_label,
                           # @ToDo: Enable Geocoder here when ready
                           #TR(street_widget, geocoder_button, _id="gis_location_addr_street_row", _class="hidden"))
-                          TR(street_widget, _id="gis_location_addr_street_row", _class="hidden"))
-        postcode_rows = DIV(TR(postcode_label),
-                        TR(postcode_widget, _id="gis_location_postcode_row", _class="hidden"))
-        lat_rows = DIV(TR(lat_label),
-                       TR(lat_widget, latlon_help, _id="gis_location_lat_row", _class="hidden"))
-        lon_rows = DIV(TR(lon_label),
-                       TR(lon_widget, converter_button, _id="gis_location_lon_row", _class="hidden"))
+                          TR(street_widget, _id="gis_location_addr_street_row",
+                             _class=details_hidden))
+        postcode_rows = DIV(postcode_label,
+                            TR(postcode_widget,
+                               _id="gis_location_postcode_row",
+                               _class=details_hidden))
+        lat_rows = DIV(lat_label,
+                       TR(lat_widget, latlon_help, _id="gis_location_lat_row",
+                          _class="hidden"))
+        lon_rows = DIV(lon_label,
+                       TR(lon_widget, converter_button,
+                          _id="gis_location_lon_row", _class="hidden"))
         divider = TR("------------------------------------------------------------------")
 
         # The overall layout of the components

@@ -425,6 +425,14 @@ def person():
         if r.interactive and r.component and r.method != "read":
             if r.component.name == "address":
                 try:
+                    if not output.items:
+                        # There are no records yet, default the Base Location to On & Hide option
+                        checked = "on"
+                        hidden = "hidden"
+                    else:
+                        checked = "off"
+                        hidden = ""
+
                     # Inject a flag to say whether this address should be set as the user's Base Location
                     HELP = T("If this is ticked, then this will become the user's Base Location & hence where the user is shown on the Map")
                     output["form"][0].insert(0,
@@ -433,11 +441,13 @@ def person():
                                                          _id="base_location",
                                                          _class="boolean",
                                                          _type="checkbox",
-                                                         _value="on"),
+                                                         _value="on",
+                                                         value=checked),
                                                    _class="w2p_fl"),
                                                 TD(DIV(_class="tooltip",
                                                        _title="%s|%s" % (T("Base Location"),
-                                                                         HELP)))))
+                                                                         HELP))),
+                                                _class=hidden))
                 except:
                     # No form to inject into
                     pass

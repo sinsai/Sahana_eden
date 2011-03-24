@@ -499,7 +499,7 @@ class S3CRUD(S3Method):
 
         elif representation == "json":
             exporter = S3Exporter(self.manager)
-            return exporter.json(self.resource, fields=fields)
+            return exporter.json(self.resource)
 
         else:
             r.error(501, self.manager.ERROR.BAD_FORMAT)
@@ -976,8 +976,7 @@ class S3CRUD(S3Method):
             exporter = S3Exporter(self.manager)
             return exporter.json(self.resource,
                                  start=start,
-                                 limit=limit,
-                                 fields=fields)
+                                 limit=limit)
 
         else:
             r.error(501, self.manager.ERROR.BAD_FORMAT)

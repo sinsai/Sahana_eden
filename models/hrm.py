@@ -132,13 +132,33 @@ if deployment_settings.has_module(prefix):
     # =========================================================================
     # Availability
     #
+    weekdays = {
+        1: T("Monday"),
+        2: T("Tuesday"),
+        3: T("Wednesday"),
+        4: T("Thursday"),
+        5: T("Friday"),
+        6: T("Saturday"),
+        7: T("Sunday")
+    }
+    weekdays_represent = lambda opt: ",".join([str(weekdays[o]) for o in opt])
+    
+    from gluon.sqlhtml import CheckboxesWidget
+
     resourcename = "availability"
     tablename = "hrm_availability"
     table = db.define_table(tablename,
                             human_resource_id(),
                             Field("date_start", "date"),
                             Field("date_end", "date"),
-                            Field("day_of_week", "integer"),
+                            Field("day_of_week", "list:integer",
+                                  requires=IS_EMPTY_OR(IS_IN_SET(weekdays,
+                                                                 zero=None,
+                                                                 multiple=True)),
+                                  default=[1, 2, 3, 4, 5],
+                                  widget=CheckboxesWidgetS3.widget,
+                                  represent=weekdays_represent
+                                 ),
                             Field("hours_start", "time"),
                             Field("hours_end", "time"),
                             #location_id(label=T("Available for Location"),

@@ -432,6 +432,9 @@ class S3Exporter(object):
 
         response = self.manager.response
 
+        if fields is None:
+            fields = [f for f in resource.table if f.readable]
+
         attributes = dict()
 
         if orderby is not None:

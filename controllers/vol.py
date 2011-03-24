@@ -425,7 +425,7 @@ def person():
         if r.interactive and r.component and r.method != "read":
             if r.component.name == "address":
                 try:
-                    if not output.items:
+                    if not output["items"]:
                         # There are no records yet, default the Base Location to On & Hide option
                         checked = "on"
                         hidden = "hidden"

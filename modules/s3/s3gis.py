@@ -609,7 +609,7 @@ class GIS(object):
                         else:
                             results[ancestor.level] = ancestor.id
 
-            if name:
+            if names:
                 # For the address_onvalidation we need to ensure we have form.vars
                 # entries for all levels
                 for key in ["L0", "L1", "L2", "L3", "L4"]:

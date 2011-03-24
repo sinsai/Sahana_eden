@@ -148,7 +148,7 @@ if deployment_settings.has_module("inv"):
     #------------------------------------------------------------------------------
     # Recv Search Method
     #
-    shn_inv_item_search = s3base.S3Find(
+    shn_inv_item_search = s3base.S3Search(
         #name="shn_item_search",
         #label=T("Name and/or ID"),
         #comment=T("To search for a hospital, enter any of the names or IDs of the hospital, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all hospitals."),
@@ -329,7 +329,7 @@ if deployment_settings.has_module("inv"):
     #------------------------------------------------------------------------------
     # Recv Search Method
     #
-    shn_recv_search = s3base.S3Find(
+    shn_recv_search = s3base.S3Search(
         #name="shn_item_search",
         #label=T("Name and/or ID"),
         #comment=T("To search for a hospital, enter any of the names or IDs of the hospital, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all hospitals."),

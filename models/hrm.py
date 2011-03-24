@@ -63,7 +63,7 @@ if deployment_settings.has_module(prefix):
                                         label = T("Human Resource"),
                                         ondelete = "RESTRICT")
 
-    human_resource_search = s3base.S3Find(
+    human_resource_search = s3base.S3Search(
                                 name="human_resource_search_simple",
                                 label=T("Name"),
                                 comment=T("To search for a person, enter any of the first, middle or last names, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons."),

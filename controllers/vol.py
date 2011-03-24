@@ -110,8 +110,7 @@ def index():
 
     # Configure redirection and list fields
     register_url = str(URL(r=request, f=resourcename,
-                           args=["[id]", "volunteer"],
-                           vars={"vol_tabs":1}))
+                           args=["[id]", "volunteer"]))
     s3xrc.model.configure(table,
                           create_next=register_url,
                           list_fields=["id",
@@ -142,8 +141,8 @@ def index():
         response.s3.actions = []
 
         # Button labels
-        REGISTER = T("Register")
-        DETAILS = T("Details")
+        REGISTER = str(T("Register"))
+        DETAILS = str(T("Details"))
 
         if not r.component:
             open_button_label = DETAILS
@@ -346,12 +345,19 @@ def person():
     def prep(r):
         if r.interactive:
 
+            table = r.table
+            # Assume volunteers only between 12-81
+            #table.date_of_birth.widget = S3DateWidget(past=972, future=-144)
+
             # Hide fields
-            table = db.pr_person
+            #table.preferred_name.readable = table.preferred_name.writable = False
+            table.local_name.readable = table.local_name.writable = False
             table.pe_label.readable = table.pe_label.writable = False
             table.missing.readable = table.missing.writable = False
             table.tags.readable = table.tags.writable = False
             table.age_group.readable = table.age_group.writable = False
+            table.religion.readable = table.religion.writable = False
+            table.marital_status.readable = table.marital_status.writable = False
 
             # CRUD strings
             ADD_VOL = T("Add Volunteer")
@@ -394,21 +400,14 @@ def person():
                                                    "group_id",
                                                    "group_head",
                                                    "description"])
-    
+
 
             elif r.component.name == "address":
                 if r.method != "read":
                     table = db.pr_address
-                    table.type.default = 1 # Home Address
                     # Don't want to see in Create forms
                     # inc list_create (list_fields over-rides)
-                    table.address.readable = False
-                    table.L4.readable = False
-                    table.L3.readable = False
-                    table.L2.readable = False
-                    table.L1.readable = False
-                    table.L0.readable = False
-                    table.postcode.readable = False
+                    pr_address_hide(table)
                     # Process Base Location
                     s3xrc.model.configure(table,
                                           onaccept=address_onaccept)
@@ -419,23 +418,23 @@ def person():
 
         return True
 
-        
+
     # Post-process
     def postp(r, output):
 
-        if r.interactive and r.component and r.component.name == "address":
-            if r.method != "read":
+        if r.interactive and r.component and r.method != "read":
+            if r.component.name == "address":
                 try:
                     # Inject a flag to say whether this address should be set as the user's Base Location
                     HELP = T("If this is ticked, then this will become the user's Base Location & hence where the user is shown on the Map")
-                    output['form'][0].insert(2,
-                                             TR(TD(LABEL("%s:" % T("Base Location?")),
+                    output["form"][0].insert(0,
+                                             TR(TD(LABEL("%s?: " % T("Base Location")),
                                                    INPUT(_name="base_location",
                                                          _id="base_location",
                                                          _class="boolean",
                                                          _type="checkbox",
                                                          _value="on"),
-                                                    _class="w2p_fl"),
+                                                   _class="w2p_fl"),
                                                 TD(DIV(_class="tooltip",
                                                        _title="%s|%s" % (T("Base Location"),
                                                                          HELP)))))
@@ -449,7 +448,7 @@ def person():
     response.s3.prep = prep
     response.s3.postp = postp
 
-        
+
     output = s3_rest_controller(_prefix, resourcename,
                                 rheader=lambda r: vol_rheader(r, tabs))
 

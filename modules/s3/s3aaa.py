@@ -96,24 +96,24 @@ class AuthS3(Auth):
 
         self.deployment_settings = deployment_settings
         self.session = self.environment.session
-        T = environment["T"]
 
         self.settings.lock_keys = False
         self.settings.username_field = False
         self.settings.lock_keys = True
         self.messages.lock_keys = False
-        self.messages.registration_pending_approval = T("Account registered, however registration is still pending approval - please wait until confirmation received.")
-        self.messages.email_approver_failed = T("Failed to send mail to Approver (%s)- Please contact them directly") % deployment_settings.get_mail_approver()
-        self.messages.email_sent = T("Verification Email sent - please check your email to validate. If you do not receive this email please check you junk email or spam filters")
-        self.messages.email_verified = T("Email verified - you can now login")
-        self.messages.duplicate_email = T("This email address is already in use")
-        self.messages.registration_disabled = T("Registration Disabled!")
-        self.messages.label_utc_offset = T("UTC Offset")
-        self.messages.help_utc_offset = T("The time difference between UTC and your timezone, specify as +HHMM for eastern or -HHMM for western timezones.")
-        self.messages.label_mobile_phone = T("Mobile Phone")
-        self.messages.help_mobile_phone = T("Entering a phone number is optional, but doing so allows you to subscribe to receive SMS messages.")
-        self.messages.label_organisation = T("Organisation")
-        self.messages.help_organisation = T("Entering an Organisation is optional, but doing so directs you to the appropriate approver & means you automatically get the appropriate permissions.")
+        self.messages.registration_pending_approval = "Account registered, however registration is still pending approval - please wait until confirmation received."
+        self.messages.email_approver_failed = "Failed to send mail to Approver - see if you can notify them manually!"
+        self.messages.email_sent = "Verification Email sent - please check your email to validate. If you do not receive this email please check you junk email or spam filters"
+        self.messages.email_verified = "Email verified - you can now login"
+        self.messages.duplicate_email = "This email address is already in use"
+        self.messages.registration_disabled = "Registration Disabled!'"
+        self.messages.registration_verifying = "You haven't yet Verified your account - please check your email"
+        self.messages.label_utc_offset = "UTC Offset"
+        self.messages.help_utc_offset = "The time difference between UTC and your timezone, specify as +HHMM for eastern or -HHMM for western timezones."
+        self.messages.label_mobile_phone = "Mobile Phone"
+        self.messages.help_mobile_phone = "Entering a phone number is optional, but doing so allows you to subscribe to receive SMS messages."
+        self.messages.label_organisation = "Organisation"
+        self.messages.help_organisation = "Entering an Organisation is optional, but doing so directs you to the appropriate approver & means you automatically get the appropriate permissions."
         self.messages.lock_keys = True
 
         self.permission = S3Permission(self, environment)
@@ -633,7 +633,7 @@ class AuthS3(Auth):
                    not settings.mailer.send(to=form.vars.email,
                                             subject=messages.verify_email_subject,
                                             message=messages.verify_email % dict(key=key)):
-                    db.rollback() # Do we wish to prevent registration if the approver mail fails to send?
+                    db.rollback()
                     response.error = messages.invalid_email
                     return form
                 session.confirmation = messages.email_sent

@@ -44,7 +44,6 @@ from gluon.sqlhtml import CheckboxesWidget
 from gluon.validators import *
 from gluon.serializers import json
 
-from s3rest import S3Method
 from s3crud import S3CRUD
 from s3validators import *
 
@@ -54,7 +53,7 @@ __all__ = ["S3SearchWidget",
            "S3SearchMinMaxWidget",
            "S3SearchSelectWidget",
            "S3SearchLocationWidget",
-           "S3Find",
+           "S3Search",
            "S3LocationSearch",
            "S3PersonSearch"]
 
@@ -599,7 +598,7 @@ class S3SearchLocationWidget(S3SearchWidget):
 
 
 # *****************************************************************************
-class S3Find(S3CRUD):
+class S3Search(S3CRUD):
     """
     RESTful Search Method for S3Resources
 
@@ -681,6 +680,9 @@ class S3Find(S3CRUD):
 
         format = r.representation
 
+        if r.component and self != self.resource.search:
+            return self.resource.search(r, **attr)
+
         if r.interactive and self.__interactive:
             return self.search_interactive(r, **attr)
         elif format == "aadata" and self.__interactive:
@@ -688,7 +690,7 @@ class S3Find(S3CRUD):
         elif format == "json":
             return self.search_json(r, **attr)
         else:
-            raise HTTP(501, body=self.manager.ERROR.BAD_FORMAT)
+            r.error(501, self.manager.ERROR.BAD_FORMAT)
 
         return dict()
 
@@ -938,7 +940,7 @@ class S3Find(S3CRUD):
         output.update(title=title, subtitle=subtitle)
 
         # View
-        response.view = "find.html"
+        response.view = "search.html"
         return output
 
 
@@ -1018,7 +1020,7 @@ class S3Find(S3CRUD):
 
 
 # *****************************************************************************
-class S3LocationSearch(S3Find):
+class S3LocationSearch(S3Search):
     """
     Search method with specifics for location records (hierarchy search)
 
@@ -1155,7 +1157,7 @@ class S3LocationSearch(S3Find):
 
 
 # *****************************************************************************
-class S3PersonSearch(S3Find):
+class S3PersonSearch(S3Search):
     """
     Search method with specifics for person records (full name search)
 

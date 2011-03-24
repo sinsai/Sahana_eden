@@ -139,7 +139,8 @@ table = db.define_table(tablename,
                         Field("local_name"),
                         pr_gender(),
                         pr_age_group(),
-                        Field("date_of_birth", "date", widget=S3DateWidget(before=110, after=0)),
+                        Field("date_of_birth", "date",
+                              widget=S3DateWidget(past=1440, future=0)),
                         pr_country("nationality", label = T("Nationality")),
                         pr_country("country"),
                         pr_religion(),
@@ -155,10 +156,9 @@ table.last_name.label = T("Last Name")
 table.local_name.label = T("Local Name")
 
 table.date_of_birth.label = T("Date of Birth")
-table.date_of_birth.requires = [IS_EMPTY_OR(IS_DATE(error_message = "%s" % T("Enter a valid date"))),
- 	                            IS_EMPTY_OR(IS_DATE_IN_RANGE(maximum=request.utcnow.date(),
-                               error_message="%s %%(max)s!" %
-                                             T("Enter a date before")))]
+table.date_of_birth.requires = [IS_EMPTY_OR(IS_DATE_IN_RANGE(maximum=request.utcnow.date(),
+                                                             error_message="%s %%(max)s!" %
+                                                                           T("Enter a valid date before")))]
 
 table.first_name.requires = IS_NOT_EMPTY(error_message = T("Please enter a First Name"))
 # NB Not possible to have an IS_NAME() validator here
@@ -571,17 +571,28 @@ table = db.define_table(tablename,
                                           pr_address_type_opts.get(opt, UNKNOWN_OPT)),
                         #Field("co_name", label=T("c/o Name")),
                         location_id(),
-                        Field("address", "text", label=T("Address"), writable=False), # Populated from location_id
-                        Field("L4", label=deployment_settings.get_gis_locations_hierarchy("L4"), writable=False), # Populated from location_id
-                        Field("L3", label=deployment_settings.get_gis_locations_hierarchy("L3"), writable=False), # Populated from location_id
-                        Field("L2", label=deployment_settings.get_gis_locations_hierarchy("L2"), writable=False), # Populated from location_id
-                        Field("L1", label=deployment_settings.get_gis_locations_hierarchy("L1"), writable=False), # Populated from location_id
-                        Field("L0", label=deployment_settings.get_gis_locations_hierarchy("L0"), writable=False), # Populated from location_id
+                        Field("building_name", "text", label=T("Building Name"),
+                              writable=False), # Populated from location_id
+                        Field("address", "text", label=T("Address"),
+                              writable=False), # Populated from location_id
+                        Field("L4",
+                              label=deployment_settings.get_gis_locations_hierarchy("L4"),
+                              writable=False), # Populated from location_id
+                        Field("L3",
+                              label=deployment_settings.get_gis_locations_hierarchy("L3"),
+                              writable=False), # Populated from location_id
+                        Field("L2",
+                              label=deployment_settings.get_gis_locations_hierarchy("L2"),
+                              writable=False), # Populated from location_id
+                        Field("L1",
+                              label=deployment_settings.get_gis_locations_hierarchy("L1"),
+                              writable=False), # Populated from location_id
+                        Field("L0",
+                              label=deployment_settings.get_gis_locations_hierarchy("L0"),
+                              writable=False), # Populated from location_id
                         Field("postcode", label=T("Postcode"), writable=False), # Populated from location_id
                         comments(),
                         migrate=migrate, *s3_meta_fields())
-
-
 
 table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 
@@ -610,7 +621,7 @@ s3.crud_strings[tablename] = Storage(
 def address_onvalidation(form):
     """
         Write the Postcode & Street Address fields from the Location
-        - also used by org_office
+        - also used by org_office & cr_shelter
 
         @ToDo: Allow the reverse operation.
         If these fields are populated then create an appropriate location
@@ -634,15 +645,33 @@ def address_onvalidation(form):
             elif location.level == "L1":
                 form.vars.L1 = location.name
                 if location.parent:
-                    country = db(locations.id == location.parent).select(locations.name, limitby=(0, 1)).first()
+                    query = (locations.id == location.parent)
+                    country = db(query).select(locations.name,
+                                               limitby=(0, 1)).first()
                     if country:
                         form.vars.L0 = country.name
             else:
+                if location.level is None:
+                    form.vars.building_name = location.name
                 # Get ids of ancestors at each level.
                 gis.get_parent_per_level(form.vars,
                                          form.vars.location_id,
                                          feature=location,
                                          names=True)
+
+
+# Hide Address fields in Create forms
+# inc list_create (list_fields over-rides)
+def pr_address_hide(table):
+    table.building_name.readable = False
+    table.address.readable = False
+    table.L4.readable = False
+    table.L3.readable = False
+    table.L2.readable = False
+    table.L1.readable = False
+    table.L0.readable = False
+    table.postcode.readable = False
+    return
 
 # Addresses as component of person entities
 s3xrc.model.add_component(prefix, resourcename,
@@ -654,6 +683,7 @@ s3xrc.model.configure(table,
                       list_fields = [
                         "id",
                         "type",
+                        "building_name",
                         "address",
                         "postcode",
                         #"L4",
@@ -1227,7 +1257,8 @@ table = db.define_table(tablename,
                               default = 1,
                               label = T("ID type"),
                               represent = lambda opt: \
-                                          pr_id_type_opts.get(opt, UNKNOWN_OPT)),
+                                          pr_id_type_opts.get(opt,
+                                                              UNKNOWN_OPT)),
                         Field("value"),
                         Field("description"),
                         Field("country_code", length=4),
@@ -1240,7 +1271,8 @@ table = db.define_table(tablename,
 
 table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 table.person_id.label = T("Person")
-table.value.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.value" % tablename)]
+table.value.requires = [IS_NOT_EMPTY(),
+                        IS_NOT_ONE_OF(db, "%s.value" % tablename)]
 table.ia_name.label = T("Issuing Authority")
 
 # Identity as component of persons

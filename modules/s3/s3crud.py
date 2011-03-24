@@ -619,7 +619,7 @@ class S3CRUD(S3Method):
             output.update(form=form)
 
             # Add delete and list buttons
-            buttons = self.insert_buttons(r, "delete", "list",
+            buttons = self.insert_buttons(r, "delete",
                                           record_id=record_id)
             if buttons:
                 output.update(buttons)
@@ -881,6 +881,14 @@ class S3CRUD(S3Method):
                     self.response.s3.start = 0
                     self.response.s3.limit = 20
 
+            # Title and subtitle
+            if r.component:
+                title = self.crud_string(r.tablename, "title_display")
+            else:
+                title = self.crud_string(self.tablename, "title_list")
+            subtitle = self.crud_string(self.tablename, "subtitle_list")
+            output.update(title=title, subtitle=subtitle)
+
             # Empty table - or just no match?
             if not items:
                 if "deleted" in self.table:
@@ -893,19 +901,14 @@ class S3CRUD(S3Method):
                     items = self.crud_string(self.tablename, "msg_no_match")
                 else:
                     items = self.crud_string(self.tablename, "msg_list_empty")
-
-            # Title and subtitle
-            if r.component:
-                title = self.crud_string(r.tablename, "title_display")
-            else:
-                title = self.crud_string(self.tablename, "title_list")
-            subtitle = self.crud_string(self.tablename, "subtitle_list")
+                if r.component and listadd:
+                    # Hide the list and show the Add-form
+                    del output["showadd_btn"]
+                    del output["subtitle"]
+                    items = ""
 
             # Update output
-            output.update(title=title,
-                          subtitle=subtitle,
-                          items=items,
-                          sortby=sortby)
+            output.update(items=items, sortby=sortby)
 
         elif representation == "aadata":
 

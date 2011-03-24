@@ -209,7 +209,10 @@ if deployment_settings.has_module(module):
                                     _target="top",
                                     _title=ADD_HOSPITAL),
                                   DIV(DIV(_class="tooltip",
-                                          _title=T("Hospital") + "|" + T("The hospital this record is associated with."))))
+                                          _title="%s|%s" % (T("Hospital"),
+                                                            T("If you don’t see the Hospital in the list, you can add a new one by clicking link 'Add Hospital'.")))))
+                                                            # If using Autocomplete Widget
+                                                            #T("Enter some characters to bring up a list of possible matches.")))))
     hospital_id = S3ReusableField("hospital_id", db.hms_hospital, sortby="name",
                                   requires = IS_NULL_OR(IS_ONE_OF(db, "hms_hospital.id", "%(name)s")),
                                   represent = lambda id: (id and
@@ -885,7 +888,7 @@ if deployment_settings.has_module(module):
     # -----------------------------------------------------------------------------
     # Hospital Search Method
     #
-    hms_hospital_search = s3base.S3Find(
+    hms_hospital_search = s3base.S3Search(
         #name="hospital_search_simple",
         #label=T("Name and/or ID"),
         #comment=T("To search for a hospital, enter any of the names or IDs of the hospital, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all hospitals."),

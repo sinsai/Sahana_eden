@@ -66,19 +66,19 @@ class S3DateWidget(FormWidget):
     """
 
     def __init__(self,
-                 before=10,  # How many years to show before the current one
-                 after=10    # How many years to show after the current one
+                 past=1440,     # how many months into the past the date can be set to
+                 future=1440    # how many months into the future the date can be set to
                 ):
 
-        self.min = before
-        self.max = after
+        self.past = past
+        self.future = future
 
 
     def __call__(self, field, value, **attributes):
 
         default = dict(
             _type = "text",
-            value = (value!=None and str(value)) or "",
+            value = (value != None and str(value)) or "",
             )
         attr = StringWidget._attributes(field, default, **attributes)
 
@@ -86,9 +86,11 @@ class S3DateWidget(FormWidget):
 
         date_options = """
     $(function() {
-        $( '#%s' ).datepicker( 'option', 'yearRange', 'c-%s:c+%s' );
+        $( '#%s' ).datepicker( 'option', 'minDate', '-%sm' );
+        $( '#%s' ).datepicker( 'option', 'maxDate', '+%sm' );
+        $( '#%s' ).datepicker( 'option', 'yearRange', 'c-100:c+100' );
     });
-    """ % (selector, self.min, self.max)
+    """ % (selector, self.past, selector, self.future, selector)
 
         return TAG[""](
                         INPUT(**attr),
@@ -118,7 +120,7 @@ class S3DateTimeWidget(FormWidget):
         default = dict(
             _type = "text",
             _class = "datetime_widget",  # Prevent default "datetime" calendar from showing up
-            value = (value!=None and str(value)) or "",
+            value = (value != None and str(value)) or "",
             )
         attr = StringWidget._attributes(field, default, **attributes)
 
@@ -1089,6 +1091,7 @@ class S3LocationSelectorWidget(FormWidget):
     var s3_gis_select_location = '<option value="" selected>%s...</option>';
     var s3_gis_url = '%s';
     S3.gis.uuid = '%s';
+    S3.gis.name = '%s';
     S3.gis.addr_street = '%s';
     S3.gis.postcode = '%s';
     S3.gis.lat = '%s';
@@ -1107,6 +1110,7 @@ class S3LocationSelectorWidget(FormWidget):
            select_location,
            url,
            uuid,
+           represent,
            addr_street_encoded,
            postcode,
            lat or "",
@@ -1122,7 +1126,7 @@ class S3LocationSelectorWidget(FormWidget):
 
         # Labels
         name_label = DIV(LABEL("%s:" % T("Name")),
-                         SPAN("*", _class="req"),
+                         #SPAN("*", _class="req"),
                          _id="gis_location_name_label", _class="hidden")
         street_label = LABEL("%s:" % T("Street Address"),
                        _id="gis_location_addr_street_label", _class="hidden")
@@ -1146,7 +1150,7 @@ class S3LocationSelectorWidget(FormWidget):
                            _class="hidden")
 
         # Buttons
-        search_button = A(T("Search Locations"),
+        search_button = A(T("Search Existing Locations"),
                           _style="cursor:pointer; cursor:hand",
                           _id="gis_location_search-btn")
 
@@ -1256,7 +1260,7 @@ class S3LocationSelectorWidget(FormWidget):
         #                    TR(INPUT(_id="gis_location_name", _value=represent)))
         #else:
         name_rows = DIV(TR(name_label),
-                        TR(INPUT(_id="gis_location_name", _class="hidden")))
+                        TR(INPUT(_id="gis_location_name", _value=represent, _class="hidden")))
         street_rows = DIV(TR(street_label),
                           # @ToDo: Enable Geocoder here when ready
                           #TR(street_widget, geocoder_button, _id="gis_location_addr_street_row", _class="hidden"))
@@ -1273,8 +1277,8 @@ class S3LocationSelectorWidget(FormWidget):
         return TAG[""](
                         #divider,           # This is in the widget, so underneath the label :/ Add in JS? 'Sections'?
                         TR(INPUT(**attr)),  # Real input, which is hidden
-                        dropdowns,
                         TR(TD(search_button, autocomplete)),
+                        dropdowns,
                         TR(TD(add_button, cancel_button)),
                         TR(gps_converter_popup),
                         TR(map_popup),

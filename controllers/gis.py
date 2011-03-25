@@ -170,7 +170,7 @@ def location():
                 table.code.readable = False
             table.gis_feature_type.writable = table.gis_feature_type.readable = False
             table.wkt.writable = table.wkt.readable = False
-        else:
+        elif r.interactive:
             table.code.comment = DIV(_class="tooltip",
                                      _title="%s|%s" % (T("Code"),
                                                        T("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode.")))
@@ -216,24 +216,22 @@ def location():
             table.level.comment = DIV(_class="tooltip",
                                       _title="%s|%s" % (T("Level"),
                                                         T("If the location is a geographic area, then state at what level here.")))
+            parent_comment = DIV(_class="tooltip",
+                                 _title="%s|%s" % (T("Parent"),
+                                                   T("The Area which this Site is located within.")))
             if r.representation == "popup":
-                # No 'Add Location' button
-                table.parent.comment = DIV(_class="tooltip",
-                                           _title="%s|%s" % (T("Parent"),
-                                                             T("The Area which this Site is located within.")))
+                table.parent.comment = parent_comment
             else:
+                # Include 'Add Location' button
                 table.parent.comment = DIV(A(ADD_LOCATION,
-                                               _class="colorbox",
-                                               _href=URL(r=request, c="gis", f="location",
-                                                         args="create",
-                                                         vars=dict(format="popup",
-                                                                   child="parent")),
-                                               _target="top",
-                                               _title=ADD_LOCATION),
-                                             DIV(
-                                               _class="tooltip",
-                                               _title="%s|%s" % (T("Parent"),
-                                                                 T("The Area which this Site is located within.")))),
+                                             _class="colorbox",
+                                             _href=URL(r=request, c="gis", f="location",
+                                                       args="create",
+                                                       vars=dict(format="popup",
+                                                                 child="parent")),
+                                             _target="top",
+                                             _title=ADD_LOCATION),
+                                           parent_comment),
             table.osm_id.comment = DIV(_class="stickytip",
                                        _title="OpenStreetMap ID|%s%s%s" % (T("The"),
                                                                            " <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. ",

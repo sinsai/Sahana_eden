@@ -307,6 +307,12 @@ def register():
     return dict(form=form)
 
 # -----------------------------------------------------------------------------
+def vol_onaccept(form):
+    """ Create a vol/volunteer record """
+    db.vol_volunteer.insert(person_id=form.vars.id,
+                            status=1)
+    return
+
 def person():
 
     """
@@ -328,16 +334,17 @@ def person():
     register_url = str(URL(r=request, f=resourcename,
                            args=["[id]", "volunteer"]))
     s3xrc.model.configure(table,
+                          create_onaccept=vol_onaccept,
                           create_next=register_url)
 
     tabs = [
             (T("Basic Details"), None),
+            (T("Availability"), "volunteer"),
             (T("Address"), "address"),
             (T("Identity"), "identity"),
             (T("Contact Data"), "pe_contact"),
             #(T("Teams"), "group_membership"),
             (T("Skills"), "credential"),
-            (T("Availability"), "volunteer"),
             (T("Images"), "image"),
            ]
 
@@ -415,6 +422,12 @@ def person():
             # Only display active volunteers
             response.s3.filter = (table.id == db.vol_volunteer.person_id) & \
                                  (db.vol_volunteer.status == 1)
+            # Alternate approach: Don't display Staff (Creates Duplicate Rows!)
+            #query = (db.org_staff.id > 0)
+            #if db(query).select(db.org_staff.id,
+            #                    limitby=(0, 1)).first():
+            #    # The filter fails if there are no records in org_staff!
+            #    response.s3.filter = (table.id != db.org_staff.person_id)
 
         return True
 
@@ -425,6 +438,14 @@ def person():
         if r.interactive and r.component and r.method != "read":
             if r.component.name == "address":
                 try:
+                    if not output["items"]:
+                        # There are no records yet, default the Base Location to On & Hide option
+                        checked = "on"
+                        hidden = "hidden"
+                    else:
+                        checked = "off"
+                        hidden = ""
+
                     # Inject a flag to say whether this address should be set as the user's Base Location
                     HELP = T("If this is ticked, then this will become the user's Base Location & hence where the user is shown on the Map")
                     output["form"][0].insert(0,
@@ -433,11 +454,13 @@ def person():
                                                          _id="base_location",
                                                          _class="boolean",
                                                          _type="checkbox",
-                                                         _value="on"),
+                                                         _value="on",
+                                                         value=checked),
                                                    _class="w2p_fl"),
                                                 TD(DIV(_class="tooltip",
                                                        _title="%s|%s" % (T("Base Location"),
-                                                                         HELP)))))
+                                                                         HELP))),
+                                                _class=hidden))
                 except:
                     # No form to inject into
                     pass

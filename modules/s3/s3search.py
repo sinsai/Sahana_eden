@@ -60,19 +60,17 @@ __all__ = ["S3SearchWidget",
 # *****************************************************************************
 class S3SearchWidget(object):
     """
-    Search Widget for interactive search (base class)
-
+        Search Widget for interactive search (base class)
     """
 
     def __init__(self, field=None, name=None, **attr):
         """
-        Configures the search option
+            Configures the search option
 
-        @param field: name(s) of the fields to search in
+            @param field: name(s) of the fields to search in
 
-        @keyword label: a label for the search widget
-        @keyword comment: a comment for the search widget
-
+            @keyword label: a label for the search widget
+            @keyword comment: a comment for the search widget
         """
 
         self.other = None
@@ -91,11 +89,10 @@ class S3SearchWidget(object):
 
     def widget(self, resource, vars):
         """
-        Returns the widget
+            Returns the widget
 
-        @param resource: the resource to search in
-        @param vars: the URL GET variables as dict
-
+            @param resource: the resource to search in
+            @param vars: the URL GET variables as dict
         """
 
         self.attr = Storage(attr)
@@ -105,19 +102,17 @@ class S3SearchWidget(object):
 
     def query(self, resource, value):
         """
-        Returns a sub-query for this search option
+            Returns a sub-query for this search option
 
-        @param resource: the resource to search in
-        @param value: the value returned from the widget
-
+            @param resource: the resource to search in
+            @param value: the value returned from the widget
         """
         raise NotImplementedError
 
 
     def build_master_query(self, resource):
         """
-        Get the master query for the specified field(s)
-
+            Get the master query for the specified field(s)
         """
 
         db = resource.db
@@ -228,17 +223,15 @@ class S3SearchWidget(object):
 # *****************************************************************************
 class S3SearchSimpleWidget(S3SearchWidget):
     """
-    Simple full-text search widget
-
+        Simple full-text search widget
     """
 
     def widget(self, resource, vars):
         """
-        Returns the widget
+            Returns the widget
 
-        @param resource: the resource to search in
-        @param vars: the URL GET variables as dict
-
+            @param resource: the resource to search in
+            @param vars: the URL GET variables as dict
         """
 
         if "_size" not in self.attr:
@@ -253,11 +246,10 @@ class S3SearchSimpleWidget(S3SearchWidget):
 
     def query(self, resource, value):
         """
-        Returns a sub-query for this search option
+            Returns a sub-query for this search option
 
-        @param resource: the resource to search in
-        @param value: the value returned from the widget
-
+            @param resource: the resource to search in
+            @param value: the value returned from the widget
         """
 
         prefix = resource.prefix
@@ -324,11 +316,10 @@ class S3SearchMatchWidget(S3SearchWidget):
 
     def widget(self, resource, vars):
         """
-        Returns the widget
+            Returns the widget
 
-        @param resource: the resource to search in
-        @param vars: the URL GET variables as dict
-
+            @param resource: the resource to search in
+            @param vars: the URL GET variables as dict
         """
 
         raise NotImplementedError
@@ -336,11 +327,10 @@ class S3SearchMatchWidget(S3SearchWidget):
 
     def query(self, resource, value):
         """
-        Returns a sub-query for this search option
+            Returns a sub-query for this search option
 
-        @param resource: the resource to search in
-        @param value: the value returned from the widget
-
+            @param resource: the resource to search in
+            @param value: the value returned from the widget
         """
         raise NotImplementedError
 
@@ -354,11 +344,10 @@ class S3SearchMinMaxWidget(S3SearchWidget):
 
     def widget(self, resource, vars):
         """
-        Returns the widget
+            Returns the widget
 
-        @param resource: the resource to search in
-        @param vars: the URL GET variables as dict
-
+            @param resource: the resource to search in
+            @param vars: the URL GET variables as dict
         """
 
         self.names = []
@@ -422,8 +411,7 @@ class S3SearchMinMaxWidget(S3SearchWidget):
 
     def validate(self, resource, value):
         """
-        Validate the input values of the widget
-
+            Validate the input values of the widget
         """
 
         errors = dict()
@@ -447,11 +435,10 @@ class S3SearchMinMaxWidget(S3SearchWidget):
 
     def query(self, resource, value):
         """
-        Returns a sub-query for this search option
+            Returns a sub-query for this search option
 
-        @param resource: the resource to search in
-        @param value: the value returned from the widget
-
+            @param resource: the resource to search in
+            @param value: the value returned from the widget
         """
 
         db = resource.db
@@ -486,12 +473,12 @@ class S3SearchMinMaxWidget(S3SearchWidget):
 # *****************************************************************************
 class S3SearchSelectWidget(S3SearchWidget):
     """
-    Option select widget for option or boolean fields
+        Option select widget for option or boolean fields
 
-    Displays a search widget which allows the user to search for records
-    with fields matching a certain criteria.
+        Displays a search widget which allows the user to search for records
+        with fields matching a certain criteria.
 
-    Field must be a integer or reference
+        Field must be a integer or reference
     """
 
     def widget(self, resource, vars):
@@ -568,8 +555,7 @@ class S3SearchSelectWidget(S3SearchWidget):
 # *****************************************************************************
 class S3SearchLocationWidget(S3SearchWidget):
     """
-    Interactive location search widget
-
+        Interactive location search widget
     """
 
     def widget(self, resource, vars):
@@ -606,13 +592,12 @@ class S3Search(S3CRUD):
 
     def __init__(self, simple=None, advanced=None, any=False, **args):
         """
-        Constructor
+            Constructor
 
-        @param simple: the widgets for the simple search form as list
-        @param advanced: the widgets for the advanced search form as list
-        @param any: match "any of" (True) or "all of" (False) the options
-                    in advanced search
-
+            @param simple: the widgets for the simple search form as list
+            @param advanced: the widgets for the advanced search form as list
+            @param any: match "any of" (True) or "all of" (False) the options
+                        in advanced search
         """
 
         S3CRUD.__init__(self)
@@ -671,11 +656,10 @@ class S3Search(S3CRUD):
     # -------------------------------------------------------------------------
     def apply_method(self, r, **attr):
         """
-        Entry point to apply search method to S3Requests
+            Entry point to apply search method to S3Requests
 
-        @param r: the S3Request
-        @param attr: request attributes
-
+            @param r: the S3Request
+            @param attr: request attributes
         """
 
         format = r.representation
@@ -698,11 +682,10 @@ class S3Search(S3CRUD):
     # -------------------------------------------------------------------------
     def search_interactive(self, r, **attr):
         """
-        Interactive search
+            Interactive search
 
-        @param r: the S3Request instance
-        @param attr: request parameters
-
+            @param r: the S3Request instance
+            @param attr: request parameters
         """
 
         # Get environment
@@ -947,11 +930,10 @@ class S3Search(S3CRUD):
     # -------------------------------------------------------------------------
     def search_json(self, r, **attr):
         """
-        Legacy JSON search method (for autocomplete-widgets)
+            Legacy JSON search method (for autocomplete-widgets)
 
-        @param r: the S3Request
-        @param attr: request attributes
-
+            @param r: the S3Request
+            @param attr: request attributes
         """
 
         xml = self.manager.xml
@@ -1022,17 +1004,15 @@ class S3Search(S3CRUD):
 # *****************************************************************************
 class S3LocationSearch(S3Search):
     """
-    Search method with specifics for location records (hierarchy search)
-
+        Search method with specifics for location records (hierarchy search)
     """
 
     def search_json(self, r, **attr):
         """
-        Legacy JSON search method (for autocomplete-widgets)
+            Legacy JSON search method (for autocomplete-widgets)
 
-        @param r: the S3Request
-        @param attr: request attributes
-
+            @param r: the S3Request
+            @param attr: request attributes
         """
 
         xml = self.manager.xml
@@ -1056,7 +1036,12 @@ class S3LocationSearch(S3Search):
 
         # We want to do case-insensitive searches
         # (default anyway on MySQL/SQLite, but not PostgreSQL)
-        value = value.lower()
+        if value:
+            value = value.lower()
+
+        query = None
+        fields = []
+        field = table.id
 
         if _vars.field and _vars.filter and value:
             fieldname = str.lower(_vars.field)
@@ -1137,10 +1122,16 @@ class S3LocationSearch(S3Search):
                           table.parent,
                           table.lat,
                           table.lon,
-                          table.addr_street]
+                          table.addr_street,
+                          table.addr_postcode]
             else:
                 output = xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =")
                 raise HTTP(400, body=output)
+
+        
+        if not fields:
+            for field in table.fields:
+                fields.append(table[field])
 
         resource.add_filter(query)
 
@@ -1159,17 +1150,15 @@ class S3LocationSearch(S3Search):
 # *****************************************************************************
 class S3PersonSearch(S3Search):
     """
-    Search method with specifics for person records (full name search)
-
+        Search method with specifics for person records (full name search)
     """
 
     def search_json(self, r, **attr):
         """
-        Legacy JSON search method (for autocomplete-widgets)
+            Legacy JSON search method (for autocomplete-widgets)
 
-        @param r: the S3Request
-        @param attr: request attributes
-
+            @param r: the S3Request
+            @param attr: request attributes
         """
 
         xml = self.manager.xml

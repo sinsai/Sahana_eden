@@ -499,7 +499,7 @@ class S3CRUD(S3Method):
 
         elif representation == "json":
             exporter = S3Exporter(self.manager)
-            return exporter.json(self.resource, fields=fields)
+            return exporter.json(self.resource)
 
         else:
             r.error(501, self.manager.ERROR.BAD_FORMAT)
@@ -869,13 +869,13 @@ class S3CRUD(S3Method):
                 totalrows = self.resource.count()
                 if totalrows:
                     aadata = dict(aaData = self.sqltable(fields=fields,
-                                                        start=0,
-                                                        limit=20,
-                                                        orderby=orderby,
-                                                        linkto=linkto,
-                                                        download_url=self.download_url,
-                                                        as_page=True,
-                                                        format=representation) or [])
+                                                         start=0,
+                                                         limit=20,
+                                                         orderby=orderby,
+                                                         linkto=linkto,
+                                                         download_url=self.download_url,
+                                                         as_page=True,
+                                                         format=representation) or [])
                     aadata.update(iTotalRecords=totalrows, iTotalDisplayRecords=totalrows)
                     self.response.aadata = json(aadata)
                     self.response.s3.start = 0
@@ -901,8 +901,8 @@ class S3CRUD(S3Method):
                     items = self.crud_string(self.tablename, "msg_no_match")
                 else:
                     items = self.crud_string(self.tablename, "msg_list_empty")
-                if r.component and listadd:
-                    # Hide the list and show the Add-form
+                if r.component and "showadd_btn" in output:
+                    # Hide the list and show the form by default
                     del output["showadd_btn"]
                     del output["subtitle"]
                     items = ""
@@ -976,8 +976,7 @@ class S3CRUD(S3Method):
             exporter = S3Exporter(self.manager)
             return exporter.json(self.resource,
                                  start=start,
-                                 limit=limit,
-                                 fields=fields)
+                                 limit=limit)
 
         else:
             r.error(501, self.manager.ERROR.BAD_FORMAT)

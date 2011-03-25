@@ -1,7 +1,7 @@
 {{extend "layout.html"}}
 {{include "_popup.html"}}
 <p>&nbsp;</p>
-{{=T("You can click on the map below to select the Lat/Lon fields:")}}
+{{="%s:" % T("You can click on the map below to select the Lat/Lon fields")}}
 <p>&nbsp;</p>
 {{try:}}
 {{=XML(_map)}}

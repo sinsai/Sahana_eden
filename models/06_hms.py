@@ -210,7 +210,7 @@ if deployment_settings.has_module(module):
                                     _title=ADD_HOSPITAL),
                                   DIV(DIV(_class="tooltip",
                                           _title="%s|%s" % (T("Hospital"),
-                                                            T("If you don’t see the Hospital in the list, you can add a new one by clicking link 'Add Hospital'.")))))
+                                                            T("If you don't see the Hospital in the list, you can add a new one by clicking link 'Add Hospital'.")))))
                                                             # If using Autocomplete Widget
                                                             #T("Enter some characters to bring up a list of possible matches.")))))
     hospital_id = S3ReusableField("hospital_id", db.hms_hospital, sortby="name",

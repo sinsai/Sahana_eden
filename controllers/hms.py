@@ -28,7 +28,7 @@ def shn_menu():
             [T("New"), False, aURL(p="create", r=request, f="hospital", args="create")],
             [T("Search"), False, aURL(r=request, f="hospital", args="search")],
             [T("List All"), False, aURL(r=request, f="hospital")],
-            #[T("----"), False, None],
+            #["----", False, None],
             #[T("Show Map"), False, URL(r=request, c="gis", f="map_viewing_client",
                                        #vars={"kml_feed" : "%s/%s/hms/hospital.kml" %
                                              #(public_url, request.application),

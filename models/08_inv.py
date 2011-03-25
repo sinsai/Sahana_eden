@@ -236,7 +236,7 @@ if deployment_settings.has_module("inv"):
                                   ),
                             super_link(db.org_site), #(label = T("By Warehouse")),
                             organisation_id("from_organisation_id",
-                                            label = T("From Organisation")),
+                                            label = T("From Organization")),
                             location_id("from_location_id",
                                         label = T("From Location")),
                             Field("from_person"), #Text field, because lookup to pr_person record is unnecessary complex workflow

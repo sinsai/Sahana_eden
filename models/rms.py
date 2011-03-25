@@ -319,7 +319,7 @@ if deployment_settings.has_module(module):
                         TH("Time"),
                         TH("Location"),
                         )),
-                        TBODY(records), _id="list", _class="display"))
+                        TBODY(records), _id="list", _class="dataTable display"))
                 else:
                     items = T("None")
 

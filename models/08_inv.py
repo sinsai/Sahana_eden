@@ -16,17 +16,22 @@ inv_menu = [
                 [T("Add"), False, URL(r=request, c="supply", f="item", args="create")],
                 [T("Search"), False, URL(r=request, c="supply", f="item", args="search")],
             ]],
-            [T("Warehouses"), False, URL(r=request, c="inv", f="wh"),
+            [T("Warehouse"), False, URL(r=request, c="inv", f="wh"),
+                [
+                    [T("List"), False, URL(r=request, c="inv", f="wh")],
+                    [T("Add"), False, URL(r=request, c="inv", f="wh", args="create")],
+                ]
+            ],
+            [T("Inventories"), False, URL(r=request, c="inv", f="wh"),
+                [
+                    [T("Search Inventory Items"), False, URL(r=request, c="inv", f="inv_item", args="search")],
+                    [T("Search Received Shipments"), False, URL(r=request, c="inv", f="recv", args="search")],
+                ]
+            ],
+            [T("Request Managment"), False, URL(r=request, c="req", f="req"),
             [
-                [T("List"), False, URL(r=request, c="inv", f="wh")],
-                [T("Add"), False, URL(r=request, c="inv", f="wh", args="create")],
-                [T("Search Inventory Items"), False, URL(r=request, c="inv", f="inv_item", args="search")],
-                [T("Search Received Shipments"), False, URL(r=request, c="inv", f="recv", args="search")],
-            ]],
-
-            [T("Request"), False, URL(r=request, c="req", f="req"),
-            [
-                [T("List"), False, URL(r=request, c="req", f="req")],
+                [T("Requests"), False, URL(r=request, c="req", f="req")],
+                [T("Commitments"), False, URL(r=request, c="req", f="commit")],
                 #[T("Search Requested Items"), False, URL(r=request, c="req", f="req_item", args="search")],
                 #[T("Add"), False, URL(r=request, c="req", f="req", args="create")],
             ]],
@@ -60,7 +65,8 @@ if deployment_settings.has_module("inv"):
     table = db.define_table(tablename,
                             super_link(db.org_site, # site_id
                                        readable=True,
-                                       label=T("Site"),
+                                       writable = True,
+                                       label=T("Inventory"),
                                        represent=shn_site_represent),
                             item_id(),
                             item_pack_id(),
@@ -234,7 +240,11 @@ if deployment_settings.has_module("inv"):
                                   label = T("Type"),
                                   default = 0,
                                   ),
-                            super_link(db.org_site), #(label = T("By Warehouse")),
+                            super_link(db.org_site,
+                                       readable=True,
+                                       writable = True,
+                                       label=T("By Inventory"),
+                                       represent=shn_site_represent),
                             organisation_id("from_organisation_id",
                                             label = T("From Organisation")),
                             location_id("from_location_id",
@@ -336,7 +346,7 @@ if deployment_settings.has_module("inv"):
         #field=["gov_uuid", "name", "aka1", "aka2"],
 
         simple=(s3base.S3SearchSimpleWidget(
-                    name="recv_search_text",
+                    name="recv_search_text_simple",
                     label=T("Search"),
                     comment=T("Search for an item by text."),
                     field=[ "from_person",
@@ -351,7 +361,23 @@ if deployment_settings.has_module("inv"):
                             "site_id#name"
                             ]
                   )),
-        advanced=(s3base.S3SearchMinMaxWidget(
+        advanced=(s3base.S3SearchSimpleWidget(
+                    name="recv_search_text_advanced",
+                    label=T("Search"),
+                    comment=T("Search for an item by text."),
+                    field=[ "from_person",
+                            "comments",
+                            "from_organisation_id#name",
+                            "from_organisation_id#acronym",
+                            "from_location_id#name",
+                            "from_location_id",
+                            "recipient_id#first_name",
+                            "recipient_id#middle_name",
+                            "recipient_id#last_name",
+                            "site_id#name"
+                            ]
+                  ),
+                  s3base.S3SearchMinMaxWidget(
                     name="recv_search_date",
                     method="range",
                     label=T("Date"),
@@ -669,7 +695,11 @@ if deployment_settings.has_module("inv"):
                             Field( "datetime",
                                    "datetime",
                                    label = T("Date Sent")),
-                            super_link(db.org_site), #( label = T("From Warehouse")),
+                            super_link(db.org_site,
+                                       readable=True,
+                                       writable = True,
+                                       label=T("From Inventory"),
+                                       represent=shn_site_represent),
                             location_id( "to_location_id",
                                          label = T("To Location") ),
                             Field("to_site_id",
@@ -692,16 +722,16 @@ if deployment_settings.has_module("inv"):
 
     # -----------------------------------------------------------------------------
     # CRUD strings
-    ADD_SEND = T("Add New Shipment to Send")
-    LIST_SEND = T("List Shipments")
+    ADD_SEND = T("Send Shipment")
+    LIST_SEND = T("List Sent Shipments")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_SEND,
-        title_display = T("Shipment Details"),
+        title_display = T("Sent Shipment Details"),
         title_list = LIST_SEND,
         title_update = T("Edit Shipment to Send"),
         title_search = T("Search Sent Shipments"),
         subtitle_create = ADD_SEND,
-        subtitle_list = T("Shipments"),
+        subtitle_list = T("Sent Shipments"),
         label_list_button = LIST_SEND,
         label_create_button = ADD_SEND,
         label_delete_button = T("Delete Sent Shipment"),

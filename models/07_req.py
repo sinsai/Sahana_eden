@@ -18,12 +18,6 @@ if deployment_settings.has_module("inv"):
     REQ_STATUS_PARTIAL    = 1
     REQ_STATUS_COMPLETE   = 2
 
-    req_priority_opts = {
-        3:T("High"),
-        2:T("Medium"),
-        1:T("Low")
-    }
-
     req_status_opts = { REQ_STATUS_NONE:       T("None"),
                         REQ_STATUS_PARTIAL:    T("Partial"),
                         REQ_STATUS_COMPLETE:   T("Complete")
@@ -39,9 +33,26 @@ if deployment_settings.has_module("inv"):
                                 writable = deployment_settings.get_req_status_writable(),
                                 )
 
+    req_priority_opts = {
+        3:T("High"),
+        2:T("Medium"),
+        1:T("Low")
+    }
+
+    def shn_req_priority_represent(id):
+        src = "/%s/static/img/priority/priority_%d.gif" % \
+                  (request.application,(id or 4))
+        return DIV(IMG(_src= src))
+
     resourcename = "req"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
+                            super_link( db.org_site, 
+                                        writable = True,
+                                        readable = True,
+                                        label = T("Requested By Site"),
+                                        represent = shn_site_represent
+                                        ),                            
                             Field("datetime",
                                   "datetime",
                                   label = T("Date Requested")),
@@ -50,10 +61,12 @@ if deployment_settings.has_module("inv"):
                                   label = T("Date Required")),
                             person_id("requester_id",
                                       label = T("Requester") ),
-                            super_link(db.org_site), #label = T("Requested By Site")),
                             Field("priority",
                                   "integer",
-                                  label = T("Priority Level")
+                                  label = T("Priority"),
+                                  represent = shn_req_priority_represent,
+                                  requires = IS_NULL_OR(
+                                                IS_IN_SET(req_priority_opts))
                                   ),
                             req_status("commit_status",
                                        label = T("Commit. Status"),
@@ -68,13 +81,6 @@ if deployment_settings.has_module("inv"):
                                   "boolean"),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
-
-    table.priority.requires = IS_NULL_OR(IS_IN_SET(req_priority_opts))
-    table.priority.represent = lambda id: (
-        [id and
-            DIV(IMG(_src="/%s/static/img/priority/priority_%d.gif" % (request.application,id,), _height=12)) or
-            DIV(IMG(_src="/%s/static/img/priority/priority_4.gif" % request.application), _height=12)
-        ][0])
 
     # -------------------------------------------------------------------------
     # CRUD strings
@@ -98,30 +104,40 @@ if deployment_settings.has_module("inv"):
 
     # -----------------------------------------------------------------------------
     def shn_req_represent(id, link = True):
+        id = int(id)
         if id:
             req_row = db(db.req_req.id == id).\
                               select(db.req_req.datetime,
                                      db.req_req.site_id,
                                      limitby=(0, 1))\
                               .first()
-            return "%s - %s" % (shn_site_represent( \
+            req = "%s - %s" % (shn_site_represent( \
                                     req_row.site_id),
                                 req_row.datetime
                                 )
+            if link:
+                return A(req,
+                         _href = URL(r = request,
+                                     c = "req",
+                                     f = "req",
+                                     args = [id]),
+                         _title = T("Go to Request"))
+            else:
+                return req
         else:
             return NONE
 
     # -----------------------------------------------------------------------------
     # Reusable Field
     req_id = S3ReusableField("req_id", db.req_req, sortby="request_date",
-                                  requires = IS_NULL_OR( \
-                                                 IS_ONE_OF(db,
-                                                           "req_req.id",
-                                                           lambda id: shn_req_represent(id,
-                                                                                         False
-                                                                                         ),
-                                                           orderby="req_req.datetime",
-                                                           sort=True)),
+                                  requires = IS_ONE_OF(db,
+                                                       "req_req.id",
+                                                       lambda id: 
+                                                           shn_req_represent(id,
+                                                                             False
+                                                                             ),
+                                                       orderby="req_req.datetime",
+                                                       sort=True),
                                   represent = shn_req_represent,
                                   label = T("Request"),
                                   ondelete = "RESTRICT"
@@ -138,7 +154,10 @@ if deployment_settings.has_module("inv"):
     #------------------------------------------------------------------------------
     # Redirect to the Items tabs after creation
     s3xrc.model.configure(table,
-                          create_next = URL(r=request, c="req", f="req", args=["[id]", "req_item"]))
+                          create_next = URL(r=request,
+                                            c="req",
+                                            f="req",
+                                            args=["[id]", "req_item"]))
 
     #------------------------------------------------------------------------------
     # Update owned_by_role to the site's owned_by_role
@@ -262,7 +281,7 @@ if deployment_settings.has_module("inv"):
         # Update owned_by_role to the req's owned_by_role
         shn_component_copy_role_func(component_name = "req_req_item",
                                      resource_name = "req_req",
-                                     fk = "req_id")()
+                                     fk = "req_id")(form)
 
 
         req_id = session.rcvars.req_req
@@ -304,6 +323,27 @@ if deployment_settings.has_module("inv"):
         db.req_req[req_id] = status_update
 
     s3xrc.model.configure(table, onaccept=shn_req_item_onaccept)
+    
+    #------------------------------------------------------------------------------
+# Moved to controller
+#    def shn_req_item_inv_item (xrequest, **attr):
+#        req_item_id  = xrequest.id
+#        item_id = xrequest.record.item_id
+#        
+#        response.s3.no_sspag = False
+#        
+#        # Get list of matching inventory items
+#        #xrequest.resource.build_query(db.inv_inv_item.item_id == item_id)
+#        response.s3.filter = (db.inv_inv_item.item_id == item_id)
+#        inv_items = s3_rest_controller("inv", "inv_item")
+#        
+#        # Get list of alternative inventory items 
+#        
+#        
+#        return inv_items
+
+#    s3xrc.model.set_method(module, resourcename,
+#                           method='inv_item', action=shn_req_item_inv_item )
 
     #==========================================================================
     # Commit
@@ -311,19 +351,27 @@ if deployment_settings.has_module("inv"):
     resourcename = "commit"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
+                            super_link( db.org_site, 
+                                        writable = True,
+                                        readable = True,
+                                        label = T("From Inventory"),
+                                        represent = shn_site_represent
+                                        ),
+                            req_id(),
                             Field("datetime",
                                   "datetime",
                                   label = T("Date")),
-                            req_id(),
+                            
                             Field("date_available",
                                   "date",
                                   label = T("Date Available")),
-                            super_link(db.org_site), #label = T("By Site"),
-                            Field("for_site_id",
-                                  db.org_site,
-                                  ),
+
+                            #For site should be a virtual field
+                            #Field("for_site_id",
+                            #      db.org_site,
+                            #      ),
                             person_id("committer_id",
-                                      label = T("Requester") ),
+                                      label = T("Committed By") ),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
@@ -448,7 +496,7 @@ if deployment_settings.has_module("inv"):
          # Update owned_by_role to the commit's owned_by_role
         shn_component_copy_role_func(component_name = "req_commit_item",
                                      resource_name = "req_commit",
-                                     fk = "commit_id")()
+                                     fk = "commit_id")(form)
 
         # try to get req_item_id from the form
         req_item_id = 0

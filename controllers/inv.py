@@ -110,8 +110,12 @@ def inv_item():
 
     """ RESTful CRUD controller """
 
-    #tablename = "%s_%s" % (module, resourcename)
-    #table = db[tablename]
+    tablename = "%s_%s" % (module, resourcename)
+    table = db[tablename]
+    
+    # Limit site_id to sites the user has permissions for
+    shn_site_based_permissions(table,
+                               T("You do not have permission to receive a shipment.") )
 
     return s3_rest_controller(module, resourcename)
 #------------------------------------------------------------------------------
@@ -135,8 +139,13 @@ def inv_item_packs():
 #==============================================================================
 def recv():
     """ RESTful CRUD controller """
-    #tablename = "%s_%s" % (module, resourcename)
-    #table = db[tablename]
+    tablename = "%s_%s" % (module, resourcename)
+    table = db[tablename]
+
+    # Limit site_id to sites the user has permissions for
+    shn_site_based_permissions(table,
+                               T("You do not have permission to receive a shipment.") )
+
     output = s3_rest_controller(module,
                                 resourcename,
                                 rheader=shn_recv_rheader)
@@ -279,8 +288,12 @@ class QUANTITY_INV_ITEM:
 #------------------------------------------------------------------------------
 def send():
     """ RESTful CRUD controller """
-    #tablename = "%s_%s" % (module, resourcename)
-    #table = db[tablename]
+    tablename = "%s_%s" % (module, resourcename)
+    table = db[tablename]
+    
+    # Limit site_id to sites the user has permissions for
+    shn_site_based_permissions(table,
+                               T("You do not have permission to send a shipment.") )
     
     #Set Validator for checking against the number of items in the warehouse
     if (request.vars.inv_item_id):

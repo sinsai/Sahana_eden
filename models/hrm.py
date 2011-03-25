@@ -29,6 +29,12 @@ if deployment_settings.has_module(prefix):
 
                             organisation_id(empty=False),
                             person_id(),
+                            Field("job_title",
+                                  label=T("Job Title")),
+                            Field("admin", "boolean",
+                                  label=T("Administrator"),
+                                  default=False),
+
                             super_link(db.org_site,
                                        label=T("Site"),
                                        readable=True,
@@ -48,9 +54,6 @@ if deployment_settings.has_module(prefix):
                                   default = 1,
                                   label = T("Status"),
                                   represent = lambda opt: hrm_status_opts.get(opt, UNKNOWN_OPT)),
-
-                            Field("job_title",
-                                  label=T("Job Title")),
 
                             migrate=migrate, *s3_meta_fields())
 

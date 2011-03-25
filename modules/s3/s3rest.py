@@ -992,6 +992,14 @@ class S3Resource(object):
             if self.__transformable(r):
                 method = "export_tree"
             elif r.component:
+                if r.interactive and self.count() == 1:
+                    # Load the record
+                    if not self._rows:
+                        self.load(start=0, limit=1)
+                    if self._rows:
+                        r.record = self._rows[0]
+                        r.id = self.get_id()
+                        r.uid = self.get_uid()
                 if r.multiple and not r.component_id:
                     method = "list"
                 else:

@@ -22,17 +22,20 @@ def shn_menu():
     ADMIN = auth.permission.ADMIN
     roles = session.s3.roles or []
 
-    # Session Org
     if session.hrm is None:
         session.hrm = Storage()
+    if request.function != "organisation":
+        session.hrm.last_call = URL(r=request,
+                                    args=request.args,
+                                    vars=request.vars)
     if session.hrm.org is None:
         query = (db.hrm_human_resource.person_id == db.pr_person.id) & \
-                (db.hrm_human_resource.admin == True) & \
+                (db.hrm_human_resource.hrm == True) & \
                 (db.pr_person.uuid == session.auth.user.person_uuid)
-        hr = db(query).select(db.hrm_human_resource.organisation_id,
-                            limitby=(0, 1)).first()
-        if hr:
-            session.hrm.org = hr.organisation_id
+        org = db(query).select(db.hrm_human_resource.organisation_id,
+                               limitby=(0, 1)).first()
+        if org:
+            session.hrm.org = org.organisation_id
 
     # Module Name
     try:
@@ -51,24 +54,28 @@ def shn_menu():
                 [T("Profile"),
                  False, None],
             ]],
-            #[T("Planner"), False, None,[
-                #[T("Tasks"),
-                 #False, None],
-                #[T("Roster"),
-                 #False, None],
-            #]],
-            #[T("Job Market"), False, None,[
-                #[T("Vacancies"),
-                 #False, None],
-                #[T("Applications"),
-                 #False, None],
-            #]],
+            [T("Planner"), False, None,[
+                [T("Tasks"),
+                 False, None],
+                [T("Roster"),
+                 False, None],
+            ]],
+            [T("Job Market"), False, None,[
+                [T("Vacancies"),
+                 False, None],
+                [T("Applications"),
+                 False, None],
+            ]],
         ]
         if session.hrm.org or ADMIN in session.s3.roles:
             menu.append([T("Organisation"),
                          True, aURL(r=request, f="index")])
     else:
         menu = [
+            [T("Organisation"), False, None,[
+                [T("Choose"),
+                 False, aURL(r=request, f="organisation")],
+            ]],
             [T("Staff"), False, None,[
                 [T("New"),
                  False, aURL(p="create", r=request, f="human_resource",
@@ -95,38 +102,38 @@ def shn_menu():
                  False, aURL(r=request, f="human_resource",
                              vars=dict(group="volunteer"))],
             ]],
-            #[T("Teams"), False, None,[
-                #[T("New"),
-                 #False, None],
-                #[T("Search"),
-                 #False, None],
-                #[T("List All"),
-                 #False, None],
-            #]],
-            #[T("Projects"), False, None,[
-                #[T("New"),
-                 #False, None],
-                #[T("Search"),
-                 #False, None],
-                #[T("List All"),
-                 #False, None],
-                ##[T("Roster"),
-                 ##False, None],
-            #]],
-            #[T("Job Market"), False, None,[
-                #[T("Vacancies"),
-                 #False, None],
-                #[T("Applications"),
-                 #False, None],
-            #]],
+            [T("Teams"), False, None,[
+                [T("New"),
+                 False, None],
+                [T("Search"),
+                 False, None],
+                [T("List All"),
+                 False, None],
+            ]],
+            [T("Projects"), False, None,[
+                [T("New"),
+                 False, None],
+                [T("Search"),
+                 False, None],
+                [T("List All"),
+                 False, None],
+                [T("Roster"),
+                 False, None],
+            ]],
+            [T("Recruitment"), False, None,[
+                [T("Vacancies"),
+                 False, None],
+                [T("Applications"),
+                 False, None],
+            ]],
         ]
         if ADMIN in session.s3.roles:
             menu.append(
                 [T("Skills"), False, None,[
                     [T("New"),
-                    False, None],
+                    False, URL(r=request, f="skill", args="create")],
                     [T("Manage"),
-                    False, None],
+                    False, URL(r=request, f="skill")],
                 ]],
             )
         menu.append(
@@ -169,7 +176,7 @@ def human_resource():
                                 "group":group}))
 
     def prep(r, group):
-        
+
         if r.interactive and not r.component:
             if r.method in ("create", "update") and \
                group is not None:
@@ -179,6 +186,12 @@ def human_resource():
                     r.table.type.default = 2
                 r.table.type.readable = False
                 r.table.type.writable = False
+                org = session.hrm.org
+                if org is not None:
+                    r.table.organisation_id.default = org
+                    r.table.organisation_id.comment = None
+                    #r.table.organisation_id.readable = False
+                    r.table.organisation_id.writable = False
         return True
     response.s3.prep = lambda r, group=group: prep(r, group)
 
@@ -239,7 +252,44 @@ def organisation():
         joinby=dict(org_organisation="organisation_id"),
         multiple=True)
 
-    output = s3_rest_controller("org", resourcename, native=False)
+    ADMIN = auth.permission.ADMIN
+    roles = session.s3.roles or []
+
+    if ADMIN not in roles:
+        query = (db.org_organisation.id == db.hrm_human_resource.organisation_id) & \
+                (db.hrm_human_resource.person_id == db.pr_person.id) & \
+                (db.pr_person.uuid == session.auth.user.person_uuid) & \
+                (db.hrm_human_resource.hrm == True)
+        response.s3.filter = query
+
+    def prep(r):
+        if r.method == "select":
+            if session.hrm is None:
+                session.hrm = Storage()
+            session.hrm.org = r.id
+        if r.method is not None:
+            r.method = "clear"
+            r.next = session.hrm.last_call
+            return dict(bypass=True, output=None)
+        else:
+            r.id = r.record = None
+        return True
+    response.s3.prep = prep
+
+    def postp(r, output):
+        response.s3.actions = [
+            dict(label=str(T("Select")), _class="action-btn",
+                 url=URL(r=request, f="organisation", args=["[id]", "select"]).xml())
+        ]
+        return output
+    response.s3.postp = postp
+
+    s3xrc.model.configure(db.org_organisation, insertable=False)
+
+    output = s3_rest_controller("org", resourcename,
+                                native=False,
+                                title=T("Select Organization"),
+                                subtitle=None)
     return output
 
 

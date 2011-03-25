@@ -7,14 +7,9 @@
 var s3_gis_pullNext;
 
 function s3_gis_dropdown_select(level, force) {
-    s3_gis_pullNext = false;
+    // @param: force - set by the search to indicate that the next dropdown should be opened up even if there are multiple entries at this level
 
-    // Clear any values in the specific location fields
-    //$('#gis_location_name').val('');
-    //$('#gis_location_addr_street').val('');
-    //$('#gis_location_postcode').val('');
-    //$('#gis_location_lat').val('');
-    //$('#gis_location_lon').val('');
+    s3_gis_pullNext = false;
 
     // Check whether any detail values have been filled-in
     var name = $('#gis_location_name').val();
@@ -22,8 +17,11 @@ function s3_gis_dropdown_select(level, force) {
     var lon = $('#gis_location_lon').val();
     var addr_street = $('#gis_location_addr_street').val();
     var postcode = $('#gis_location_postcode').val();
-
-    var details = name && lat && lon && addr_street && postcode;
+    if (name || lat || lon || addr_street || postcode) {
+        var details = true;
+    } else {
+        var details = false;
+    }
 
     // Read the new value of the dropdown
     var new_id = $('#gis_location_L' + level).val();
@@ -41,9 +39,12 @@ function s3_gis_dropdown_select(level, force) {
             var v = '';
             if (data.length == 0) {
                 options = s3_gis_empty_set;
-            } else if (data.length == 1) {
+            } else if ((!force) && (level != s3_gis_maxlevel) && (data.length == 1)) {
                 // Only 1 value available, so set directly
-                options = '<option value="' +  data[0].id + '">' + data[0].name + '</option>';
+                // Don't do this for Specific Locations or if called by autocomplete to force next open (or it will close/open again!)
+                // NB Still allow people to deselect
+                options = s3_gis_select_location;
+                options += '<option selected="" value="' +  data[0].id + '">' + data[0].name + '</option>';
                 s3_gis_pullNext = true;
             } else {
                 options = s3_gis_select_location;
@@ -67,19 +68,18 @@ function s3_gis_dropdown_select(level, force) {
             if (options == s3_gis_empty_set) {
                 // Don't show unless it has data in
             } else {
+                $('#gis_location__label__row').removeClass('hidden').show();
+                $('#gis_location___row').removeClass('hidden').show();
                 $('#gis_location_').removeClass('hidden').show();
-                $('#gis_location_label_').removeClass('hidden').show();
-                $('#gis_location_details-btn').removeClass('hidden').show();
+                //$('#gis_location_details-btn').removeClass('hidden').show();
             }
         } else {
             // Normal Level
-            $('#gis_location_L' + (level + 1)).removeClass('hidden').show();
-            $('#gis_location_label_L' + (level + 1)).removeClass('hidden').show();
-            $('#gis_location_details-btn').removeClass('hidden').show();
+            $('#gis_location_L' + (level + 1)  + '_label__row').removeClass('hidden').show();
+            $('#gis_location_L' + (level + 1)  + '__row').removeClass('hidden').show();
+            // Hide other levels & reset their contents
+            s3_gis_hide_dropdown(level + 2);
         }
-
-        // Hide other levels & reset their contents
-        s3_gis_dropdown_hide(level + 2);
 
         if (s3_gis_pullNext) {
             // We just had a single value
@@ -98,33 +98,75 @@ function s3_gis_dropdown_select(level, force) {
             }
         }
 
-    } else {
+    } else if (level != s3_gis_maxlevel) {
         // Zero selected: Hide other levels & reset their contents
-        s3_gis_dropdown_hide(level + 1);
+        s3_gis_hide_dropdown(level + 1);
         
         // If we're the top-level selector & there are no detail fields already defined
         if (( 0 == level ) && ( !details )) {
             // Clear the real location_id field
             $('#' + s3_gis_location_id).val('');
-            // Clear the Lat/Lon fields to avoid thinking that a new location is being created
-            //$('#gis_location_lat').val('');
-            //$('#gis_location_lon').val('');
         }
     }
 }
 
-function s3_gis_dropdown_hide(level) {
+function s3_gis_hide_dropdown(level) {
     // Hide other levels & reset their contents
-    for (l = level; l <= parseInt(s3_gis_maxlevel); l = l + 1) {
-        $('#gis_location_L' + l).hide().html(s3_gis_loading_locations);
-        $('#gis_location_label_L' + l).hide();
+    for (l = level; l <= s3_gis_maxlevel; l = l + 1) {
+        $('#gis_location_L' + l + '_label__row').hide();
+        $('#gis_location_L' + l + '__row').hide();
+        $('#gis_location_L' + l).html(s3_gis_loading_locations);
     }
     if (level < (parseInt(s3_gis_maxlevel) + 2)) {
         // Hide the specific location level
-        $('#gis_location_').hide().html(s3_gis_loading_locations);
-        $('#gis_location_label_').hide();
+        $('#gis_location___row').hide();
+        $('#gis_location__label__row').hide();
         $('#gis_location_details-btn').hide();
+        $('#gis_location_').html(s3_gis_loading_locations);
     }
+}
+
+function s3_gis_hide_details() {
+    // Hide Detail Fields
+    $('#gis_location_name_label').hide();
+    $('#gis_location_name').hide();
+    $('#gis_location_details_hide-btn').hide();
+    $('#gis_location_addr_street_label').hide();
+    $('#gis_location_addr_street_row').hide();
+    $('#gis_location_postcode_label').hide();
+    $('#gis_location_postcode_row').hide();
+    $('#gis_location_map-btn').hide();
+    $('#gis_location_advanced_div').hide();
+}
+
+function s3_gis_show_details() {
+    // Show Detail Fields
+    $('#gis_location_name_label').removeClass('hidden').show();
+    $('#gis_location_name').removeClass('hidden').show();
+    $('#gis_location_details_hide-btn').removeClass('hidden').show();
+    $('#gis_location_addr_street_label').removeClass('hidden').show();
+    $('#gis_location_addr_street_row').removeClass('hidden').show();
+    $('#gis_location_postcode_label').removeClass('hidden').show();
+    $('#gis_location_postcode_row').removeClass('hidden').show();
+    $('#gis_location_map-btn').removeClass('hidden').show();
+    $('#gis_location_advanced_div').removeClass('hidden').show();
+}
+
+function s3_gis_update_details(new_id) {
+    // Read the detailed values for this selection
+    var this_url  = s3_gis_url + '/search.json?filter=%3D&field=id&value=' + new_id;
+    var s3_gis_load_locations = function(data, status) {
+        if (data.length != 0) {
+            // Set the values in the specific location fields
+            $('#gis_location_name').val(data[0].name);
+            $('#gis_location_addr_street').val(data[0].addr_street);
+            $('#gis_location_postcode').val(data[0].addr_postcode);
+            $('#gis_location_lat').val(data[0].lat);
+            $('#gis_location_lon').val(data[0].lon);
+        }
+     }
+    // Ensure this call is Synchronous
+    $.getJSONS3(this_url, s3_gis_load_locations, false, true);
 }
 
 function s3_gis_save_location(name, lat, lon, addr_street, addr_postcode) {
@@ -321,11 +363,18 @@ $(function(){
             s3_gis_dropdown_select(4);
         });
         $('#gis_location_').change( function() {
-            // Populate the real location_id field (unless a name is already present)
+            // Populate the real location_id field
             var new_id = $(this).val();
-            if ( '' == $('#gis_location_name').val() ) {
-                $('#' + s3_gis_location_id).val(new_id);
-            }
+            $('#' + s3_gis_location_id).val(new_id);
+            // Set the Detail Fields from this location
+            s3_gis_update_details(new_id);
+            // Hide the specific-location dropdown
+            $('#gis_location__label__row').hide();
+            $('#gis_location___row').hide();
+            // Hide the Create New Location button
+            $('#gis_location_add-btn').hide();
+            // Show the Detail Fields
+            s3_gis_show_details();
         });
 
         $('#gis_location_add-btn').click( function(evt) {
@@ -336,23 +385,30 @@ $(function(){
                 // Blank the UUID
                 S3.gis.uuid = '';
             }
+            // Save the current Details in case we cancel
+            var name = $('#gis_location_name').val();
+            var addr_street = $('#gis_location_addr_street').val();
+            var postcode = $('#gis_location_postcode').val();
             var lat = $('#gis_location_lat').val();
             var lon = $('#gis_location_lat').val();
-            if ( ('' != lat) || ('' != lon) ) {
-                // Save the value of Lat/Lon in case we cancel
-                $('body').data('lat', lat);
-                $('body').data('lon', lon);
-                // Blank the Lat/Lon
-                $('#gis_location_lat').val('');
-                $('#gis_location_lon').val('');
-            }
+            $('body').data('name', name);
+            $('body').data('addr_street', addr_street);
+            $('body').data('postcode', postcode);
+            $('body').data('lat', lat);
+            $('body').data('lon', lon);
+            // Blank the current values
+            $('#gis_location_name').val('');
+            $('#gis_location_addr_street').val('');
+            $('#gis_location_postcode').val('');
+            $('#gis_location_lat').val('');
+            $('#gis_location_lon').val('');
             // Hide the now-redundant Add button
             $('#gis_location_add-btn').hide();
             // Show the Cancel button
             $('#gis_location_cancel-btn').removeClass('hidden').show();
             // Hide the now-redundant specific-location dropdown
-            $('#gis_location_').hide();
-            $('#gis_location_label_').hide();
+            $('#gis_location__label__row').hide();
+            $('#gis_location___row').hide();
             // Unhide the create form
             if (navigator.geolocation) {
                 // HTML5 geolocation is available :)
@@ -360,14 +416,35 @@ $(function(){
             } else {
                 // geolocation is not available...IE sucks! ;)
             }
-            $('#gis_location_map-btn').removeClass('hidden').show();
-            $('#gis_location_name_label').removeClass('hidden').show();
-            $('#gis_location_name').removeClass('hidden').show();
-            $('#gis_location_addr_street_label').removeClass('hidden').show();
-            $('#gis_location_addr_street_row').removeClass('hidden').show();
-            $('#gis_location_postcode_label').removeClass('hidden').show();
-            $('#gis_location_postcode_row').removeClass('hidden').show();
-            $('#gis_location_advanced_div').removeClass('hidden').show();
+            // Show the Details
+            s3_gis_show_details();
+            // Hide the 'Hide Details' button
+            $('#gis_location_details_hide-btn').hide();
+            
+            evt.preventDefault();
+        });
+
+        $('#gis_location_cancel-btn').click( function(evt) {
+            // Restore the value of S3.gis.uuid
+            S3.gis.uuid = $('body').data('uuid');
+            // Restore the Details
+            $('#gis_location_name').val($('body').data('name'));
+            $('#gis_location_addr_street').val($('body').data('addr_street'));
+            $('#gis_location_postcode').val($('body').data('postcode'));
+            $('#gis_location_lat').val($('body').data('lat'));
+            $('#gis_location_lon').val($('body').data('lon'));
+            // Hide the Cancel button again
+            $('#gis_location_cancel-btn').hide();
+            // Show the Specific Location row
+            $('#gis_location__label__row').show();
+            $('#gis_location___row').show();
+            //$('#gis_location_details-btn').show();
+            // Show the Add button again
+            $('#gis_location_add-btn').show();
+            // Hide the 'Hide Details' button
+            $('#gis_location_details_hide-btn').show();
+            // Hide the details
+            s3_gis_hide_details();
 
             evt.preventDefault();
         });
@@ -395,49 +472,56 @@ $(function(){
             $(this).hide();
             // Show the Search Box
             $('#gis_location_autocomplete_div').removeClass('hidden').show();
+            // Show the Create New Location button
+            $('#gis_location_add-btn').removeClass('hidden').show();
+            // Hide the Dropdowns
+            $('#gis_location_L0_label__row').hide();
+            $('#gis_location_L0__row').hide();
+            $('#gis_location_L1_label__row').hide();
+            $('#gis_location_L1__row').hide();
+            $('#gis_location_L2_label__row').hide();
+            $('#gis_location_L2__row').hide();
+            $('#gis_location_L3_label__row').hide();
+            $('#gis_location_L3__row').hide();
+            $('#gis_location_L4_label__row').hide();
+            $('#gis_location_L4__row').hide();
+            $('#gis_location_L5_label__row').hide();
+            $('#gis_location_L5__row').hide();
+            $('#gis_location___row').hide();
+            $('#gis_location__label__row').hide();
+            $('#gis_location_details-btn').hide();
+            // Hide the Detail fields
+            s3_gis_hide_details();
 
             evt.preventDefault();
         });
 
         $('#gis_location_details-btn').click( function(evt) {
-            // Show the details
-            $('#gis_location_map-btn').removeClass('hidden').show();
-            $('#gis_location_addr_street_label').removeClass('hidden').show();
-            $('#gis_location_addr_street_row').removeClass('hidden').show();
-            $('#gis_location_postcode_label').removeClass('hidden').show();
-            $('#gis_location_postcode_row').removeClass('hidden').show();
-            $('#gis_location_advanced_div').removeClass('hidden').show();
+            // Hide the Create New Location button
+            $('#gis_location_add-btn').hide();
+            // Hide the Specific location dropdown
+            $('#gis_location___row').hide();
+            $('#gis_location__label__row').hide();
+            $('#gis_location_details-btn').hide();
+            // Show the Hide Details button
+            $('#gis_location_details_hide-btn').removeClass('hidden').show();
+            // Show the Details
+            s3_gis_show_details();
 
             evt.preventDefault();
         });
 
-        $('#gis_location_cancel-btn').click( function(evt) {
-            // Restore the value of S3.gis.uuid
-            S3.gis.uuid = $('body').data('uuid');
-            // Restore the Lat/Lon
-            $('#gis_location_lat').val($('body').data('lat'));
-            $('#gis_location_lon').val($('body').data('lon'));
-            // Hide the Cancel button again
-            $('#gis_location_cancel-btn').hide();
-            // Empty the 'name' field
-            $('#gis_location_name').val('');
-            // Show the Add button again
-            $('#gis_location_add-btn').show();
-            if ( "" != $('#gis_location_').val() ) {
-                // Show the Specific Location row if it has data
-                $('#gis_location_').show();
-                $('#gis_location_label_').show();
-                $('#gis_location_details-btn').show();
-            }
-            // Hide the details
-            $('#gis_location_map-btn').hide();
-            $('#gis_location_name_label').hide();
-            $('#gis_location_name').hide();
-            $('#gis_location_addr_street_label').hide();
-            $('#gis_location_addr_street_row').hide();
-            $('#gis_location_postcode_label').hide();
-            $('#gis_location_postcode_row').hide();
-            $('#gis_location_advanced_div').hide();
+        $('#gis_location_details_hide-btn').click( function(evt) {
+            // Show the Create New Location button
+            $('#gis_location_add-btn').removeClass('hidden').show();
+            // Show the Specific location dropdown
+            $('#gis_location___row').show();
+            $('#gis_location__label__row').show();
+            $('#gis_location_details-btn').removeClass('hidden').show();
+            // Hide the Hide Details button
+            $('#gis_location_details_hide-btn').hide();
+            // Hide the Details
+            s3_gis_hide_details();
 
             evt.preventDefault();
         });
@@ -464,7 +548,16 @@ $(function(){
                 $('#gis_location_autocomplete').val( ui.item.name );
                 $('#' + s3_gis_location_id).val( ui.item.id );
                 s3_gis_ac_data.accept = true;
+                // Hide the search results
+                $('ul.ui-autocomplete').hide();
+                // Hide the search box again
+                $('#gis_location_autocomplete_div').hide();
+                // Show the search button again
+                $('#gis_location_search-btn').show();
                 // Display/Set the dropdowns as-required
+                // @ToDo: Check for Hardcoded L0?
+                $('#gis_location_L0_label__row').show();
+                $('#gis_location_L0__row').show();
                 var s3_gis_path = ui.item.path;
                 var s3_gis_id = ui.item.id;
                 var s3_gis_l1, s3_gis_l2, s3_gis_l3, s3_gis_l4, s3_gis_l5;
@@ -828,7 +921,7 @@ $(function(){
                             // Set the L3 dropdown (if we have it in the path)
                             $('#gis_location_L3').val( s3_gis_l3 );
                             // Open the L4 dropdown filtered to this parent (if we have it in the path)
-                            s3_gis_dropdown_select(3);
+                            s3_gis_dropdown_select(3, true);
                             // Check to see if Parent is in this select
                             if ( s3_gis_missing[0] ) {
                                 if (undefined != $('#gis_location_L4 option[value=' + s3_gis_missing[0] + ']')[0]) {
@@ -856,11 +949,10 @@ $(function(){
                         }
                         // Populate the real location_id field
                         $('#' + s3_gis_location_id).val( s3_gis_id );
+                        // Update the Detail Fields
+                        s3_gis_update_details( s3_gis_id );
+                        $('#gis_location_details-btn').removeClass('hidden').show();
                 }
-                // Hide the search box again
-                $('#gis_location_autocomplete_div').hide();
-                // Show the search button again
-                $('#gis_location_search-btn').show();
                 return false;
             }
         })
@@ -904,17 +996,11 @@ $(function(){
             var lon = $('#gis_location_lon').val();
             var addr_street = $('#gis_location_addr_street').val();
             var addr_postcode = $('#gis_location_postcode').val();
-            var L0 = $('#gis_location_L0').val();
 
-            // Check if there are Location changes to save
-            if (('' == name) && ('' == lat || '' == lon) && ('' == addr_street) && ('' == addr_postcode) && ('' == L0)) {
-                // Skip: There are no location details specified
-            //} else if ((S3.gis.name == name) && (S3.gis.lat == lat) && (S3.gis.lon == lon) && (S3.gis.addr_street == addr_street.replace(/\n/g, '%0d')) && (S3.gis.postcode == addr_postcode)) {
-                // Skip: Nothing has been changed
-            } else {
-                // Save the location
-                s3_gis_save_location(name, lat, lon, addr_street, addr_postcode);
-            }
+            // Save the location
+            // NB Currently this is always done, whether or not we have any data
+            // This wouldn't be appropriate for Projects/Documents which can point directly to an Lx
+            s3_gis_save_location(name, lat, lon, addr_street, addr_postcode);
 
             // Allow the Form's save to continue
             return true;

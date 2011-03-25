@@ -258,7 +258,7 @@ class MENUS3(DIV):
                 if link == False:
                     continue
                 if not link:
-                        link = "#null"
+                    link = "#null"
                 if right:
                     style = "float: right;"
                 else:

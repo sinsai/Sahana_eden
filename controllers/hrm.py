@@ -74,8 +74,7 @@ def shn_menu():
         menu = [
             [T("Organisation"), False, None,[
                 [T("Choose"),
-                 False, aURL(r=request, f="organisation",
-                             args="search")],
+                 False, aURL(r=request, f="organisation")],
             ]],
             [T("Staff"), False, None,[
                 [T("New"),
@@ -268,10 +267,12 @@ def organisation():
             if session.hrm is None:
                 session.hrm = Storage()
             session.hrm.org = r.id
-        if r.method != "search":
+        if r.method is not None:
             r.method = "clear"
             r.next = session.hrm.last_call
             return dict(bypass=True, output=None)
+        else:
+            r.id = r.record = None
         return True
     response.s3.prep = prep
 
@@ -285,7 +286,10 @@ def organisation():
 
     s3xrc.model.configure(db.org_organisation, insertable=False)
 
-    output = s3_rest_controller("org", resourcename, native=False)
+    output = s3_rest_controller("org", resourcename,
+                                native=False,
+                                title=T("Select Organization"),
+                                subtitle=None)
     return output
 
 

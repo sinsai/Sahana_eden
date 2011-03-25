@@ -324,7 +324,7 @@ if deployment_settings.has_module(module):
                         TH("End date"),
                         TH("Description"),
                         TH("Status"))),
-                        TBODY(records), _id="list", _class="display"))
+                        TBODY(records), _id="list", _class="dataTable display"))
                 else:
                         items = T("None")
 

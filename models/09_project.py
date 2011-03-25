@@ -297,7 +297,7 @@ if deployment_settings.has_module("project"):
                         TH("Start date"),
                         TH("End date"),
                         TH("Budgeted Cost"))),
-                        TBODY(records), _id="list", _class="display"))
+                        TBODY(records), _id="list", _class="dataTable display"))
                 else:
                         items = T(NONE)
 

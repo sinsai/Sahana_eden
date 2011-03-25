@@ -1056,7 +1056,7 @@ class S3CRUD(S3Method):
                               headers=headers,
                               linkto=linkto,
                               upload=download_url,
-                              _id="list", _class="display")
+                              _id="list", _class="dataTable display")
         return items
 
 

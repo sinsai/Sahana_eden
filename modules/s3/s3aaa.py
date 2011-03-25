@@ -1010,18 +1010,16 @@ class AuthS3(Auth):
                 # This staff is a component of a site instance
                 table = db[tablename]
                 query = (table.site_id == site_id)
-                site_staff_role_id = db(query).select(table.owned_by_role,
-                                                      limitby=(0, 1)).first().owned_by_role
-                try:
-                    table = db.org_site
-                    id = site_id
-                    record = db(table.id == id).select(table.name,
-                                                       limitby=(0, 1)).first()
-                    recordname = record.name
-                except:
-                    recordname = ""
+                record = db(query).select(table.owned_by_role,
+                                          table.id,
+                                          table.name,
+                                          limitby=(0, 1)).first()
+                id = record.id
+                recordname = record.name or ""
+                site_staff_role_id = record.owned_by_role
+
                 site_supervisor_role = "%s_%s Supervisors of %s" % (tablename,
-                                                                    site_id,
+                                                                    id,
                                                                     recordname)
                 table = db[self.settings.table_group]
                 query = (table.role == site_supervisor_role)
@@ -2579,7 +2577,7 @@ class S3RoleManager(S3Method):
             tbody = TBODY(trows)
 
             # Aggregate list
-            items = TABLE(thead, tbody, _id="list", _class="display")
+            items = TABLE(thead, tbody, _id="list", _class="dataTable display")
             output.update(items=items, sortby=[[1, 'asc']])
 
             # Add-button
@@ -3186,7 +3184,7 @@ class S3RoleManager(S3Method):
                                          _value=T("Remove")))))
                     tbody = TBODY(trows)
                     del_form = TABLE(thead, tbody, _id="list",
-                                     _class="display")
+                                     _class="dataTable display")
                 else:
                     del_form = T("No users with this role")
 

@@ -34,15 +34,17 @@ def shn_menu():
                                              #(public_url, request.application),
                                              #"kml_name" : "Hospitals_"})],
         ]],
-        [T("Requests"), False, aURL(r=request, c="rms", f="req",
+    ]
+    if deployment_settings.has_module("rms"):
+        response.menu_options.append( \
+            [T("Requests"), False, aURL(r=request, c="rms", f="req",
                                     vars=selreq), [
             [T("New"), False, aURL(p="create", r=request, c="rms", f="req",
                                    args="create", vars=newreq)],
             [T("Manage"), False, aURL(r=request, c="rms", f="req",
                                       vars=selreq)],
-        ]],
-        [T("Help"), False, URL(r=request, f="index")],
-    ]
+        ]])
+    response.menu_options.append([T("Help"), False, URL(r=request, f="index")])
     menu_selected = []
     if session.rcvars and "hms_hospital" in session.rcvars:
         hospital = db.hms_hospital
@@ -128,12 +130,14 @@ def hospital():
                 msg_list_empty = T("No Hospitals currently registered"))
 
             if r.component and r.component.name == "req":
+                # This now applies to req_req
+                pass
                 # Hide the Implied fields
-                db.rms_req.shelter_id.writable = db.rms_req.shelter_id.readable = False
-                db.rms_req.organisation_id.writable = db.rms_req.organisation_id.readable = False
-                db.rms_req.location_id.writable = False
-                db.rms_req.location_id.default = r.record.location_id
-                db.rms_req.location_id.comment = ""
+                #db.rms_req.shelter_id.writable = db.rms_req.shelter_id.readable = False
+                #db.rms_req.organisation_id.writable = db.rms_req.organisation_id.readable = False
+                #db.rms_req.location_id.writable = False
+                #db.rms_req.location_id.default = r.record.location_id
+                #db.rms_req.location_id.comment = ""
 
         elif r.representation == "aadata":
             # Hide the Implied fields here too to make columns match
@@ -156,7 +160,7 @@ def hospital():
     tabs = [(T("Status Report"), ""),
             (T("Bed Capacity"), "bed_capacity"),
             (T("Activity Report"), "activity"),
-            (T("Requests"), "req"),
+            #(T("Requests"), "req"), # Included in Inventory Tabs
             (T("Images"), "image"),
             (T("Services"), "services"),
             (T("Contacts"), "contact"),

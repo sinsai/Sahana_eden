@@ -50,6 +50,7 @@ def shn_item_rheader(r):
             tabs = [
                     (T("Edit Details"), None),
                     (T("Packs"), "item_pack"),
+                    (T("Alternative Items"), "item_alt"),
                     (T("In Inventories"), "store_item"),
                     (T("Requested"), "ritem")            
                    ]            

@@ -439,7 +439,7 @@ def location_duplicates():
         items = DIV((TABLE(table_header,
                            TBODY(),
                            _id="list",
-                           _class="display")))
+                           _class="dataTable display")))
         return(dict(items=items))
 
 def delete_location():

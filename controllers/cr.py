@@ -164,7 +164,8 @@ def shelter():
             (T("People"), "presence"),
             (T("Staff"), "staff"),
             (T("Assessments"), "rat"),
-            (T("Requests"), "req")]
+            #(T("Requests"), "req") # Included in Inventory Tabs
+            ]
 
     rheader = lambda r: shn_shelter_rheader(r,
                                             tabs=tabs + shn_show_inv_tabs(r))
@@ -235,7 +236,7 @@ def shn_shelter_prep(r):
         if r.method != "read":
             # Don't want to see in Create forms
             # inc list_create (list_fields over-rides)
-           pr_address_hide(table)
+           pr_address_hide(r.table)
 
         if r.component:
             if r.component.name == "rat":
@@ -253,14 +254,16 @@ def shn_shelter_prep(r):
                         db.assess_rat.staff_id.default = staff_id.id
 
             elif r.component.name == "req":
+                # This now applies to req_req
+                pass
                 # Hide the Implied fields
-                db.rms_req.hospital_id.writable = db.rms_req.hospital_id.readable = False
-                db.rms_req.location_id.writable = False
-                db.rms_req.location_id.default = r.record.location_id
-                db.rms_req.location_id.comment = ""
+                #db.rms_req.hospital_id.writable = db.rms_req.hospital_id.readable = False
+                #db.rms_req.location_id.writable = False
+                #db.rms_req.location_id.default = r.record.location_id
+                #db.rms_req.location_id.comment = ""
                 # Set defaults
-                db.rms_req.datetime.default = request.utcnow
-                db.rms_req.person_id.default = s3_logged_in_person()
+                #db.rms_req.datetime.default = request.utcnow
+                #db.rms_req.person_id.default = s3_logged_in_person()
 
             elif r.component.name == "presence":
                 # Hide the Implied fields

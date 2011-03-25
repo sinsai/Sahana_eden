@@ -434,7 +434,7 @@ def person_duplicates():
 
     else:
         # Don't load records except via dataTables (saves duplicate loading & less confusing for user)
-        items = DIV((TABLE(table_header, TBODY(), _id="list", _class="display")))
+        items = DIV((TABLE(table_header, TBODY(), _id="list", _class="dataTable display")))
         return(dict(items=items))
 
 #----------------------------------------------------------------------------------------------------------

@@ -20,8 +20,8 @@ def shn_menu():
     """ Options menu """
 
     response.menu_options = [
-        [T("Missing Persons"), False, aURL(r=request, f="index"), [
-            [T("Add or Update"), False, aURL(r=request, f="index")],
+        [T("Missing Persons"), False, None, [
+            [T("Search"), False, aURL(r=request, f="index")],
             [T("List All Reports"), False, aURL(r=request, f="person")],
         ]],
         #[T("Help"), False, URL(r=request, f="guide")],

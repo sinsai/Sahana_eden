@@ -22,6 +22,15 @@ def index():
     response.title = module_name
     return dict(module_name=module_name)
 #==============================================================================
+req_item_inv_item_btn = dict(url = str( URL( r=request,
+                                             c = "req",
+                                             f = "req_item_inv_item",
+                                             args = ["[id]"]
+                                            )
+                                        ),
+                             _class = "action-btn",
+                             label = str(T("Inventory Items")),
+                             )
 def req():
     tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
@@ -73,16 +82,7 @@ def req():
         #                            )
         #                        )
     else:
-        req_actions = [dict(url = str( URL( r=request,
-                                            c = "req",
-                                            f = "req_item_inv_item",
-                                            args = ["[id]"]
-                                           )
-                                       ),
-                            _class = "action-btn",
-                            label = str(T("Inventory Items")),
-                            ),
-                        ]
+        req_actions = [req_item_inv_item_btn]
 
     output = s3_rest_controller( module,
                                  resourcename,
@@ -91,7 +91,7 @@ def req():
     if response.s3.actions:
         response.s3.actions += req_actions
     else:
-        response.s3.actions = req_actions    
+        response.s3.actions = req_actions
           
     return output
 #------------------------------------------------------------------------------
@@ -146,9 +146,16 @@ def shn_req_rheader(r):
 def req_item():
     tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
+
     output = s3_rest_controller( module,
                                  resourcename,
                                  rheader=shn_commit_rheader)
+
+    if response.s3.actions:
+        response.s3.actions += [req_item_inv_item_btn]
+    else:
+        response.s3.actions = [req_item_inv_item_btn] 
+
     return output
 #------------------------------------------------------------------------------
 def req_item_inv_item():

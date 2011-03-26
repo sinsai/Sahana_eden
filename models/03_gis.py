@@ -144,142 +144,6 @@ symbology_id = S3ReusableField("symbology_id", db.gis_symbology, sortby="name",
                                )
 
 # -----------------------------------------------------------------------------
-# GIS Config
-gis_config_layout_opts = {
-    1:T("window"),
-    2:T("embedded")
-    }
-opt_gis_layout = db.Table(db, "opt_gis_layout",
-                          Field("opt_gis_layout", "integer",
-                                requires = IS_IN_SET(gis_config_layout_opts,
-                                                     zero=None),
-                                default = 1,
-                                label = T("Layout"),
-                                represent = lambda opt: gis_config_layout_opts.get(opt,
-                                                                                   UNKNOWN_OPT)))
-# id=1 = Default settings
-resourcename = "config"
-tablename = "gis_config"
-table = db.define_table(tablename,
-                        super_link(db.pr_pentity), # pe_id
-                        Field("lat", "double"),
-                        Field("lon", "double"),
-                        Field("zoom", "integer"),
-                        Field("bbox_min_size", "double", default=0.01),
-                        Field("bbox_inset", "double", default=0.007),
-                        projection_id(),
-                        symbology_id(),
-                        marker_id(),
-                        Field("map_height", "integer", notnull=True),
-                        Field("map_width", "integer", notnull=True),
-                        Field("min_lon", "double", default=-180),
-                        Field("min_lat", "double", default=-90),
-                        Field("max_lon", "double", default=180),
-                        Field("max_lat", "double", default=90),
-                        Field("zoom_levels", "integer", default=22,
-                              notnull=True),
-                        Field("cluster_distance", "integer", default=5,
-                              notnull=True),
-                        Field("cluster_threshold", "integer", default=2,
-                              notnull=True),
-                        opt_gis_layout,
-                        Field("wmsbrowser_name", default="Web Map Service"),
-                        Field("wmsbrowser_url"),
-                        migrate=migrate,
-                        *(s3_timestamp() + s3_uid()))
-table.uuid.requires = IS_NOT_ONE_OF(db, "gis_config.uuid")
-table.pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.pe_id",
-                                            shn_pentity_represent))
-table.pe_id.readable = table.pe_id.writable = False
-table.lat.requires = IS_LAT()
-table.lon.requires = IS_LON()
-table.zoom.requires = IS_INT_IN_RANGE(1, 20)
-table.bbox_min_size.requires = IS_FLOAT_IN_RANGE(0, 90)
-table.bbox_inset.requires = IS_FLOAT_IN_RANGE(0, 90)
-table.map_height.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(160, 1024)]
-table.map_width.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(320, 1280)]
-table.min_lat.requires = IS_LAT()
-table.max_lat.requires = IS_LAT()
-table.min_lon.requires = IS_LON()
-table.max_lon.requires = IS_LON()
-table.zoom_levels.requires = IS_INT_IN_RANGE(1, 30)
-table.cluster_distance.requires = IS_INT_IN_RANGE(1, 30)
-table.cluster_threshold.requires = IS_INT_IN_RANGE(1, 10)
-table.lat.label = T("Latitude")
-table.lon.label = T("Longitude")
-table.zoom.label = T("Zoom")
-table.bbox_min_size.label = T("Bounding Box Size")
-table.bbox_inset.label = T("Bounding Box Insets")
-table.marker_id.label = T("Default Marker")
-table.map_height.label = T("Map Height")
-table.map_width.label = T("Map Width")
-table.zoom_levels.label = T("Zoom Levels")
-table.cluster_distance.label = T("Cluster Distance")
-table.cluster_threshold.label = T("Cluster Threshold")
-table.wmsbrowser_name.label = T("WMS Browser Name")
-table.wmsbrowser_url.label =  T("WMS Browser URL")
-# Defined here since Component
-table.lat.comment = DIV( _class="tooltip",
-                         _title="%s|%s" % (T("Latitude"),
-                                           T("Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
-table.lon.comment = DIV( _class="tooltip",
-                         _title="%s|%s" % (T("Longitude"),
-                                           T("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
-table.zoom.comment = DIV( _class="tooltip",
-                          _title="%s|%s" % (T("Zoom"),
-                                            T("How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
-table.bbox_min_size.comment = DIV( _class="tooltip",
-                                   _title="%s|%s" % (T("Minimum Bounding Box"),
-                                                     T("When a map is displayed that focuses on a collection of points, the map is zoomed to show just the region bounding the points. This value gives a minimum width and height in degrees for the region shown. Without this, a map showing a single point would not show any extent around that point. After the map is displayed, it can be zoomed as desired.")))
-table.bbox_inset.comment = DIV( _class="tooltip",
-                                _title="%s|%s" % (T("Bounding Box Insets"),
-                                                  T("When a map is displayed that focuses on a collection of points, the map is zoomed to show just the region bounding the points. This value adds a small mount of distance outside the points. Without this, the outermost points would be on the bounding box, and might not be visible.")))
-table.map_height.comment = DIV( _class="tooltip",
-                                _title="%s|%s" % (T("Height"),
-                                                  T("Default Height of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
-table.map_width.comment = DIV( _class="tooltip",
-                               _title="%s|%s" % (T("Width"),
-                                                 T("Default Width of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
-table.wmsbrowser_name.comment = DIV( _class="tooltip",
-                                     _title="%s|%s" % (T("WMS Browser Name"),
-                                                       T("The title of the WMS Browser panel in the Tools panel.")))
-table.wmsbrowser_url.comment = DIV( _class="tooltip",
-                                    _title="%s|%s" % (T("WMS Browser URL"),
-                                                      T("The URL for the GetCapabilities of a WMS Service whose layers you want accessible via the Map.")))
-ADD_CONFIG = T("Add Config")
-LIST_CONFIGS = T("List Configs")
-s3.crud_strings[tablename] = Storage(
-    title_create = ADD_CONFIG,
-    title_display = T("Config"),
-    title_list = T("Configs"),
-    title_update = T("Edit Config"),
-    title_search = T("Search Configs"),
-    subtitle_create = T("Add New Config"),
-    subtitle_list = LIST_CONFIGS,
-    label_list_button = LIST_CONFIGS,
-    label_create_button = ADD_CONFIG,
-    label_delete_button = T("Delete Config"),
-    msg_record_created = T("Config added"),
-    msg_record_modified = T("Config updated"),
-    msg_record_deleted = T("Config deleted"),
-    msg_list_empty = T("No Configs currently defined")
-)
-
-# Configs as component of Persons (Personalised configurations)
-s3xrc.model.add_component(module, resourcename,
-                          multiple=False,
-                          joinby=super_key(db.pr_pentity))
-
-s3xrc.model.configure(table,
-                      deletable=False,
-                      listadd=False,
-                      list_fields = ["lat",
-                                     "lon",
-                                     "zoom",
-                                     "projection_id",
-                                     "map_height",
-                                     "map_width"])
-# -----------------------------------------------------------------------------
 # GIS Feature Classes
 # These are used in groups (for display/export), for icons & for URLs to edit data
 # This is the list of GPS Markers for Garmin devices
@@ -604,6 +468,143 @@ if response.s3.countries:
 #s3xrc.model.add_component(module, resourcename,
 #                          multiple=False,
 #                          joinby=dict(gis_location="parent"))
+
+# -----------------------------------------------------------------------------
+# GIS Config
+gis_config_layout_opts = {
+    1:T("window"),
+    2:T("embedded")
+    }
+opt_gis_layout = db.Table(db, "opt_gis_layout",
+                          Field("opt_gis_layout", "integer",
+                                requires = IS_IN_SET(gis_config_layout_opts,
+                                                     zero=None),
+                                default = 1,
+                                label = T("Layout"),
+                                represent = lambda opt: gis_config_layout_opts.get(opt,
+                                                                                   UNKNOWN_OPT)))
+# id=1 = Default settings
+resourcename = "config"
+tablename = "gis_config"
+table = db.define_table(tablename,
+                        super_link(db.pr_pentity), # pe_id
+                        Field("lat", "double"),
+                        Field("lon", "double"),
+                        Field("zoom", "integer"),
+                        Field("bbox_min_size", "double", default=0.01),
+                        Field("bbox_inset", "double", default=0.007),
+                        projection_id(),
+                        symbology_id(),
+                        marker_id(),
+                        Field("map_height", "integer", notnull=True),
+                        Field("map_width", "integer", notnull=True),
+                        Field("min_lon", "double", default=-180),
+                        Field("min_lat", "double", default=-90),
+                        Field("max_lon", "double", default=180),
+                        Field("max_lat", "double", default=90),
+                        Field("zoom_levels", "integer", default=22,
+                              notnull=True),
+                        Field("cluster_distance", "integer", default=5,
+                              notnull=True),
+                        Field("cluster_threshold", "integer", default=2,
+                              notnull=True),
+                        opt_gis_layout,
+                        Field("wmsbrowser_name", default="Web Map Service"),
+                        Field("wmsbrowser_url"),
+                        migrate=migrate,
+                        *(s3_timestamp() + s3_uid()))
+table.uuid.requires = IS_NOT_ONE_OF(db, "gis_config.uuid")
+table.pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.pe_id",
+                                            shn_pentity_represent))
+table.pe_id.readable = table.pe_id.writable = False
+table.lat.requires = IS_LAT()
+table.lon.requires = IS_LON()
+table.zoom.requires = IS_INT_IN_RANGE(1, 20)
+table.bbox_min_size.requires = IS_FLOAT_IN_RANGE(0, 90)
+table.bbox_inset.requires = IS_FLOAT_IN_RANGE(0, 90)
+table.map_height.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(160, 1024)]
+table.map_width.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(320, 1280)]
+table.min_lat.requires = IS_LAT()
+table.max_lat.requires = IS_LAT()
+table.min_lon.requires = IS_LON()
+table.max_lon.requires = IS_LON()
+table.zoom_levels.requires = IS_INT_IN_RANGE(1, 30)
+table.cluster_distance.requires = IS_INT_IN_RANGE(1, 30)
+table.cluster_threshold.requires = IS_INT_IN_RANGE(1, 10)
+table.lat.label = T("Latitude")
+table.lon.label = T("Longitude")
+table.zoom.label = T("Zoom")
+table.bbox_min_size.label = T("Bounding Box Size")
+table.bbox_inset.label = T("Bounding Box Insets")
+table.marker_id.label = T("Default Marker")
+table.map_height.label = T("Map Height")
+table.map_width.label = T("Map Width")
+table.zoom_levels.label = T("Zoom Levels")
+table.cluster_distance.label = T("Cluster Distance")
+table.cluster_threshold.label = T("Cluster Threshold")
+table.wmsbrowser_name.label = T("WMS Browser Name")
+table.wmsbrowser_url.label =  T("WMS Browser URL")
+# Defined here since Component
+table.lat.comment = DIV( _class="tooltip",
+                         _title="%s|%s" % (T("Latitude"),
+                                           T("Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+table.lon.comment = DIV( _class="tooltip",
+                         _title="%s|%s" % (T("Longitude"),
+                                           T("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
+table.zoom.comment = DIV( _class="tooltip",
+                          _title="%s|%s" % (T("Zoom"),
+                                            T("How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
+table.bbox_min_size.comment = DIV( _class="tooltip",
+                                   _title="%s|%s" % (T("Minimum Bounding Box"),
+                                                     T("When a map is displayed that focuses on a collection of points, the map is zoomed to show just the region bounding the points. This value gives a minimum width and height in degrees for the region shown. Without this, a map showing a single point would not show any extent around that point. After the map is displayed, it can be zoomed as desired.")))
+table.bbox_inset.comment = DIV( _class="tooltip",
+                                _title="%s|%s" % (T("Bounding Box Insets"),
+                                                  T("When a map is displayed that focuses on a collection of points, the map is zoomed to show just the region bounding the points. This value adds a small mount of distance outside the points. Without this, the outermost points would be on the bounding box, and might not be visible.")))
+table.map_height.comment = DIV( _class="tooltip",
+                                _title="%s|%s" % (T("Height"),
+                                                  T("Default Height of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
+table.map_width.comment = DIV( _class="tooltip",
+                               _title="%s|%s" % (T("Width"),
+                                                 T("Default Width of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
+table.wmsbrowser_name.comment = DIV( _class="tooltip",
+                                     _title="%s|%s" % (T("WMS Browser Name"),
+                                                       T("The title of the WMS Browser panel in the Tools panel.")))
+table.wmsbrowser_url.comment = DIV( _class="tooltip",
+                                    _title="%s|%s" % (T("WMS Browser URL"),
+                                                      T("The URL for the GetCapabilities of a WMS Service whose layers you want accessible via the Map.")))
+ADD_CONFIG = T("Add Config")
+LIST_CONFIGS = T("List Configs")
+s3.crud_strings[tablename] = Storage(
+    title_create = ADD_CONFIG,
+    title_display = T("Config"),
+    title_list = T("Configs"),
+    title_update = T("Edit Config"),
+    title_search = T("Search Configs"),
+    subtitle_create = T("Add New Config"),
+    subtitle_list = LIST_CONFIGS,
+    label_list_button = LIST_CONFIGS,
+    label_create_button = ADD_CONFIG,
+    label_delete_button = T("Delete Config"),
+    msg_record_created = T("Config added"),
+    msg_record_modified = T("Config updated"),
+    msg_record_deleted = T("Config deleted"),
+    msg_list_empty = T("No Configs currently defined")
+)
+
+# Configs as component of Persons (Personalised configurations)
+s3xrc.model.add_component(module, resourcename,
+                          multiple=False,
+                          joinby=super_key(db.pr_pentity))
+
+s3xrc.model.configure(table,
+                      deletable=False,
+                      listadd=False,
+                      list_fields = ["lat",
+                                     "lon",
+                                     "zoom",
+                                     "projection_id",
+                                     "map_height",
+                                     "map_width"])
 
 # -----------------------------------------------------------------------------
 # Local Names

@@ -28,13 +28,6 @@ inv_menu = [
                     [T("Search Received Shipments"), False, URL(r=request, c="inv", f="recv", args="search")],
                 ]
             ],
-            [T("Request Management"), False, URL(r=request, c="req", f="req"),
-            [
-                [T("Requests"), False, URL(r=request, c="req", f="req")],
-                [T("Commitments"), False, URL(r=request, c="req", f="commit")],
-                #[T("Search Requested Items"), False, URL(r=request, c="req", f="req_item", args="search")],
-                #[T("Add"), False, URL(r=request, c="req", f="req", args="create")],
-            ]],
            # [T("Receive"), False, URL(r=request, c="inv", f="recv"),
            # [
            #     [T("List"), False, URL(r=request, c="inv", f="recv")],

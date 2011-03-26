@@ -10,7 +10,7 @@
 module = request.controller
 resourcename = request.function
 
-response.menu_options = inv_menu
+response.menu_options = req_menu
 
 #==============================================================================
 def index():

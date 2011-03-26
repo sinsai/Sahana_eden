@@ -9,7 +9,18 @@
      - staff
      - assets
 """
-
+#==============================================================================
+req_menu = [
+                [T("Request Management"), False, URL(r=request, c="req", f="req"),
+                    [
+                        [T("Requests"), False, URL(r=request, c="req", f="req")],
+                        [T("Request Items"), False, URL(r=request, c="req", f="req_item")],
+                        [T("Commitments"), False, URL(r=request, c="req", f="commit")],
+                        #[T("Search Requested Items"), False, URL(r=request, c="req", f="req_item", args="search")],
+                    ]
+                ],
+            ]
+#==============================================================================
 module = "req"
 if deployment_settings.has_module("inv"):
     #==========================================================================

@@ -334,7 +334,7 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
             else:
                 return None
 
-    #Packs as component of Items
+    # Packs as component of Items
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(supply_item="item_id"))
@@ -386,7 +386,7 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
         except:
             return NONE
 
-    # Reusable Field - probably not needs
+    # Reusable Field - probably not needed
     item_alt_id = S3ReusableField("item_alt_id", db.supply_item_alt, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db,
                                                 "supply_item_alt.id",
@@ -395,8 +395,8 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
                 represent = shn_item_alt_represent,
                 label = T("Alternative Item"),
                 comment = DIV(DIV( _class="tooltip",
-                                   _title="%s|%s" % (T("Alternative Items"),
-                                                     T("A item which can be used in place of another item"))),
+                                   _title="%s|%s" % (T("Alternative Item"),
+                                                     T("An item which can be used in place of another item"))),
                               A( ADD_ALT_ITEM,
                                  _class="colorbox",
                                  _href=URL(r=request,
@@ -413,12 +413,12 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
                 ondelete = "RESTRICT"
                 )
 
-    #Alternative Items as component of Items
+    # Alternative Items as component of Items
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(supply_item="item_id"))
 
-     #==============================================================================
+    #==========================================================================
     def shn_supply_item_add (quantity_1, pack_quantity_1,
                              quantity_2, pack_quantity_2,):
         """
@@ -432,3 +432,5 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
             return ((quantity_1*pack_quantity_1) +
                     (quantity_2*pack_quantity_2)
                     ) / pack_quantity_1
+
+# END =========================================================================

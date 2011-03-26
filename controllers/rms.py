@@ -11,34 +11,38 @@ if prefix not in deployment_settings.modules:
 
 # Options Menu (available in all Functions' Views)
 menu = [
-    [T("Home"), False, URL(r=request, f="index")],
+    #[T("Home"), False, URL(r=request, f="index")],
     [T("Requests"), False, URL(r=request, f="req"), [
-        [T("List"), False, URL(r=request, f="req")],
-        [T("Add"), False, URL(r=request, f="req", args="create")],
+        [T("New"),
+         False, aURL(p="create", r=request, f="req",
+                     args="create")],
         # @ToDo Search by priority, status, location
-        #[T("Search"), False, URL(r=request, f="req", args="search")],
+        [T("Search"),
+         False, URL(r=request, f="req", args="search")],
+        [T("List"),
+         False, aURL(r=request, f="req")],
     ]],
-    [T("All Requested Items"), False, URL(r=request, f="ritem")],
+    #[T("All Requested Items"), False, URL(r=request, f="ritem")],
 ]
-if session.rcvars:
-    if "hms_hospital" in session.rcvars:
-        hospital = db.hms_hospital
-        query = (hospital.id == session.rcvars["hms_hospital"])
-        selection = db(query).select(hospital.id, hospital.name, limitby=(0, 1)).first()
-        if selection:
-            menu_hospital = [
-                [selection.name, False, URL(r=request, c="hms", f="hospital", args=[selection.id])]
-            ]
-            menu.extend(menu_hospital)
-    if "cr_shelter" in session.rcvars:
-        shelter = db.cr_shelter
-        query = (shelter.id == session.rcvars["cr_shelter"])
-        selection = db(query).select(shelter.id, shelter.name, limitby=(0, 1)).first()
-        if selection:
-            menu_shelter = [
-                [selection.name, False, URL(r=request, c="cr", f="shelter", args=[selection.id])]
-            ]
-            menu.extend(menu_shelter)
+#if session.rcvars:
+#    if "hms_hospital" in session.rcvars:
+#        hospital = db.hms_hospital
+#        query = (hospital.id == session.rcvars["hms_hospital"])
+#        selection = db(query).select(hospital.id, hospital.name, limitby=(0, 1)).first()
+#        if selection:
+#            menu_hospital = [
+#                [selection.name, False, URL(r=request, c="hms", f="hospital", args=[selection.id])]
+#            ]
+#            menu.extend(menu_hospital)
+#    if "cr_shelter" in session.rcvars:
+#        shelter = db.cr_shelter
+#        query = (shelter.id == session.rcvars["cr_shelter"])
+#        selection = db(query).select(shelter.id, shelter.name, limitby=(0, 1)).first()
+#        if selection:
+#            menu_shelter = [
+#                [selection.name, False, URL(r=request, c="cr", f="shelter", args=[selection.id])]
+#            ]
+#            menu.extend(menu_shelter)
 
 response.menu_options = menu
 
@@ -61,8 +65,7 @@ def index():
 
 
 def req():
-
-    """ RESTful CRUD controller """
+    """ Request Controller """
 
     resourcename = request.function # check again in case we're coming from index()
     tablename = "%s_%s" % (prefix, resourcename)
@@ -89,25 +92,21 @@ def req():
     # Post-processor
     def postp(r, output):
         if r.representation in shn_interactive_view_formats:
-            #if r.method == "create" and not r.component:
-            # listadd arrives here as method=None
-            if r.method != "delete" and not r.component:
-                # Redirect to the Assessments tabs after creation
-                r.next = r.other(method="ritem", record_id=s3xrc.get_session(prefix, resourcename))
-
             # Custom Action Buttons
             if not r.component:
                 response.s3.actions = [
-                    dict(label=str(T("Open")), _class="action-btn", url=str(URL(r=request, args=["[id]", "update"]))),
-                    dict(label=str(T("Items")), _class="action-btn", url=str(URL(r=request, args=["[id]", "ritem"]))),
+                    dict(label=str(T("Open")), _class="action-btn",
+                         url=str(URL(r=request, args=["[id]", "update"]))),
+                    dict(label=str(T("Details")), _class="action-btn",
+                         url=str(URL(r=request, args=["[id]", "req_detail"]))),
                 ]
 
         return output
     response.s3.postp = postp
 
     s3xrc.model.configure(table,
-                          #listadd=False, #@todo: List add is causing errors with JS - FIX
-                          editable=True)
+        editable=True,
+        create_next=URL(r=request, f="req", args=["[id]", "req_detail"]))
 
     return s3_rest_controller(prefix,
                               resourcename,
@@ -131,24 +130,26 @@ def shn_rms_req_rheader(r):
                     location_represent = None
 
                 rheader_tabs = shn_rheader_tabs( r,
-                                                 [(T("Edit Details"), None),
-                                                  (T("Items"), "ritem"),
+                                                 [(T("Request"), None),
+                                                  (T("Details"), "req_detail"),
                                                   ]
                                                  )
 
                 rheader = DIV( TABLE(
-                                   TR( TH( T("Message") + ": "),
+                                   TR( TH( "%s: " % T("Message")),
                                        TD(req_record.message, _colspan=3)
                                       ),
-                                   TR( TH( T("Time of Request") + ": "),
+                                   TR( TH( "%s: " % T("Time of Request")),
                                        req_record.datetime,
-                                       TH( T( "Location") + ": "),
+                                       TH( "%s: " % T("Location")),
                                        location_represent,
                                       ),
-                                   TR( TH( T("Priority") + ": "),
+                                   TR( TH( "%s: " % T("Priority")),
                                        req_record.priority,
-                                       TH( T("Document") + ": "),
-                                       document_represent(req_record.document_id)
+                                       TH(""),
+                                       ""
+                                       #TH( "%s: " % T("Document")),
+                                       #document_represent(req_record.document_id)
                                       ),
                                      ),
                                 rheader_tabs
@@ -157,18 +158,14 @@ def shn_rms_req_rheader(r):
                 return rheader
     return None
 
+#def ritem():
+    #""" RESTful CRUD controller """
 
+    #tablename = "%s_%s" % (prefix, resourcename)
+    #table = db[tablename]
 
-def ritem():
-
-    """ RESTful CRUD controller """
-
-    tablename = "%s_%s" % (prefix, resourcename)
-    table = db[tablename]
-
-    s3xrc.model.configure(table, insertable=False)
-    return s3_rest_controller(prefix, resourcename)
-
+    #s3xrc.model.configure(table, insertable=False)
+    #return s3_rest_controller(prefix, resourcename)
 
 def store_for_req():
 

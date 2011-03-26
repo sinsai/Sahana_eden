@@ -457,7 +457,7 @@ if deployment_settings.has_module("project"):
 
     table.person_id.label = T("Contact Person")
 
-    #table.comments.comment = T("(Constraints Only)")
+    #table.comments.comment = "(%s)" % T("Constraints Only")
 
     for field in table:
         if field.type == "integer":

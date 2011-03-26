@@ -5,6 +5,8 @@
 
     @author: Pat Tressel
 
+    @ToDo: Remove dependency on HMS
+        Remove hospital_id FK
 """
 
 module = "cr"
@@ -177,7 +179,7 @@ if deployment_settings.has_module(module):
 
     table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     # Shelters don't have to have unique names
-    # @ToDo If we want to filter incoming reports automatically to see if
+    # @ToDo: If we want to filter incoming reports automatically to see if
     # they apply to shelters, then we may need to reconsider whether names
     # can be non-unique, *especially* since location is not required.
     table.name.requires = IS_NOT_EMPTY()

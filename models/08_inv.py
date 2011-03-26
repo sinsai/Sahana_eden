@@ -28,7 +28,7 @@ inv_menu = [
                     [T("Search Received Shipments"), False, URL(r=request, c="inv", f="recv", args="search")],
                 ]
             ],
-            [T("Request Managment"), False, URL(r=request, c="req", f="req"),
+            [T("Request Management"), False, URL(r=request, c="req", f="req"),
             [
                 [T("Requests"), False, URL(r=request, c="req", f="req")],
                 [T("Commitments"), False, URL(r=request, c="req", f="commit")],
@@ -246,7 +246,7 @@ if deployment_settings.has_module("inv"):
                                        label=T("By Inventory"),
                                        represent=shn_site_represent),
                             organisation_id("from_organisation_id",
-                                            label = T("From Organisation")),
+                                            label = T("From Organization")),
                             location_id("from_location_id",
                                         label = T("From Location")),
                             Field("from_person"), #Text field, because lookup to pr_person record is unnecessary complex workflow

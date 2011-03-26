@@ -12,9 +12,9 @@ module = "dvi"
 if deployment_settings.has_module(module):
 
     # -----------------------------------------------------------------------------
-    # Option fields
+    # Recovery Request
     #
-    dvi_task_status_opts = {
+    task_status = {
         1:T("New"),
         2:T("Assigned"),
         3:T("In Progress"),
@@ -23,28 +23,22 @@ if deployment_settings.has_module(module):
         6:T("Not Possible")
     }
 
-    dvi_task_status = S3ReusableField("opt_dvi_task_status","integer",
-                            requires = IS_IN_SET(dvi_task_status_opts, zero=None),
-                            default = 1,
-                            label = T("Task Status"),
-                            represent = lambda opt: \
-                                        dvi_task_status_opts.get(opt, UNKNOWN_OPT))
-
-
-    # -----------------------------------------------------------------------------
-    # Recovery Request
-    #
     resourcename = "recreq"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("date", "datetime"),
-                            Field("site_id", length=64),
+                            Field("marker", length=64),
                             location_id(),
                             Field("location_details"),
                             person_id(), # Finder
                             Field("description"),
                             Field("bodies_est", "integer"), # Number of bodies found
-                            dvi_task_status(),
+                            Field("status", "integer",
+                                  requires = IS_IN_SET(task_status, zero=None),
+                                  default = 1,
+                                  label = T("Task Status"),
+                                  represent = lambda opt: \
+                                              task_status.get(opt, UNKNOWN_OPT)),
                             Field("bodies_rec", "integer"), # Number of bodies recovered
                             migrate=migrate, *s3_meta_fields())
 
@@ -57,8 +51,11 @@ if deployment_settings.has_module(module):
                                           allow_future=False)
     table.date.represent = shn_as_local_time
 
-    table.site_id.label = T("Site ID")
-    #table.site_id.requires = IS_EMPTY_OR(IS_NOT_ONE_OF(db, table.site_id))
+    table.marker.label = T("Marker")
+    table.marker.comment = DIV(_class="tooltip",
+                                _title="%s|%s" % (
+                                       T("Marker"),
+                                       T("Number or code used to mark the place of find, e.g. flag code, grid coordinates, site reference number or similar (if available)")))
 
     table.location_id.label = T("Location")
     table.person_id.label = T("Finder")
@@ -70,8 +67,6 @@ if deployment_settings.has_module(module):
     table.bodies_rec.label = T("Bodies recovered")
     table.bodies_rec.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
     table.bodies_rec.default = 0
-
-    table.opt_dvi_task_status.label = T("Task status")
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(
@@ -94,7 +89,7 @@ if deployment_settings.has_module(module):
     dvi_recreq_id = S3ReusableField("dvi_recreq_id", table,
                                     requires = IS_NULL_OR(IS_ONE_OF(db,
                                                "dvi_recreq.id",
-                                               "[%(site_id)s] %(date)s: %(bodies_est)s bodies")),
+                                               "[%(marker)s] %(date)s: %(bodies_est)s bodies")),
                                     represent = lambda id: id,
                                     ondelete = "RESTRICT")
 
@@ -102,13 +97,13 @@ if deployment_settings.has_module(module):
     s3xrc.model.configure(table,
         list_fields = ["id",
                        "date",
-                       "site_id",
+                       "marker",
                        "location_id",
                        "location_details",
                        #"description",
                        "bodies_est",
                        "bodies_rec",
-                       "opt_dvi_task_status"])
+                       "status"])
 
     # Body ====================================================================
     resourcename = "body"
@@ -197,50 +192,56 @@ if deployment_settings.has_module(module):
     resourcename = "checklist"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                    super_link(db.pr_pentity), # pe_id
-                    Field("personal_effects","integer",
-                        requires = IS_IN_SET(dvi_task_status_opts, zero=None),
+                super_link(db.pr_pentity), # pe_id
+                Field("personal_effects","integer",
+                        requires = IS_IN_SET(task_status, zero=None),
                         default = 1,
                         label = T("Inventory of Effects"),
-                        represent = lambda opt: dvi_task_status_opts.get(opt, T("not specified"))),
-                    Field("body_radiology","integer",
-                        requires = IS_IN_SET(dvi_task_status_opts, zero=None),
+                        represent = lambda opt: \
+                                    task_status.get(opt, UNKNOWN_OPT)),
+                Field("body_radiology","integer",
+                        requires = IS_IN_SET(task_status, zero=None),
                         default = 1,
                         label = T("Radiology"),
-                        represent = lambda opt: dvi_task_status_opts.get(opt, T("not specified"))),
-                    Field("fingerprints","integer",
-                        requires = IS_IN_SET(dvi_task_status_opts, zero=None),
+                        represent = lambda opt: \
+                                    task_status.get(opt, UNKNOWN_OPT)),
+                Field("fingerprints","integer",
+                        requires = IS_IN_SET(task_status, zero=None),
                         default = 1,
                         label = T("Fingerprinting"),
-                        represent = lambda opt: dvi_task_status_opts.get(opt, T("not specified"))),
-                    Field("anthropology","integer",
-                        requires = IS_IN_SET(dvi_task_status_opts, zero=None),
+                        represent = lambda opt: \
+                                    task_status.get(opt, UNKNOWN_OPT)),
+                Field("anthropology","integer",
+                        requires = IS_IN_SET(task_status, zero=None),
                         default = 1,
                         label = T("Anthropolgy"),
-                        represent = lambda opt: dvi_task_status_opts.get(opt, T("not specified"))),
-                    Field("pathology","integer",
-                        requires = IS_IN_SET(dvi_task_status_opts, zero=None),
+                        represent = lambda opt: \
+                                    task_status.get(opt, UNKNOWN_OPT)),
+                Field("pathology","integer",
+                        requires = IS_IN_SET(task_status, zero=None),
                         default = 1,
                         label = T("Pathology"),
-                        represent = lambda opt: dvi_task_status_opts.get(opt, T("not specified"))),
-                    Field("embalming","integer",
-                        requires = IS_IN_SET(dvi_task_status_opts, zero=None),
+                        represent = lambda opt: \
+                                    task_status.get(opt, UNKNOWN_OPT)),
+                Field("embalming","integer",
+                        requires = IS_IN_SET(task_status, zero=None),
                         default = 1,
                         label = T("Embalming"),
-                        represent = lambda opt: dvi_task_status_opts.get(opt, T("not specified"))),
-                    Field("dna","integer",
-                        requires = IS_IN_SET(dvi_task_status_opts, zero=None),
+                        represent = lambda opt: \
+                                    task_status.get(opt, UNKNOWN_OPT)),
+                Field("dna","integer",
+                        requires = IS_IN_SET(task_status, zero=None),
                         default = 1,
                         label = T("DNA Profiling"),
-                        represent = lambda opt: dvi_task_status_opts.get(opt, T("not specified"))),
-                    Field("dental","integer",
-                        requires = IS_IN_SET(dvi_task_status_opts, zero=None),
+                        represent = lambda opt: \
+                                    task_status.get(opt, UNKNOWN_OPT)),
+                Field("dental","integer",
+                        requires = IS_IN_SET(task_status, zero=None),
                         default = 1,
                         label = T("Dental Examination"),
-                        represent = lambda opt: dvi_task_status_opts.get(opt, T("not specified"))),
-                    migrate=migrate, *s3_meta_fields())
-
-    # Setting and restrictions
+                        represent = lambda opt: \
+                                    task_status.get(opt, UNKNOWN_OPT)),
+                migrate=migrate, *s3_meta_fields())
 
     # CRUD Strings
     CREATE_CHECKLIST = T("Create Checklist")
@@ -265,25 +266,19 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.configure(table, list_fields = ["id"])
 
-    #
-    # Personal Effects ------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
+    # Personal Effects
     #
     resourcename = "effects"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                    super_link(db.pr_pentity), # pe_id
-    #                person_id(),
-                    Field("clothing", "text"),    #TODO: elaborate
-                    Field("jewellery", "text"),   #TODO: elaborate
-                    Field("footwear", "text"),    #TODO: elaborate
-                    Field("watch", "text"),       #TODO: elaborate
-                    Field("other", "text"),
-                    migrate=migrate, *s3_meta_fields())
-
-    # Settings and Restrictions
-
-    # Labels
-    #table.person_id.label = T("Reporter")
+                super_link(db.pr_pentity),  # pe_id
+                Field("clothing", "text"),  #TODO: elaborate
+                Field("jewellery", "text"), #TODO: elaborate
+                Field("footwear", "text"),  #TODO: elaborate
+                Field("watch", "text"),     #TODO: elaborate
+                Field("other", "text"),
+                migrate=migrate, *s3_meta_fields())
 
     # CRUD Strings
     ADD_PERSONAL_EFFECTS = T("Add Personal Effects")
@@ -302,61 +297,56 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Record deleted"),
         msg_list_empty = T("No Details currently registered"))
 
-    # Joined Resource
     s3xrc.model.add_component(module, resourcename,
                               multiple = False,
                               joinby = super_key(db.pr_pentity))
 
     s3xrc.model.configure(table, list_fields = ["id"])
 
+    # -------------------------------------------------------------------------
+    # Identification
     #
-    # Identification --------------------------------------------------------------
-    #
-    dvi_id_status_opts = {
+    dvi_id_status = {
         1:T("Unidentified"),
         2:T("Preliminary"),
         3:T("Confirmed"),
     }
 
-    dvi_id_status = S3ReusableField("opt_dvi_id_status","integer",
-                        requires = IS_IN_SET(dvi_id_status_opts, zero=None),
-                        default = 1,
-                        label = T("Identification Status"),
-                        represent = lambda opt: dvi_id_status_opts.get(opt, UNKNOWN_OPT))
-
-
-    dvi_id_method_opts = {
+    dvi_id_methods = {
         1:T("Visual Recognition"),
         2:T("Physical Description"),
         3:T("Fingerprints"),
         4:T("Dental Profile"),
         5:T("DNA Profile"),
         6:T("Combined Method"),
-        99:T("Other Evidence")
+        9:T("Other Evidence")
     }
-
-    dvi_id_method = S3ReusableField("opt_dvi_id_method","integer",
-                        requires = IS_IN_SET(dvi_id_method_opts, zero=None),
-                        default = 99,
-                        label = T("Method used"),
-                        represent = lambda opt: dvi_id_method_opts.get(opt, UNKNOWN_OPT))
-
 
     resourcename = "identification"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            super_link(db.pr_pentity), # pe_id
-                            dvi_id_status(),
-                            person_id("identity",
-                                      label=T("Identified as"),
-                                      empty=False),
-                            person_id("identified_by",
-                                      label=T("Identified by"),
-                                      empty=False),
-                            dvi_id_method(),
-                            Field("presence", db.pr_presence),
-                            Field("comment", "text"),
-                            migrate=migrate, *s3_meta_fields())
+                super_link(db.pr_pentity), # pe_id
+                Field("status", "integer",
+                      requires = IS_IN_SET(dvi_id_status, zero=None),
+                      default = 1,
+                      label = T("Identification Status"),
+                      represent = lambda opt: \
+                                  dvi_id_status.get(opt, UNKNOWN_OPT)),
+                person_id("identity",
+                            label=T("Identified as"),
+                            empty=False),
+                person_id("identified_by",
+                            label=T("Identified by"),
+                            empty=False),
+                Field("method", "integer",
+                      requires = IS_IN_SET(dvi_id_methods, zero=None),
+                      default = 1,
+                      label = T("Method used"),
+                      represent = lambda opt: \
+                                  dvi_id_methods.get(opt, UNKNOWN_OPT)),
+                Field("presence", db.pr_presence),
+                Field("comment", "text"),
+                migrate=migrate, *s3_meta_fields())
 
     table.presence.readable = False
     table.presence.writable = False
@@ -376,7 +366,6 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Report updated"),
         msg_record_deleted = T("Report deleted"),
         msg_list_empty = T("No Identification Report Available"))
-
 
     # Identification reports as component of person entities
     s3xrc.model.add_component(module, resourcename,
@@ -422,7 +411,7 @@ if deployment_settings.has_module(module):
                                                       table.identity,
                                                       table.presence,
                                                       table.opt_dvi_id_status,
-                                                      limitby=(0,1)).first()
+                                                      limitby=(0, 1)).first()
 
             if not record:
                 return

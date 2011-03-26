@@ -218,7 +218,9 @@ def tropo():
                 except:
                     # SyntaxError: s.from => invalid syntax (why!?)
                     fromaddress = ""
-                db.msg_log.insert(uuid=uuid, fromaddress=fromaddress, recipient=recipient, message=message, inbound=True)
+                db.msg_log.insert(uuid=uuid, fromaddress=fromaddress,
+                                  recipient=recipient, message=message,
+                                  inbound=True)
                 # Send the message to the parser
                 reply = parserdooth(message)
                 t.say([reply])
@@ -263,11 +265,11 @@ def parserdooth(message):
         result = person_search(name)
 
         if len(result) > 1:
-            return "Multiple Matches"
+            return T("Multiple Matches")
         if len(result) == 1:
             if "Person" in result[0]["name"]:
                 reply = result[0]["name"]
-                table3 = db.pr_pe_contact
+                table3 = db.pr_contact
                 if "email" in query:
                     query = (table3.pe_id == result[0]["id"]) & (table3.contact_method == 1)
                     recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
@@ -278,7 +280,7 @@ def parserdooth(message):
                     reply = reply + " Mobile->" + str(recipient.value)
 
         if len(reply) == 0:
-            return "No Match"
+            return T("No Match")
 
         return reply
 
@@ -288,11 +290,12 @@ def parserdooth(message):
         resource = s3xrc.define_resource("hms", "hospital")
         result = resource.search_simple(fields=["name"],label = str(name))
         if len(result) > 1:
-            return "Multiple Matches"
+            return T("Multiple Matches")
 
         if len(result) == 1:
             hospital = db(table.id == result[0]).select().first()
-            reply = reply + " " + hospital.name + "(Hospital) "
+            reply = "%s %s (%s) " % (reply, hospital.name,
+                                     T("Hospital"))
             if "phone" in query:
                 reply = reply + "Phone->" + str(hospital.phone_emergency)
             if "facility" in query:
@@ -303,7 +306,7 @@ def parserdooth(message):
                 reply = reply + "Security status " + str(table.facility_status.represent(hospital.security_status))
 
         if len(reply) == 0:
-            return "No Match"
+            return T("No Match")
 
         return reply
 
@@ -313,11 +316,12 @@ def parserdooth(message):
         resource = s3xrc.define_resource("org", "organisation")
         result = resource.search_simple(fields=["name"], label = str(name))
         if len(result) > 1:
-            return "Multiple Matches"
+            return T("Multiple Matches")
 
         if len(result) == 1:
             organisation = db(table.id == result[0]).select().first()
-            reply = reply + " " + organisation.name + "(Organisation) "
+            reply = "%s %s (%s) " % (reply, organisation.name,
+                                     T("Organization"))
             if "phone" in query:
                 reply = reply + "Phone->" + str(organisation.donation_phone)
             if "office" in query:
@@ -327,7 +331,7 @@ def parserdooth(message):
                                                                      look_up = organisation.id
                                                                      )
         if len(reply) == 0:
-            return "No Match"
+            return T("No Match")
 
         return reply
 
@@ -629,12 +633,12 @@ def twitter_settings():
                 session.s3.twitter_request_key = oauth.request_token.key
                 session.s3.twitter_request_secret = oauth.request_token.secret
             except tweepy.TweepError:
-                session.error = T("problem connecting to twitter.com - please refresh")
+                session.error = T("Problem connecting to twitter.com - please refresh")
                 return True
             table.pin.readable = True
             table.pin.label = SPAN(T("PIN number "),
                 A(T("from Twitter"), _href=T(session.s3.twitter_oauth_url), _target="_blank"),
-                T(" (leave empty to detach account)"))
+                " (%s)" % T("leave empty to detach account"))
             table.pin.value = ""
             table.twitter_account.label = T("Current Twitter account")
             return True
@@ -707,16 +711,16 @@ def group_membership():
 
 
 #------------------------------------------------------------------------------
-def pe_contact():
+def contact():
 
     """ Allows the user to add, update and delete their contacts """
 
     if auth.is_logged_in() or auth.basic():
         person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
-        response.s3.filter = (db.pr_pe_contact.pe_id == person)
+        response.s3.filter = (db.pr_contact.pe_id == person)
     else:
         redirect(URL(r=request, c="default", f="user", args="login",
-            vars={"_next":URL(r=request, c="msg", f="pe_contact")}))
+            vars={"_next":URL(r=request, c="msg", f="contact")}))
 
     prefix = "pr"
     tablename = "%s_%s" % (prefix, resourcename)
@@ -729,25 +733,25 @@ def pe_contact():
     table.id.writable = False
     #table.id.readable = False
 
-    def msg_pe_contact_onvalidation(form):
+    def msg_contact_onvalidation(form):
         """ This onvalidation method adds the person id to the record """
         person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
         form.vars.pe_id = person
     s3xrc.model.configure(table,
-            onvalidation=lambda form: msg_pe_contact_onvalidation(form))
+            onvalidation=lambda form: msg_contact_onvalidation(form))
 
-    def msg_pe_contact_restrict_access(r):
+    def msg_contact_restrict_access(r):
         """ The following restricts update and delete access to contacts not owned by the user """
         if r.id :
             person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
-            if person == db(db.pr_pe_contact.id == r.id).select(db.pr_pe_contact.pe_id, limitby=(0, 1)).first().pe_id :
+            if person == db(db.pr_contact.id == r.id).select(db.pr_contact.pe_id, limitby=(0, 1)).first().pe_id :
                 return True
             else:
                 session.error = T("Access denied")
                 return dict(bypass = True, output = redirect(URL(r=request)))
         else:
             return True
-    response.s3.prep = msg_pe_contact_restrict_access
+    response.s3.prep = msg_contact_restrict_access
 
     response.menu_options = []
     return s3_rest_controller(prefix, resourcename)

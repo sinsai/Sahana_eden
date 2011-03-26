@@ -42,7 +42,7 @@ def req():
         req_actions = [dict(url = str( URL( r=request,
                                             c = "req",
                                             f = "req",
-                                            args = ["[id]","req_item"]
+                                            args = ["[id]", "req_item"]
                                            )
                                        ),
                             _class = "action-btn",
@@ -108,22 +108,22 @@ def shn_req_rheader(r):
                                                   ]
                                                  )
                 rheader = DIV( TABLE(
-                                   TR( TH( T("Date Requested") + ": "),
+                                   TR( TH( "%s: " % T("Date Requested")),
                                        req_record.datetime,
-                                       TH( T("Date Required") + ": "),
+                                       TH( "%s: " % T("Date Required")),
                                        req_record.date_required,
                                       ),
-                                   TR( TH( T("Requested By") + ": "),
+                                   TR( TH( "%s: " % T("Requested By")),
                                        shn_site_represent(req_record.site_id),
                                       ),
-                                   TR( TH( T("Commit. Status") + ": "),
+                                   TR( TH( "%s: " % T("Commit. Status")),
                                        req_status_opts.get(req_record.commit_status),
-                                       TH( T("Transit. Status") + ": "),
+                                       TH( "%s: " % T("Transit. Status")),
                                        req_status_opts.get(req_record.transit_status),
-                                       TH( T("Fulfil. Status") + ": "),
+                                       TH( "%s: " % T("Fulfil. Status")),
                                        req_status_opts.get(req_record.fulfil_status)
                                       ),                                       
-                                   TR( TH( T("Comments") + ": "),
+                                   TR( TH( "%s: " % T("Comments")),
                                        TD(req_record.comments, _colspan=3)
                                       ),
                                    TR( A( T("Commit"),
@@ -165,33 +165,33 @@ def req_item_inv_item():
     
     output["title"] = T("Inventory Items Available for Request Item")
     output["req_item"] = TABLE( TR( 
-                                    TH( T("Requested By:") ),
+                                    TH( "%s: " % T("Requested By") ),
                                     shn_site_represent(req.site_id),
-                                    TH( T("Item")),
+                                    TH( "%s: " % T("Item")),
                                     shn_item_represent(req_item.item_id),
                                    ),
                                 TR( 
-                                    TH( T("Requester:") ),
+                                    TH( "%s: " % T("Requester") ),
                                     shn_pr_person_represent(req.requester_id),
-                                    TH( T("Quantity")),
+                                    TH( "%s: " % T("Quantity")),
                                     req_item.quantity,
                                    ),
                                 TR( 
-                                    TH( T("Date Requested") ),
+                                    TH( "%s: " % T("Date Requested") ),
                                     req.datetime,
-                                    TH( T("quantity_commit")),
+                                    TH( T("Quantity Committed")),
                                     req_item.quantity_commit,
                                    ),
                                 TR( 
-                                    TH( T("Date Required") ),
+                                    TH( "%s: " % T("Date Required") ),
                                     req.date_required,
-                                    TH( T("quantity_transit")),
+                                    TH( "%s: " % T("Quantity in Transit")),
                                     req_item.quantity_transit,
                                    ),
                                 TR( 
-                                    TH( T("Priority") ),
+                                    TH( "%s: " % T("Priority") ),
                                     shn_req_priority_represent(req.priority),
-                                    TH( T("quantity_fulfil")),
+                                    TH( "%s: " % T("Quantity Fulfilled")),
                                     req_item.quantity_fulfil,
                                    )
                                )
@@ -233,7 +233,7 @@ def commit():
         if r.record:
             req_id = r.record.req_id
             
-            #Limit commit items to items from the request
+            # Limit commit items to items from the request
             db.req_commit_item.req_item_id.requires = \
                 IS_ONE_OF(db,
                           "req_req_item.id",
@@ -267,15 +267,15 @@ def shn_commit_rheader(r):
                 #req_record = db.req_req[commit_record.req_id]
                 #for_site_id = req_record.site_id
                 #req_date = req_record.datetime
-                rheader = DIV( TABLE( TR( TH( T("Request") + ": "),
+                rheader = DIV( TABLE( TR( TH( "%s: " % T("Request")),
                                           shn_req_represent(commit_record.req_id),
                                          ),
-                                      TR( TH( T("Commiting Inventory") + ": "),
+                                      TR( TH( "%s: " % T("Committing Inventory")),
                                           shn_site_represent(commit_record.site_id),
-                                          TH( T("Commit Date") + ": "),
+                                          TH( "%s: " % T("Commit Date")),
                                           commit_record.datetime,
                                           ),
-                                       TR( TH( T("Comments") + ": "),
+                                       TR( TH( "%s: " % T("Comments")),
                                            TD(commit_record.comments, _colspan=3)
                                           ),
                                          ),                                                                 

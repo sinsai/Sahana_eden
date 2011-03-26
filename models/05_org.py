@@ -151,7 +151,7 @@ org_organisation_type_opts = {
     8:T("International Organization"),
     9:T("Military"),
     10:T("Private"),
-    11:T("Intergovernmental Organisation"),
+    11:T("Intergovernmental Organization"),
     12:T("Institution"),
     #12:"MINUSTAH"   Haiti-specific
 }
@@ -177,7 +177,7 @@ table = db.define_table(tablename,
                         Field("website", label = T("Website"),
                               requires = IS_NULL_OR(IS_URL()),
                               represent = shn_url_represent),
-                        Field("twitter"),   # deprecated by pe_contact component
+                        Field("twitter"),   # deprecated by contact component
                         Field("donation_phone", label = T("Donation Phone #"),
                               requires = shn_phone_requires),
                         comments(),
@@ -589,7 +589,7 @@ STAFF_HELP = T("If Staff have login accounts then they are given access to edit 
 
 # -----------------------------------------------------------------------------
 def shn_site_based_permissions( table,
-                                error_msg = T("You do no have permission")):
+                                error_msg = T("You do not have permission")):
     """
         Sets the site_id validator limited to sites which the current user 
         has update permission for
@@ -783,7 +783,7 @@ def shn_office_rheader(r, tabs=[]):
             return None
 
         tabs = [(T("Basic Details"), None),
-                (T("Contact Data"), "pe_contact"),
+                (T("Contact Data"), "contact"),
                 (T("Staff"), "staff"),
                 ]
 
@@ -849,12 +849,12 @@ table = db.define_table(tablename,
                               represent = lambda bool: (bool and [T("Supervisor")] or [NONE])[0],
                               comment = DIV( _class="tooltip",
                                              _title="%s|%s" % (T("Supervisor"),
-                                                               T("Has additional rights to modify records relating to this Organisation or Site.")))),
+                                                               T("Has additional rights to modify records relating to this Organization or Site.")))),
                         Field("no_access", "boolean", label=T("Read-only"),
                               represent = lambda bool: (bool and [T("Read-only")] or [NONE])[0],
                               comment = DIV( _class="tooltip",
                                              _title="%s|%s" % (T("Read-Only"),
-                                                               T("Has only read-only access to records relating to this Organisation or Site.")))),
+                                                               T("Has only read-only access to records relating to this Organization or Site.")))),
                         Field("focal_point", "boolean",
                               label = T("Focal Point"),
                               represent = lambda bool: (bool and [T("Focal Point")] or [NONE])[0],

@@ -102,19 +102,16 @@ if deployment_settings.has_module("inv"):
         msg_record_deleted = T("Request Canceled"),
         msg_list_empty = T("No Requests"))
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def shn_req_represent(id, link = True):
         id = int(id)
         if id:
-            req_row = db(db.req_req.id == id).\
-                              select(db.req_req.datetime,
-                                     db.req_req.site_id,
-                                     limitby=(0, 1))\
-                              .first()
-            req = "%s - %s" % (shn_site_represent( \
-                                    req_row.site_id),
-                                req_row.datetime
-                                )
+            query = (db.req_req.id == id)
+            req_row = db(query).select(db.req_req.datetime,
+                                       db.req_req.site_id,
+                                       limitby=(0, 1)).first()
+            req = "%s - %s" % (shn_site_represent(req_row.site_id),
+                               req_row.datetime)
             if link:
                 return A(req,
                          _href = URL(r = request,
@@ -127,21 +124,20 @@ if deployment_settings.has_module("inv"):
         else:
             return NONE
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Reusable Field
     req_id = S3ReusableField("req_id", db.req_req, sortby="request_date",
-                                  requires = IS_ONE_OF(db,
-                                                       "req_req.id",
-                                                       lambda id: 
-                                                           shn_req_represent(id,
-                                                                             False
-                                                                             ),
-                                                       orderby="req_req.datetime",
-                                                       sort=True),
-                                  represent = shn_req_represent,
-                                  label = T("Request"),
-                                  ondelete = "RESTRICT"
-                                  )
+                             requires = IS_ONE_OF(db,
+                                                  "req_req.id",
+                                                  lambda id: 
+                                                    shn_req_represent(id,
+                                                                      False),
+                                                  orderby="req_req.datetime",
+                                                  sort=True),
+                             represent = shn_req_represent,
+                             label = T("Request"),
+                             ondelete = "RESTRICT"
+                            )
 
     #------------------------------------------------------------------------------
     # Request as a component of Sites

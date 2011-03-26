@@ -963,8 +963,11 @@ class S3Resource(object):
         if r.next is not None and (r.http != "GET" or r.method == "clear"):
             if isinstance(output, dict):
                 form = output.get("form", None)
-                if form and form.errors:
-                    return output
+                if form:
+                    if not hasattr(form, "errors"):
+                        form = form[0]
+                    if form.errors:
+                        return output
             r.session.flash = r.response.flash
             r.session.confirmation = r.response.confirmation
             r.session.error = r.response.error
@@ -992,6 +995,14 @@ class S3Resource(object):
             if self.__transformable(r):
                 method = "export_tree"
             elif r.component:
+                if r.interactive and self.count() == 1:
+                    # Load the record
+                    if not self._rows:
+                        self.load(start=0, limit=1)
+                    if self._rows:
+                        r.record = self._rows[0]
+                        r.id = self.get_id()
+                        r.uid = self.get_uid()
                 if r.multiple and not r.component_id:
                     method = "list"
                 else:

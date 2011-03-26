@@ -20,8 +20,8 @@ def shn_menu():
     """ Options menu """
 
     response.menu_options = [
-        [T("Missing Persons"), False, aURL(r=request, f="index"), [
-            [T("Add or Update"), False, aURL(r=request, f="index")],
+        [T("Missing Persons"), False, None, [
+            [T("Search"), False, aURL(r=request, f="index")],
             [T("List All Reports"), False, aURL(r=request, f="person")],
         ]],
         #[T("Help"), False, URL(r=request, f="guide")],
@@ -286,7 +286,7 @@ def person():
                 (T("Images"), "image"),
                 (T("Identity"), "identity"),
                 (T("Address"), "address"),
-                (T("Contact Data"), "pe_contact"),
+                (T("Contact Data"), "contact"),
                 (T("Presence Log"), "presence")]
 
     rheader = lambda r: shn_pr_rheader(r, tabs=pf_tabs)

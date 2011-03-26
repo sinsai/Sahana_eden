@@ -68,7 +68,7 @@ def index():
 
     div_res = DIV(H3(T("RESPONSE")),
                   menu_box(T("Activities"), "project", "activity"),
-                  menu_box(T("Requests"),   "rms",     "req"),
+                  menu_box(T("Requests"),   "req",     "req"),
                   #+menu_box(T("Distribution"), "logs", "distrib")
                   _class = "menu_div",
                   _id = "menu_div_response")

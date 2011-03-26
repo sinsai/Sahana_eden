@@ -99,7 +99,7 @@ admin_menu_options = [
     [T("User Management"), False, URL(r=request, c="admin", f="user"), [
         [T("Users"), False, URL(r=request, c="admin", f="user")],
         [T("Roles"), False, URL(r=request, c="admin", f="role")],
-        [T("Organisations"), False, URL(r=request, c="admin", f="organisation")],
+        [T("Organizations"), False, URL(r=request, c="admin", f="organisation")],
         #[T("Roles"), False, URL(r=request, c="admin", f="group")],
         #[T("Membership"), False, URL(r=request, c="admin", f="membership")],
     ]],

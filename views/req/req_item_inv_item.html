@@ -1,0 +1,18 @@
+{{extend "layout.html"}}
+ <h2>{{=title}}</h2>
+ <div id="rheader">
+  {{=req_item}}
+</div>
+<div>
+  <h3>{{=T("Available Inventory Items")}}</h3>
+  {{=items}}
+</div>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<div>
+  <h3>{{=T("Available Alternative Inventory Items")}}</h3>
+  {{=items_alt}}
+</div>
+{{include "pagenav.html"}}
+{{include "searchbox.html"}}
+{{include "dataTables.html"}}

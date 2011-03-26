@@ -151,7 +151,7 @@ org_organisation_type_opts = {
     8:T("International Organization"),
     9:T("Military"),
     10:T("Private"),
-    11:T("Intergovernmental Organisation"),
+    11:T("Intergovernmental Organization"),
     12:T("Institution"),
     #12:"MINUSTAH"   Haiti-specific
 }
@@ -413,6 +413,14 @@ def shn_site_represent(id, default_label="[no label]"):
     return site_str
 
 # -----------------------------------------------------------------------------
+site_id = super_link( db.org_site, 
+                      writable = True,
+                      readable = True,
+                      label = T("Site"),
+                      represent = shn_site_represent
+                      )
+
+# -----------------------------------------------------------------------------
 def shn_create_record_roles(form, tablename):
     """
         Function to be called at create_onaccept by a record which can have
@@ -441,12 +449,20 @@ def shn_create_record_roles(form, tablename):
     cf = tablename.split("_")
     c = cf[0]
     f = cf[1]
+
+    url = "%s/%s" % (deployment_settings.get_base_public_url(),
+                     URL(r = request,
+                         c = c,
+                         f = f,
+                         args = [id]) )
+
     # Create the Staff Role for this resource
     staff_role_id = auth.s3_create_role( "%s_%s Staff of %s" % (tablename,
                                                                 id,
                                                                 recordname),
-                                         "Staff Role for record id %s in table %s" % (id,
-                                                                                      tablename),
+                                         "Staff Role for record id %s in table %s (%s)" % (id,
+                                                                                           tablename,
+                                                                                           url),
                                          dict(c=c, f=f,
                                               uacl=acl.NONE, oacl=staff_acl)
                                         )
@@ -454,14 +470,18 @@ def shn_create_record_roles(form, tablename):
     supervisor_role_id = auth.s3_create_role( "%s_%s Supervisors of %s" % (tablename,
                                                                            id,
                                                                            recordname),
-                                              "Supervisor Role for record id %s in table %s" % (id,
-                                                                                                tablename),
+                                              "Supervisor Role for record id %s in table %s (%s)" % (id,
+                                                                                                     tablename,
+                                                                                                     url),
                                               dict(c=c, f=f,
                                                    uacl=acl.NONE,
                                                    oacl=supervisor_acl)
                                             )
     # Set the resource's owned_by_role to the staff role
     db(table.id == id).update(owned_by_role = staff_role_id)
+    # Update owned_by_role in site super_entity
+    s3xrc.model.update_super(table, {"id":id}) 
+
 
     # Add user to the staff & supervisor roles
     auth.add_membership(staff_role_id)
@@ -566,6 +586,38 @@ def shn_component_copy_role_func(component_name, resource_name, fk, pk = "id"):
         return None
 
 STAFF_HELP = T("If Staff have login accounts then they are given access to edit the details of the")
+
+# -----------------------------------------------------------------------------
+def shn_site_based_permissions( table,
+                                error_msg = T("You do not have permission")):
+    """
+        Sets the site_id validator limited to sites which the current user 
+        has update permission for
+        If there are no sites that the user has permission for, 
+        prevents create & update & gives an warning if the user tries to 
+    """
+    q = auth.s3_accessible_query("update", db.org_site)
+    rows = db(q).select(db.org_site.site_id)
+    filter_opts = [row.site_id for row in rows]
+    if filter_opts:
+        table.site_id.requires = IS_ONE_OF(db, "org_site.site_id", 
+                                           shn_site_represent,
+                                           filterby = "site_id",
+                                           filter_opts = filter_opts
+                                           )
+    else:
+        if "update" in request.args or "create" in request.args:
+            # Trying to create or update 
+            # If they do no have permission to any sites
+            session.error = error_msg    
+            redirect(URL(r = request,
+                         c = "default",
+                         f = "index"
+                         )
+                     )
+        else:
+            # Remove the list add button  
+            s3xrc.model.configure(table, insertable = False)
 #==============================================================================
 # Offices
 #
@@ -797,12 +849,12 @@ table = db.define_table(tablename,
                               represent = lambda bool: (bool and [T("Supervisor")] or [NONE])[0],
                               comment = DIV( _class="tooltip",
                                              _title="%s|%s" % (T("Supervisor"),
-                                                               T("Has additional rights to modify records relating to this Organisation or Site.")))),
+                                                               T("Has additional rights to modify records relating to this Organization or Site.")))),
                         Field("no_access", "boolean", label=T("Read-only"),
                               represent = lambda bool: (bool and [T("Read-only")] or [NONE])[0],
                               comment = DIV( _class="tooltip",
                                              _title="%s|%s" % (T("Read-Only"),
-                                                               T("Has only read-only access to records relating to this Organisation or Site.")))),
+                                                               T("Has only read-only access to records relating to this Organization or Site.")))),
                         Field("focal_point", "boolean",
                               label = T("Focal Point"),
                               represent = lambda bool: (bool and [T("Focal Point")] or [NONE])[0],

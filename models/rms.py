@@ -2,13 +2,21 @@
 
 """
     Request Management System
+
+    @ ToDo:
+        Clean this up so that it is clearly different from the Req module
+        - that handles Item Requests & this handles other Requests
+
+        Restore Pledges: As a component of Requests
+
+        Remove dependency on CR/HMS by removing FK & 1 of:
+            link via site_id (preferred? Although the Inv req has got that component tab already :/)
+            using a link table
+            linking via Location
 """
 
 module = "rms"
 if deployment_settings.has_module(module):
-    # NB Current this module depends on HMS, CR & Project
-
-    # -------------------------------
     # Load lists/dictionaries for drop down menus
 
     rms_priority_opts = {
@@ -35,35 +43,26 @@ if deployment_settings.has_module(module):
     # -----------------
     # Requests table
 
-    #def shn_req_aid_represent(id):
-        #return  A(T("Make Pledge"), _href=URL(r=request, f="req", args=[id, "pledge"]))
-
-    # 2010-10-31 Michael Howden: The request resource is undergoing a significant re-design.
-    # A large number of fields are being commented out. Eventually they should be removed
-    # (Once the re-design is accepted)
-
     resourcename = "req"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            super_link(db.sit_situation),
+                            super_link(db.sit_situation),   # Why is it a Situation?
                             Field("datetime", "datetime"),  # 'timestamp' is a reserved word in Postgres
                             location_id(),
                             person_id(),
-                            hospital_id(),    # @ToDo: Check if the HMS module is enabled for adding FK: check CR for an example
-                            shelter_id(),     # @ToDo: Check if the CR module is enabled for adding FK: check CR for an example
-                            organisation_id(),
-                            #inv_store_id("from_inv_store_id"),
+                            #hospital_id(),      # @ToDo: Remove FK
+                            #shelter_id(),       # @ToDo: Remove FK
+                            organisation_id(),  # @ToDo: Remove?
                             Field("type", "integer"),
                             Field("priority", "integer"),
                             Field("message", "text"),
-                            activity_id(),     # @ToDo: Check if the Project module is enabled for adding FK: check CR for an example
-                            #Field("verified", "boolean"),
-                            #Field("verified_details"),
-                            #Field("actionable", "boolean"),
-                            #Field("actioned", "boolean"),
-                            #Field("actioned_details"),
-                            #Field("pledge_status", "string"),
-                            document_id(),
+                            Field("verified", "boolean"),
+                            Field("verified_details"),
+                            Field("actionable", "boolean"),
+                            Field("actioned", "boolean"),
+                            Field("actioned_details"),
+                            Field("pledge_status", "string"),
+                            #Field("source_type", "integer"),
                             migrate=migrate, *s3_meta_fields())
 
 
@@ -74,24 +73,19 @@ if deployment_settings.has_module(module):
     table.datetime.requires = IS_DATETIME()
     table.datetime.label = T("Date & Time")
 
-    #table.from_inv_store_id.label = T("From Warehouse")
-
-    #This is only set by rms/store_for_req
-    #table.from_inv_store_id.readable = table.from_inv_store_id.writable = False
-
     table.message.requires = IS_NOT_EMPTY()
 
     # Hide fields from user:
-    #table.source_id.readable = table.source_id.writable = False
-    #table.verified.readable = table.verified.writable = False
-    #table.verified_details.readable = table.verified_details.writable = False
-    #table.actionable.readable = table.actionable.writable = False
-    #table.actioned.readable = table.actioned.writable = False
-    #table.actioned_details.readable = table.actioned_details.writable = False
+    table.source_id.readable = table.source_id.writable = False
+    table.verified.readable = table.verified.writable = False
+    table.verified_details.readable = table.verified_details.writable = False
+    table.actionable.readable = table.actionable.writable = False
+    table.actioned.readable = table.actioned.writable = False
+    table.actioned_details.readable = table.actioned_details.writable = False
 
     # Set default values
-    #table.actionable.default = 1
-    #table.source_type.default = 1
+    table.actionable.default = 1
+    table.source_type.default = 1
 
     table.priority.requires = IS_NULL_OR(IS_IN_SET(rms_priority_opts))
     table.priority.represent = lambda id: (
@@ -137,18 +131,9 @@ if deployment_settings.has_module(module):
     # Reusable Field
     request_id = S3ReusableField("request_id", db.rms_req, sortby="message",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req.id", "%(message)s")),
-                    represent = lambda id: (id and [db(db.rms_req.id == id).select(limitby=(0, 1)).first().message] or ["None"])[0],
+                    represent = lambda id: (id and [db(db.rms_req.id == id).select(db.rms_req.message,
+                                                                                   limitby=(0, 1)).first().message] or ["None"])[0],
                     label = T("Request"),
-                    comment = DIV(A(ADD_REQUEST,
-                                    _class="colorbox",
-                                    _href=URL(r=request, c="rms", f="req", args="create", vars=dict(format="popup")),
-                                    _target="top",
-                                    _title=ADD_REQUEST
-                                    ),
-                                  DIV( _class="tooltip",
-                                       _title=T("Add Request") + "|" + T("The Request this record is associated with.")
-                                       )
-                                  ),
                     ondelete = "RESTRICT"
                     )
 
@@ -158,7 +143,8 @@ if deployment_settings.has_module(module):
 
         # Hack: Send to all people in the Organisation
         try:
-            org_pe_id = db(db.org_organisation.id == form.vars.organisation_id).select(db.org_organisation.pe_id, limitby=(0, 1)).first().pe_id
+            org_pe_id = db(db.org_organisation.id == form.vars.organisation_id).select(db.org_organisation.pe_id,
+                                                                                       limitby=(0, 1)).first().pe_id
 
             message = T("Sahana: new request has been made. Please login to see if you can fulfil the request.")
 
@@ -178,17 +164,15 @@ if deployment_settings.has_module(module):
                           onaccept = lambda form: rms_req_onaccept(form),
                           )
 
-    # rms_req as component of doc_documents, shelters, hospitals, activities and inv store
-    s3xrc.model.add_component(module,
-                              resourcename,
-                              multiple=True,
-                              joinby=dict(doc_document="document_id",
-                                          cr_shelter="shelter_id",
-                                          hms_hospital="hospital_id",
-                                          project_activity = "activity_id",
-                                          #inv_store = "from_inv_store_id",
-                                          )
-                              )
+    # rms_req as component of shelters & hospitals
+    #s3xrc.model.add_component(module,
+    #                          resourcename,
+    #                          multiple=True,
+    #                          joinby=dict(
+    #                                      cr_shelter="shelter_id",
+    #                                      hms_hospital="hospital_id",
+    #                                      )
+    #                          )
 
     # --------------------------------------------------------------------
     def shn_rms_get_req(label, fields=None, filterby=None):
@@ -212,7 +196,7 @@ if deployment_settings.has_module(module):
             labels = label.split()
             results = []
             query = None
-            # TODO: make a more sophisticated search function (Levenshtein?)
+            # @ToDo: make a more sophisticated search function (Levenshtein?)
             for l in labels:
 
                 # append wildcards
@@ -223,29 +207,29 @@ if deployment_settings.has_module(module):
                 # (default anyway on MySQL/SQLite, but not PostgreSQL)
                 _l = _l.lower()
 
-                # build query
+                # Build query
                 for f in search_fields:
                     if query:
                         query = (db.rms_req[f].lower().like(_l)) | query
                     else:
                         query = (db.rms_req[f].lower().like(_l))
 
-                # undeleted records only
+                # Undeleted records only
                 query = (db.rms_req.deleted == False) & (query)
-                # restrict to prior results (AND)
+                # Restrict to prior results (AND)
                 if len(results):
                     query = (db.rms_req.id.belongs(results)) & query
                 if filterby:
                     query = (filterby) & (query)
                 records = db(query).select(db.rms_req.id)
-                # rebuild result list
+                # Rebuild result list
                 results = [r.id for r in records]
-                # any results left?
+                # Any results left?
                 if not len(results):
                     return None
             return results
         else:
-            # no label given or wrong parameter type
+            # No label given or wrong parameter type
             return None
 
     # ---------------------------------------------------------------------
@@ -262,7 +246,9 @@ if deployment_settings.has_module(module):
 
         if not s3_has_permission("read", db.rms_req):
             session.error = UNAUTHORISED
-            redirect(URL(r=request, c="default", f="user", args="login", vars={"_next":URL(r=request, args="search_simple", vars=request.vars)}))
+            redirect(URL(r=request, c="default", f="user", args="login",
+                         vars={"_next":URL(r=request, args="search_simple",
+                                           vars=request.vars)}))
 
         if xrequest.representation=="html":
             # Check for redirection
@@ -282,7 +268,8 @@ if deployment_settings.has_module(module):
             form = FORM(TABLE(
                     TR(T("Text in Message: "),
                     INPUT(_type="text", _name="label", _size="40"),
-                    DIV( _class="tooltip", _title=T("Text in Message") + "|" + T("To search for a request, enter some of the text that you are looking for. You may use % as wildcard. Press 'Search' without input to list all requests."))),
+                    DIV( _class="tooltip", _title="%s|%s" % (T("Text in Message"),
+                                                             T("To search for a request, enter some of the text that you are looking for. You may use % as wildcard. Press 'Search' without input to list all requests.")))),
                     TR("", INPUT(_type="submit", _value=T("Search")))
                     ))
 
@@ -319,7 +306,7 @@ if deployment_settings.has_module(module):
                         TH("Time"),
                         TH("Location"),
                         )),
-                        TBODY(records), _id="list", _class="display"))
+                        TBODY(records), _id="list", _class="dataTable display"))
                 else:
                     items = T("None")
 
@@ -338,50 +325,11 @@ if deployment_settings.has_module(module):
             redirect(URL(r=request))
 
     # Plug into REST controller
-    s3xrc.model.set_method(module, resourcename, method="search_simple", action=shn_rms_req_search_simple )
+    s3xrc.model.set_method(module, resourcename, method="search_simple",
+                           action=shn_rms_req_search_simple )
 
-    #==============================================================================
-    # Request Item
-    #
-    resourcename = "ritem"
-    tablename = "%s_%s" % (module, resourcename)
-    table = db.define_table(tablename,
-                            request_id(),
-                            item_id(empty=False),
-                            Field("quantity", "double"),
-                            comments(),
-                            migrate=migrate, *s3_meta_fields())
-    # CRUD strings
-    ADD_REQUEST_ITEM = T("Add Request Item")
-    LIST_REQUEST_ITEMS = T("List Request Items")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_REQUEST_ITEM,
-        title_display = T("Request Item Details"),
-        title_list = LIST_REQUEST_ITEMS,
-        title_update = T("Edit Request Item"),
-        title_search = T("Search Request Items"),
-        subtitle_create = T("Add New Request Item"),
-        subtitle_list = T("Request Items"),
-        label_list_button = LIST_REQUEST_ITEMS,
-        label_create_button = ADD_REQUEST_ITEM,
-        label_delete_button = T("Delete Request Item"),
-        msg_record_created = T("Request Item added"),
-        msg_record_modified = T("Request Item updated"),
-        msg_record_deleted = T("Request Item deleted"),
-        msg_list_empty = T("No Items currently requested"))
-
-    table.item_id.requires = IS_ONE_OF(db, "supply_item.id", "%(name)s")
-    #table.quantity.requires = IS_NOT_EMPTY()
-
-    # Items as component of Locations
-    s3xrc.model.add_component(module, resourcename,
-                              multiple=True,
-                              joinby=dict(rms_req="request_id",
-                                          supply_item="item_id"))
-
-    #==============================================================================
+    #==========================================================================
     # Create the table for request_detail for requests with arbitrary keys
-    # (This is probably redundant)
     resourcename = "req_detail"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
@@ -426,3 +374,9 @@ if deployment_settings.has_module(module):
                                          msg_record_deleted  = "Request detail deleted",
                                          msg_list_empty      = "No request details currently available"
                                         )
+    # Details as component of Requests
+    s3xrc.model.add_component(module, resourcename,
+                              multiple=True,
+                              joinby=dict(rms_req="request_id"))
+
+# END =========================================================================

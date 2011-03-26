@@ -18,27 +18,27 @@ menu = [
         # @ToDo Search by priority, status, location
         #[T("Search"), False, URL(r=request, f="req", args="search")],
     ]],
-    [T("All Requested Items"), False, URL(r=request, f="ritem")],
+    #[T("All Requested Items"), False, URL(r=request, f="ritem")],
 ]
-if session.rcvars:
-    if "hms_hospital" in session.rcvars:
-        hospital = db.hms_hospital
-        query = (hospital.id == session.rcvars["hms_hospital"])
-        selection = db(query).select(hospital.id, hospital.name, limitby=(0, 1)).first()
-        if selection:
-            menu_hospital = [
-                [selection.name, False, URL(r=request, c="hms", f="hospital", args=[selection.id])]
-            ]
-            menu.extend(menu_hospital)
-    if "cr_shelter" in session.rcvars:
-        shelter = db.cr_shelter
-        query = (shelter.id == session.rcvars["cr_shelter"])
-        selection = db(query).select(shelter.id, shelter.name, limitby=(0, 1)).first()
-        if selection:
-            menu_shelter = [
-                [selection.name, False, URL(r=request, c="cr", f="shelter", args=[selection.id])]
-            ]
-            menu.extend(menu_shelter)
+#if session.rcvars:
+#    if "hms_hospital" in session.rcvars:
+#        hospital = db.hms_hospital
+#        query = (hospital.id == session.rcvars["hms_hospital"])
+#        selection = db(query).select(hospital.id, hospital.name, limitby=(0, 1)).first()
+#        if selection:
+#            menu_hospital = [
+#                [selection.name, False, URL(r=request, c="hms", f="hospital", args=[selection.id])]
+#            ]
+#            menu.extend(menu_hospital)
+#    if "cr_shelter" in session.rcvars:
+#        shelter = db.cr_shelter
+#        query = (shelter.id == session.rcvars["cr_shelter"])
+#        selection = db(query).select(shelter.id, shelter.name, limitby=(0, 1)).first()
+#        if selection:
+#            menu_shelter = [
+#                [selection.name, False, URL(r=request, c="cr", f="shelter", args=[selection.id])]
+#            ]
+#            menu.extend(menu_shelter)
 
 response.menu_options = menu
 
@@ -92,14 +92,16 @@ def req():
             #if r.method == "create" and not r.component:
             # listadd arrives here as method=None
             if r.method != "delete" and not r.component:
-                # Redirect to the Assessments tabs after creation
-                r.next = r.other(method="ritem", record_id=s3xrc.get_session(prefix, resourcename))
+                # Redirect to the Details tabs after creation
+                r.next = r.other(method="req_detail", record_id=s3xrc.get_session(prefix, resourcename))
 
             # Custom Action Buttons
             if not r.component:
                 response.s3.actions = [
-                    dict(label=str(T("Open")), _class="action-btn", url=str(URL(r=request, args=["[id]", "update"]))),
-                    dict(label=str(T("Items")), _class="action-btn", url=str(URL(r=request, args=["[id]", "ritem"]))),
+                    dict(label=str(T("Open")), _class="action-btn",
+                         url=str(URL(r=request, args=["[id]", "update"]))),
+                    dict(label=str(T("Details")), _class="action-btn",
+                         url=str(URL(r=request, args=["[id]", "req_detail"]))),
                 ]
 
         return output
@@ -137,17 +139,17 @@ def shn_rms_req_rheader(r):
                                                  )
 
                 rheader = DIV( TABLE(
-                                   TR( TH( T("Message") + ": "),
+                                   TR( TH( "%s: " % T("Message")),
                                        TD(req_record.message, _colspan=3)
                                       ),
-                                   TR( TH( T("Time of Request") + ": "),
+                                   TR( TH( "%s: " % T("Time of Request")),
                                        req_record.datetime,
-                                       TH( T( "Location") + ": "),
+                                       TH( "%s: " % T("Location")),
                                        location_represent,
                                       ),
-                                   TR( TH( T("Priority") + ": "),
+                                   TR( TH( "%s: " % T("Priority")),
                                        req_record.priority,
-                                       TH( T("Document") + ": "),
+                                       TH( "%s: " % T("Document")),
                                        document_represent(req_record.document_id)
                                       ),
                                      ),

@@ -14,6 +14,9 @@ resourcename = request.function
 
 response.menu_options = inv_menu
 
+NO_PERM_RECV_SHIPMENT = T("You do not have permission to receive a shipment.")
+NO_PERM_SEND_SHIPMENT = T("You do not have permission to send a shipment.")
+
 def index():
     """
         Application Home page
@@ -110,8 +113,12 @@ def inv_item():
 
     """ RESTful CRUD controller """
 
-    #tablename = "%s_%s" % (module, resourcename)
-    #table = db[tablename]
+    tablename = "%s_%s" % (module, resourcename)
+    table = db[tablename]
+    
+    # Limit site_id to sites the user has permissions for
+    shn_site_based_permissions(table,
+                               NO_PERM_RECV_SHIPMENT )
 
     return s3_rest_controller(module, resourcename)
 #------------------------------------------------------------------------------
@@ -121,7 +128,7 @@ def inv_item_quantity():
                   (db.inv_inv_item.item_pack_id == db.supply_item_pack.id)
                  ).select(db.inv_inv_item.quantity,
                           db.supply_item_pack.quantity,
-                          limitby=[0, 1]).first()#
+                          limitby=(0, 1)).first()#
 
     return json.dumps(record)
 #------------------------------------------------------------------------------
@@ -135,8 +142,13 @@ def inv_item_packs():
 #==============================================================================
 def recv():
     """ RESTful CRUD controller """
-    #tablename = "%s_%s" % (module, resourcename)
-    #table = db[tablename]
+    tablename = "%s_%s" % (module, resourcename)
+    table = db[tablename]
+
+    # Limit site_id to sites the user has permissions for
+    shn_site_based_permissions(table,
+                               NO_PERM_RECV_SHIPMENT )
+
     output = s3_rest_controller(module,
                                 resourcename,
                                 rheader=shn_recv_rheader)
@@ -150,15 +162,15 @@ def shn_recv_rheader(r):
             recv_record = r.record
             if recv_record:   
                 rheader = DIV( TABLE(
-                                   TR( TH( T("Date") + ": "),
+                                   TR( TH( "%s: " % T("Date")),
                                        recv_record.datetime,
                                       ),
-                                   TR( TH( T( "By" ) + ": "),
+                                   TR( TH( "%s: " % T("By")),
                                        shn_site_represent(recv_record.site_id),
-                                       TH( T( "From" ) + ": "),
+                                       TH( "%s: " % T("From")),
                                        shn_gis_location_represent(recv_record.from_location_id),
                                       ),
-                                   TR( TH( T("Comments") + ": "),
+                                   TR( TH( "%s: " % T("Comments")),
                                        TD(recv_record.comments, _colspan=3)
                                       ),
                                      )
@@ -250,11 +262,11 @@ class QUANTITY_INV_ITEM:
     def __call__(self, value):
         error = "Invalid Quantity" # @todo: better error catching
         inv_item_record = db( (db.inv_inv_item.id == self.inv_item_id) & \
-                                (db.inv_inv_item.item_pack_id == db.supply_item_pack.id)
+                              (db.inv_inv_item.item_pack_id == db.supply_item_pack.id)
                                ).select(db.inv_inv_item.quantity,
                                         db.supply_item_pack.quantity,
                                         db.supply_item_pack.name,
-                                        limitby = [0,1]).first() # @todo: this should be a virtual field
+                                        limitby = (0, 1)).first() # @todo: this should be a virtual field
         if inv_item_record and value:
             send_quantity = float(value) * shn_get_db_field_value(db,
                                                            "supply_item_pack",
@@ -279,26 +291,30 @@ class QUANTITY_INV_ITEM:
 #------------------------------------------------------------------------------
 def send():
     """ RESTful CRUD controller """
-    #tablename = "%s_%s" % (module, resourcename)
-    #table = db[tablename]
+    tablename = "%s_%s" % (module, resourcename)
+    table = db[tablename]
     
-    #Set Validator for checking against the number of items in the warehouse
+    # Limit site_id to sites the user has permissions for
+    shn_site_based_permissions(table,
+                               NO_PERM_SEND_SHIPMENT )
+    
+    # Set Validator for checking against the number of items in the warehouse
     if (request.vars.inv_item_id):
         db.inv_send_item.quantity.requires = QUANTITY_INV_ITEM(request.vars.inv_item_id, 
-                                                                     request.vars.item_pack_id)
+                                                               request.vars.item_pack_id)
     
     def prep(r):
         # If component view
         if r.record and r.record.get("site_id"):        
-            #Restrict to items from this warehouse only
+            # Restrict to items from this warehouse only
             db.inv_send_item.inv_item_id.requires = IS_ONE_OF(db, 
-                                                                 "inv_inv_item.id", 
-                                                                 shn_inv_item_represent, 
-                                                                 orderby="inv_inv_item.id", 
-                                                                 sort=True,
-                                                                 filterby = "site_id",
-                                                                 filter_opts = [r.record.site_id]
-                                                                 )
+                                                              "inv_inv_item.id", 
+                                                              shn_inv_item_represent, 
+                                                              orderby="inv_inv_item.id", 
+                                                              sort=True,
+                                                              filterby = "site_id",
+                                                              filter_opts = [r.record.site_id]
+                                                             )
         return True
         
     response.s3.prep = prep           
@@ -921,7 +937,7 @@ def send_cancel():
                         (db.req_req_item.deleted == False)
                         ).select(db.req_req_item.quantity_fulfil,
                                  db.req_req_item.item_pack_id, # required by pack_quantity virtualfield
-                                 limitby = (0,1)).first()
+                                 limitby = (0, 1)).first()
         if r_req_item:
             quantity_fulfil = shn_supply_item_add(r_req_item.quantity_fulfil,
                                                   r_req_item.pack_quantity,
@@ -1029,7 +1045,7 @@ def send_commit():
     if not auth.s3_has_permission("update", 
                                   db["%s_%s" % (prefix, resourcename)], 
                                   record_id=id):    
-        session.error = T("You do no have permission to send this shipment.")    
+        session.error = NO_PERM_SEND_SHIPMENT   
         redirect(URL(r = request,
                      c = "req",
                      f = "commit",
@@ -1060,10 +1076,10 @@ def send_commit():
     
     for commit_item in commit_items:                        
         send_item_id = db.inv_send_item.insert( send_id = send_id,
-                                                 inv_item_id = commit_item.inv_inv_item.id,
-                                                 quantity = commit_item.req_commit_item.quantity,
-                                                 item_pack_id = commit_item.req_commit_item.item_pack_id                                                 
-                                                 ) 
+                                                inv_item_id = commit_item.inv_inv_item.id,
+                                                quantity = commit_item.req_commit_item.quantity,
+                                                item_pack_id = commit_item.req_commit_item.item_pack_id                                                 
+                                                ) 
                                                     
     # Redirect to send
     redirect(URL(r = request,

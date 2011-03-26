@@ -1231,12 +1231,18 @@ if populate:
         create_role("Authenticated", "Authenticated - all logged-in users",
                     dict(c="gis", uacl=acl.ALL, oacl=acl.ALL),
                     dict(c="gis", f="location", uacl=acl.READ, oacl=acl.ALL),
+                    # For Staff Permissions
                     dict(c="org", uacl=default_uacl, oacl=default_oacl),
+                    dict(c="hms", uacl=default_uacl, oacl=default_oacl),
+                    dict(c="cr", uacl=default_uacl, oacl=default_oacl),
                     dict(c="inv", uacl=default_uacl, oacl=default_oacl),       
                     dict(c="req", uacl=default_uacl, oacl=default_oacl),               
                     )
         create_role("Anonymous", "Unauthenticated users",
-                    dict(c="gis", uacl = default_acl, oacl = default_acl))
+                    # Allow unauthenticated users to sign-up as a Volunteer
+                    dict(c="vol", uacl=acl.CREATE, oacl=default_acl)
+                    #dict(c="gis", uacl=acl.READ, oacl=default_acl)
+                    )
         create_role("Editor", "Editor - can access & make changes to any unprotected data")
         create_role("MapAdmin", "MapAdmin - allowed access to edit the MapService Catalogue",
                     dict(c="gis", uacl=acl.ALL, oacl=acl.ALL),

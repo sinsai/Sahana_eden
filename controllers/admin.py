@@ -505,7 +505,7 @@ def users():
                                      _value=T("Remove")))))
     items = DIV(FORM(TABLE(table_header,
                            TBODY(item_list),
-                           table_footer, _id="list", _class="display"),
+                           table_footer, _id="list", _class="dataTable display"),
                      _name="custom", _method="post",
                      _enctype="multipart/form-data",
                      _action=URL(r=request, f="group_remove_users",

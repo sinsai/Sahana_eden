@@ -94,6 +94,11 @@ def index():
 
     """ Module's Home Page """
 
+    # If not logged-in then redirect to the registration sign-up page as this is all you are likely to be able to access
+    # (Anonymous has Create access)
+    if not auth.is_logged_in():
+        redirect(URL(r=request, f="register"))
+
     # Module's nice name
     try:
         module_name = deployment_settings.modules[prefix].name_nice
@@ -183,7 +188,9 @@ def index():
 # -----------------------------------------------------------------------------
 def register():
     """
-        Custom page to allow people to register as a Volunteer whilst hiding the complexity of the data model.
+        Custom page to allow people to register as a Volunteer whilst:
+            not requiring them to have an authenticated account
+            hiding the complexity of the data model
     """
 
     # Fields that we want in our custom Form
@@ -203,6 +210,7 @@ def register():
                 "fieldname" : "value",
                 "formfieldname" : "telephone",
                 "label" : T("Telephone"),
+                "required" : True, # Currently it is, so we should label it as-such
                 "comment" : DIV(_class="tooltip",
                                 _title="%s|%s" % (T("Telephone"),
                                                   T("Please sign-up with your Cell Phone as this allows us to send you Text messages. Please include full Area code.")))
@@ -295,12 +303,16 @@ def register():
                                  skill_id=request.vars.skill_id,
                                  status=1)  # Pending
 
-        pe_id = db(db.pr_person.id == person_id).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
+        
+        query = (db.pr_person.id == person_id)
+        pe_id = db(query).select(db.pr_person.pe_id,
+                                 limitby=(0, 1)).first().pe_id
         # Insert Email
-        db.pr_pe_contact.insert(pe_id=pe_id, contact_method=1, value=request.vars.email)
+        db.pr_pe_contact.insert(pe_id=pe_id, contact_method=1,
+                                value=request.vars.email)
         # Insert Telephone
-        db.pr_pe_contact.insert(pe_id=pe_id, contact_method=2, value=request.vars.telephone)
-
+        db.pr_pe_contact.insert(pe_id=pe_id, contact_method=2,
+                                value=request.vars.telephone)
 
         response.confirmation = T("Sign-up succesful - you should hear from us soon!")
 
@@ -308,7 +320,10 @@ def register():
 
 # -----------------------------------------------------------------------------
 def vol_onaccept(form):
-    """ Create a vol/volunteer record """
+    """
+        Create a vol/volunteer record when a person's basic details are created
+        through vol/person (so they don't need to press 2x Saves to register)
+    """
     db.vol_volunteer.insert(person_id=form.vars.id,
                             status=1)
     return

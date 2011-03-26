@@ -351,15 +351,21 @@ deployment_settings.modules = OrderedDict([
             #restricted = False,
             #module_type = 10,
         #)),
-    # NB RMS module depends on HMS, CR & Project
-    ("rms", Storage(
+    # This needs some work to cleanup after req has been introduced
+    #("rms", Storage(
+    #        name_nice = T("RMS"),
+    #        description = T("Manage requests for assistance"),
+    #        restricted = False,
+    #        module_type = 10,
+    #        resources = Storage(
+    #            rms_req = {"importer" : True},
+    #        )
+    #    )),
+    ("req", Storage(
             name_nice = T("Requests"),
-            description = T("Tracks requests for aid and matches them against donors who have pledged aid"),
+            description = T("Manage requests for items and assets and matches them against existing inventories"),
             restricted = False,
             module_type = 10,
-            resources = Storage(
-                rms_req = {"importer" : True},
-            )
         )),
     ("cr", Storage(
             name_nice = T("Shelter Registry"),

@@ -7,57 +7,52 @@
 
     A module to record inventories of items at a location (site)
 """
-#==============================================================================
-inv_menu = [
-            #[T("Home"), False, URL(r=request, c="inv", f="index")],
-            [T("Catalog Items"), False, URL(r=request, c="supply", f="item"),
-            [
-                [T("List"), False, URL(r=request, c="supply", f="item")],
-                [T("Add"), False, URL(r=request, c="supply", f="item", args="create")],
-                [T("Search"), False, URL(r=request, c="supply", f="item", args="search")],
-            ]],
-            [T("Warehouse"), False, URL(r=request, c="inv", f="wh"),
-                [
-                    [T("List"), False, URL(r=request, c="inv", f="wh")],
-                    [T("Add"), False, URL(r=request, c="inv", f="wh", args="create")],
-                ]
-            ],
-            [T("Inventories"), False, URL(r=request, c="inv", f="wh"),
-                [
-                    [T("Search Inventory Items"), False, URL(r=request, c="inv", f="inv_item", args="search")],
-                    [T("Search Received Shipments"), False, URL(r=request, c="inv", f="recv", args="search")],
-                ]
-            ],
-            [T("Request Management"), False, URL(r=request, c="req", f="req"),
-            [
-                [T("Requests"), False, URL(r=request, c="req", f="req")],
-                [T("Commitments"), False, URL(r=request, c="req", f="commit")],
-                #[T("Search Requested Items"), False, URL(r=request, c="req", f="req_item", args="search")],
-                #[T("Add"), False, URL(r=request, c="req", f="req", args="create")],
-            ]],
-           # [T("Receive"), False, URL(r=request, c="inv", f="recv"),
-           # [
-           #     [T("List"), False, URL(r=request, c="inv", f="recv")],
-           #     [T("Add"), False, URL(r=request, c="inv", f="recv", args="create")],
-           # ]],
-           # [T("Send"), False, URL(r=request, c="inv", f="send"),
-           # [
-           #     [T("List"), False, URL(r=request, c="inv", f="send")],
-           #     [T("Add"), False, URL(r=request, c="inv", f="send", args="create")],
-           # ]],
-            ]
-if s3_has_role(1):
-    inv_menu.append(
-        [T("Item Categories"), False, URL(r=request, c="supply", f="item_category"),[
-            [T("List"), False, URL(r=request, c="supply", f="item_category")],
-            [T("Add"), False, URL(r=request, c="supply", f="item_category", args="create")]
-        ]]
-    )
-#==============================================================================
-module = "inv"
-if deployment_settings.has_module("inv"):
 
-    #==============================================================================
+module = "inv"
+if deployment_settings.has_module(module):
+    inv_menu = [
+                #[T("Home"), False, aURL(r=request, c="inv", f="index")],
+                [T("Catalog Items"), False, aURL(r=request, c="supply", f="item"),
+                [
+                    [T("List"), False, aURL(r=request, c="supply", f="item")],
+                    [T("Add"), False, aURL(r=request, c="supply", f="item", args="create")],
+                    [T("Search"), False, aURL(r=request, c="supply", f="item", args="search")],
+                ]],
+                [T("Warehouse"), False, aURL(r=request, c="inv", f="wh"),
+                    [
+                        [T("List"), False, aURL(r=request, c="inv", f="wh")],
+                        [T("Add"), False, aURL(r=request, c="inv", f="wh", args="create")],
+                    ]
+                ],
+                [T("Inventories"), False, aURL(r=request, c="inv", f="wh"),
+                    [
+                        [T("Search Inventory Items"), False, aURL(r=request, c="inv", f="inv_item", args="search")],
+                        [T("Search Received Shipments"), False, aURL(r=request, c="inv", f="recv", args="search")],
+                    ]
+                ]
+            ]
+    if deployment_settings.has_module("req"):
+        inv_menu.append(
+                [T("Receive"), False, aURL(r=request, c="inv", f="recv"),
+                [
+                    [T("List"), False, aURL(r=request, c="inv", f="recv")],
+                    [T("Add"), False, aURL(r=request, c="inv", f="recv", args="create")],
+                ]])
+        inv_menu.append(        
+                [T("Send"), False, aURL(r=request, c="inv", f="send"),
+                [
+                    [T("List"), False, aURL(r=request, c="inv", f="send")],
+                    [T("Add"), False, aURL(r=request, c="inv", f="send", args="create")],
+                ]])
+    if s3_has_role(1):
+        inv_menu.append(
+            [T("Item Categories"), False, aURL(r=request, c="supply", f="item_category"),[
+                [T("List"), False, aURL(r=request, c="supply", f="item_category")],
+                [T("Add"), False, aURL(r=request, c="supply", f="item_category", args="create")]
+            ]]
+        )
+
+    #==========================================================================
     # Inventory Item
     #
     resourcename = "inv_item"
@@ -133,7 +128,7 @@ if deployment_settings.has_module("inv"):
                                                                      T("Select Items from this Inventory"))),
                                     ondelete = "RESTRICT"
                                     )
-    #------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     # Inv item as component of Sites
     s3xrc.model.add_component(module,
                               resourcename,
@@ -151,7 +146,7 @@ if deployment_settings.has_module("inv"):
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(supply_item_pack = "item_pack_id"))
-    #------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     # Recv Search Method
     #
     shn_inv_item_search = s3base.S3Search(
@@ -183,7 +178,7 @@ if deployment_settings.has_module("inv"):
                   ),
         ))
 
-    #------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     # Update owned_by_role to the site's owned_by_role
     s3xrc.model.configure(
         table,
@@ -195,7 +190,7 @@ if deployment_settings.has_module("inv"):
     )
 
 
-    #==============================================================================
+    #==========================================================================
     # Received (In/Receive / Donation / etc)
     #
 
@@ -220,7 +215,6 @@ if deployment_settings.has_module("inv"):
                        SHIP_DOC_COMPLETE: T("Complete")
                        }
 
-    from gluon.sqlhtml import RadioWidget
     radio_widget = lambda field, value: \
                             RadioWidget().widget(field, value, cols = 2)
 
@@ -280,7 +274,7 @@ if deployment_settings.has_module("inv"):
                             migrate=migrate, *s3_meta_fields()
                             )
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # CRUD strings
     ADD_RECV = T("Receive Shipment")
     LIST_RECV = T("List Received Shipments")
@@ -301,7 +295,7 @@ if deployment_settings.has_module("inv"):
         msg_list_empty = T("No Received Shipments")
     )
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def shn_recv_represent(id):
         if id:
             inv_recv_row = db(db.inv_recv.id == id).\
@@ -315,7 +309,7 @@ if deployment_settings.has_module("inv"):
         else:
             return NONE
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Reusable Field
     recv_id = S3ReusableField("recv_id", db.inv_recv, sortby="datetime",
                                  requires = IS_NULL_OR(IS_ONE_OF(db,
@@ -329,14 +323,14 @@ if deployment_settings.has_module("inv"):
                                  ondelete = "RESTRICT"
                                  )
 
-    #------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     # Recv as a component of Sites
     s3xrc.model.add_component(module,
                               resourcename,
                               multiple = True,
                               joinby = super_key(db.org_site)
                               )
-    #------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     # Recv Search Method
     #
     shn_recv_search = s3base.S3Search(
@@ -411,10 +405,11 @@ if deployment_settings.has_module("inv"):
                   ),
         ))
 
-    #------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     # Redirect to the Items tabs after creation
-    recv_item_url = URL(r=request, c="inv", f="recv", args=["[id]", "recv_item"])
-    #------------------------------------------------------------------------------
+    recv_item_url = URL(r=request, c="inv", f="recv", args=["[id]",
+                                                            "recv_item"])
+    #--------------------------------------------------------------------------
     s3xrc.model.configure(table,
                           create_next = recv_item_url,
                           update_next = recv_item_url,
@@ -617,7 +612,7 @@ if deployment_settings.has_module("inv"):
         output.seek(0)
         return output.read()
 
-    #==============================================================================
+    #==========================================================================
     # In (Receive / Donation / etc) Items
     #
     resourcename = "recv_item"
@@ -634,7 +629,7 @@ if deployment_settings.has_module("inv"):
                                              writable = False),
                             migrate=migrate, *s3_meta_fields())
 
-    #pack_quantity virtual field
+    # pack_quantity virtual field
     table.virtualfields.append(item_pack_virtualfields(tablename = tablename))
 
     # CRUD strings
@@ -656,7 +651,7 @@ if deployment_settings.has_module("inv"):
         msg_record_deleted = T("Received Item deleted"),
         msg_list_empty = T("No Received Items currently registered"))
 
-    #------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     # In Items as component of In
     # In Items as a component of Items
     s3xrc.model.add_component(module, resourcename,
@@ -664,7 +659,7 @@ if deployment_settings.has_module("inv"):
                               joinby=dict(inv_recv = "recv_id",
                                           supply_item = "item_id"))
 
-    #------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     # Update owned_by_role to the recv's owned_by_role
     s3xrc.model.configure(
         table,
@@ -673,7 +668,7 @@ if deployment_settings.has_module("inv"):
                                                 fk = "recv_id")
     )
 
-    #==============================================================================
+    #==========================================================================
     def shn_location_id_to_site_id(r, field = "location_id"):
         if r[field]:
             return shn_get_db_field_value(db,
@@ -684,7 +679,7 @@ if deployment_settings.has_module("inv"):
         else:
             return None
 
-    #==============================================================================
+    #==========================================================================
     # Send (Outgoing / Dispatch / etc)
     #
     shn_to_location_id_to_site_id = lambda r, field = "to_location_id": \
@@ -720,7 +715,7 @@ if deployment_settings.has_module("inv"):
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # CRUD strings
     ADD_SEND = T("Send Shipment")
     LIST_SEND = T("List Sent Shipments")
@@ -740,7 +735,7 @@ if deployment_settings.has_module("inv"):
         msg_record_deleted = T("Sent Shipment canceled"),
         msg_list_empty = T("No Sent Shipments"))
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def shn_send_represent(id):
         if id:
             send_row = db(db.inv_send.id == id).\
@@ -754,7 +749,7 @@ if deployment_settings.has_module("inv"):
         else:
             return NONE
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Reusable Field
     send_id = S3ReusableField( "send_id", db.inv_send, sortby="datetime",
                                requires = IS_NULL_OR(IS_ONE_OF(db,
@@ -767,18 +762,19 @@ if deployment_settings.has_module("inv"):
                                ondelete = "RESTRICT"
                                )
 
-    #------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     # Inv Send added as a component of Inventory Store in controller
 
-    #------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     # Redirect to the Items tabs after create & update
-    url_send_items = URL(r=request, c="inv", f="send", args=["[id]", "send_item"])
+    url_send_items = URL(r=request, c="inv", f="send", args=["[id]",
+                                                             "send_item"])
     s3xrc.model.configure(table,
                           create_next = url_send_items,
                           update_next = url_send_items
                           )
 
-    #------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     # Update owned_by_role to the site's owned_by_role
     s3xrc.model.configure(
         table,
@@ -802,7 +798,7 @@ if deployment_settings.has_module("inv"):
     s3xrc.model.set_method(module, resourcename,
                            method="form", action=shn_inv_send_form )
 
-    #==============================================================================
+    #==========================================================================
     # Send (Outgoing / Dispatch / etc) Items
     #
     log_sent_item_status = {0: NONE,
@@ -849,14 +845,14 @@ if deployment_settings.has_module("inv"):
         msg_record_deleted = T("Sent Item deleted"),
         msg_list_empty = T("No Sent Items currently registered"))
 
-    #------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     # Send Items as component of Send
     # Send Items as a component of Items
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(inv_send = "send_id",
                                           inv_item = "inv_item_id"))
-    #------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     # Update owned_by_role to the send's owned_by_role
     s3xrc.model.configure(
         table,
@@ -864,12 +860,11 @@ if deployment_settings.has_module("inv"):
                                                 resource_name = "inv_send",
                                                 fk = "send_id")
     )
-    #==============================================================================
 
-    #==============================================================================
+    #==========================================================================
     # Inventory Controller Helper functions
 
-    #------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     def shn_add_dynamic_inv_components():
         """
             Add inv_send as component joinby field according to tab selected
@@ -915,7 +910,7 @@ if deployment_settings.has_module("inv"):
                     msg_record_deleted = T("Sent Shipment canceled"),
                     msg_list_empty = T("No Sent Shipments"))
 
-    #------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     def shn_inv_prep(r):
         if "inv_item" in request.args:
             # Filter out items which are already in this inventory
@@ -936,13 +931,16 @@ if deployment_settings.has_module("inv"):
             filter = (db.inv_send.status == SHIP_STATUS_SENT)
             r.resource.add_component_filter("send", filter)
 
-    #------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     # Session dictionary to indicate if a site inv should be shown
     if session.s3.show_inv == None:
         session.s3.show_inv = {}
 
     def shn_show_inv_tabs(r):
         """
+            Add an expandable set of Tabs for a Site's Inventory Tasks
+
+            @ToDo: Make these Expand/Contract without a server-side call
         """
         try:
             show_inv = eval(r.request.vars.show_inv)
@@ -955,11 +953,11 @@ if deployment_settings.has_module("inv"):
 
         if show_inv or r.request.function == "wh":
             inv_tabs = [(T("Inventory Items"), "inv_item"),
-                        (T("Request"), "req"),
-                        (T("Match Requests"), "match_req"),
-                        (T("Incoming"), "send", dict(select="incoming")),
+                        #(T("Request"), "req"),                 # Added separately as not necessarily related to items
+                        #(T("Match Requests"), "match_req"),                # Disabled as 'unsupported method'
+                        #(T("Incoming"), "send", dict(select="incoming")),  # Disabled as 'unsupported method'
                         (T("Receive" ), "recv"),
-                        (T("Send"), "send", dict(select="sent")),
+                        #(T("Send"), "send", dict(select="sent")),          # Disabled as 'unsupported method'
                         (T("Commit"), "commit"),
                         ]
             if r.request.function != "wh":
@@ -970,3 +968,5 @@ if deployment_settings.has_module("inv"):
             inv_tabs = [("+ %s" % T("Inventory"), None, dict(show_inv="True"))]
 
         return inv_tabs
+
+# END =========================================================================

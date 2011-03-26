@@ -7,10 +7,10 @@
 
 """
 
-prefix = request.controller
+module = request.controller
 resourcename = request.function
 
-if prefix not in deployment_settings.modules:
+if not deployment_settings.has_module(module):
     session.error = T("Module disabled!")
     redirect(URL(r=request, c="default", f="index"))
 
@@ -22,7 +22,7 @@ def index():
 
     """ Module's Home Page """
 
-    module_name = deployment_settings.modules[prefix].name_nice
+    module_name = deployment_settings.modules[module].name_nice
     response.title = module_name
     return dict(module_name=module_name)
 
@@ -32,10 +32,10 @@ def cluster():
 
     """ RESTful CRUD controller """
 
-    #tablename = "%s_%s" % (prefix, resourcename)
+    #tablename = "%s_%s" % (module, resourcename)
     #table = db[tablename]
 
-    return s3_rest_controller(prefix, resourcename)
+    return s3_rest_controller(module, resourcename)
 
 
 #==============================================================================
@@ -43,10 +43,10 @@ def cluster_subsector():
 
     """ RESTful CRUD controller """
 
-    #tablename = "%s_%s" % (prefix, resourcename)
+    #tablename = "%s_%s" % (module, resourcename)
     #table = db[tablename]
 
-    return s3_rest_controller(prefix, resourcename)
+    return s3_rest_controller(module, resourcename)
 
 
 #==============================================================================
@@ -98,7 +98,7 @@ def organisation():
     rheader = lambda r: shn_org_rheader(r,
                                         tabs=tabs)
 
-    output = s3_rest_controller(prefix, resourcename, rheader=rheader)
+    output = s3_rest_controller(module, resourcename, rheader=rheader)
     return output
 
 #==============================================================================
@@ -118,9 +118,10 @@ def office():
     def prep(r):
         # Filter out people which are already staff for this office
         shn_staff_prep(r)
-        # Filter out items which are already in this inventory
-        shn_inv_prep(r)
-
+        if deployment_settings.has_module("inv"):
+            # Filter out items which are already in this inventory
+            shn_inv_prep(r)
+          
         if r.representation == "popup":
             organisation = request.vars.organisation_id or session.s3.organisation_id or ""
             if organisation:
@@ -168,7 +169,7 @@ def office():
 
     rheader = shn_office_rheader
 
-    return s3_rest_controller(prefix, resourcename, rheader=rheader)
+    return s3_rest_controller(module, resourcename, rheader=rheader)
 
 
 #==============================================================================
@@ -194,7 +195,7 @@ def staff():
         return True
     response.s3.prep = prep
 
-    return s3_rest_controller(prefix, resourcename)
+    return s3_rest_controller(module, resourcename)
 
 
 #==============================================================================
@@ -206,7 +207,7 @@ def donor():
     table = db[tablename]
 
     s3xrc.model.configure(table, listadd=False)
-    output = s3_rest_controller(prefix, resourcename)
+    output = s3_rest_controller(module, resourcename)
 
     return output
 
@@ -278,7 +279,4 @@ def shn_org_rheader(r, tabs=[]):
 
     return None
 
-#==============================================================================
-
-
-#==============================================================================
+# END =========================================================================

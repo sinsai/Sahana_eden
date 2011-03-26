@@ -4,9 +4,6 @@
     Shelter (Camp) Registry, model
 
     @author: Pat Tressel
-
-    @ToDo: Remove dependency on HMS
-        Remove hospital_id FK
 """
 
 module = "cr"
@@ -14,6 +11,7 @@ if deployment_settings.has_module(module):
 
     # -------------------------------------------------------------------------
     # Shelter types
+    # e.g. NGO-operated, Government evacuation center, School, Hospital -- see Agasti opt_camp_type.)
     resourcename = "shelter_type"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
@@ -42,11 +40,16 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Shelter Types currently registered"))
 
     shelter_type_id = S3ReusableField("shelter_type_id", db.cr_shelter_type,
-                                      requires = IS_NULL_OR(IS_ONE_OF(db, "cr_shelter_type.id", "%(name)s")),
+                                      requires = IS_NULL_OR(IS_ONE_OF(db,
+                                                                      "cr_shelter_type.id",
+                                                                      "%(name)s")),
                                       represent = lambda id: (id and [db.cr_shelter_type[id].name] or ["None"])[0],
                                       comment = A(ADD_SHELTER_TYPE,
                                                   _class="colorbox",
-                                                  _href=URL(r=request, c="cr", f="shelter_type", args="create", vars=dict(format="popup")),
+                                                  _href=URL(r=request, c="cr",
+                                                            f="shelter_type",
+                                                            args="create",
+                                                            vars=dict(format="popup")),
                                                   _target="top",
                                                   _title=ADD_SHELTER_TYPE),
                                       ondelete = "RESTRICT",
@@ -54,6 +57,8 @@ if deployment_settings.has_module(module):
                                      )
 
     # -------------------------------------------------------------------------
+    # Shelter services
+    # e.g. medical, housing, food, ...
     resourcename = "shelter_service"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
@@ -83,99 +88,83 @@ if deployment_settings.has_module(module):
         if not shelter_service_ids:
             return NONE
         elif isinstance(shelter_service_ids, (list, tuple)):
-            shelter_services = db(db.cr_shelter_service.id.belongs(shelter_service_ids)).select(db.cr_shelter_service.name)
+            query = (db.cr_shelter_service.id.belongs(shelter_service_ids))
+            shelter_services = db(query).select(db.cr_shelter_service.name)
             return ", ".join([s.name for s in shelter_services])
         else:
-            shelter_service = db(db.cr_shelter_service.id == shelter_service_ids).select(db.cr_shelter_service.name,
-                                                                                         limitby=(0, 1)).first()
+            query = (db.cr_shelter_service.id == shelter_service_ids)
+            shelter_service = db(query).select(db.cr_shelter_service.name,
+                                               limitby=(0, 1)).first()
             return shelter_service and shelter_service.name or NONE
 
-    shelter_service_id = S3ReusableField("shelter_service_id", "list:reference cr_shelter_service", sortby="name",
-                                          requires = IS_NULL_OR(IS_ONE_OF(db, "cr_shelter_service.id", "%(name)s", multiple=True)),
-                                          represent = shn_shelter_service_represent,
-                                          label = T("Shelter Service"),
-                                          comment = A(ADD_SHELTER_SERVICE,
-                                                      _class="colorbox",
-                                                      _href=URL(r=request, c="cr", f="shelter_service", args="create", vars=dict(format="popup")),
-                                                      _target="top",
-                                                      _title=ADD_SHELTER_SERVICE),
-                                          ondelete = "RESTRICT",
-                                          #widget = SQLFORM.widgets.checkboxes.widget
+    shelter_service_id = S3ReusableField("shelter_service_id",
+                                         "list:reference cr_shelter_service",
+                                         sortby="name",
+                                         requires = IS_NULL_OR(IS_ONE_OF(db,
+                                                                         "cr_shelter_service.id",
+                                                                         "%(name)s", multiple=True)),
+                                         represent = shn_shelter_service_represent,
+                                         label = T("Shelter Service"),
+                                         comment = A(ADD_SHELTER_SERVICE,
+                                                     _class="colorbox",
+                                                     _href=URL(r=request, c="cr",
+                                                               f="shelter_service",
+                                                               args="create",
+                                                               vars=dict(format="popup")),
+                                                     _target="top",
+                                                     _title=ADD_SHELTER_SERVICE),
+                                         ondelete = "RESTRICT",
+                                         #widget = SQLFORM.widgets.checkboxes.widget
                                          )
 
     # -------------------------------------------------------------------------
     resourcename = "shelter"
     tablename = "%s_%s" % (module, resourcename)
-
-    # If the HMS module is enabled, we include a hospital_id field, so if the
-    # shelter is co-located with a hospital, the hospital can be identified.
-    # To get the fields in the correct order in the table, get the fields
-    # before and after where hospital_id should go.
-    #
-    # Caution:  If you start with HMS enabled, and fill in hospital info, then disable HMS,
-    # the hospital_id column will get dropped.  If HMS is re-enabled, the hospital_id links will be gone.
-    # If this is a production site, do not disable HMS unless you really mean it...
-
-    fields_before_hospital = db.Table(None, None,
-                                      super_link(db.org_site),
-                                      Field("name", notnull=True,
-                                            label = T("Shelter Name")),
-                                      organisation_id(),
-                                      shelter_type_id(),
-                                      shelter_service_id(),
-                                      location_id(),
-                                      Field("phone", label = T("Phone"),
-                                            requires = shn_phone_requires),
-                                      Field("building_name", "text", label=T("Building Name"),
-                                            writable=False), # Populated from location_id
-                                      Field("address", "text", label=T("Address"),
-                                            writable=False), # Populated from location_id
-                                      Field("L4",
-                                            label=deployment_settings.get_gis_locations_hierarchy("L4"),
-                                            writable=False), # Populated from location_id
-                                      Field("L3",
-                                            label=deployment_settings.get_gis_locations_hierarchy("L3"),
-                                            writable=False), # Populated from location_id
-                                      Field("L2",
-                                            label=deployment_settings.get_gis_locations_hierarchy("L2"),
-                                            writable=False), # Populated from location_id
-                                      Field("L1",
-                                            label=deployment_settings.get_gis_locations_hierarchy("L1"),
-                                            writable=False), # Populated from location_id
-                                      Field("L0",
-                                            label=deployment_settings.get_gis_locations_hierarchy("L0"),
-                                            writable=False), # Populated from location_id
-                                      Field("postcode", label=T("Postcode"), writable=False), # Populated from location_id
-                                      person_id(label = T("Contact Person")),
-                                      Field("population", "integer",
-                                            label = T("Population"),
-                                            requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 999999))),
-                                      Field("capacity", "integer",
-                                            label = T("Capacity (Max Persons)"),
-                                            requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 999999))),
-                                      #Field("dwellings", "integer"),
-                                      #Field("persons_per_dwelling", "integer"),
-                                      #Field("area"),
-                                      Field("source",
-                                            label = T("Source")),
-                                      document_id())
-
-    fields_after_hospital = db.Table(None, None,
-                                     comments())
-
-    # Only include hospital_id if the hms module is enabled.
-    if deployment_settings.has_module("hms"):
-        table = db.define_table(tablename,
-                                fields_before_hospital,
-                                hospital_id(comment = shn_hospital_id_comment),
-                                fields_after_hospital,
-                                migrate=migrate, *s3_meta_fields())
-
-    else:
-        table = db.define_table(tablename,
-                                fields_before_hospital,
-                                fields_after_hospital,
-                                migrate=migrate, *s3_meta_fields())
+    table = db.define_table(tablename,
+                            super_link(db.org_site),
+                            Field("name", notnull=True,
+                                  label = T("Shelter Name")),
+                            organisation_id(),
+                            shelter_type_id(),          # e.g. NGO-operated, Government evacuation center, School, Hospital -- see Agasti opt_camp_type.)
+                            shelter_service_id(),       # e.g. medical, housing, food, ...
+                            location_id(),
+                            Field("phone", label = T("Phone"),
+                                  requires = shn_phone_requires),
+                            Field("building_name", "text", label=T("Building Name"),
+                                  writable=False), # Populated from location_id
+                            Field("address", "text", label=T("Address"),
+                                  writable=False), # Populated from location_id
+                            Field("L4",
+                                  label=deployment_settings.get_gis_locations_hierarchy("L4"),
+                                  writable=False), # Populated from location_id
+                            Field("L3",
+                                  label=deployment_settings.get_gis_locations_hierarchy("L3"),
+                                  writable=False), # Populated from location_id
+                            Field("L2",
+                                  label=deployment_settings.get_gis_locations_hierarchy("L2"),
+                                  writable=False), # Populated from location_id
+                            Field("L1",
+                                  label=deployment_settings.get_gis_locations_hierarchy("L1"),
+                                  writable=False), # Populated from location_id
+                            Field("L0",
+                                  label=deployment_settings.get_gis_locations_hierarchy("L0"),
+                                  writable=False), # Populated from location_id
+                            Field("postcode", label=T("Postcode"), writable=False), # Populated from location_id
+                            person_id(label = T("Contact Person")),
+                            Field("population", "integer",
+                                  label = T("Population"),
+                                  requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 999999))),
+                            Field("capacity", "integer",
+                                  label = T("Capacity (Max Persons)"),
+                                  requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 999999))),
+                            #Field("dwellings", "integer"),
+                            #Field("persons_per_dwelling", "integer"),
+                            #Field("area"),
+                            Field("source",
+                                  label = T("Source")),
+                            document_id(),
+                            comments(),
+                            migrate=migrate, *s3_meta_fields())
 
     table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
     # Shelters don't have to have unique names
@@ -206,14 +195,20 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Shelter deleted"),
         msg_list_empty = T("No Shelters currently registered"))
 
-    # reusable field
+    # Reusable field
     shelter_id = S3ReusableField("shelter_id", db.cr_shelter,
-                                 requires = IS_NULL_OR(IS_ONE_OF(db, "cr_shelter.id", "%(name)s", sort=True)),
+                                 requires = IS_NULL_OR(IS_ONE_OF(db,
+                                                                 "cr_shelter.id",
+                                                                 "%(name)s",
+                                                                 sort=True)),
                                  represent = lambda id: (id and [db.cr_shelter[id].name] or ["None"])[0],
                                  ondelete = "RESTRICT",
                                  comment = DIV(A(ADD_SHELTER,
                                                  _class="colorbox",
-                                                 _href=URL(r=request, c="cr", f="shelter", args="create", vars=dict(format="popup")),
+                                                 _href=URL(r=request, c="cr",
+                                                           f="shelter",
+                                                           args="create",
+                                                           vars=dict(format="popup")),
                                                  _target="top",
                                                  _title=ADD_SHELTER),
                                            DIV( _class="tooltip",
@@ -270,6 +265,7 @@ if deployment_settings.has_module(module):
     table.shelter_id.writable = True
 
     s3xrc.model.add_component("pr", "presence",
-        multiple=True,
-        joinby=dict(cr_shelter="shelter_id"))
-# -----------------------------------------------------------------------------
+                              multiple=True,
+                              joinby=dict(cr_shelter="shelter_id"))
+
+# END -------------------------------------------------------------------------

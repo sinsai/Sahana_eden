@@ -589,7 +589,7 @@ STAFF_HELP = T("If Staff have login accounts then they are given access to edit 
 
 # -----------------------------------------------------------------------------
 def shn_site_based_permissions( table,
-                                error_msg = T("You do not have permission")):
+                                error_msg = T("You do not have permission for any site to perform this action.")):
     """
         Sets the site_id validator limited to sites which the current user 
         has update permission for
@@ -609,7 +609,8 @@ def shn_site_based_permissions( table,
         if "update" in request.args or "create" in request.args:
             # Trying to create or update 
             # If they do no have permission to any sites
-            session.error = error_msg    
+            session.error = T("%s Create a new site or ensure that you have permissions for an existing site.")\
+                            % error_msg 
             redirect(URL(r = request,
                          c = "default",
                          f = "index"
@@ -785,16 +786,19 @@ def shn_office_rheader(r, tabs=[]):
         tabs = [(T("Basic Details"), None),
                 (T("Contact Data"), "contact"),
                 (T("Staff"), "staff"),
+                (T("Requests"), "req"),
                 ]
+        
+        if deployment_settings.has_module("inv"):
+            tabs = tabs + shn_show_inv_tabs(r)
 
-        rheader_tabs = shn_rheader_tabs(r, tabs + shn_show_inv_tabs(r))
+        rheader_tabs = shn_rheader_tabs(r, tabs)
 
         office = r.record
         if office:
-            organisation = db(db.org_organisation.id == office.organisation_id
-                              ).select(db.org_organisation.name,
-                                       limitby=(0, 1)
-                                       ).first()
+            query = (db.org_organisation.id == office.organisation_id)
+            organisation = db(query).select(db.org_organisation.name,
+                                            limitby=(0, 1)).first()
             if organisation:
                 org_name = organisation.name
             else:
@@ -812,8 +816,10 @@ def shn_office_rheader(r, tabs=[]):
                              TH("%s: " % T("Location")),
                              shn_gis_location_represent(office.location_id),
                              ),
-                          #TR(#TH(A(T("Edit Office"),
-                          #   #    _href=URL(r=request, c="org", f="office", args=[r.id, "update"], vars={"_next": _next})))
+                          #TR(TH(A(T("Edit Office"),
+                          #        _href=URL(r=request, c="org", f="office",
+                          #                  args=[r.id, "update"],
+                          #                  vars={"_next": _next})))
                           #   )
                               ),
                           rheader_tabs)
@@ -962,7 +968,7 @@ staff_id = S3ReusableField("staff_id", db.org_staff, sortby="name",
                            ondelete = "RESTRICT"
                         )
 
-# Staff as component of Orgs & Projects
+# Staff as component of Orgs (& Projects)
 s3xrc.model.add_component(module, resourcename,
                           multiple=True,
                           joinby=dict(org_organisation="organisation_id",

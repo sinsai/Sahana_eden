@@ -9,7 +9,7 @@
 module = request.controller
 resourcename = request.function
 
-if module not in deployment_settings.modules:
+if not deployment_settings.has_module(module):
     session.error = T("Module disabled!")
     redirect(URL(r=request, c="default", f="index"))
 
@@ -79,7 +79,18 @@ def hospital():
 
     # Pre-processor
     def prep(r):
-        if r.representation in shn_interactive_view_formats:
+        # Filter out people which are already staff for this warehouse
+        shn_staff_prep(r) 
+        if deployment_settings.has_module("inv"):
+            # Filter out items which are already in this inventory
+            shn_inv_prep(r)
+          
+        # Cascade the organisation_id from the Warehouse to the staff
+        if r.record:
+            db.org_staff.organisation_id.default = r.record.organisation_id
+            db.org_staff.organisation_id.writable = False
+                
+        if r.interactive:
             # Don't send the locations list to client (pulled by AJAX instead)
             r.table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
 
@@ -140,9 +151,10 @@ def hospital():
                 #db.rms_req.location_id.comment = ""
 
         elif r.representation == "aadata":
+            pass
             # Hide the Implied fields here too to make columns match
-            db.rms_req.shelter_id.readable = False
-            db.rms_req.organisation_id.readable = False
+            #db.rms_req.shelter_id.readable = False
+            #db.rms_req.organisation_id.readable = False
 
         return True
     response.s3.prep = prep
@@ -157,18 +169,7 @@ def hospital():
         return output
     response.s3.postp = postp
 
-    tabs = [(T("Status Report"), ""),
-            (T("Bed Capacity"), "bed_capacity"),
-            (T("Activity Report"), "activity"),
-            #(T("Requests"), "req"), # Included in Inventory Tabs
-            (T("Images"), "image"),
-            (T("Services"), "services"),
-            (T("Contacts"), "contact"),
-            (T("Cholera Treatment Capability"), "ctc_capability"),
-            (T("Staff"), "staff")]
-
-    rheader = lambda r: shn_hms_hospital_rheader(r,
-                                                 tabs=tabs + shn_show_inv_tabs(r))
+    rheader = lambda r: shn_hms_hospital_rheader(r)
 
     output = s3_rest_controller(module, resourcename, rheader=rheader)
     shn_menu()
@@ -187,6 +188,21 @@ def shn_hms_hospital_rheader(r, tabs=[]):
             if hospital:
                 _next = r.here()
                 _same = r.same()
+                
+                if not tabs:
+                    tabs = [(T("Status Report"), ""),
+                            (T("Services"), "services"),
+                            (T("Contacts"), "contact"),
+                            (T("Bed Capacity"), "bed_capacity"),
+                            (T("Cholera Treatment Capability"), "ctc_capability"), # @ToDo: make this a deployemnt_setting?
+                            (T("Activity Report"), "activity"),
+                            (T("Images"), "image"),
+                            (T("Staff"), "staff")]
+
+                    if deployment_settings.has_module("req"):
+                        tabs.append((T("Requests"), "req"))
+                    if deployment_settings.has_module("inv"):
+                        tabs = tabs + shn_show_inv_tabs(r)
 
                 rheader_tabs = shn_rheader_tabs(r, tabs)
 

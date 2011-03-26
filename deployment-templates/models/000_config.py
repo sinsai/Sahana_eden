@@ -351,7 +351,7 @@ deployment_settings.modules = OrderedDict([
             #restricted = False,
             #module_type = 10,
         #)),
-    # This needs some work to cleanup after req has been introduced
+    # RMS is being replaced by Req
     #("rms", Storage(
     #        name_nice = T("RMS"),
     #        description = T("Manage requests for assistance"),
@@ -363,7 +363,8 @@ deployment_settings.modules = OrderedDict([
     #    )),
     ("req", Storage(
             name_nice = T("Requests"),
-            description = T("Manage requests for items and assets and matches them against existing inventories"),
+            # Assets & Staff to come
+            description = T("Manage requests for items and matches them against existing inventories"),
             restricted = False,
             module_type = 10,
         )),

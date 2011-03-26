@@ -1,9 +1,0 @@
-{{extend "layout.html"}}
-{{include "_popup.html"}}
-{{if jr.method in ("create", "update"):}}
-<script type="text/javascript">//<![CDATA[
-$(function() {
-    {{include "cr/shelter_optional_data.js"}}
-});
-//]]></script>
-{{pass}}

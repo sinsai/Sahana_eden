@@ -10,7 +10,7 @@
 module = request.controller
 resourcename = request.function
 
-response.menu_options = inv_menu
+response.menu_options = req_menu
 
 #==============================================================================
 def index():
@@ -22,13 +22,22 @@ def index():
     response.title = module_name
     return dict(module_name=module_name)
 #==============================================================================
+req_item_inv_item_btn = dict(url = str( URL( r=request,
+                                             c = "req",
+                                             f = "req_item_inv_item",
+                                             args = ["[id]"]
+                                            )
+                                        ),
+                             _class = "action-btn",
+                             label = str(T("Inventory Items")),
+                             )
 def req():
     tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
     
     # Limit site_id to sites the user has permissions for
     shn_site_based_permissions(table,
-                               T("You do not have permission to make a request.") )
+                               T("You do not have permission for any site to make a request."))
     
     # Improve - get site which the staff is allocated to? 
     site_id  = shn_get_db_field_value(db,
@@ -73,16 +82,7 @@ def req():
         #                            )
         #                        )
     else:
-        req_actions = [dict(url = str( URL( r=request,
-                                            c = "req",
-                                            f = "req_item_inv_item",
-                                            args = ["[id]"]
-                                           )
-                                       ),
-                            _class = "action-btn",
-                            label = str(T("Inventory Items")),
-                            ),
-                        ]
+        req_actions = [req_item_inv_item_btn]
 
     output = s3_rest_controller( module,
                                  resourcename,
@@ -91,7 +91,7 @@ def req():
     if response.s3.actions:
         response.s3.actions += req_actions
     else:
-        response.s3.actions = req_actions    
+        response.s3.actions = req_actions
           
     return output
 #------------------------------------------------------------------------------
@@ -109,7 +109,7 @@ def shn_req_rheader(r):
                                                  )
                 rheader = DIV( TABLE(
                                    TR( TH( "%s: " % T("Date Requested")),
-                                       req_record.datetime,
+                                       req_record.date_requested,
                                        TH( "%s: " % T("Date Required")),
                                        req_record.date_required,
                                       ),
@@ -146,9 +146,16 @@ def shn_req_rheader(r):
 def req_item():
     tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
+
     output = s3_rest_controller( module,
                                  resourcename,
                                  rheader=shn_commit_rheader)
+
+    if response.s3.actions:
+        response.s3.actions += [req_item_inv_item_btn]
+    else:
+        response.s3.actions = [req_item_inv_item_btn] 
+
     return output
 #------------------------------------------------------------------------------
 def req_item_inv_item():
@@ -178,7 +185,7 @@ def req_item_inv_item():
                                    ),
                                 TR( 
                                     TH( "%s: " % T("Date Requested") ),
-                                    req.datetime,
+                                    req.date_requested,
                                     TH( T("Quantity Committed")),
                                     req_item.quantity_commit,
                                    ),
@@ -227,7 +234,7 @@ def commit():
 
     # Limit site_id to sites the user has permissions for
     shn_site_based_permissions(table,
-                               T("You do not have permission to make a commitment.") )
+                               T("You do not have permission for any site to make a commitment.") )
     
     def prep(r):
         if r.record:
@@ -266,14 +273,14 @@ def shn_commit_rheader(r):
                                                  )
                 #req_record = db.req_req[commit_record.req_id]
                 #for_site_id = req_record.site_id
-                #req_date = req_record.datetime
+                #req_date = req_record.date_requested
                 rheader = DIV( TABLE( TR( TH( "%s: " % T("Request")),
                                           shn_req_represent(commit_record.req_id),
                                          ),
                                       TR( TH( "%s: " % T("Committing Inventory")),
                                           shn_site_represent(commit_record.site_id),
                                           TH( "%s: " % T("Commit Date")),
-                                          commit_record.datetime,
+                                          commit_record.date_requested,
                                           ),
                                        TR( TH( "%s: " % T("Comments")),
                                            TD(commit_record.comments, _colspan=3)
@@ -336,7 +343,7 @@ def commit_req():
                  )      
 
     # Create a new commit record
-    commit_id = db.req_commit.insert( datetime = request.utcnow,
+    commit_id = db.req_commit.insert( date_requested = request.utcnow,
                                        req_id = req_id,
                                        site_id = site_id,
                                        for_site_id = r_req.site_id
@@ -393,13 +400,13 @@ def commit_req():
 #==============================================================================
 def commit_item_json():
     response.headers["Content-Type"] = "application/json"
-    db.req_commit.datetime.represent = lambda dt: dt[:10]
+    #db.req_commit.date_requested.represent = lambda dt: dt[:10]
     records =  db( (db.req_commit_item.req_item_id == request.args[0]) & \
                    (db.req_commit.id == db.req_commit_item.commit_id) & \
                    (db.req_commit_item.deleted == False )
                   ).select(db.req_commit.id,
                            db.req_commit_item.quantity,
-                           db.req_commit.datetime,
+                           db.req_commit.date_requested,
                            )
     json_str = "[%s,%s" % ( json.dumps(dict(id = str(T("Committed")), 
                                             quantity = "#"

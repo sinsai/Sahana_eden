@@ -589,7 +589,7 @@ STAFF_HELP = T("If Staff have login accounts then they are given access to edit 
 
 # -----------------------------------------------------------------------------
 def shn_site_based_permissions( table,
-                                error_msg = T("You do not have permission")):
+                                error_msg = T("You do not have permission for any site to perform this action.")):
     """
         Sets the site_id validator limited to sites which the current user 
         has update permission for
@@ -609,7 +609,8 @@ def shn_site_based_permissions( table,
         if "update" in request.args or "create" in request.args:
             # Trying to create or update 
             # If they do no have permission to any sites
-            session.error = error_msg    
+            session.error = T("%s Create a new site or ensure that you have permissions for an existing site.")\
+                            % error_msg 
             redirect(URL(r = request,
                          c = "default",
                          f = "index"

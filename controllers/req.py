@@ -28,7 +28,7 @@ def req():
     
     # Limit site_id to sites the user has permissions for
     shn_site_based_permissions(table,
-                               T("You do not have permission to make a request.") )
+                               T("You do not have permission for any site to make a request."))
     
     # Improve - get site which the staff is allocated to? 
     site_id  = shn_get_db_field_value(db,
@@ -227,7 +227,7 @@ def commit():
 
     # Limit site_id to sites the user has permissions for
     shn_site_based_permissions(table,
-                               T("You do not have permission to make a commitment.") )
+                               T("You do not have permission for any site to make a commitment.") )
     
     def prep(r):
         if r.record:

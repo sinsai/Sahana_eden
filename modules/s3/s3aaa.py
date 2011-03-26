@@ -721,7 +721,7 @@ class AuthS3(Auth):
         authenticated = self.id_group("Authenticated")
         self.add_membership(authenticated, form.vars.id)
 
-        # Add to Person Registry and Email/Mobile to pr_pe_contact
+        # Add to Person Registry and Email/Mobile to pr_contact
         person_id = self.s3_link_to_person(user=form.vars)
 
         organisation_id = form.vars.get("organisation",
@@ -758,7 +758,7 @@ class AuthS3(Auth):
         db = self.db
         utable = self.settings.table_user
         ptable = db.pr_person
-        ctable = db.pr_pe_contact
+        ctable = db.pr_contact
         etable = db.pr_pentity
         ttable = db.sit_trackable
 
@@ -806,13 +806,13 @@ class AuthS3(Auth):
                         db(utable.id == user.id).update(person_uuid=person_uuid)
                         db(etable.id == pe_id).update(uuid=person_uuid)
                         db(ttable.id == track_id).update(uuid=person_uuid)
-                        # Add the email to pr_pe_contact
+                        # Add the email to pr_contact
                         ctable.insert(
                                 pe_id = pe_id,
                                 contact_method = 1,
                                 priority = 1,
                                 value = email)
-                        # Add the mobile to pr_pe_contact
+                        # Add the mobile to pr_contact
                         mobile = self.environment.request.vars.get("mobile",
                                                                    None)
                         if mobile:

@@ -233,7 +233,7 @@ def person():
             (T("Images"), "image"),
             #(T("Identity"), "identity"),
             (T("Address"), "address"),
-            (T("Contact Data"), "pe_contact"),
+            (T("Contact Data"), "contact"),
             (T("Teams"), "group_membership"),
            ]
 

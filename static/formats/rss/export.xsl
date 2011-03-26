@@ -191,5 +191,16 @@
     </xsl:template>
 
     <!-- ****************************************************************** -->
+    <!-- dvi_recreq -->
+    <xsl:template match="resource[@name='dvi_recreq']" mode="contents">
+        <title>
+            <xsl:value-of select="./data[@field='marker']/text()"/>
+        </title>
+        <description>
+            <xsl:value-of select="./data[@field='date']/text()"/>
+        </description>
+    </xsl:template>
+
+    <!-- ****************************************************************** -->
 
 </xsl:stylesheet>

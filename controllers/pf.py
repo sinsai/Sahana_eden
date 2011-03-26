@@ -286,7 +286,7 @@ def person():
                 (T("Images"), "image"),
                 (T("Identity"), "identity"),
                 (T("Address"), "address"),
-                (T("Contact Data"), "pe_contact"),
+                (T("Contact Data"), "contact"),
                 (T("Presence Log"), "presence")]
 
     rheader = lambda r: shn_pr_rheader(r, tabs=pf_tabs)

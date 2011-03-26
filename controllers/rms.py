@@ -11,12 +11,16 @@ if prefix not in deployment_settings.modules:
 
 # Options Menu (available in all Functions' Views)
 menu = [
-    [T("Home"), False, URL(r=request, f="index")],
+    #[T("Home"), False, URL(r=request, f="index")],
     [T("Requests"), False, URL(r=request, f="req"), [
-        [T("List"), False, URL(r=request, f="req")],
-        [T("Add"), False, URL(r=request, f="req", args="create")],
+        [T("New"),
+         False, aURL(p="create", r=request, f="req",
+                     args="create")],
         # @ToDo Search by priority, status, location
-        #[T("Search"), False, URL(r=request, f="req", args="search")],
+        [T("Search"),
+         False, URL(r=request, f="req", args="search")],
+        [T("List"),
+         False, aURL(r=request, f="req")],
     ]],
     #[T("All Requested Items"), False, URL(r=request, f="ritem")],
 ]
@@ -61,8 +65,7 @@ def index():
 
 
 def req():
-
-    """ RESTful CRUD controller """
+    """ Request Controller """
 
     resourcename = request.function # check again in case we're coming from index()
     tablename = "%s_%s" % (prefix, resourcename)
@@ -89,12 +92,6 @@ def req():
     # Post-processor
     def postp(r, output):
         if r.representation in shn_interactive_view_formats:
-            #if r.method == "create" and not r.component:
-            # listadd arrives here as method=None
-            if r.method != "delete" and not r.component:
-                # Redirect to the Details tabs after creation
-                r.next = r.other(method="req_detail", record_id=s3xrc.get_session(prefix, resourcename))
-
             # Custom Action Buttons
             if not r.component:
                 response.s3.actions = [
@@ -108,8 +105,8 @@ def req():
     response.s3.postp = postp
 
     s3xrc.model.configure(table,
-                          #listadd=False, #@todo: List add is causing errors with JS - FIX
-                          editable=True)
+        editable=True,
+        create_next=URL(r=request, f="req", args=["[id]", "req_detail"]))
 
     return s3_rest_controller(prefix,
                               resourcename,
@@ -133,8 +130,8 @@ def shn_rms_req_rheader(r):
                     location_represent = None
 
                 rheader_tabs = shn_rheader_tabs( r,
-                                                 [(T("Edit Details"), None),
-                                                  (T("Items"), "ritem"),
+                                                 [(T("Request"), None),
+                                                  (T("Details"), "req_detail"),
                                                   ]
                                                  )
 
@@ -149,8 +146,10 @@ def shn_rms_req_rheader(r):
                                       ),
                                    TR( TH( "%s: " % T("Priority")),
                                        req_record.priority,
-                                       TH( "%s: " % T("Document")),
-                                       document_represent(req_record.document_id)
+                                       TH(""),
+                                       ""
+                                       #TH( "%s: " % T("Document")),
+                                       #document_represent(req_record.document_id)
                                       ),
                                      ),
                                 rheader_tabs
@@ -159,18 +158,14 @@ def shn_rms_req_rheader(r):
                 return rheader
     return None
 
+#def ritem():
+    #""" RESTful CRUD controller """
 
+    #tablename = "%s_%s" % (prefix, resourcename)
+    #table = db[tablename]
 
-def ritem():
-
-    """ RESTful CRUD controller """
-
-    tablename = "%s_%s" % (prefix, resourcename)
-    table = db[tablename]
-
-    s3xrc.model.configure(table, insertable=False)
-    return s3_rest_controller(prefix, resourcename)
-
+    #s3xrc.model.configure(table, insertable=False)
+    #return s3_rest_controller(prefix, resourcename)
 
 def store_for_req():
 

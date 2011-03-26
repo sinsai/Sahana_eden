@@ -160,7 +160,7 @@ def person():
                                             (T("Images"), "image"),
                                             (T("Identity"), "identity"),
                                             (T("Address"), "address"),
-                                            (T("Contact Data"), "pe_contact"),
+                                            (T("Contact Data"), "contact"),
                                             (T("Memberships"), "group_membership"),
                                             (T("Presence Log"), "presence"),
                                             (T("Subscriptions"), "pe_subscription"),
@@ -191,7 +191,7 @@ def group():
                 rheader=lambda r: shn_pr_rheader(r,
                     tabs = [(T("Group Details"), None),
                             (T("Address"), "address"),
-                            (T("Contact Data"), "pe_contact"),
+                            (T("Contact Data"), "contact"),
                             (T("Members"), "group_membership")]))
 
     shn_menu()
@@ -207,11 +207,11 @@ def image():
 
 
 # -----------------------------------------------------------------------------
-def pe_contact():
+def contact():
 
     """ RESTful CRUD controller """
 
-    table = db.pr_pe_contact
+    table = db.pr_contact
 
     table.pe_id.label = T("Person/Group")
     table.pe_id.readable = True

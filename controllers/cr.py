@@ -235,7 +235,7 @@ def shn_shelter_prep(r):
         if r.method != "read":
             # Don't want to see in Create forms
             # inc list_create (list_fields over-rides)
-           pr_address_hide(table)
+           pr_address_hide(r.table)
 
         if r.component:
             if r.component.name == "rat":

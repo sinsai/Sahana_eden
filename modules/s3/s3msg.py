@@ -443,7 +443,7 @@ class S3Msg(object):
             entity_type = db(query).select(table2.instance_type,
                                            limitby=(0, 1)).first().instance_type
             def dispatch_to_pe_id(pe_id):
-                table3 = db.pr_pe_contact
+                table3 = db.pr_contact
                 query = (table3.pe_id == pe_id) & \
                         (table3.contact_method == contact_method) & \
                         (table3.deleted == False)

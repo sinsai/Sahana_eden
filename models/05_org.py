@@ -785,10 +785,11 @@ def shn_office_rheader(r, tabs=[]):
 
         tabs = [(T("Basic Details"), None),
                 (T("Contact Data"), "contact"),
-                (T("Staff"), "staff"),
-                (T("Requests"), "req"),
+                (T("Staff"), "staff")
                 ]
         
+        if deployment_settings.has_module("req"):
+            tabs.append((T("Requests"), "req"))
         if deployment_settings.has_module("inv"):
             tabs = tabs + shn_show_inv_tabs(r)
 

@@ -18,6 +18,7 @@ if not deployment_settings.has_module(module):
 
 response.menu_options = inv_menu
 
+#==============================================================================
 def index():
     """
         Application Home page
@@ -74,6 +75,12 @@ def wh():
                 # Process Base Location
                 #s3xrc.model.configure(table,
                 #                      onaccept=address_onaccept)
+
+            if r.component and r.component.name == "req":
+                if r.method != "update" and r.method != "read":
+                    # Hide fields which don't make sense in a Create form
+                    # inc list_create (list_fields over-rides)
+                    shn_req_create_form_mods()
 
         # Filter out people which are already staff for this warehouse
         shn_staff_prep(r) 

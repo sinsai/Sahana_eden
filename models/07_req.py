@@ -5,9 +5,10 @@
     @date-created: 2010-08-16
 
     A module to record requests for:
-     - items
+     - supplies (items)
      - staff
      - assets
+     - other
 """
 
 module = "req"
@@ -20,8 +21,7 @@ if deployment_settings.has_module(module):
                     [T("Commitments"), False, aURL(r=request, c="req", f="commit")],
                     #[T("Search Requested Items"), False, aURL(r=request, c="req", f="req_item", args="search")],
                 ]
-    #==========================================================================
-    # Request
+
     REQ_STATUS_NONE       = 0
     REQ_STATUS_PARTIAL    = 1
     REQ_STATUS_COMPLETE   = 2
@@ -36,7 +36,7 @@ if deployment_settings.has_module(module):
                                 label = T("Request Status"),
                                 requires = IS_NULL_OR(IS_IN_SET(req_status_opts,
                                                                 zero = None)),
-                                represent = lambda status: req_status_opts[status] if status else T("None"),
+                                represent = lambda opt: req_status_opts.get(opt, UNKNOWN_OPT),
                                 default = REQ_STATUS_NONE,
                                 writable = deployment_settings.get_req_status_writable(),
                                 )
@@ -47,11 +47,29 @@ if deployment_settings.has_module(module):
         1:T("Low")
     }
 
+    req_type_opts = {
+        #1:T("Supplies"),
+        #2:T("Assets"),
+        #3:T("Staff"),
+        #4:T("Shelter"),
+        9:T("Other")
+    }
+    if deployment_settings.has_module("inv"):
+        req_type_opts[1] = T("Supplies")
+    #if deployment_settings.has_module("asset"):
+    #    req_type_opts[2] = T("Assets")
+    #if deployment_settings.has_module("hrm"):
+    #    req_type_opts[3] = T("Staff")
+    #if deployment_settings.has_module("cr"):
+    #    req_type_opts[4] = T("Shelter")
+
     def shn_req_priority_represent(id):
         src = "/%s/static/img/priority/priority_%d.gif" % \
-                  (request.application,(id or 4))
+                  (request.application, (id or 4))
         return DIV(IMG(_src= src))
 
+    # -------------------------------------------------------------------------
+    # Requests
     resourcename = "req"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
@@ -74,7 +92,12 @@ if deployment_settings.has_module(module):
                                                     T("Enter a valid future date")))],
                                   widget = S3DateWidget(past=0, future=120)),  # Months, so 10 years
                             person_id("requester_id",
-                                      label = T("Requester") ),
+                                      label = T("Requester"),
+                                      default = s3_logged_in_person()),
+                            Field("type", "integer",
+                                  requires = IS_IN_SET(req_type_opts),
+                                  represent = lambda opt: req_type_opts.get(opt, UNKNOWN_OPT),
+                                  label = T("Request Type")),
                             Field("priority",
                                   "integer",
                                   label = T("Priority"),
@@ -93,10 +116,9 @@ if deployment_settings.has_module(module):
                                        ),
                             Field("cancel",
                                   "boolean"),
-                            comments(),
+                            comments(label=T("Message"), comment=""),
                             migrate=migrate, *s3_meta_fields())
 
-    # -------------------------------------------------------------------------
     # CRUD strings
     ADD_REQUEST = T("Make Request")
     LIST_REQUEST = T("List Requests")
@@ -116,7 +138,7 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Request Canceled"),
         msg_list_empty = T("No Requests"))
 
-    # -------------------------------------------------------------------------
+    # Represent
     def shn_req_represent(id, link = True):
         id = int(id)
         if id:
@@ -138,7 +160,6 @@ if deployment_settings.has_module(module):
         else:
             return NONE
 
-    # -------------------------------------------------------------------------
     # Reusable Field
     req_id = S3ReusableField("req_id", db.req_req, sortby="request_date",
                              requires = IS_ONE_OF(db,
@@ -153,7 +174,6 @@ if deployment_settings.has_module(module):
                              ondelete = "RESTRICT"
                             )
 
-    #--------------------------------------------------------------------------
     # Request as a component of Sites
     s3xrc.model.add_component(module,
                               resourcename,
@@ -161,31 +181,112 @@ if deployment_settings.has_module(module):
                               joinby = super_key(db.org_site)
                               )
 
-    #--------------------------------------------------------------------------
-    # Update owned_by_role to the site's owned_by_role
-    s3xrc.model.configure(
-        table,
-        onaccept = shn_component_copy_role_func(component_name = tablename,
-                                                resource_name = "org_site",
-                                                fk = "site_id",
-                                                pk = "site_id")
-    )
+    #----------------------------------------------------------------------
+    def shn_req_onaccept(form):
+        # Update owned_by_role to the site's owned_by_role
+        shn_component_copy_role_func(component_name = "req_req",
+                                     resource_name = "org_site",
+                                     fk = "site_id",
+                                     pk = "site_id"),
+    
+        # Configure the next page to go to based on the request type
+        table = db.req_req
+        if form.vars.type == "1" and deployment_settings.has_module("inv"):
+            s3xrc.model.configure(table,
+                                  create_next = URL(r=request,
+                                                    c="req",
+                                                    f="req",
+                                                    args=["[id]", "req_item"]))
+        elif form.vars.type == "2" and deployment_settings.has_module("asset"):
+            s3xrc.model.configure(table,
+                                  create_next = URL(r=request,
+                                                    c="req",
+                                                    f="req",
+                                                    args=["[id]", "req_asset"]))
+        #elif form.vars.type == "3" and deployment_settings.has_module("hrm"):
+        #    s3xrc.model.configure(table,
+        #                          create_next = URL(r=request,
+        #                                            c="req",
+        #                                            f="req",
+        #                                            args=["[id]", "req_staff"]))
+        #elif form.vars.type == "4" and deployment_settings.has_module("cr"):
+        #    s3xrc.model.configure(table,
+        #                          create_next = URL(r=request,
+        #                                            c="req",
+        #                                            f="req",
+        #                                            args=["[id]", "req_shelter"]))
 
+    s3xrc.model.configure(table,
+                          onaccept = shn_req_onaccept,
+                          list_fields = ["site_id",
+                                         "date_requested",
+                                         "date_required",
+                                         "priority",
+                                         "type",
+                                         "commit_status",
+                                         "transit_status",
+                                         "fulfil_status"]
+                        )
+
+    #--------------------------------------------------------------------------
+    def shn_req_create_form_mods():
+        """
+            Function to be called from REST prep functions
+             - main module & site components
+        """
+        table = db.req_req
+        # Hide fields which don't make sense in a Create form
+        table.commit_status.readable = table.commit_status.writable = False
+        table.transit_status.readable = table.transit_status.writable = False
+        table.fulfil_status.readable = table.fulfil_status.writable = False
+        table.cancel.readable = table.cancel.writable = False
+        return
+
+    # Script to inject into Pages which include Request create forms
+    req_helptext_script = SCRIPT("""
+        $(function() {
+            var req_help_msg = '%s\\n\\n%s';
+            // Provide some default help text in the Message box if message is empty
+            if (!$('#req_req_comments').val()) {
+                $('#req_req_comments').addClass('default-text').attr({ value: req_help_msg }).focus(function(){
+                    if($(this).val() == req_help_msg){
+                        // Clear on click if still default
+                        $(this).val('').removeClass('default-text');
+                    }
+                });
+                $('form').submit( function() {
+                    // Do the normal form-submission tasks
+                    // @ToDo: Look to have this happen automatically
+                    // http://forum.jquery.com/topic/multiple-event-handlers-on-form-submit
+                    // http://api.jquery.com/bind/
+                    S3ClearNavigateAwayConfirm();
+
+                    if (($('#req_req_type').val() == 9) && ($('#req_req_comments').val() == req_help_msg)) {
+                        // Requests of type 'Other' need this field to be mandatory
+                        $('#req_req_comments').after('<div id="type__error" class="error" style="display: block;">%s</div>');
+                        // Reset the Navigation protection
+                        S3SetNavigateAwayConfirm()
+                        // Move focus to this field
+                        $('#req_req_comments').focus();
+                        // Prevent the Form's save from continuing
+                        return false;
+                    } else {
+                        // Allow the Form's save to continue
+                        return true;
+                    }
+                });
+            }
+        });
+        """ % (T('If the request is for type "Other", you should enter a summary of the request here.'),
+               T("For other types, the next screen will allow you to enter the relevant details..."),
+               T("Message field is required!"))
+        )
+
+    #==========================================================================
     if deployment_settings.has_module("inv"):
         #======================================================================
         # Request Items
 
-        #----------------------------------------------------------------------
-        # Redirect to the Items tabs after creation
-        # @ToDo: Move this to the controller & make it depend on the type of Request
-        s3xrc.model.configure(table,
-                          create_next = URL(r=request,
-                                            c="req",
-                                            f="req",
-                                            args=["[id]", "req_item"]))
-
-        
-        #----------------------------------------------------------------------
         resourcename = "req_item"
         tablename = "%s_%s" % (module, resourcename)
         table = db.define_table(tablename,
@@ -213,7 +314,7 @@ if deployment_settings.has_module(module):
         # pack_quantity virtual field
         table.virtualfields.append(item_pack_virtualfields(tablename = tablename))
 
-        # -----------------------------------------------------------------------------
+        # ---------------------------------------------------------------------
         def shn_req_quantity_represent(quantity, type):
             if quantity:
                 return TAG[""]( quantity,
@@ -225,11 +326,14 @@ if deployment_settings.has_module(module):
             else:
                 return quantity
 
-        table.quantity_commit.represent = lambda quantity_commit: shn_req_quantity_represent(quantity_commit, "commit")
-        table.quantity_fulfil.represent = lambda quantity_fulfil: shn_req_quantity_represent(quantity_fulfil, "fulfil")
-        table.quantity_transit.represent = lambda quantity_transit: shn_req_quantity_represent(quantity_transit, "transit")
+        table.quantity_commit.represent = lambda quantity_commit: \
+                        shn_req_quantity_represent(quantity_commit, "commit")
+        table.quantity_fulfil.represent = lambda quantity_fulfil: \
+                        shn_req_quantity_represent(quantity_fulfil, "fulfil")
+        table.quantity_transit.represent = lambda quantity_transit: \
+                        shn_req_quantity_represent(quantity_transit, "transit")
 
-        # -----------------------------------------------------------------------------
+        # ---------------------------------------------------------------------
         # CRUD strings
         ADD_REQUEST_ITEM = T("Add Item to Request")
         LIST_REQUEST_ITEM = T("List Request Items")
@@ -340,7 +444,8 @@ if deployment_settings.has_module(module):
             db.req_req[req_id] = status_update
 
         s3xrc.model.configure(table, onaccept=shn_req_item_onaccept)
-    
+
+
     #==========================================================================
     # Commitments (Pledges)
     #
@@ -437,18 +542,20 @@ if deployment_settings.has_module(module):
                                                 pk = "site_id")
     )
 
+
+    #==========================================================================
     if deployment_settings.has_module("inv"):
         #======================================================================
         # Commitment Items
 
-        #------------------------------------------------------------------------------
+        #----------------------------------------------------------------------
         # Redirect to the Items tabs after creation
         # @ToDo: Move this to the controller & make it depend on the type of Request
         s3xrc.model.configure(table,
                               create_next = URL(r=request, c="req", f="commit",
                                                 args=["[id]", "commit_item"]))
 
-        #------------------------------------------------------------------------------
+        #----------------------------------------------------------------------
         resourcename = "commit_item"
         tablename = "%s_%s" % (module, resourcename)
         table = db.define_table(tablename,
@@ -486,7 +593,6 @@ if deployment_settings.has_module(module):
 
         #----------------------------------------------------------------------
         # Commitment Items as component of Commitment
-        # Commitment Items as a component of Items
         s3xrc.model.add_component(module, resourcename,
                                   multiple=True,
                                   joinby=dict( req_commit = "commit_id" )

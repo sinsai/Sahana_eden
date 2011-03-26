@@ -10,7 +10,7 @@
 """
 
 module = "asset"
-if deployment_settings.has_module("asset"):
+if deployment_settings.has_module(module):
     #==========================================================================
     # Asset 
     #
@@ -50,7 +50,7 @@ if deployment_settings.has_module("asset"):
     
     def shn_asset_represent(id):
         """
-        include item fields
+            include item fields
         """
         return shn_get_db_field_value(db=db, table="asset_asset", 
                                       field="number", look_up=id)
@@ -67,6 +67,7 @@ if deployment_settings.has_module("asset"):
         
     #==========================================================================
     # Asset Assignment
+    # @ToDo: Look at using S3Track to help with this
     #
     resourcename = "assign"
     tablename = "%s_%s" % (module, resourcename)
@@ -120,4 +121,5 @@ if deployment_settings.has_module("asset"):
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(asset_asset="asset_id"))
+
 # END =========================================================================

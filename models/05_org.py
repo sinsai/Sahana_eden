@@ -780,7 +780,8 @@ def shn_office_rheader(r, tabs=[]):
     if r.representation == "html":
 
         if r.record is None:
-            # List or Create form: rheader makes no sense here
+            # List or Create form
+            # rheader makes no sense here
             return None
 
         tabs = [(T("Basic Details"), None),
@@ -824,6 +825,10 @@ def shn_office_rheader(r, tabs=[]):
                           #   )
                               ),
                           rheader_tabs)
+
+            if r.component and r.component.name == "req":
+                # Inject the helptext script
+                rheader.append(req_helptext_script)
 
             return rheader
 

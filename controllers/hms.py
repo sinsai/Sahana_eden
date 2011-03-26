@@ -141,14 +141,10 @@ def hospital():
                 msg_list_empty = T("No Hospitals currently registered"))
 
             if r.component and r.component.name == "req":
-                # This now applies to req_req
-                pass
-                # Hide the Implied fields
-                #db.rms_req.shelter_id.writable = db.rms_req.shelter_id.readable = False
-                #db.rms_req.organisation_id.writable = db.rms_req.organisation_id.readable = False
-                #db.rms_req.location_id.writable = False
-                #db.rms_req.location_id.default = r.record.location_id
-                #db.rms_req.location_id.comment = ""
+                if r.method != "update" and r.method != "read":
+                    # Hide fields which don't make sense in a Create form
+                    # inc list_create (list_fields over-rides)
+                    shn_req_create_form_mods()
 
         elif r.representation == "aadata":
             pass
@@ -194,7 +190,8 @@ def shn_hms_hospital_rheader(r, tabs=[]):
                             (T("Services"), "services"),
                             (T("Contacts"), "contact"),
                             (T("Bed Capacity"), "bed_capacity"),
-                            (T("Cholera Treatment Capability"), "ctc_capability"), # @ToDo: make this a deployemnt_setting?
+                            (T("Cholera Treatment Capability"),
+                             "ctc_capability"), # @ToDo: make this a deployemnt_setting?
                             (T("Activity Report"), "activity"),
                             (T("Images"), "image"),
                             (T("Staff"), "staff")]
@@ -206,30 +203,37 @@ def shn_hms_hospital_rheader(r, tabs=[]):
 
                 rheader_tabs = shn_rheader_tabs(r, tabs)
 
+                table = db.hms_hospital
+
                 rheader = DIV(TABLE(
 
                     TR(TH("%s: " % T("Name")),
                         hospital.name,
                         TH("%s: " % T("EMS Status")),
-                        "%s" % db.hms_hospital.ems_status.represent(hospital.ems_status)),
+                        "%s" % table.ems_status.represent(hospital.ems_status)),
 
                     TR(TH("%s: " % T("Location")),
-                        db.gis_location[hospital.location_id] and db.gis_location[hospital.location_id].name or "unknown",
+                        db.gis_location[hospital.location_id] and \
+                            db.gis_location[hospital.location_id].name or "unknown",
                         TH("%s: " % T("Facility Status")),
-                        "%s" % db.hms_hospital.facility_status.represent(hospital.facility_status)),
+                        "%s" % table.facility_status.represent(hospital.facility_status)),
 
                     TR(TH("%s: " % T("Total Beds")),
                         hospital.total_beds,
                         TH("%s: " % T("Clinical Status")),
-                        "%s" % db.hms_hospital.clinical_status.represent(hospital.clinical_status)),
+                        "%s" % table.clinical_status.represent(hospital.clinical_status)),
 
                     TR(TH("%s: " % T("Available Beds")),
                         hospital.available_beds,
                         TH("%s: " % T("Security Status")),
-                        "%s" % db.hms_hospital.security_status.represent(hospital.security_status))
+                        "%s" % table.security_status.represent(hospital.security_status))
 
                         ), rheader_tabs)
 
-                return rheader
+            if r.component and r.component.name == "req":
+                # Inject the helptext script
+                rheader.append(req_helptext_script)
+
+            return rheader
 
     return None

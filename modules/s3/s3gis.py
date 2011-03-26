@@ -2014,7 +2014,7 @@ class GIS(object):
             else:
                 config_button = SPAN( A(T("Defaults"),
                                       _href=URL(r=request, c="gis", f="config",
-                                                args=["1"])),
+                                                args=["1", "read"])),
                                       _class="rheader_tab_other" )
             catalogue_toolbar = DIV(
                 config_button,

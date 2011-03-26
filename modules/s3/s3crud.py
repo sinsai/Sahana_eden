@@ -157,9 +157,7 @@ class S3CRUD(S3Method):
 
         if r.interactive:
 
-            # Form configuration
-            create_next = self._config("create_next")
-            subheadings = self._config("subheadings")
+            # Configure the HTML Form
 
             # Set view
             if representation in ("popup", "iframe"):
@@ -271,6 +269,7 @@ class S3CRUD(S3Method):
                                 format=representation)
 
             # Insert subheadings
+            subheadings = self._config("subheadings")
             if subheadings:
                 self.insert_subheadings(form, tablename, subheadings)
 
@@ -293,6 +292,7 @@ class S3CRUD(S3Method):
                 output.update(buttons)
 
             # Redirection
+            create_next = self._config("create_next")
             if representation in ("popup", "iframe"):
                 self.next = None
             elif not create_next:

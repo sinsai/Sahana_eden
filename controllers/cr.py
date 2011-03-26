@@ -238,6 +238,12 @@ def shn_shelter_prep(r):
                     msg_list_empty = T("No People currently registered in this shelter")
                 )
 
+            elif r.component.name == "req":
+                if r.method != "update" and r.method != "read":
+                    # Hide fields which don't make sense in a Create form
+                    # inc list_create (list_fields over-rides)
+                    shn_req_create_form_mods()
+
     return True
 
 # -----------------------------------------------------------------------------
@@ -281,6 +287,10 @@ def shn_shelter_rheader(r, tabs=[]):
                                       ),
                                     ),
                               rheader_tabs)
+
+            if r.component and r.component.name == "req":
+                # Inject the helptext script
+                rheader.append(req_helptext_script)
 
             return rheader
     return None

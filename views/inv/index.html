@@ -5,7 +5,14 @@
 <p>
 {{=T("Inventory functionality is available for:")}}
 </p>
-<li>{{=A(T("Warehouses"), _href=URL(r=request, c="inv", f="wh"))}} & {{=A(T("Offices"), _href=URL(r=request, c="org", f="office"))}}</li>
+<li>
+{{if deployment_settings.has_module("inv"):}}
+{{=A(T("Warehouses"), _href=URL(r=request, c="inv", f="wh"))}} &
+{{pass}}
+{{=A(T("Offices"), _href=URL(r=request, c="org", f="office"))}}</li>
+{{if deployment_settings.has_module("cr"):}}
 {{=LI(A("Shelters", _href=URL(r=request, c="cr", f="shelter")))}}
+{{pass}}
+{{if deployment_settings.has_module("hms"):}}
 {{=LI(A("Hospitals", _href=URL(r=request, c="hms", f="hospital")))}}
-
+{{pass}}

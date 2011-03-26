@@ -177,7 +177,7 @@ table = db.define_table(tablename,
                         Field("website", label = T("Website"),
                               requires = IS_NULL_OR(IS_URL()),
                               represent = shn_url_represent),
-                        Field("twitter"),   # deprecated by pe_contact component
+                        Field("twitter"),   # deprecated by contact component
                         Field("donation_phone", label = T("Donation Phone #"),
                               requires = shn_phone_requires),
                         comments(),
@@ -783,7 +783,7 @@ def shn_office_rheader(r, tabs=[]):
             return None
 
         tabs = [(T("Basic Details"), None),
-                (T("Contact Data"), "pe_contact"),
+                (T("Contact Data"), "contact"),
                 (T("Staff"), "staff"),
                 ]
 

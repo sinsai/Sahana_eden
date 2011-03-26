@@ -76,7 +76,6 @@ if deployment_settings.has_module(module):
     table.message.requires = IS_NOT_EMPTY()
 
     # Hide fields from user:
-    table.source_id.readable = table.source_id.writable = False
     table.verified.readable = table.verified.writable = False
     table.verified_details.readable = table.verified_details.writable = False
     table.actionable.readable = table.actionable.writable = False
@@ -85,7 +84,7 @@ if deployment_settings.has_module(module):
 
     # Set default values
     table.actionable.default = 1
-    table.source_type.default = 1
+    #table.source_type.default = 1
 
     table.priority.requires = IS_NULL_OR(IS_IN_SET(rms_priority_opts))
     table.priority.represent = lambda id: (
@@ -107,6 +106,41 @@ if deployment_settings.has_module(module):
     #table.source_type.requires = IS_NULL_OR(IS_IN_SET(rms_req_source_type))
     #table.source_type.represent = lambda stype: stype and rms_req_source_type[stype]
     #table.source_type.label = T("Source Type")
+
+    def rms_req_onaccept(form):
+        # Send a Message to the Inventory Managers when a new Request comes in
+        # Q: How to tell whether this is a new request?
+
+        # Hack: Send to all people in the Organisation
+        try:
+            org_pe_id = db(db.org_organisation.id == form.vars.organisation_id).select(db.org_organisation.pe_id,
+                                                                                       limitby=(0, 1)).first().pe_id
+
+            message = T("Sahana: new request has been made. Please login to see if you can fulfil the request.")
+
+            msg.send_sms_by_pe_id(self,
+                                  org_pe_id,
+                                  message=message,
+                                  sender_pe_id="",
+                                  sender="",
+                                  fromaddress="",
+                                  system_generated=True)
+        except:
+            pass
+
+    rms_req_search = s3base.S3Search(
+                            name="rms_req_search_simple",
+                            label=T("Text in Message"),
+                            comment=T("To search for a request, enter some of the text that you are looking for. You may use % as wildcard. Press 'Search' without input to list all requests."),
+                            field=["message"]
+                     )
+
+    s3xrc.model.configure(table,
+                          mark_required=["type"],
+                          super_entity=db.sit_situation,
+                          onaccept = lambda form: rms_req_onaccept(form),
+                          search_method=rms_req_search
+                          )
 
     # CRUD strings
     ADD_REQUEST = T("Add Request")
@@ -136,197 +170,6 @@ if deployment_settings.has_module(module):
                     label = T("Request"),
                     ondelete = "RESTRICT"
                     )
-
-    def rms_req_onaccept(form):
-        # Send a Message to the Inventory Managers when a new Request comes in
-        # Q: How to tell whether this is a new request?
-
-        # Hack: Send to all people in the Organisation
-        try:
-            org_pe_id = db(db.org_organisation.id == form.vars.organisation_id).select(db.org_organisation.pe_id,
-                                                                                       limitby=(0, 1)).first().pe_id
-
-            message = T("Sahana: new request has been made. Please login to see if you can fulfil the request.")
-
-            msg.send_sms_by_pe_id(self,
-                                  org_pe_id,
-                                  message=message,
-                                  sender_pe_id="",
-                                  sender="",
-                                  fromaddress="",
-                                  system_generated=True)
-        except:
-            pass
-
-    s3xrc.model.configure(table,
-                          mark_required=["type"],
-                          super_entity=db.sit_situation,
-                          onaccept = lambda form: rms_req_onaccept(form),
-                          )
-
-    # rms_req as component of shelters & hospitals
-    #s3xrc.model.add_component(module,
-    #                          resourcename,
-    #                          multiple=True,
-    #                          joinby=dict(
-    #                                      cr_shelter="shelter_id",
-    #                                      hms_hospital="hospital_id",
-    #                                      )
-    #                          )
-
-    # --------------------------------------------------------------------
-    def shn_rms_get_req(label, fields=None, filterby=None):
-        """
-            Finds a request by Message string
-        """
-
-        if fields and isinstance(fields, (list,tuple)):
-            search_fields = []
-            for f in fields:
-                if db.rms_req.has_key(f):     # TODO: check for field type?
-                    search_fields.append(f)
-            if not len(search_fields):
-                # Error: none of the specified search fields exists
-                return None
-        else:
-            # No search fields specified at all => fallback
-            search_fields = ["message"]
-
-        if label and isinstance(label, str):
-            labels = label.split()
-            results = []
-            query = None
-            # @ToDo: make a more sophisticated search function (Levenshtein?)
-            for l in labels:
-
-                # append wildcards
-                wc = "%"
-                _l = "%s%s%s" % (wc, l, wc)
-
-                # We want to do case-insensitive searches
-                # (default anyway on MySQL/SQLite, but not PostgreSQL)
-                _l = _l.lower()
-
-                # Build query
-                for f in search_fields:
-                    if query:
-                        query = (db.rms_req[f].lower().like(_l)) | query
-                    else:
-                        query = (db.rms_req[f].lower().like(_l))
-
-                # Undeleted records only
-                query = (db.rms_req.deleted == False) & (query)
-                # Restrict to prior results (AND)
-                if len(results):
-                    query = (db.rms_req.id.belongs(results)) & query
-                if filterby:
-                    query = (filterby) & (query)
-                records = db(query).select(db.rms_req.id)
-                # Rebuild result list
-                results = [r.id for r in records]
-                # Any results left?
-                if not len(results):
-                    return None
-            return results
-        else:
-            # No label given or wrong parameter type
-            return None
-
-    # ---------------------------------------------------------------------
-    def shn_rms_req_search_simple(xrequest, **attr):
-        """
-        Custom search method for requests
-
-        @todo: replace by standard S3Search?
-
-        """
-
-        if attr is None:
-            attr = {}
-
-        if not s3_has_permission("read", db.rms_req):
-            session.error = UNAUTHORISED
-            redirect(URL(r=request, c="default", f="user", args="login",
-                         vars={"_next":URL(r=request, args="search_simple",
-                                           vars=request.vars)}))
-
-        if xrequest.representation=="html":
-            # Check for redirection
-            if request.vars._next:
-                next = str.lower(request.vars._next)
-            else:
-                next = str.lower(URL(r=request, f="req", args="[id]"))
-
-            # Custom view
-            response.view = "%s/req_search.html" % xrequest.prefix
-
-            # Title and subtitle
-            title = T("Search for a Request")
-            subtitle = T("Matching Records")
-
-            # Select form
-            form = FORM(TABLE(
-                    TR(T("Text in Message: "),
-                    INPUT(_type="text", _name="label", _size="40"),
-                    DIV( _class="tooltip", _title="%s|%s" % (T("Text in Message"),
-                                                             T("To search for a request, enter some of the text that you are looking for. You may use % as wildcard. Press 'Search' without input to list all requests.")))),
-                    TR("", INPUT(_type="submit", _value=T("Search")))
-                    ))
-
-            output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
-
-            # Accept action
-            items = None
-            if form.accepts(request.vars, session):
-
-                if form.vars.label == "":
-                    form.vars.label = "%"
-
-                results = shn_rms_get_req(form.vars.label)
-
-                if results and len(results):
-                    rows = db(db.rms_req.id.belongs(results)).select()
-                else:
-                    rows = None
-
-                # Build table rows from matching records
-                if rows:
-                    records = []
-                    for row in rows:
-                        href = next.replace("%5bid%5d", "%s" % row.id)
-                        records.append(TR(
-                            row.completion_status,
-                            row.message,
-                            row.datetime,
-                            row.location_id and shn_gis_location_represent(row.location_id) or "unknown",
-                            ))
-                    items=DIV(TABLE(THEAD(TR(
-                        TH("Completion Status"),
-                        TH("Message"),
-                        TH("Time"),
-                        TH("Location"),
-                        )),
-                        TBODY(records), _id="list", _class="dataTable display"))
-                else:
-                    items = T("None")
-
-            try:
-                label_create_button = s3.crud_strings["rms_req"].label_create_button
-            except:
-                label_create_button = s3.crud_strings.label_create_button
-
-            add_btn = A(label_create_button, _href=URL(r=request, f="req", args="create"), _class="action-btn")
-
-            output.update(dict(items=items, add_btn=add_btn))
-            return output
-
-        else:
-            session.error = BADFORMAT
-            redirect(URL(r=request))
-
-    # Plug into REST controller
-    s3xrc.model.set_method(module, resourcename, method="search_simple",
-                           action=shn_rms_req_search_simple )
 
     #==========================================================================
     # Create the table for request_detail for requests with arbitrary keys

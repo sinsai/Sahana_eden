@@ -206,7 +206,7 @@ def register():
                 "fieldname" : "last_name"
               },
               {
-                "tablename" : "pr_pe_contact",
+                "tablename" : "pr_contact",
                 "fieldname" : "value",
                 "formfieldname" : "telephone",
                 "label" : T("Telephone"),
@@ -217,7 +217,7 @@ def register():
 
               },
               {
-                "tablename" : "pr_pe_contact",
+                "tablename" : "pr_contact",
                 "fieldname" : "value",
                 "formfieldname" : "email",
                 "label" : T("Email Address"),
@@ -238,8 +238,8 @@ def register():
     # Forms
     forms = Storage()
     forms["pr_person"] = SQLFORM(db.pr_person)
-    forms["pr_pe_contact1"] = SQLFORM(db.pr_pe_contact)
-    forms["pr_pe_contact2"] = SQLFORM(db.pr_pe_contact)
+    forms["pr_contact1"] = SQLFORM(db.pr_contact)
+    forms["pr_contact2"] = SQLFORM(db.pr_contact)
     forms["vol_credential"] = SQLFORM(db.vol_credential)
     forms["vol_volunteer"] = SQLFORM(db.vol_volunteer)
 
@@ -303,16 +303,18 @@ def register():
                                  skill_id=request.vars.skill_id,
                                  status=1)  # Pending
 
-        
+
         query = (db.pr_person.id == person_id)
         pe_id = db(query).select(db.pr_person.pe_id,
                                  limitby=(0, 1)).first().pe_id
         # Insert Email
-        db.pr_pe_contact.insert(pe_id=pe_id, contact_method=1,
-                                value=request.vars.email)
+        db.pr_contact.insert(pe_id=pe_id,
+                             contact_method=1,
+                             value=request.vars.email)
         # Insert Telephone
-        db.pr_pe_contact.insert(pe_id=pe_id, contact_method=2,
-                                value=request.vars.telephone)
+        db.pr_contact.insert(pe_id=pe_id,
+                             contact_method=2,
+                             value=request.vars.telephone)
 
         response.confirmation = T("Sign-up succesful - you should hear from us soon!")
 
@@ -357,7 +359,7 @@ def person():
             (T("Availability"), "volunteer"),
             (T("Address"), "address"),
             (T("Identity"), "identity"),
-            (T("Contact Data"), "pe_contact"),
+            (T("Contact Data"), "contact"),
             #(T("Teams"), "group_membership"),
             (T("Skills"), "credential"),
             (T("Images"), "image"),
@@ -674,7 +676,7 @@ def group():
                                  rheader=lambda jr: shn_pr_rheader(jr,
                                         tabs = [(T("Team Details"), None),
                                                 (T("Address"), "address"),
-                                                (T("Contact Data"), "pe_contact"),
+                                                (T("Contact Data"), "contact"),
                                                 (T("Members"), "group_membership")]))
 
     shn_menu()

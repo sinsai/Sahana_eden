@@ -465,8 +465,8 @@ def shn_last_update(table, record_id):
     if table and record_id:
         record = table[record_id]
         if record:
-            mod_on_str  = T(" on ")
-            mod_by_str  = T(" by ")
+            mod_on_str  = " %s " % T("on")
+            mod_by_str  = " %s " % T("by")
 
             modified_on = ""
             if "modified_on" in table.fields:

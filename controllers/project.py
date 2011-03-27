@@ -108,17 +108,17 @@ def shn_activity_rheader(r, tabs=[]):
         if project_activity:
             rheader_tabs = shn_rheader_tabs(r, tabs)
             rheader = DIV( TABLE(
-                               TR( TH( T("Short Description") + ": "), 
+                               TR( TH( "%s: " % T("Short Description")), 
                                    project_activity.name,
                                   ),
-                               TR( TH( T("Location") + ": "), 
+                               TR( TH( "%s: " % T("Location")), 
                                    shn_gis_location_represent(project_activity.location_id),
-                                   TH( T("Duration") + ": "),
+                                   TH( "%s: " % T("Duration")),
                                    "%s to %s" % (project_activity.start_date, project_activity.end_date),
                                   ),                                      
-                               TR( TH( T("Organisation") + ": "),
+                               TR( TH( "%s: " % T("Organization")),
                                    shn_organisation_represent(project_activity.organisation_id),                                       
-                                   TH( T("Sector") + ": "),
+                                   TH( "%s: " % T("Sector")),
                                    shn_org_cluster_represent(project_activity.cluster_id),                               
                                  ),
                                 ),

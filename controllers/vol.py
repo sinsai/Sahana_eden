@@ -183,7 +183,9 @@ def index():
 # -----------------------------------------------------------------------------
 def register():
     """
-        Custom page to allow people to register as a Volunteer whilst hiding the complexity of the data model.
+        Custom page to allow people to register as a Volunteer whilst:
+            not requiring them to have an authenticated account
+            hiding the complexity of the data model
     """
 
     # Fields that we want in our custom Form
@@ -295,12 +297,16 @@ def register():
                                  skill_id=request.vars.skill_id,
                                  status=1)  # Pending
 
-        pe_id = db(db.pr_person.id == person_id).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
+        
+        query = (db.pr_person.id == person_id)
+        pe_id = db(query).select(db.pr_person.pe_id,
+                                 limitby=(0, 1)).first().pe_id
         # Insert Email
-        db.pr_pe_contact.insert(pe_id=pe_id, contact_method=1, value=request.vars.email)
+        db.pr_pe_contact.insert(pe_id=pe_id, contact_method=1,
+                                value=request.vars.email)
         # Insert Telephone
-        db.pr_pe_contact.insert(pe_id=pe_id, contact_method=2, value=request.vars.telephone)
-
+        db.pr_pe_contact.insert(pe_id=pe_id, contact_method=2,
+                                value=request.vars.telephone)
 
         response.confirmation = T("Sign-up succesful - you should hear from us soon!")
 

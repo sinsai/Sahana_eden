@@ -80,9 +80,9 @@ if populate:
     db.commit()
     if not db(table.id > 0).count():
         table.insert(
-            admin_name = T("Sahana Administrator").xml(),
-            admin_email = "support@Not Set",
-            admin_tel = T("Not Set").xml(),
+            #admin_name = T("Sahana Administrator").xml(),
+            #admin_email = "support@Not Set",
+            #admin_tel = T("Not Set").xml(),
             theme = 1
         )
 
@@ -1235,8 +1235,8 @@ if populate:
                     dict(c="org", uacl=default_uacl, oacl=default_oacl),
                     dict(c="hms", uacl=default_uacl, oacl=default_oacl),
                     dict(c="cr", uacl=default_uacl, oacl=default_oacl),
-                    dict(c="inv", uacl=default_uacl, oacl=default_oacl),       
-                    dict(c="req", uacl=default_uacl, oacl=default_oacl),               
+                    dict(c="inv", uacl=default_uacl, oacl=default_oacl),
+                    dict(c="req", uacl=default_uacl, oacl=default_oacl),
                     )
         create_role("Anonymous", "Unauthenticated users",
                     # Allow unauthenticated users to sign-up as a Volunteer

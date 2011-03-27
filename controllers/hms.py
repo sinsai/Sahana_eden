@@ -80,16 +80,16 @@ def hospital():
     # Pre-processor
     def prep(r):
         # Filter out people which are already staff for this warehouse
-        shn_staff_prep(r) 
+        shn_staff_prep(r)
         if deployment_settings.has_module("inv"):
             # Filter out items which are already in this inventory
             shn_inv_prep(r)
-          
+
         # Cascade the organisation_id from the Warehouse to the staff
         if r.record:
             db.org_staff.organisation_id.default = r.record.organisation_id
             db.org_staff.organisation_id.writable = False
-                
+
         if r.interactive:
             # Don't send the locations list to client (pulled by AJAX instead)
             r.table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
@@ -178,13 +178,12 @@ def shn_hms_hospital_rheader(r, tabs=[]):
 
     """ Page header for component resources """
 
+    rheader = None
     if r.representation == "html":
         if r.name == "hospital":
             hospital = r.record
             if hospital:
-                _next = r.here()
-                _same = r.same()
-                
+
                 if not tabs:
                     tabs = [(T("Status Report"), ""),
                             (T("Services"), "services"),
@@ -230,10 +229,8 @@ def shn_hms_hospital_rheader(r, tabs=[]):
 
                         ), rheader_tabs)
 
-            if r.component and r.component.name == "req":
+            if rheader and r.component and r.component.name == "req":
                 # Inject the helptext script
                 rheader.append(req_helptext_script)
 
-            return rheader
-
-    return None
+    return rheader

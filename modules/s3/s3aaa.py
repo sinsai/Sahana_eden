@@ -377,6 +377,20 @@ class AuthS3(Auth):
 
 
     # -------------------------------------------------------------------------
+    def set_cookie(self):
+        """
+            Set a Cookie to the client browser so that we know this user has
+            registered & so we should present them with a login form instead
+            of a register form
+        """
+
+        response = self.environment.response
+
+        response.cookies["registered"] = "yes"
+        response.cookies["registered"]["expires"] = 365 * 24 * 3600    # 1 year
+        response.cookies["registered"]["path"] = "/"
+
+    # -------------------------------------------------------------------------
     def login(self,
               next=DEFAULT,
               onvalidation=DEFAULT,
@@ -497,6 +511,8 @@ class AuthS3(Auth):
                                    expiration=self.settings.expiration)
             self.user = user
             session.confirmation = self.messages.logged_in
+            # Set a Cookie to present user with login box by default
+            self.set_cookie()
         if log and self.user:
             self.log_event(log % self.user)
 
@@ -666,12 +682,8 @@ class AuthS3(Auth):
                 # No verification or approval needed
                 approved = True
 
-            # Set a Cookie to the client browser so that we know this user has
-            # registered & so we should present them with a login form instead
-            # of a register form
-            response.cookies["registered"] = "yes"
-            #response.cookies["registered"]["expires"] = 24 * 3600
-            response.cookies["registered"]["path"] = "/"
+            # Set a Cookie to present user with login box by default
+            self.set_cookie()
 
             if approved:
                 user[form.vars.id] = dict(registration_key="")

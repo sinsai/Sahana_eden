@@ -114,24 +114,75 @@ def index():
 
     # Login/Registration forms
     self_registration = deployment_settings.get_security_self_registration()
-    login_form = None
-    register_form = None
     registered = False
-    if not auth.is_logged_in():
+    login_form = None
+    login_div = None
+    register_form = None
+    register_div = None
+    if 2 not in session.s3.roles:
+        # This user isn't yet logged-in
+        if request.cookies.has_key("registered"):
+            # This browser has logged-in before
+            registered = True
+    
         # Provide a login box on front page
         request.args = ["login"]
         auth.messages.submit_button = T("Login")
         login_form = auth()
+        login_div = DIV(H3(T("Login")),
+                        P(XML("%s <b>%s</b> %s" % (T("Registered users can"),
+                                                   T("login"),
+                                                   T("to access the system")))))
 
-        # Download the registration box on front page ready to unhide without a server-side call
         if self_registration:
+            # Provide a Registration box on front page
             request.args = ["register"]
             auth.messages.submit_button = T("Register")
             register_form = auth()
+            register_div = DIV(H3(T("Register")),
+                               P(XML("%s <b>%s</b>" % (T("If you would like to help, then please"),
+                                                       T("sign-up now")))))
+            
+            if session.s3.debug:
+                validate_script = SCRIPT(_type="text/javascript",
+                                         _src=URL(r=request, c="static", f="scripts/S3/jquery.validate.js"))
+            else:
+                validate_script = SCRIPT(_type="text/javascript",
+                                         _src=URL(r=request, c="static", f="scripts/S3/jquery.validate.pack.js"))
+            register_div.append(validate_script)
+            if request.env.request_method == "POST":
+                post_script = """
+    // Unhide register form
+    $('#register_form').removeClass('hide');
+    // Hide login form
+    $('#login_form').addClass('hide');
+                """
+            else:
+                post_script = ""
+            register_script = SCRIPT("""
+$(document).ready(function() {
+    // Change register/login links to avoid page reload, make back button work.
+    $('#register-btn').attr('href', '#register');
+    $('#login-btn').attr('href', '#login');
+    %s
+    // Redirect Register Button to unhide
+    $('#register-btn').click(function() {
+        // Unhide register form
+        $('#register_form').removeClass('hide');
+        // Hide login form
+        $('#login_form').addClass('hide');
+    });
 
-        # Check to see if the user has already registered
-        if request.cookies.has_key("registered"):
-            registered = True
+    // Redirect Login Button to unhide
+    $('#login-btn').click(function() {
+        // Hide register form
+        $('#register_form').addClass('hide');
+        // Unhide login form
+        $('#login_form').removeClass('hide');
+    });
+});
+            """ % post_script)
+            register_div.append(register_script)
 
     return dict(title = title,
                 #modules=modules,
@@ -142,7 +193,10 @@ def index():
                 self_registration=self_registration,
                 registered=registered,
                 login_form=login_form,
-                register_form=register_form)
+                login_div=login_div,
+                register_form=register_form,
+                register_div=register_div
+                )
 
 
 # -----------------------------------------------------------------------------

@@ -2,66 +2,33 @@
 <div id='home'>
 <h2>{{=title}}</h2>
 {{try:}}
-{{=menu_boxes}}
+  {{=menu_boxes}}
 {{except:}}
 {{pass}}
 </div>
+
 {{if 2 not in session.s3.roles:}}
-  <div id='login_form'>
-<p>&nbsp;</p>
-    {{=H3(T("Login"))}}
-    <p>
-    {{=XML("%s <b>%s</b> %s" % (T("Registered users can"), T("login"), T("to access the system")))}}:
-    </p>
-    {{include "auth/_login.html"}}
-  </div>
-  {{if self_registration:}}
-   {{if session.s3.debug:}}
-    <script src="/{{=request.application}}/static/scripts/S3/jquery.validate.js" type="text/javascript" charset="utf-8"></script>
-   {{else:}}
-    <script src="/{{=request.application}}/static/scripts/S3/jquery.validate.pack.js" type="text/javascript"></script>
-   {{pass}}
-    <div id='register_form' class='hide'>
-<p>&nbsp;</p>
-      {{=H3(T("Register"))}}
-      <p>
-      {{=XML("%s <b>%s</b>" % (T("If you would like to help, then please"), T("sign-up now")))}}:
-      </p>
-      {{include "auth/_register.html"}}
-    </div>
-   {{pass}}
-<script type="text/javascript">//<![CDATA[
-$(document).ready(function() {
-    // Change register/login links to avoid page reload, back make back button work.
-    $('#register-btn').attr('href', '#register');
-    $('#login-btn').attr('href', '#login');
-
-{{if request.env.request_method == "POST":}}
-    // Unhide register form
-    $('#register_form').removeClass('hide');
-    // Hide login form
-    $('#login_form').addClass('hide');
+    {{if not self_registration or registered:}}
+        <div id='login_form'>
+            {{=login_div}}
+            {{include "auth/_login.html"}}
+        </div>
+    {{pass}}
+    {{if self_registration:}}
+        <div id='register_form' {{if registered:}}class='hide'{{pass}}>
+            {{=register_div}}
+            {{include "auth/_register.html"}}
+        </div>
+    {{pass}}
+    {{if self_registration and not registered:}}
+      <div id='login_form' class='hide'>
+        {{=login_div}}
+        {{include "auth/_login.html"}}
+      </div>
+    {{pass}}
 {{pass}}
-    // Redirect Register Button to unhide
-    $('#register-btn').click(function() {
-        // Unhide register form
-        $('#register_form').removeClass('hide');
-        // Hide login form
-        $('#login_form').addClass('hide');
-    });
-
-    // Redirect Login Button to unhide
-    $('#login-btn').click(function() {
-        // Hide register form
-        $('#register_form').addClass('hide');
-        // Unhide login form
-        $('#login_form').removeClass('hide');
-    });
-});
-//]]></script>
-{{pass}}
-<div>
-    <p class="menu_text">&nbsp;</p>
+    
+<div id='about'>
     <!--
     <p>
     {{=T("Contact")}}: Name of Public Information person
@@ -69,11 +36,13 @@ $(document).ready(function() {
     <br/>{{=T("Telephone")}}: Public Information telephone number
     </p>
     -->
-    <p class="menu_text">
+    <p>
     {{=T("For more details on the Sahana Eden system, see the")}} <a href="http://eden.sahanafoundation.org" target="_blank">{{=T("Sahana Eden Website")}}</a>
     <br/>{{=T("For live help from the Sahana community on using this application, go to")}} <a href="http://eden.sahanafoundation.org/wiki/Chat" target="_blank">{{=T("Sahana Community Chat")}}</a>
     </p>
     <p>&nbsp;</p>
 </div>
-{{include "rssviewer.html"}}
-</div>
+
+{{if deployment_settings.frontpage.rss:}}
+  {{include "rssviewer.html"}}
+{{pass}}

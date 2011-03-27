@@ -377,7 +377,7 @@ table { border-collapse: collapse }
          color: #666;
          background: #336699 url(../../img/footback.gif) repeat-x;
          border-top: #fff 1px solid;
-         padding-top: 20px; }
+         padding-top: 10px; }
 a.help, a:link.help { color: #fff;
                      text-decoration: none;
                      margin-right: 10px; }
@@ -507,16 +507,16 @@ div#map { width: 100%;
 
 /* Big Buttons (e.g. RMS) */
 div.question-container { text-align:center;
-                         width:8em;
-                         background-color:#F3F6FF;
-                         border: solid 3px #bbb;
-                         padding:1.5em;
-                         font-size:large;
-                         overflow: auto; }
+                        width:8em;
+                        background-color:#F3F6FF;
+                        border: solid 3px #bbb;
+                        padding:1.5em;
+                        font-size:large;
+                        overflow: auto; }
 
 /* Required Field indicator */
 .req { color: red;
-      font-weight: bold;  }
+       font-weight: bold; }
 
 /* For Key - ugly! */
 .red { color: red; }
@@ -788,9 +788,14 @@ div#last_update { text-align: right;
     text-decoration: none;
 }
 
-#login_form, #register_form, .menu_text { clear: both;}
+#login_form, #register_form {
+    clear: both;
+    padding: 10px 0 10px 0;
+}
+#about{ clear: both; }
 
 /* RSS Feed */
+#feed-control { clear: both; }
 .gfg-title { text-align: left;
              padding: 0 0 0 10px; }
 .gfg-subtitle { padding: 0 0 0 5px; }

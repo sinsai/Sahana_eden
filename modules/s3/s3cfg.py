@@ -48,6 +48,8 @@ class S3Config(Storage):
         self.auth = Storage()
         self.base = Storage()
         self.database = Storage()
+        self.frontpage = Storage()
+        self.frontpage.rss = []
         self.gis = Storage()
         self.mail = Storage()
         self.twitter = Storage()

@@ -759,16 +759,17 @@ def setting():
 
     """
         RESTful CRUD controller
-        
+         - just used to set the Theme
+
         @ToDo: Deprecate this - move to deployment_settings
     """
 
     tablename = "s3_%s" % resourcename
     table = db[tablename]
 
-    table.admin_name.label = T("Admin Name")
-    table.admin_email.label = T("Admin Email")
-    table.admin_tel.label = T("Admin Tel")
+    #table.admin_name.label = T("Admin Name")
+    #table.admin_email.label = T("Admin Email")
+    #table.admin_tel.label = T("Admin Tel")
     table.theme.label = T("Theme")
     table.theme.comment = DIV(A(T("Add Theme"), _class="colorbox",
                                 _href=URL(r=request, c="admin", f="theme",

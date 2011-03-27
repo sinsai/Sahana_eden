@@ -332,9 +332,9 @@ resource = "setting"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                         meta_uuid(),
-                        Field("admin_name"),
-                        Field("admin_email"),
-                        Field("admin_tel"),
+                        #Field("admin_name"),
+                        #Field("admin_email"),
+                        #Field("admin_tel"),
                         Field("theme", db.admin_theme),
                         migrate=migrate, *s3_timestamp())
 

@@ -9,9 +9,9 @@
 module = "default"
 
 # Options Menu (available in all Functions)
-response.menu_options = [
+#response.menu_options = [
     #[T("About Sahana"), False, URL(r=request, f="about")],
-]
+#]
 
 def call():
     "Call an XMLRPC, JSONRPC or RSS service"
@@ -37,69 +37,86 @@ _table_user.password.comment = SPAN("*", _class="req")
 
 #_table_user.password.label = T("Password")
 #_table_user.language.label = T("Language")
-_table_user.language.comment = DIV(_class="tooltip", _title=T("Language") + "|" + T("The language to use for notifications."))
+_table_user.language.comment = DIV(_class="tooltip", _title="%s|%s" % (T("Language"),
+                                                                       T("The language you wish the site to be displayed in.")))
 _table_user.language.represent = lambda opt: s3_languages.get(opt, UNKNOWN_OPT)
 
-# -------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 def index():
     """ Main Home Page """
 
+    title = T("Sahana Eden Disaster Management Platform")
+    response.title = title
+
+    # Menu Boxes
+    #modules = deployment_settings.modules
     def menu_box( title, ci, fi ):
           """ Returns a menu_box linking to URL(ci, fi) """
-          return A( DIV(title, _class = "menu-box-r"), _class = "menu-box-l", _href = URL( r=request, c=ci, f=fi) )
+          return A( DIV(title, _class = "menu-box-r"), _class = "menu-box-l",
+                        _href = URL( r=request, c=ci, f=fi) )
+
+    div_arrow_1 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % \
+                                 request.application),
+                          _class = "div_arrow")
+
+    div_arrow_2 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % \
+                                 request.application),
+                          _class = "div_arrow")
 
     div_sit = DIV( H3(T("SITUATION")),
-                   menu_box(T("Incidents"),   "irs",      "ireport"),
-                   menu_box(T("Assessments"), "assess",   "assess"),
-                   menu_box(T("Organizations"),  "org", "organisation"),
-                  _class = "menu_div")
-
-    div_arrow_1 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % request.application),
-                          _class = "div_arrow")
+                   _class = "menu_div")
+    if deployment_settings.has_module("irs"):
+        div_sit.append(menu_box(T("Incidents"), "irs", "ireport"))
+    if deployment_settings.has_module("assess"):
+        div_sit.append(menu_box(T("Assessments"), "assess", "assess"))
+    div_sit.append(menu_box(T("Organizations"), "org", "organisation"))
 
     div_dec = DIV( H3(T("DECISION")),
-                   menu_box(T("Gap Report"), "project", "gap_report"),
-                   menu_box(T("Gap Map"),    "project", "gap_map"),
-                   menu_box(T("Map"), "gis", "index"),
-                  _class = "menu_div")
-
-    div_arrow_2 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % request.application),
-                          _class = "div_arrow")
+                   _class = "menu_div")
+    div_dec.append(menu_box(T("Map"), "gis", "index"))
+    if deployment_settings.has_module("assess"):
+        div_dec.append(menu_box(T("Gap Report"), "project", "gap_report"))
+        div_dec.append(menu_box(T("Gap Map"), "project", "gap_map"))
 
     div_res = DIV(H3(T("RESPONSE")),
-                  menu_box(T("Activities"), "project", "activity"),
-                  menu_box(T("Requests"),   "req",     "req"),
-                  #+menu_box(T("Distribution"), "logs", "distrib")
                   _class = "menu_div",
                   _id = "menu_div_response")
+    if deployment_settings.has_module("req"):
+        div_res.append(menu_box(T("Requests"), "req", "req"))
+    if deployment_settings.has_module("project"):
+        div_res.append(menu_box(T("Activities"), "project", "activity"))
 
     #div_additional = DIV(A(DIV(T("Mobile Assess."),
     #                       _class = "menu_box"
     #                       ),
     #                    _href = URL( r=request, c="assess", f= "mobile_basic_assess")
     #                   ))
+    
+    menu_boxes = DIV(div_sit,
+                     div_arrow_1,
+                     div_dec,
+                     div_arrow_2,
+                     div_res,
+                     #div_additional,
+                    )
 
-    modules = deployment_settings.modules
+    # @ToDo: Replace this with an easily-customisable section on the homepage
+    #settings = db(db.s3_setting.id == 1).select(limitby=(0, 1)).first()
+    #if settings:
+    #    admin_name = settings.admin_name
+    #    admin_email = settings.admin_email
+    #    admin_tel = settings.admin_tel
+    #else:
+    #    # db empty and prepopulate is false
+    #    admin_name = T("Sahana Administrator").xml(),
+    #    admin_email = "support@Not Set",
+    #    admin_tel = T("Not Set").xml(),
 
-    module_name = modules[module].name_nice
-
-    settings = db(db.s3_setting.id == 1).select(limitby=(0, 1)).first()
-    if settings:
-        admin_name = settings.admin_name
-        admin_email = settings.admin_email
-        admin_tel = settings.admin_tel
-    else:
-        # db empty and prepopulate is false
-        admin_name = T("Sahana Administrator").xml(),
-        admin_email = "support@Not Set",
-        admin_tel = T("Not Set").xml(),
-
+    # Login/Registration forms
     self_registration = deployment_settings.get_security_self_registration()
-
-    title = T("Sahana Eden Disaster Management Platform")
     login_form = None
     register_form = None
-
+    registered = False
     if not auth.is_logged_in():
         # Provide a login box on front page
         request.args = ["login"]
@@ -112,18 +129,23 @@ def index():
             auth.messages.submit_button = T("Register")
             register_form = auth()
 
-    response.title = title
+        # Check to see if the user has already registered
+        if request.cookies.has_key("registered"):
+            registered = True
+
     return dict(title = title,
-                div_sit = div_sit,
-                div_arrow_1 = div_arrow_1,
-                div_dec = div_dec,
-                div_arrow_2 = div_arrow_2,
-                div_res = div_res,
-                #div_additional = div_additional,
-                module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel, self_registration=self_registration, login_form=login_form, register_form=register_form)
+                #modules=modules,
+                menu_boxes=menu_boxes,
+                #admin_name=admin_name,
+                #admin_email=admin_email,
+                #admin_tel=admin_tel,
+                self_registration=self_registration,
+                registered=registered,
+                login_form=login_form,
+                register_form=register_form)
 
 
-# -------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 def user():
     "Auth functions based on arg. See gluon/tools.py"
 
@@ -234,12 +256,13 @@ def about():
                 xlwt_version=xlwt_version
                 )
 
-# -------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 def help():
     "Custom View"
     response.title = T("Help")
     return dict()
 
+# -----------------------------------------------------------------------------
 def contact():
     """
         Give the user options to contact the site admins.
@@ -273,3 +296,5 @@ def contact():
         # Default: Simple Custom View
         response.title = T("Contact us")
         return dict()
+
+# END -------------------------------------------------------------------------

@@ -353,7 +353,7 @@ deployment_settings.modules = OrderedDict([
         #)),
     ("req", Storage(
             name_nice = T("Requests"),
-            description = T("Manage requests for supplies, assets, staff or anything else. Matches against Inventories where supplies are requested."),
+            description = T("Manage requests for supplies, assets, staff or other resources. Matches against Inventories where supplies are requested."),
             restricted = False,
             module_type = 10,
         )),

@@ -12,11 +12,13 @@
 module = request.controller
 resourcename = request.function
 
+if not deployment_settings.has_module(module):
+    session.error = T("Module disabled!")
+    redirect(URL(r=request, c="default", f="index"))
+
 response.menu_options = inv_menu
 
-NO_PERM_RECV_SHIPMENT = T("You do not have permission to receive a shipment.")
-NO_PERM_SEND_SHIPMENT = T("You do not have permission to send a shipment.")
-
+#==============================================================================
 def index():
     """
         Application Home page
@@ -74,10 +76,17 @@ def wh():
                 #s3xrc.model.configure(table,
                 #                      onaccept=address_onaccept)
 
+            if r.component and r.component.name == "req":
+                if r.method != "update" and r.method != "read":
+                    # Hide fields which don't make sense in a Create form
+                    # inc list_create (list_fields over-rides)
+                    shn_req_create_form_mods()
+
         # Filter out people which are already staff for this warehouse
         shn_staff_prep(r) 
-        # Filter out items which are already in this inventory
-        shn_inv_prep(r)
+        if deployment_settings.has_module("inv"):
+            # Filter out items which are already in this inventory
+            shn_inv_prep(r)
           
         # Cascade the organisation_id from the Warehouse to the staff
         if r.record:
@@ -118,7 +127,7 @@ def inv_item():
     
     # Limit site_id to sites the user has permissions for
     shn_site_based_permissions(table,
-                               NO_PERM_RECV_SHIPMENT )
+                               T("You do not have permission for any site to add an inventory item."))
 
     return s3_rest_controller(module, resourcename)
 #------------------------------------------------------------------------------
@@ -147,7 +156,7 @@ def recv():
 
     # Limit site_id to sites the user has permissions for
     shn_site_based_permissions(table,
-                               NO_PERM_RECV_SHIPMENT )
+                               T("You do not have permission for any site to receive a shipment."))
 
     output = s3_rest_controller(module,
                                 resourcename,
@@ -296,7 +305,7 @@ def send():
     
     # Limit site_id to sites the user has permissions for
     shn_site_based_permissions(table,
-                               NO_PERM_SEND_SHIPMENT )
+                               T("You do not have permission for any site to send a shipment.") )
     
     # Set Validator for checking against the number of items in the warehouse
     if (request.vars.inv_item_id):
@@ -1035,6 +1044,8 @@ def send_commit():
         function to send items according to a commit.
         copy data from a commit into a send 
         arg: req_id
+        @ToDo: This function needs to be able to detect the site to send the items from,
+        site_id is currently undefined and this will not work.
     """    
     
     commit_id = request.args[0]
@@ -1045,7 +1056,7 @@ def send_commit():
     if not auth.s3_has_permission("update", 
                                   db["%s_%s" % (prefix, resourcename)], 
                                   record_id=id):    
-        session.error = NO_PERM_SEND_SHIPMENT   
+        session.error = T("You do not have permission to send a shipment from this site.")   
         redirect(URL(r = request,
                      c = "req",
                      f = "commit",

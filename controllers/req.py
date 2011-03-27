@@ -10,7 +10,11 @@
 module = request.controller
 resourcename = request.function
 
-response.menu_options = inv_menu
+if not deployment_settings.has_module(module):
+    session.error = T("Module disabled!")
+    redirect(URL(r=request, c="default", f="index"))
+
+response.menu_options = req_menu
 
 #==============================================================================
 def index():
@@ -22,13 +26,24 @@ def index():
     response.title = module_name
     return dict(module_name=module_name)
 #==============================================================================
+req_item_inv_item_btn = dict(url = str( URL( r=request,
+                                             c = "req",
+                                             f = "req_item_inv_item",
+                                             args = ["[id]"]
+                                            )
+                                        ),
+                             _class = "action-btn",
+                             label = str(T("Inventory Items")), # Change to Fulfil? Match?
+                             )
+
+#------------------------------------------------------------------------------
 def req():
     tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
     
     # Limit site_id to sites the user has permissions for
     shn_site_based_permissions(table,
-                               T("You do not have permission to make a request.") )
+                               T("You do not have permission for any site to make a request."))
     
     # Improve - get site which the staff is allocated to? 
     site_id  = shn_get_db_field_value(db,
@@ -39,26 +54,26 @@ def req():
                                       ) 
 
     if "req_item" not in request.args:
-        req_actions = [dict(url = str( URL( r=request,
-                                            c = "req",
-                                            f = "req",
-                                            args = ["[id]", "req_item"]
-                                           )
-                                       ),
-                            _class = "action-btn",
-                            label = str(T("Request Items")),
-                            ),
-                       dict(url = str( URL( r=request,
-                                            c = "req",
-                                            f = "commit",
-                                            args = ["create"],
-                                            vars = dict(req_id = "[id]")
-                                           )
-                                       ),
-                            _class = "action-btn",
-                            label = str(T("Commit")),
-                            ),                            
-                        ]
+        req_item_actions = [dict(url = str( URL(r=request,
+                                                c = "req",
+                                                f = "req",
+                                                args = ["[id]", "req_item"]
+                                               )
+                                           ),
+                                _class = "action-btn",
+                                label = str(T("Request Items")),
+                                ),
+                           dict(url = str( URL( r=request,
+                                                c = "req",
+                                                f = "commit",
+                                                args = ["create"],
+                                                vars = dict(req_id = "[id]")
+                                               )
+                                           ),
+                                _class = "action-btn",
+                                label = str(T("Commit")),
+                                ),                            
+                            ]
         # Disabled until there is a more explicit way of determining site_id of the user
         #if site_id:
         #    req_actions.append(dict(url = str(URL( r=request,
@@ -73,27 +88,29 @@ def req():
         #                            )
         #                        )
     else:
-        req_actions = [dict(url = str( URL( r=request,
-                                            c = "req",
-                                            f = "req_item_inv_item",
-                                            args = ["[id]"]
-                                           )
-                                       ),
-                            _class = "action-btn",
-                            label = str(T("Inventory Items")),
-                            ),
-                        ]
+        req_item_actions = [req_item_inv_item_btn]
 
-    output = s3_rest_controller( module,
-                                 resourcename,
-                                 rheader=shn_req_rheader)
+    def prep(r):
+        if r.interactive:
+            if r.method != "update" and r.method != "read":
+                # Hide fields which don't make sense in a Create form
+                # inc list_create (list_fields over-rides)
+                shn_req_create_form_mods()
+        return True
+    response.s3.prep = prep
+
+    rheader = shn_req_rheader
+
+    output = s3_rest_controller(module, resourcename, rheader=rheader)
     
-    if response.s3.actions:
-        response.s3.actions += req_actions
-    else:
-        response.s3.actions = req_actions    
-          
+    if deployment_settings.has_module("inv"):
+        if response.s3.actions:
+            response.s3.actions += req_item_actions
+        else:
+            response.s3.actions = req_item_actions
+
     return output
+
 #------------------------------------------------------------------------------
 def shn_req_rheader(r):
     """ Resource Header for Requests """
@@ -102,14 +119,16 @@ def shn_req_rheader(r):
         if r.name == "req":
             req_record = r.record
             if req_record:
-                rheader_tabs = shn_rheader_tabs( r,
-                                                 [(T("Edit Details"), None),
-                                                  (T("Items"), "req_item"),
-                                                  ]
-                                                 )
+                
+                tabs = [(T("Edit Details"), None)]
+                if deployment_settings.has_module("inv"):
+                    tabs.append((T("Items"), "req_item"))
+                
+                rheader_tabs = shn_rheader_tabs(r, tabs)
+
                 rheader = DIV( TABLE(
                                    TR( TH( "%s: " % T("Date Requested")),
-                                       req_record.datetime,
+                                       req_record.date_requested,
                                        TH( "%s: " % T("Date Required")),
                                        req_record.date_required,
                                       ),
@@ -139,17 +158,30 @@ def shn_req_rheader(r):
                                      ),
                                 rheader_tabs
                                 )
+
                 return rheader
+            else:
+                # No Record means that we are either a Create or List Create
+                # Inject the helptext script
+                return req_helptext_script
     return None
 
 #==============================================================================
 def req_item():
     tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
+
     output = s3_rest_controller( module,
                                  resourcename,
                                  rheader=shn_commit_rheader)
+
+    if response.s3.actions:
+        response.s3.actions += [req_item_inv_item_btn]
+    else:
+        response.s3.actions = [req_item_inv_item_btn] 
+
     return output
+
 #------------------------------------------------------------------------------
 def req_item_inv_item():
     """
@@ -178,7 +210,7 @@ def req_item_inv_item():
                                    ),
                                 TR( 
                                     TH( "%s: " % T("Date Requested") ),
-                                    req.datetime,
+                                    req.date_requested,
                                     TH( T("Quantity Committed")),
                                     req_item.quantity_commit,
                                    ),
@@ -216,6 +248,7 @@ def req_item_inv_item():
     response.view = "req/req_item_inv_item.html"
 
     return output
+
 #==============================================================================
 def commit():
     tablename = "%s_%s" % (module, resourcename)
@@ -227,7 +260,7 @@ def commit():
 
     # Limit site_id to sites the user has permissions for
     shn_site_based_permissions(table,
-                               T("You do not have permission to make a commitment.") )
+                               T("You do not have permission for any site to make a commitment.") )
     
     def prep(r):
         if r.record:
@@ -245,12 +278,13 @@ def commit():
                           )
         return True
     response.s3.prep = prep 
-    
-    output = s3_rest_controller( module,
-                                 resourcename,
-                                 rheader=shn_commit_rheader,
-                                 )
+
+    rheader = shn_commit_rheader
+
+    output = s3_rest_controller(module, resourcename, rheader=rheader)
+
     return output
+
 #------------------------------------------------------------------------------
 def shn_commit_rheader(r):
     """ Resource Header for Commitments """
@@ -266,19 +300,19 @@ def shn_commit_rheader(r):
                                                  )
                 #req_record = db.req_req[commit_record.req_id]
                 #for_site_id = req_record.site_id
-                #req_date = req_record.datetime
+                #req_date = req_record.date_requested
                 rheader = DIV( TABLE( TR( TH( "%s: " % T("Request")),
                                           shn_req_represent(commit_record.req_id),
                                          ),
                                       TR( TH( "%s: " % T("Committing Inventory")),
                                           shn_site_represent(commit_record.site_id),
                                           TH( "%s: " % T("Commit Date")),
-                                          commit_record.datetime,
+                                          commit_record.date_requested,
                                           ),
                                        TR( TH( "%s: " % T("Comments")),
                                            TD(commit_record.comments, _colspan=3)
                                           ),
-                                         ),                                                                 
+                                         ),
                                         )
                 
                 send_btn = A( T("Send Items"),
@@ -291,23 +325,23 @@ def shn_commit_rheader(r):
                               _class = "action-btn"
                               )
                 
-                send_btn_confirm = SCRIPT("S3ConfirmClick('#send_commit','%s')" 
-                                          % T("Do you want to send these Committed items?") )
+                send_btn_confirm = SCRIPT("S3ConfirmClick('#send_commit', '%s')" %
+                                          T("Do you want to send these Committed items?") )
                 rheader.append(send_btn)
-                rheader.append(send_btn_confirm)    
-                
-                rheader.append(rheader_tabs) 
-                        
+                rheader.append(send_btn_confirm)
+
+                rheader.append(rheader_tabs)
+
                 return rheader
     return None
+
 #------------------------------------------------------------------------------
 def commit_item():
     tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
-    output = s3_rest_controller( module,
-                                 resourcename
-                                 )
+    output = s3_rest_controller(module, resourcename)
     return output
+
 #------------------------------------------------------------------------------
 def commit_req():
     """ 
@@ -336,7 +370,7 @@ def commit_req():
                  )      
 
     # Create a new commit record
-    commit_id = db.req_commit.insert( datetime = request.utcnow,
+    commit_id = db.req_commit.insert( date_requested = request.utcnow,
                                        req_id = req_id,
                                        site_id = site_id,
                                        for_site_id = r_req.site_id
@@ -393,13 +427,13 @@ def commit_req():
 #==============================================================================
 def commit_item_json():
     response.headers["Content-Type"] = "application/json"
-    db.req_commit.datetime.represent = lambda dt: dt[:10]
+    #db.req_commit.date_requested.represent = lambda dt: dt[:10]
     records =  db( (db.req_commit_item.req_item_id == request.args[0]) & \
                    (db.req_commit.id == db.req_commit_item.commit_id) & \
                    (db.req_commit_item.deleted == False )
                   ).select(db.req_commit.id,
                            db.req_commit_item.quantity,
-                           db.req_commit.datetime,
+                           db.req_commit.date_requested,
                            )
     json_str = "[%s,%s" % ( json.dumps(dict(id = str(T("Committed")), 
                                             quantity = "#"

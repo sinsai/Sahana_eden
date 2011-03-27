@@ -2006,7 +2006,7 @@ class GIS(object):
         ######
         # Catalogue Toolbar
         if catalogue_toolbar:
-            if auth.has_membership(1):
+            if auth.s3_has_role("MapAdmin"):
                 config_button = SPAN( A(T("Defaults"),
                                       _href=URL(r=request, c="gis", f="config",
                                                 args=["1", "update"])),
@@ -2014,7 +2014,7 @@ class GIS(object):
             else:
                 config_button = SPAN( A(T("Defaults"),
                                       _href=URL(r=request, c="gis", f="config",
-                                                args=["1", "display"])),
+                                                args=["1", "read"])),
                                       _class="rheader_tab_other" )
             catalogue_toolbar = DIV(
                 config_button,

@@ -5,10 +5,10 @@
 {{else:}}
     <span class='rheader_tab_other'>
 {{pass}}
-{{if auth.has_membership(1):}}
+{{if s3_has_role("MapAdmin"):}}
     <a href='{{=URL(r=request, c="gis", f="config", args=[1, "update"])}}'>
 {{else:}}
-    <a href='{{=URL(r=request, c="gis", f="config", args=[1])}}'>
+    <a href='{{=URL(r=request, c="gis", f="config", args=[1, "read"])}}'>
 {{pass}}
 {{=T("Defaults")}}
 </a></span>

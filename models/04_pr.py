@@ -76,13 +76,18 @@ table = db.define_table(tablename,
                               default=False),
                         Field("first_name", notnull=True),
                         Field("middle_name"),
-                        Field("last_name"),
+                        Field("last_name"), # Not Mandatory - this is deliberate (not everyone has 2 names & often only 1 is known when describing someone)
                         Field("preferred_name"),
                         Field("local_name"),
                         pr_gender(),
                         pr_age_group(),
                         Field("date_of_birth", "date",
-                              widget=S3DateWidget(past=1440, future=0)),
+                              label = T("Date of Birth"),
+                              requires = [IS_EMPTY_OR(IS_DATE_IN_RANGE(
+                                            maximum=request.utcnow.date(),
+                                            error_message="%s %%(max)s!" %
+                                                T("Enter a valid date before")))],
+                              widget = S3DateWidget(past=1440, future=0)),  # Months, so 120 years
                         Field("nationality",
                               requires = IS_NULL_OR(IS_IN_SET(pr_nations,
                                                               sort=True)),
@@ -118,12 +123,6 @@ table.first_name.label = T("First Name")
 table.middle_name.label = T("Middle Name")
 table.last_name.label = T("Last Name")
 table.local_name.label = T("Local Name")
-
-table.date_of_birth.label = T("Date of Birth")
-table.date_of_birth.requires = [IS_EMPTY_OR(IS_DATE_IN_RANGE(
-                                    maximum=request.utcnow.date(),
-                                    error_message="%s %%(max)s!" %
-                                        T("Enter a valid date before")))]
 
 table.first_name.requires = IS_NOT_EMPTY(error_message = T("Please enter a First Name"))
 # NB Not possible to have an IS_NAME() validator here
@@ -265,7 +264,7 @@ shn_person_comment = lambda title, comment: \
 
 shn_person_id_comment = shn_person_comment(
     T("Person"),
-    T("Select the person associated with this scenario."))
+    T("Type the first few characters of one of the Person's names."))
 
 person_id = S3ReusableField("person_id", db.pr_person,
                             sortby = ["first_name", "middle_name", "last_name"],

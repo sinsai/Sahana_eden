@@ -71,9 +71,12 @@
     <xsl:template name="shelter">
         <resource name="cr_shelter">
 
+            <!-- The name field is populated with the Prefecture in the Japan export! -->
+            <!--
             <data field="name">
                 <xsl:value-of select="./kml:name/text()"/>
             </data>
+            -->
 
             <!-- HTML isn't really appropriate for the Comments field -->
             <!--
@@ -98,6 +101,11 @@
     <xsl:template name="extended">
         <!-- Format produced by Google Fusion
         e.g. Japan feed: http://www.google.com/intl/ja/crisisresponse/japanquake2011_shelter.kmz -->
+        <xsl:for-each select="./kml:Data[@name='Name']">
+            <data field="name">
+                <xsl:call-template name="detail"/>
+            </data>
+        </xsl:for-each>
         <xsl:for-each select="./kml:Data[@name='Population']">
             <data field="population">
                 <xsl:call-template name="integer"/>
@@ -125,11 +133,6 @@
         </xsl:for-each>
         <xsl:for-each select="./kml:Data[@name='City']">
             <data field="L2">
-                <xsl:call-template name="detail"/>
-            </data>
-        </xsl:for-each>
-        <xsl:for-each select="./kml:Data[@name='Name']">
-            <data field="L3">
                 <xsl:call-template name="detail"/>
             </data>
         </xsl:for-each>

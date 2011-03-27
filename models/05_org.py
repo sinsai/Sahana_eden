@@ -3,10 +3,9 @@
 """
     Organisation Registry
 """
-#==============================================================================
+
 module = "org"
 
-#==============================================================================
 org_menu = [
     [T("Organizations"), False, URL(r=request, c="org", f="organisation"),[
         [T("List"), False, URL(r=request, c="org", f="organisation")],

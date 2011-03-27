@@ -1,20 +1,17 @@
 {{extend "layout.html"}}
 <div id='home'>
 <h2>{{=title}}</h2>
-<div>
-{{=div_sit}}
-{{=div_arrow_1}}
-{{=div_dec}}
-{{=div_arrow_2}}
-{{=div_res}}
-</div>
+{{try:}}
+{{=menu_boxes}}
+{{except:}}
+{{pass}}
 </div>
 {{if 2 not in session.s3.roles:}}
   <div id='login_form'>
 <p>&nbsp;</p>
     {{=H3(T("Login"))}}
     <p>
-    {{=XML(T("Registered users can") + " <b>" + T("login") + "</b> " + T("to access the system"))}}:
+    {{=XML("%s <b>%s</b> %s" % (T("Registered users can"), T("login"), T("to access the system")))}}:
     </p>
     {{include "auth/_login.html"}}
   </div>
@@ -28,7 +25,7 @@
 <p>&nbsp;</p>
       {{=H3(T("Register"))}}
       <p>
-      {{=XML(T("If you would like to help, then please") + " <b>" + T("sign-up now") + "</b>")}}:
+      {{=XML("%s <b>%s</b>" % (T("If you would like to help, then please"), T("sign-up now")))}}:
       </p>
       {{include "auth/_register.html"}}
     </div>
@@ -65,11 +62,13 @@ $(document).ready(function() {
 {{pass}}
 <div>
     <p class="menu_text">&nbsp;</p>
+    <!--
     <p>
-    {{=T("Administrator")}}: {{=admin_name}}
-    <br/>{{=T("Email")}}: {{=admin_email}}
-    <br/>{{=T("Telephone")}}: {{=admin_tel}}
+    {{=T("Contact")}}: Name of Public Information person
+    <br/>{{=T("Email")}}: Public Information email address
+    <br/>{{=T("Telephone")}}: Public Information telephone number
     </p>
+    -->
     <p class="menu_text">
     {{=T("For more details on the Sahana Eden system, see the")}} <a href="http://eden.sahanafoundation.org" target="_blank">{{=T("Sahana Eden Website")}}</a>
     <br/>{{=T("For live help from the Sahana community on using this application, go to")}} <a href="http://eden.sahanafoundation.org/wiki/Chat" target="_blank">{{=T("Sahana Community Chat")}}</a>

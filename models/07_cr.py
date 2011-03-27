@@ -4,6 +4,7 @@
     Shelter (Camp) Registry, model
 
     @author: Pat Tressel
+    @author: Fran Boon
 """
 
 module = "cr"

@@ -591,8 +591,10 @@ if deployment_settings.has_module(module):
                 height = 0.5*cm
                 elements = [
                     Label(text="%s" % request.utcnow.date(), top=0.1*cm, left=0),
-                    SystemField(expression="Page: %(page_number)d of %(page_count)d", top=0.1*cm,
-                        width=BAND_WIDTH, style={"alignment": TA_RIGHT}),
+                    SystemField(expression="Page: %(page_number)d of %(page_count)d",
+                                           top=0.1*cm,
+                                           width=BAND_WIDTH,
+                                           style={"alignment": TA_RIGHT}),
                 ]
                 borders = {"top": True}
             class band_detail(ReportBand):
@@ -606,260 +608,262 @@ if deployment_settings.has_module(module):
         if response:
             filename = "%s.pdf" % filename
             response.headers["Content-Type"] = contenttype(".pdf")
-            response.headers["Content-disposition"] = "attachment; filename=\"%s\"" % filename
+            response.headers["Content-disposition"] = "attachment; filename=\"%s\"" \
+                                                      % filename
 
         # Return the stream
         output.seek(0)
         return output.read()
 
-    #==========================================================================
-    # In (Receive / Donation / etc) Items
-    #
-    resourcename = "recv_item"
-    tablename = "%s_%s" % (module, resourcename)
-    table = db.define_table(tablename,
-                            recv_id(),
-                            item_id(),
-                            item_pack_id(),
-                            Field("quantity", "double",
-                                  label = T("Quantity"),
-                                  notnull = True),
-                            comments(),
-                            req_item_id(readable = False,
-                                             writable = False),
-                            migrate=migrate, *s3_meta_fields())
+    if deployment_settings.has_module("req"):
+        #======================================================================
+        # In (Receive / Donation / etc) Items
+        #
+        resourcename = "recv_item"
+        tablename = "%s_%s" % (module, resourcename)
+        table = db.define_table(tablename,
+                                recv_id(),
+                                item_id(),
+                                item_pack_id(),
+                                Field("quantity", "double",
+                                      label = T("Quantity"),
+                                      notnull = True),
+                                comments(),
+                                req_item_id(readable = False,
+                                                 writable = False),
+                                migrate=migrate, *s3_meta_fields())
 
-    # pack_quantity virtual field
-    table.virtualfields.append(item_pack_virtualfields(tablename = tablename))
+        # pack_quantity virtual field
+        table.virtualfields.append(item_pack_virtualfields(tablename = tablename))
 
-    # CRUD strings
-    ADD_RECV_ITEM = T("Add Item to Shipment")
-    LIST_RECV_ITEMS = T("List Received Items")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_RECV_ITEM,
-        title_display = T("Received Item Details"),
-        title_list = LIST_RECV_ITEMS,
-        title_update = T("Edit Received Item"),
-        title_search = T("Search Received Items"),
-        subtitle_create = T("Add New Received Item"),
-        subtitle_list = T("Shipment Items"),
-        label_list_button = LIST_RECV_ITEMS,
-        label_create_button = ADD_RECV_ITEM,
-        label_delete_button = T("Delete Received Item"),
-        msg_record_created = T("Item added to shipment"),
-        msg_record_modified = T("Received Item updated"),
-        msg_record_deleted = T("Received Item deleted"),
-        msg_list_empty = T("No Received Items currently registered"))
+        # CRUD strings
+        ADD_RECV_ITEM = T("Add Item to Shipment")
+        LIST_RECV_ITEMS = T("List Received Items")
+        s3.crud_strings[tablename] = Storage(
+            title_create = ADD_RECV_ITEM,
+            title_display = T("Received Item Details"),
+            title_list = LIST_RECV_ITEMS,
+            title_update = T("Edit Received Item"),
+            title_search = T("Search Received Items"),
+            subtitle_create = T("Add New Received Item"),
+            subtitle_list = T("Shipment Items"),
+            label_list_button = LIST_RECV_ITEMS,
+            label_create_button = ADD_RECV_ITEM,
+            label_delete_button = T("Delete Received Item"),
+            msg_record_created = T("Item added to shipment"),
+            msg_record_modified = T("Received Item updated"),
+            msg_record_deleted = T("Received Item deleted"),
+            msg_list_empty = T("No Received Items currently registered"))
 
-    #--------------------------------------------------------------------------
-    # In Items as component of In
-    # In Items as a component of Items
-    s3xrc.model.add_component(module, resourcename,
-                              multiple=True,
-                              joinby=dict(inv_recv = "recv_id",
-                                          supply_item = "item_id"))
+        #----------------------------------------------------------------------
+        # In Items as component of In
+        # In Items as a component of Items
+        s3xrc.model.add_component(module, resourcename,
+                                  multiple=True,
+                                  joinby=dict(inv_recv = "recv_id",
+                                              supply_item = "item_id"))
 
-    #--------------------------------------------------------------------------
-    # Update owned_by_role to the recv's owned_by_role
-    s3xrc.model.configure(
-        table,
-        onaccept = shn_component_copy_role_func(component_name = tablename,
-                                                resource_name = "inv_recv",
-                                                fk = "recv_id")
-    )
+        #----------------------------------------------------------------------
+        # Update owned_by_role to the recv's owned_by_role
+        s3xrc.model.configure(
+            table,
+            onaccept = shn_component_copy_role_func(component_name = tablename,
+                                                    resource_name = "inv_recv",
+                                                    fk = "recv_id")
+        )
 
-    #==========================================================================
-    def shn_location_id_to_site_id(r, field = "location_id"):
-        if r[field]:
-            return shn_get_db_field_value(db,
-                                          "org_site",
-                                          "site_id",
-                                          r[field],
-                                          "location_id")
-        else:
-            return None
+        #======================================================================
+        def shn_location_id_to_site_id(r, field = "location_id"):
+            if r[field]:
+                return shn_get_db_field_value(db,
+                                              "org_site",
+                                              "site_id",
+                                              r[field],
+                                              "location_id")
+            else:
+                return None
 
-    #==========================================================================
-    # Send (Outgoing / Dispatch / etc)
-    #
-    shn_to_location_id_to_site_id = lambda r, field = "to_location_id": \
-                                       shn_location_id_to_site_id(r,field)
-    resourcename = "send"
-    tablename = "%s_%s" % (module, resourcename)
-    table = db.define_table(tablename,
-                            Field( "datetime",
-                                   "datetime",
-                                   label = T("Date Sent")),
-                            super_link(db.org_site,
-                                       readable=True,
-                                       writable = True,
-                                       label=T("From Inventory"),
-                                       represent=shn_site_represent),
-                            location_id( "to_location_id",
-                                         label = T("To Location") ),
-                            Field("to_site_id",
-                                  db.org_site,
-                                  label = T("To Site"),
-                                  compute = shn_to_location_id_to_site_id
-                                  ),
-                            Field("status",
-                                  "integer",
-                                  requires = IS_NULL_OR(IS_IN_SET(shipment_status)),
-                                  represent = lambda opt: shipment_status.get(opt, UNKNOWN_OPT),
-                                  default = SHIP_STATUS_IN_PROCESS,
-                                  label = T("Status"),
-                                  writable = False,
-                                  ),
-                            person_id(name = "recipient_id",
-                                      label = T("To Person")),
-                            comments(),
-                            migrate=migrate, *s3_meta_fields())
+        #======================================================================
+        # Send (Outgoing / Dispatch / etc)
+        #
+        shn_to_location_id_to_site_id = lambda r, field = "to_location_id": \
+                                           shn_location_id_to_site_id(r,field)
+        resourcename = "send"
+        tablename = "%s_%s" % (module, resourcename)
+        table = db.define_table(tablename,
+                                Field( "datetime",
+                                       "datetime",
+                                       label = T("Date Sent")),
+                                super_link(db.org_site,
+                                           readable=True,
+                                           writable = True,
+                                           label=T("From Inventory"),
+                                           represent=shn_site_represent),
+                                location_id( "to_location_id",
+                                             label = T("To Location") ),
+                                Field("to_site_id",
+                                      db.org_site,
+                                      label = T("To Site"),
+                                      compute = shn_to_location_id_to_site_id
+                                      ),
+                                Field("status",
+                                      "integer",
+                                      requires = IS_NULL_OR(IS_IN_SET(shipment_status)),
+                                      represent = lambda opt: shipment_status.get(opt, UNKNOWN_OPT),
+                                      default = SHIP_STATUS_IN_PROCESS,
+                                      label = T("Status"),
+                                      writable = False,
+                                      ),
+                                person_id(name = "recipient_id",
+                                          label = T("To Person")),
+                                comments(),
+                                migrate=migrate, *s3_meta_fields())
 
-    # -------------------------------------------------------------------------
-    # CRUD strings
-    ADD_SEND = T("Send Shipment")
-    LIST_SEND = T("List Sent Shipments")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_SEND,
-        title_display = T("Sent Shipment Details"),
-        title_list = LIST_SEND,
-        title_update = T("Edit Shipment to Send"),
-        title_search = T("Search Sent Shipments"),
-        subtitle_create = ADD_SEND,
-        subtitle_list = T("Sent Shipments"),
-        label_list_button = LIST_SEND,
-        label_create_button = ADD_SEND,
-        label_delete_button = T("Delete Sent Shipment"),
-        msg_record_created = T("Shipment Created"),
-        msg_record_modified = T("Sent Shipment updated"),
-        msg_record_deleted = T("Sent Shipment canceled"),
-        msg_list_empty = T("No Sent Shipments"))
+        # ---------------------------------------------------------------------
+        # CRUD strings
+        ADD_SEND = T("Send Shipment")
+        LIST_SEND = T("List Sent Shipments")
+        s3.crud_strings[tablename] = Storage(
+            title_create = ADD_SEND,
+            title_display = T("Sent Shipment Details"),
+            title_list = LIST_SEND,
+            title_update = T("Edit Shipment to Send"),
+            title_search = T("Search Sent Shipments"),
+            subtitle_create = ADD_SEND,
+            subtitle_list = T("Sent Shipments"),
+            label_list_button = LIST_SEND,
+            label_create_button = ADD_SEND,
+            label_delete_button = T("Delete Sent Shipment"),
+            msg_record_created = T("Shipment Created"),
+            msg_record_modified = T("Sent Shipment updated"),
+            msg_record_deleted = T("Sent Shipment canceled"),
+            msg_list_empty = T("No Sent Shipments"))
 
-    # -------------------------------------------------------------------------
-    def shn_send_represent(id):
-        if id:
-            send_row = db(db.inv_send.id == id).\
-                              select(db.inv_send.datetime,
-                                     db.inv_send.to_location_id,
-                                     limitby=(0, 1))\
-                              .first()
-            return SPAN( shn_gis_location_represent( send_row.to_location_id),
-                         " - ",
-                        send_row.datetime)
-        else:
-            return NONE
+        # ---------------------------------------------------------------------
+        def shn_send_represent(id):
+            if id:
+                send_row = db(db.inv_send.id == id).\
+                                  select(db.inv_send.datetime,
+                                         db.inv_send.to_location_id,
+                                         limitby=(0, 1))\
+                                  .first()
+                return SPAN( shn_gis_location_represent( send_row.to_location_id),
+                             " - ",
+                            send_row.datetime)
+            else:
+                return NONE
 
-    # -------------------------------------------------------------------------
-    # Reusable Field
-    send_id = S3ReusableField( "send_id", db.inv_send, sortby="datetime",
-                               requires = IS_NULL_OR(IS_ONE_OF(db,
-                                                               "inv_send.id",
-                                                               shn_send_represent,
-                                                               orderby="inv_send_id.datetime",
-                                                               sort=True)),
-                               represent = shn_send_represent,
-                               label = T("Send Shipment"),
-                               ondelete = "RESTRICT"
-                               )
+        # ---------------------------------------------------------------------
+        # Reusable Field
+        send_id = S3ReusableField( "send_id", db.inv_send, sortby="datetime",
+                                   requires = IS_NULL_OR(IS_ONE_OF(db,
+                                                                   "inv_send.id",
+                                                                   shn_send_represent,
+                                                                   orderby="inv_send_id.datetime",
+                                                                   sort=True)),
+                                   represent = shn_send_represent,
+                                   label = T("Send Shipment"),
+                                   ondelete = "RESTRICT"
+                                   )
 
-    #--------------------------------------------------------------------------
-    # Inv Send added as a component of Inventory Store in controller
+        #----------------------------------------------------------------------
+        # Inv Send added as a component of Inventory Store in controller
 
-    #--------------------------------------------------------------------------
-    # Redirect to the Items tabs after create & update
-    url_send_items = URL(r=request, c="inv", f="send", args=["[id]",
-                                                             "send_item"])
-    s3xrc.model.configure(table,
-                          create_next = url_send_items,
-                          update_next = url_send_items
-                          )
+        #----------------------------------------------------------------------
+        # Redirect to the Items tabs after create & update
+        url_send_items = URL(r=request, c="inv", f="send", args=["[id]",
+                                                                 "send_item"])
+        s3xrc.model.configure(table,
+                              create_next = url_send_items,
+                              update_next = url_send_items
+                              )
 
-    #--------------------------------------------------------------------------
-    # Update owned_by_role to the site's owned_by_role
-    s3xrc.model.configure(
-        table,
-        onaccept = shn_component_copy_role_func(component_name = tablename,
-                                                resource_name = "org_site",
-                                                fk = "site_id",
-                                                pk = "site_id")
-    )
+        #----------------------------------------------------------------------
+        # Update owned_by_role to the site's owned_by_role
+        s3xrc.model.configure(
+            table,
+            onaccept = shn_component_copy_role_func(component_name = tablename,
+                                                    resource_name = "org_site",
+                                                    fk = "site_id",
+                                                    pk = "site_id")
+        )
 
-    # send set as a component of Sites in controller, depending if it is outgoing or incoming
+        # send set as a component of Sites in controller, depending if it is outgoing or incoming
 
-    # -------------------------------------------------------------------------
-    def shn_inv_send_form (xrequest, **attr):
-        db.inv_recv.datetime.readable = True
-        return shn_component_form( xrequest,
-                                   componentname = "send_item",
-                                   formname = T("Consignment Note"),
-                                   filename = T("CN"),
-                                   **attr)
+        # ---------------------------------------------------------------------
+        def shn_inv_send_form (xrequest, **attr):
+            db.inv_recv.datetime.readable = True
+            return shn_component_form( xrequest,
+                                       componentname = "send_item",
+                                       formname = T("Consignment Note"),
+                                       filename = T("CN"),
+                                       **attr)
 
-    s3xrc.model.set_method(module, resourcename,
-                           method="form", action=shn_inv_send_form )
+        s3xrc.model.set_method(module, resourcename,
+                               method="form", action=shn_inv_send_form )
 
-    #==========================================================================
-    # Send (Outgoing / Dispatch / etc) Items
-    #
-    log_sent_item_status = {0: NONE,
-                            1: "Invalid Quantity"
-                            }
+        #======================================================================
+        # Send (Outgoing / Dispatch / etc) Items
+        #
+        log_sent_item_status = {0: NONE,
+                                1: "Invalid Quantity"
+                                }
 
-    resourcename = "send_item"
-    tablename = "%s_%s" % (module, resourcename)
-    table = db.define_table(tablename,
-                            send_id(),
-                            inv_item_id(),
-                            item_pack_id(),
-                            Field("quantity", "double",
-                                  notnull = True),
-                            comments(),
-                            Field("status",
-                                  "integer",
-                                  requires = IS_NULL_OR(IS_IN_SET(log_sent_item_status)),
-                                  represent = lambda opt: log_sent_item_status[opt] if opt else log_sent_item_status[0],
-                                  writable = False),
-                            req_item_id(readable = False,
-                                        writable = False),
-                            migrate=migrate, *s3_meta_fields())
+        resourcename = "send_item"
+        tablename = "%s_%s" % (module, resourcename)
+        table = db.define_table(tablename,
+                                send_id(),
+                                inv_item_id(),
+                                item_pack_id(),
+                                Field("quantity", "double",
+                                      notnull = True),
+                                comments(),
+                                Field("status",
+                                      "integer",
+                                      requires = IS_NULL_OR(IS_IN_SET(log_sent_item_status)),
+                                      represent = lambda opt: log_sent_item_status[opt] if opt else log_sent_item_status[0],
+                                      writable = False),
+                                req_item_id(readable = False,
+                                            writable = False),
+                                migrate=migrate, *s3_meta_fields())
 
-    # pack_quantity virtual field
-    table.virtualfields.append(item_pack_virtualfields(tablename = tablename))
+        # pack_quantity virtual field
+        table.virtualfields.append(item_pack_virtualfields(tablename = tablename))
 
-    # CRUD strings
-    ADD_SEND_ITEM = T("Add Item to Shipment")
-    LIST_SEND_ITEMS = T("List Sent Items")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_SEND_ITEM,
-        title_display = T("Sent Item Details"),
-        title_list = LIST_SEND_ITEMS,
-        title_update = T("Edit Sent Item"),
-        title_search = T("Search Sent Items"),
-        subtitle_create = T("Add New Sent Item"),
-        subtitle_list = T("Shipment Items"),
-        label_list_button = LIST_SEND_ITEMS,
-        label_create_button = ADD_SEND_ITEM,
-        label_delete_button = T("Delete Sent Item"),
-        msg_record_created = T("Item Added to Shipment"),
-        msg_record_modified = T("Sent Item updated"),
-        msg_record_deleted = T("Sent Item deleted"),
-        msg_list_empty = T("No Sent Items currently registered"))
+        # CRUD strings
+        ADD_SEND_ITEM = T("Add Item to Shipment")
+        LIST_SEND_ITEMS = T("List Sent Items")
+        s3.crud_strings[tablename] = Storage(
+            title_create = ADD_SEND_ITEM,
+            title_display = T("Sent Item Details"),
+            title_list = LIST_SEND_ITEMS,
+            title_update = T("Edit Sent Item"),
+            title_search = T("Search Sent Items"),
+            subtitle_create = T("Add New Sent Item"),
+            subtitle_list = T("Shipment Items"),
+            label_list_button = LIST_SEND_ITEMS,
+            label_create_button = ADD_SEND_ITEM,
+            label_delete_button = T("Delete Sent Item"),
+            msg_record_created = T("Item Added to Shipment"),
+            msg_record_modified = T("Sent Item updated"),
+            msg_record_deleted = T("Sent Item deleted"),
+            msg_list_empty = T("No Sent Items currently registered"))
 
-    #--------------------------------------------------------------------------
-    # Send Items as component of Send
-    # Send Items as a component of Items
-    s3xrc.model.add_component(module, resourcename,
-                              multiple=True,
-                              joinby=dict(inv_send = "send_id",
-                                          inv_item = "inv_item_id"))
-    #--------------------------------------------------------------------------
-    # Update owned_by_role to the send's owned_by_role
-    s3xrc.model.configure(
-        table,
-        onaccept = shn_component_copy_role_func(component_name = tablename,
-                                                resource_name = "inv_send",
-                                                fk = "send_id")
-    )
+        #----------------------------------------------------------------------
+        # Send Items as component of Send
+        # Send Items as a component of Items
+        s3xrc.model.add_component(module, resourcename,
+                                  multiple=True,
+                                  joinby=dict(inv_send = "send_id",
+                                              inv_item = "inv_item_id"))
+        #----------------------------------------------------------------------
+        # Update owned_by_role to the send's owned_by_role
+        s3xrc.model.configure(
+            table,
+            onaccept = shn_component_copy_role_func(component_name = tablename,
+                                                    resource_name = "inv_send",
+                                                    fk = "send_id")
+        )
 
     #==========================================================================
     # Inventory Controller Helper functions

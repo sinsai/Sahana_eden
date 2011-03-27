@@ -666,6 +666,13 @@ class AuthS3(Auth):
                 # No verification or approval needed
                 approved = True
 
+            # Set a Cookie to the client browser so that we know this user has
+            # registered & so we should present them with a login form instead
+            # of a register form
+            response.cookies["registered"] = "yes"
+            #response.cookies["registered"]["expires"] = 24 * 3600
+            response.cookies["registered"]["path"] = "/"
+
             if approved:
                 user[form.vars.id] = dict(registration_key="")
                 session.confirmation = messages.registration_successful

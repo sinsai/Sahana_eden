@@ -51,7 +51,7 @@ from s3xml import S3XML
 from s3rest import S3Resource, S3Request
 from s3model import S3ResourceModel, S3ResourceLinker
 from s3crud import S3CRUD
-from s3find import S3Find
+from s3search import S3Search
 from s3export import S3Exporter
 from s3import import S3Importer
 
@@ -140,7 +140,7 @@ class S3ResourceController(object):
         self.model = S3ResourceModel(self.db)
         self.linker = S3ResourceLinker(self)
         self.crud = S3CRUD()
-        self.search = S3Find()
+        self.search = S3Search
         self.xml = S3XML(self)
         self.exporter = S3Exporter(self)
         self.importer = S3Importer(self)
@@ -514,9 +514,12 @@ class S3ResourceController(object):
             text = val = value
 
         # Always XML-escape content markup
-        if not xml_escape and val is not None and \
-           str(field.type) in ("string", "list:string", "text"):
-            val = text = self.xml.xml_encode(str(val))
+        if not xml_escape and val is not None:
+            ftype = str(field.type)
+            if ftype in ("string", "text"):
+                val = text = self.xml.xml_encode(str(val))
+            elif ftype == "list:string":
+                val = text = [self.xml.xml_encode(str(v)) for v in val]
 
         # Get text representation
         if field.represent:
@@ -957,6 +960,9 @@ class S3ResourceController(object):
             if jobs:
                 job = jobs[-1]
             else:
+                if self.error:
+                    error = self.error
+                    self.error = None
                 continue
 
             # Import components

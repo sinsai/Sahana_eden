@@ -37,8 +37,10 @@ org_menu = [
 resourcename = "cluster"
 tablename = "org_cluster"
 table = db.define_table(tablename,
-                        Field("abrv", length=64, notnull=True, unique=True),
-                        Field("name", length=128, notnull=True, unique=True),
+                        Field("abrv", length=64, notnull=True, unique=True,
+                              label=T("Abbreviation")),
+                        Field("name", length=128, notnull=True, unique=True,
+                              label=T("Name")),
                         migrate=migrate, *s3_meta_fields()
                         )
 
@@ -81,8 +83,9 @@ resourcename = "cluster_subsector"
 tablename = "org_cluster_subsector"
 table = db.define_table(tablename,
                         cluster_id(),
-                        Field("abrv", length=64, notnull=True, unique=True),
-                        Field("name", length=128),
+                        Field("abrv", length=64, notnull=True, unique=True,
+                              label=T("Abbreviation")),
+                        Field("name", length=128, label=T("Name")),
                         migrate=migrate, *s3_meta_fields()
                         )
 
@@ -148,7 +151,7 @@ org_organisation_type_opts = {
     8:T("International Organization"),
     9:T("Military"),
     10:T("Private"),
-    11:T("Intergovernmental Organisation"),
+    11:T("Intergovernmental Organization"),
     12:T("Institution"),
     #12:"MINUSTAH"   Haiti-specific
 }
@@ -233,14 +236,16 @@ organisation_popup_url = URL(r=request, c="org", f="organisation",
                              args="create",
                              vars=dict(format="popup"))
 
-shn_organisation_comment = DIV(A(ADD_ORGANIZATION,
+organisation_comment = DIV(A(ADD_ORGANIZATION,
                            _class="colorbox",
                            _href=organisation_popup_url,
                            _target="top",
                            _title=ADD_ORGANIZATION),
                          DIV(DIV(_class="tooltip",
                                  _title="%s|%s" % (ADD_ORGANIZATION,
-                                                   T("The Organization this record is associated with.")))))
+                                                   T("Enter some characters to bring up a list of possible matches.")))))
+                                                   # Replace with this one if using dropdowns & not autocompletes
+                                                   #T("If you don't see the Organization in the list, you can add a new one by clicking link 'Add Organization'.")))))
 
 organisation_id = S3ReusableField("organisation_id", db.org_organisation, sortby="name",
                                   requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id",
@@ -250,8 +255,9 @@ organisation_id = S3ReusableField("organisation_id", db.org_organisation, sortby
                                                         ),
                                   represent = shn_organisation_represent,
                                   label = T("Organization"),
-                                  comment = shn_organisation_comment,
+                                  comment = organisation_comment,
                                   ondelete = "RESTRICT",
+                                  # Comment this to use a Dropdown & not an Autocomplete
                                   widget = S3AutocompleteWidget(request, module, resourcename)
                                  )
 
@@ -368,7 +374,7 @@ tablename = "org_site"
 table = super_entity(tablename,
                      "site_id",
                      org_site_types,
-                     Field("name"),
+                     Field("name", label=T("Name")),
                      location_id(),
                      organisation_id(),
                      *s3_ownerstamp(),
@@ -571,6 +577,18 @@ org_office_type_opts = {
     5:T("Warehouse"),       # Don't change this number, as it affects the Inv module
 }
 
+ADD_OFFICE = T("Add Office")
+office_comment = DIV(A(ADD_OFFICE,
+                       _class="colorbox",
+                       _href=URL(r=request, c="org", f="office",
+                                 args="create",
+                                 vars=dict(format="popup")),
+                       _target="top",
+                       _title=ADD_OFFICE),
+                     DIV( _class="tooltip",
+                          _title="%s|%s" % (ADD_OFFICE,
+                                            T("If you don't see the Office in the list, you can add a new one by clicking link 'Add Office'."))))
+
 resourcename = "office"
 tablename = "org_office"
 table = db.define_table(tablename,
@@ -579,9 +597,12 @@ table = db.define_table(tablename,
                         Field("name", notnull=True, label = T("Name")),
                         organisation_id(),
                         Field("type", "integer", label = T("Type")),
-                        Field("parent", "reference org_office", # This form of hierarchy may not work on all Databases
-                              label = T("Parent Office")),
+                        Field("office_id", "reference org_office", # This form of hierarchy may not work on all Databases
+                              label = T("Parent Office"),
+                              comment = office_comment),
                         location_id(),
+                        Field("building_name", "text", label=T("Building Name"),
+                              writable=False), # Populated from location_id
                         Field("address", "text", label=T("Address"),
                               writable=False), # Populated from location_id
                         Field("L4",
@@ -637,8 +658,8 @@ table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 table.type.requires = IS_NULL_OR(IS_IN_SET(org_office_type_opts))
 table.type.represent = lambda opt: org_office_type_opts.get(opt, UNKNOWN_OPT)
-table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "org_office.id", "%(name)s"))
-table.parent.represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name,
+table.office_id.requires = IS_NULL_OR(IS_ONE_OF(db, "org_office.id", "%(name)s"))
+table.office_id.represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name,
                                                                                limitby=(0, 1)).first().name] or [NONE])[0]
 
 # CRUD strings
@@ -666,16 +687,7 @@ office_id = S3ReusableField("office_id", db.org_office, sortby="default/indexnam
                 represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name,
                                                                                   limitby=(0, 1)).first().name] or [NONE])[0],
                 label = T("Office"),
-                comment = DIV(A(ADD_OFFICE,
-                                _class="colorbox",
-                                _href=URL(r=request, c="org", f="office",
-                                          args="create",
-                                          vars=dict(format="popup")),
-                                _target="top",
-                                _title=ADD_OFFICE),
-                          DIV( _class="tooltip",
-                               _title="%s|%s" % (ADD_OFFICE,
-                                                 T("The Office this record is associated with.")))),    # Should be over-ridden in the context wherever possible
+                comment = office_comment,
                 ondelete = "RESTRICT"
                 )
 
@@ -775,9 +787,7 @@ table = db.define_table(tablename,
                                   comment = shn_person_comment(T("Person"),
                                                                T("The Person currently filling this Role."))),
                         Field("title", label = T("Job Title")),
-                        organisation_id(comment = DIV( _class="tooltip",
-                                                       _title="%s|%s" % (T("Organization"),
-                                                                         T("Enter some characters to bring up a list of possible matches.")))),
+                        organisation_id(),
                         # This form of hierarchy may not work on all DBs
                         Field("manager_id",
                               "reference org_staff",
@@ -787,12 +797,12 @@ table = db.define_table(tablename,
                               represent = lambda bool: (bool and [T("Supervisor")] or [NONE])[0],
                               comment = DIV( _class="tooltip",
                                              _title="%s|%s" % (T("Supervisor"),
-                                                               T("Has additional rights to modify records relating to this Organisation or Site.")))),
+                                                               T("Has additional rights to modify records relating to this Organization or Site.")))),
                         Field("no_access", "boolean", label=T("Read-only"),
                               represent = lambda bool: (bool and [T("Read-only")] or [NONE])[0],
                               comment = DIV( _class="tooltip",
                                              _title="%s|%s" % (T("Read-Only"),
-                                                               T("Has only read-only access to records relating to this Organisation or Site.")))),
+                                                               T("Has only read-only access to records relating to this Organization or Site.")))),
                         Field("focal_point", "boolean",
                               label = T("Focal Point"),
                               represent = lambda bool: (bool and [T("Focal Point")] or [NONE])[0],

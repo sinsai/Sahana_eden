@@ -184,7 +184,7 @@ if deployment_settings.has_module(module):
                             Field("barricades", "boolean",
                                   label=T("Barricades are needed")),
                             Field("barricades_details", "text",
-                                  label=T("(state location)")),
+                                  label="(%s)" % T("state location")),
                             Field("detailed_evaluation", "boolean",
                                   label=T("Level 2 or detailed engineering evaluation recommended")),
                             Field("detailed_structural", "boolean",
@@ -221,7 +221,7 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Level 1 Assessment deleted"),
         msg_list_empty = T("No Level 1 Assessments currently registered"))
 
-    building_nzseel1_search = s3base.S3Find(
+    building_nzseel1_search = s3base.S3Search(
             name="nzseel1_search_simple",
             label=T("Ticket ID"),
             comment=T("To search for an assessment, enter any portion the ticket number of the assessment. You may use % as wildcard. Press 'Search' without input to list all assessments."),
@@ -315,7 +315,7 @@ if deployment_settings.has_module(module):
                             Field("barricades", "boolean",
                                   label=T("Barricades are needed")),
                             Field("barricades_details", "text",
-                                  label=T("(state location)")),
+                                  label="(%s)" % T("state location")),
                             Field("detailed_evaluation", "boolean",
                                   label=T("Level 2 or detailed engineering evaluation recommended")),
                             Field("detailed_structural", "boolean",
@@ -435,7 +435,7 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Level 2 Assessment deleted"),
         msg_list_empty = T("No Level 2 Assessments currently registered"))
 
-    building_nzseel2_search = s3base.S3Find(
+    building_nzseel2_search = s3base.S3Search(
             name="nzseel2_search_simple",
             label=T("Ticket ID"),
             comment=T("To search for an assessment, enter any portion the ticket number of the assessment. You may use % as wildcard. Press 'Search' without input to list all assessments."),

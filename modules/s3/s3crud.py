@@ -499,7 +499,7 @@ class S3CRUD(S3Method):
 
         elif representation == "json":
             exporter = S3Exporter(self.manager)
-            return exporter.json(self.resource, fields=fields)
+            return exporter.json(self.resource)
 
         else:
             r.error(501, self.manager.ERROR.BAD_FORMAT)
@@ -619,7 +619,7 @@ class S3CRUD(S3Method):
             output.update(form=form)
 
             # Add delete and list buttons
-            buttons = self.insert_buttons(r, "delete", "list",
+            buttons = self.insert_buttons(r, "delete",
                                           record_id=record_id)
             if buttons:
                 output.update(buttons)
@@ -869,17 +869,25 @@ class S3CRUD(S3Method):
                 totalrows = self.resource.count()
                 if totalrows:
                     aadata = dict(aaData = self.sqltable(fields=fields,
-                                                        start=0,
-                                                        limit=20,
-                                                        orderby=orderby,
-                                                        linkto=linkto,
-                                                        download_url=self.download_url,
-                                                        as_page=True,
-                                                        format=representation) or [])
+                                                         start=0,
+                                                         limit=20,
+                                                         orderby=orderby,
+                                                         linkto=linkto,
+                                                         download_url=self.download_url,
+                                                         as_page=True,
+                                                         format=representation) or [])
                     aadata.update(iTotalRecords=totalrows, iTotalDisplayRecords=totalrows)
                     self.response.aadata = json(aadata)
                     self.response.s3.start = 0
                     self.response.s3.limit = 20
+
+            # Title and subtitle
+            if r.component:
+                title = self.crud_string(r.tablename, "title_display")
+            else:
+                title = self.crud_string(self.tablename, "title_list")
+            subtitle = self.crud_string(self.tablename, "subtitle_list")
+            output.update(title=title, subtitle=subtitle)
 
             # Empty table - or just no match?
             if not items:
@@ -893,19 +901,14 @@ class S3CRUD(S3Method):
                     items = self.crud_string(self.tablename, "msg_no_match")
                 else:
                     items = self.crud_string(self.tablename, "msg_list_empty")
-
-            # Title and subtitle
-            if r.component:
-                title = self.crud_string(r.tablename, "title_display")
-            else:
-                title = self.crud_string(self.tablename, "title_list")
-            subtitle = self.crud_string(self.tablename, "subtitle_list")
+                if r.component and "showadd_btn" in output:
+                    # Hide the list and show the form by default
+                    del output["showadd_btn"]
+                    del output["subtitle"]
+                    items = ""
 
             # Update output
-            output.update(title=title,
-                          subtitle=subtitle,
-                          items=items,
-                          sortby=sortby)
+            output.update(items=items, sortby=sortby)
 
         elif representation == "aadata":
 
@@ -973,8 +976,7 @@ class S3CRUD(S3Method):
             exporter = S3Exporter(self.manager)
             return exporter.json(self.resource,
                                  start=start,
-                                 limit=limit,
-                                 fields=fields)
+                                 limit=limit)
 
         else:
             r.error(501, self.manager.ERROR.BAD_FORMAT)
@@ -1329,12 +1331,12 @@ class S3CRUD(S3Method):
             record = db(table.id==record_id).select(limitby=(0, 1), *fields).first()
 
             try:
-                # @todo: "on" and "by" particles are problematic in translations
                 represent = table.modified_by.represent
             except:
                 # Table doesn't have a modified_by field
                 represent = ""
 
+            # @todo: "on" and "by" particles are problematic in translations
             if "modified_by" in record and represent:
                 if not record.modified_by:
                     modified_by = T("anonymous user")

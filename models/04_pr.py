@@ -56,7 +56,7 @@ pr_marital_status_opts = {
     4:T("separated"),
     5:T("divorced"),
     6:T("widowed"),
-    99:T("other")
+    9:T("other")
 }
 
 pr_marital_status = S3ReusableField("marital_status", "integer",
@@ -127,8 +127,11 @@ tablename = "pr_person"
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
                         super_link(db.sit_trackable), # track_id
+                        location_id(readable=False,
+                                    writable=False), # base location
                         pe_label(),
-                        Field("missing", "boolean", default=False),
+                        Field("missing", "boolean",
+                              default=False),
                         Field("first_name", notnull=True),
                         Field("middle_name"),
                         Field("last_name"),
@@ -136,7 +139,8 @@ table = db.define_table(tablename,
                         Field("local_name"),
                         pr_gender(),
                         pr_age_group(),
-                        Field("date_of_birth", "date", widget=S3DateWidget(before=110, after=0)),
+                        Field("date_of_birth", "date",
+                              widget=S3DateWidget(past=1440, future=0)),
                         pr_country("nationality", label = T("Nationality")),
                         pr_country("country"),
                         pr_religion(),
@@ -152,10 +156,9 @@ table.last_name.label = T("Last Name")
 table.local_name.label = T("Local Name")
 
 table.date_of_birth.label = T("Date of Birth")
-table.date_of_birth.requires = [IS_EMPTY_OR(IS_DATE(error_message = "%s" % T("Enter a valid date"))), 
- 	                            IS_EMPTY_OR(IS_DATE_IN_RANGE(maximum=request.utcnow.date(),
-                               error_message="%s %%(max)s!" %
-                                             T("Enter a date before")))]
+table.date_of_birth.requires = [IS_EMPTY_OR(IS_DATE_IN_RANGE(maximum=request.utcnow.date(),
+                                                             error_message="%s %%(max)s!" %
+                                                                           T("Enter a valid date before")))]
 
 table.first_name.requires = IS_NOT_EMPTY(error_message = T("Please enter a First Name"))
 # NB Not possible to have an IS_NAME() validator here
@@ -479,20 +482,20 @@ elif request.function == "group":
 
 # -----------------------------------------------------------------------------
 #
-def shn_pr_rheader(jr, tabs=[]):
+def shn_pr_rheader(r, tabs=[]):
 
     """ Person Registry page headers """
 
-    if jr.representation == "html":
+    if r.representation == "html":
 
-        rheader_tabs = shn_rheader_tabs(jr, tabs)
+        rheader_tabs = shn_rheader_tabs(r, tabs)
 
-        if jr.name == "person":
+        if r.name == "person":
 
-            _next = jr.here()
-            _same = jr.same()
+            #_next = r.here()
+            #_same = r.same()
 
-            person = jr.record
+            person = r.record
 
             if person:
                 rheader = DIV(TABLE(
@@ -517,12 +520,12 @@ def shn_pr_rheader(jr, tabs=[]):
 
                 return rheader
 
-        elif jr.name == "group":
+        elif r.name == "group":
 
-            _next = jr.here()
-            _same = jr.same()
+            #_next = r.here()
+            #_same = r.same()
 
-            group = jr.record
+            group = r.record
 
             if group:
                 rheader = DIV(TABLE(
@@ -549,7 +552,7 @@ pr_address_type_opts = {
     1:T("Home Address"),
     2:T("Office Address"),
     3:T("Holiday Address"),
-    99:T("other")
+    9:T("other")
 }
 
 
@@ -561,23 +564,35 @@ table = db.define_table(tablename,
                         Field("type",
                               "integer",
                               requires = IS_IN_SET(pr_address_type_opts, zero=None),
-                              default = 99,
+                              widget = RadioWidget.widget,
+                              default = 1,
                               label = T("Address Type"),
                               represent = lambda opt: \
                                           pr_address_type_opts.get(opt, UNKNOWN_OPT)),
-                        Field("co_name", label=T("c/o Name")),
+                        #Field("co_name", label=T("c/o Name")),
                         location_id(),
-                        Field("address", "text", label=T("Address"), writable=False), # Populated from location_id
-                        Field("L4", label=deployment_settings.get_gis_locations_hierarchy("L4"), writable=False), # Populated from location_id
-                        Field("L3", label=deployment_settings.get_gis_locations_hierarchy("L3"), writable=False), # Populated from location_id
-                        Field("L2", label=deployment_settings.get_gis_locations_hierarchy("L2"), writable=False), # Populated from location_id
-                        Field("L1", label=deployment_settings.get_gis_locations_hierarchy("L1"), writable=False), # Populated from location_id
-                        Field("L0", label=deployment_settings.get_gis_locations_hierarchy("L0"), writable=False), # Populated from location_id
+                        Field("building_name", "text", label=T("Building Name"),
+                              writable=False), # Populated from location_id
+                        Field("address", "text", label=T("Address"),
+                              writable=False), # Populated from location_id
+                        Field("L4",
+                              label=deployment_settings.get_gis_locations_hierarchy("L4"),
+                              writable=False), # Populated from location_id
+                        Field("L3",
+                              label=deployment_settings.get_gis_locations_hierarchy("L3"),
+                              writable=False), # Populated from location_id
+                        Field("L2",
+                              label=deployment_settings.get_gis_locations_hierarchy("L2"),
+                              writable=False), # Populated from location_id
+                        Field("L1",
+                              label=deployment_settings.get_gis_locations_hierarchy("L1"),
+                              writable=False), # Populated from location_id
+                        Field("L0",
+                              label=deployment_settings.get_gis_locations_hierarchy("L0"),
+                              writable=False), # Populated from location_id
                         Field("postcode", label=T("Postcode"), writable=False), # Populated from location_id
                         comments(),
                         migrate=migrate, *s3_meta_fields())
-
-
 
 table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 
@@ -601,12 +616,12 @@ s3.crud_strings[tablename] = Storage(
     msg_record_created = T("Address added"),
     msg_record_modified = T("Address updated"),
     msg_record_deleted = T("Address deleted"),
-    msg_list_empty = T("No Addresses currently registered"))
+    msg_list_empty = T("There is no address for this person yet. Add new address."))
 
 def address_onvalidation(form):
     """
         Write the Postcode & Street Address fields from the Location
-        - also used by org_office
+        - also used by org_office & cr_shelter
 
         @ToDo: Allow the reverse operation.
         If these fields are populated then create an appropriate location
@@ -630,15 +645,33 @@ def address_onvalidation(form):
             elif location.level == "L1":
                 form.vars.L1 = location.name
                 if location.parent:
-                    country = db(locations.id == location.parent).select(locations.name, limitby=(0, 1)).first()
+                    query = (locations.id == location.parent)
+                    country = db(query).select(locations.name,
+                                               limitby=(0, 1)).first()
                     if country:
                         form.vars.L0 = country.name
             else:
+                if location.level is None:
+                    form.vars.building_name = location.name
                 # Get ids of ancestors at each level.
                 gis.get_parent_per_level(form.vars,
                                          form.vars.location_id,
                                          feature=location,
                                          names=True)
+
+
+# Hide Address fields in Create forms
+# inc list_create (list_fields over-rides)
+def pr_address_hide(table):
+    table.building_name.readable = False
+    table.address.readable = False
+    table.L4.readable = False
+    table.L3.readable = False
+    table.L2.readable = False
+    table.L1.readable = False
+    table.L0.readable = False
+    table.postcode.readable = False
+    return
 
 # Addresses as component of person entities
 s3xrc.model.add_component(prefix, resourcename,
@@ -646,13 +679,13 @@ s3xrc.model.add_component(prefix, resourcename,
                           joinby=super_key(db.pr_pentity))
 
 s3xrc.model.configure(table,
-                      onvalidation=lambda form: address_onvalidation(form),
+                      onvalidation=address_onvalidation,
                       list_fields = [
                         "id",
                         "type",
+                        "building_name",
                         "address",
                         "postcode",
-                        #"co_name",
                         #"L4",
                         "L3",
                         "L2",
@@ -660,7 +693,21 @@ s3xrc.model.configure(table,
                         "L0"
                     ])
 
-# *****************************************************************************
+def address_onaccept(form):
+    """
+        Updates the Base Location to be the same as the Address
+
+        NB This doesn't apply globally but is only activated for specific
+           parts of the workflow
+    """
+
+    if "location_id" in form.vars and \
+       "base_location" in request.vars and request.vars.base_location == "on":
+        location_id = form.vars.location_id
+        pe_id = request.post_vars.pe_id
+        s3tracker(db.pr_pentity, pe_id).set_base_location(location_id)
+
+# -----------------------------------------------------------------------------
 # Contact (pe_contact)
 #
 pr_contact_method_opts = {
@@ -671,7 +718,7 @@ pr_contact_method_opts = {
     5:T("Telephone"),
     6:T("Fax"),
     7:T("Facebook"),
-    99:T("other")
+    9:T("other")
 }
 
 
@@ -689,9 +736,9 @@ table = db.define_table(tablename,
                               represent = lambda opt: \
                                           pr_contact_method_opts.get(opt,
                                                                      UNKNOWN_OPT)),
-                        Field("value", notnull=True),
-                        Field("priority"),
-                        Field("contact_person"),
+                        Field("value", notnull=True, label= T("Value")),
+                        Field("priority", label= T("Priority")),
+                        Field("contact_person", label= T("Contact Person")),
                         comments(),
                         #Field("name"),
                         migrate=migrate, *s3_meta_fields())
@@ -752,12 +799,12 @@ s3.crud_strings[tablename] = Storage(
     title_search = T("Search Contact Information"),
     subtitle_create = T("Add Contact Information"),
     subtitle_list = T("Contact Information"),
-    label_list_button = T("List Records"),
-    label_create_button = T("Add Record"),
-    label_delete_button = T("Delete Record"),
-    msg_record_created = T("Contact information added"),
-    msg_record_modified = T("Contact information updated"),
-    msg_record_deleted = T("Contact information deleted"),
+    label_list_button = T("List Contact Information"),
+    label_create_button = T("Add Contact Information"),
+    label_delete_button = T("Delete Contact Information"),
+    msg_record_created = T("Contact Information Added"),
+    msg_record_modified = T("Contact Information Updated"),
+    msg_record_deleted = T("Contact Information Deleted"),
     msg_list_empty = T("No contact information available"))
 
 
@@ -770,7 +817,7 @@ pr_image_type_opts = {
     3:T("Fingerprint"),
     4:T("X-Ray"),
     5:T("Document Scan"),
-    99:T("other")
+    9:T("other")
 }
 
 
@@ -785,38 +832,34 @@ table = db.define_table(tablename,
                               label = T("Image Type"),
                               represent = lambda opt: pr_image_type_opts.get(opt,
                                                                              UNKNOWN_OPT)),
-                        Field("title"),
-                        Field("image", "upload", autodelete=True),
-                        Field("url"),
-                        Field("description"),
+                        Field("title", label=T("Title"),
+                              requires = IS_NOT_EMPTY(),
+                              comment = DIV(_class="tooltip",
+                                            _title="%s|%s" % (T("Title"),
+                                                              T("Specify a descriptive title for the image.")))),
+                        Field("image", "upload", autodelete=True,
+                              represent = lambda image: image and \
+                                            DIV(A(IMG(_src=URL(r=request, c="default", f="download",
+                                                               args=image),
+                                                      _height=60, _alt=T("View Image")),
+                                                      _href=URL(r=request, c="default", f="download",
+                                                                args=image))) or T("No Image"),
+                              comment =  DIV(_class="tooltip",
+                                             _title="%s|%s" % (T("Image"),
+                                                               T("Upload an image file here. If you don't upload an image file, then you must specify its location in the URL field.")))),
+                        Field("url", label = T("URL"),
+                              represent = lambda url: url and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None"),
+                              comment =  DIV(_class="tooltip",
+                                             _title="%s|%s" % (T("URL"),
+                                                               T("The URL of the image file. If you don't upload an image file, then you must specify its location here.")))),
+                        Field("description", label=T("Description"),
+                              comment =  DIV(_class="tooltip",
+                                             _title="%s|%s" % (T("Description"),
+                                                               T("Give a brief description of the image, e.g. what can be seen where on the picture (optional).")))),
                         comments(),
                         migrate=migrate, *s3_meta_fields())
 
-
 table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
-
-table.title.requires = IS_NOT_EMPTY()
-table.title.comment = DIV(_class="tooltip",
-    _title="%s|%s" % (T("Title"),
-                      T("Specify a descriptive title for the image.")))
-
-table.url.label = T("URL")
-table.url.represent = lambda url: url and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None")
-table.url.comment =  DIV(_class="tooltip",
-    _title="%s|%s" % (T("URL"),
-                      T("The URL of the image file. If you don't upload an image file, then you must specify its location here.")))
-table.image.comment =  DIV(_class="tooltip",
-    _title="%s|%s" % (T("Image"),
-                      T("Upload an image file here. If you don't upload an image file, then you must specify its location in the URL field.")))
-table.image.represent = lambda image: image and \
-        DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=image),
-                  _height=60, _alt=T("View Image")),
-              _href=URL(r=request, c="default", f="download", args=image))) or \
-        T("No Image")
-table.description.comment =  DIV(_class="tooltip",
-    _title="%s|%s" % (T("Description"),
-                      T("Give a brief description of the image, e.g. what can be seen where on the picture (optional).")))
-
 
 # -----------------------------------------------------------------------------
 def shn_pr_image_onvalidation(form):
@@ -895,17 +938,27 @@ table = db.define_table(tablename,
                                   default = s3_logged_in_person(),
                                   comment=shn_person_comment(T("Observer"),
                                                              T("Person who has actually seen the person/group."))),
-                        Field("shelter_id", "integer"),
+                        Field("shelter_id", "integer",
+                              readable = False,
+                              writable = False),
                         location_id(widget = S3LocationAutocompleteWidget(request, deployment_settings),
                                     comment = DIV(A(ADD_LOCATION, _class="colorbox", _target="top", _title=ADD_LOCATION,
                                                   _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup"))),
                                               DIV(_class="tooltip",
-                                                  _title=T("Current Location") + "|" + T("The Current Location of the Person/Group, which can be general (for Reporting) or precise (for displaying on a Map). Enter a few characters to search from available locations.")))),
+                                                  _title="%s|%s" % (T("Current Location"),
+                                                                    T("The Current Location of the Person/Group, which can be general (for Reporting) or precise (for displaying on a Map). Enter a few characters to search from available locations."))))),
                         Field("location_details",
                               comment = DIV(_class="tooltip",
-                                            _title=T("Location Details") + "|" + T("Specific Area (e.g. Building/Room) within the Location that this Person/Group is seen."))
+                                            _title="%s|%s" % (T("Location Details"),
+                                                              T("Specific Area (e.g. Building/Room) within the Location that this Person/Group is seen.")))
                              ),
-                        Field("datetime", "datetime"),
+                        Field("datetime", "datetime",
+                              label = T("Date/Time"),
+                              default = request.utcnow,
+                              requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
+                                                         allow_future=False),
+                              represent = shn_as_local_time,
+                              ),
                         Field("presence_condition", "integer",
                               requires = IS_IN_SET(pr_presence_condition_opts,
                                                    zero=None),
@@ -913,7 +966,10 @@ table = db.define_table(tablename,
                               label = T("Presence Condition"),
                               represent = lambda opt: \
                                           pr_presence_condition_opts.get(opt, UNKNOWN_OPT)),
-                        Field("proc_desc"),
+                        Field("proc_desc", label = T("Procedure"),
+                              comment = DIV(DIV(_class="tooltip",
+                                                _title="%s|%s" % (T("Procedure"),
+                                                                  T('Describe the procedure which this record relates to (e.g. "medical examination")'))))),
                         location_id("orig_id", label=T("Origin"), widget = S3LocationAutocompleteWidget(request, deployment_settings),
                                     comment = DIV(A(ADD_LOCATION, _class="colorbox", _target="top", _title=ADD_LOCATION,
                                                   _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup"))),
@@ -925,30 +981,14 @@ table = db.define_table(tablename,
                                               DIV(_class="tooltip",
                                                   _title=T("Destination") + "|" + T("The Location the Person is going to, which can be general (for Reporting) or precise (for displaying on a Map). Enter a few characters to search from available locations.")))),
                         Field("comment"),
-                        Field("closed", "boolean", default=False),
+                        Field("closed", "boolean", default=False,
+                              readable = False,
+                              writable = False,
+                              #represent = lambda opt: opt and "closed" or ""
+                              ),
                         migrate=migrate, *s3_meta_fields())
 
-
-
 table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
-
-table.datetime.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
-table.datetime.represent = shn_as_local_time
-table.datetime.label = T("Date/Time")
-table.datetime.default = request.utcnow
-
-table.closed.readable = False
-table.closed.writable = False
-#table.closed.represent = lambda opt: opt and "closed" or ""
-
-table.proc_desc.label = T("Procedure")
-table.proc_desc.comment = DIV(DIV(_class="tooltip",
-        _title="%s|%s" % (T("Procedure"),
-                          T('Describe the procedure which this record relates to (e.g. "medical examination")'))))
-
-table.shelter_id.readable = False
-table.shelter_id.writable = False
-
 
 # -----------------------------------------------------------------------------
 def s3_pr_presence_onvalidation(form):
@@ -1150,8 +1190,8 @@ resourcename = "pe_subscription"
 tablename = "pr_pe_subscription"
 table = db.define_table(tablename,
                         super_link(db.pr_pentity), # pe_id
-                        Field("resource"),
-                        Field("record"), # type="s3uuid"
+                        Field("resource", label=T("Resource")),
+                        Field("record", label=T("Record")), # type="s3uuid"
                         comments(),
                         migrate=migrate, *s3_meta_fields())
 
@@ -1217,7 +1257,8 @@ table = db.define_table(tablename,
                               default = 1,
                               label = T("ID type"),
                               represent = lambda opt: \
-                                          pr_id_type_opts.get(opt, UNKNOWN_OPT)),
+                                          pr_id_type_opts.get(opt,
+                                                              UNKNOWN_OPT)),
                         Field("value"),
                         Field("description"),
                         Field("country_code", length=4),
@@ -1230,7 +1271,8 @@ table = db.define_table(tablename,
 
 table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 table.person_id.label = T("Person")
-table.value.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.value" % tablename)]
+table.value.requires = [IS_NOT_EMPTY(),
+                        IS_NOT_ONE_OF(db, "%s.value" % tablename)]
 table.ia_name.label = T("Issuing Authority")
 
 # Identity as component of persons

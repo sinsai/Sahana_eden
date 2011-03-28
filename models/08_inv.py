@@ -14,16 +14,21 @@ inv_menu = [
             [
                 [T("List"), False, URL(r=request, c="supply", f="item")],
                 [T("Add"), False, URL(r=request, c="supply", f="item", args="create")],
-            ]],            
+                [T("Search"), False, URL(r=request, c="supply", f="item", args="search")],
+            ]],
             [T("Warehouses"), False, URL(r=request, c="inv", f="wh"),
             [
                 [T("List"), False, URL(r=request, c="inv", f="wh")],
                 [T("Add"), False, URL(r=request, c="inv", f="wh", args="create")],
+                [T("Search Inventory Items"), False, URL(r=request, c="inv", f="inv_item", args="search")],
+                [T("Search Received Shipments"), False, URL(r=request, c="inv", f="recv", args="search")],
             ]],
+
             [T("Request"), False, URL(r=request, c="req", f="req"),
             [
                 [T("List"), False, URL(r=request, c="req", f="req")],
-          #      [T("Add"), False, URL(r=request, c="inv", f="req", args="create")],
+                #[T("Search Requested Items"), False, URL(r=request, c="req", f="req_item", args="search")],
+                #[T("Add"), False, URL(r=request, c="req", f="req", args="create")],
             ]],
            # [T("Receive"), False, URL(r=request, c="inv", f="recv"),
            # [
@@ -53,23 +58,30 @@ if deployment_settings.has_module("inv"):
     resourcename = "inv_item"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            super_link(db.org_site), # site_id
+                            super_link(db.org_site, # site_id
+                                       readable=True,
+                                       label=T("Site"),
+                                       represent=shn_site_represent),
                             item_id(),
                             item_pack_id(),
-                            Field("quantity", 
+                            Field("quantity",
                                   "double",
                                   label = T("Quantity"),
                                   notnull = True),
                             #Field("pack_quantity",
                             #      "double",
-                            #      compute = shn_record_pack_quantity),   
+                            #      compute = shn_record_pack_quantity),
                             Field("expiry_date",
                                   "date",
-                                  label = T("Expiry Date")),                            
+                                  label = T("Expiry Date")),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
-    
-    db.inv_inv_item.virtualfields.append(item_pack_virtualfields(tablename = "inv_inv_item"))    
+
+    #db.inv_inv_item.site_id.readable = True
+    #db.inv_inv_item.site_id.represent = shn_site_represent
+    #db.inv_inv_item.site_id.label = T("Site")
+
+    db.inv_inv_item.virtualfields.append(item_pack_virtualfields(tablename = "inv_inv_item"))
 
     # CRUD strings
     INV_ITEM = T("Inventory Item")
@@ -90,23 +102,23 @@ if deployment_settings.has_module("inv"):
         msg_record_modified = T("Inventory Item updated"),
         msg_record_deleted = T("Inventory Item deleted"),
         msg_list_empty = T("No Inventory Items currently registered"))
-    
+
     def shn_inv_item_represent (id):
         record = db( (db.inv_inv_item.id == id) & \
-                     (db.inv_inv_item.item_id == db.supply_item.id) 
+                     (db.inv_inv_item.item_id == db.supply_item.id)
                     ).select( db.supply_item.name,
                               limitby = [0,1]).first()
         if record:
             return record.name
         else:
-            return None  
+            return None
 
     # Reusable Field
     inv_item_id = S3ReusableField("inv_item_id", db.inv_inv_item,
-                                    requires = IS_ONE_OF(db, 
-                                                         "inv_inv_item.id", 
-                                                         shn_inv_item_represent, 
-                                                         orderby="inv_inv_item.id", 
+                                    requires = IS_ONE_OF(db,
+                                                         "inv_inv_item.id",
+                                                         shn_inv_item_represent,
+                                                         orderby="inv_inv_item.id",
                                                          sort=True),
                                     represent = shn_inv_item_represent,
                                     label = INV_ITEM,
@@ -114,57 +126,98 @@ if deployment_settings.has_module("inv"):
                                                    _title="%s|%s" % (INV_ITEM,
                                                                      T("Select Items from this Inventory"))),
                                     ondelete = "RESTRICT"
-                                    )    
-
+                                    )
+    #------------------------------------------------------------------------------
     # Inv item as component of Sites
-    s3xrc.model.add_component(module, 
+    s3xrc.model.add_component(module,
                               resourcename,
                               multiple = True,
                               joinby = super_key(db.org_site)
                               )
-    
-    # Store items as components of Supply Items 
+
+    # Store items as components of Supply Items
     s3xrc.model.add_component(module, resourcename,
                               multiple=False,
                               joinby=dict(supply_item = "item_id")
-                              )     
-    
+                              )
+
     #Store Items as component of packs
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(supply_item_pack = "item_pack_id")) 
-    
+                              joinby=dict(supply_item_pack = "item_pack_id"))
     #------------------------------------------------------------------------------
-    # Update owned_by_role to the site's owned_by_role    
+    # Recv Search Method
+    #
+    shn_inv_item_search = s3base.S3Search(
+        #name="shn_item_search",
+        #label=T("Name and/or ID"),
+        #comment=T("To search for a hospital, enter any of the names or IDs of the hospital, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all hospitals."),
+        #field=["gov_uuid", "name", "aka1", "aka2"],
+        advanced=(s3base.S3SearchSimpleWidget(
+                    name="inv_item_search_text",
+                    label=T("Search"),
+                    comment=T("Search for an item by text."),
+                    field=[ "item_id$name",
+                            #"item_id$category_id$name",
+                            "site_id$name"
+                            ]
+                  ),
+                  s3base.S3SearchSelectWidget(
+                    name="recv_search_site",
+                    label=T("Site"),
+                    field=["site_id"],
+                    represent ="%(name)s",
+                    cols = 2
+                  ),
+                  s3base.S3SearchMinMaxWidget(
+                    name="inv_item_search_expiry_date",
+                    method="range",
+                    label=T("Expiry_Date"),
+                    field=["expiry_date"]
+                  ),
+        ))
+
+    #------------------------------------------------------------------------------
+    # Update owned_by_role to the site's owned_by_role
     s3xrc.model.configure(
-        table, 
-        onaccept = shn_component_copy_role_func(component_name = tablename, 
-                                                resource_name = "org_site", 
+        table,
+        onaccept = shn_component_copy_role_func(component_name = tablename,
+                                                resource_name = "org_site",
                                                 fk = "site_id",
-                                                pk = "site_id")
-    )      
+                                                pk = "site_id"),
+        search_method = shn_inv_item_search
+    )
 
 
     #==============================================================================
     # Received (In/Receive / Donation / etc)
     #
-    
+
     inv_recv_type = {0:NONE,
                       1:"Another Store",
                       2:"Donation",
                       3:"Supplier"}
-    
+
     SHIP_STATUS_IN_PROCESS = 0
     SHIP_STATUS_RECEIVED   = 1
     SHIP_STATUS_SENT       = 2
     SHIP_STATUS_CANCEL     = 3
-    
     shipment_status = { SHIP_STATUS_IN_PROCESS: T("In Process"),
                         SHIP_STATUS_RECEIVED:   T("Received"),
                         SHIP_STATUS_SENT:       T("Sent"),
                         SHIP_STATUS_CANCEL:     T("Canceled")
-                        }    
-     
+                        }
+
+    SHIP_DOC_PENDING  = 0
+    SHIP_DOC_COMPLETE = 1
+    ship_doc_status = {SHIP_DOC_PENDING: T("Pending"),
+                       SHIP_DOC_COMPLETE: T("Complete")
+                       }
+
+    from gluon.sqlhtml import RadioWidget
+    radio_widget = lambda field, value: \
+                            RadioWidget().widget(field, value, cols = 2)
+
     resourcename = "recv"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
@@ -172,7 +225,7 @@ if deployment_settings.has_module("inv"):
                                   "datetime",
                                   label = T("Date Received"),
                                   writable = False,
-                                  readable = False #unless the record is locked
+                                  #readable = False #unless the record is locked
                                   ),
                             Field("type",
                                   "integer",
@@ -180,20 +233,36 @@ if deployment_settings.has_module("inv"):
                                   represent = lambda type: inv_recv_type[type] if type else NONE,
                                   label = T("Type"),
                                   default = 0,
-                                  ),                                  
+                                  ),
                             super_link(db.org_site), #(label = T("By Warehouse")),
                             organisation_id("from_organisation_id",
-                                            label = T("From Organisation")),
+                                            label = T("From Organization")),
                             location_id("from_location_id",
                                         label = T("From Location")),
-                            Field("from_person"), #Text field, because lookup to pr_person record is unnecessary complex workflow                                              
-                            Field("status", 
+                            Field("from_person"), #Text field, because lookup to pr_person record is unnecessary complex workflow
+                            Field("status",
                                   "integer",
                                   requires = IS_NULL_OR(IS_IN_SET(shipment_status)),
-                                  represent = lambda status: shipment_status.get(status),       
-                                  default = SHIP_STATUS_IN_PROCESS,                           
+                                  represent = lambda status: shipment_status.get(status),
+                                  default = SHIP_STATUS_IN_PROCESS,
                                   label = T("Status"),
                                   writable = False,
+                                  ),
+                            Field("grn_status",
+                                  "integer",
+                                  requires = IS_NULL_OR(IS_IN_SET(ship_doc_status)),
+                                  represent = lambda status: ship_doc_status.get(status,NONE),
+                                  default = None,
+                                  widget = radio_widget,
+                                  label = T("GRN Status"),
+                                  ),
+                            Field("cert_status",
+                                  "integer",
+                                  requires = IS_NULL_OR(IS_IN_SET(ship_doc_status)),
+                                  represent = lambda status: ship_doc_status.get(status,NONE),
+                                  default = None,
+                                  widget = radio_widget,
+                                  label = T("Certificate Status"),
                                   ),
                             person_id(name = "recipient_id",
                                       label = T("Received By")),
@@ -252,74 +321,129 @@ if deployment_settings.has_module("inv"):
 
     #------------------------------------------------------------------------------
     # Recv as a component of Sites
-    s3xrc.model.add_component(module, 
+    s3xrc.model.add_component(module,
                               resourcename,
                               multiple = True,
                               joinby = super_key(db.org_site)
                               )
+    #------------------------------------------------------------------------------
+    # Recv Search Method
+    #
+    shn_recv_search = s3base.S3Search(
+        #name="shn_item_search",
+        #label=T("Name and/or ID"),
+        #comment=T("To search for a hospital, enter any of the names or IDs of the hospital, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all hospitals."),
+        #field=["gov_uuid", "name", "aka1", "aka2"],
+
+        simple=(s3base.S3SearchSimpleWidget(
+                    name="recv_search_text",
+                    label=T("Search"),
+                    comment=T("Search for an item by text."),
+                    field=[ "from_person",
+                            "comments",
+                            "from_organisation_id#name",
+                            "from_organisation_id#acronym",
+                            "from_location_id#name",
+                            "from_location_id",
+                            "recipient_id#first_name",
+                            "recipient_id#middle_name",
+                            "recipient_id#last_name",
+                            "site_id#name"
+                            ]
+                  )),
+        advanced=(s3base.S3SearchMinMaxWidget(
+                    name="recv_search_date",
+                    method="range",
+                    label=T("Date"),
+                    comment=T("Search for a shipment received between these dates"),
+                    field=["datetime"]
+                  ),
+                  s3base.S3SearchSelectWidget(
+                    name="recv_search_site",
+                    label=T("Site"),
+                    field=["site_id"],
+                    represent ="%(name)s",
+                    cols = 2
+                  ),
+                  s3base.S3SearchSelectWidget(
+                    name="recv_search_status",
+                    label=T("Status"),
+                    field=["status"],
+                    cols = 2
+                  ),
+                  s3base.S3SearchSelectWidget(
+                    name="recv_search_grn",
+                    label=T("GRN Status"),
+                    field=["grn_status"],
+                    cols = 2
+                  ),
+                  s3base.S3SearchSelectWidget(
+                    name="recv_search_cert",
+                    label=T("Certificate Status"),
+                    field=["grn_status"],
+                    cols = 2
+                  ),
+        ))
 
     #------------------------------------------------------------------------------
     # Redirect to the Items tabs after creation
     recv_item_url = URL(r=request, c="inv", f="recv", args=["[id]", "recv_item"])
+    #------------------------------------------------------------------------------
     s3xrc.model.configure(table,
                           create_next = recv_item_url,
-                          update_next = recv_item_url)
-    
-    #------------------------------------------------------------------------------
-    # Update owned_by_role to the site's owned_by_role    
-    s3xrc.model.configure(
-        table, 
-        onaccept = shn_component_copy_role_func(component_name = tablename, 
-                                                resource_name = "org_site", 
-                                                fk = "site_id",
-                                                pk = "site_id")
-    )    
-      
-    # -------------------------------------------------------------------------        
-    def shn_inv_recv_form (xrequest, **attr):   
-        db.inv_recv.datetime.readable = True  
-        db.inv_recv.site_id.readable = True  
+                          update_next = recv_item_url,
+                          # Update owned_by_role to the site's owned_by_role
+                          onaccept = shn_component_copy_role_func(component_name = tablename,
+                                        resource_name = "org_site",
+                                        fk = "site_id",
+                                        pk = "site_id"),
+                          search_method = shn_recv_search
+                          )
+    # -------------------------------------------------------------------------
+    def shn_inv_recv_form (xrequest, **attr):
+        db.inv_recv.datetime.readable = True
+        db.inv_recv.site_id.readable = True
         db.inv_recv.site_id.label = T("By Inventory")
         db.inv_recv.site_id.represent = shn_site_represent
-        return shn_component_form( xrequest, 
-                                   componentname = "recv_item", 
+        return shn_component_form( xrequest,
+                                   componentname = "recv_item",
                                    formname = T("Goods Received Note"),
                                    filename = T("GRN"),
                                    **attr)
-        
-    s3xrc.model.set_method(module, resourcename, 
-                           method='form', action=shn_inv_recv_form ) 
-    
-    # -------------------------------------------------------------------------        
-    def shn_inv_recv_donation_cert (xrequest, **attr):   
-        db.inv_recv.datetime.readable = True  
+
+    s3xrc.model.set_method(module, resourcename,
+                           method='form', action=shn_inv_recv_form )
+
+    # -------------------------------------------------------------------------
+    def shn_inv_recv_donation_cert (xrequest, **attr):
+        db.inv_recv.datetime.readable = True
         db.inv_recv.type.readable = False
-        db.inv_recv.site_id.readable = True  
+        db.inv_recv.site_id.readable = True
         db.inv_recv.site_id.label = T("By Inventory")
         db.inv_recv.site_id.represent = shn_site_represent
-        return shn_component_form( xrequest, 
-                                   componentname = "recv_item", 
+        return shn_component_form( xrequest,
+                                   componentname = "recv_item",
                                    formname = T("Donation Certificate"),
                                    filename = T("DC"),
                                    **attr)
-        
-    s3xrc.model.set_method(module, resourcename, 
-                           method='cert', action=shn_inv_recv_donation_cert )     
-        
+
+    s3xrc.model.set_method(module, resourcename,
+                           method='cert', action=shn_inv_recv_donation_cert )
+
     # -------------------------------------------------------------------------
-    def shn_component_form( xrequest, **attr):     
+    def shn_component_form( xrequest, **attr):
         """
         Copied from modules/s3/s3export.py:pdf
         """
         module, resourcename, table, tablename = xrequest.target()
-        resource = xrequest.resource             
-        componentname = attr.get("componentname") 
+        resource = xrequest.resource
+        componentname = attr.get("componentname")
         formname = attr.get("formname")
-        filename = attr.get("filename")        
+        filename = attr.get("filename")
         component = resource.components[componentname].resource
-        
+
         xml = s3xrc.xml
-        
+
         import StringIO
         from gluon.contenttype import contenttype
 
@@ -342,7 +466,7 @@ if deployment_settings.has_module("inv"):
 
         # Create output stream
         output = StringIO.StringIO()
-        
+
         # Settings
         COLWIDTH = 3.0
         LEFTMARGIN = 0.2
@@ -367,27 +491,27 @@ if deployment_settings.has_module("inv"):
                                 }
                             )]
         detail_ele = []
-         
-        #Add values of the primary resource      
+
+        #Add values of the primary resource
         fields = resource.readable_fields()#subset=list_fields)
         line = 0;
         for field in fields:
             if field.name == "id":
                 continue
             header_ele.append(Label(text= clean_str( field.label ),
-                                       top= (TITLEHEIGHT + line * LINEHEIGTH) * cm, 
-                                       left=LEFTMARGIN*cm, 
+                                       top= (TITLEHEIGHT + line * LINEHEIGTH) * cm,
+                                       left=LEFTMARGIN*cm,
                                        width=LABELWIDTH*cm,
                                        style={'fontName': 'Helvetica-Bold'})
                               )
             value = xrequest.record[field.name]
-            header_ele.append(Label(text=clean_str( 
+            header_ele.append(Label(text=clean_str(
                                             s3xrc.represent(field,
                                                             value=value,
                                                             strip_markup=True,
                                                             xml_escape=True)
                                             ),
-                                       top= (TITLEHEIGHT + line * LINEHEIGTH) * cm, 
+                                       top= (TITLEHEIGHT + line * LINEHEIGTH) * cm,
                                        left=(LEFTMARGIN + LABELWIDTH) * cm,
                                        width=VALUEWIDTH*cm,
                                        style={'fontName': 'Helvetica'})
@@ -396,22 +520,22 @@ if deployment_settings.has_module("inv"):
 
         #Add table for component resource
         fields = component.readable_fields()
-        
+
 
         component_represent = lambda field, value, table=component.table: \
                                      clean_str( s3xrc.represent(table[field],
                                                      value=value,
                                                      strip_markup=True,
                                                      xml_escape=True)
-                                               )   
-        line += 1 #blank line before component table           
+                                               )
+        line += 1 #blank line before component table
         column = 0
         for field in fields:
             if field.name == "id":
-                continue            
+                continue
             # Append component table column headers
             label = Label(text= clean_str( field.label ),
-                          top = (TITLEHEIGHT + line * LINEHEIGTH) * cm, 
+                          top = (TITLEHEIGHT + line * LINEHEIGTH) * cm,
                           left = (LEFTMARGIN + column * COLWIDTH) *cm,
                           style={'fontName': 'Helvetica-Bold'}
                           )
@@ -421,9 +545,9 @@ if deployment_settings.has_module("inv"):
             value = ObjectValue(attribute_name = field.name,
                                 left = (LEFTMARGIN + column * COLWIDTH) *cm,
                                 width = COLWIDTH * cm,
-                                get_value = lambda instance, 
+                                get_value = lambda instance,
                                                    column = field.name: \
-                                            component_represent(column, 
+                                            component_represent(column,
                                                                 instance[column]),
                                 style={'fontName': 'Helvetica'}
                                 )
@@ -441,7 +565,7 @@ if deployment_settings.has_module("inv"):
                 height = (TITLEHEIGHT + (line+1) * LINEHEIGTH) * cm
                 auto_expand_height = True
                 elements = header_ele
-                borders = {"bottom": True}              
+                borders = {"bottom": True}
             class band_page_footer(ReportBand):
                 height = 0.5*cm
                 elements = [
@@ -465,8 +589,8 @@ if deployment_settings.has_module("inv"):
 
         # Return the stream
         output.seek(0)
-        return output.read()        
-    
+        return output.read()
+
     #==============================================================================
     # In (Receive / Donation / etc) Items
     #
@@ -483,9 +607,9 @@ if deployment_settings.has_module("inv"):
                             req_item_id(readable = False,
                                              writable = False),
                             migrate=migrate, *s3_meta_fields())
-        
+
     #pack_quantity virtual field
-    table.virtualfields.append(item_pack_virtualfields(tablename = tablename))      
+    table.virtualfields.append(item_pack_virtualfields(tablename = tablename))
 
     # CRUD strings
     ADD_RECV_ITEM = T("Add Item to Shipment")
@@ -512,16 +636,16 @@ if deployment_settings.has_module("inv"):
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(inv_recv = "recv_id",
-                                          supply_item = "item_id")) 
-    
+                                          supply_item = "item_id"))
+
     #------------------------------------------------------------------------------
-    # Update owned_by_role to the recv's owned_by_role    
+    # Update owned_by_role to the recv's owned_by_role
     s3xrc.model.configure(
-        table, 
-        onaccept = shn_component_copy_role_func(component_name = tablename, 
-                                                resource_name = "inv_recv", 
+        table,
+        onaccept = shn_component_copy_role_func(component_name = tablename,
+                                                resource_name = "inv_recv",
                                                 fk = "recv_id")
-    )     
+    )
 
     #==============================================================================
     def shn_location_id_to_site_id(r, field = "location_id"):
@@ -532,32 +656,32 @@ if deployment_settings.has_module("inv"):
                                           r[field],
                                           "location_id")
         else:
-            return None        
+            return None
 
     #==============================================================================
     # Send (Outgoing / Dispatch / etc)
-    #       
+    #
     shn_to_location_id_to_site_id = lambda r, field = "to_location_id": \
                                        shn_location_id_to_site_id(r,field)
     resourcename = "send"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            Field( "datetime", 
+                            Field( "datetime",
                                    "datetime",
                                    label = T("Date Sent")),
                             super_link(db.org_site), #( label = T("From Warehouse")),
                             location_id( "to_location_id",
                                          label = T("To Location") ),
-                            Field("to_site_id",                                  
+                            Field("to_site_id",
                                   db.org_site,
                                   label = T("To Site"),
                                   compute = shn_to_location_id_to_site_id
-                                  ),                               
-                            Field("status", 
+                                  ),
+                            Field("status",
                                   "integer",
                                   requires = IS_NULL_OR(IS_IN_SET(shipment_status)),
-                                  represent = lambda status: shipment_status.get(status),       
-                                  default = SHIP_STATUS_IN_PROCESS,                           
+                                  represent = lambda status: shipment_status.get(status),
+                                  default = SHIP_STATUS_IN_PROCESS,
                                   label = T("Status"),
                                   writable = False,
                                   ),
@@ -565,7 +689,7 @@ if deployment_settings.has_module("inv"):
                                       label = T("To Person")),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
-    
+
     # -----------------------------------------------------------------------------
     # CRUD strings
     ADD_SEND = T("Add New Shipment to Send")
@@ -606,7 +730,7 @@ if deployment_settings.has_module("inv"):
                                requires = IS_NULL_OR(IS_ONE_OF(db,
                                                                "inv_send.id",
                                                                shn_send_represent,
-                                                               orderby="inv_send_id.datetime", 
+                                                               orderby="inv_send_id.datetime",
                                                                sort=True)),
                                represent = shn_send_represent,
                                label = T("Send Shipment"),
@@ -623,31 +747,31 @@ if deployment_settings.has_module("inv"):
                           create_next = url_send_items,
                           update_next = url_send_items
                           )
-    
+
     #------------------------------------------------------------------------------
-    # Update owned_by_role to the site's owned_by_role    
+    # Update owned_by_role to the site's owned_by_role
     s3xrc.model.configure(
-        table, 
-        onaccept = shn_component_copy_role_func(component_name = tablename, 
-                                                resource_name = "org_site", 
+        table,
+        onaccept = shn_component_copy_role_func(component_name = tablename,
+                                                resource_name = "org_site",
                                                 fk = "site_id",
                                                 pk = "site_id")
-    ) 
-    
+    )
+
     # send set as a component of Sites in controller, depending if it is outgoing or incoming
-    
-    # -------------------------------------------------------------------------        
-    def shn_inv_send_form (xrequest, **attr):   
-        db.inv_recv.datetime.readable = True  
-        return shn_component_form( xrequest, 
-                                   componentname = "send_item", 
+
+    # -------------------------------------------------------------------------
+    def shn_inv_send_form (xrequest, **attr):
+        db.inv_recv.datetime.readable = True
+        return shn_component_form( xrequest,
+                                   componentname = "send_item",
                                    formname = T("Consignment Note"),
                                    filename = T("CN"),
                                    **attr)
-        
-    s3xrc.model.set_method(module, resourcename, 
-                           method="form", action=shn_inv_send_form ) 
-    
+
+    s3xrc.model.set_method(module, resourcename,
+                           method="form", action=shn_inv_send_form )
+
     #==============================================================================
     # Send (Outgoing / Dispatch / etc) Items
     #
@@ -670,11 +794,11 @@ if deployment_settings.has_module("inv"):
                                   represent = lambda opt: log_sent_item_status[opt] if opt else log_sent_item_status[0],
                                   writable = False),
                             req_item_id(readable = False,
-                                        writable = False),      
+                                        writable = False),
                             migrate=migrate, *s3_meta_fields())
-    
+
     # pack_quantity virtual field
-    table.virtualfields.append(item_pack_virtualfields(tablename = tablename))       
+    table.virtualfields.append(item_pack_virtualfields(tablename = tablename))
 
     # CRUD strings
     ADD_SEND_ITEM = T("Add Item to Shipment")
@@ -703,15 +827,15 @@ if deployment_settings.has_module("inv"):
                               joinby=dict(inv_send = "send_id",
                                           inv_item = "inv_item_id"))
     #------------------------------------------------------------------------------
-    # Update owned_by_role to the send's owned_by_role    
+    # Update owned_by_role to the send's owned_by_role
     s3xrc.model.configure(
-        table, 
-        onaccept = shn_component_copy_role_func(component_name = tablename, 
-                                                resource_name = "inv_send", 
+        table,
+        onaccept = shn_component_copy_role_func(component_name = tablename,
+                                                resource_name = "inv_send",
                                                 fk = "send_id")
-    ) 
-    #==============================================================================    
-            
+    )
+    #==============================================================================
+
     #==============================================================================
     # Inventory Controller Helper functions
 
@@ -719,7 +843,7 @@ if deployment_settings.has_module("inv"):
     def shn_add_dynamic_inv_components():
         """
             Add inv_send as component joinby field according to tab selected
-            and returns prep function 
+            and returns prep function
         """
         if "send" in request.args:
             if request.get_vars.get("select","sent") == "incoming":
@@ -730,16 +854,16 @@ if deployment_settings.has_module("inv"):
                     joinby= {"org_site.site_id": "to_site_id" #super_key(db.org_site)
                              }
                     )
-                
+
                 # Hide the Add button for incoming shipments
                 s3xrc.model.configure(db.inv_send, insertable=False)
-                
+
                 # Probably need to adjust some more CRUD strings:
                 s3.crud_strings["inv_send"].update(
                     msg_record_modified = T("Incoming Shipment updated"),
                     msg_record_deleted = T("Incoming Shipment canceled"),
                     msg_list_empty = T("No Incoming Shipments"))
-                
+
                 response.s3.actions = [dict(url = str(URL(r=request,
                                                       c = "inv",
                                                       f = "recv_sent",
@@ -748,20 +872,20 @@ if deployment_settings.has_module("inv"):
                                                    ),
                                             _class = "action-btn",
                                             label = "Receive")
-                                        ]                    
+                                        ]
             else:
                 s3xrc.model.add_component(
                     "inv",
                     "send",
                     multiple=True,
                     joinby=super_key(db.org_site)
-                    )                                              
+                    )
                 s3.crud_strings["inv_send"].update(
                     msg_record_modified = T("Sent Shipment updated"),
                     msg_record_deleted = T("Sent Shipment canceled"),
-                    msg_list_empty = T("No Sent Shipments"))    
-            
-    #------------------------------------------------------------------------------   
+                    msg_list_empty = T("No Sent Shipments"))
+
+    #------------------------------------------------------------------------------
     def shn_inv_prep(r):
         if "inv_item" in request.args:
             # Filter out items which are already in this inventory
@@ -769,13 +893,13 @@ if deployment_settings.has_module("inv"):
                                 (db.inv_inv_item.deleted == False)
                                 ).select(db.inv_inv_item.item_id)
             item_ids = [row.item_id for row in inv_item_rows]
-            
+
             # Ensure that the current item CAN be selected
             if r.method == "update":
                 item_ids.remove(db.inv_inv_item[r.request.args[2]].item_id)
             db.inv_inv_item.item_id.requires.set_filter(not_filterby = "id",
                                                         not_filter_opts = item_ids)
-        
+
         if "send" in request.args and \
             request.get_vars.get("select", "sent") == "incoming":
             # Display only incoming shipments which haven't been received yet
@@ -786,7 +910,7 @@ if deployment_settings.has_module("inv"):
     # Session dictionary to indicate if a site inv should be shown
     if session.s3.show_inv == None:
         session.s3.show_inv = {}
-        
+
     def shn_show_inv_tabs(r):
         """
         """
@@ -798,14 +922,8 @@ if deployment_settings.has_module("inv"):
             session.s3.show_inv["%s_%s" %  (r.name, r.id)] = show_inv
         else:
             show_inv = session.s3.show_inv.get("%s_%s" %  (r.name, r.id))
-            
-        if show_inv:
-            inv_btn = A(T("Hide Inventory"),
-                        _href = URL(r = request, 
-                                    args = r.id,
-                                    vars = dict(show_inv = False)),
-                        _class = "action-btn"
-                        )
+
+        if show_inv or r.request.function == "wh":
             inv_tabs = [(T("Inventory Items"), "inv_item"),
                         (T("Request"), "req"),
                         (T("Match Requests"), "match_req"),
@@ -813,9 +931,12 @@ if deployment_settings.has_module("inv"):
                         (T("Receive" ), "recv"),
                         (T("Send"), "send", dict(select="sent")),
                         (T("Commit"), "commit"),
-                        ("- %s" % T("Inventory"), None, dict(show_inv="False")),
-                        ]                        
+                        ]
+            if r.request.function != "wh":
+                inv_tabs.append(("- %s" % T("Inventory"),
+                                 None, dict(show_inv="False")))
+
         else:
             inv_tabs = [("+ %s" % T("Inventory"), None, dict(show_inv="True"))]
-                        
-        return inv_tabs 
+
+        return inv_tabs

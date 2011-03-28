@@ -36,8 +36,6 @@
 
 """
 
-__name__ = "S3GIS"
-
 __all__ = ["GIS", "GoogleGeocoder", "YahooGeocoder"]
 
 #import logging
@@ -57,14 +55,14 @@ except:
 import zipfile          # Needed to unzip KMZ files
 from lxml import etree  # Needed to follow NetworkLinks
 KML_NAMESPACE = "http://earth.google.com/kml/2.2"
-# Which resources have a different icon per-category
-gis_categorised_resources = ["irs_ireport"]
 
 from gluon.dal import Rows
 from gluon.storage import Storage, Messages
 from gluon.html import *
-#from gluon.http import HTTP
+from gluon.http import redirect
 from gluon.tools import fetch
+
+from s3track import S3Trackable
 
 def s3_debug(message, value=None):
     """
@@ -611,6 +609,13 @@ class GIS(object):
                         else:
                             results[ancestor.level] = ancestor.id
 
+            if names:
+                # For the address_onvalidation we need to ensure we have form.vars
+                # entries for all levels
+                for key in ["L0", "L1", "L2", "L3", "L4"]:
+                    if not results.has_key(key):
+                        results[key] = None
+
         return results
 
     # -----------------------------------------------------------------------------
@@ -669,21 +674,23 @@ class GIS(object):
                           popup_label,
                           config=None,
                           marker_id=None,
-                          filter=None,
+                          _filter=None,
                           id=None,
                           active=True,
                           polygons=False,
                           opacity=1):
         """
             Return a Feature Layer suitable to display on a map
+
             @param layername: used as the label in the LayerSwitcher
             @param popup_label: used in Cluster Popups to differentiate between types
             @param id: Used by Location Selector to select which gis_location to include on the map
-            @param filter: a filter to e.g. specify a type of resource
+            @param _filter: a filter to e.g. specify a type of resource
         """
         db = self.db
         cache = self.cache
         auth = self.auth
+        T = self.T
         deployment_settings = self.deployment_settings
         request = self.request
 
@@ -704,65 +711,39 @@ class GIS(object):
                 # Which feature to display in the location selector
                 query = query & (table.id == id)
 
-            if filter:
+            if _filter:
                 # e.g. Which type of resource we're interested in
-                query = query & filter
+                query = query & _filter
+
+            fields = [_locations.id,
+                      _locations.uuid,
+                      _locations.parent,
+                      _locations.name,
+                      _locations.lat,
+                      _locations.lon]
+            if polygons:
+               # Only retrieve the bulky polygons if-required
+               fields.append(_locations.wkt)
 
             # Hide Resources recorded to Country Locations on the map?
+            _filter = None
             if not deployment_settings.get_gis_display_l0():
-                query = query & ((_locations.level != "L0") | (_locations.level == None))
+                _filter = (_locations.level != "L0") | (_locations.level == None)
 
-            query = query & (_locations.id == db["%s_%s" % (prefix, resourcename)].location_id)
-            if not polygons and not resourcename in gis_categorised_resources:
-                # Only retrieve the bulky polygons if-required
-                locations = db(query).select(_locations.id,
-                                             _locations.uuid,
-                                             _locations.parent,
-                                             _locations.name,
-                                             _locations.lat,
-                                             _locations.lon)
-            elif not polygons and resourcename in gis_categorised_resources:
-                locations = db(query).select(_locations.id,
-                                             _locations.uuid,
-                                             _locations.parent,
-                                             _locations.name,
-                                             _locations.lat,
-                                             _locations.lon,
-                                             table.category)
-            elif polygons and not resourcename in gis_categorised_resources:
-                locations = db(query).select(_locations.id,
-                                             _locations.uuid,
-                                             _locations.parent,
-                                             _locations.name,
-                                             _locations.wkt,
-                                             _locations.lat,
-                                             _locations.lon)
-            else:
-                # Polygons & Categorised resources
-                locations = db(query).select(_locations.id,
-                                             _locations.uuid,
-                                             _locations.parent,
-                                             _locations.name,
-                                             _locations.wkt,
-                                             _locations.lat,
-                                             _locations.lon,
-                                             table.category)
+            # Get the Current Location for the resource
+            # If Tracking isn't enabled, then this will be the Base Location
+            locations = S3Trackable(db, query).get_location(_fields=fields,
+                                                            _filter=_filter,
+                                                            as_rows=True)
 
-            if resourcename in gis_categorised_resources:
-                for i in range(0, len(locations)):
-                    locations[i].popup_label = "%s-%s" % (locations[i].name,
-                                                          popup_label)
-                    locations[i].marker = self.get_marker(tablename,
-                                                          locations[i][tablename].category)
-            else:
-                for i in range(0, len(locations)):
-                    locations[i].popup_label = "%s-%s" % (locations[i].name,
-                                                          popup_label)
+            for i in range(0, len(locations)):
+                locations[i].popup_label = "%s-%s" % (locations[i].name,
+                                                      T(popup_label))
 
             popup_url = URL(r=request, c=prefix, f=resourcename,
                             args="read.plain?%s.location_id=" % resourcename)
 
-            if not marker_id and not resourcename in gis_categorised_resources:
+            if not marker_id:
                 # Add the marker here so that we calculate once/layer not once/feature
                 table_fclass = db.gis_feature_class
                 if not config:
@@ -783,17 +764,17 @@ class GIS(object):
                                                              _markers.id,
                                                              limitby=(0, 1),
                                                              cache=cache).first()
-                layer = {"name":layername,
-                         "query":locations,
-                         "active":active,
-                         "marker":marker,
+                layer = {"name": layername,
+                         "query": locations,
+                         "active": active,
+                         "marker": marker,
                          "opacity": opacity,
                          "popup_url": popup_url,
                          "polygons": polygons}
             except:
-                layer = {"name":layername,
-                         "query":locations,
-                         "active":active,
+                layer = {"name": layername,
+                         "query": locations,
+                         "active": active,
                          "opacity": opacity,
                          "popup_url": popup_url,
                          "polygons": polygons}
@@ -1121,7 +1102,9 @@ class GIS(object):
                 marker.height
                 marker.width
 
-            Used by s3xrc for Feeds export and by get_feature_layer for Categorised Resources
+            Used by s3xrc for Feeds export
+
+            @ToDo: Get Feeds to use the gis_feature_layer table?
 
             @param tablename
             @param category
@@ -1982,6 +1965,18 @@ class GIS(object):
             zoom = config.zoom
         if not projection:
             projection = config.epsg
+
+        
+        if projection != "900913" and projection != "4326":
+            # Test for Valid Projection file in Proj4JS library
+            projpath = os.path.join(request.folder, "static", "scripts", "gis", "proj4js", "lib", "defs", "EPSG%s.js" % projection)
+            try:
+                f = open(projpath, "r")
+                f.close()
+            except:
+                session.error = "%s /static/scripts/gis/proj4js/lib/defs" % T("Projection not supported - please add definition to")
+                redirect(URL(r=request, c="gis", f="projection"))
+            
         units = config.units
         maxResolution = config.maxResolution
         maxExtent = config.maxExtent
@@ -2063,6 +2058,11 @@ class GIS(object):
         # Scripts
         #########
         if session.s3.debug:
+            if projection != "900913" and projection != "4326":
+                html.append(SCRIPT(_type="text/javascript",
+                                   _src=URL(r=request, c="static", f="scripts/gis/proj4js/lib/proj4js.js")))
+                html.append(SCRIPT(_type="text/javascript",
+                                   _src=URL(r=request, c="static", f="scripts/gis/proj4js/lib/defs/EPSG%s.js" % projection)))
             html.append(SCRIPT(_type="text/javascript",
                                _src=URL(r=request, c="static", f="scripts/gis/openlayers/lib/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript",
@@ -2079,6 +2079,11 @@ class GIS(object):
                 html.append(SCRIPT(_type="text/javascript",
                                    _src=URL(r=request, c="static", f="scripts/gis/MP.js")))
         else:
+            if projection != "900913" and projection != "4326":
+                html.append(SCRIPT(_type="text/javascript",
+                                   _src=URL(r=request, c="static", f="scripts/gis/proj4js/lib/proj4js-compressed.js")))
+                html.append(SCRIPT(_type="text/javascript",
+                                   _src=URL(r=request, c="static", f="scripts/gis/proj4js/lib/defs/EPSG%s.js" % projection)))
             html.append(SCRIPT(_type="text/javascript",
                                _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript",
@@ -2086,7 +2091,7 @@ class GIS(object):
             if mouse_position == "mgrs":
                 html.append(SCRIPT(_type="text/javascript",
                                    _src=URL(r=request, c="static", f="scripts/gis/MGRS.min.js")))
-                
+
 
         if print_tool:
             url = print_tool["url"] + "info.json?var=printCapabilities"
@@ -2234,7 +2239,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         });
         """ % T("Add Point")
 
-        
+
             if None:
                 draw_feature += """
         // Controls for Draft Features
@@ -2319,7 +2324,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    toggleGroup: 'controls'
         //});
         """
-            
+
             draw_feature2 = """
         // Draw Controls
         //toolbar.add(selectButton);
@@ -4840,7 +4845,7 @@ var s3_gis_max_h = %i;
             nodeType: 'gx_baselayercontainer',
             layerStore: mapPanel.layers,
             leaf: false,
-            expanded: false
+            expanded: true
         };
 
         var layerTreeFeaturesExternal = {

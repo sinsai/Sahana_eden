@@ -50,7 +50,7 @@ from gluon.validators import *
 #except ImportError:
 from gluon.dal import Field, Row, Query, Set, Table, Expression
 from gluon.sqlhtml import SQLFORM, SQLTABLE, CheckboxesWidget
-from gluon.tools import Auth
+from gluon.tools import Auth, callback
 from gluon.contrib.simplejson.ordered_dict import OrderedDict
 
 from s3rest import S3Method
@@ -59,15 +59,6 @@ from s3validators import IS_ACL
 
 DEFAULT = lambda: None
 table_field = re.compile("[\w_]+\.[\w_]+")
-
-def callback(actions, form, tablename=None):
-    """ from gluon/tools.py """
-    if actions:
-        if tablename and isinstance(actions, dict):
-            actions = actions.get(tablename, [])
-        if not isinstance(actions, (list, tuple)):
-            actions = [actions]
-        [action(form) for action in actions]
 
 # =============================================================================
 class AuthS3(Auth):
@@ -116,6 +107,7 @@ class AuthS3(Auth):
         self.messages.email_verified = "Email verified - you can now login"
         self.messages.duplicate_email = "This email address is already in use"
         self.messages.registration_disabled = "Registration Disabled!'"
+        self.messages.registration_verifying = "You haven't yet Verified your account - please check your email"
         self.messages.label_utc_offset = "UTC Offset"
         self.messages.help_utc_offset = "The time difference between UTC and your timezone, specify as +HHMM for eastern or -HHMM for western timezones."
         self.messages.label_mobile_phone = "Mobile Phone"
@@ -125,7 +117,7 @@ class AuthS3(Auth):
         self.messages.lock_keys = True
 
         self.permission = S3Permission(self, environment)
-        
+
         T = self.environment.T
         self.org_site_types = Storage(
                                 cr_shelter = T("Shelter"),
@@ -635,7 +627,7 @@ class AuthS3(Auth):
                 # Ensure that we add to the correct Organisation
                 approver, organisation_id = self.s3_approver(form.vars)
                 form.vars.organisation = organisation_id
-                
+
                 # Send the Verification email
                 if not settings.mailer or \
                    not settings.mailer.send(to=form.vars.email,
@@ -666,6 +658,9 @@ class AuthS3(Auth):
                 else:
                     # The domain is Whitelisted
                     approved = True
+            else:
+                # No verification or approval needed
+                approved = True
 
             if approved:
                 user[form.vars.id] = dict(registration_key="")
@@ -728,7 +723,7 @@ class AuthS3(Auth):
 
         # Add to Person Registry and Email/Mobile to pr_pe_contact
         person_id = self.s3_link_to_person(user=form.vars)
-        
+
         organisation_id = form.vars.get("organisation",
                                         None)
         if organisation_id:
@@ -842,7 +837,7 @@ class AuthS3(Auth):
         """
             Returns the Approver for a new Registration &
             the organisation_id field
-            
+
             @param: user - the user record (form.vars when done direct)
         """
 
@@ -851,6 +846,7 @@ class AuthS3(Auth):
 
         # Default Approver
         approver = deployment_settings.get_mail_approver()
+        organisation_id = None
         # Check for Domain: Whitelist or specific Approver
         table = db.auth_organisation
         address, domain = user.email.split("@", 1)
@@ -1061,7 +1057,7 @@ class AuthS3(Auth):
         id = r_site[site_type].select(db[site_type].id,
                                       limitby=(0, 1)).first().id
         return (prefix, resourcename, id)
-    
+
 
     # -------------------------------------------------------------------------
     def s3_logged_in(self):
@@ -1501,7 +1497,7 @@ class AuthS3(Auth):
         return False
 
 
-    
+
 
 
 # =============================================================================

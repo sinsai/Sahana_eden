@@ -42,8 +42,35 @@ def wh():
     # Only show warehouses 
     response.s3.filter = (db.org_office.type == 5)
     
-    # Hide Obsolete warehouses
     def prep(r):
+        if r.interactive:
+            # CRUD strings
+            ADD_WH = T("Add Warehouse")
+            LIST_WH = T("List Warehouses")
+            s3.crud_strings[tablename] = Storage(
+                title_create = ADD_WH,
+                title_display = T("Warehouse Details"),
+                title_list = LIST_WH,
+                title_update = T("Edit Warehouse"),
+                title_search = T("Search Warehouses"),
+                subtitle_create = T("Add New Warehouse"),
+                subtitle_list = T("Warehouses"),
+                label_list_button = LIST_WH,
+                label_create_button = ADD_WH,
+                label_delete_button = T("Delete Warehouse"),
+                msg_record_created = T("Warehouse added"),
+                msg_record_modified = T("Warehouse updated"),
+                msg_record_deleted = T("Warehouse deleted"),
+                msg_list_empty = T("No Warehouses currently registered"))    
+
+            if r.method != "read":
+                # Don't want to see in Create forms
+                # inc list_create (list_fields over-rides)
+                pr_address_hide(table)
+                # Process Base Location
+                #s3xrc.model.configure(table,
+                #                      onaccept=address_onaccept)
+
         # Filter out people which are already staff for this warehouse
         shn_staff_prep(r) 
         # Filter out items which are already in this inventory
@@ -56,7 +83,7 @@ def wh():
             
         # "show_obsolete" var option can be added (btn?) later to 
         # disable this filter
-        if r.method in [None,"list"] and \
+        if r.method in [None, "list"] and \
             not r.request.vars.get("show_obsolete", False):
             r.resource.add_filter((db.org_office.obsolete != True))
         return True
@@ -72,28 +99,11 @@ def wh():
         return output
     response.s3.postp = postp
 
-    # CRUD strings
-    ADD_WH = T("Add Warehouse")
-    LIST_WH = T("List Warehouses")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_WH,
-        title_display = T("Warehouse Details"),
-        title_list = LIST_WH,
-        title_update = T("Edit Warehouse"),
-        title_search = T("Search Warehouses"),
-        subtitle_create = T("Add New Warehouse"),
-        subtitle_list = T("Warehouses"),
-        label_list_button = LIST_WH,
-        label_create_button = ADD_WH,
-        label_delete_button = T("Delete Warehouse"),
-        msg_record_created = T("Warehouse added"),
-        msg_record_modified = T("Warehouse updated"),
-        msg_record_deleted = T("Warehouse deleted"),
-        msg_list_empty = T("No Warehouses currently registered"))    
-
     rheader = shn_office_rheader
-    
-    return s3_rest_controller(module, resourcename, rheader=rheader)
+
+    output = s3_rest_controller(module, resourcename, rheader=rheader)
+
+    return output
 
 #==============================================================================
 def inv_item():

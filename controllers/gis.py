@@ -97,7 +97,7 @@ def define_map(window=False, toolbar=False, config=None):
             # Check for multiples
             filter_values = layer.filter_value.split("/")
             if len(filter_values) == 1:
-                filter = (table[layer.filter_field] == filter_values[0])
+                _filter = (table[layer.filter_field] == filter_values[0])
             else:
                 null = False
                 for i in range(len(filter_values)):
@@ -105,20 +105,20 @@ def define_map(window=False, toolbar=False, config=None):
                         # Catch NULLs
                         null = True
                 if null:
-                    filter = ((table[layer.filter_field].belongs(filter_values)) | \
+                    _filter = ((table[layer.filter_field].belongs(filter_values)) | \
                               (table[layer.filter_field] == None))
                 else:
-                    filter = (table[layer.filter_field].belongs(filter_values))
+                    _filter = (table[layer.filter_field].belongs(filter_values))
 
         else:
-            filter = None
+            _filter = None
         _layer = gis.get_feature_layer(layer.module,
                                        layer.resource,
                                        layer.name,
                                        layer.popup_label,
                                        config=config,
                                        marker_id=layer.marker_id,
-                                       filter=filter,
+                                       _filter=_filter,
                                        active=layer.visible,
                                        polygons=layer.polygons,
                                        opacity=layer.opacity)
@@ -157,13 +157,11 @@ def location():
     def prep(r, vars):
 
         def get_location_info():
-            return db(db.gis_location.id == r.id).select(db.gis_location.lat,
-                                                         db.gis_location.lon,
-                                                         db.gis_location.level,
-                                                         limitby=(0, 1)).first()
-
-        # Override the default Search Method
-        #r.resource.set_handler("search", s3base.S3LocationSearch())
+            query = (db.gis_location.id == r.id)
+            return db(query).select(db.gis_location.lat,
+                                    db.gis_location.lon,
+                                    db.gis_location.level,
+                                    limitby=(0, 1)).first()
 
         # Restrict access to Polygons to just MapAdmins
         if deployment_settings.get_security_map() and not s3_has_role("MapAdmin"):
@@ -172,7 +170,7 @@ def location():
                 table.code.readable = False
             table.gis_feature_type.writable = table.gis_feature_type.readable = False
             table.wkt.writable = table.wkt.readable = False
-        else:
+        elif r.interactive:
             table.code.comment = DIV(_class="tooltip",
                                      _title="%s|%s" % (T("Code"),
                                                        T("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode.")))
@@ -183,11 +181,12 @@ def location():
                                                                "</a>",
                                                                T("representation of the Polygon/Line.")))
 
-        if r.method == "update":
+        if r.method == "update" and r.id:
             # We don't allow converting a location group to non-group and
             # vice versa. We also don't allow taking away all the members of
             # a group -- setting "notnull" gets the "required" * displayed.
             # Groups don't have parents. (This is all checked in onvalidation.)
+            # NB r.id is None for update.url
             location = get_location_info()
             if location.level == "GR":
                 table.level.writable = False
@@ -202,46 +201,57 @@ def location():
                 table.members.writable = table.members.readable = False
                 response.s3.location_is_group = False
 
-        # Don't show street address, postcode for hierarchy on read or update.
-        if r.method != "create" and r.id:
-            try:
-                location
-            except:
-                location = get_location_info()
-            if location.level:
-                table.addr_street.writable = table.addr_street.readable = False
-                table.addr_postcode.writable = table.addr_postcode.readable = False
+        if r.interactive:
+            # Don't show street address, postcode for hierarchy on read or update.
+            if r.method != "create" and r.id:
+                try:
+                    location
+                except:
+                    location = get_location_info()
+                if location.level:
+                    table.addr_street.writable = table.addr_street.readable = False
+                    table.addr_postcode.writable = table.addr_postcode.readable = False
 
-        if r.http in ("GET", "POST") and r.representation in shn_interactive_view_formats:
             # Options which are only required in interactive HTML views
             table.level.comment = DIV(_class="tooltip",
-                                      _title=T("Level") + "|" + T("If the location is a geographic area, then state at what level here."))
+                                      _title="%s|%s" % (T("Level"),
+                                                        T("If the location is a geographic area, then state at what level here.")))
+            parent_comment = DIV(_class="tooltip",
+                                 _title="%s|%s" % (T("Parent"),
+                                                   T("The Area which this Site is located within.")))
             if r.representation == "popup":
-                # No 'Add Location' button
-                table.parent.comment = DIV(_class="tooltip",
-                                           _title=T("Parent") + "|" + T("The Area which this Site is located within."))
+                table.parent.comment = parent_comment
             else:
+                # Include 'Add Location' button
                 table.parent.comment = DIV(A(ADD_LOCATION,
-                                               _class="colorbox",
-                                               _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", child="parent")),
-                                               _target="top",
-                                               _title=ADD_LOCATION),
-                                             DIV(
-                                               _class="tooltip",
-                                               _title=T("Parent") + "|" + T("The Area which this Site is located within."))),
+                                             _class="colorbox",
+                                             _href=URL(r=request, c="gis", f="location",
+                                                       args="create",
+                                                       vars=dict(format="popup",
+                                                                 child="parent")),
+                                             _target="top",
+                                             _title=ADD_LOCATION),
+                                           parent_comment),
             table.osm_id.comment = DIV(_class="stickytip",
-                                       _title="OpenStreetMap ID|" + T("The") + " <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. " + T("If you know what the OSM ID of this location is then you can enter it here."))
+                                       _title="OpenStreetMap ID|%s%s%s" % (T("The"),
+                                                                           " <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. ",
+                                                                           T("If you know what the OSM ID of this location is then you can enter it here.")))
             table.geonames_id.comment = DIV(_class="stickytip",
-                                            _title="Geonames ID|" + T("The") + " <a href='http://geonames.org' target=_blank>Geonames</a> ID. " + T("If you know what the Geonames ID of this location is then you can enter it here."))
+                                            _title="Geonames ID|%s%s%s" % (T("The"),
+                                                                           " <a href='http://geonames.org' target=_blank>Geonames</a> ID. ",
+                                                                           T("If you know what the Geonames ID of this location is then you can enter it here.")))
             table.comments.comment = DIV(_class="tooltip",
-                                         _title=T("Comments") + "|" + T("Please use this field to record any additional information, such as Ushahidi instance IDs. Include a history of the record if it is updated."))
+                                         _title="%s|%s" % (T("Comments"),
+                                                           T("Please use this field to record any additional information, such as Ushahidi instance IDs. Include a history of the record if it is updated.")))
 
             if r.representation == "iframe":
                 # De-duplicator needs to be able to access UUID fields
                 table.uuid.readable = table.uuid.writable = True
                 table.uuid.label = "UUID"
                 table.uuid.comment = DIV(_class="stickytip",
-                                         _title="UUID|" + T("The") + " <a href='http://eden.sahanafoundation.org/wiki/UUID#Mapping' target=_blank>Universally Unique ID</a>. " + T("Suggest not changing this field unless you know what you are doing."))
+                                         _title="UUID|%s%s%s" % (T("The"),
+                                                                 " <a href='http://eden.sahanafoundation.org/wiki/UUID#Mapping' target=_blank>Universally Unique ID</a>. ",
+                                                                 T("Suggest not changing this field unless you know what you are doing.")))
 
             if r.method in (None, "list") and r.record is None:
                 # List
@@ -309,7 +319,8 @@ def location():
 
         # Can't do this using a JOIN in DAL syntax
         # .belongs() not GAE-compatible!
-        filters.append((db.gis_location.parent.belongs(db(db.gis_location.name.lower().like(_parent)).select(db.gis_location.id))))
+        query = (db.gis_location.name.lower().like(_parent))
+        filters.append((db.gis_location.parent.belongs(db(query).select(db.gis_location.id))))
         # ToDo: Make this recursive - want descendants not just direct children!
         # Use new gis.get_children() function
 
@@ -1846,8 +1857,8 @@ def geocode_manual():
     # @ToDo: make this role-dependent
     # - Normal users do the Lat/Lons
     # - Special users do the Codes
-    filter = (table.lat == None)
-    response.s3.filter = (query & filter)
+    _filter = (table.lat == None)
+    response.s3.filter = (query & _filter)
 
     # Hide unnecessary fields
     table.name_dummy.readable = table.name_dummy.writable = False
@@ -1951,6 +1962,9 @@ def geoexplorer():
 
     """
         Embedded GeoExplorer: https://github.com/opengeo/GeoExplorer
+
+        @ToDo: Refactor to avoid code duplication with define_map() & 
+                                                       gis.show_map()
     """
 
     _cache = (cache.ram, 60)
@@ -1986,13 +2000,35 @@ def geoexplorer():
     feature_layers = db(db.gis_layer_feature.enabled == True).select()
     for layer in feature_layers:
         if layer.role_required and not auth.s3_has_role(layer.role_required):
+            # Skip layer is it i srestricted & we don't have the required role
             continue
+        if layer.filter_field and layer.filter_value:
+            table = db["%s_%s" % (layer.module, layer.resource)]
+            # Check for multiples
+            filter_values = layer.filter_value.split("/")
+            if len(filter_values) == 1:
+                _filter = (table[layer.filter_field] == filter_values[0])
+            else:
+                null = False
+                for i in range(len(filter_values)):
+                    if filter_values[i] == "":
+                        # Catch NULLs
+                        null = True
+                if null:
+                    _filter = ((table[layer.filter_field].belongs(filter_values)) | \
+                              (table[layer.filter_field] == None))
+                else:
+                    _filter = (table[layer.filter_field].belongs(filter_values))
+
+        else:
+            _filter = None
         _layer = gis.get_feature_layer(layer.module,
                                        layer.resource,
                                        layer.name,
                                        layer.popup_label,
                                        config=config,
                                        marker_id=layer.marker_id,
+                                       _filter=_filter,
                                        active=layer.visible,
                                        polygons=layer.polygons,
                                        opacity=layer.opacity)

@@ -118,18 +118,13 @@ def person():
 
     def prep(r):
 
-        # Test code (to be removed):
-        #trackable = s3tracker(db.pr_person.id==1)
-        #trackable.check_in(db.hms_hospital, 1)
+        #Test code (to be removed):
+        #trackable = s3tracker(db.pr_pentity, 1)
+        #trackable.check_in(db.org_site, 2)
         #location = trackable.get_location()
+        #print "After check-in"
         #if location:
-            #print "Trackable location: %s lat=%s, lon=%s" % (location.name, location.lat, location.lon)
-        #else:
-            #print "No location found"
-        #trackable.check_out(db.hms_hospital)
-        #location = trackable.get_location()
-        #if location:
-            #print "Trackable location: %s lat=%s, lon=%s" % (location.name, location.lat, location.lon)
+            #print "Base location: %s lat=%s, lon=%s" % (location.name, location.lat, location.lon)
         #else:
             #print "No location found"
 
@@ -231,6 +226,8 @@ def presence():
     """
         RESTful CRUD controller
         - needed for Map Popups (no Menu entry for direct access)
+
+        @deprecated - People now use Base Location pr_person.location_id
     """
 
     table = db.pr_presence

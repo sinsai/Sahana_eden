@@ -469,7 +469,12 @@ class S3ResourceController(object):
 
         """
 
-        field = table.get(fieldname, None)
+        try:
+            field = table[fieldname]
+        except:
+            print "error: no such field"
+            raise AttributeError("No field %s in %s" % (fieldname, table._tablename))
+
         if field:
             if record:
                 v = record.get(fieldname, None)
@@ -481,8 +486,6 @@ class S3ResourceController(object):
                 return (None, None)
             else:
                 return (value, error)
-        else:
-            raise AttributeError("No field %s in %s" % (fieldname, table._tablename))
 
 
     # -------------------------------------------------------------------------

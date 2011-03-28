@@ -39,6 +39,7 @@ __all__ = ["S3ResourceController", "S3ImportJob"]
 
 import sys, datetime, time
 
+from copy import deepcopy
 from gluon.sql import Field
 from gluon.storage import Storage
 from gluon.html import URL, A
@@ -468,7 +469,11 @@ class S3ResourceController(object):
 
         """
 
-        field = table.get(fieldname, None)
+        try:
+            field = table[fieldname]
+        except:
+            raise AttributeError("No field %s in %s" % (fieldname, table._tablename))
+
         if field:
             if record:
                 v = record.get(fieldname, None)
@@ -480,8 +485,6 @@ class S3ResourceController(object):
                 return (None, None)
             else:
                 return (value, error)
-        else:
-            raise AttributeError("No field %s in %s" % (fieldname, table._tablename))
 
 
     # -------------------------------------------------------------------------
@@ -894,6 +897,7 @@ class S3ResourceController(object):
         """
 
         self.error = None
+        self.error_tree = etree.Element("s3xml")
 
         # Call the tree-resolver to cleanup the tree
         if self.tree_resolve:
@@ -962,6 +966,7 @@ class S3ResourceController(object):
             else:
                 if self.error:
                     error = self.error
+                    self.error_tree.append(deepcopy(element))
                     self.error = None
                 continue
 
@@ -1024,6 +1029,7 @@ class S3ResourceController(object):
                 imports.extend(jobs)
             else:
                 error = self.error
+                self.error_tree.append(deepcopy(element))
                 self.error = None
 
         if error:
@@ -1043,6 +1049,7 @@ class S3ResourceController(object):
                         if not job.element.get(self.xml.ATTRIBUTE.error):
                             job.element.set(self.xml.ATTRIBUTE.error,
                                             str(self.error).decode("utf-8"))
+                            self.error_tree.append(deepcopy(job.element))
                     if ignore_errors:
                         continue
                     else:

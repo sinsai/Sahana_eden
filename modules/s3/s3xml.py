@@ -838,7 +838,11 @@ class S3XML(object):
                         t = t.split("Z", 1)[0]
                         v = value = "%s %s" % (d, t)
                     if validate is not None:
-                        (value, error) = validate(table, original, f, v)
+                        try:
+                            (value, error) = validate(table, original, f, v)
+                        except AttributeError:
+                            # No such field
+                            continue
                         if error:
                             element.set(self.ATTRIBUTE.error,
                                         "%s: %s" % (f, error))
@@ -896,7 +900,11 @@ class S3XML(object):
                         v = value.encode("utf-8")
                     else:
                         v = value
-                    (value, error) = validate(table, original, f, v)
+                    try:
+                        (value, error) = validate(table, original, f, v)
+                    except AttributeError:
+                        # No such field
+                        continue
                     child.set(self.ATTRIBUTE.value, str(v).decode("utf-8"))
                     if error:
                         child.set(self.ATTRIBUTE.error, "%s: %s" % (f, error))

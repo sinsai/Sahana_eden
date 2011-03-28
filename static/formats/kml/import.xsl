@@ -88,13 +88,13 @@
             <xsl:for-each select="./kml:ExtendedData">
                 <xsl:call-template name="extended"/>
             </xsl:for-each>
-            
+
             <!-- Location Info -->
             <reference field="location_id" resource="gis_location">
                 <xsl:call-template name="location"/>
             </reference>
 
-        </resource>    
+        </resource>
     </xsl:template>
 
     <!-- ****************************************************************** -->
@@ -159,7 +159,7 @@
         </xsl:variable>
         <xsl:choose>
             <!-- This test isn't working with lxml, works with Xalan -->
-            <xsl:when test="floor($x) = $x">
+            <xsl:when test="floor($x)=number($x) and $x!='-'">
                 <xsl:value-of select="$x"/>
             </xsl:when>
         </xsl:choose>
@@ -250,7 +250,7 @@
             <xsl:with-param name="s" select="substring-before($coordinate, ',')"/>
         </xsl:call-template>
     </xsl:template>
-    
+
     <xsl:template name="lat">
         <xsl:param name="coordinate"/>
         <xsl:choose>
@@ -268,7 +268,7 @@
     </xsl:template>
 
     <!-- ****************************************************************** -->
-    
+
     <xsl:template name="left-trim">
       <xsl:param name="s" />
       <xsl:choose>

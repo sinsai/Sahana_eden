@@ -40,7 +40,7 @@ import re
 from gluon.storage import Storage
 from gluon.http import HTTP
 from gluon.html import *
-from gluon.sqlhtml import CheckboxesWidget
+from gluon.sqlhtml import CheckboxesWidget, MultipleOptionsWidget, RadioWidget
 from gluon.validators import *
 from gluon.serializers import json
 
@@ -495,50 +495,68 @@ class S3SearchSelectWidget(S3SearchWidget):
             self.attr.update(_name="%s_search_select_%s" % (resource.name, field))
         self.name = self.attr._name
 
-        # Find unique values of options for that field
-        rows = resource.select(field, groupby = resource.table[field] )
-        opt_keys = [row[field] for row in rows if row[field] != None]
-
-        field_type = resource.table[field].type
-
-        # Get the representations for these values
-        if field_type == "integer":
-            # For integers, use the represent function
-            represent = resource.table[field].represent
-            opt_list = [[opt_key, represent(opt_key)] for opt_key in opt_keys]
+        field_type = str(resource.table[field].type)
+        if field_type == "boolean":
+            opt_keys = (True, False)
         else:
-            # For reference's use the represent string to reduce db calls
+            # Find unique values of options for that field
+            rows = resource.select(field, groupby=resource.table[field])
+            opt_keys = [row[field] for row in rows if row[field] != None]
+
+        # Always use the represent of the widget, of present
+        represent = self.attr.represent
+        # Fallback to the field's represent
+        if not represent:
+            represent = resource.table[field].represent
+        # Execute, if callable
+        if callable(represent):
+            opt_list = [(opt_key, represent(opt_key)) for opt_key in opt_keys]
+        # Otherwise, feed the format string
+        elif isinstance(represent, str) and field_type[:9] == "reference":
+            # Use the represent string to reduce db calls
+            # Find the fields which are needed to represent:
             db = resource.db
-            component_table = db[field_type[10:]]
-
-            # Find the fields which are needed to represent
-
-            fieldnames = re.findall("%\(([a-zA-Z0-9_]*)\)s",self.attr.represent)
+            ktable = db[field_type[10:]]
+            fieldnames = re.findall("%\(([a-zA-Z0-9_]*)\)s", represent)
             fieldnames += ["id"]
-            represent_fields = [component_table[fieldname]
-                                for fieldname in fieldnames]
-
-            represent_rows = db(component_table.id.belongs(opt_keys) &
-                                component_table.deleted  == False
-                                ).select(*represent_fields).as_dict()
+            represent_fields = [ktable[fieldname] for fieldname in fieldnames]
+            query = (ktable.id.belongs(opt_keys)) & (ktable.deleted == False)
+            represent_rows = db(query).select(*represent_fields).as_dict()
             opt_list = []
             for opt_key in opt_keys:
-                opt_list.append([opt_key, self.attr.represent % represent_rows[opt_key]])
+                opt_list.append([opt_key, represent % represent_rows[opt_key]])
+        else:
+            opt_list = [(opt_key, "%s" % opt_key) for opt_key in opt_keys]
 
-        # Alphabetise (this will not work as it is converted to a dict), look at IS_IN_SET validator or CheckboxesWidget to ensure that the list
+        # Alphabetise (this will not work as it is converted to a dict),
+        # look at IS_IN_SET validator or CheckboxesWidget to ensure that the list
         #opt_list.sort()
 
         options = dict(opt_list)
         #for opt in opt_list:
         #    options[opt[1]] = opt[0]
 
-        # Dummy field to Create check boxes
+        T = resource.manager.T
+
+        # Dummy field
         field = Storage(name = self.name,
                         requires = IS_IN_SET(options,
-                                             multiple = True)
+                                            multiple=True)
                         )
-        widget = CheckboxesWidget().widget(field, None, cols = self.attr.cols)
+
+        if len(opt_list) > 50:
+            # Collapse into a list widget if there are too many options
+            widget = MultipleOptionsWidget().widget(field, None)
+        else:
+            if self.attr.cols:
+                widget = CheckboxesWidget().widget(field, None,
+                                                    cols=self.attr.cols)
+            else:
+                widget = CheckboxesWidget().widget(field, None)
         return widget
+
+        return ""
+
 
     def query(self, resource, value):
         """
@@ -548,8 +566,11 @@ class S3SearchSelectWidget(S3SearchWidget):
         @param value: the value returned from the widget
 
         """
-        return (resource.table[self.field[0]].belongs(value))
-        raise NotImplementedError
+
+        if value:
+            return (resource.table[self.field[0]].belongs(value))
+        else:
+            return None
 
 
 # *****************************************************************************
@@ -764,13 +785,18 @@ class S3Search(S3CRUD):
                 if hasattr(widget, "attr"):
                     label = widget.attr.get("label", label)
                     comment = widget.attr.get("comment", comment)
-                use = isinstance(widget, S3SearchSimpleWidget) and \
-                      "hidden" or "checkbox"
-                on = use == "hidden" and 'on' or ''
-                tr = TR(TD(INPUT(_type=use, _name="use_%s" % name,
-                                 _class="use_widget", _value=on)),
-                                 TD("%s: " % label, _class="w2p_fl"),
-                                 widget.widget(resource, vars))
+                #use = isinstance(widget, S3SearchSimpleWidget) and \
+                      #"hidden" or "checkbox"
+                #on = use == "hidden" and 'on' or ''
+                tr = TR(
+                        #TD(INPUT(_type=use,
+                                 #_name="use_%s" % name,
+                                 #_class="use_widget",
+                                 #_value=on)
+                        #),
+                        TD("%s: " % label, _class="w2p_fl"),
+                        widget.widget(resource, vars)
+                       )
                 if comment:
                     tr.append(DIV(DIV(_class="tooltip",
                                       _title="%s|%s" % (label, comment))))
@@ -780,9 +806,18 @@ class S3Search(S3CRUD):
                                 _class="action-lnk", _id="simple-lnk")
             else:
                 switch_link = ""
-            trows.append(TR("", "", TD(INPUT(_type="submit", _value=T("Search")),
-                                   switch_link, add_link)))
-            advanced_form = FORM(TABLE(trows), _id="advanced-form")
+            trows.append(TR("",# "",
+                            TD(INPUT(_type="submit", _value=T("Search")),
+                               switch_link,
+                               add_link
+                              )
+                           )
+                        )
+            if simple:
+                _class = "hide"
+            else:
+                _class = None
+            advanced_form = FORM(TABLE(trows), _id="advanced-form", _class=_class)
             form.append(advanced_form)
 
         output.update(form=form)
@@ -824,9 +859,9 @@ class S3Search(S3CRUD):
             simple = False
             errors = None
             for name, widget in self.__advanced:
-                use_widget = advanced_form.vars.get("use_%s" % name, False)
-                if not use_widget:
-                    continue
+                #use_widget = advanced_form.vars.get("use_%s" % name, False)
+                #if not use_widget:
+                    #continue
                 if hasattr(widget, "names"):
                     value = Storage([(name, advanced_form.vars[name])
                                      for name in widget.names
@@ -834,7 +869,7 @@ class S3Search(S3CRUD):
                 elif name in advanced_form.vars:
                     value = advanced_form.vars[name]
                 else:
-                    value = None
+                    continue
                 if hasattr(widget, "validate"):
                     errors = widget.validate(resource, value)
                 if errors:
@@ -1128,7 +1163,7 @@ class S3LocationSearch(S3Search):
                 output = xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =")
                 raise HTTP(400, body=output)
 
-        
+
         if not fields:
             for field in table.fields:
                 fields.append(table[field])

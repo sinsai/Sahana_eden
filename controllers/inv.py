@@ -29,7 +29,7 @@ def index():
     return dict(module_name=module_name)
     
 #==============================================================================
-def wh():
+def warehouse():
     """ 
         RESTful CRUD controller 
         Filtered version of the org_office resource

@@ -472,7 +472,6 @@ class S3ResourceController(object):
         try:
             field = table[fieldname]
         except:
-            print "error: no such field"
             raise AttributeError("No field %s in %s" % (fieldname, table._tablename))
 
         if field:

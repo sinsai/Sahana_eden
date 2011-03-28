@@ -42,6 +42,12 @@
     <!-- Which Resource? -->
     <xsl:param name="name"/>
 
+    <!-- Which mode?
+        Simple mode: Name field from Placemark Name (default) & Comments from Details
+        Extended mode: Name field from ExtendedData & Comments from Notes
+    -->
+    <xsl:param name="xsltmode"/>
+
     <!-- ****************************************************************** -->
     <xsl:template match="/">
         <s3xml>
@@ -71,19 +77,18 @@
     <xsl:template name="shelter">
         <resource name="cr_shelter">
 
-            <!-- The name field is populated with the Prefecture in the Japan export! -->
-            <!--
-            <data field="name">
-                <xsl:value-of select="./kml:name/text()"/>
-            </data>
-            -->
-
-            <!-- HTML isn't really appropriate for the Comments field -->
-            <!--
-            <data field="comments">
-                <xsl:value-of select="./kml:description/text()"/>
-            </data>
-            -->
+            
+            <xsl:choose>
+                <xsl:when test="$xsltmode!='extended'">
+                    <data field="name">
+                        <xsl:value-of select="./kml:name/text()"/>
+                    </data>
+                    <data field="comments">
+                        <!-- @ToDo: Cleanup HTML? -->
+                        <xsl:value-of select="./kml:description/text()"/>
+                    </data>
+                </xsl:when>
+            </xsl:choose>
 
             <xsl:for-each select="./kml:ExtendedData">
                 <xsl:call-template name="extended"/>
@@ -99,13 +104,22 @@
 
     <!-- ****************************************************************** -->
     <xsl:template name="extended">
-        <!-- Format produced by Google Fusion
-        e.g. Japan feed: http://www.google.com/intl/ja/crisisresponse/japanquake2011_shelter.kmz -->
-        <xsl:for-each select="./kml:Data[@name='Name']">
-            <data field="name">
-                <xsl:call-template name="detail"/>
-            </data>
-        </xsl:for-each>
+        <xsl:choose>
+            <xsl:when test="$xsltmode='extended'">
+                <!-- Format produced by Google Fusion
+                e.g. Japan feed: http://www.google.com/intl/ja/crisisresponse/japanquake2011_shelter.kmz -->
+                <xsl:for-each select="./kml:Data[@name='Name']">
+                    <data field="name">
+                        <xsl:call-template name="detail"/>
+                    </data>
+                </xsl:for-each>
+                <xsl:for-each select="./kml:Data[@name='Notes']">
+                    <data field="comments">
+                        <xsl:call-template name="detail"/>
+                    </data>
+                </xsl:for-each>
+            </xsl:when>
+        </xsl:choose>
         <xsl:for-each select="./kml:Data[@name='Population']">
             <data field="population">
                 <xsl:call-template name="integer"/>
@@ -114,11 +128,6 @@
         <xsl:for-each select="./kml:Data[@name='Capacity']">
             <data field="capacity">
                 <xsl:call-template name="integer"/>
-            </data>
-        </xsl:for-each>
-        <xsl:for-each select="./kml:Data[@name='Notes']">
-            <data field="comments">
-                <xsl:call-template name="detail"/>
             </data>
         </xsl:for-each>
         <xsl:for-each select="./kml:Data[@name='Source']">
@@ -131,8 +140,13 @@
                 <xsl:call-template name="detail"/>
             </data>
         </xsl:for-each>
-        <xsl:for-each select="./kml:Data[@name='City']">
+        <xsl:for-each select="./kml:Data[@name='Area']">
             <data field="L2">
+                <xsl:call-template name="detail"/>
+            </data>
+        </xsl:for-each>
+        <xsl:for-each select="./kml:Data[@name='City']">
+            <data field="L3">
                 <xsl:call-template name="detail"/>
             </data>
         </xsl:for-each>
@@ -158,7 +172,6 @@
             <xsl:value-of select="./kml:value/text()"/>
         </xsl:variable>
         <xsl:choose>
-            <!-- This test isn't working with lxml, works with Xalan -->
             <xsl:when test="floor($x)=number($x) and $x!='-'">
                 <xsl:value-of select="$x"/>
             </xsl:when>
@@ -176,9 +189,20 @@
     <xsl:template name="location">
         <resource name="gis_location">
 
-            <data field="name">
-                <xsl:value-of select="./kml:name/text()"/>
-            </data>
+            <xsl:choose>
+                <xsl:when test="$xsltmode='extended'">
+                    <data field="name">
+                        <xsl:for-each select="./kml:ExtendedData/kml:Data[@name='Name']">
+                            <xsl:call-template name="detail"/>
+                        </xsl:for-each>
+                    </data>
+                </xsl:when>
+                <xsl:otherwise>
+                    <data field="name">
+                        <xsl:value-of select="./kml:name/text()"/>
+                    </data>
+                </xsl:otherwise>
+            </xsl:choose>
 
             <!-- Handle Points -->
             <xsl:for-each select="./kml:Point">

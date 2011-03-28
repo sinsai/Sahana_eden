@@ -10,7 +10,7 @@
          http://schemas.opengis.net/kml/2.2.0/
          http://code.google.com/apis/kml/documentation/kmlreference.html
 
-         Version 0.1 / 2011-03-27 / by flavour
+         Version 0.2 / 2011-03-28 / by flavour
 
          Copyright (c) 2011 Sahana Software Foundation
 
@@ -48,6 +48,46 @@
     -->
     <xsl:param name="xsltmode"/>
 
+    <!-- Which Country? (2-letter ISO) -->
+    <xsl:param name="country"/>
+
+    <!-- Location Hierarchy fieldnames -->
+    <!--<xsl:choose>
+        <xsl:when test="$country='jp'">-->
+            <!-- Currently set to those for the Japan Shelters feed -->
+            <xsl:variable name="L1">Prefecture</xsl:variable>
+            <xsl:variable name="L2">Area</xsl:variable>
+            <xsl:variable name="L3">City</xsl:variable>
+            <xsl:variable name="L4">District</xsl:variable>
+        <!--</xsl:when>
+        <xsl:otherwise>
+            <xsl:variable name="L1">Province</xsl:variable>
+            <xsl:variable name="L2">District</xsl:variable>
+            <xsl:variable name="L3">Town</xsl:variable>
+            <xsl:variable name="L4">Village</xsl:variable>
+        </xsl:otherwise>
+    </xsl:choose>-->
+
+    <xsl:key
+        name="L1"
+        match="//kml:Placemark"
+        use="./kml:ExtendedData/kml:Data[@name=$L1]/kml:value/text()"/>
+
+    <xsl:key
+        name="L2"
+        match="//kml:Placemark"
+        use="./kml:ExtendedData/kml:Data[@name=$L2]/kml:value/text()"/>
+
+    <xsl:key
+        name="L3"
+        match="//kml:Placemark"
+        use="./kml:ExtendedData/kml:Data[@name=$L3]/kml:value/text()"/>
+
+    <xsl:key
+        name="L4"
+        match="//kml:Placemark"
+        use="./kml:ExtendedData/kml:Data[@name=$L4]/kml:value/text()"/>
+
     <!-- ****************************************************************** -->
     <xsl:template match="/">
         <s3xml>
@@ -62,6 +102,13 @@
                     <xsl:call-template name="locations"/>
                 </xsl:otherwise>
             </xsl:choose>
+
+            <!-- Do the Locations Hierarchy -->
+            <xsl:call-template name="L4"/>
+            <xsl:call-template name="L3"/>
+            <xsl:call-template name="L2"/>
+            <xsl:call-template name="L1"/>
+
         </s3xml>
     </xsl:template>
 
@@ -97,6 +144,11 @@
             <!-- Location Info -->
             <reference field="location_id" resource="gis_location">
                 <xsl:call-template name="location"/>
+                <!--<xsl:call-template name="location">
+                    <xsl:with-param name="location_name">
+                        <xsl:value-of select="$resource_name"/>
+                    </xsl:with-param>
+                </xsl:call-template>-->
             </reference>
 
         </resource>
@@ -135,22 +187,22 @@
                 <xsl:call-template name="detail"/>
             </data>
         </xsl:for-each>
-        <xsl:for-each select="./kml:Data[@name='Prefecture']">
+        <xsl:for-each select="./kml:Data[@name=$L1]">
             <data field="L1">
                 <xsl:call-template name="detail"/>
             </data>
         </xsl:for-each>
-        <xsl:for-each select="./kml:Data[@name='Area']">
+        <xsl:for-each select="./kml:Data[@name=$L2]">
             <data field="L2">
                 <xsl:call-template name="detail"/>
             </data>
         </xsl:for-each>
-        <xsl:for-each select="./kml:Data[@name='City']">
+        <xsl:for-each select="./kml:Data[@name=$L3]">
             <data field="L3">
                 <xsl:call-template name="detail"/>
             </data>
         </xsl:for-each>
-        <xsl:for-each select="./kml:Data[@name='District']">
+        <xsl:for-each select="./kml:Data[@name=$L4]">
             <data field="L4">
                 <xsl:call-template name="detail"/>
             </data>
@@ -192,6 +244,7 @@
 
     <!-- ****************************************************************** -->
     <xsl:template name="location">
+        <!--<xsl:param name="location_name"/>-->
         <resource name="gis_location">
 
             <xsl:choose>
@@ -201,6 +254,11 @@
                             <xsl:call-template name="detail"/>
                         </xsl:for-each>
                     </data>
+                    <reference field="parent" resource="gis_location">
+                        <xsl:attribute name="tuid">
+                            <xsl:value-of select="./kml:ExtendedData/kml:Data[@name=$L1]/kml:value/text()"/>
+                        </xsl:attribute>
+                    </reference>
                 </xsl:when>
                 <xsl:otherwise>
                     <data field="name">
@@ -229,6 +287,97 @@
             -->
 
         </resource>
+    </xsl:template>
+
+    <!-- ****************************************************************** -->
+    <!-- Locations Hierarchy -->
+    <xsl:template name="L1">
+        <xsl:variable name="unique-list" select="//kml:Placemark[not(kml:ExtendedData/kml:Data[@name=$L1]/kml:value=following::kml:ExtendedData/kml:Data[@name=$L1]/kml:value)]" />
+        <xsl:for-each select="$unique-list">
+            <resource name="gis_location">
+                <xsl:attribute name="tuid">
+                    <xsl:value-of select="./kml:ExtendedData/kml:Data[@name=$L1]/kml:value/text()"/>
+                </xsl:attribute>
+                <data field="name">
+                    <xsl:value-of select="./kml:ExtendedData/kml:Data[@name=$L1]/kml:value/text()"/>
+                </data>
+                <xsl:if test="$country">
+                    <reference field="parent" resource="gis_location">
+                        <xsl:attribute name="uuid">
+                            <xsl:text>www.sahanafoundation.org/COUNTRY-</xsl:text>
+                            <xsl:call-template name="uppercase">
+                                <xsl:with-param name="string" select="$country"/>
+                            </xsl:call-template>
+                        </xsl:attribute>
+                    </reference>
+                </xsl:if>
+            </resource>
+        </xsl:for-each>
+    </xsl:template>
+
+    <xsl:template name="L2">
+        <xsl:variable name="unique-list" select="//kml:Placemark[not(kml:ExtendedData/kml:Data[@name=$L2]/kml:value=following::kml:ExtendedData/kml:Data[@name=$L2]/kml:value)]" />
+        <xsl:for-each select="$unique-list">
+            <resource name="gis_location">
+                <xsl:attribute name="tuid">
+                    <xsl:value-of select="./kml:ExtendedData/kml:Data[@name=$L2]/kml:value/text()"/>
+                </xsl:attribute>
+                <data field="name">
+                    <xsl:value-of select="./kml:ExtendedData/kml:Data[@name=$L2]/kml:value/text()"/>
+                </data>
+                <reference field="parent" resource="gis_location">
+                    <xsl:attribute name="tuid">
+                        <xsl:value-of select="./kml:ExtendedData/kml:Data[@name=$L1]/kml:value/text()"/>
+                    </xsl:attribute>
+                </reference>
+            </resource>
+        </xsl:for-each>
+    </xsl:template>
+
+    <xsl:template name="L3">
+        <xsl:variable name="unique-list" select="//kml:Placemark[not(kml:ExtendedData/kml:Data[@name=$L3]/kml:value=following::kml:ExtendedData/kml:Data[@name=$L3]/kml:value)]" />
+        <xsl:for-each select="$unique-list">
+            <resource name="gis_location">
+                <xsl:attribute name="tuid">
+                    <xsl:value-of select="./kml:ExtendedData/kml:Data[@name=$L3]/kml:value/text()"/>
+                </xsl:attribute>
+                <data field="name">
+                    <xsl:value-of select="./kml:ExtendedData/kml:Data[@name=$L3]/kml:value/text()"/>
+                </data>
+                <reference field="parent" resource="gis_location">
+                    <xsl:attribute name="tuid">
+                        <xsl:choose>
+                            <xsl:when test="$country='jp'">
+                                <!-- Special case for Japan: L3 goes direct to L1 -->
+                                <xsl:value-of select="./kml:ExtendedData/kml:Data[@name=$L1]/kml:value/text()"/>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:value-of select="./kml:ExtendedData/kml:Data[@name=$L2]/kml:value/text()"/>
+                            </xsl:otherwise>
+                        </xsl:choose>     
+                    </xsl:attribute>
+                </reference>
+            </resource>
+        </xsl:for-each>
+    </xsl:template>
+
+    <xsl:template name="L4">
+        <xsl:variable name="unique-list" select="//kml:Placemark[not(kml:ExtendedData/kml:Data[@name=$L4]/kml:value=following::kml:ExtendedData/kml:Data[@name=$L4]/kml:value)]" />
+        <xsl:for-each select="$unique-list">
+            <resource name="gis_location">
+                <xsl:attribute name="tuid">
+                    <xsl:value-of select="./kml:ExtendedData/kml:Data[@name=$L4]/kml:value/text()"/>
+                </xsl:attribute>
+                <data field="name">
+                    <xsl:value-of select="./kml:ExtendedData/kml:Data[@name=$L4]/kml:value/text()"/>
+                </data>
+                <reference field="parent" resource="gis_location">
+                    <xsl:attribute name="tuid">
+                        <xsl:value-of select="./kml:ExtendedData/kml:Data[@name=$L3]/kml:value/text()"/>
+                    </xsl:attribute>
+                </reference>
+            </resource>
+        </xsl:for-each>
     </xsl:template>
 
     <!-- ****************************************************************** -->
@@ -330,6 +479,14 @@
           <xsl:value-of select="$s" />
         </xsl:otherwise>
       </xsl:choose>
+    </xsl:template>
+
+    <!-- Convert a string to uppercase -->
+    <xsl:template name="uppercase">
+        <xsl:param name="string"/>
+        <xsl:value-of select="translate($string,
+            'abcdefghijklmnopqrstuvwxyzáéíóúàèìòùäöüåâêîôûãẽĩõũø',
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÀÈÌÒÙÄÖÜÅÂÊÎÔÛÃẼĨÕŨØ')"/>
     </xsl:template>
 
     <!-- ****************************************************************** -->

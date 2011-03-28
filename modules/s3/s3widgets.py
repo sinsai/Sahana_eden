@@ -938,7 +938,7 @@ class S3LocationSelectorWidget(FormWidget):
                 elif current or _parent:
                     # Dropdown or one above this one contains a current value
                     # Read values from db
-                    options = [("", "Select a location...")]
+                    options = [("", "%s..." % T("Select a location"))]
                     if level:
                         query = (locations.level == level) & deleted
                     else:
@@ -953,7 +953,7 @@ class S3LocationSelectorWidget(FormWidget):
 
                 else:
                     # We don't want to pre-populate the dropdown - it will be pulled dynamically via AJAX when the parent dropdown is selected
-                    options = [("", loading_locations)]
+                    options = [("", "%s..." % loading_locations)]
 
             opts = [OPTION(v, _value=k) for (k, v) in options]
 
@@ -1160,7 +1160,7 @@ class S3LocationSelectorWidget(FormWidget):
         lat_widget = INPUT(_id="gis_location_lat", _value=lat)
         lon_widget = INPUT(_id="gis_location_lon", _value=lon)
 
-        autocomplete = DIV(LABEL("%s:" % T("Search")),
+        autocomplete = DIV(LABEL("%s:" % T("Enter some characters to bring up a list of possible matches")),
                            BR(),
                            INPUT(_id="gis_location_autocomplete"),
                            _id="gis_location_autocomplete_div",
@@ -1170,6 +1170,10 @@ class S3LocationSelectorWidget(FormWidget):
         search_button = A(T("Search Existing Locations"),
                           _style="cursor:pointer; cursor:hand",
                           _id="gis_location_search-btn")
+        # A copy of the label to keep position without being a link
+        search_button_label = DIV(T("Search Existing Locations"),
+                                  _id="gis_location_search-btn-label",
+                                  _class="hidden")
 
         add_button = A(T("Create New Location"),
                        _style="cursor:pointer; cursor:hand",
@@ -1307,7 +1311,8 @@ class S3LocationSelectorWidget(FormWidget):
         return TAG[""](
                         #divider,           # This is in the widget, so underneath the label :/ Add in JS? 'Sections'?
                         TR(INPUT(**attr)),  # Real input, which is hidden
-                        TR(TD(search_button, autocomplete)),
+                        TR(TD(search_button, search_button_label,
+                              autocomplete)),
                         dropdowns,
                         TR(TD(add_button, cancel_button)),
                         TR(gps_converter_popup),

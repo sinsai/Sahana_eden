@@ -597,56 +597,89 @@ div#rheader th { text-align: left;
 div#rheader td { text-align: left;
                  padding: 1px 6px 1px 1px;
                  width: 20%; }
-div#rheader_tabs { width: 100%;
-                   padding: 10px 0px 2px 0px;
-                   margin-top: 5px;
-                   margin-bottom: 5px;
-                   border-bottom: none;
-                   text-align: left; }
+div.tabs {
+    width: 100%;
+    padding: 10px 0px 2px 0px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    border-bottom: none;
+    text-align: left;
+}
+div.tabs span {
+    padding: 1px 3px 3px 3px;
+   -moz-border-radius: 3px 3px 0px 0px;
+   -webkit-border-radius: 3px 3px 0px 0px;
+}
 
-div#rheader_tabs span { padding: 1px 3px 3px 3px;
-                       -moz-border-radius: 3px 3px 0px 0px;
-                       -webkit-border-radius: 3px 3px 0px 0px; }
-
-div#rheader_tabs span.rheader_tab_last,
-div#rheader_tabs span.rheader_tab_other { border-width: 2px 0px 0px 3px;
-                                          border-style: solid;
-                                          border-color: #bbb;
-                                          padding-right: 3px;
-                                          margin-right: 2px;
-                                          border-bottom: 1px solid #bbb; }
-div#rheader_tabs span.rheader_tab_last { border-right: 1px solid #bbb; }
-div#rheader_tabs span.rheader_tab_here { border-width: 2px 1px 0px 3px;
-                                         border-style: solid;
-                                         border-color: #6699cc;
-                                         padding-top: 3px;
-                                         padding-left: 5px;
-                                         padding-right: 3px;
-                                         margin-right: 2px;
-                                         font-weight: bold; }
-
-div#rheader_tabs span.rheader_prev_active { border: 1px solid #6699cc; color: #006699; border-bottom: 0; }
-div#rheader_tabs span.rheader_next_active { border: 1px solid #6699cc; color: #006699; border-bottom: 0; }
-div#rheader_tabs span.rheader_prev_inactive { border: 1px solid #bbb; color: #bbb; border-bottom: 0; }
-div#rheader_tabs span.rheader_next_inactive { border: 1px solid #bbb; color: #bbb; border-bottom: 0; }
-
-div#rheader_tabs span.rheader_prev_active a,
-div#rheader_tabs span.rheader_next_active a { color: #006699; text-decoration: None; }
-
-div#rheader_tabs span.rheader_prev_inactive a,
-div#rheader_tabs span.rheader_next_inactive a { color: #bbb; text-decoration: None; }
-
-div#rheader_tabs span.rheader_tab_last a,
-div#rheader_tabs span.rheader_tab_other a { color: #000000;
-                                          text-decoration: None; }
-div#rheader_tabs span.rheader_tab_here a { color: #006699;
-                                         text-decoration: None; }
+span.tab_last,
+span.tab_other {
+    border-width: 2px 0px 0px 3px;
+    border-style: solid;
+    border-color: #bbb;
+    padding-right: 3px;
+    margin-right: 2px;
+    border-bottom: 1px solid #bbb;
+}
+span.tab_last {
+    border-right: 1px solid #bbb;
+}
+span.tab_here {
+    border-width: 2px 1px 0px 3px;
+    border-style: solid;
+    border-color: #6699cc;
+    padding-top: 3px;
+    padding-left: 5px;
+    padding-right: 3px;
+    margin-right: 2px;
+    font-weight: bold;
+}
+span.tab_last a,
+span.tab_other a {
+    color: #000000;
+    text-decoration: None;
+}
+span.tab_here a {
+    color: #006699;
+    text-decoration: None;
+}
+span.tab_prev_active {
+    border: 1px solid #6699cc;
+    color: #006699;
+    border-bottom: 0;
+}
+span.tab_next_active {
+    border: 1px solid #6699cc;
+    color: #006699;
+    border-bottom: 0;
+}
+span.tab_prev_inactive {
+    border: 1px solid #bbb;
+    color: #bbb;
+    border-bottom: 0;
+}
+span.tab_next_inactive {
+    border: 1px solid #bbb;
+    color: #bbb;
+    border-bottom: 0;
+}
+span.tab_prev_active a,
+span.tab_next_active a {
+    color: #006699;
+    text-decoration: None;
+}
+span.tab_prev_inactive a,
+span.tab_next_inactive a {
+    color: #bbb;
+    text-decoration: None;
+}
 
 /* Last Update Meta-data */
-div#last_update { text-align: right;
-                font-style: italic;
-                font-size: 80%;
-                color: #bbb; }
+div#last_update {
+    text-align: right;
+    font-style: italic;
+    font-size: 80%;
+    color: #bbb;
+}
 
 /* Used to diplay the list-add with the list-add-btn */
 #list-add { display: none }

@@ -83,6 +83,21 @@ deployment_settings.mail.sender = "'Sahana' <sahana@your.org>"
 # This can be overridden for specific domains/organisations via the auth_domain table
 deployment_settings.mail.approver = "useradmin@your.org"
 
+# Frontpage settings
+# RSS feeds
+deployment_settings.frontpage.rss = [
+    {"title": "Eden",
+     # Trac timeline
+     "url": "http://eden.sahanafoundation.org/timeline?ticket=on&changeset=on&milestone=on&wiki=on&max=50&daysback=90&format=rss"
+    },
+    {"title": "Twitter",
+     # @SahanaFOSS
+     "url": "http://twitter.com/statuses/user_timeline/96591754.rss"
+     # Hashtag
+     #url: "http://search.twitter.com/search.atom?q=%23eqnz"
+    }
+]
+
 # Twitter settings:
 # Register an app at http://twitter.com/apps
 # (select Aplication Type: Client)
@@ -351,19 +366,9 @@ deployment_settings.modules = OrderedDict([
             #restricted = False,
             #module_type = 10,
         #)),
-    # This needs some work to cleanup after req has been introduced
-    #("rms", Storage(
-    #        name_nice = T("RMS"),
-    #        description = T("Manage requests for assistance"),
-    #        restricted = False,
-    #        module_type = 10,
-    #        resources = Storage(
-    #            rms_req = {"importer" : True},
-    #        )
-    #    )),
     ("req", Storage(
             name_nice = T("Requests"),
-            description = T("Manage requests for items and assets and matches them against existing inventories"),
+            description = T("Manage requests for supplies, assets, staff or other resources. Matches against Inventories where supplies are requested."),
             restricted = False,
             module_type = 10,
         )),

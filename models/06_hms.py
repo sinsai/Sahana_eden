@@ -11,7 +11,7 @@ if deployment_settings.has_module(module):
 
     from gluon.sql import Row
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Hospitals
     #
 
@@ -241,7 +241,7 @@ if deployment_settings.has_module(module):
                                        "total_beds",
                                        "available_beds"])
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Contacts
     #
     resourcename = "contact"
@@ -309,7 +309,7 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Contact information deleted"),
         msg_list_empty = T("No contacts currently registered"))
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Activity
     #
     resourcename = "activity"
@@ -403,7 +403,7 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Report deleted"),
         msg_list_empty = T("No reports currently available"))
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Bed Capacity
     #
     hms_bed_type_opts = {
@@ -559,7 +559,7 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Unit deleted"),
         msg_list_empty = T("No units currently registered"))
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Services
     #
     resourcename = "services"
@@ -625,7 +625,7 @@ if deployment_settings.has_module(module):
                           list_fields = ["id"],
                           main="hospital_id", extra="id")
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Cholera Treatment Capability
     #
     hms_problem_types = {
@@ -767,7 +767,7 @@ if deployment_settings.has_module(module):
             "Current Problems": "problem_types",
             "Comments": "comments"})
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Images
     #
     hms_image_type_opts = {
@@ -845,7 +845,7 @@ if deployment_settings.has_module(module):
                                        "description",
                                        "tags"])
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Resources (multiple) - TODO: to be completed!
     #
     resourcename = "resources"
@@ -885,7 +885,7 @@ if deployment_settings.has_module(module):
                           list_fields=["id"],
                           main="hospital_id", extra="id")
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Hospital Search Method
     #
     hms_hospital_search = s3base.S3Search(
@@ -912,3 +912,5 @@ if deployment_settings.has_module(module):
 
     # Set as standard search method for hospitals
     s3xrc.model.configure(db.hms_hospital, search_method=hms_hospital_search)
+
+# END =========================================================================

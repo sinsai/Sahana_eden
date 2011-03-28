@@ -3,10 +3,9 @@
 """
     Organisation Registry
 """
-#==============================================================================
+
 module = "org"
 
-#==============================================================================
 org_menu = [
     [T("Organizations"), False, URL(r=request, c="org", f="organisation"),[
         [T("List"), False, URL(r=request, c="org", f="organisation")],
@@ -780,22 +779,27 @@ def shn_office_rheader(r, tabs=[]):
     if r.representation == "html":
 
         if r.record is None:
-            # List or Create form: rheader makes no sense here
+            # List or Create form
+            # rheader makes no sense here
             return None
 
         tabs = [(T("Basic Details"), None),
                 (T("Contact Data"), "contact"),
-                (T("Staff"), "staff"),
+                (T("Staff"), "staff")
                 ]
+        
+        if deployment_settings.has_module("req"):
+            tabs.append((T("Requests"), "req"))
+        if deployment_settings.has_module("inv"):
+            tabs = tabs + shn_show_inv_tabs(r)
 
-        rheader_tabs = shn_rheader_tabs(r, tabs + shn_show_inv_tabs(r))
+        rheader_tabs = shn_rheader_tabs(r, tabs)
 
         office = r.record
         if office:
-            organisation = db(db.org_organisation.id == office.organisation_id
-                              ).select(db.org_organisation.name,
-                                       limitby=(0, 1)
-                                       ).first()
+            query = (db.org_organisation.id == office.organisation_id)
+            organisation = db(query).select(db.org_organisation.name,
+                                            limitby=(0, 1)).first()
             if organisation:
                 org_name = organisation.name
             else:
@@ -813,11 +817,17 @@ def shn_office_rheader(r, tabs=[]):
                              TH("%s: " % T("Location")),
                              shn_gis_location_represent(office.location_id),
                              ),
-                          #TR(#TH(A(T("Edit Office"),
-                          #   #    _href=URL(r=request, c="org", f="office", args=[r.id, "update"], vars={"_next": _next})))
+                          #TR(TH(A(T("Edit Office"),
+                          #        _href=URL(r=request, c="org", f="office",
+                          #                  args=[r.id, "update"],
+                          #                  vars={"_next": _next})))
                           #   )
                               ),
                           rheader_tabs)
+
+            if r.component and r.component.name == "req":
+                # Inject the helptext script
+                rheader.append(req_helptext_script)
 
             return rheader
 
@@ -963,7 +973,7 @@ staff_id = S3ReusableField("staff_id", db.org_staff, sortby="name",
                            ondelete = "RESTRICT"
                         )
 
-# Staff as component of Orgs & Projects
+# Staff as component of Orgs (& Projects)
 s3xrc.model.add_component(module, resourcename,
                           multiple=True,
                           joinby=dict(org_organisation="organisation_id",

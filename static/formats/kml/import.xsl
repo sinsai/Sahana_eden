@@ -150,6 +150,11 @@
                 <xsl:call-template name="detail"/>
             </data>
         </xsl:for-each>
+        <xsl:for-each select="./kml:Data[@name='District']">
+            <data field="L4">
+                <xsl:call-template name="detail"/>
+            </data>
+        </xsl:for-each>
         <!-- Date needs converting -->
         <!--
         <xsl:for-each select="./kml:Data[@name='UpdateDate']">

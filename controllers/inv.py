@@ -118,7 +118,7 @@ def warehouse():
     return output
 #==============================================================================
 def req_match():
-    return shn_req_match()
+    return s3_req_match("warehouse")
 #==============================================================================
 def inv_item():
 

@@ -544,7 +544,7 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
     )
 
     # -----------------------------------------------------------------------------
-    def shn_req_match():
+    def s3_req_match(function):
         """
             Function to be called from controller functions to display all request as a tab 
             for a site.
@@ -557,12 +557,11 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
         r.record = db.org_office[resource_id]
         r.representation = "html"
         r.request = request
-        r.request.function = "office"
+        r.request.function = function
         r.request.cust_function = "req_match"
         rheader = shn_office_rheader(r)
-        request.args = []
         
-
+        #request.args = []
         response.s3.actions = [dict(url = str(URL( r=request,
                                                    c = "req",
                                                    f = "commit_req",

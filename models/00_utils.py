@@ -617,13 +617,15 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
         else:
             _vars = r.request.vars
 
-
+        is_cust_function = False
         if component and component.find("/") > 0:
             function, component = component.split("/", 1)
             if not component:
                 component = None
+                is_cust_function = True
         else:
             function = r.request.function
+            
 
         if i == len(tabs)-1:
             tab = Storage(title=title, _class = "tab_last")
@@ -640,7 +642,9 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
             args = [r.id, component]
             tab.update(_href=URL(r=request, f=function, args=args, vars=_vars))
         else:
-            if not r.component and len(tabs[i]) <= 2:
+            if (r.request.is_cust_function and is_cust_function ) or \
+               (not r.request.is_cust_function and not is_cust_function \
+                and not r.component and len(tabs[i]) <= 2):
                 tab.update(_class = "tab_here")
                 previous = i and tablist[i-1] or None
             args = [r.id]

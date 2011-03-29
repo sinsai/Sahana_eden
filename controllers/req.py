@@ -367,7 +367,7 @@ def commit_req():
     
     # User must have permissions over site which is sending 
     (prefix, resourcename, id) = auth.s3_site_resource(site_id)        
-    if not site or not auth.s3_has_permission("update", 
+    if not site_id or not auth.s3_has_permission("update", 
                                               db["%s_%s" % (prefix,
                                                             resourcename)], 
                                               record_id=id):    
@@ -433,7 +433,6 @@ def commit_req():
                  args = [commit_id, "commit_item"]
                  )
              )   
-    
 #==============================================================================
 def commit_item_json():
     response.headers["Content-Type"] = "application/json"

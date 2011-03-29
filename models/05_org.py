@@ -790,6 +790,9 @@ def shn_office_rheader(r, tabs=[]):
         
         if deployment_settings.has_module("req"):
             tabs.append((T("Requests"), "req"))
+            tabs.append((T("Match Requests"), "req_match/"))
+            tabs.append((T("Commit"), "commit"))
+
         if deployment_settings.has_module("inv"):
             tabs = tabs + shn_show_inv_tabs(r)
 
@@ -832,7 +835,6 @@ def shn_office_rheader(r, tabs=[]):
             return rheader
 
     return None
-
 #==============================================================================
 # Staff
 # Many-to-Many Persons to Offices & Projects with also the Title & Manager that

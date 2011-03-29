@@ -7,7 +7,7 @@
 </p>
 <li>
 {{if deployment_settings.has_module("inv"):}}
-{{=A(T("Warehouses"), _href=URL(r=request, c="inv", f="wh"))}} &
+{{=A(T("Warehouses"), _href=URL(r=request, c="inv", f="warehouse"))}} &
 {{pass}}
 {{=A(T("Offices"), _href=URL(r=request, c="org", f="office"))}}</li>
 {{if deployment_settings.has_module("cr"):}}

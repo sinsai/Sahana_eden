@@ -34,7 +34,7 @@
       <th class="navbar" align="right" width="100%">
         <table border="0" cellpadding="0" cellspacing="0">
           <tr><th class="navbar" align="center"
-            >S3</th>
+            ><a class="navbar" target="_top" href="http://eden.sahanafoundation.org/wiki/S3">S3</a></th>
           </tr></table></th>
   </tr>
 </table>
@@ -160,11 +160,11 @@ object --+
         <span class="summary-sig-arg">source</span>,
         <span class="summary-sig-arg">files</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">id</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">template</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">as_json</span>=<span class="summary-sig-default">False</span>,
+        <span class="summary-sig-arg">format</span>=<span class="summary-sig-default">&quot;xml&quot;</span>,
+        <span class="summary-sig-arg">stylesheet</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">ignore_errors</span>=<span class="summary-sig-default">False</span>,
         <span class="summary-sig-arg">**args</span>)</span><br />
-      Import data from an XML source into a resource</td>
+      XML Importer</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3.s3import-pysrc.html#S3Importer.xml">source&nbsp;code</a></span>
             
@@ -335,8 +335,8 @@ object --+
         <span class="sig-arg">source</span>,
         <span class="sig-arg">files</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">id</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">template</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">as_json</span>=<span class="sig-default">False</span>,
+        <span class="sig-arg">format</span>=<span class="sig-default">&quot;xml&quot;</span>,
+        <span class="sig-arg">stylesheet</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">ignore_errors</span>=<span class="sig-default">False</span>,
         <span class="sig-arg">**args</span>)</span>
   </h3>
@@ -345,23 +345,22 @@ object --+
     </td>
   </tr></table>
   
-  <p>Import data from an XML source into a resource</p>
+  <p>XML Importer</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>resource</code></strong> - the resource to import to</li>
-        <li><strong class="pname"><code>source</code></strong> - the XML source (or ElementTree)</li>
-        <li><strong class="pname"><code>files</code></strong> - file attachments as {filename:file}</li>
-        <li><strong class="pname"><code>id</code></strong> - the ID or list of IDs of records to update (None for all)</li>
-        <li><strong class="pname"><code>template</code></strong> - the XSLT template</li>
-        <li><strong class="pname"><code>as_json</code></strong> - source is JSONified XML</li>
-        <li><strong class="pname"><code>ignore_errors</code></strong> - do not stop at errors (skip invalid elements)</li>
-        <li><strong class="pname"><code>args</code></strong> - arguments to pass to the XSLT template</li>
-    </ul></dd>
-    <dt>Raises:</dt>
-    <dd><ul class="nomargin-top">
-        <li><code><strong class='fraise'>SyntaxError</strong></code> - in case of a parser or transformation error</li>
-        <li><code><strong class='fraise'>IOError</strong></code> - at insufficient permissions</li>
+        <li><strong class="pname"><code>resource</code></strong> - the target resource</li>
+        <li><strong class="pname"><code>source</code></strong> - the data source, accepts source=xxx, source=[xxx, yyy, zzz] or 
+          source=[(resourcename1, xxx), (resourcename2, yyy)], where the 
+          xxx has to be either an ElementTree or a file-like object</li>
+        <li><strong class="pname"><code>files</code></strong> - attached files (None to read in the HTTP request)</li>
+        <li><strong class="pname"><code>id</code></strong> - ID (or list of IDs) of the record(s) to update (performs only 
+          update)</li>
+        <li><strong class="pname"><code>format</code></strong> - type of source = &quot;xml&quot;, &quot;json&quot; or 
+          &quot;csv&quot;</li>
+        <li><strong class="pname"><code>stylesheet</code></strong> - stylesheet to use for transformation</li>
+        <li><strong class="pname"><code>ignore_errors</code></strong> - skip invalid records silently</li>
+        <li><strong class="pname"><code>args</code></strong> - parameters to pass to the transformation stylesheet</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -391,14 +390,14 @@ object --+
       <th class="navbar" align="right" width="100%">
         <table border="0" cellpadding="0" cellspacing="0">
           <tr><th class="navbar" align="center"
-            >S3</th>
+            ><a class="navbar" target="_top" href="http://eden.sahanafoundation.org/wiki/S3">S3</a></th>
           </tr></table></th>
   </tr>
 </table>
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Mon Jan 17 00:32:28 2011
+    Generated by Epydoc 3.0.1 on Tue Mar 29 14:25:41 2011
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

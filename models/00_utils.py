@@ -284,8 +284,8 @@ def shn_action_buttons(r,
         Designed to be called from a postp
 
         @note: standard action buttons will be inserted automatically unless already overridden
-        @note: If custom action buttons are already added, 
-               they will appear AFTER the standard action buttons 
+        @note: If custom action buttons are already added,
+               they will appear AFTER the standard action buttons
     """
 
     if r.component:
@@ -294,9 +294,9 @@ def shn_action_buttons(r,
         args = ["[id]"]
 
     prefix, name, table, tablename = r.target()
-    
+
     custom_actions = response.s3.actions
-        
+
     if s3_has_permission("update", table) and \
        not auth.permission.ownership_required(table, "update"):
         if not update_url:
@@ -333,7 +333,7 @@ def shn_action_buttons(r,
         response.s3.actions.append(
             dict(label=str(COPY), _class="action-btn", url=copy_url)
         )
-        
+
     if custom_actions:
         response.s3.actions = response.s3.actions + custom_actions
 
@@ -618,10 +618,13 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
             _vars = r.request.vars
 
 
+        here = True
         if component and component.find("/") > 0:
             function, component = component.split("/", 1)
             if not component:
                 component = None
+            if function != r.request.function:
+                here = False
         else:
             function = r.request.function
 
@@ -640,14 +643,16 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
             args = [r.id, component]
             tab.update(_href=URL(r=request, f=function, args=args, vars=_vars))
         else:
-            if not r.component and len(tabs[i]) <= 2:
+            if not r.component and len(tabs[i]) <= 2 and here:
                 tab.update(_class = "tab_here")
                 previous = i and tablist[i-1] or None
-            args = [r.id]
             vars = Storage(_vars)
-            # _next has no effect
-            #if not vars.get("_next", None):
-                #vars.update(_next=URL(r=request, f=function, args=args, vars=_vars))
+            args = []
+            if function != r.name:
+                if not "from_record" in vars and r.id:
+                    vars.update(from_record="%s.%s" % (r.tablename, r.id))
+            else:
+                args = [r.id]
             tab.update(_href=URL(r=request, f=function, args=args, vars=vars))
 
         tablist.append(tab)

@@ -34,7 +34,7 @@
       <th class="navbar" align="right" width="100%">
         <table border="0" cellpadding="0" cellspacing="0">
           <tr><th class="navbar" align="center"
-            >S3</th>
+            ><a class="navbar" target="_top" href="http://eden.sahanafoundation.org/wiki/S3">S3</a></th>
           </tr></table></th>
   </tr>
 </table>
@@ -189,24 +189,6 @@ object --+
       
     </td>
   </tr>
-<tr class="private">
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3.s3gis.GIS-class.html#_min_not_none" class="summary-sig-name" onclick="show_private();">_min_not_none</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">*args</span>)</span><br />
-      Utility function: returns minimal argument that is not None.</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#GIS._min_not_none">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
@@ -218,6 +200,24 @@ object --+
       Calculate the Bounds of a list of Features e.g.</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#GIS.get_bounds">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3gis.GIS-class.html#_lookup_parent_path" class="summary-sig-name" onclick="show_private();">_lookup_parent_path</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">feature_id</span>)</span><br />
+      Helper that gets parent and path for a location.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#GIS._lookup_parent_path">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -251,12 +251,33 @@ object --+
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3.s3gis.GIS-class.html#get_parents" class="summary-sig-name">get_parents</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">feature_id</span>)</span><br />
-      Return a list of all GIS Features which are parents of the requested 
-      feature @ ToDo Switch to modified preorder tree traversal: 
-      http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees</td>
+        <span class="summary-sig-arg">feature_id</span>,
+        <span class="summary-sig-arg">feature</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">ids_only</span>=<span class="summary-sig-default">False</span>)</span><br />
+      Returns a list containing ancestors of the requested feature.</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#GIS.get_parents">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3gis.GIS-class.html#get_parent_per_level" class="summary-sig-name">get_parent_per_level</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">results</span>,
+        <span class="summary-sig-arg">feature_id</span>,
+        <span class="summary-sig-arg">feature</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">names</span>=<span class="summary-sig-default">False</span>)</span><br />
+      Adds ancestor of requested feature for each level to supplied dict.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#GIS.get_parent_per_level">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -312,12 +333,34 @@ object --+
         <span class="summary-sig-arg">popup_label</span>,
         <span class="summary-sig-arg">config</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">marker_id</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">filter</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">_filter</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">id</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">active</span>=<span class="summary-sig-default">True</span>,
-        <span class="summary-sig-arg">polygons</span>=<span class="summary-sig-default">False</span>)</span><br />
+        <span class="summary-sig-arg">polygons</span>=<span class="summary-sig-default">False</span>,
+        <span class="summary-sig-arg">opacity</span>=<span class="summary-sig-default">1</span>)</span><br />
       Return a Feature Layer suitable to display on a map</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#GIS.get_feature_layer">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3gis.GIS-class.html#get_features_in_polygon" class="summary-sig-name">get_features_in_polygon</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">location_id</span>,
+        <span class="summary-sig-arg">tablename</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">category</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Returns a gluon.sql.Rows of Features within a Polygonal Location</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#GIS.get_features_in_polygon">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -356,7 +399,7 @@ object --+
           <td><span class="summary-sig"><a href="vita.modules.s3.s3gis.GIS-class.html#get_latlon" class="summary-sig-name">get_latlon</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">feature_id</span>,
         <span class="summary-sig-arg">filter</span>=<span class="summary-sig-default">False</span>)</span><br />
-      Returns the Lat/Lon for a Feature (using recursion where necessary)</td>
+      Returns the Lat/Lon for a Feature</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#GIS.get_latlon">source&nbsp;code</a></span>
             
@@ -373,7 +416,7 @@ object --+
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3.s3gis.GIS-class.html#get_marker" class="summary-sig-name">get_marker</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">resource</span>,
+        <span class="summary-sig-arg">tablename</span>,
         <span class="summary-sig-arg">category</span>=<span class="summary-sig-default">None</span>)</span><br />
       Returns the Marker for a Feature
     marker.image = filename
@@ -381,6 +424,25 @@ object --+
     marker.width</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#GIS.get_marker">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3gis.GIS-class.html#get_gps_marker" class="summary-sig-name">get_gps_marker</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">tablename</span>,
+        <span class="summary-sig-arg">category</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Returns the GPS Marker (Symbol) for a Feature</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#GIS.get_gps_marker">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -519,9 +581,11 @@ object --+
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3.s3gis.GIS-class.html#update_location_tree" class="summary-sig-name">update_location_tree</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">location_id</span>,
-        <span class="summary-sig-arg">parent</span>=<span class="summary-sig-default">None</span>)</span><br />
+        <span class="summary-sig-arg">parent_id</span>=<span class="summary-sig-default">None</span>)</span><br />
       Using Materialized path for each node in the tree 
-      http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees</td>
+      http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees 
+      Do a lazy update of a database that does not have location paths. For
+      convenience of get_parents, return the path.</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#GIS.update_location_tree">source&nbsp;code</a></span>
             
@@ -949,26 +1013,6 @@ If a Point has LonLat defined: calculate the WKT.</td>
   </dl>
 </td></tr></table>
 </div>
-<a name="_min_not_none"></a>
-<div class="private">
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">_min_not_none</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">*args</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#GIS._min_not_none">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Utility function: returns minimal argument that is not None.</p>
-  <dl class="fields">
-  </dl>
-</td></tr></table>
-</div>
 <a name="get_bounds"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -985,13 +1029,34 @@ If a Point has LonLat defined: calculate the WKT.</td>
   </tr></table>
   
   <p>Calculate the Bounds of a list of Features e.g. to use in GPX export 
-  for correct zooming</p>
+  for correct zooming Ensure a minimum size of bounding box, and that the 
+  points are inset from the border.</p>
   <dl class="fields">
   </dl>
 <div class="fields">      <p><strong>To Do:</strong>
         Optimised Geospatial routines rather than this crude hack
       </p>
 </div></td></tr></table>
+</div>
+<a name="_lookup_parent_path"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_lookup_parent_path</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">feature_id</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#GIS._lookup_parent_path">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Helper that gets parent and path for a location.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
 </div>
 <a name="get_children"></a>
 <div>
@@ -1017,6 +1082,8 @@ If a Point has LonLat defined: calculate the WKT.</td>
         <p>This has been chosen over Modified Preorder Tree Traversal for 
         greater efficiency: 
         http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees</p>
+        <p>Assists lazy update of a database without location paths by 
+        calling update_location_tree to get the path.</p>
       </p>
 </div></td></tr></table>
 </div>
@@ -1028,16 +1095,61 @@ If a Point has LonLat defined: calculate the WKT.</td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">get_parents</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">feature_id</span>)</span>
+        <span class="sig-arg">feature_id</span>,
+        <span class="sig-arg">feature</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">ids_only</span>=<span class="sig-default">False</span>)</span>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#GIS.get_parents">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>Return a list of all GIS Features which are parents of the requested 
-  feature @ ToDo Switch to modified preorder tree traversal: 
-  http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees</p>
+  <p>Returns a list containing ancestors of the requested feature.</p>
+  <p>If the caller already has the location row, including path and parent 
+  fields, they can supply it via feature to avoid a db lookup.</p>
+  <p>If ids_only is false, each element in the list is a gluon.sql.Row 
+  containing the gis_location record of an ancestor of the specified 
+  location.</p>
+  <p>If ids_only is true, just returns a list of ids of the parents. This 
+  avoids a db lookup for the parents if the specified feature has a 
+  path.</p>
+  <p>List elements are in the opposite order as the location path and 
+  exclude the specified location itself, i.e. element 0 is the parent and 
+  the last element is the most distant ancestor.</p>
+  <p>Assists lazy update of a database without location paths by calling 
+  update_location_tree to get the path.</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="get_parent_per_level"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_parent_per_level</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">results</span>,
+        <span class="sig-arg">feature_id</span>,
+        <span class="sig-arg">feature</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">names</span>=<span class="sig-default">False</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#GIS.get_parent_per_level">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Adds ancestor of requested feature for each level to supplied 
+  dict.</p>
+  <p>If the caller already has the location row, including path and parent 
+  fields, they can supply it via feature to avoid a db lookup.</p>
+  <p>If a dict is not supplied in results, one is created. The results dict
+  is returned in either case.</p>
+  <p>If names=True (used by address_onvalidation) then: For each ancestor, 
+  an entry ancestor.level : ancestor.name is added to results.</p>
+  <p>If names=False (used by S3LocationSelectorWidget) then: For each 
+  ancestor, an entry ancestor.level : ancestor.id is added to results.</p>
   <dl class="fields">
   </dl>
 </td></tr></table>
@@ -1095,9 +1207,11 @@ If a Point has LonLat defined: calculate the WKT.</td>
         <span class="sig-arg">popup_label</span>,
         <span class="sig-arg">config</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">marker_id</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">filter</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">_filter</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">id</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">active</span>=<span class="sig-default">True</span>,
-        <span class="sig-arg">polygons</span>=<span class="sig-default">False</span>)</span>
+        <span class="sig-arg">polygons</span>=<span class="sig-default">False</span>,
+        <span class="sig-arg">opacity</span>=<span class="sig-default">1</span>)</span>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#GIS.get_feature_layer">source&nbsp;code</a></span>&nbsp;
@@ -1110,7 +1224,32 @@ If a Point has LonLat defined: calculate the WKT.</td>
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>layername</code></strong> - used as the label in the LayerSwitcher</li>
         <li><strong class="pname"><code>popup_label</code></strong> - used in Cluster Popups to differentiate between types</li>
+        <li><strong class="pname"><code>id</code></strong> - Used by Location Selector to select which gis_location to include
+          on the map</li>
+        <li><strong class="pname"><code>_filter</code></strong> - a filter to e.g. specify a type of resource</li>
     </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="get_features_in_polygon"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_features_in_polygon</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">location_id</span>,
+        <span class="sig-arg">tablename</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">category</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#GIS.get_features_in_polygon">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Returns a gluon.sql.Rows of Features within a Polygonal Location</p>
+  <dl class="fields">
   </dl>
 </td></tr></table>
 </div>
@@ -1154,14 +1293,12 @@ If a Point has LonLat defined: calculate the WKT.</td>
     </td>
   </tr></table>
   
-  <p>Returns the Lat/Lon for a Feature (using recursion where 
-  necessary)</p>
+  <p>Returns the Lat/Lon for a Feature</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>feature_id</code></strong> - the feature ID (int) or UUID (str)</li>
-        <li><strong class="pname"><code>filter</code></strong> - Filter out results based on deployment_settings @ToDo Rewrite to 
-          use self.get_parents()</li>
+        <li><strong class="pname"><code>filter</code></strong> - Filter out results based on deployment_settings</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -1174,7 +1311,7 @@ If a Point has LonLat defined: calculate the WKT.</td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">get_marker</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">resource</span>,
+        <span class="sig-arg">tablename</span>,
         <span class="sig-arg">category</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
@@ -1189,12 +1326,37 @@ Returns the Marker for a Feature
     marker.height
     marker.width
 
-Used by s3xrc for Feeds export and by get_feature_layer for Categorised Resources
+Used by s3xrc for Feeds export
 
-@param resource
+@ToDo: Get Feeds to use the gis_feature_layer table?
+
+@param tablename
 @param category
 
 </pre>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="get_gps_marker"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_gps_marker</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">tablename</span>,
+        <span class="sig-arg">category</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#GIS.get_gps_marker">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Returns the GPS Marker (Symbol) for a Feature</p>
+  <p>Used by s3xrc for Feeds export</p>
+  <p>@param tablename @param category</p>
   <dl class="fields">
   </dl>
 </td></tr></table>
@@ -1382,7 +1544,7 @@ Currently it expects L0 data to be pre-imported into the database.
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">update_location_tree</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">location_id</span>,
-        <span class="sig-arg">parent</span>=<span class="sig-default">None</span>)</span>
+        <span class="sig-arg">parent_id</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vita.modules.s3.s3gis-pysrc.html#GIS.update_location_tree">source&nbsp;code</a></span>&nbsp;
@@ -1422,7 +1584,7 @@ Centroid and bounds calculation is done using Shapely, which wraps Geos.
 A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
 
 Relies on Shapely.
-@ToDo provide an option to use PostGIS/Spatialite
+@ToDo: provide an option to use PostGIS/Spatialite
 
 </pre>
   <dl class="fields">
@@ -1771,14 +1933,14 @@ In the view, put: {{=XML(map)}}
       <th class="navbar" align="right" width="100%">
         <table border="0" cellpadding="0" cellspacing="0">
           <tr><th class="navbar" align="center"
-            >S3</th>
+            ><a class="navbar" target="_top" href="http://eden.sahanafoundation.org/wiki/S3">S3</a></th>
           </tr></table></th>
   </tr>
 </table>
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Mon Jan 17 00:32:28 2011
+    Generated by Epydoc 3.0.1 on Tue Mar 29 14:25:41 2011
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

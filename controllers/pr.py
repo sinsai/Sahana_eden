@@ -157,7 +157,6 @@ def person():
                                 extra="last_name",
                                 rheader=lambda r: shn_pr_rheader(r,
                                     tabs = [(T("Basic Details"), None),
-                                            (T("Test"), "group/"),
                                             (T("Images"), "image"),
                                             (T("Identity"), "identity"),
                                             (T("Address"), "address"),

@@ -525,7 +525,7 @@ class S3LocationAutocompleteWidget(FormWidget):
         return TAG[""](
                         INPUT(_id=dummy_input, _value=represent),
                         IMG(_src="/%s/static/img/ajax-loader.gif" % \
-                                 request.application,
+                                 self.request.application,
                             _height=32, _width=32,
                             _id="%s_throbber" % dummy_input,
                             _class="throbber hidden"),
@@ -680,7 +680,7 @@ class S3PersonAutocompleteWidget(FormWidget):
         return TAG[""](
                         INPUT(_id=dummy_input, _value=represent),
                         IMG(_src="/%s/static/img/ajax-loader.gif" % \
-                                 request.application,
+                                 self.request.application,
                             _height=32, _width=32,
                             _id="%s_throbber" % dummy_input,
                             _class="throbber hidden"),
@@ -907,7 +907,7 @@ class S3LocationSelectorWidget(FormWidget):
 
         # Settings to insert into static/scripts/S3/s3.locationselector.widget.js
         location_id = attr["_id"]
-        url = URL(r=request, c="gis", f="location")
+        url = URL(r=self.request, c="gis", f="location")
 
         # Localised strings
         empty_set = T("No locations registered at this level")
@@ -1247,7 +1247,7 @@ class S3LocationSelectorWidget(FormWidget):
                            BR(),
                            INPUT(_id="gis_location_autocomplete"),
                            IMG(_src="/%s/static/img/ajax-loader.gif" % \
-                                    request.application,
+                                    self.request.application,
                                _height=32, _width=32,
                                _id="gis_location_autocomplete_throbber",
                                _class="throbber hidden"),
@@ -1607,7 +1607,7 @@ class S3StreetAddressWidget(FormWidget):
 
         # Settings to insert into static/scripts/S3/s3.locationselector.widget.js
         location_id = attr["_id"]
-        url = URL(r=request, c="gis", f="location")
+        url = URL(r=self.request, c="gis", f="location")
 
         # Localised strings
         loading_locations = T("Loading Locations")

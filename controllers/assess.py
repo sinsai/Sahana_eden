@@ -196,18 +196,20 @@ def rat():
     # Over-ride the listadd since we're not a component here
     s3xrc.model.configure(table, create_next="", listadd=True)
 
-    rheader = lambda r: shn_rat_rheader(r,
-                                        tabs = [(T("Identification"), None),
-                                                (T("Demographic"), "section2"),
-                                                (T("Shelter & Essential NFIs"), "section3"),
-                                                (T("WatSan"), "section4"),
-                                                (T("Health"), "section5"),
-                                                (T("Nutrition"), "section6"),
-                                                (T("Livelihood"), "section7"),
-                                                (T("Education"), "section8"),
-                                                (T("Protection"), "section9") ])
+    tabs = [(T("Identification"), None),
+            (T("Demographic"), "section2"),
+            (T("Shelter & Essential NFIs"), "section3"),
+            (T("WatSan"), "section4"),
+            (T("Health"), "section5"),
+            (T("Nutrition"), "section6"),
+            (T("Livelihood"), "section7"),
+            (T("Education"), "section8"),
+            (T("Protection"), "section9") ]
 
-    output = s3_rest_controller(prefix, resourcename, rheader=rheader)
+    rheader = lambda r: shn_rat_rheader(r,
+                                        tabs)
+
+    output = s3_rest_controller(prefix, resourcename, rheader=rheader, s3ocr_config={"tabs": tabs})
 
     response.extra_styles = ["S3/rat.css"]
     return output

@@ -381,27 +381,31 @@ table = super_entity(tablename,
 
 # -----------------------------------------------------------------------------
 def shn_site_represent(id, default_label="[no label]"):
-
     """ Represent a site in option fields or list views """
 
     site_str = T("None (no such record)")
-
     site_table = db.org_site
-    site = db(site_table.site_id == id).select(site_table.instance_type,
-                                               limitby=(0, 1)).first()
-    if not site:
-        return site_str
+
+    if isinstance(id, Row) and "instance_type" in id:
+        # Do not repeat the lookup if already done by IS_ONE_OF
+        site = id
+    else:
+        site = db(site_table._id == id).select(site_table.instance_type,
+                                               limitby=(0,1)).first()
+        if not site:
+            return site_str
 
     instance_type = site.instance_type
-    instance_type_nice = site_table.instance_type.represent(instance_type)
-
-    table = db.get(instance_type, None)
-    if not table:
+    try:
+        table = db[instance_type]
+    except:
         return site_str
 
     # All the current types of sites have a required "name" field that can
     # serve as their representation.
     record = db(table.site_id == id).select(table.name, limitby=(0, 1)).first()
+
+    instance_type_nice = site_table.instance_type.represent(instance_type)
 
     if record:
         site_str = "%s (%s)" % (record.name, instance_type_nice)

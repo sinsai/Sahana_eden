@@ -258,7 +258,7 @@ class S3AutocompleteWidget(FormWidget):
     def __call__(self ,field, value, **attributes):
 
         request = self.request
-    
+
         default = dict(
             _type = "text",
             value = (value != None and str(value)) or "",
@@ -362,7 +362,7 @@ class S3AutocompleteWidget(FormWidget):
         return TAG[""](
                         INPUT(_id=dummy_input, _value=represent),
                         IMG(_src="/%s/static/img/ajax-loader.gif" % \
-                                 request.application,
+                                 self.request.application,
                             _height=32, _width=32,
                             _id="%s_throbber" % dummy_input,
                             _class="throbber hidden"),
@@ -525,7 +525,7 @@ class S3LocationAutocompleteWidget(FormWidget):
         return TAG[""](
                         INPUT(_id=dummy_input, _value=represent),
                         IMG(_src="/%s/static/img/ajax-loader.gif" % \
-                                 request.application,
+                                 self.request.application,
                             _height=32, _width=32,
                             _id="%s_throbber" % dummy_input,
                             _class="throbber hidden"),
@@ -680,7 +680,7 @@ class S3PersonAutocompleteWidget(FormWidget):
         return TAG[""](
                         INPUT(_id=dummy_input, _value=represent),
                         IMG(_src="/%s/static/img/ajax-loader.gif" % \
-                                 request.application,
+                                 self.request.application,
                             _height=32, _width=32,
                             _id="%s_throbber" % dummy_input,
                             _class="throbber hidden"),
@@ -754,7 +754,7 @@ class S3LocationSelectorWidget(FormWidget):
         else:
             details_hidden = "hidden"
             details_button_hidden = ""
-        
+
         countries = response.s3.gis.countries  # Also needed by location_represent hence want to keep in model, so useful not to repeat
         # Should we use a Map-based selector?
         map_selector = deployment_settings.get_gis_map_selector()
@@ -777,7 +777,7 @@ class S3LocationSelectorWidget(FormWidget):
             navigate_away_confirm = "true"
         else:
             navigate_away_confirm = "false"
-        
+
         # Main Input
         default = dict(
                         _type = "text",
@@ -1247,7 +1247,7 @@ class S3LocationSelectorWidget(FormWidget):
                            BR(),
                            INPUT(_id="gis_location_autocomplete"),
                            IMG(_src="/%s/static/img/ajax-loader.gif" % \
-                                    request.application,
+                                    self.request.application,
                                _height=32, _width=32,
                                _id="gis_location_autocomplete_throbber",
                                _class="throbber hidden"),
@@ -1480,7 +1480,7 @@ class S3StreetAddressWidget(FormWidget):
             navigate_away_confirm = "true"
         else:
             navigate_away_confirm = "false"
-        
+
         # Main Input
         default = dict(
                         _type = "text",

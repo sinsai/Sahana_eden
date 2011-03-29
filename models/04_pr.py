@@ -163,14 +163,18 @@ table.tags.represent = lambda opt: opt and \
 def shn_pr_person_represent(id):
 
     def _represent(id):
-        table = db.pr_person
-        person = db(table.id == id).select(
-                    table.first_name,
-                    table.middle_name,
-                    table.last_name,
-                    limitby=(0, 1))
+        if isinstance(id, Row):
+            person = id
+            id = person.id
+        else:
+            table = db.pr_person
+            person = db(table.id == id).select(
+                        table.first_name,
+                        table.middle_name,
+                        table.last_name,
+                        limitby=(0, 1)).first()
         if person:
-            return vita.fullname(person.first())
+            return vita.fullname(person)
         else:
             return None
 

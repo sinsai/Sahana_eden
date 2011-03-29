@@ -470,9 +470,9 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
                                   label = T("Date Available")),
 
                             #For site should be a virtual field
-                            #Field("for_site_id",
-                            #      db.org_site,
-                            #      ),
+                            Field("for_site_id",
+                                  db.org_site,
+                                  ),
                             person_id("committer_id",
                                       label = T("Committed By") ),
                             comments(),
@@ -543,6 +543,46 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
                                                 pk = "site_id")
     )
 
+    # -----------------------------------------------------------------------------
+    def shn_req_match():
+        """
+            Function to be called from controller functions to display all request as a tab 
+            for a site.
+            @ToDo: Needs to work with wh, shelters and hospitals
+                   Filter out requests from this site
+        """
+        resource_id = request.args[0]
+        r = Storage()
+        r.id = resource_id
+        r.record = db.org_office[resource_id]
+        r.representation = "html"
+        r.request = request
+        r.request.function = "office"
+        r.request.cust_function = "req_match"
+        rheader = shn_office_rheader(r)
+        request.args = []
+        
+
+        response.s3.actions = [dict(url = str(URL( r=request,
+                                                   c = "req",
+                                                   f = "commit_req",
+                                                   args = ["[id]"],
+                                                   vars = {"site_id": r.record.site_id}
+                                                   )
+                                               ),
+                                    _class = "action-btn",
+                                    label = str(T("Commit")),
+                                    )
+                               ]
+
+        
+        s3xrc.model.configure(db.req_req, insertable=False)
+        output = s3_rest_controller("req", "req",
+                                    method = "list")
+
+        output["rheader"] = rheader
+        
+        return output
 
     #==========================================================================
     if deployment_settings.has_module("inv"):

@@ -963,7 +963,6 @@ if deployment_settings.has_module(module):
                         #(T("Incoming"), "send", dict(select="incoming")),  # Disabled as 'unsupported method'
                         (T("Receive" ), "recv"),
                         (T("Send"), "send", dict(select="sent")),          # Disabled as 'unsupported method'
-                        (T("Commit"), "commit"),
                         ]
             if r.request.function != "warehouse":
                 inv_tabs.append(("- %s" % T("Inventory"),

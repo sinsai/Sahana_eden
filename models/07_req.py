@@ -13,7 +13,7 @@
 """
 
 module = "req"
-if deployment_settings.has_module(module):
+if deployment_settings.has_module(module) or deployment_settings.has_module("inv"):
     req_menu = [
                     [T("Requests"), False, aURL(r=request, c="req", f="req"), [
                         [T("New"), False, aURL(r=request, c="req", f="req", args="create")]

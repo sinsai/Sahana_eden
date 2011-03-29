@@ -2010,27 +2010,27 @@ class GIS(object):
                 config_button = SPAN( A(T("Defaults"),
                                       _href=URL(r=request, c="gis", f="config",
                                                 args=["1", "update"])),
-                                      _class="rheader_tab_other" )
+                                      _class="tab_other" )
             else:
                 config_button = SPAN( A(T("Defaults"),
                                       _href=URL(r=request, c="gis", f="config",
                                                 args=["1", "read"])),
-                                      _class="rheader_tab_other" )
+                                      _class="tab_other" )
             catalogue_toolbar = DIV(
                 config_button,
                 SPAN( A(T("Layers"),
                       _href=URL(r=request, c="gis", f="map_service_catalogue")),
-                      _class="rheader_tab_other" ),
+                      _class="tab_other" ),
                 SPAN( A(T("Markers"),
                       _href=URL(r=request, c="gis", f="marker")),
-                      _class="rheader_tab_other" ),
+                      _class="tab_other" ),
                 SPAN( A(T("Keys"),
                       _href=URL(r=request, c="gis", f="apikey")),
-                      _class="rheader_tab_other" ),
+                      _class="tab_other" ),
                 SPAN( A(T("Projections"),
                       _href=URL(r=request, c="gis", f="projection")),
-                      _class="rheader_tab_other" ),
-                _id="rheader_tabs")
+                      _class="tab_last" ),
+                _class="tabs")
             html.append(catalogue_toolbar)
 
         # Map (Embedded not Window)
@@ -2058,9 +2058,9 @@ class GIS(object):
         # Scripts
         #########
         if session.s3.debug:
-            if projection != "900913" and projection != "4326":
+            if projection != 900913 and projection != 4326:
                 html.append(SCRIPT(_type="text/javascript",
-                                   _src=URL(r=request, c="static", f="scripts/gis/proj4js/lib/proj4js.js")))
+                                   _src=URL(r=request, c="static", f="scripts/gis/proj4js/lib/proj4js-combined.js")))
                 html.append(SCRIPT(_type="text/javascript",
                                    _src=URL(r=request, c="static", f="scripts/gis/proj4js/lib/defs/EPSG%s.js" % projection)))
             html.append(SCRIPT(_type="text/javascript",
@@ -2079,7 +2079,7 @@ class GIS(object):
                 html.append(SCRIPT(_type="text/javascript",
                                    _src=URL(r=request, c="static", f="scripts/gis/MP.js")))
         else:
-            if projection != "900913" and projection != "4326":
+            if projection != 900913 and projection != 4326:
                 html.append(SCRIPT(_type="text/javascript",
                                    _src=URL(r=request, c="static", f="scripts/gis/proj4js/lib/proj4js-compressed.js")))
                 html.append(SCRIPT(_type="text/javascript",

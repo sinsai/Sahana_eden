@@ -212,7 +212,7 @@ if deployment_settings.has_module(module):
                                           _title="%s|%s" % (T("Hospital"),
                                                             T("If you don't see the Hospital in the list, you can add a new one by clicking link 'Add Hospital'.")))))
                                                             # If using Autocomplete Widget
-                                                            #T("Enter some characters to bring up a list of possible matches.")))))
+                                                            #T("Enter some characters to bring up a list of possible matches")))))
     hospital_id = S3ReusableField("hospital_id", db.hms_hospital, sortby="name",
                                   requires = IS_NULL_OR(IS_ONE_OF(db, "hms_hospital.id", "%(name)s")),
                                   represent = lambda id: (id and
@@ -900,14 +900,20 @@ if deployment_settings.has_module(module):
                     field=["gov_uuid", "name", "aka1", "aka2",
                         "organisation_id$name", "organisation_id$acronym"]
                   ),
-                  ## for testing:
+                  # for testing:
+                  s3base.S3SearchSelectWidget(
+                    name="hospital_facility_type",
+                    label=T("Facility Type"),
+                    field=["facility_type"]
+                  ),
+                  # for testing:
                   s3base.S3SearchMinMaxWidget(
                     name="hospital_search_bedcount",
                     method="range",
-                    #label=T("Total Beds"),
+                    label=T("Total Beds"),
                     comment=T("Select a range for the number of total beds"),
                     field=["total_beds"]
-                  )
+                  ),
         ))
 
     # Set as standard search method for hospitals

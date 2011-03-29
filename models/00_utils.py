@@ -626,22 +626,22 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
             function = r.request.function
 
         if i == len(tabs)-1:
-            tab = Storage(title=title, _class = "rheader_tab_last")
+            tab = Storage(title=title, _class = "tab_last")
         else:
-            tab = Storage(title=title, _class = "rheader_tab_other")
-        if i > 0 and tablist[i-1]._class == "rheader_tab_here":
+            tab = Storage(title=title, _class = "tab_other")
+        if i > 0 and tablist[i-1]._class == "tab_here":
             next = tab
 
         if component:
             if r.component and r.component.name == component and vars_in_request or \
                r.custom_action and r.method == component:
-                tab.update(_class = "rheader_tab_here")
+                tab.update(_class = "tab_here")
                 previous = i and tablist[i-1] or None
             args = [r.id, component]
             tab.update(_href=URL(r=request, f=function, args=args, vars=_vars))
         else:
             if not r.component and len(tabs[i]) <= 2:
-                tab.update(_class = "rheader_tab_here")
+                tab.update(_class = "tab_here")
                 previous = i and tablist[i-1] or None
             args = [r.id]
             vars = Storage(_vars)
@@ -656,14 +656,14 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
     if rheader_tabs:
         if paging:
             if next:
-                rheader_tabs.insert(0, SPAN(A(">", _href=next._href), _class="rheader_next_active"))
+                rheader_tabs.insert(0, SPAN(A(">", _href=next._href), _class="tab_next_active"))
             else:
-                rheader_tabs.insert(0, SPAN(">", _class="rheader_next_inactive"))
+                rheader_tabs.insert(0, SPAN(">", _class="tab_next_inactive"))
             if previous:
-                rheader_tabs.insert(0, SPAN(A("<", _href=previous._href), _class="rheader_prev_active"))
+                rheader_tabs.insert(0, SPAN(A("<", _href=previous._href), _class="tab_prev_active"))
             else:
-                rheader_tabs.insert(0, SPAN("<", _class="rheader_prev_inactive"))
-        rheader_tabs = DIV(rheader_tabs, _id="rheader_tabs")
+                rheader_tabs.insert(0, SPAN("<", _class="tab_prev_inactive"))
+        rheader_tabs = DIV(rheader_tabs, _class="tabs")
     else:
         rheader_tabs = ""
 

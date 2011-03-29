@@ -107,9 +107,6 @@ deployment_settings.twitter.oauth_consumer_key = ""
 deployment_settings.twitter.oauth_consumer_secret = ""
 
 # L10n settings
-# Uncomment this if the deployment is just in a few countries
-# (used in the GIS Location Selector)
-#deployment_settings.L10n.countries = ["PK"]
 #deployment_settings.L10n.default_country_code = 1
 # Languages used in the deployment (used for Language Toolbar & GIS Locations)
 # http://www.loc.gov/standards/iso639-2/php/code_list.php
@@ -146,6 +143,9 @@ deployment_settings.L10n.religions = {
 }
 
 # GIS (Map) settings
+# Uncomment this if the deployment is just in a few countries
+# (used in the GIS Location Selector)
+#deployment_settings.gis.countries = ["PK"]
 # Provide a tool to select locations via a map on all forms with location_id
 deployment_settings.gis.map_selector = True
 # Display Resources recorded to Admin-Level Locations on the map

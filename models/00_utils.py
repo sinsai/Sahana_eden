@@ -617,16 +617,20 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
         else:
             _vars = r.request.vars
 
-
-        here = True
+        here = False
         if component and component.find("/") > 0:
             function, component = component.split("/", 1)
             if not component:
                 component = None
-            if function != r.request.function:
-                here = False
         else:
-            function = r.request.function
+            if "viewing" in _vars:
+                tablename, record_id = _vars.viewing.split(".", 1)
+                function = tablename.split("_", 1)[1]
+            else:
+                function = r.request.function
+                record_id = r.id
+        if function == r.name:
+            here = True
 
         if i == len(tabs)-1:
             tab = Storage(title=title, _class = "tab_last")
@@ -640,8 +644,11 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
                r.custom_action and r.method == component:
                 tab.update(_class = "tab_here")
                 previous = i and tablist[i-1] or None
-            args = [r.id, component]
-            tab.update(_href=URL(r=request, f=function, args=args, vars=_vars))
+            args = [record_id, component]
+            vars = Storage(_vars)
+            if "viewing" in vars:
+                del vars["viewing"]
+            tab.update(_href=URL(r=request, f=function, args=args, vars=vars))
         else:
             if not r.component and len(tabs[i]) <= 2 and here:
                 tab.update(_class = "tab_here")
@@ -649,10 +656,14 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
             vars = Storage(_vars)
             args = []
             if function != r.name:
-                if not "viewing" in vars and r.id:
+                if "viewing" not in vars and r.id:
                     vars.update(viewing="%s.%s" % (r.tablename, r.id))
+                elif "viewing" in vars:
+                    del vars["viewing"]
+                    args = [record_id]
             else:
-                args = [r.id]
+                if "viewing" not in vars and record_id:
+                    args = [record_id]
             tab.update(_href=URL(r=request, f=function, args=args, vars=vars))
 
         tablist.append(tab)

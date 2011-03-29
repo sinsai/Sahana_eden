@@ -242,7 +242,7 @@ organisation_comment = DIV(A(ADD_ORGANIZATION,
                            _title=ADD_ORGANIZATION),
                          DIV(DIV(_class="tooltip",
                                  _title="%s|%s" % (ADD_ORGANIZATION,
-                                                   T("Enter some characters to bring up a list of possible matches.")))))
+                                                   T("Enter some characters to bring up a list of possible matches")))))
                                                    # Replace with this one if using dropdowns & not autocompletes
                                                    #T("If you don't see the Organization in the list, you can add a new one by clicking link 'Add Organization'.")))))
 

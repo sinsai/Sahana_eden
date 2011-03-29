@@ -34,7 +34,7 @@ req_item_inv_item_btn = dict(url = str( URL( r=request,
                                             )
                                         ),
                              _class = "action-btn",
-                             label = str(T("Inventory Items")), # Change to Fulfil? Match?
+                             label = str(T("Find Match")), # Change to Fulfil? Match?
                              )
 
 #------------------------------------------------------------------------------
@@ -247,6 +247,15 @@ def req_item_inv_item():
     output["items_alt"] = inv_items_alt["items"]
     
     response.view = "req/req_item_inv_item.html"
+    response.s3.actions = [dict(url = str(URL( r=request,
+                                               c = "inv",
+                                               f = "inv_item",
+                                               args = ["[id]"],
+                                               )
+                                           ),
+                                _class = "action-btn",
+                                label = str(T("Open")),
+                                )] 
 
     return output
 

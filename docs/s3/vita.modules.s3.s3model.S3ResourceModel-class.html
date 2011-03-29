@@ -34,7 +34,7 @@
       <th class="navbar" align="right" width="100%">
         <table border="0" cellpadding="0" cellspacing="0">
           <tr><th class="navbar" align="center"
-            >S3</th>
+            ><a class="navbar" target="_top" href="http://eden.sahanafoundation.org/wiki/S3">S3</a></th>
           </tr></table></th>
   </tr>
 </table>
@@ -335,7 +335,17 @@ object --+
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3.s3model.S3ResourceModel-class.html#super_link" class="summary-sig-name">super_link</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">super</span>)</span><br />
+        <span class="summary-sig-arg">supertable</span>,
+        <span class="summary-sig-arg">label</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">comment</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">represent</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">orderby</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">sort</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">filterby</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">filter_opts</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">groupby</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">readable</span>=<span class="summary-sig-default">False</span>,
+        <span class="summary-sig-arg">writable</span>=<span class="summary-sig-default">False</span>)</span><br />
       Get a foreign key field for a super-entity</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3.s3model-pysrc.html#S3ResourceModel.super_link">source&nbsp;code</a></span>
@@ -426,7 +436,7 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3.s3model.S3ResourceModel-class.html#super_key" class="summary-sig-name">super_key</a>(<span class="summary-sig-arg">super</span>)</span><br />
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3model.S3ResourceModel-class.html#super_key" class="summary-sig-name">super_key</a>(<span class="summary-sig-arg">supertable</span>)</span><br />
       Get the name of the key for a super-entity</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3.s3model-pysrc.html#S3ResourceModel.super_key">source&nbsp;code</a></span>
@@ -818,7 +828,7 @@ object --+
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">super_key</span>(<span class="sig-arg">super</span>)</span>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">super_key</span>(<span class="sig-arg">supertable</span>)</span>
     <br /><em class="fname">Static Method</em>
   </h3>
   </td><td align="right" valign="top"
@@ -830,7 +840,7 @@ object --+
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>super</code></strong> - the super-entity table</li>
+        <li><strong class="pname"><code>supertable</code></strong> - the super-entity table</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -843,7 +853,17 @@ object --+
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">super_link</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">super</span>)</span>
+        <span class="sig-arg">supertable</span>,
+        <span class="sig-arg">label</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">comment</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">represent</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">orderby</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">sort</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">filterby</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">filter_opts</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">groupby</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">readable</span>=<span class="sig-default">False</span>,
+        <span class="sig-arg">writable</span>=<span class="sig-default">False</span>)</span>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vita.modules.s3.s3model-pysrc.html#S3ResourceModel.super_link">source&nbsp;code</a></span>&nbsp;
@@ -854,7 +874,11 @@ object --+
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>super</code></strong> - the super-entity table</li>
+        <li><strong class="pname"><code>supertable</code></strong> - the super-entity table</li>
+        <li><strong class="pname"><code>label</code></strong> - label for the field</li>
+        <li><strong class="pname"><code>comment</code></strong> - comment for the field</li>
+        <li><strong class="pname"><code>readable</code></strong> - set the field readable</li>
+        <li><strong class="pname"><code>represent</code></strong> - set a representation function for the field</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -936,14 +960,14 @@ object --+
       <th class="navbar" align="right" width="100%">
         <table border="0" cellpadding="0" cellspacing="0">
           <tr><th class="navbar" align="center"
-            >S3</th>
+            ><a class="navbar" target="_top" href="http://eden.sahanafoundation.org/wiki/S3">S3</a></th>
           </tr></table></th>
   </tr>
 </table>
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Mon Jan 17 00:32:28 2011
+    Generated by Epydoc 3.0.1 on Tue Mar 29 14:25:41 2011
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

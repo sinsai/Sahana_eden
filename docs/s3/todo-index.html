@@ -34,7 +34,7 @@
       <th class="navbar" align="right" width="100%">
         <table border="0" cellpadding="0" cellspacing="0">
           <tr><th class="navbar" align="center"
-            >S3</th>
+            ><a class="navbar" target="_top" href="http://eden.sahanafoundation.org/wiki/S3">S3</a></th>
           </tr></table></th>
   </tr>
 </table>
@@ -61,6 +61,12 @@
 <h1 class="epydoc"><a name="todo">To Do List</a></h1>
 <br />
 <div>
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3.s3aaa.AuthS3-class.html#s3_site_resource">vita.modules.s3.s3aaa.AuthS3.s3_site_resource</a></b>    <ul class="nomargin">
+      <li>Should this functionality be shifted to the super entity code? (But 
+    then can't be visible from Auth)</li>
+    </ul>
+</table></div>
+<div>
 <table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3.s3export.S3Exporter-class.html#csv">vita.modules.s3.s3export.S3Exporter.csv</a></b>    <ul class="nomargin">
       <li>implement audit</li>
     </ul>
@@ -76,7 +82,7 @@
     </ul>
 </table></div>
 <div class="private">
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3.s3gis.GIS-class.html#_get_features_by_latlon">vita.modules.s3.s3gis.GIS._get_features_by_latlon</a></b>    <ul class="nomargin">
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3.s3gis.GIS-class.html#_get_features_by_latlon" onclick="show_private();">vita.modules.s3.s3gis.GIS._get_features_by_latlon</a></b>    <ul class="nomargin">
       <li>provide an option to use PostGIS/Spatialite</li>
     </ul>
 </table></div>
@@ -91,13 +97,14 @@
     </ul>
 </table></div>
 <div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3.s3rest.S3Request-class.html">vita.modules.s3.s3rest.S3Request</a></b>    <ul class="nomargin">
-      <li>integrate into S3Resource</li>
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3.s3ocr.S3XForms-class.html#pdf_manager">vita.modules.s3.s3ocr.S3XForms.pdf_manager</a></b>    <ul class="nomargin">
+      <li>ocr implementation would require if (no pdf) : generate + store(db) + 
+    deliver elif (pdf exists) : retrive(db) + deliver</li>
     </ul>
 </table></div>
-<div class="private">
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3.s3rest.S3Resource-class.html#__put_tree" onclick="show_private();">vita.modules.s3.s3rest.S3Resource.__put_tree</a></b>    <ul class="nomargin">
-      <li>use the importer!</li>
+<div>
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3.s3rest.S3Request-class.html">vita.modules.s3.s3rest.S3Request</a></b>    <ul class="nomargin">
+      <li>integrate into S3Resource</li>
     </ul>
 </table></div>
 <div>
@@ -106,19 +113,9 @@
       <li>audit</li>
     </ul>
 </table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3.s3search.S3LocationSearch-class.html">vita.modules.s3.s3search.S3LocationSearch</a></b>    <ul class="nomargin">
-      <li>Support Components</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3.s3search.S3PersonSearch-class.html">vita.modules.s3.s3search.S3PersonSearch</a></b>    <ul class="nomargin">
-      <li>Support components</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3.s3search.S3Search-class.html">vita.modules.s3.s3search.S3Search</a></b>    <ul class="nomargin">
-      <li>Support components</li>
+<div class="private">
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3.s3track.S3Trackable-class.html#remove_location">vita.modules.s3.s3track.S3Trackable.remove_location</a></b>    <ul class="nomargin">
+      <li>implement</li>
     </ul>
 </table></div>
 <div>
@@ -151,7 +148,38 @@
 </table></div>
 <div>
 <table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3.s3widgets.S3LocationSelectorWidget-class.html">vita.modules.s3.s3widgets.S3LocationSelectorWidget</a></b>    <ul class="nomargin">
-      <li>This is a work-in-progress</li>
+      <li>Need to allow Projects/Documents to be linked to a generic Lx Location.</li>
+    </ul>
+</table></div>
+<div>
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3.s3widgets.S3StreetAddressWidget-class.html">vita.modules.s3.s3widgets.S3StreetAddressWidget</a></b>    <ul class="nomargin">
+      <li>Renders a gis_location SELECT suitable for use as a Street Address:
+    <ul>
+      <li>
+        a set of INPUT fields ordered in 'normal' order
+      </li>
+      <li>
+        street address field triggers a geocoder lookup (direct to Google 
+        @ToDo: configurable which back-end to use)
+      </li>
+      <li>
+        if succesful then the rest of the hierarchy is populated
+      </li>
+      <li>
+        Lx fields act as optional Autocompletes
+      </li>
+      <li>
+        any levels of hierarchy which weren't selected get created along 
+        with the main record through a single AJAX request Q: How do we 
+        avoid duplicates with the auto-population of the hierarchy from the
+        geocoder? (Check for same name =&gt; Update in this processing 
+        controller?)
+      </li>
+      <li>
+        map opens up to the geocoded location &amp; can be fine-tuned from 
+        there
+      </li>
+    </ul></li>
     </ul>
 </table></div>
 <div>
@@ -244,11 +272,6 @@
     </ul>
 </table></div>
 <div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3.s3xml.S3XML-class.html#json_message">vita.modules.s3.s3xml.S3XML.json_message</a></b>    <ul class="nomargin">
-      <li>extend to report number of results/successful imports</li>
-    </ul>
-</table></div>
-<div>
 <table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3.s3xrc.S3ResourceController-class.html#export_tree">vita.modules.s3.s3xrc.S3ResourceController.export_tree</a></b>    <ul class="nomargin">
       <li>move into S3Resource</li>
     </ul>
@@ -288,14 +311,14 @@
       <th class="navbar" align="right" width="100%">
         <table border="0" cellpadding="0" cellspacing="0">
           <tr><th class="navbar" align="center"
-            >S3</th>
+            ><a class="navbar" target="_top" href="http://eden.sahanafoundation.org/wiki/S3">S3</a></th>
           </tr></table></th>
   </tr>
 </table>
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Mon Jan 17 00:32:28 2011
+    Generated by Epydoc 3.0.1 on Tue Mar 29 14:25:40 2011
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

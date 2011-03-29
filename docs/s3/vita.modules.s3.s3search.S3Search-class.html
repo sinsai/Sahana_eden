@@ -34,7 +34,7 @@
       <th class="navbar" align="right" width="100%">
         <table border="0" cellpadding="0" cellspacing="0">
           <tr><th class="navbar" align="center"
-            >S3</th>
+            ><a class="navbar" target="_top" href="http://eden.sahanafoundation.org/wiki/S3">S3</a></th>
           </tr></table></th>
   </tr>
 </table>
@@ -65,21 +65,19 @@
 <!-- ==================== CLASS DESCRIPTION ==================== -->
 <h1 class="epydoc">Class S3Search</h1><p class="nomargin-top"><span class="codelink"><a href="vita.modules.s3.s3search-pysrc.html#S3Search">source&nbsp;code</a></span></p>
 <pre class="base-tree">
-     object --+    
-              |    
-<a href="vita.modules.s3.s3rest.S3Method-class.html">s3rest.S3Method</a> --+
-                  |
-                 <strong class="uidshort">S3Search</strong>
+     object --+        
+              |        
+<a href="vita.modules.s3.s3rest.S3Method-class.html">s3rest.S3Method</a> --+    
+                  |    
+      <a href="vita.modules.s3.s3crud.S3CRUD-class.html">s3crud.S3CRUD</a> --+
+                      |
+                     <strong class="uidshort">S3Search</strong>
 </pre>
 
 <hr />
-<p>Search method for S3Resources</p>
+<p>RESTful Search Method for S3Resources</p>
 
-<hr />
-<div class="fields">      <p><strong>To Do:</strong>
-        Support components
-      </p>
-</div><!-- ==================== INSTANCE METHODS ==================== -->
+<!-- ==================== INSTANCE METHODS ==================== -->
 <a name="section-InstanceMethods"></a>
 <table class="summary" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
@@ -102,10 +100,31 @@
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3search.S3Search-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">simple</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">advanced</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">any</span>=<span class="summary-sig-default">False</span>,
+        <span class="summary-sig-arg">**args</span>)</span><br />
+      Constructor</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3.s3search-pysrc.html#S3Search.__init__">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3.s3search.S3Search-class.html#apply_method" class="summary-sig-name">apply_method</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">r</span>,
         <span class="summary-sig-arg">**attr</span>)</span><br />
-      Apply method</td>
+      Entry point to apply search method to S3Requests</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3.s3search-pysrc.html#S3Search.apply_method">source&nbsp;code</a></span>
             
@@ -115,8 +134,64 @@
       
     </td>
   </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3search.S3Search-class.html#search_interactive" class="summary-sig-name">search_interactive</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">r</span>,
+        <span class="summary-sig-arg">**attr</span>)</span><br />
+      Interactive search</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3.s3search-pysrc.html#S3Search.search_interactive">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3search.S3Search-class.html#search_json" class="summary-sig-name">search_json</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">r</span>,
+        <span class="summary-sig-arg">**attr</span>)</span><br />
+      Legacy JSON search method (for autocomplete-widgets)</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3.s3search-pysrc.html#S3Search.search_json">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
   <tr>
     <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="vita.modules.s3.s3crud.S3CRUD-class.html">s3crud.S3CRUD</a></code></b>:
+      <code><a href="vita.modules.s3.s3crud.S3CRUD-class.html#create">create</a></code>,
+      <code><a href="vita.modules.s3.s3crud.S3CRUD-class.html#crud_button">crud_button</a></code>,
+      <code><a href="vita.modules.s3.s3crud.S3CRUD-class.html#crud_string">crud_string</a></code>,
+      <code><a href="vita.modules.s3.s3crud.S3CRUD-class.html#delete">delete</a></code>,
+      <code><a href="vita.modules.s3.s3crud.S3CRUD-class.html#insert_buttons">insert_buttons</a></code>,
+      <code><a href="vita.modules.s3.s3crud.S3CRUD-class.html#last_update">last_update</a></code>,
+      <code><a href="vita.modules.s3.s3crud.S3CRUD-class.html#read">read</a></code>,
+      <code><a href="vita.modules.s3.s3crud.S3CRUD-class.html#select">select</a></code>,
+      <code><a href="vita.modules.s3.s3crud.S3CRUD-class.html#sqlform">sqlform</a></code>,
+      <code><a href="vita.modules.s3.s3crud.S3CRUD-class.html#sqltable">sqltable</a></code>,
+      <code><a href="vita.modules.s3.s3crud.S3CRUD-class.html#ssp_filter">ssp_filter</a></code>,
+      <code><a href="vita.modules.s3.s3crud.S3CRUD-class.html#ssp_orderby">ssp_orderby</a></code>,
+      <code><a href="vita.modules.s3.s3crud.S3CRUD-class.html#update">update</a></code>
+      </p>
+    <div class="private">    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="vita.modules.s3.s3crud.S3CRUD-class.html">s3crud.S3CRUD</a></code></b> (private):
+      <code><a href="vita.modules.s3.s3crud.S3CRUD-class.html#_linkto" onclick="show_private();">_linkto</a></code>
+      </p></div>
     <p class="indent-wrapped-lines"><b>Inherited from <code><a href="vita.modules.s3.s3rest.S3Method-class.html">s3rest.S3Method</a></code></b>:
       <code><a href="vita.modules.s3.s3rest.S3Method-class.html#__call__">__call__</a></code>
       </p>
@@ -128,7 +203,6 @@
       <code>__format__</code>,
       <code>__getattribute__</code>,
       <code>__hash__</code>,
-      <code>__init__</code>,
       <code>__new__</code>,
       <code>__reduce__</code>,
       <code>__reduce_ex__</code>,
@@ -160,6 +234,9 @@
 </tr>
   <tr>
     <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="vita.modules.s3.s3crud.S3CRUD-class.html">s3crud.S3CRUD</a></code></b>:
+      <code><a href="vita.modules.s3.s3crud.S3CRUD-class.html#insert_subheadings">insert_subheadings</a></code>
+      </p>
     <div class="private">    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="vita.modules.s3.s3rest.S3Method-class.html">s3rest.S3Method</a></code></b> (private):
       <code><a href="vita.modules.s3.s3rest.S3Method-class.html#_extend_view" onclick="show_private();">_extend_view</a></code>,
       <code><a href="vita.modules.s3.s3rest.S3Method-class.html#_record_id" onclick="show_private();">_record_id</a></code>,
@@ -211,6 +288,40 @@
   </td>
 </tr>
 </table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">simple</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">advanced</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">any</span>=<span class="sig-default">False</span>,
+        <span class="sig-arg">**args</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3.s3search-pysrc.html#S3Search.__init__">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Constructor</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>simple</code></strong> - the widgets for the simple search form as list</li>
+        <li><strong class="pname"><code>advanced</code></strong> - the widgets for the advanced search form as list</li>
+        <li><strong class="pname"><code>any</code></strong> - match &quot;any of&quot; (True) or &quot;all of&quot; (False) the
+          options in advanced search</li>
+    </ul></dd>
+    <dt>Overrides:
+        object.__init__
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
 <a name="apply_method"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -227,18 +338,70 @@
     </td>
   </tr></table>
   
-  <p>Apply method</p>
+  <p>Entry point to apply search method to S3Requests</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>r</code></strong> - the S3Request</li>
-        <li><strong class="pname"><code>attr</code></strong> - dictionary of parameters for the method handler</li>
+        <li><strong class="pname"><code>attr</code></strong> - request attributes</li>
     </ul></dd>
     <dt>Returns:</dt>
         <dd>output object to send to the view</dd>
     <dt>Overrides:
         <a href="vita.modules.s3.s3rest.S3Method-class.html#apply_method">s3rest.S3Method.apply_method</a>
     </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="search_interactive"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">search_interactive</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">r</span>,
+        <span class="sig-arg">**attr</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3.s3search-pysrc.html#S3Search.search_interactive">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Interactive search</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>r</code></strong> - the S3Request instance</li>
+        <li><strong class="pname"><code>attr</code></strong> - request parameters</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="search_json"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">search_json</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">r</span>,
+        <span class="sig-arg">**attr</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3.s3search-pysrc.html#S3Search.search_json">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Legacy JSON search method (for autocomplete-widgets)</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>r</code></strong> - the S3Request</li>
+        <li><strong class="pname"><code>attr</code></strong> - request attributes</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -267,14 +430,14 @@
       <th class="navbar" align="right" width="100%">
         <table border="0" cellpadding="0" cellspacing="0">
           <tr><th class="navbar" align="center"
-            >S3</th>
+            ><a class="navbar" target="_top" href="http://eden.sahanafoundation.org/wiki/S3">S3</a></th>
           </tr></table></th>
   </tr>
 </table>
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Mon Jan 17 00:32:28 2011
+    Generated by Epydoc 3.0.1 on Tue Mar 29 14:25:41 2011
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

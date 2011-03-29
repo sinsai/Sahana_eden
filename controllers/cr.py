@@ -129,7 +129,7 @@ def shelter():
                                               orderby="instance_type",
                                               filter_opts=("pr_person",
                                                            "pr_group"))
-    
+
     s3xrc.model.configure(db.pr_presence,
                           # presence not deletable in this view! (need to register a check-out
                           # for the same person instead):
@@ -175,11 +175,11 @@ def shn_shelter_prep(r):
         r.resource.add_filter(db.pr_presence.closed == False)
 
     # Filter out people which are already staff for this warehouse
-    shn_staff_prep(r) 
+    shn_staff_prep(r)
     if deployment_settings.has_module("inv"):
         # Filter out items which are already in this inventory
         shn_inv_prep(r)
-          
+
     # Cascade the organisation_id from the shelter to the staff
     if r.record:
         db.org_staff.organisation_id.default = r.record.organisation_id
@@ -266,7 +266,7 @@ def shn_shelter_rheader(r, tabs=[]):
                 if deployment_settings.has_module("inv"):
                     tabs = tabs + shn_show_inv_tabs(r)
 
-            rheader_tabs = shn_rheader_tabs(r, tabs)
+            rheader_tabs = s3_rheader_tabs(r, tabs)
 
             if r.name == "shelter":
                 location = shn_gis_location_represent(record.location_id)

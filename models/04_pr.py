@@ -163,14 +163,18 @@ table.tags.represent = lambda opt: opt and \
 def shn_pr_person_represent(id):
 
     def _represent(id):
-        table = db.pr_person
-        person = db(table.id == id).select(
-                    table.first_name,
-                    table.middle_name,
-                    table.last_name,
-                    limitby=(0, 1))
+        if isinstance(id, Row):
+            person = id
+            id = person.id
+        else:
+            table = db.pr_person
+            person = db(table.id == id).select(
+                        table.first_name,
+                        table.middle_name,
+                        table.last_name,
+                        limitby=(0, 1)).first()
         if person:
-            return vita.fullname(person.first())
+            return vita.fullname(person)
         else:
             return None
 
@@ -1380,11 +1384,18 @@ if deployment_settings.has_module("dvi") or \
 def shn_pr_rheader(r, tabs=[]):
     """ Person Registry resource headers """
 
-    if r.representation == "html":
-        rheader_tabs = shn_rheader_tabs(r, tabs)
+    if "viewing" in r.request.vars:
+        tablename, record_id = r.request.vars.viewing.rsplit(".", 1)
+        record = db[tablename][record_id]
+    else:
+        tablename = r.tablename
+        record = r.record
 
-        if r.name == "person":
-            person = r.record
+    if r.representation == "html":
+        rheader_tabs = s3_rheader_tabs(r, tabs)
+
+        if tablename == "pr_person":
+            person = record
             if person:
                 rheader = DIV(TABLE(
 
@@ -1406,8 +1417,8 @@ def shn_pr_rheader(r, tabs=[]):
                     ), rheader_tabs)
                 return rheader
 
-        elif r.name == "group":
-            group = r.record
+        elif tablename == "group":
+            group = record
             if group:
                 rheader = DIV(TABLE(
 

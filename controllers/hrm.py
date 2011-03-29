@@ -320,7 +320,7 @@ def hrm_rheader(r, tabs=[]):
     """ Resource header for component views """
 
     rheader = None
-    rheader_tabs = shn_rheader_tabs(r, tabs)
+    rheader_tabs = s3_rheader_tabs(r, tabs)
 
     if r.representation == "html":
 

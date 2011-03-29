@@ -326,7 +326,7 @@ if deployment_settings.has_module("project"):
 
         if r.representation == "html":
 
-            rheader_tabs = shn_rheader_tabs(r, tabs)
+            rheader_tabs = s3_rheader_tabs(r, tabs)
 
             if r.name == "project":
 

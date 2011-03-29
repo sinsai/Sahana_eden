@@ -573,7 +573,6 @@ def shn_table_links(reference):
         specified table
 
         @deprecated: to be replaced by db[tablename]._referenced_by
-
     """
 
     tables = {}

@@ -222,7 +222,7 @@ def shn_rat_rheader(r, tabs=[]):
         if r.name == "rat":
             report = r.record
             if report:
-                rheader_tabs = shn_rheader_tabs(r, tabs, paging=True)
+                rheader_tabs = s3_rheader_tabs(r, tabs, paging=True)
                 location = report.location_id
                 if location:
                     location = shn_gis_location_represent(location)
@@ -277,7 +277,7 @@ def shn_assess_rheader(r, tabs=[]):
 
     if r.representation == "html":
 
-        rheader_tabs = shn_rheader_tabs(r, tabs)
+        rheader_tabs = s3_rheader_tabs(r, tabs)
 
         assess = r.record
 
@@ -556,7 +556,7 @@ def custom_assess(custom_assess_fields, location_id=None):
                       _type = "submit"),
                )
     assess_id = None
-    
+
     form_accepted = form.accepts(request.vars, session)
     if form_accepted:
         record_dict = {"organisation_id" : session.s3.organisation_id}

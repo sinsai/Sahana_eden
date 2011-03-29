@@ -1380,11 +1380,18 @@ if deployment_settings.has_module("dvi") or \
 def shn_pr_rheader(r, tabs=[]):
     """ Person Registry resource headers """
 
-    if r.representation == "html":
-        rheader_tabs = shn_rheader_tabs(r, tabs)
+    if "viewing" in r.request.vars:
+        tablename, record_id = r.request.vars.viewing.rsplit(".", 1)
+        record = db[tablename][record_id]
+    else:
+        tablename = r.tablename
+        record = r.record
 
-        if r.name == "person":
-            person = r.record
+    if r.representation == "html":
+        rheader_tabs = s3_rheader_tabs(r, tabs)
+
+        if tablename == "pr_person":
+            person = record
             if person:
                 rheader = DIV(TABLE(
 
@@ -1406,8 +1413,8 @@ def shn_pr_rheader(r, tabs=[]):
                     ), rheader_tabs)
                 return rheader
 
-        elif r.name == "group":
-            group = r.record
+        elif tablename == "group":
+            group = record
             if group:
                 rheader = DIV(TABLE(
 

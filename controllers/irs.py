@@ -136,7 +136,7 @@ def shn_irs_rheader(r, tabs=[]):
             # List or Create form: rheader makes no sense here
             return None
 
-        rheader_tabs = shn_rheader_tabs(r, tabs)
+        rheader_tabs = s3_rheader_tabs(r, tabs)
 
         if r.name == "ireport":
             report = r.record

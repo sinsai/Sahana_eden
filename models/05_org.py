@@ -412,7 +412,7 @@ def shn_site_represent(id, default_label="[no label]"):
     return site_str
 
 # -----------------------------------------------------------------------------
-site_id = super_link( db.org_site, 
+site_id = super_link( db.org_site,
                       writable = True,
                       readable = True,
                       label = T("Site"),
@@ -479,7 +479,7 @@ def shn_create_record_roles(form, tablename):
     # Set the resource's owned_by_role to the staff role
     db(table.id == id).update(owned_by_role = staff_role_id)
     # Update owned_by_role in site super_entity
-    s3xrc.model.update_super(table, {"id":id}) 
+    s3xrc.model.update_super(table, {"id":id})
 
 
     # Add user to the staff & supervisor roles
@@ -590,33 +590,33 @@ STAFF_HELP = T("If Staff have login accounts then they are given access to edit 
 def shn_site_based_permissions( table,
                                 error_msg = T("You do not have permission for any site to perform this action.")):
     """
-        Sets the site_id validator limited to sites which the current user 
+        Sets the site_id validator limited to sites which the current user
         has update permission for
-        If there are no sites that the user has permission for, 
-        prevents create & update & gives an warning if the user tries to 
+        If there are no sites that the user has permission for,
+        prevents create & update & gives an warning if the user tries to
     """
     q = auth.s3_accessible_query("update", db.org_site)
     rows = db(q).select(db.org_site.site_id)
     filter_opts = [row.site_id for row in rows]
     if filter_opts:
-        table.site_id.requires = IS_ONE_OF(db, "org_site.site_id", 
+        table.site_id.requires = IS_ONE_OF(db, "org_site.site_id",
                                            shn_site_represent,
                                            filterby = "site_id",
                                            filter_opts = filter_opts
                                            )
     else:
         if "update" in request.args or "create" in request.args:
-            # Trying to create or update 
+            # Trying to create or update
             # If they do no have permission to any sites
             session.error = T("%s Create a new site or ensure that you have permissions for an existing site.")\
-                            % error_msg 
+                            % error_msg
             redirect(URL(r = request,
                          c = "default",
                          f = "index"
                          )
                      )
         else:
-            # Remove the list add button  
+            # Remove the list add button
             s3xrc.model.configure(table, insertable = False)
 #==============================================================================
 # Offices
@@ -787,13 +787,13 @@ def shn_office_rheader(r, tabs=[]):
                 (T("Contact Data"), "contact"),
                 (T("Staff"), "staff")
                 ]
-        
+
         if deployment_settings.has_module("req"):
             tabs.append((T("Requests"), "req"))
         if deployment_settings.has_module("inv"):
             tabs = tabs + shn_show_inv_tabs(r)
 
-        rheader_tabs = shn_rheader_tabs(r, tabs)
+        rheader_tabs = s3_rheader_tabs(r, tabs)
 
         office = r.record
         if office:
@@ -1035,7 +1035,7 @@ else:
 
 DOMAIN_HELP = T("If a user verifies that they own an Email Address with this domain, the Approver field is used to determine whether & by whom further approval is required.")
 APPROVER_HELP = T("The Email Address to which approval requests are sent (normally this would be a Group mail rather than an individual). If the field is blank then requests are approved automatically if the domain matches.")
-    
+
 table = db.define_table(tablename,
                         organisation_id(comment=DIV(_class="tooltip",
                                                     _title="%s|%s" % (T("Organization"),

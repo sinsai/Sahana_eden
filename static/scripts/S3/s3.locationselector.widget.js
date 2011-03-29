@@ -595,6 +595,14 @@ $(function(){
             // Search across all locations bar only those from unreliable imports
             source: s3_gis_url + '/search.json?filter=~&field=name&exclude_field=level&exclude_value=XX',
             minLength: 2,
+            search: function(event, ui) {
+                $( '#gis_location_autocomplete_throbber' ).removeClass('hidden').show();
+                return true;
+            },
+            response: function(event, ui, content) {
+                $( '#gis_location_autocomplete_throbber' ).hide();
+                return content;
+            },
             focus: function( event, ui ) {
                 $('#gis_location_autocomplete').val( ui.item.name );
                 return false;

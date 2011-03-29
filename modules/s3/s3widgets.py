@@ -1246,7 +1246,12 @@ class S3LocationSelectorWidget(FormWidget):
         autocomplete = DIV(LABEL("%s:" % T("Enter some characters to bring up a list of possible matches")),
                            BR(),
                            INPUT(_id="gis_location_autocomplete"),
-                           _id="gis_location_autocomplete_div",
+                           IMG(_src="/%s/static/img/ajax-loader.gif" % \
+                                    request.application,
+                               _height=32, _width=32,
+                               _id="gis_location_autocomplete_throbber",
+                               _class="throbber hidden"),
+                            _id="gis_location_autocomplete_div",
                            _class="hidden")
 
         # Buttons

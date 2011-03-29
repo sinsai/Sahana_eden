@@ -649,8 +649,8 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
             vars = Storage(_vars)
             args = []
             if function != r.name:
-                if not "from_record" in vars and r.id:
-                    vars.update(from_record="%s.%s" % (r.tablename, r.id))
+                if not "viewing" in vars and r.id:
+                    vars.update(viewing="%s.%s" % (r.tablename, r.id))
             else:
                 args = [r.id]
             tab.update(_href=URL(r=request, f=function, args=args, vars=vars))

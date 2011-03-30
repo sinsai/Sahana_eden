@@ -170,67 +170,7 @@ def hospital():
     output = s3_rest_controller(module, resourcename, rheader=rheader)
     shn_menu()
     return output
-
-
 # -----------------------------------------------------------------------------
-#
-def shn_hms_hospital_rheader(r, tabs=[]):
-
-    """ Page header for component resources """
-
-    rheader = None
-    if r.representation == "html":
-        if r.name == "hospital":
-            hospital = r.record
-            if hospital:
-
-                if not tabs:
-                    tabs = [(T("Status Report"), ""),
-                            (T("Services"), "services"),
-                            (T("Contacts"), "contact"),
-                            (T("Bed Capacity"), "bed_capacity"),
-                            (T("Cholera Treatment Capability"),
-                             "ctc_capability"), # @ToDo: make this a deployemnt_setting?
-                            (T("Activity Report"), "activity"),
-                            (T("Images"), "image"),
-                            (T("Staff"), "staff")]
-
-                    if deployment_settings.has_module("req"):
-                        tabs.append((T("Requests"), "req"))
-                    if deployment_settings.has_module("inv"):
-                        tabs = tabs + shn_show_inv_tabs(r)
-
-                rheader_tabs = s3_rheader_tabs(r, tabs)
-
-                table = db.hms_hospital
-
-                rheader = DIV(TABLE(
-
-                    TR(TH("%s: " % T("Name")),
-                        hospital.name,
-                        TH("%s: " % T("EMS Status")),
-                        "%s" % table.ems_status.represent(hospital.ems_status)),
-
-                    TR(TH("%s: " % T("Location")),
-                        db.gis_location[hospital.location_id] and \
-                            db.gis_location[hospital.location_id].name or "unknown",
-                        TH("%s: " % T("Facility Status")),
-                        "%s" % table.facility_status.represent(hospital.facility_status)),
-
-                    TR(TH("%s: " % T("Total Beds")),
-                        hospital.total_beds,
-                        TH("%s: " % T("Clinical Status")),
-                        "%s" % table.clinical_status.represent(hospital.clinical_status)),
-
-                    TR(TH("%s: " % T("Available Beds")),
-                        hospital.available_beds,
-                        TH("%s: " % T("Security Status")),
-                        "%s" % table.security_status.represent(hospital.security_status))
-
-                        ), rheader_tabs)
-
-            if rheader and r.component and r.component.name == "req":
-                # Inject the helptext script
-                rheader.append(req_helptext_script)
-
-    return rheader
+def req_match():
+    return s3_req_match()
+# -----------------------------------------------------------------------------

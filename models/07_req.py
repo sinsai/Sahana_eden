@@ -564,11 +564,15 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
                                     label = str(T("Commit")),
                                     )
                                ]
+        
+        rheader_dict = dict(org_office = shn_office_rheader,
+                            cr_shelter = shn_shelter_rheader,
+                            hms_hospital = shn_hms_hospital_rheader)
 
         s3xrc.model.configure(db.req_req, insertable=False)
         output = s3_rest_controller("req", "req",
                                     method = "list",
-                                    rheader = shn_office_rheader)
+                                    rheader = rheader_dict[tablename])
         output["title"] = s3.crud_strings[tablename]["title_display"]
 
         return output

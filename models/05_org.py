@@ -790,7 +790,7 @@ def shn_office_rheader(r, tabs=[]):
         
         if deployment_settings.has_module("req"):
             tabs.append((T("Requests"), "req"))
-            tabs.append((T("Match Requests"), "req_match/"))
+            tabs.append((T("Match Requests"), "req_match"))
             tabs.append((T("Commit"), "commit"))
 
         if deployment_settings.has_module("inv"):
@@ -835,6 +835,13 @@ def shn_office_rheader(r, tabs=[]):
             return rheader
 
     return None
+# -----------------------------------------------------------------------------
+def test_req_match(r, **attr):
+    resource = s3xrc.define_resource("req", "req")
+    r.resource = resource
+    return resource.crud(r, method="list", **attr)
+s3xrc.model.set_method(module, resourcename, 
+                       method = "req_match", action=test_req_match ) 
 #==============================================================================
 # Staff
 # Many-to-Many Persons to Offices & Projects with also the Title & Manager that

@@ -588,11 +588,13 @@ def s3_rheader_tabs(r, tabs=[], paging=False):
         title, component = tabs[i][:2]
         vars_in_request = True
         if len(tabs[i]) > 2:
-            _vars = tabs[i][2]
+            _vars = Storage(tabs[i][2])
             for k,v in _vars.iteritems():
                 if r.request.vars.get(k) != v:
                     vars_in_request = False
                     break
+            if "viewing" in r.request.vars:
+                _vars.viewing = r.request.vars.viewing
         else:
             _vars = r.request.vars
 
@@ -608,7 +610,8 @@ def s3_rheader_tabs(r, tabs=[], paging=False):
             else:
                 function = r.request.function
                 record_id = r.id
-        if function == r.name:
+        if function == r.name or \
+           (function == r.request.function and "viewing" in request.vars):
             here = True
 
         if i == len(tabs)-1:
@@ -637,8 +640,10 @@ def s3_rheader_tabs(r, tabs=[], paging=False):
             if function != r.name:
                 if "viewing" not in vars and r.id:
                     vars.update(viewing="%s.%s" % (r.tablename, r.id))
-                elif "viewing" in vars:
-                    del vars["viewing"]
+                #elif "viewing" in vars:
+                elif not tabs[i][1]:
+                    if "viewing" in vars:
+                        del vars["viewing"]
                     args = [record_id]
             else:
                 if "viewing" not in vars and record_id:

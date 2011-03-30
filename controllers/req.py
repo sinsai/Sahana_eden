@@ -27,17 +27,6 @@ def index():
     response.title = module_name
     return dict(module_name=module_name)
 #==============================================================================
-req_item_inv_item_btn = dict(url = str( URL( r=request,
-                                             c = "req",
-                                             f = "req_item_inv_item",
-                                             args = ["[id]"]
-                                            )
-                                        ),
-                             _class = "action-btn",
-                             label = str(T("Find Match")), # Change to Fulfil? Match?
-                             )
-
-#------------------------------------------------------------------------------
 def req():
     tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
@@ -54,7 +43,7 @@ def req():
                                       "person_id"
                                       )
 
-    if "req_item" not in request.args:
+    if not request.args: # No component 
         req_item_actions = [dict(url = str( URL(r=request,
                                                 c = "req",
                                                 f = "req",
@@ -64,32 +53,21 @@ def req():
                                 _class = "action-btn",
                                 label = str(T("Request Items")),
                                 ),
-                           dict(url = str( URL( r=request,
-                                                c = "req",
-                                                f = "commit",
-                                                args = ["create"],
-                                                vars = dict(req_id = "[id]")
-                                               )
-                                           ),
-                                _class = "action-btn",
-                                label = str(T("Commit")),
-                                ),
+                            dict(url = str( URL( r=request,
+                                                 c = "req",
+                                                 f = "commit",
+                                                 args = ["create"],
+                                                 vars = dict(req_id = "[id]")
+                                                )
+                                            ),
+                                 _class = "action-btn",
+                                 label = str(T("Commit")),
+                                 ),
                             ]
-        # Disabled until there is a more explicit way of determining site_id of the user
-        #if site_id:
-        #    req_actions.append(dict(url = str(URL( r=request,
-        #                                   c = "req",
-        #                                   f = "commit_req",
-        #                                   args = ["[id]"],
-        #                                   vars = {"site_id": site_id}
-        #                                  )
-        #                                   ),
-        #                            _class = "action-btn",
-        #                            label = str(T("Commit")),
-        #                            )
-        #                        )
-    else:
+    elif "req_item" in request.args and deployment_settings.has_module("inv"):
         req_item_actions = [req_item_inv_item_btn]
+    else:
+        req_item_actions = []
 
     def prep(r):
         if r.interactive:
@@ -111,62 +89,6 @@ def req():
             response.s3.actions = req_item_actions
 
     return output
-
-#------------------------------------------------------------------------------
-def shn_req_rheader(r):
-    """ Resource Header for Requests """
-
-    if r.representation == "html":
-        if r.name == "req":
-            req_record = r.record
-            if req_record:
-
-                tabs = [(T("Edit Details"), None)]
-                if deployment_settings.has_module("inv"):
-                    tabs.append((T("Items"), "req_item"))
-
-                rheader_tabs = s3_rheader_tabs(r, tabs)
-
-                rheader = DIV( TABLE(
-                                   TR( TH( "%s: " % T("Date Requested")),
-                                       req_record.date_requested,
-                                       TH( "%s: " % T("Date Required")),
-                                       req_record.date_required,
-                                      ),
-                                   TR( TH( "%s: " % T("Requested By")),
-                                       shn_site_represent(req_record.site_id),
-                                      ),
-                                   TR( TH( "%s: " % T("Commit. Status")),
-                                       req_status_opts.get(req_record.commit_status),
-                                       TH( "%s: " % T("Transit. Status")),
-                                       req_status_opts.get(req_record.transit_status),
-                                       TH( "%s: " % T("Fulfil. Status")),
-                                       req_status_opts.get(req_record.fulfil_status)
-                                      ),
-                                   TR( TH( "%s: " % T("Comments")),
-                                       TD(req_record.comments, _colspan=3)
-                                      ),
-                                   TR( A( T("Commit"),
-                                          _href = URL( r=request,
-                                                       c = "req",
-                                                       f = "commit",
-                                                       args = ["create"],
-                                                       vars = dict(req_id = r.id)
-                                                       ),
-                                          _class = "action-btn"
-                                          ),
-                                      ),
-                                     ),
-                                rheader_tabs
-                                )
-
-                return rheader
-            else:
-                # No Record means that we are either a Create or List Create
-                # Inject the helptext script
-                return req_helptext_script
-    return None
-
 #==============================================================================
 def req_item():
     tablename = "%s_%s" % (module, resourcename)
@@ -229,7 +151,7 @@ def req_item_inv_item():
                                    )
                                )
 
-    response.s3.no_sspag = False # pag won't work with 2 datatables on one page
+    response.s3.no_sspag = True # pag won't work with 2 datatables on one page @todo: test
 
     # Get list of matching inventory items
     response.s3.filter = (db.inv_inv_item.item_id == req_item.item_id)
@@ -367,7 +289,7 @@ def commit_req():
 
     # User must have permissions over site which is sending
     (prefix, resourcename, id) = auth.s3_site_resource(site_id)
-    if not site or not auth.s3_has_permission("update",
+    if not site_id or not auth.s3_has_permission("update",
                                               db["%s_%s" % (prefix,
                                                             resourcename)],
                                               record_id=id):

@@ -29,6 +29,11 @@ def index():
     return dict(module_name=module_name)
 
 #==============================================================================
+def office():
+    """
+        Required to ensure the tabs work from req_match
+    """
+    return warehouse()
 def warehouse():
     """
         RESTful CRUD controller
@@ -116,7 +121,10 @@ def warehouse():
     output = s3_rest_controller(module, resourcename, rheader=rheader)
 
     return output
-
+#==============================================================================
+def req_match():
+    s3.crud_strings.org_office.title_display = T("Warehouse Details")
+    return s3_req_match()
 #==============================================================================
 def inv_item():
 
@@ -434,7 +442,9 @@ def shn_send_rheader(r):
                                )
                 return rheader
     return None
-
+#------------------------------------------------------------------------------
+def incoming():
+    return dict(test = "test")
 #------------------------------------------------------------------------------
 def req_items_for_inv(site_id, quantity_type):
     """

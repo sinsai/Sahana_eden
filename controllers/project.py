@@ -248,7 +248,7 @@ def gap_report():
                 )
     gap_table = TABLE(THEAD(TR(*[TH(header) for header in headings])),
                       _id = "list",
-                      _class = "display"
+                      _class = "dataTable display"
                       )
 
     for gap_row in gap_rows:

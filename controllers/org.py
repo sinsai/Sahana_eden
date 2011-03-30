@@ -177,8 +177,9 @@ def office():
     rheader = shn_office_rheader
 
     return s3_rest_controller(module, resourcename, rheader=rheader)
-
-
+#==============================================================================
+def req_match():
+    return s3_req_match()
 #==============================================================================
 def staff():
     """

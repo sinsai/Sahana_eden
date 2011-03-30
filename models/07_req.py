@@ -544,29 +544,20 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
     )
 
     # -----------------------------------------------------------------------------
-    def s3_req_match(function):
+    def s3_req_match():
         """
             Function to be called from controller functions to display all request as a tab 
             for a site.
             @ToDo: Needs to work with wh, shelters and hospitals
                    Filter out requests from this site
         """
-        resource_id = request.args[0]
-        r = Storage()
-        r.id = resource_id
-        r.record = db.org_office[resource_id]
-        r.representation = "html"
-        r.request = request
-        r.request.function = function
-        r.request.cust_function = "req_match"
-        rheader = shn_office_rheader(r)
-        
-        #request.args = []
+        tablename, id = request.vars.viewing.split(".")
+        site_id = db[tablename][id].site_id
         response.s3.actions = [dict(url = str(URL( r=request,
                                                    c = "req",
                                                    f = "commit_req",
                                                    args = ["[id]"],
-                                                   vars = {"site_id": r.record.site_id}
+                                                   vars = {"site_id": site_id}
                                                    )
                                                ),
                                     _class = "action-btn",
@@ -574,13 +565,12 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
                                     )
                                ]
 
-        
         s3xrc.model.configure(db.req_req, insertable=False)
         output = s3_rest_controller("req", "req",
-                                    method = "list")
+                                    method = "list",
+                                    rheader = shn_office_rheader)
+        output["title"] = s3.crud_strings[tablename]["title_display"]
 
-        output["rheader"] = rheader
-        
         return output
 
     #==========================================================================

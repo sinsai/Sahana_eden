@@ -179,7 +179,7 @@ def office():
     return s3_rest_controller(module, resourcename, rheader=rheader)
 #==============================================================================
 def req_match():
-    return s3_req_match("office")
+    return s3_req_match()
 #==============================================================================
 def staff():
     """

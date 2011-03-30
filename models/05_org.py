@@ -781,29 +781,26 @@ def shn_office_rheader(r, tabs=[]):
     """ Office/Warehouse page headers """
 
     if r.representation == "html":
+        
+        tablename, record = s3_rheader_resource(r)
+        if tablename == "org_office" and record:
+            office = record
+    
+            tabs = [(T("Basic Details"), None),
+                    (T("Contact Data"), "contact"),
+                    (T("Staff"), "staff")
+                    ]
+    
+            if deployment_settings.has_module("req"):
+                tabs.append((T("Requests"), "req"))
+                tabs.append((T("Match Requests"), "req_match/")) 
+                tabs.append((T("Commit"), "commit"))
 
-        if r.record is None:
-            # List or Create form
-            # rheader makes no sense here
-            return None
+            if deployment_settings.has_module("inv"):
+                tabs = tabs + shn_show_inv_tabs(r)
 
-        tabs = [(T("Basic Details"), None),
-                (T("Contact Data"), "contact"),
-                (T("Staff"), "staff")
-                ]
+            rheader_tabs = s3_rheader_tabs(r, tabs)
 
-        if deployment_settings.has_module("req"):
-            tabs.append((T("Requests"), "req"))
-            tabs.append((T("Match Requests"), "req_match"))
-            tabs.append((T("Commit"), "commit"))
-
-        if deployment_settings.has_module("inv"):
-            tabs = tabs + shn_show_inv_tabs(r)
-
-        rheader_tabs = s3_rheader_tabs(r, tabs)
-
-        office = r.record
-        if office:
             query = (db.org_organisation.id == office.organisation_id)
             organisation = db(query).select(db.org_organisation.name,
                                             limitby=(0, 1)).first()
@@ -837,15 +834,7 @@ def shn_office_rheader(r, tabs=[]):
                 rheader.append(req_helptext_script)
 
             return rheader
-
     return None
-# -----------------------------------------------------------------------------
-def test_req_match(r, **attr):
-    resource = s3xrc.define_resource("req", "req")
-    r.resource = resource
-    return resource.crud(r, method="list", **attr)
-s3xrc.model.set_method(module, resourcename, 
-                       method = "req_match", action=test_req_match ) 
 #==============================================================================
 # Staff
 # Many-to-Many Persons to Offices & Projects with also the Title & Manager that

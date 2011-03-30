@@ -608,7 +608,8 @@ def s3_rheader_tabs(r, tabs=[], paging=False):
             else:
                 function = r.request.function
                 record_id = r.id
-        if function == r.name:
+        if function == r.name or\
+           (function == r.request.function and "viewing" in request.vars):
             here = True
 
         if i == len(tabs)-1:
@@ -637,8 +638,10 @@ def s3_rheader_tabs(r, tabs=[], paging=False):
             if function != r.name:
                 if "viewing" not in vars and r.id:
                     vars.update(viewing="%s.%s" % (r.tablename, r.id))
-                elif "viewing" in vars:
-                    del vars["viewing"]
+                #elif "viewing" in vars:
+                elif not tabs[i][1]:
+                    if "viewing" in vars:
+                        del vars["viewing"]
                     args = [record_id]
             else:
                 if "viewing" not in vars and record_id:

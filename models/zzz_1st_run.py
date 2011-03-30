@@ -679,24 +679,38 @@ if populate:
 
     tablename = "gis_config"
     table = db[tablename]
-    # Ensure that the projection/marker we defined are in the DB ready to be used as FKs
+    # Ensure that the projection/marker we defined are in the DB ready to be
+    # used as FKs
     db.commit()
-    symbology_us = db(db.gis_symbology.name == "US").select(db.gis_symbology.id,
-                                                            limitby=(0, 1)).first().id
+    query = db.gis_symbology.name == deployment_settings.gis.default_symbology
+    site_symbology = db(query).select(db.gis_symbology.id,
+                                      limitby=(0, 1)).first().id
     if not db(table.id > 0).count():
-        # We want to start at ID 1, but postgres won't let us truncate() & not needed anyway this is only run on 1st_run.
+        # We want to start at ID 1, but postgres won't let us truncate() & not
+        # needed anyway this is only run on 1st_run.
         #table.truncate()
-        table.insert(
-            lat = "51.8",
-            lon = "-1.3",
-            zoom = 7,
-            projection_id = 1,
-            marker_id = 1,
-            map_height = 600,
-            map_width = 1000,
-            symbology_id = symbology_us,
-            wmsbrowser_url = "http://geo.eden.sahanafoundation.org/geoserver/wms?service=WMS&request=GetCapabilities"
-        )
+        default_gis_config_values = Storage()
+        default_gis_config_values.update(
+            deployment_settings.gis.default_config_values)
+        default_gis_config_values.update(
+            gis.get_location_hierarchy_settings())
+        default_gis_config_values.update({"symbology_id": site_symbology})
+        
+        # Since the values from deployment_settings have not been validated,
+        # check them.
+        errors = Storage()
+        gis.config_onvalidation(default_gis_config_values, errors)
+        # Do a minimal fixup of any errors.
+        # If there's an error in region settings, don't show it in the menu.
+        if errors.region_location_id or errors.name:
+            default_gis_config_values.show_region_in_menu = False
+        # If there are missing level names, default them to Ln.
+        for error in errors:
+            if len(error) == 2 and error[0] == "L":
+                default_gis_config_values[error] = error
+        # @ToDo: Log the errors.
+        
+        table.insert(**default_gis_config_values)
 
     tablename = "gis_feature_class"
     table = db[tablename]
@@ -732,7 +746,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-AIRPORT",
             name = "Airport",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "airport").select(db.gis_marker.id,
                                                                    limitby=(0, 1)).first().id,
             gps_marker = "Airport",
@@ -740,7 +754,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-BRIDGE",
             name = "Bridge",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "bridge").select(db.gis_marker.id,
                                                                   limitby=(0, 1)).first().id,
             gps_marker = "Bridge",
@@ -748,7 +762,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-CHURCH",
             name = "Church",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "church").select(db.gis_marker.id,
                                                                   limitby=(0, 1)).first().id,
             gps_marker = "Church",
@@ -756,7 +770,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-FOOD",
             name = "Food",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "food").select(db.gis_marker.id,
                                                                 limitby=(0, 1)).first().id,
             gps_marker = "Restaurant",
@@ -764,7 +778,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-HOSPITAL",
             name = "Hospital",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "hospital").select(db.gis_marker.id,
                                                                     limitby=(0, 1)).first().id,
             gps_marker = "Medical Facility",
@@ -778,7 +792,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-OFFICE",
             name = "Office",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "office").select(db.gis_marker.id,
                                                                   limitby=(0, 1)).first().id,
             gps_marker = "Building",
@@ -787,7 +801,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-PERSON",
             name = "Person",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "person").select(db.gis_marker.id,
                                                                   limitby=(0, 1)).first().id,
             gps_marker = "Contact, Dreadlocks",
@@ -796,7 +810,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-PORT",
             name = "Port",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "port").select(db.gis_marker.id,
                                                                 limitby=(0, 1)).first().id,
             gps_marker = "Marina",
@@ -815,7 +829,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-SHELTER",
             name = "Shelter",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "shelter").select(db.gis_marker.id,
                                                                    limitby=(0, 1)).first().id,
             gps_marker = "Campground",
@@ -830,7 +844,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-VEHICLE",
             name = "Vehicle",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "vehicle").select(db.gis_marker.id,
                                                                    limitby=(0, 1)).first().id,
             gps_marker = "Car",
@@ -838,7 +852,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-VOLUNTEER",
             name = "Volunteer",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "volunteer").select(db.gis_marker.id,
                                                                      limitby=(0, 1)).first().id,
             gps_marker = "Contact, Dreadlocks",
@@ -846,7 +860,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-WAREHOUSE",
             name = "Warehouse",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "office").select(db.gis_marker.id,
                                                                   limitby=(0, 1)).first().id,
             gps_marker = "Building",
@@ -854,7 +868,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-WATER",
             name = "Water",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "water").select(db.gis_marker.id,
                                                                  limitby=(0, 1)).first().id,
             gps_marker = "Drinking Water",

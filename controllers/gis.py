@@ -845,16 +845,25 @@ def config():
 
     # Pre-processor
     def prep(r):
-        if r.representation in shn_interactive_view_formats:
-            # Model options
-            # In Model so that they're visible to person() as component
-            # CRUD Strings (over-ride)
-            s3.crud_strings[tablename].title_display = T("Defaults")
-            s3.crud_strings[tablename].title_update = T("Edit Defaults")
-            s3.crud_strings[tablename].msg_record_modified = T("Defaults updated")
-        if deployment_settings.get_security_map() and r.id == 1 and r.method in ["create", "update"] and not s3_has_role("MapAdmin"):
+        #if r.representation in shn_interactive_view_formats:
+        #    # Model options
+        #    # In Model so that they're visible to person() as component
+        #    # CRUD Strings (over-ride)
+        #    s3.crud_strings[tablename].title_display = T("Defaults")
+        #    s3.crud_strings[tablename].title_update = T("Edit Defaults")
+        #    s3.crud_strings[tablename].msg_record_modified = T("Defaults updated")
+
+        # @ToDo: Check that an unauthorized user is not attempting to edit
+        # a region or personal config -- this would require looking up the
+        # original in the db.
+        # @ToDo: Handle that with ACLs.
+        if deployment_settings.get_security_map() and \
+           (r.id == 1 or r.request.vars.region_location_id) and \
+           r.method in ["create", "update"] and not s3_has_role("MapAdmin"):
             unauthorised()
+        gis_config_prep_helper(r)
         return True
+    
     response.s3.prep = prep
 
     output = s3_rest_controller(module, resourcename)
@@ -862,7 +871,9 @@ def config():
     if not "gis" in response.view:
         response.view = "gis/" + response.view
 
-    output["list_btn"] = ""
+    # @ToDo: Why shouldn't we let people see the other map configs?
+    #if not s3_has_role("MapAdmin"):
+    #    output["list_btn"] = ""
 
     if auth.is_logged_in():
         query = (db.pr_person.uuid == auth.user.person_uuid) & \
@@ -870,13 +881,13 @@ def config():
         personalised = db(query).select(table.id,
                                         limitby=(0, 1)).first()
         if personalised:
-            output["rheader"] = P(T("You have personalised settings, so changes made here won't be visible to you. To change your personalised settings, click "),
+            output["rheader"] = P(T("You have a personal map configuration. To change your personal configuration, click "),
                                   A(T("here"),
                                     _href=URL(r=request, c="pr", f="person",
                                               args=["config"],
                                               vars={"person.uid":auth.user.person_uuid})))
         else:
-            output["rheader"] = P(T("These are the default settings for all users. To change settings just for you, click "),
+            output["rheader"] = P(T("To create a personal map configuration, click "),
                                   A(T("here"),
                                     _href=URL(r=request, c="pr", f="person",
                                               args=["config"],

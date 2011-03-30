@@ -389,17 +389,16 @@ class S3LocationAutocompleteWidget(FormWidget):
         url = URL(r=self.request, c=self.prefix, f=self.resourcename, args="search.json", vars={"filter":"~", "field":fieldname, "exclude_field":"level", "exclude_value":"XX"})
 
         # Which Levels do we have in our hierarchy & what are their Labels?
-        deployment_settings = self.deployment_settings
-        location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
+        location_hierarchy = get.get_location_hierarchy()
         try:
             # Ignore the bad bulk-imported data
             del location_hierarchy["XX"]
         except KeyError:
             pass
         # What is the maximum level of hierarchy?
-        #max_hierarchy = deployment_settings.get_gis_max_hierarchy()
+        #max_hierarchy = gis.get_max_hierarchy_level()
         # Is full hierarchy mandatory?
-        #strict = deployment_settings.get_gis_strict_hierarchy()
+        #strict = gis.get_strict_hierarchy()
 
         post_process = self.post_process
         if not post_process:
@@ -676,7 +675,7 @@ class S3LocationSelectorWidget(FormWidget):
         # Should we use a Map-based selector?
         map_selector = deployment_settings.get_gis_map_selector()
         # Which Levels do we have in our hierarchy & what are their Labels?
-        location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
+        location_hierarchy = gis.get_location_hierarchy()
         # No longer needed
         #try:
         #    # Ignore the bad bulk-imported data
@@ -684,9 +683,9 @@ class S3LocationSelectorWidget(FormWidget):
         #except KeyError:
         #    pass
         # What is the maximum level of hierarchy?
-        max_hierarchy = deployment_settings.get_gis_max_hierarchy()
+        max_hierarchy = gis.get_max_hierarchy_level()
         # Is full hierarchy mandatory?
-        #strict = deployment_settings.get_gis_strict_hierarchy()
+        #strict = gis.get_strict_hierarchy()
         # @ToDo: Do soem client-side validation based on this flag
 
         # Navigate Away Confirm?

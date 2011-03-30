@@ -98,7 +98,8 @@ def ireport():
         if r.method == "ushahidi":
             auth.settings.on_failed_authorization = r.other(method="", vars=None)
             # Allow the 'XX' levels
-            db.gis_location.level.requires = IS_NULL_OR(IS_IN_SET(deployment_settings.get_gis_all_levels()))
+            db.gis_location.level.requires = IS_NULL_OR(IS_IN_SET(
+                gis.get_all_current_levels()))
         elif r.representation in shn_interactive_view_formats and r.method == "update":
             table.verified.writable = True
         elif r.representation in shn_interactive_view_formats and (r.method == "create" or r.method == None):

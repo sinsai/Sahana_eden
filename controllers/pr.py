@@ -134,13 +134,25 @@ def person():
             for key in defaults.keys():
                 if key not in ["id", "uuid", "mci", "update_record", "delete_record"]:
                     _config[key].default = defaults[key]
+            # Name will be generated from person's name.
+            _config.name.readable = _config.name.writable = False
+            # Hide region fields.
+            _config.region_location_id.readable = _config.region_location_id.writable = False
+            _config.show_region_in_menu.readable = _config.show_region_in_menu.writable = False
+            _config.region_changed_timestamp.readable = _config.region_changed_timestamp.writable = False
+            
         if r.representation == "popup":
             # Hide "pe_label" and "missing" fields in person popups
             r.table.pe_label.readable = False
             r.table.pe_label.writable = False
             r.table.missing.readable = False
             r.table.missing.writable = False
+        
+        if r.interactive:
+            gis_config_prep_helper(r)
+        
         return True
+    
     response.s3.prep = prep
 
     s3xrc.model.configure(db.pr_group_membership,

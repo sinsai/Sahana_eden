@@ -424,7 +424,7 @@ table { border-collapse: collapse }
    -webkit-border-radius: 10px 10px 10px 10px;
 }
 #content h1,
-#content h2 { 
+#content h2 {
     color: #006699;
     font-size: 16px;
     font-weight: bolder;
@@ -510,8 +510,8 @@ div.form-container form select { padding: 1px;
                                  margin: 2px 0 2px 0; }
 div.form-container form input[type="checkbox"],
 div.form-container form input[type="radio"] { padding: 1px;
-                                 			  margin: 2px 5px 2px 5px; }	   
-                                   				                           
+                                 			  margin: 2px 5px 2px 5px; }
+
 div.form-container form fieldset { margin:0 0 10px 0;
                                    padding: 10px;
                                    border: #ddd 1px solid;
@@ -745,6 +745,7 @@ div#rheader table {
 div#rheader th {
     text-align: left;
     width: 10%;
+    font-weight: bold;
 }
 div#rheader td {
     text-align: left;

@@ -122,24 +122,6 @@ def hospital():
             table.access_status.comment =  DIV(DIV(_class="tooltip",
                 _title=T("Road Conditions") + "|" + T("Describe the condition of the roads to your hospital.")))
 
-            # CRUD Strings
-            LIST_HOSPITALS = T("List Hospitals")
-            s3.crud_strings[tablename] = Storage(
-                title_create = ADD_HOSPITAL,
-                title_display = T("Hospital Details"),
-                title_list = LIST_HOSPITALS,
-                title_update = T("Edit Hospital"),
-                title_search = T("Find Hospital"),
-                subtitle_create = T("Add New Hospital"),
-                subtitle_list = T("Hospitals"),
-                label_list_button = LIST_HOSPITALS,
-                label_create_button = ADD_HOSPITAL,
-                label_delete_button = T("Delete Hospital"),
-                msg_record_created = T("Hospital information added"),
-                msg_record_modified = T("Hospital information updated"),
-                msg_record_deleted = T("Hospital information deleted"),
-                msg_list_empty = T("No Hospitals currently registered"))
-
             if r.component and r.component.name == "req":
                 if r.method != "update" and r.method != "read":
                     # Hide fields which don't make sense in a Create form

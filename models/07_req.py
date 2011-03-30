@@ -282,7 +282,198 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
                T("For other types, the next screen will allow you to enter the relevant details..."),
                T("Message field is required!"))
         )
+    # ==========================================================================
+    def shn_req_rheader(r):
+        """ Resource Header for Requests """
+    
+        if r.representation == "html":
+            if r.name == "req":
+                req_record = r.record
+                if req_record:
+    
+                    tabs = [(T("Edit Details"), None)]
+                    if deployment_settings.has_module("inv"):
+                        tabs.append((T("Items"), "req_item"))
+    
+                    rheader_tabs = s3_rheader_tabs(r, tabs)
+                    
+                    site_id = request.vars.site_id
+                    if site_id:
+                        site_name = shn_site_represent(site_id)
+                        commit_btn = A( T("Commit from %s") % site_name,    
+                                        _href = URL( r=request,
+                                                     c = "req",
+                                                     f = "commit_req",
+                                                     args = [r.id],
+                                                     vars = dict(site_id = site_id)
+                                                    ),
+                                        _class = "action-btn"
+                                       )
+                    else:
+                        commit_btn = A( T("Commit"),     
+                                        _href = URL( r=request,
+                                                     c = "req",
+                                                     f = "commit",
+                                                     args = ["create"],
+                                                     vars = dict(req_id = r.id)
+                                                    ),
+                                        _class = "action-btn"
+                                       )
 
+    
+                    rheader = DIV( TABLE(
+                                       TR( TH( "%s: " % T("Date Requested")),
+                                           req_record.date_requested,
+                                           TH( "%s: " % T("Date Required")),
+                                           req_record.date_required,
+                                          ),
+                                       TR( TH( "%s: " % T("Requested By")),
+                                           shn_site_represent(req_record.site_id),
+                                          ),
+                                       TR( TH( "%s: " % T("Commit. Status")),
+                                           req_status_opts.get(req_record.commit_status),
+                                           TH( "%s: " % T("Transit. Status")),
+                                           req_status_opts.get(req_record.transit_status),
+                                           TH( "%s: " % T("Fulfil. Status")),
+                                           req_status_opts.get(req_record.fulfil_status)
+                                          ),
+                                       TR( TH( "%s: " % T("Comments")),
+                                           TD(req_record.comments, _colspan=3)
+                                          ),
+                                         ),
+                                    commit_btn,
+                                    rheader_tabs
+                                    )
+    
+                    return rheader
+                else:
+                    # No Record means that we are either a Create or List Create
+                    # Inject the helptext script
+                    return req_helptext_script
+        return None
+    #--------------------------------------------------------------------------
+    def s3_req_match():
+        """
+            Function to be called from controller functions to display all request as a tab 
+            for a site.
+            @ToDo: Needs to work with wh, shelters and hospitals
+                   Filter out requests from this site
+        """
+        tablename, id = request.vars.viewing.split(".")
+        site_id = db[tablename][id].site_id
+        response.s3.actions = [dict(url = str(URL( r=request,
+                                                   c = "req",
+                                                   f = "req",
+                                                   args = ["[id]","check"],
+                                                   vars = {"site_id": site_id}
+                                                   )
+                                               ),
+                                    _class = "action-btn",
+                                    label = str(T("Check")),
+                                    ),
+                               dict(url = str(URL( r=request,
+                                                   c = "req",
+                                                   f = "commit_req",
+                                                   args = ["[id]"],
+                                                   vars = {"site_id": site_id}
+                                                   )
+                                               ),
+                                    _class = "action-btn",
+                                    label = str(T("Commit")),
+                                    )
+                               
+                               ]
+        
+        rheader_dict = dict(org_office = shn_office_rheader,
+                            cr_shelter = shn_shelter_rheader,
+                            hms_hospital = shn_hms_hospital_rheader)
+
+        s3xrc.model.configure(db.req_req, insertable=False)
+        output = s3_rest_controller("req", "req",
+                                    method = "list",
+                                    rheader = rheader_dict[tablename])
+        output["title"] = s3.crud_strings[tablename]["title_display"]
+
+        return output
+    # -------------------------------------------------------------------------
+    def s3_req_check(r, **attr):
+        site_id = r.request.vars.site_id
+        site_name = shn_site_represent(site_id)
+        output = {}
+        output["title"] = s3.crud_strings.req_req.title_display
+        output["rheader"] = shn_req_rheader(r)
+        output["subtitle"] = T("Request Items") 
+        
+        #Get req_items & inv_items from this site
+        req_items = db( (db.req_req_item.req_id == r.id ) &
+                        (db.req_req_item.deleted == False ) #&
+                       ).select(db.req_req_item.id,
+                                db.req_req_item.item_id,
+                                db.req_req_item.quantity,
+                                db.req_req_item.item_pack_id,
+                                db.req_req_item.quantity_commit,
+                                db.req_req_item.quantity_transit,
+                                db.req_req_item.quantity_fulfil,
+                                )
+        inv_items = db( (db.inv_inv_item.site_id == site_id ) &
+                        (db.inv_inv_item.deleted == False ) #&
+                       ).select(db.inv_inv_item.item_id,
+                                db.inv_inv_item.quantity,
+                                db.inv_inv_item.item_pack_id,
+                                )
+        inv_items_dict = inv_items.as_dict(key = "item_id")
+
+        if len(req_items):
+            items = TABLE(THEAD(TR(TH(""),
+                                   TH(db.req_req_item.item_id.label),
+                                   TH(db.req_req_item.quantity.label),
+                                   TH(db.req_req_item.item_pack_id.label),
+                                   TH(db.req_req_item.quantity_commit.label),
+                                   TH(db.req_req_item.quantity_transit.label),
+                                   TH(db.req_req_item.quantity_fulfil.label),
+                                   TH(T("Quantity in %s's Inventory") % site_name)
+                                  )  
+                                ),
+                          _id = "list",
+                          _class = "dataTable display")
+    
+            for req_item in req_items:
+                # Convert inv item quantity to req item quantity
+                try:
+                    inv_item = Storage(inv_items_dict[req_item.item_id])
+                    inv_quantity = inv_item.quantity * \
+                                   inv_item.pack_quantity / \
+                                   req_item.pack_quantity
+                                   
+                except:
+                    inv_quantity = NONE
+                
+                items.append(TR( A(req_item.id),
+                                 shn_item_represent(req_item.item_id),
+                                 req_item.quantity,
+                                 shn_item_pack_represent(
+                                     req_item.item_pack_id),
+                                 req_item.quantity_commit,
+                                 req_item.quantity_transit,
+                                 req_item.quantity_fulfil,
+                                 inv_quantity,
+                                )
+                            )
+                output["items"] = items
+                response.s3.actions = [req_item_inv_item_btn]
+                response.s3.no_sspag = True # pag won't work 
+        else:
+            output["items"] = s3.crud_strings.req_req_item.msg_list_empty
+                
+        
+        response.view = "list.html"
+        response.s3.no_formats = True
+        
+                
+        return output
+
+    s3xrc.model.set_method(module, resourcename,
+                           method = "check", action=s3_req_check )
     #==========================================================================
     if deployment_settings.has_module("inv"):
         #======================================================================
@@ -446,7 +637,15 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
 
         s3xrc.model.configure(table, onaccept=shn_req_item_onaccept)
 
-
+        req_item_inv_item_btn = dict(url = str( URL( r=request,
+                                                     c = "req",
+                                                     f = "req_item_inv_item",
+                                                     args = ["[id]"]
+                                                    )
+                                                ),
+                                     _class = "action-btn",
+                                     label = str(T("Find All Matches")), # Change to Fulfil? Match?
+                                     )
     #==========================================================================
     # Commitments (Pledges)
     #
@@ -542,41 +741,7 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
                                                 fk = "site_id",
                                                 pk = "site_id")
     )
-
-    # -----------------------------------------------------------------------------
-    def s3_req_match():
-        """
-            Function to be called from controller functions to display all request as a tab 
-            for a site.
-            @ToDo: Needs to work with wh, shelters and hospitals
-                   Filter out requests from this site
-        """
-        tablename, id = request.vars.viewing.split(".")
-        site_id = db[tablename][id].site_id
-        response.s3.actions = [dict(url = str(URL( r=request,
-                                                   c = "req",
-                                                   f = "commit_req",
-                                                   args = ["[id]"],
-                                                   vars = {"site_id": site_id}
-                                                   )
-                                               ),
-                                    _class = "action-btn",
-                                    label = str(T("Commit")),
-                                    )
-                               ]
-        
-        rheader_dict = dict(org_office = shn_office_rheader,
-                            cr_shelter = shn_shelter_rheader,
-                            hms_hospital = shn_hms_hospital_rheader)
-
-        s3xrc.model.configure(db.req_req, insertable=False)
-        output = s3_rest_controller("req", "req",
-                                    method = "list",
-                                    rheader = rheader_dict[tablename])
-        output["title"] = s3.crud_strings[tablename]["title_display"]
-
-        return output
-
+    
     #==========================================================================
     if deployment_settings.has_module("inv"):
         #======================================================================
@@ -663,7 +828,7 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
             db.req_req_item[req_item_id] = dict(quantity_commit = quantity_commit)
 
             #Update status_commit of the req record
-            session.rcvars.req_req = r_req_item.req_id
+            session.rcvars.req_req_item = r_req_item.id
             shn_req_item_onaccept(None)
 
 

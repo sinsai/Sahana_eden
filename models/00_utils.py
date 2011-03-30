@@ -588,11 +588,13 @@ def s3_rheader_tabs(r, tabs=[], paging=False):
         title, component = tabs[i][:2]
         vars_in_request = True
         if len(tabs[i]) > 2:
-            _vars = tabs[i][2]
+            _vars = Storage(tabs[i][2])
             for k,v in _vars.iteritems():
                 if r.request.vars.get(k) != v:
                     vars_in_request = False
                     break
+            if "viewing" in r.request.vars:
+                _vars.viewing = r.request.vars.viewing
         else:
             _vars = r.request.vars
 

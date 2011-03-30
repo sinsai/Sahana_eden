@@ -378,10 +378,10 @@ def person():
             table.local_name.readable = table.local_name.writable = False
             table.pe_label.readable = table.pe_label.writable = False
             table.missing.readable = table.missing.writable = False
-            table.tags.readable = table.tags.writable = False
+            #table.tags.readable = table.tags.writable = False
             table.age_group.readable = table.age_group.writable = False
-            table.religion.readable = table.religion.writable = False
-            table.marital_status.readable = table.marital_status.writable = False
+            #table.religion.readable = table.religion.writable = False
+            #table.marital_status.readable = table.marital_status.writable = False
 
             # CRUD strings
             ADD_VOL = T("Add Volunteer")
@@ -517,8 +517,8 @@ def vol_rheader(r, tabs=[]):
                        TH("%s: " % T("Gender")),
                        "%s" % pr_gender_opts.get(person.gender, T("unknown"))),
 
-                    TR(TH("%s: " % T("Nationality")),
-                       "%s" % pr_nations.get(person.nationality, T("unknown")),
+                    TR(TH("%s: " % T("Country")),
+                       "%s" % pr_nations.get(person.country, T("unknown")),
                        TH("%s: " % T("Date of Birth")),
                        "%s" % (person.date_of_birth or T("unknown"))),
 

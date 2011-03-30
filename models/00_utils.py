@@ -610,7 +610,7 @@ def s3_rheader_tabs(r, tabs=[], paging=False):
             else:
                 function = r.request.function
                 record_id = r.id
-        if function == r.name or\
+        if function == r.name or \
            (function == r.request.function and "viewing" in request.vars):
             here = True
 

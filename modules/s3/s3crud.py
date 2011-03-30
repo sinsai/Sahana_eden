@@ -1022,7 +1022,7 @@ class S3CRUD(S3Method):
         if not fields:
             fields = [table.id]
 
-        attributes = dict()
+        attributes = dict(distinct=True)
 
         # Orderby
         if orderby is not None:

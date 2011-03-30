@@ -178,8 +178,7 @@ def human_resource():
     def prep(r, group):
 
         if r.interactive and not r.component:
-            if r.method in ("create", "update") and \
-               group is not None:
+            if r.method == "create" and group is not None:
                 if group == "staff":
                     r.table.type.default = 1
                 elif group == "volunteer":
@@ -192,6 +191,11 @@ def human_resource():
                     r.table.organisation_id.comment = None
                     #r.table.organisation_id.readable = False
                     r.table.organisation_id.writable = False
+            elif r.id:
+                redirect(URL(r=request, c="hrm", f="person",
+                          args=["human_resource"],
+                          vars={"human_resource.id":r.id}))
+
         return True
     response.s3.prep = lambda r, group=group: prep(r, group)
 
@@ -214,26 +218,26 @@ def person():
     table.missing.writable = False
     table.age_group.readable = False
     table.age_group.writable = False
-    table.country.readable = False
-    table.country.writable = False
-    table.religion.readable = False
-    table.religion.writable = False
-    table.marital_status.readable = False
-    table.marital_status.writable = False
-    table.tags.readable = False
-    table.tags.writable = False
+    #table.nationality.readable = False
+    #table.nationality.writable = False
+    #table.religion.readable = False
+    #table.religion.writable = False
+    #table.marital_status.readable = False
+    #table.marital_status.writable = False
+    #table.tags.readable = False
+    #table.tags.writable = False
 
     if request.get_vars.get("human_resource.id", False):
         s3xrc.model.configure(db.hrm_human_resource,
                               insertable = False)
 
     tabs = [
+            (T("HR Data"), "human_resource"),
             (T("Person Details"), None),
-            (T("Human Resource"), "human_resource"),
-            (T("Images"), "image"),
-            #(T("Identity"), "identity"),
             (T("Address"), "address"),
             (T("Contact Data"), "contact"),
+            #(T("Images"), "image"),
+            (T("Identity"), "identity"),
             (T("Teams"), "group_membership"),
            ]
 

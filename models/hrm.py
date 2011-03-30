@@ -68,7 +68,7 @@ if deployment_settings.has_module(prefix):
 
     human_resource_search = s3base.S3Search(
                                 name="human_resource_search_simple",
-                                label=T("Name"),
+                                label=T("Name or Job Title"),
                                 comment=T("To search for a person, enter any of the first, middle or last names, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons."),
                                 field=["job_title",
                                        "person_id$first_name",

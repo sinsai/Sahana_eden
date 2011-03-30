@@ -121,7 +121,7 @@ def office():
         if deployment_settings.has_module("inv"):
             # Filter out items which are already in this inventory
             shn_inv_prep(r)
-          
+
         if r.representation == "popup":
             organisation = request.vars.organisation_id or session.s3.organisation_id or ""
             if organisation:
@@ -154,7 +154,7 @@ def office():
                 table.L1.readable = False
                 table.L0.readable = False
                 table.postcode.readable = False
-                
+
             if r.component and r.component.name == "req":
                 if r.method != "update" and r.method != "read":
                     # Hide fields which don't make sense in a Create form
@@ -251,7 +251,7 @@ def shn_org_rheader(r, tabs=[]):
             # List or Create form: rheader makes no sense here
             return None
 
-        rheader_tabs = shn_rheader_tabs(r, tabs)
+        rheader_tabs = s3_rheader_tabs(r, tabs)
 
         #_next = r.here()
         #_same = r.same()

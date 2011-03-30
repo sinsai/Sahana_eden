@@ -200,7 +200,7 @@ def shn_hms_hospital_rheader(r, tabs=[]):
                     if deployment_settings.has_module("inv"):
                         tabs = tabs + shn_show_inv_tabs(r)
 
-                rheader_tabs = shn_rheader_tabs(r, tabs)
+                rheader_tabs = s3_rheader_tabs(r, tabs)
 
                 table = db.hms_hospital
 

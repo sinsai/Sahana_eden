@@ -483,10 +483,10 @@ class S3SearchSelectWidget(S3SearchWidget):
 
     def widget(self, resource, vars):
         """
-        Returns the widget
+            Returns the widget
 
-        @param resource: the resource to search in
-        @param vars: the URL GET variables as dict
+            @param resource: the resource to search in
+            @param vars: the URL GET variables as dict
         """
 
         field = self.field[0]
@@ -581,11 +581,10 @@ class S3SearchLocationWidget(S3SearchWidget):
 
     def widget(self, resource, vars):
         """
-        Returns the widget
+            Returns the widget
 
-        @param resource: the resource to search in
-        @param vars: the URL GET variables as dict
-
+            @param resource: the resource to search in
+            @param vars: the URL GET variables as dict
         """
 
         self.attr = Storage(attr)
@@ -595,11 +594,10 @@ class S3SearchLocationWidget(S3SearchWidget):
 
     def query(self, resource, value):
         """
-        Returns a sub-query for this search option
+            Returns a sub-query for this search option
 
-        @param resource: the resource to search in
-        @param value: the value returned from the widget
-
+            @param resource: the resource to search in
+            @param value: the value returned from the widget
         """
         raise NotImplementedError
 
@@ -607,8 +605,7 @@ class S3SearchLocationWidget(S3SearchWidget):
 # *****************************************************************************
 class S3Search(S3CRUD):
     """
-    RESTful Search Method for S3Resources
-
+        RESTful Search Method for S3Resources
     """
 
     def __init__(self, simple=None, advanced=None, any=False, **args):
@@ -1086,6 +1083,14 @@ class S3LocationSearch(S3Search):
             fields = [table.id, table.name, table.level, table.path]
 
             # Optional fields
+            if "level" in _vars and _vars.level:
+                if _vars.level == "null":
+                    level = None
+                else:
+                    level = str.upper(_vars.level)
+            else:
+                level = None
+
             if "parent" in _vars and _vars.parent:
                 if _vars.parent == "null":
                     parent = None
@@ -1093,6 +1098,14 @@ class S3LocationSearch(S3Search):
                     parent = int(_vars.parent)
             else:
                 parent = None
+
+            if "children" in _vars and _vars.children:
+                if _vars.children == "null":
+                    children = None
+                else:
+                    children = int(_vars.children)
+            else:
+                children = None
 
             if "exclude_field" in _vars:
                 exclude_field = str.lower(_vars.exclude_field)
@@ -1106,23 +1119,17 @@ class S3LocationSearch(S3Search):
 
             filter = _vars.filter
             if filter == "~":
-                if parent:
-                    # gis_location hierarchical search
-                    # NB Currently not used - we allow people to search
-                    # freely across all the hierarchy,
-                    # SQL Filter is immediate children only so need slow lookup
-                    # query = query & (table.parent == parent) & \
-                    #                 (field.like("%" + value + "%"))
-                    # @todo: does currently not check deletion_status!
-                    children = gis.get_children(parent)
-                    children = children.find(lambda row: \
-                                             value in str.lower(row.name))
+                if children:
+                    # New LocationSelector
+                    children = gis.get_children(children, level=level)
+                    #children = children.find(lambda row: \
+                    #                         value in str.lower(row.name))
                     output = children.json()
                     response.headers["Content-Type"] = "application/json"
                     return output
 
-                elif exclude_field and exclude_value:
-                    # gis_location hierarchical search
+                if exclude_field and exclude_value:
+                    # Old LocationSelector
                     # Filter out poor-quality data, such as from Ushahidi
                     query = (field.lower().like("%" + value + "%")) & \
                             ((table[exclude_field].lower() != exclude_value) | \
@@ -1131,6 +1138,16 @@ class S3LocationSearch(S3Search):
                 else:
                     # Normal single-field
                     query = (field.lower().like("%" + value + "%"))
+
+                if level:
+                    # New LocationSelector
+                    resource.add_filter(query)
+                    query = (table.level == level)
+
+                if parent:
+                    # New LocationSelector
+                    resource.add_filter(query)
+                    query = (table.parent == parent)
 
             elif filter == "=":
                 if field.type.split(" ")[0] in \

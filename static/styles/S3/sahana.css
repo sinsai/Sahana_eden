@@ -559,11 +559,23 @@ div.form-container div.controlset div { margin-left: 15em; }
 div.form-container div.buttonrow { margin-left: 180px; }
 
 /* Subheadings */
-td.subheading { padding-top: 10px !important;
-                padding-bottom: 5px;
-                border-bottom: thin solid #bbb;
-                font-weight: bold; }
-tr.after_subheading td { padding-top: 10px !important; }
+td.subheading {
+    padding-top: 10px !important;
+    padding-bottom: 5px;
+    border-bottom: thin solid #bbb;
+    font-weight: bold;
+}
+tr.after_subheading td {
+    padding-top: 10px !important;
+}
+
+input[disabled='disabled'] {
+    /* A lighter background so the text is more readable */
+    background: #eee;
+    color: #333;
+    /* Make the cursor not change to editable */
+    cursor: default;
+}
 
 /* Tabular data view */
 div#table-container {

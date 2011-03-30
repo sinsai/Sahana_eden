@@ -65,8 +65,10 @@ marker_id = S3ReusableField("marker_id", db.gis_marker, sortby="name",
                                              _target="top",
                                              _title=ADD_MARKER),
                                        DIV( _class="tooltip",
-                                            _title="%s|%s" % (MARKER,
-                                                              T("Defines the icon used for display of features on interactive map & KML exports. A Marker assigned to an individual Location is set if there is a need to override the Marker assigned to the Feature Class. If neither are defined, then the Default Marker is used.")))),
+                                            _title="%s|%s|%s|%s" % (MARKER,
+                                                                    T("Defines the icon used for display of features on interactive map & KML exports."),
+                                                                    T("A Marker assigned to an individual Location is set if there is a need to override the Marker assigned to the Feature Class."),
+                                                                    T("If neither are defined, then the Default Marker is used.")))),
                              ondelete = "RESTRICT"
                             )
 
@@ -220,11 +222,13 @@ table.wmsbrowser_name.label = T("WMS Browser Name")
 table.wmsbrowser_url.label =  T("WMS Browser URL")
 # Defined here since Component
 table.lat.comment = DIV( _class="tooltip",
-                         _title="%s|%s" % (T("Latitude"),
-                                           T("Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+                         _title="%s|%s|%s" % (T("Latitude"),
+                                              T("Latitude is North-South (Up-Down)."),
+                                              T("Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
 table.lon.comment = DIV( _class="tooltip",
-                         _title="%s|%s" % (T("Longitude"),
-                                           T("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
+                         _title="%s|%s|%s" % (T("Longitude"),
+                                              T("Longitude is West - East (sideways)."),
+                                              T("Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
 table.zoom.comment = DIV( _class="tooltip",
                           _title="%s|%s" % (T("Zoom"),
                                             T("How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
@@ -521,8 +525,12 @@ table.geonames_id.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999999))
 CONVERSION_TOOL = T("Conversion Tool")
 table.lat.comment = DIV(_class="tooltip",
                         _id="gis_location_lat_tooltip",
-                        _title="%s|%s" % (T("Latitude & Longitude"),
-                                          T("Longitude is West - East (sideways). Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  These need to be added in Decimal Degrees.")))
+                        _title="%s|%s|%s|%s|%s|%s" % (T("Latitude & Longitude"),
+                                                      T("Longitude is West - East (sideways)."),
+                                                      T("Latitude is North-South (Up-Down)."),
+                                                      T("Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere."),
+                                                      T("Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas."),
+                                                      T("These need to be added in Decimal Degrees.")))
 table.lon.comment = A(CONVERSION_TOOL,
                       _style="cursor:pointer;",
                       _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."),

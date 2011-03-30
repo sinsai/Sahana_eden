@@ -34,7 +34,7 @@
       <th class="navbar" align="right" width="100%">
         <table border="0" cellpadding="0" cellspacing="0">
           <tr><th class="navbar" align="center"
-            >S3</th>
+            ><a class="navbar" target="_top" href="http://eden.sahanafoundation.org/wiki/S3">S3</a></th>
           </tr></table></th>
   </tr>
 </table>
@@ -76,9 +76,6 @@ object --+
 <hr />
 <div class="fields">      <p><strong>Author:</strong>
         Dominic K&#246;nig &lt;dominic@aidiq.com&gt;
-      </p>
-      <p><strong>Status:</strong>
-        work in progress
       </p>
 </div><!-- ==================== INSTANCE METHODS ==================== -->
 <a name="section-InstanceMethods"></a>
@@ -205,6 +202,50 @@ object --+
       Establish the ownership of a record</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3Permission.is_owner">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.S3Permission-class.html#hidden_modules" class="summary-sig-name">hidden_modules</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      List of modules to hide from the main menu</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3Permission.hidden_modules">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3aaa.S3Permission-class.html#accessible_url" class="summary-sig-name">accessible_url</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">p</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">a</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">c</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">f</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">r</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">args</span>=<span class="summary-sig-default">[]</span>,
+        <span class="summary-sig-arg">vars</span>=<span class="summary-sig-default">{}</span>,
+        <span class="summary-sig-arg">anchor</span>=<span class="summary-sig-default">''</span>,
+        <span class="summary-sig-arg">extension</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">env</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Return a URL only if accessible by the user, otherwise False</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3Permission.accessible_url">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -398,6 +439,20 @@ DELETE, &quot;DELETE&quot;],])">OrderedDict([[CREATE, &quot;CREATE&quot;], [READ
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
+        <a href="vita.modules.s3.s3aaa.S3Permission-class.html#AUTHENTICATED" class="summary-name">AUTHENTICATED</a> = <code title="2">2</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="vita.modules.s3.s3aaa.S3Permission-class.html#ANONYMOUS" class="summary-name">ANONYMOUS</a> = <code title="3">3</code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
         <a href="vita.modules.s3.s3aaa.S3Permission-class.html#EDITOR" class="summary-name">EDITOR</a> = <code title="4">4</code>
     </td>
   </tr>
@@ -541,8 +596,8 @@ DELETE, &quot;DELETE&quot;],])">OrderedDict([[CREATE, &quot;CREATE&quot;], [READ
   </dl>
 <div class="fields">      <p><strong>Note:</strong>
         if passing a Row, it must contain all available ownership fields 
-        (id, created_by, owned_by), otherwise the record will be re-loaded 
-        by this function
+        (id, owned_by_user, owned_by_role), otherwise the record will be 
+        re-loaded by this function
       </p>
 </div></td></tr></table>
 </div>
@@ -628,10 +683,58 @@ DELETE, &quot;DELETE&quot;],])">OrderedDict([[CREATE, &quot;CREATE&quot;], [READ
   </dl>
 <div class="fields">      <p><strong>Note:</strong>
         if passing a Row, it must contain all available ownership fields 
-        (id, created_by, owned_by), otherwise the record will be re-loaded 
-        by this function
+        (id, owned_by_user, owned_by_role), otherwise the record will be 
+        re-loaded by this function
       </p>
 </div></td></tr></table>
+</div>
+<a name="hidden_modules"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">hidden_modules</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3Permission.hidden_modules">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>List of modules to hide from the main menu</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="accessible_url"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">accessible_url</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">p</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">a</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">c</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">f</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">r</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">args</span>=<span class="sig-default">[]</span>,
+        <span class="sig-arg">vars</span>=<span class="sig-default">{}</span>,
+        <span class="sig-arg">anchor</span>=<span class="sig-default">''</span>,
+        <span class="sig-arg">extension</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">env</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3.s3aaa-pysrc.html#S3Permission.accessible_url">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Return a URL only if accessible by the user, otherwise False</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
 </div>
 <a name="accessible_query"></a>
 <div>
@@ -721,8 +824,8 @@ DELETE, &quot;DELETE&quot;],])">OrderedDict([[CREATE, &quot;CREATE&quot;], [READ
   </dl>
 <div class="fields">      <p><strong>Note:</strong>
         when submitting a record, the record ID and the ownership fields 
-        (=&quot;created_by&quot;, &quot;owned_by&quot;) must be contained 
-        if available, otherwise the record will be re-loaded
+        (=&quot;owned_by_user&quot;, &quot;owned_by_role&quot;) must be 
+        contained if available, otherwise the record will be re-loaded
       </p>
 </div></td></tr></table>
 </div>
@@ -945,6 +1048,42 @@ Storage(create= CREATE, read= READ, update= UPDATE, delete= DELETE)
   </dl>
 </td></tr></table>
 </div>
+<a name="AUTHENTICATED"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">AUTHENTICATED</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+2
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="ANONYMOUS"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">ANONYMOUS</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+3
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
 <a name="EDITOR"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -1024,14 +1163,14 @@ lambda self, acl:
       <th class="navbar" align="right" width="100%">
         <table border="0" cellpadding="0" cellspacing="0">
           <tr><th class="navbar" align="center"
-            >S3</th>
+            ><a class="navbar" target="_top" href="http://eden.sahanafoundation.org/wiki/S3">S3</a></th>
           </tr></table></th>
   </tr>
 </table>
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Mon Jan 17 00:32:28 2011
+    Generated by Epydoc 3.0.1 on Tue Mar 29 14:25:41 2011
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

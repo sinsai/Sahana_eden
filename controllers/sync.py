@@ -983,7 +983,7 @@ def sync_rheader(r, tabs=[]):
                 _same = r.same()
 
                 if tabs:
-                    rheader_tabs = shn_rheader_tabs(r, tabs)
+                    rheader_tabs = s3_rheader_tabs(r, tabs)
                 else:
                     rheader_tabs = ""
 

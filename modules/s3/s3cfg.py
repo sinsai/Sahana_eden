@@ -131,75 +131,18 @@ class S3Config(Storage):
             countries = self.L10n.get("countries", "")
         return countries
 
-    # All levels, or name of a specific level. Includes non-hierarchy levels.
-    # Serves as represent for level.
-    def get_gis_all_levels(self, level=None):
-        all_levels = self.gis.get("all_levels")
-        if not all_levels:
-            L0 = self.get_gis_locations_hierarchy("L0")
-            L1 = self.get_gis_locations_hierarchy("L1")
-            L2 = self.get_gis_locations_hierarchy("L2")
-            L3 = self.get_gis_locations_hierarchy("L3")
-            L4 = self.get_gis_locations_hierarchy("L4")
-            T = self.T
-            all_levels = OrderedDict([
-                ("L0", L0),
-                ("L1", L1),
-                ("L2", L2),
-                ("L3", L3),
-                ("L4", L4),
-                ("L5", T("Neighbourhood")),
-                ("GR", T("Location Group")),
-                ("XX", T("Imported")),
-            ])
-        if level:
-            try:
-                return all_levels[level]
-            except:
-                return level
-        else:
-            return all_levels
+    # For if 000_config.py is not up to date or corrupted when zzz_1st_run is run
+    def get_gis_default_config_values(self):
+        values = self.gis.get("default_config_values", Storage())
+        # @ToDo: provide some default values
+        if not values:
+            raise UserWarning("Need to update 000_config.py for default map configuration")
+        return values
+    def get_gis_default_symbology(self):
+        return self.gis.get("default_symbology", "US")
+    def get_gis_max_allowed_hierarchy_level(self):
+        return self.gis.get("max_allowed_hierarchy_level", "L2")
 
-    # Location hierarchy, or name of a specific level.
-    def get_gis_locations_hierarchy(self, level=None):
-        locations_hierarchy = self.gis.get("locations_hierarchy")
-        if not locations_hierarchy:
-            T = self.T
-            locations_hierarchy = OrderedDict([
-                ("L0", T("Country")),
-                ("L1", T("Province")),
-                ("L2", T("District")),
-                ("L3", T("Town")),
-                ("L4", T("Village")),
-                #("L5", T("Neighbourhood")),
-            ])
-        if level:
-            try:
-                return locations_hierarchy[level]
-            except:
-                return level
-        else:
-            return locations_hierarchy
-
-    def get_gis_max_hierarchy(self):
-        location_hierarchy = self.get_gis_locations_hierarchy()
-        if "L5" in location_hierarchy:
-            max_hierarchy = "L5"
-        elif "L4" in location_hierarchy:
-            max_hierarchy = "L4"
-        elif "L3" in location_hierarchy:
-            max_hierarchy = "L3"
-        elif "L2" in location_hierarchy:
-            max_hierarchy = "L2"
-        elif "L1" in location_hierarchy:
-            max_hierarchy = "L1"
-        elif "L0" in location_hierarchy:
-            max_hierarchy = "L0"
-        else:
-            max_hierarchy = ""
-        return max_hierarchy
-    def get_gis_strict_hierarchy(self):
-        return self.gis.get("strict_hierarchy", False)
     def get_gis_map_selector(self):
         return self.gis.get("map_selector", True)
     def get_gis_display_l0(self):
@@ -341,7 +284,8 @@ class S3Config(Storage):
                 "msg",          # Messaging
                 "project",      # Project Tracking
                 "assess",       # Assessments Tool
-                "rms",          # Request Management
+                "req",          # Request Management
+                #"hrm",          # Human Resource Management
                 "vol",          # Volunteer Management
                 #"importer",     # Spreadsheet Importer
                 #"survey",       # Surveys

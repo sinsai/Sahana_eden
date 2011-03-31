@@ -429,17 +429,16 @@ class S3LocationAutocompleteWidget(FormWidget):
                         "exclude_value":"XX"})
 
         # Which Levels do we have in our hierarchy & what are their Labels?
-        deployment_settings = self.deployment_settings
-        location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
+        location_hierarchy = get.get_location_hierarchy()
         try:
             # Ignore the bad bulk-imported data
             del location_hierarchy["XX"]
         except KeyError:
             pass
         # What is the maximum level of hierarchy?
-        #max_hierarchy = deployment_settings.get_gis_max_hierarchy()
+        #max_hierarchy = gis.get_max_hierarchy_level()
         # Is full hierarchy mandatory?
-        #strict = deployment_settings.get_gis_strict_hierarchy()
+        #strict = gis.get_strict_hierarchy()
 
         post_process = self.post_process
         if not post_process:
@@ -705,13 +704,27 @@ class S3LocationSelectorWidget2(FormWidget):
                 Street Address (Line1/Line2?)
                     Trigger a geocoder lookup onblur
                 Postcode
-                L2-L5 as Autocompletes which create missing locations automatically
-                L1 as Dropdown? (Have a gis_config setting to inform whether this is populated for a given L0)
-                Inline Map? (Deployment Option?)
+                Mode Strict:
+                    Lx as dropdowns. Default label is 'Select previous to populate this dropdown' (Fixme!)
+                Mode not Strict (default):
+                    L2-L5 as Autocompletes which create missing locations automatically
+                    L1 as Dropdown? (Have a gis_config setting to inform whether this is populated for a given L0)
+                Map:
+                    Inline or Popup? (Deployment Option?)
+                    Set Map Viewport to default on best currently selected Hierarchy
                 Lat Lon
             Inactive Tab: Search Existing Locations
+                Needs 2 modes:
+                    Specific Locations only - for Sites/Incidents
+                    Hierarchies ok (can specify which) - for Projects/Documents
                 Hierarchical Filters above the Search Box
                     Search is filtered to values shown
+                    Filters default to any hierarchy selected on the Create tab?
+                We should save the Add tab data when opening the Search so that we can go back to that Tab & add after all (e.g. if specific not found)
+                We should save the Search tab data when re-opening the Add tab
+                    Do we have different fieldnames so can just use hide/unhide?
+                    Do we save the settings to keep same fieldnames?
+                        Flag to know which mode we're in currently
 
         Update form
             Update form has uuid set server-side & hence S3.gis.uuid set client-side
@@ -777,6 +790,7 @@ class S3LocationSelectorWidget2(FormWidget):
 
         map_popup = ""
         if value:
+            mode = "update"
             # Read current record
             this_location = db(locations.id == value).select(locations.uuid,
                                                              locations.name,
@@ -807,7 +821,7 @@ class S3LocationSelectorWidget2(FormWidget):
             # Populate default with Names of ancestors at each level
             gis.get_parent_per_level(default, value, feature=this_location, names=True)
 
-            if level:
+            if level and not level == "XX":
                 # If within the locations hierarchy then don't populate the visible name box
                 represent = ""
             else:
@@ -857,6 +871,7 @@ class S3LocationSelectorWidget2(FormWidget):
 
         else:
             # No default value
+            mode = "create"
             uuid = ""
             represent = ""
             level = None
@@ -882,7 +897,7 @@ class S3LocationSelectorWidget2(FormWidget):
         #elif len(countries) == 1:
         #else:
         # Default
-        location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
+        location_hierarchy = get.get_location_hierarchy()
 
         # Components to inject into Form
         divider = TR(TD(_class="subheading"))
@@ -1083,6 +1098,7 @@ class S3LocationSelectorWidget2(FormWidget):
 
         # Settings to be read by static/scripts/S3/s3.locationselector.widget.js
         js_location_selector = """
+    S3.gis.mode = '%s';
     S3.gis.uuid = '%s';
     S3.gis.name = '%s';
     S3.gis.addr_street = '%s';
@@ -1093,6 +1109,7 @@ class S3LocationSelectorWidget2(FormWidget):
     var s3_gis_url = '%s';
     var s3_navigate_away_confirm = %s;
     """ % (
+            mode,
             uuid,
             represent,
             addr_street_encoded,
@@ -1194,8 +1211,8 @@ class S3LocationSelectorWidget(FormWidget):
         countries = response.s3.gis.countries  # Also needed by location_represent hence want to keep in model, so useful not to repeat
         # Should we use a Map-based selector?
         map_selector = deployment_settings.get_gis_map_selector()
-        # Which Levels do we have in our hierarchy & what are their initial Labels?
-        location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
+        # Which Levels do we have in our hierarchy & what are their Labels?
+        location_hierarchy = gis.get_location_hierarchy()
         # No longer needed
         #try:
         #    # Ignore the bad bulk-imported data
@@ -1203,9 +1220,9 @@ class S3LocationSelectorWidget(FormWidget):
         #except KeyError:
         #    pass
         # What is the maximum level of hierarchy?
-        max_hierarchy = deployment_settings.get_gis_max_hierarchy()
+        max_hierarchy = gis.get_max_hierarchy_level()
         # Is full hierarchy mandatory?
-        #strict = deployment_settings.get_gis_strict_hierarchy()
+        #strict = gis.get_strict_hierarchy()
         # @ToDo: Do some client-side validation based on this flag
 
         # Navigate Away Confirm?

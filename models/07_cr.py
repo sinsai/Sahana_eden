@@ -135,20 +135,21 @@ if deployment_settings.has_module(module):
                                   writable=False), # Populated from location_id
                             Field("address", "text", label=T("Address"),
                                   writable=False), # Populated from location_id
+                            # Labels that need gis_config data are set later.
                             Field("L4",
-                                  label=deployment_settings.get_gis_locations_hierarchy("L4"),
+                                  #label=gis.get_location_hierarchy("L4"),
                                   writable=False), # Populated from location_id
                             Field("L3",
-                                  label=deployment_settings.get_gis_locations_hierarchy("L3"),
+                                  #label=gis.get_location_hierarchy("L3"),
                                   writable=False), # Populated from location_id
                             Field("L2",
-                                  label=deployment_settings.get_gis_locations_hierarchy("L2"),
+                                  #label=gis.get_location_hierarchy("L2"),
                                   writable=False), # Populated from location_id
                             Field("L1",
-                                  label=deployment_settings.get_gis_locations_hierarchy("L1"),
+                                  #label=gis.get_location_hierarchy("L1"),
                                   writable=False), # Populated from location_id
                             Field("L0",
-                                  label=deployment_settings.get_gis_locations_hierarchy("L0"),
+                                  #label=gis.get_location_hierarchy("L0"),
                                   writable=False), # Populated from location_id
                             Field("postcode", label=T("Postcode"), writable=False), # Populated from location_id
                             person_id(label = T("Contact Person")),

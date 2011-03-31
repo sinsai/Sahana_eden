@@ -289,7 +289,7 @@ class MENUS3(DIV):
                     li = LI(HR(), _class="menu_separator")
                 elif isinstance(name, tuple) and link:
                     if link:
-                        _onchange="var val=$('#%s:checked').length; $.getS3('%s'+'?val='+val, {}, 'xml', false, false);" % (name[1], link)
+                        _onchange="var val=$('#%s:checked').length; $.getS3('%s'+'?val='+val, null, false, 'xml', false, false);" % (name[1], link)
                     else:
                         _onchange=None
                     if len(name)>2:

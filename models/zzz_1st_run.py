@@ -7,7 +7,10 @@
 # Deployments can change settings live via appadmin
 
 # Set deployment_settings.base.prepopulate to False in Production (to save 1x DAL hit every page)
-if not deployment_settings.get_base_prepopulate() or db(db["s3_setting"].id > 0).count():
+# The query used here takes 2/3 the time of .count()
+table = db.s3_setting
+if not deployment_settings.get_base_prepopulate() or db(table.id > 0).select(table.id,
+                                                                             limitby=(0, 1)).first():
     populate = False
 else:
     populate = True
@@ -17,7 +20,7 @@ if populate:
     # Themes
     tablename = "admin_theme"
     table = db[tablename]
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         table.insert(
             name = T("Sahana Blue"),
             logo = "img/sahanapy_logo.png",
@@ -78,7 +81,7 @@ if populate:
     table = db[tablename]
     # Ensure that the theme we defined is in the DB ready to be used as a FK
     db.commit()
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         table.insert(
             #admin_name = T("Sahana Administrator").xml(),
             #admin_email = "support@Not Set",
@@ -89,7 +92,7 @@ if populate:
     # Organisation Registry
     tablename = "org_cluster"
     table = db[tablename]
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         table.insert(
             abrv = T("Agriculture"),
             name = T("Agriculture")
@@ -138,7 +141,7 @@ if populate:
     table = db[tablename]
     # Ensure that the clusters we defined are in the DB ready to be used as a FK
     db.commit()
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         cluster_shelter = db(db.org_cluster.abrv == T("Shelter")).select(db.org_cluster.id,
                                                                          limitby=(0, 1)).first().id
         cluster_nutrition = db(db.org_cluster.abrv == T("Nutrition")).select(db.org_cluster.id,
@@ -208,7 +211,7 @@ if populate:
     # Synchronisation
     tablename = "sync_setting"
     table = db[tablename]
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
        table.insert(proxy="")
 
     # Incident Reporting System
@@ -216,7 +219,7 @@ if populate:
         # Categories visible to ends-users by default
         tablename = "irs_icategory"
         table = db[tablename]
-        if not db(table.id > 0).count():
+        if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
             table.insert(code = "flood")
             table.insert(code = "geophysical.landslide")
             table.insert(code = "roadway.bridgeClosure")
@@ -229,7 +232,7 @@ if populate:
     if "msg" in deployment_settings.modules:
         tablename = "msg_email_settings"
         table = db[tablename]
-        if not db(table.id > 0).count():
+        if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
             table.insert(
                 inbound_mail_server = "imap.gmail.com",
                 inbound_mail_type = "imap",
@@ -244,30 +247,30 @@ if populate:
         # Need entries for the Settings/1/Update URLs to work
         tablename = "msg_setting"
         table = db[tablename]
-        if not db(table.id > 0).count():
+        if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
             table.insert( outgoing_sms_handler = "Gateway" )
         tablename = "msg_modem_settings"
         table = db[tablename]
-        if not db(table.id > 0).count():
+        if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
             table.insert( modem_baud = 115200 )
         tablename = "msg_gateway_settings"
         table = db[tablename]
-        if not db(table.id > 0).count():
+        if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
             table.insert( to_variable = "to" )
         tablename = "msg_tropo_settings"
         table = db[tablename]
-        if not db(table.id > 0).count():
+        if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
             table.insert( token_messaging = "" )
         tablename = "msg_twitter_settings"
         table = db[tablename]
-        if not db(table.id > 0).count():
+        if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
             table.insert( pin = "" )
 
     # Assessment
     if "assess" in deployment_settings.modules:
         tablename = "assess_baseline_type"
         table = db[tablename]
-        if not db(table.id > 0).count():
+        if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
             table.insert( name = "# of population")
             table.insert( name = "# of households" )
             table.insert( name = "# of children under 5" )
@@ -279,7 +282,7 @@ if populate:
     if deployment_settings.has_module("irs") or deployment_settings.has_module("assess"):
         tablename = "impact_type"
         table = db[tablename]
-        if not db(table.id > 0).count():
+        if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
             table.insert( name = "# of People Affected" )
             table.insert( name = "# People Needing Food",
                           cluster_id = \
@@ -342,7 +345,7 @@ if populate:
         # Supply / Inventory
         tablename = "supply_item_category"
         table = db[tablename]
-        if not db(table.id > 0).count():
+        if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
             #shn_import_table("supply_item_category")
             table.insert( name = "Agriculture" )
             #table.insert( name = "Clothing" )
@@ -355,7 +358,7 @@ if populate:
             table.insert( name = "WASH" )
         tablename = "supply_item"
         table = db[tablename]
-        if not db(table.id > 0).count():
+        if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
             #shn_import_table("supply_item_pakistan")
             agriculture = db(db.supply_item_category.name == "Agriculture").select(db.supply_item_category.id,
                                                                                    limitby=(0, 1)).first().id
@@ -435,7 +438,7 @@ if populate:
     if deployment_settings.has_module("project"):
         tablename = "project_need_type"
         table = db[tablename]
-        if not db(table.id > 0).count():
+        if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
             table.insert( name = T("People Needing Food") )
             table.insert( name = T("People Needing Water") )
             table.insert( name = T("People Needing Shelter") )
@@ -444,7 +447,7 @@ if populate:
     if "budget" in deployment_settings.modules:
         tablename = "budget_parameter"
         table = db[tablename]
-        if not db(table.id > 0).count():
+        if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
             table.insert(
             )
 
@@ -452,7 +455,7 @@ if populate:
     if "lms" in deployment_settings.modules:
         tablename = "lms_catalog"
         table = db[tablename]
-        if not db(table.id > 0).count():
+        if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
             table.insert(
                 name="Default",
                 description="Default Catalog",
@@ -463,7 +466,7 @@ if populate:
     if "ticket" in deployment_settings.modules:
         tablename = "ticket_category"
         table = db[tablename]
-        if not db(table.id > 0).count():
+        if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
             table.insert( name = "Report Missing Person" )
             table.insert( name = "Report Security Incident" )
             table.insert( name = "Report Information" )
@@ -475,7 +478,7 @@ if populate:
     table = db[tablename]
     # Can't do sub-folders :/
     # need a script to read in the list of default markers from the filesystem, copy/rename & populate the DB 1 by 1
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         # We want to start at ID 1, but postgres won't let us truncate() & not needed anyway this is only run on 1st_run.
         #table.truncate()
         table.insert(
@@ -642,7 +645,7 @@ if populate:
         )
     tablename = "gis_symbology"
     table = db[tablename]
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         table.insert(
             name = "Australasia"
         )
@@ -654,7 +657,7 @@ if populate:
         )
     tablename = "gis_projection"
     table = db[tablename]
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         # We want to start at ID 1, but postgres won't let us truncate() & not needed anyway this is only run on 1st_run.
         #table.truncate()
         table.insert(
@@ -679,28 +682,42 @@ if populate:
 
     tablename = "gis_config"
     table = db[tablename]
-    # Ensure that the projection/marker we defined are in the DB ready to be used as FKs
+    # Ensure that the projection/marker we defined are in the DB ready to be
+    # used as FKs
     db.commit()
-    symbology_us = db(db.gis_symbology.name == "US").select(db.gis_symbology.id,
-                                                            limitby=(0, 1)).first().id
-    if not db(table.id > 0).count():
-        # We want to start at ID 1, but postgres won't let us truncate() & not needed anyway this is only run on 1st_run.
+    query = db.gis_symbology.name == deployment_settings.get_gis_default_symbology()
+    site_symbology = db(query).select(db.gis_symbology.id,
+                                      limitby=(0, 1)).first().id
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
+        # We want to start at ID 1, but postgres won't let us truncate() & not
+        # needed anyway this is only run on 1st_run.
         #table.truncate()
-        table.insert(
-            lat = "51.8",
-            lon = "-1.3",
-            zoom = 7,
-            projection_id = 1,
-            marker_id = 1,
-            map_height = 600,
-            map_width = 1000,
-            symbology_id = symbology_us,
-            wmsbrowser_url = "http://geo.eden.sahanafoundation.org/geoserver/wms?service=WMS&request=GetCapabilities"
-        )
+        default_gis_config_values = Storage()
+        default_gis_config_values.update(
+            deployment_settings.get_gis_default_config_values())
+        default_gis_config_values.update(
+            gis.get_location_hierarchy_settings())
+        default_gis_config_values.update({"symbology_id": site_symbology})
+        
+        # Since the values from deployment_settings have not been validated,
+        # check them.
+        errors = Storage()
+        gis.config_onvalidation(default_gis_config_values, errors)
+        # Do a minimal fixup of any errors.
+        # If there's an error in region settings, don't show it in the menu.
+        if errors.region_location_id or errors.name:
+            default_gis_config_values.show_region_in_menu = False
+        # If there are missing level names, default them to Ln.
+        for error in errors:
+            if len(error) == 2 and error[0] == "L":
+                default_gis_config_values[error] = error
+        # @ToDo: Log the errors.
+        
+        table.insert(**default_gis_config_values)
 
     tablename = "gis_feature_class"
     table = db[tablename]
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-TRACK",
             name = "Track",
@@ -732,7 +749,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-AIRPORT",
             name = "Airport",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "airport").select(db.gis_marker.id,
                                                                    limitby=(0, 1)).first().id,
             gps_marker = "Airport",
@@ -740,7 +757,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-BRIDGE",
             name = "Bridge",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "bridge").select(db.gis_marker.id,
                                                                   limitby=(0, 1)).first().id,
             gps_marker = "Bridge",
@@ -748,7 +765,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-CHURCH",
             name = "Church",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "church").select(db.gis_marker.id,
                                                                   limitby=(0, 1)).first().id,
             gps_marker = "Church",
@@ -756,7 +773,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-FOOD",
             name = "Food",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "food").select(db.gis_marker.id,
                                                                 limitby=(0, 1)).first().id,
             gps_marker = "Restaurant",
@@ -764,7 +781,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-HOSPITAL",
             name = "Hospital",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "hospital").select(db.gis_marker.id,
                                                                     limitby=(0, 1)).first().id,
             gps_marker = "Medical Facility",
@@ -778,7 +795,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-OFFICE",
             name = "Office",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "office").select(db.gis_marker.id,
                                                                   limitby=(0, 1)).first().id,
             gps_marker = "Building",
@@ -787,7 +804,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-PERSON",
             name = "Person",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "person").select(db.gis_marker.id,
                                                                   limitby=(0, 1)).first().id,
             gps_marker = "Contact, Dreadlocks",
@@ -796,7 +813,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-PORT",
             name = "Port",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "port").select(db.gis_marker.id,
                                                                 limitby=(0, 1)).first().id,
             gps_marker = "Marina",
@@ -815,7 +832,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-SHELTER",
             name = "Shelter",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "shelter").select(db.gis_marker.id,
                                                                    limitby=(0, 1)).first().id,
             gps_marker = "Campground",
@@ -830,7 +847,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-VEHICLE",
             name = "Vehicle",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "vehicle").select(db.gis_marker.id,
                                                                    limitby=(0, 1)).first().id,
             gps_marker = "Car",
@@ -838,7 +855,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-VOLUNTEER",
             name = "Volunteer",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "volunteer").select(db.gis_marker.id,
                                                                      limitby=(0, 1)).first().id,
             gps_marker = "Contact, Dreadlocks",
@@ -846,7 +863,7 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-WAREHOUSE",
             name = "Warehouse",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "office").select(db.gis_marker.id,
                                                                   limitby=(0, 1)).first().id,
             gps_marker = "Building",
@@ -854,14 +871,14 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-WATER",
             name = "Water",
-            symbology_id = symbology_us,
+            symbology_id = site_symbology,
             marker_id = db(db.gis_marker.name == "water").select(db.gis_marker.id,
                                                                  limitby=(0, 1)).first().id,
             gps_marker = "Drinking Water",
         )
     tablename = "gis_apikey"
     table = db[tablename]
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         table.insert(
             name = "google",
             apikey = "ABQIAAAAgB-1pyZu7pKAZrMGv3nksRRi_j0U6kJrkFvY4-OX2XYmEAa76BSH6SJQ1KrBv-RzS5vygeQosHsnNw",
@@ -879,7 +896,7 @@ if populate:
         )
     tablename = "gis_layer_feature"
     table = db[tablename]
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         table.insert(
             name = "Incident Reports",
             module = "irs",
@@ -959,7 +976,7 @@ if populate:
         )
     tablename = "gis_layer_coordinate"
     table = db[tablename]
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         # Populate table
         table.insert(
                 name = "Coordinate Grid",
@@ -968,7 +985,7 @@ if populate:
             )
     tablename = "gis_layer_openstreetmap"
     table = db[tablename]
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         # Populate table
         table.insert(
                 name = "OpenStreetMap (Mapnik)",
@@ -1035,7 +1052,7 @@ if populate:
         #    )
     tablename = "gis_layer_google"
     table = db[tablename]
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         # Populate table
         for subtype in gis_layer_google_subtypes:
             table.insert(
@@ -1045,7 +1062,7 @@ if populate:
                 )
     tablename = "gis_layer_yahoo"
     table = db[tablename]
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         # Populate table
         for subtype in gis_layer_yahoo_subtypes:
             table.insert(
@@ -1055,7 +1072,7 @@ if populate:
                 )
     tablename = "gis_layer_bing"
     table = db[tablename]
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         # Populate table
         for subtype in gis_layer_bing_subtypes:
             table.insert(
@@ -1065,7 +1082,7 @@ if populate:
                 )
     tablename = "gis_layer_mgrs"
     table = db[tablename]
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         # Populate table
         table.insert(
                 name = "MGRS Atlas PDFs",
@@ -1075,7 +1092,7 @@ if populate:
             )
     tablename = "gis_layer_wms"
     table = db[tablename]
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         # Populate table
         table.insert(
                 name = "VMap0",
@@ -1097,7 +1114,7 @@ if populate:
             )
     tablename = "gis_layer_georss"
     table = db[tablename]
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         # Populate table
         table.insert(
                 name = "Earthquakes",
@@ -1122,7 +1139,7 @@ if populate:
 
     tablename = "gis_wmc_layer"
     table = db[tablename]
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         # Populate table with the layers currently-supported by GeoExplorer
         table.insert(
                 source = "ol",
@@ -1207,7 +1224,7 @@ if populate:
 
     tablename = "gis_location"
     table = db[tablename]
-    if not db(table.id > 0).count():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         # L0 Countries
         import_file = os.path.join(request.folder,
                                    "private", "import",
@@ -1224,7 +1241,7 @@ if populate:
     default_acl = deployment_settings.get_aaa_default_acl()
     default_uacl = deployment_settings.get_aaa_default_uacl()
     default_oacl = deployment_settings.get_aaa_default_oacl()
-    if not db(db[table].id > 0).count():
+    if not db(db[table].id > 0).select(table.id, limitby=(0, 1)).first():
         create_role = auth.s3_create_role
         # Do not remove or change order of these 5 definitions (System Roles):
         create_role("Administrator", "System Administrator - can access & make changes to any data")
@@ -1259,7 +1276,7 @@ if populate:
     # Security Defaults for all tables (if using 'full' security policy: i.e. native Web2Py)
     if session.s3.security_policy not in (1, 2, 3, 4, 5):
         table = auth.settings.table_permission_name
-        if not db(db[table].id > 0).count():
+        if not db(db[table].id > 0).select(table.id, limitby=(0, 1)).first():
             # For performance we only populate this once (at system startup)
             # => need to populate manually when adding new tables to the database! (less RAD)
             authenticated = auth.id_group("Authenticated")

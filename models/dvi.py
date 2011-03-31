@@ -410,7 +410,7 @@ if deployment_settings.has_module(module):
                                                       table.deleted,
                                                       table.identity,
                                                       table.presence,
-                                                      table.opt_dvi_id_status,
+                                                      table.status,
                                                       limitby=(0, 1)).first()
 
             if not record:
@@ -424,7 +424,7 @@ if deployment_settings.has_module(module):
                 vita.presence_accept(record.presence)
                 db(table.id == record_id).update(presence=None)
 
-            elif not record.presence and record.opt_dvi_id_status == 3:
+            elif not record.presence and record.status == 3:
 
                 # Get the identified person:
                 person = db(db.pr_person.id == record.identity).select(db.pr_person.pe_id,

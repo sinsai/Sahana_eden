@@ -180,7 +180,7 @@ def shn_recv_rheader(r):
             if recv_record:
                 rheader = DIV( TABLE(
                                    TR( TH( "%s: " % T("Date")),
-                                       recv_record.datetime,
+                                       recv_record.date,
                                       ),
                                    TR( TH( "%s: " % T("By")),
                                        shn_site_represent(recv_record.site_id),
@@ -351,12 +351,12 @@ def shn_send_rheader(r):
             if send_record:
                 rheader = DIV( TABLE(
                                    TR( TH("%s: " % T("Date")),
-                                       send_record.datetime,
+                                       send_record.date,
                                       ),
                                    TR( TH("%s: " % T("From")),
                                        shn_site_represent(send_record.site_id),
                                        TH("%s: " % T("To")),
-                                       shn_site_represent(send_record.to_site_id),
+                                       shn_gis_location_represent(send_record.to_location_id),
                                       ),
                                    TR( TH("%s: " % T("Comments")),
                                        TD(send_record.comments, _colspan=3)
@@ -443,9 +443,6 @@ def shn_send_rheader(r):
                 return rheader
     return None
 #------------------------------------------------------------------------------
-def incoming():
-    return dict(test = "test")
-#------------------------------------------------------------------------------
 def req_items_for_inv(site_id, quantity_type):
     """
     used by recv_process & send_process
@@ -469,7 +466,7 @@ def req_items_for_inv(site_id, quantity_type):
                             db.req_req_item.quantity,
                             db.req_req_item["quantity_%s" % quantity_type],
                             db.req_req_item.item_pack_id,
-                            orderby = db.req_req.date_required | db.req_req.datetime,
+                            orderby = db.req_req.date_required | db.req_req.date_requested,
                             #groupby = db.req_req_item.item_id
                             )
 
@@ -504,6 +501,8 @@ def req_item_in_shipment( shipment_item,
 
     # Check for req_items
     if item_id in req_items:
+        shn_shipment_to_req_type = dict(recv = "fulfil",
+                                        send = "transit")
         quantity_req_type = "quantity_%s" % shn_shipment_to_req_type[shipment_type]
 
         # This item has been requested from this inv
@@ -523,9 +522,9 @@ def req_item_in_shipment( shipment_item,
         db[shipment_item_table][shipment_item[shipment_item_table].id] = dict(req_item_id = req_item_id)
 
         # Flag req record to update status_fulfil
-        return req_item.req_id
+        return req_item.req_id, req_item.id
     else:
-        return None
+        return None, None
 
 
 def recv_process():
@@ -607,7 +606,7 @@ def recv_process():
                                  )
 
     # Update recv record & lock for editing
-    db.inv_recv[recv_id] = dict(datetime = request.utcnow,
+    db.inv_recv[recv_id] = dict(date = request.utcnow,
                                  status = SHIP_STATUS_RECEIVED,
                                  owned_by_user = None,
                                  owned_by_role = ADMIN
@@ -724,19 +723,20 @@ def recv_cancel():
             db.req_req_item[req_item_id] = dict(quantity_fulfil=quantity_fulfil)
 
             # Check for req_items (-> fulfil)
-            update_req_id.append(  )
+            update_req_id.append( [r_req_item.req_id, req_item_id] )
 
     # Update recv record & lock for editing
-    db.inv_recv[recv_id] = dict(datetime = request.utcnow,
+    db.inv_recv[recv_id] = dict(date = request.utcnow,
                                 status = SHIP_STATUS_CANCEL,
                                 owned_by_user = None,
                                 owned_by_role = ADMIN
                                 )
 
     # Update status_fulfil of the req record(s)
-    for req_id in update_req_id:
+    for req_id, req_item_id in update_req_id:
         if req_id:
             session.rcvars.req_req = req_id
+            session.rcvars.req_req_item = req_item_id
             shn_req_item_onaccept(None)
 
     session.confirmation = T("Received Shipment canceled and items removed from Inventory")
@@ -770,7 +770,7 @@ def send_process():
 
 
     site_id = send_record.site_id
-    to_site_id = send_record.to_site_id
+    
     cancel_send = False
     invalid_send_item_ids = []
 
@@ -794,6 +794,15 @@ def send_process():
                                    row.inv_inv_item.deleted == True
                        )
 
+    try:
+        to_site_id = db( (db.org_site.location_id == send_record.to_location_id) & \
+                         (db.org_site.deleted == False)
+                        ).select( db.org_site.id,
+                                  limitby = (0,1)
+                                 ).first().id
+    except:
+        to_site_id = None
+                             
     req_items = req_items_for_inv(to_site_id, "transit")
 
     update_req_id = []
@@ -841,7 +850,7 @@ def send_process():
                  )
     else:
         # Update Send record & lock for editing
-        db.inv_send[send_id] = dict(datetime = request.utcnow,
+        db.inv_send[send_id] = dict(date = request.utcnow,
                                      status = SHIP_STATUS_SENT,
                                      owned_by_user = None,
                                      owned_by_role = ADMIN
@@ -849,9 +858,10 @@ def send_process():
         session.confirmation = T("Shipment Items sent from Inventory")
 
         # Update status_fulfil of the req record(s)
-        for req_id in update_req_id:
+        for req_id, req_item_id in update_req_id:
             if req_id:
                 session.rcvars.req_req = req_id
+                session.rcvars.req_req_item = req_item_id
                 shn_req_item_onaccept(None)
 
         # Go to the Site which has sent these items
@@ -965,19 +975,20 @@ def send_cancel():
             db.req_req_item[req_item_id] = dict(quantity_fulfil=quantity_fulfil)
 
             # Check for req_items (-> fulfil)
-            update_req_id.append(  )
+            update_req_id.append( [r_req_item.req_id, req_item_id] )
 
     # Update send record & lock for editing
-    db.inv_send[send_id] = dict(datetime = request.utcnow,
+    db.inv_send[send_id] = dict(date = request.utcnow,
                                 status = SHIP_STATUS_CANCEL,
                                 owned_by_user = None,
                                 owned_by_role = ADMIN
                                 )
 
     # Update status_fulfil of the req record(s)
-    for req_id in update_req_id:
+    for req_id, req_item_id in update_req_id:
         if req_id:
             session.rcvars.req_req = req_id
+            session.rcvars.req_req_item = req_item_id
             shn_req_item_onaccept(None)
 
     session.confirmation = T("Sent Shipment canceled and items returned to Inventory")
@@ -1012,7 +1023,9 @@ def recv_sent():
                      )
                  )
 
-    site_id = r_send.to_site_id
+    # This is more explicit than getting the site_id from the inv_send.to_location_id
+    # As there may be multiple sites per location.
+    site_id = request.vars.site_id
 
     from_location_id = shn_get_db_field_value(db,
                                               "org_site",
@@ -1074,13 +1087,10 @@ def send_commit():
                      )
                  )
     # Create a new send record
-    to_site_id = r_commit.for_site_id
-    to_location_id = db.org_site[to_site_id].location_id
-    send_id = db.inv_send.insert( datetime = request.utcnow,
+    to_location_id = db.org_site[r_commit.for_site_id].location_id
+    send_id = db.inv_send.insert( date = request.utcnow,
                                   site_id = r_commit.site_id,
                                   to_location_id = to_location_id,
-                                  to_site_id = to_site_id,
-
                                    )
 
     # Only select items which are in the warehouse
@@ -1112,13 +1122,13 @@ def send_commit():
 #==============================================================================#
 def recv_item_json():
     response.headers["Content-Type"] = "application/json"
-    db.inv_recv.datetime.represent = lambda dt: dt[:10]
+    db.inv_recv.date.represent = lambda dt: dt[:10]
     records =  db( (db.inv_recv_item.req_item_id == request.args[0]) & \
                    (db.inv_recv.id == db.inv_recv_item.inv_recv_id) & \
                    (db.inv_recv_item.deleted == False )
                   ).select(db.inv_recv.id,
                            db.inv_recv_item.quantity,
-                           db.inv_recv.datetime,
+                           db.inv_recv.date,
                            )
     json_str = "[%s,%s" % ( json.dumps(dict(id = str(T("Received")),
                                             quantity = "#"
@@ -1130,13 +1140,13 @@ def recv_item_json():
 #==============================================================================#
 def send_item_json():
     response.headers["Content-Type"] = "application/json"
-    db.inv_send.datetime.represent = lambda dt: dt[:10]
+    db.inv_send.date.represent = lambda dt: dt[:10]
     records =  db( (db.inv_send_item.req_item_id == request.args[0]) & \
                    (db.inv_send.id == db.inv_send_item.send_id) & \
                    (db.inv_send_item.deleted == False )
                   ).select(db.inv_send.id,
                            db.inv_send_item.quantity,
-                           db.inv_send.datetime,
+                           db.inv_send.date,
                            )
     json_str = "[%s,%s" % ( json.dumps(dict(id = str(T("Sent")),
                                             quantity = "#"

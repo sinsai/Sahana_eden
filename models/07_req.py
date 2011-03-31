@@ -351,13 +351,13 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
                     # Inject the helptext script
                     return req_helptext_script
         return None
+
     #--------------------------------------------------------------------------
     def s3_req_match():
         """
             Function to be called from controller functions to display all request as a tab 
             for a site.
-            @ToDo: Needs to work with wh, shelters and hospitals
-                   Filter out requests from this site
+            @ToDo: Filter out requests from this site
         """
         tablename, id = request.vars.viewing.split(".")
         site_id = db[tablename][id].site_id
@@ -595,7 +595,6 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
             shn_component_copy_role_func(component_name = "req_req_item",
                                          resource_name = "req_req",
                                          fk = "req_id")(form)
-
 
             req_id = session.rcvars.req_req
 

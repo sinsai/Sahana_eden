@@ -112,8 +112,6 @@ def office():
     if isinstance(request.vars.organisation_id, list):
         request.vars.organisation_id = request.vars.organisation_id[0]
 
-    shn_add_dynamic_inv_components()
-
     # Pre-processor
     def prep(r):
         # Filter out people which are already staff for this office
@@ -177,6 +175,9 @@ def office():
     rheader = shn_office_rheader
 
     return s3_rest_controller(module, resourcename, rheader=rheader)
+#==============================================================================
+def incoming():
+    return s3_inv_incoming()
 #==============================================================================
 def req_match():
     return s3_req_match()

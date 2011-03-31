@@ -72,7 +72,11 @@ else:
                      args="pe_subscription",
                      vars={"person.uid" : auth.user.person_uuid})],
                 [T("Change Password"), False,
-                 URL(request.application, "default", "user/change_password")]
+                 URL(request.application, "default", "user/change_password")],
+                ["----", False, None],
+                [(T("Rapid Data Entry"), "rapid_toggle",
+                  session.s3.rapid_data_entry is True),
+                 False, URL(request.application, "default", "rapid")]
             ]
         ]
 

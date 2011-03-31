@@ -91,7 +91,7 @@ def index():
     #                       ),
     #                    _href = URL( r=request, c="assess", f= "mobile_basic_assess")
     #                   ))
-    
+
     menu_boxes = DIV(div_sit,
                      div_arrow_1,
                      div_dec,
@@ -124,7 +124,7 @@ def index():
         if request.cookies.has_key("registered"):
             # This browser has logged-in before
             registered = True
-    
+
         # Provide a login box on front page
         request.args = ["login"]
         auth.messages.submit_button = T("Login")
@@ -142,7 +142,7 @@ def index():
             register_div = DIV(H3(T("Register")),
                                P(XML("%s <b>%s</b>" % (T("If you would like to help, then please"),
                                                        T("sign-up now")))))
-            
+
             if session.s3.debug:
                 validate_script = SCRIPT(_type="text/javascript",
                                          _src=URL(r=request, c="static", f="scripts/S3/jquery.validate.js"))
@@ -198,6 +198,20 @@ $(document).ready(function() {
                 register_div=register_div
                 )
 
+
+# -----------------------------------------------------------------------------
+def rapid():
+    """ Set/remove rapid data entry flag """
+
+    val = request.vars.get("val", True)
+    if val == "0":
+        val = False
+    else:
+        val = True
+    session.s3.rapid_data_entry = val
+
+    response.view = "xml.html"
+    return dict(item=str(session.s3.rapid_data_entry))
 
 # -----------------------------------------------------------------------------
 def user():

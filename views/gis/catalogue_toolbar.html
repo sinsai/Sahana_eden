@@ -5,12 +5,8 @@
 {{else:}}
     <span class='tab_other'>
 {{pass}}
-{{if s3_has_role("MapAdmin"):}}
-    <a href='{{=URL(r=request, c="gis", f="config", args=[1, "update"])}}'>
-{{else:}}
-    <a href='{{=URL(r=request, c="gis", f="config", args=[1, "read"])}}'>
-{{pass}}
-{{=T("Defaults")}}
+<a href='{{=URL(r=request, c="gis", f="config")}}'>
+{{=T("Configurations")}}
 </a></span>
 {{if request.function == "map_service_catalogue":}}
     <span class='tab_here'>

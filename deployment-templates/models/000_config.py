@@ -149,6 +149,7 @@ deployment_settings.L10n.religions = {
 # Provide a tool to select locations via a map on all forms with location_id
 deployment_settings.gis.map_selector = True
 # Display Resources recorded to Admin-Level Locations on the map
+# @ToDo: Move into gis_config?
 deployment_settings.gis.display_L0 = False
 # Currently unused
 #deployment_settings.gis.display_L1 = True
@@ -158,7 +159,10 @@ deployment_settings.gis.display_L0 = False
 deployment_settings.gis.edit_L0 = False
 deployment_settings.gis.edit_L1 = True
 #deployment_settings.gis.edit_L2 = True
-deployment_settings.gis.locations_hierarchy = OrderedDict([
+# Map settings that relate to locale, such as the number and names of the
+# location hierarchy levels, are now in gis_config.  The site-wide gis_config
+# will be populated from the settings here.
+deployment_settings.gis.location_hierarchy = OrderedDict([
     ("L0", T("Country")),
     ("L1", T("Province")),
     ("L2", T("District")),
@@ -166,8 +170,54 @@ deployment_settings.gis.locations_hierarchy = OrderedDict([
     ("L4", T("Village")),
     #("L5", T("Neighbourhood")),  # Currently not supported by testSuite
 ])
-# Should we require locations to follow strict hierarchy?
-deployment_settings.gis.strict_hierarchy = False
+# Maximum hierarchy levels to allow for any map configuration.
+deployment_settings.gis.max_allowed_hierarchy_level = "L4"
+# If the site's default hierarchy needs more than the default maximum levels, 
+# allow other map configurations to have that many levels.
+deployment_settings.gis.max_allowed_hierarchy_level = \
+    max(deployment_settings.gis.max_allowed_hierarchy_level,
+        deployment_settings.gis.location_hierarchy.keys()
+            [len(deployment_settings.gis.location_hierarchy)-1])
+deployment_settings.gis.default_symbology = "US"
+# @ToDo: The id numbers of the projection and marker don't convey
+# which they are to whoever's setting up the site. Web setup should
+# deal with this.
+# Default map configuration values for the site:
+deployment_settings.gis.default_config_values = Storage(
+    name = "Site Map Configuration",
+    # Where the map is centered:
+    lat = "51.8",
+    lon = "-1.3",
+    # How close to zoom in initially -- larger is closer.
+    zoom = 7,
+    zoom_levels = 22,
+    bbox_min_size = 0.01,
+    bbox_inset = 0.007,
+    # These govern whether locations that are close together on the map should
+    # be collapsed into one marker.
+    cluster_distance = 5,
+    cluster_threshold = 2,
+    projection_id = 1,
+    marker_id = 1,
+    map_height = 600,
+    map_width = 1000,
+    # Bounds for the overall map - used by onvalidation to filter out LatLon which are obviously wrong (e.g. missing minus sign)
+    min_lon = -180,
+    min_lat = -90,
+    max_lon = 180,
+    max_lat = 90,
+    wmsbrowser_name = "Web Map Service",
+    wmsbrowser_url = "http://geo.eden.sahanafoundation.org/geoserver/wms?service=WMS&request=GetCapabilities",
+    # Should locations that link to a hierarchy location be required to link
+    # at the deepest level? (False means they can have a hierarchy location of
+    # any level as parent.)
+    strict_hierarchy = False,
+    # Should all specific locations (e.g. addresses, waypoints) be required to
+    # link to where they are in the location hierarchy?
+    location_parent_required = False,
+    region_location_id = None,
+    show_region_in_menu = False,
+)
 # Maximum Marker Size
 # (takes effect only on display)
 deployment_settings.gis.marker_max_height = 35

@@ -131,8 +131,8 @@ s3tracker = s3base.S3Tracking(globals())
 # -----------------------------------------------------------------------------
 def shn_auth_on_login(form):
     """
-    Actions to be performed upon successful login (Do not redirect from here!)
-
+        Actions to be performed upon successful login
+            Do not redirect from here!
     """
 
     # S3XRC last seen records (rcvars)
@@ -145,8 +145,8 @@ def shn_auth_on_login(form):
 # -----------------------------------------------------------------------------
 def shn_auth_on_logout(user):
     """
-    Actions to be performed after logout (Do not redirect from here!)
-
+        Actions to be performed after logout
+            Do not redirect from here!
     """
 
     # S3XRC last seen records (rcvars)

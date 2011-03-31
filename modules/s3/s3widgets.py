@@ -705,13 +705,27 @@ class S3LocationSelectorWidget2(FormWidget):
                 Street Address (Line1/Line2?)
                     Trigger a geocoder lookup onblur
                 Postcode
-                L2-L5 as Autocompletes which create missing locations automatically
-                L1 as Dropdown? (Have a gis_config setting to inform whether this is populated for a given L0)
-                Inline Map? (Deployment Option?)
+                Mode Strict:
+                    Lx as dropdowns. Default label is 'Select previous to populate this dropdown' (Fixme!)
+                Mode not Strict (default):
+                    L2-L5 as Autocompletes which create missing locations automatically
+                    L1 as Dropdown? (Have a gis_config setting to inform whether this is populated for a given L0)
+                Map:
+                    Inline or Popup? (Deployment Option?)
+                    Set Map Viewport to default on best currently selected Hierarchy
                 Lat Lon
             Inactive Tab: Search Existing Locations
+                Needs 2 modes:
+                    Specific Locations only - for Sites/Incidents
+                    Hierarchies ok (can specify which) - for Projects/Documents
                 Hierarchical Filters above the Search Box
                     Search is filtered to values shown
+                    Filters default to any hierarchy selected on the Create tab?
+                We should save the Add tab data when opening the Search so that we can go back to that Tab & add after all (e.g. if specific not found)
+                We should save the Search tab data when re-opening the Add tab
+                    Do we have different fieldnames so can just use hide/unhide?
+                    Do we save the settings to keep same fieldnames?
+                        Flag to know which mode we're in currently
 
         Update form
             Update form has uuid set server-side & hence S3.gis.uuid set client-side
@@ -777,6 +791,7 @@ class S3LocationSelectorWidget2(FormWidget):
 
         map_popup = ""
         if value:
+            mode = "update"
             # Read current record
             this_location = db(locations.id == value).select(locations.uuid,
                                                              locations.name,
@@ -857,6 +872,7 @@ class S3LocationSelectorWidget2(FormWidget):
 
         else:
             # No default value
+            mode = "create"
             uuid = ""
             represent = ""
             level = None
@@ -1083,6 +1099,7 @@ class S3LocationSelectorWidget2(FormWidget):
 
         # Settings to be read by static/scripts/S3/s3.locationselector.widget.js
         js_location_selector = """
+    S3.gis.mode = '%s';
     S3.gis.uuid = '%s';
     S3.gis.name = '%s';
     S3.gis.addr_street = '%s';
@@ -1093,6 +1110,7 @@ class S3LocationSelectorWidget2(FormWidget):
     var s3_gis_url = '%s';
     var s3_navigate_away_confirm = %s;
     """ % (
+            mode,
             uuid,
             represent,
             addr_street_encoded,

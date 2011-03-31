@@ -73,6 +73,7 @@ def index():
                                        "first_name",
                                        "middle_name",
                                        "last_name",
+                                       "picture",
                                        "gender",
                                        "age_group",
                                        "missing"])
@@ -189,6 +190,7 @@ def person():
                      "first_name",
                      "middle_name",
                      "last_name",
+                     "picture",
                      "gender",
                      "age_group",
                      "missing"])

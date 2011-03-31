@@ -298,12 +298,14 @@ table { border-collapse: collapse }
     color: #000;
     background: none;
 }
-#subnav li li a {
+#subnav li li a,
+#subnav li li input {
     display: block;
     font-weight: normal;
     padding: 5px 5px 5px 10px;
 }
-#subnav li li a:hover {
+#subnav li li a:hover,
+#subnav li li input:hover {
     background: #d2eaff;
     color: #000;
 }

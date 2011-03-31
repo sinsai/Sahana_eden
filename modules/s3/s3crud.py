@@ -296,7 +296,10 @@ class S3CRUD(S3Method):
             if representation in ("popup", "iframe"):
                 self.next = None
             elif not create_next:
-                self.next = r.there() #r.component and r.there() or r.here()
+                if session.s3.rapid_data_entry and not r.component:
+                    self.next = r.here()
+                else:
+                    self.next = r.there()
             else:
                 try:
                     self.next = create_next(self)

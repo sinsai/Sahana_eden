@@ -191,6 +191,7 @@ def person():
                                        "first_name",
                                        "middle_name",
                                        "last_name",
+                                       "picture",
                                        "gender",
                                        "age_group"])
 

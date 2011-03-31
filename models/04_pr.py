@@ -73,6 +73,8 @@ table = db.define_table(tablename,
                                     writable=False),  # base location
                         pe_label(),
                         Field("missing", "boolean",
+                              readable=False,
+                              writable=False,
                               default=False),
                         Field("first_name", notnull=True),
                         Field("middle_name"),
@@ -80,7 +82,6 @@ table = db.define_table(tablename,
                         Field("preferred_name"),
                         Field("local_name"),
                         pr_gender(),
-                        pr_age_group(),
                         Field("date_of_birth", "date",
                               label = T("Date of Birth"),
                               requires = [IS_EMPTY_OR(IS_DATE_IN_RANGE(
@@ -88,34 +89,57 @@ table = db.define_table(tablename,
                                             error_message="%s %%(max)s!" %
                                                 T("Enter a valid date before")))],
                               widget = S3DateWidget(past=1440, future=0)),  # Months, so 120 years
-                        Field("nationality",
-                              requires = IS_NULL_OR(IS_IN_SET(pr_nations,
-                                                              sort=True)),
-                              label = T("Nationality"),
-                              represent = lambda opt: \
-                                          pr_nations.get(opt, UNKNOWN_OPT)),
+                        pr_age_group(),
                         Field("country",
                               requires = IS_NULL_OR(IS_IN_SET(pr_nations,
                                                               sort=True)),
                               label = T("Country of Residence"),
                               represent = lambda opt: \
                                           pr_nations.get(opt, UNKNOWN_OPT)),
-                        Field("religion",
-                              requires = IS_EMPTY_OR(IS_IN_SET(pr_religion_opts)),
-                              label = T("Religion"),
-                              represent = lambda opt: \
-                                          pr_religion_opts.get(opt, UNKNOWN_OPT)),
+                        Field("picture", "upload",
+                              autodelete=True,
+                              requires = IS_EMPTY_OR(IS_IMAGE(maxsize=(300, 300),
+                                                     error_message=T('Upload an image file (bmp, gif, jpeg or png), max. 300x300 pixels!'))),
+                              represent = lambda image: image and \
+                                            DIV(A(IMG(_src=URL(r=request,
+                                                               c="default",
+                                                               f="download",
+                                                               args=image),
+                                                      _height=60,
+                                                      _alt=T("View Picture")),
+                                                      _href=URL(r=request,
+                                                                c="default",
+                                                                f="download",
+                                                                args=image))) or
+                                            T("No Picture"),
+                              comment =  DIV(_class="tooltip",
+                                             _title="%s|%s" % (T("Picture"),
+                                                               T("Upload an image file here.")))),
+                        # -------------------------------------------------------------------------
+                        # all fields below - move into pr_details:
+                        #
+                        #Field("nationality",
+                              #requires = IS_NULL_OR(IS_IN_SET(pr_nations,
+                                                              #sort=True)),
+                              #label = T("Nationality"),
+                              #represent = lambda opt: \
+                                          #pr_nations.get(opt, UNKNOWN_OPT)),
+                        #Field("religion",
+                              #requires = IS_EMPTY_OR(IS_IN_SET(pr_religion_opts)),
+                              #label = T("Religion"),
+                              #represent = lambda opt: \
+                                          #pr_religion_opts.get(opt, UNKNOWN_OPT)),
 
-                        Field("marital_status", "integer",
-                              requires = IS_NULL_OR(IS_IN_SET(
-                                                    pr_marital_status_opts)),
-                              default = 1,
-                              label = T("Marital Status"),
-                              represent = lambda opt: \
-                                          pr_marital_status_opts.get(opt,
-                                                                     UNKNOWN_OPT)),
-                        Field("occupation"),
-                        Field("tags", "list:integer"),
+                        #Field("marital_status", "integer",
+                              #requires = IS_NULL_OR(IS_IN_SET(
+                                                    #pr_marital_status_opts)),
+                              #default = 1,
+                              #label = T("Marital Status"),
+                              #represent = lambda opt: \
+                                          #pr_marital_status_opts.get(opt,
+                                                                     #UNKNOWN_OPT)),
+                        #Field("occupation"),
+                        #Field("tags", "list:integer"),
                         comments(),
                         migrate=migrate, *s3_meta_fields())
 
@@ -140,9 +164,9 @@ table.preferred_name.comment = DIV(DIV(_class="tooltip",
 table.local_name.comment = DIV(DIV(_class="tooltip",
     _title="%s|%s" % (T("Local Name"),
                       T("Name of the person in local language and script (optional)."))))
-table.nationality.comment = DIV(DIV(_class="tooltip",
-    _title="%s|%s" % (T("Nationality"),
-                      T("Nationality of the person."))))
+#table.nationality.comment = DIV(DIV(_class="tooltip",
+    #_title="%s|%s" % (T("Nationality"),
+                      #T("Nationality of the person."))))
 table.country.comment = DIV(DIV(_class="tooltip",
     _title="%s|%s" % (T("Country of Residence"),
                       T("The country the person usually lives in."))))
@@ -152,25 +176,29 @@ table.missing.represent = lambda missing: (missing and ["missing"] or [""])[0]
 table.gender.label = T("Gender")
 table.age_group.label = T("Age group")
 
-table.tags.label = T("Personal impact of disaster")
-table.tags.comment = DIV(DIV(_class="tooltip",
-    _title="%s|%s" % (T("Personal impact of disaster"),
-                      T("How is this person affected by the disaster? (Select all that apply)"))))
-table.tags.requires = IS_EMPTY_OR(IS_IN_SET(pr_impact_tags, zero=None, multiple=True))
-table.tags.represent = lambda opt: opt and \
-                       ", ".join([str(pr_impact_tags.get(o, UNKNOWN_OPT)) for o in opt]) or ""
+#table.tags.label = T("Personal impact of disaster")
+#table.tags.comment = DIV(DIV(_class="tooltip",
+    #_title="%s|%s" % (T("Personal impact of disaster"),
+                      #T("How is this person affected by the disaster? (Select all that apply)"))))
+#table.tags.requires = IS_EMPTY_OR(IS_IN_SET(pr_impact_tags, zero=None, multiple=True))
+#table.tags.represent = lambda opt: opt and \
+                       #", ".join([str(pr_impact_tags.get(o, UNKNOWN_OPT)) for o in opt]) or ""
 
 def shn_pr_person_represent(id):
 
     def _represent(id):
-        table = db.pr_person
-        person = db(table.id == id).select(
-                    table.first_name,
-                    table.middle_name,
-                    table.last_name,
-                    limitby=(0, 1))
+        if isinstance(id, Row):
+            person = id
+            id = person.id
+        else:
+            table = db.pr_person
+            person = db(table.id == id).select(
+                        table.first_name,
+                        table.middle_name,
+                        table.last_name,
+                        limitby=(0, 1)).first()
         if person:
-            return vita.fullname(person.first())
+            return vita.fullname(person)
         else:
             return None
 
@@ -226,6 +254,7 @@ s3xrc.model.configure(table,
                         "first_name",
                         "middle_name",
                         "last_name",
+                        "picture",
                         "gender",
                         "age_group"
                       ],
@@ -1382,11 +1411,18 @@ if deployment_settings.has_module("dvi") or \
 def shn_pr_rheader(r, tabs=[]):
     """ Person Registry resource headers """
 
-    if r.representation == "html":
-        rheader_tabs = shn_rheader_tabs(r, tabs)
+    if "viewing" in r.request.vars:
+        tablename, record_id = r.request.vars.viewing.rsplit(".", 1)
+        record = db[tablename][record_id]
+    else:
+        tablename = r.tablename
+        record = r.record
 
-        if r.name == "person":
-            person = r.record
+    if r.representation == "html":
+        rheader_tabs = s3_rheader_tabs(r, tabs)
+
+        if tablename == "pr_person":
+            person = record
             if person:
                 rheader = DIV(TABLE(
 
@@ -1400,16 +1436,16 @@ def shn_pr_rheader(r, tabs=[]):
                        TH("%s: " % T("Gender")),
                        "%s" % pr_gender_opts.get(person.gender, T("unknown"))),
 
-                    TR(TH("%s: " % T("Nationality")),
-                       "%s" % pr_nations.get(person.nationality, T("unknown")),
+                    TR(TH("%s: " % T("Country")),
+                       "%s" % pr_nations.get(person.country, T("unknown")),
                        TH("%s: " % T("Age Group")),
                        "%s" % pr_age_group_opts.get(person.age_group, T("unknown"))),
 
                     ), rheader_tabs)
                 return rheader
 
-        elif r.name == "group":
-            group = r.record
+        elif tablename == "group":
+            group = record
             if group:
                 rheader = DIV(TABLE(
 

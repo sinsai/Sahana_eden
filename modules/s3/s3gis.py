@@ -62,10 +62,9 @@ from gluon.storage import Storage, Messages
 from gluon.html import *
 from gluon.http import redirect
 from gluon.tools import fetch
-from gluon.validators import Validator, IS_NULL_OR, IS_IN_SET
+from gluon.validators import IS_NULL_OR, IS_IN_SET
 from gluon.contrib.simplejson.ordered_dict import OrderedDict
 from s3track import S3Trackable
-#from s3validators import IS_ONE_OF
 
 def s3_debug(message, value=None):
     """
@@ -471,20 +470,19 @@ class GIS(object):
         """
 
         db = self.db
-        _locations = db.gis_location
+        table = db.gis_location
 
-        deleted = (_locations.deleted == False)
-        query = deleted & (_locations.id == feature_id)
-        feature = db(query).select(
-                  _locations.path, _locations.parent,
-                  limitby=(0, 1)).first()
+        query = (table.id == feature_id)
+        feature = db(query).select(table.path,
+                                   table.parent,
+                                   limitby=(0, 1)).first()
 
         return feature
 
     # -------------------------------------------------------------------------
-    def get_children(self, parent_id):
+    def get_children(self, id, level=None):
         """
-            Return a list of all GIS Features which are children of
+            Return a list of IDs of all GIS Features which are children of
             the requested feature, using Materialized path for retrieving
             the children
 
@@ -493,19 +491,20 @@ class GIS(object):
             This has been chosen over Modified Preorder Tree Traversal for greater efficiency:
             http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
 
-            Assists lazy update of a database without location paths by calling
-            update_location_tree to get the path.
+            @param: level - optionally filter by level
         """
 
-        parent_row = self._lookup_parent_path(parent_id)
-        path = parent_row.path
-        if parent_row.parent and not path:
-            path = self.update_location_tree(parent_id, feature.parent)
+        db = self.db
+        table = db.gis_location
 
-        for row in db(table.path.like(path + "/%")).select():
-            list.append(row.id)
-
-        return list
+        query = (table.deleted == False)
+        if level:
+            query = query & (table.level == level)
+        term = str(id)
+        query = query & ((table.path.like(term + "/%")) | (table.path.like("%/" + term + "/%")))
+        children = db(query).select(table.id,
+                                    table.name)
+        return children
 
     # -------------------------------------------------------------------------
     def get_parents(self, feature_id, feature=None, ids_only=False):
@@ -532,7 +531,7 @@ class GIS(object):
         """
 
         db = self.db
-        _locations = db.gis_location
+        table = db.gis_location
 
         if not feature or "path" not in feature or "parent" not in feature:
             feature = self._lookup_parent_path(feature_id)
@@ -557,7 +556,7 @@ class GIS(object):
                 return reverse_path
 
             # Retrieve parents -- order in which they're returned is arbitrary.
-            unordered_parents = db(_locations.id.belongs(reverse_path)).select()
+            unordered_parents = db(table.id.belongs(reverse_path)).select()
 
             # Reorder parents in order of reversed path.
             unordered_ids = [row.id for row in unordered_parents]
@@ -580,11 +579,11 @@ class GIS(object):
             If a dict is not supplied in results, one is created. The results
             dict is returned in either case.
 
-            If names=True (used by address_onvalidation) then:
+            If names=True (used by address_onvalidation & new S3LocationSelectorWidget) then:
             For each ancestor, an entry ancestor.level : ancestor.name is added to
             results.
 
-            If names=False (used by S3LocationSelectorWidget) then:
+            If names=False (used by old S3LocationSelectorWidget) then:
             For each ancestor, an entry ancestor.level : ancestor.id is added to
             results.
         """
@@ -2405,22 +2404,22 @@ class GIS(object):
         if catalogue_toolbar:
             config_button = SPAN( A(T("Configurations"),
                                   _href=URL(r=request, c="gis", f="config")),
-                                  _class="rheader_tab_other" )
+                                  _class="tab_other" )
             catalogue_toolbar = DIV(
                 config_button,
                 SPAN( A(T("Layers"),
                       _href=URL(r=request, c="gis", f="map_service_catalogue")),
-                      _class="rheader_tab_other" ),
+                      _class="tab_other" ),
                 SPAN( A(T("Markers"),
                       _href=URL(r=request, c="gis", f="marker")),
-                      _class="rheader_tab_other" ),
+                      _class="tab_other" ),
                 SPAN( A(T("Keys"),
                       _href=URL(r=request, c="gis", f="apikey")),
-                      _class="rheader_tab_other" ),
+                      _class="tab_other" ),
                 SPAN( A(T("Projections"),
                       _href=URL(r=request, c="gis", f="projection")),
-                      _class="rheader_tab_other" ),
-                _id="rheader_tabs")
+                      _class="tab_last" ),
+                _class="tabs")
             html.append(catalogue_toolbar)
 
         # Map (Embedded not Window)
@@ -2448,9 +2447,9 @@ class GIS(object):
         # Scripts
         #########
         if session.s3.debug:
-            if projection != "900913" and projection != "4326":
+            if projection != 900913 and projection != 4326:
                 html.append(SCRIPT(_type="text/javascript",
-                                   _src=URL(r=request, c="static", f="scripts/gis/proj4js/lib/proj4js.js")))
+                                   _src=URL(r=request, c="static", f="scripts/gis/proj4js/lib/proj4js-combined.js")))
                 html.append(SCRIPT(_type="text/javascript",
                                    _src=URL(r=request, c="static", f="scripts/gis/proj4js/lib/defs/EPSG%s.js" % projection)))
             html.append(SCRIPT(_type="text/javascript",
@@ -2469,7 +2468,7 @@ class GIS(object):
                 html.append(SCRIPT(_type="text/javascript",
                                    _src=URL(r=request, c="static", f="scripts/gis/MP.js")))
         else:
-            if projection != "900913" and projection != "4326":
+            if projection != 900913 and projection != 4326:
                 html.append(SCRIPT(_type="text/javascript",
                                    _src=URL(r=request, c="static", f="scripts/gis/proj4js/lib/proj4js-compressed.js")))
                 html.append(SCRIPT(_type="text/javascript",

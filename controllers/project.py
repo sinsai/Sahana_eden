@@ -16,7 +16,7 @@ response.menu_options = [
     [T("Gap Analysis"), False, URL(r=request, f="gap_report"),[
         [T("Report"), False, URL(r=request, f="gap_report")],
         [T("Map"), False, URL(r=request, f="gap_map")],
-    ]],                             
+    ]],
     [T("Projects"), False, URL(r=request, f="project"),[
         [T("List"), False, URL(r=request, f="project")],
         [T("Add"), False, URL(r=request, f="project", args="create")],
@@ -106,24 +106,24 @@ def shn_activity_rheader(r, tabs=[]):
     if r.representation == "html":
         project_activity = r.record
         if project_activity:
-            rheader_tabs = shn_rheader_tabs(r, tabs)
+            rheader_tabs = s3_rheader_tabs(r, tabs)
             rheader = DIV( TABLE(
-                               TR( TH( "%s: " % T("Short Description")), 
+                               TR( TH( "%s: " % T("Short Description")),
                                    project_activity.name,
                                   ),
-                               TR( TH( "%s: " % T("Location")), 
+                               TR( TH( "%s: " % T("Location")),
                                    shn_gis_location_represent(project_activity.location_id),
                                    TH( "%s: " % T("Duration")),
                                    "%s to %s" % (project_activity.start_date, project_activity.end_date),
-                                  ),                                      
+                                  ),
                                TR( TH( "%s: " % T("Organization")),
-                                   shn_organisation_represent(project_activity.organisation_id),                                       
+                                   shn_organisation_represent(project_activity.organisation_id),
                                    TH( "%s: " % T("Sector")),
-                                   shn_org_cluster_represent(project_activity.cluster_id),                               
+                                   shn_org_cluster_represent(project_activity.cluster_id),
                                  ),
                                 ),
                             rheader_tabs
-                            )                    
+                            )
             return rheader
     return None
 #==============================================================================
@@ -133,24 +133,24 @@ def activity():
 
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
-    
+
     tabs = [
             (T("Details"), None),
             (T("Requests"), "req"),
             #(T("Shipments To"), "rms_req"),
            ]
     rheader = lambda r: shn_activity_rheader(r, tabs)
-    
+
     if "create"  in request.args:
-        #Default values (from gap_report) set for fields 
+        #Default values (from gap_report) set for fields
         default_fieldnames = ["location_id", "need_type_id"]
         for fieldname in default_fieldnames:
             if fieldname in request.vars:
                 table[fieldname].default = request.vars[fieldname]
                 table[fieldname].writable = False
                 table[fieldname].comment = None
-    
-    return s3_rest_controller(prefix, 
+
+    return s3_rest_controller(prefix,
                               resourcename,
                               rheader = rheader)
 
@@ -196,9 +196,9 @@ def gap_report():
     def map_assess_to_gap(row):
         return Storage( assess_id = row.assess_assess.id,
                         location_id = row.assess_assess.location_id,
-                        datetime = row.assess_assess.datetime,                       
+                        datetime = row.assess_assess.datetime,
                         need_type_id = row.project_need.need_type_id,
-                        value = row.project_need.value,                         
+                        value = row.project_need.value,
                         activity_id = None,
                         organisation_id = None,
                         start_date = NONE,
@@ -238,17 +238,17 @@ def gap_report():
     headings = ("Location",
                 "Needs",
                 "Assessment",
-                "Date",                
+                "Date",
                 "Activity",
                 "Start Date",
                 "End Date",
-                "Total Beneficiaries", 
-                "Organization",  
-                "Gap (% Needs Met)",              
+                "Total Beneficiaries",
+                "Organization",
+                "Gap (% Needs Met)",
                 )
     gap_table = TABLE(THEAD(TR(*[TH(header) for header in headings])),
                       _id = "list",
-                      _class = "display"
+                      _class = "dataTable display"
                       )
 
     for gap_row in gap_rows:
@@ -277,7 +277,7 @@ def gap_report():
                                    _id = "show-add-btn",
                                    _class="action-btn"
                                    ),
-        else:            
+        else:
             activity_action_btn = A(T("Add"),
                                    _href = URL(r=request,
                                                c="project",
@@ -290,11 +290,11 @@ def gap_report():
                                    _id = "show-add-btn",
                                    _class="action-btn"
                                    ),
-                       
+
         need_str = shn_need_type_represent(gap_row.need_type_id)
         if gap_row.value:
-            need_str = "%d %s" % (gap_row.value, need_str)    
-        
+            need_str = "%d %s" % (gap_row.value, need_str)
+
         #Calculate the Gap
         if not gap_row.value:
             gap_str = NONE
@@ -302,12 +302,12 @@ def gap_report():
             gap_str = "%d%%" % min((gap_row.total_bnf / gap_row.value) * 100, 100)
         else:
             gap_str = "0%"
-            
+
         gap_table.append(TR( shn_gis_location_represent(gap_row.location_id),
-                             need_str,   
+                             need_str,
                              assess_action_btn,
-                             gap_row.datetime or NONE,                                                                        
-                             activity_action_btn,                             
+                             gap_row.datetime or NONE,
+                             activity_action_btn,
                              gap_row.start_date or NONE,
                              gap_row.end_date or NONE,
                              gap_row.total_bnf or NONE,
@@ -318,28 +318,28 @@ def gap_report():
 
     return dict(title = T("Gap Analysis Report"),
                 subtitle = T("Assessments Needs vs. Activities"),
-                gap_table = gap_table,                
+                gap_table = gap_table,
                 )
 
 #==============================================================================
 def gap_map():
     """ @todo: fix docstring """
-    
+
     assess_summary_colour_code = {0:"#008000", #green
                                   1:"#FFFF00", #yellow
                                   2:"#FFA500", #orange
                                   3:"#FF0000", #red
-                                  }    
+                                  }
 
     feature_queries = []
     need_type_rows = db(db.project_need_type.id > 0).select()
     for need_type_rows in need_type_rows:
-        
+
         layer_rows = []
-        
+
         need_type_id = need_type_rows.id
-        need_type = shn_need_type_represent(need_type_id)               
-            
+        need_type = shn_need_type_represent(need_type_id)
+
         #Add activity row
         activity_rows = db((db.project_activity.id > 0) &\
                            (db.project_activity.need_type_id == need_type_id) &\
@@ -358,14 +358,14 @@ def gap_map():
                                     )
         if len(activity_rows):
             for i in range( 0 , len( activity_rows) ):
-                #layer_rows.append(Storage(gis_location = 
+                #layer_rows.append(Storage(gis_location =
                 #                      Storage(uuid = activity_rows[i].gis_location.uuid,
                 #                              id = activity_rows[i].gis_location.id,
                 #                              name = activity_rows[i].gis_location.name,
                 #                              lat = activity_rows[i].gis_location.lat,
                 #                              lon = activity_rows[i].gis_location.lon,
                 #                              shape = "circle",
-                #                              size = 6,                                              
+                #                              size = 6,
                 #                              color = "#0000FF", #blue
                 #                              )
                 #                          )
@@ -377,8 +377,8 @@ def gap_map():
                                      "query": activity_rows,
                                      "active": False,
                                      "popup_url" : "#",
-                                    })             
-            
+                                    })
+
 #Add assess layer
         assess_need_rows = db((db.project_need.id > 0) &\
                               (db.project_need.need_type_id == need_type_id) &\
@@ -401,18 +401,18 @@ def gap_map():
 
         if len(assess_need_rows):
             for i in range( 0 , len( assess_need_rows) ):
-                #layer_rows.append(dict(gis_location = 
+                #layer_rows.append(dict(gis_location =
                 #                      dict(uuid = assess_need_rows[i].gis_location.uuid,
                 #                              id = assess_need_rows[i].gis_location.id,
                 #                              name = assess_need_rows[i].gis_location.name,
                 #                              lat = assess_need_rows[i].gis_location.lat,
-                #                              lon = assess_need_rows[i].gis_location.lon,                                              
+                #                              lon = assess_need_rows[i].gis_location.lon,
                 #                              shape = "circle",
-                #                              size = 4,                                              
+                #                              size = 4,
                 #                              color = assess_summary_colour_code[3]
                 #                              )
                 #                          )
-                #                  )                
+                #                  )
                 assess_need_rows[i].gis_location.shape = "circle"
                 assess_need_rows[i].gis_location.size = 4
                 assess_need_rows[i].gis_location.color = assess_summary_colour_code[3]
@@ -421,7 +421,7 @@ def gap_map():
                                      "query": assess_need_rows,
                                      "active": False,
                                      "popup_url" : "#",
-                                    })            
+                                    })
 
     map = gis.show_map(
                 feature_queries = feature_queries,

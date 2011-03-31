@@ -80,16 +80,16 @@ def hospital():
     # Pre-processor
     def prep(r):
         # Filter out people which are already staff for this warehouse
-        shn_staff_prep(r) 
+        shn_staff_prep(r)
         if deployment_settings.has_module("inv"):
             # Filter out items which are already in this inventory
             shn_inv_prep(r)
-          
+
         # Cascade the organisation_id from the Warehouse to the staff
         if r.record:
             db.org_staff.organisation_id.default = r.record.organisation_id
             db.org_staff.organisation_id.writable = False
-                
+
         if r.interactive:
             # Don't send the locations list to client (pulled by AJAX instead)
             r.table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
@@ -122,33 +122,11 @@ def hospital():
             table.access_status.comment =  DIV(DIV(_class="tooltip",
                 _title=T("Road Conditions") + "|" + T("Describe the condition of the roads to your hospital.")))
 
-            # CRUD Strings
-            LIST_HOSPITALS = T("List Hospitals")
-            s3.crud_strings[tablename] = Storage(
-                title_create = ADD_HOSPITAL,
-                title_display = T("Hospital Details"),
-                title_list = LIST_HOSPITALS,
-                title_update = T("Edit Hospital"),
-                title_search = T("Find Hospital"),
-                subtitle_create = T("Add New Hospital"),
-                subtitle_list = T("Hospitals"),
-                label_list_button = LIST_HOSPITALS,
-                label_create_button = ADD_HOSPITAL,
-                label_delete_button = T("Delete Hospital"),
-                msg_record_created = T("Hospital information added"),
-                msg_record_modified = T("Hospital information updated"),
-                msg_record_deleted = T("Hospital information deleted"),
-                msg_list_empty = T("No Hospitals currently registered"))
-
             if r.component and r.component.name == "req":
-                # This now applies to req_req
-                pass
-                # Hide the Implied fields
-                #db.rms_req.shelter_id.writable = db.rms_req.shelter_id.readable = False
-                #db.rms_req.organisation_id.writable = db.rms_req.organisation_id.readable = False
-                #db.rms_req.location_id.writable = False
-                #db.rms_req.location_id.default = r.record.location_id
-                #db.rms_req.location_id.comment = ""
+                if r.method != "update" and r.method != "read":
+                    # Hide fields which don't make sense in a Create form
+                    # inc list_create (list_fields over-rides)
+                    shn_req_create_form_mods()
 
         elif r.representation == "aadata":
             pass
@@ -174,62 +152,7 @@ def hospital():
     output = s3_rest_controller(module, resourcename, rheader=rheader)
     shn_menu()
     return output
-
-
 # -----------------------------------------------------------------------------
-#
-def shn_hms_hospital_rheader(r, tabs=[]):
-
-    """ Page header for component resources """
-
-    if r.representation == "html":
-        if r.name == "hospital":
-            hospital = r.record
-            if hospital:
-                _next = r.here()
-                _same = r.same()
-                
-                if not tabs:
-                    tabs = [(T("Status Report"), ""),
-                            (T("Services"), "services"),
-                            (T("Contacts"), "contact"),
-                            (T("Bed Capacity"), "bed_capacity"),
-                            (T("Cholera Treatment Capability"), "ctc_capability"), # @ToDo: make this a deployemnt_setting?
-                            (T("Activity Report"), "activity"),
-                            (T("Images"), "image"),
-                            (T("Staff"), "staff")]
-
-                    if deployment_settings.has_module("req"):
-                        tabs.append((T("Requests"), "req"))
-                    if deployment_settings.has_module("inv"):
-                        tabs = tabs + shn_show_inv_tabs(r)
-
-                rheader_tabs = shn_rheader_tabs(r, tabs)
-
-                rheader = DIV(TABLE(
-
-                    TR(TH("%s: " % T("Name")),
-                        hospital.name,
-                        TH("%s: " % T("EMS Status")),
-                        "%s" % db.hms_hospital.ems_status.represent(hospital.ems_status)),
-
-                    TR(TH("%s: " % T("Location")),
-                        db.gis_location[hospital.location_id] and db.gis_location[hospital.location_id].name or "unknown",
-                        TH("%s: " % T("Facility Status")),
-                        "%s" % db.hms_hospital.facility_status.represent(hospital.facility_status)),
-
-                    TR(TH("%s: " % T("Total Beds")),
-                        hospital.total_beds,
-                        TH("%s: " % T("Clinical Status")),
-                        "%s" % db.hms_hospital.clinical_status.represent(hospital.clinical_status)),
-
-                    TR(TH("%s: " % T("Available Beds")),
-                        hospital.available_beds,
-                        TH("%s: " % T("Security Status")),
-                        "%s" % db.hms_hospital.security_status.represent(hospital.security_status))
-
-                        ), rheader_tabs)
-
-                return rheader
-
-    return None
+def req_match():
+    return s3_req_match()
+# -----------------------------------------------------------------------------

@@ -48,6 +48,8 @@ class S3Config(Storage):
         self.auth = Storage()
         self.base = Storage()
         self.database = Storage()
+        self.frontpage = Storage()
+        self.frontpage.rss = []
         self.gis = Storage()
         self.mail = Storage()
         self.twitter = Storage()
@@ -121,6 +123,13 @@ class S3Config(Storage):
             return db_string
 
     # GIS (Map) Settings
+    # Which countries the deployment cover (used in GIS Location Selector)
+    def get_gis_countries(self):
+        countries = self.gis.get("countries", "")
+        if not countries:
+            # Backwards-compatibility for old 000_config
+            countries = self.L10n.get("countries", "")
+        return countries
 
     def get_gis_map_selector(self):
         return self.gis.get("map_selector", True)
@@ -174,8 +183,6 @@ class S3Config(Storage):
         return self.twitter.get("oauth_consumer_secret", "")
 
     # L10N Settings
-    def get_L10n_countries(self):
-        return self.L10n.get("countries", "")
     def get_L10n_default_country_code(self):
         return self.L10n.get("default_country_code", 1)
     def get_L10n_default_language(self):
@@ -275,3 +282,16 @@ class S3Config(Storage):
             _modules = self.modules
 
         return module_name in _modules
+
+    # S3OCR
+    def get_s3ocr_fieldtype_properties(self):
+        fieldtype_properties = {
+        # Example configuration
+        #    "reference document_id": {
+        #        "fieldtype"="string",
+        #        "readable"="True",
+        #        .
+        #        .
+        #        }
+            }
+        return fieldtype_properties

@@ -121,7 +121,7 @@ def office():
         if deployment_settings.has_module("inv"):
             # Filter out items which are already in this inventory
             shn_inv_prep(r)
-          
+
         if r.representation == "popup":
             organisation = request.vars.organisation_id or session.s3.organisation_id or ""
             if organisation:
@@ -132,27 +132,34 @@ def office():
             db.org_staff.organisation_id.default = r.record.organisation_id
             db.org_staff.organisation_id.writable = False
 
-        # No point in downloading large dropdowns which we hide, so provide a smaller represent
-        # the update forms are not ready. when they will - uncomment this and comment the next one
-        #if r.method in ("create", "update"):
-        if r.method == "create":
-            table = r.table
-            table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db,
-                                                                        "org_organisation.id"))
-            if request.vars.organisation_id and request.vars.organisation_id != "None":
-                table.organisation_id.default = request.vars.organisation_id
+        if r.interactive:
+            # No point in downloading large dropdowns which we hide, so provide a smaller represent
+            # the update forms are not ready. when they will - uncomment this and comment the next one
+            #if r.method in ("create", "update"):
+            if r.method == "create":
+                table = r.table
+                table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db,
+                                                                            "org_organisation.id"))
+                if request.vars.organisation_id and request.vars.organisation_id != "None":
+                    table.organisation_id.default = request.vars.organisation_id
 
-        if r.interactive and r.method and r.method != "read":
-            # Don't want to see in Create forms
-            # inc list_create (list_fields over-rides)
-            table = r.table
-            table.address.readable = False
-            table.L4.readable = False
-            table.L3.readable = False
-            table.L2.readable = False
-            table.L1.readable = False
-            table.L0.readable = False
-            table.postcode.readable = False
+            if r.method and r.method != "read":
+                # Don't want to see in Create forms
+                # inc list_create (list_fields over-rides)
+                table = r.table
+                table.address.readable = False
+                table.L4.readable = False
+                table.L3.readable = False
+                table.L2.readable = False
+                table.L1.readable = False
+                table.L0.readable = False
+                table.postcode.readable = False
+
+            if r.component and r.component.name == "req":
+                if r.method != "update" and r.method != "read":
+                    # Hide fields which don't make sense in a Create form
+                    # inc list_create (list_fields over-rides)
+                    shn_req_create_form_mods()
 
         return True
     response.s3.prep = prep
@@ -170,8 +177,9 @@ def office():
     rheader = shn_office_rheader
 
     return s3_rest_controller(module, resourcename, rheader=rheader)
-
-
+#==============================================================================
+def req_match():
+    return s3_req_match()
 #==============================================================================
 def staff():
     """
@@ -243,7 +251,7 @@ def shn_org_rheader(r, tabs=[]):
             # List or Create form: rheader makes no sense here
             return None
 
-        rheader_tabs = shn_rheader_tabs(r, tabs)
+        rheader_tabs = s3_rheader_tabs(r, tabs)
 
         #_next = r.here()
         #_same = r.same()

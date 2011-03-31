@@ -2,16 +2,18 @@
     Request Management
 
     @author: Michael Howden (michael@sahanafoundation.org)
+    @author: Fran Boon
     @date-created: 2010-08-16
 
     A module to record requests for:
-     - items
+     - supplies (items)
      - staff
      - assets
+     - other
 """
 
 module = "req"
-if deployment_settings.has_module(module):
+if deployment_settings.has_module(module) or deployment_settings.has_module("inv"):
     req_menu = [
                     [T("Requests"), False, aURL(r=request, c="req", f="req"), [
                         [T("New"), False, aURL(r=request, c="req", f="req", args="create")]
@@ -20,8 +22,7 @@ if deployment_settings.has_module(module):
                     [T("Commitments"), False, aURL(r=request, c="req", f="commit")],
                     #[T("Search Requested Items"), False, aURL(r=request, c="req", f="req_item", args="search")],
                 ]
-    #==========================================================================
-    # Request
+
     REQ_STATUS_NONE       = 0
     REQ_STATUS_PARTIAL    = 1
     REQ_STATUS_COMPLETE   = 2
@@ -36,7 +37,7 @@ if deployment_settings.has_module(module):
                                 label = T("Request Status"),
                                 requires = IS_NULL_OR(IS_IN_SET(req_status_opts,
                                                                 zero = None)),
-                                represent = lambda status: req_status_opts[status] if status else T("None"),
+                                represent = lambda opt: req_status_opts.get(opt, UNKNOWN_OPT),
                                 default = REQ_STATUS_NONE,
                                 writable = deployment_settings.get_req_status_writable(),
                                 )
@@ -47,11 +48,29 @@ if deployment_settings.has_module(module):
         1:T("Low")
     }
 
+    req_type_opts = {
+        #1:T("Supplies"),
+        #2:T("Assets"),
+        #3:T("Staff"),
+        #4:T("Shelter"),
+        9:T("Other")
+    }
+    if deployment_settings.has_module("inv"):
+        req_type_opts[1] = T("Supplies")
+    #if deployment_settings.has_module("asset"):
+    #    req_type_opts[2] = T("Assets")
+    #if deployment_settings.has_module("hrm"):
+    #    req_type_opts[3] = T("Staff")
+    #if deployment_settings.has_module("cr"):
+    #    req_type_opts[4] = T("Shelter")
+
     def shn_req_priority_represent(id):
         src = "/%s/static/img/priority/priority_%d.gif" % \
-                  (request.application,(id or 4))
+                  (request.application, (id or 4))
         return DIV(IMG(_src= src))
 
+    # -------------------------------------------------------------------------
+    # Requests
     resourcename = "req"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
@@ -74,7 +93,12 @@ if deployment_settings.has_module(module):
                                                     T("Enter a valid future date")))],
                                   widget = S3DateWidget(past=0, future=120)),  # Months, so 10 years
                             person_id("requester_id",
-                                      label = T("Requester") ),
+                                      label = T("Requester"),
+                                      default = s3_logged_in_person()),
+                            Field("type", "integer",
+                                  requires = IS_IN_SET(req_type_opts),
+                                  represent = lambda opt: req_type_opts.get(opt, UNKNOWN_OPT),
+                                  label = T("Request Type")),
                             Field("priority",
                                   "integer",
                                   label = T("Priority"),
@@ -93,10 +117,9 @@ if deployment_settings.has_module(module):
                                        ),
                             Field("cancel",
                                   "boolean"),
-                            comments(),
+                            comments(label=T("Message"), comment=""),
                             migrate=migrate, *s3_meta_fields())
 
-    # -------------------------------------------------------------------------
     # CRUD strings
     ADD_REQUEST = T("Make Request")
     LIST_REQUEST = T("List Requests")
@@ -116,7 +139,7 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Request Canceled"),
         msg_list_empty = T("No Requests"))
 
-    # -------------------------------------------------------------------------
+    # Represent
     def shn_req_represent(id, link = True):
         id = int(id)
         if id:
@@ -138,7 +161,6 @@ if deployment_settings.has_module(module):
         else:
             return NONE
 
-    # -------------------------------------------------------------------------
     # Reusable Field
     req_id = S3ReusableField("req_id", db.req_req, sortby="request_date",
                              requires = IS_ONE_OF(db,
@@ -153,7 +175,6 @@ if deployment_settings.has_module(module):
                              ondelete = "RESTRICT"
                             )
 
-    #--------------------------------------------------------------------------
     # Request as a component of Sites
     s3xrc.model.add_component(module,
                               resourcename,
@@ -161,31 +182,303 @@ if deployment_settings.has_module(module):
                               joinby = super_key(db.org_site)
                               )
 
-    #--------------------------------------------------------------------------
-    # Update owned_by_role to the site's owned_by_role
-    s3xrc.model.configure(
-        table,
-        onaccept = shn_component_copy_role_func(component_name = tablename,
-                                                resource_name = "org_site",
-                                                fk = "site_id",
-                                                pk = "site_id")
-    )
+    #----------------------------------------------------------------------
+    def shn_req_onaccept(form):
+        # Update owned_by_role to the site's owned_by_role
+        shn_component_copy_role_func(component_name = "req_req",
+                                     resource_name = "org_site",
+                                     fk = "site_id",
+                                     pk = "site_id"),
+    
+        # Configure the next page to go to based on the request type
+        table = db.req_req
+        if form.vars.type == "1" and deployment_settings.has_module("inv"):
+            s3xrc.model.configure(table,
+                                  create_next = URL(r=request,
+                                                    c="req",
+                                                    f="req",
+                                                    args=["[id]", "req_item"]))
+        elif form.vars.type == "2" and deployment_settings.has_module("asset"):
+            s3xrc.model.configure(table,
+                                  create_next = URL(r=request,
+                                                    c="req",
+                                                    f="req",
+                                                    args=["[id]", "req_asset"]))
+        #elif form.vars.type == "3" and deployment_settings.has_module("hrm"):
+        #    s3xrc.model.configure(table,
+        #                          create_next = URL(r=request,
+        #                                            c="req",
+        #                                            f="req",
+        #                                            args=["[id]", "req_staff"]))
+        #elif form.vars.type == "4" and deployment_settings.has_module("cr"):
+        #    s3xrc.model.configure(table,
+        #                          create_next = URL(r=request,
+        #                                            c="req",
+        #                                            f="req",
+        #                                            args=["[id]", "req_shelter"]))
 
+    s3xrc.model.configure(table,
+                          onaccept = shn_req_onaccept,
+                          list_fields = ["site_id",
+                                         "date_requested",
+                                         "date_required",
+                                         "priority",
+                                         "type",
+                                         "commit_status",
+                                         "transit_status",
+                                         "fulfil_status"]
+                        )
+
+    #--------------------------------------------------------------------------
+    def shn_req_create_form_mods():
+        """
+            Function to be called from REST prep functions
+             - main module & site components
+        """
+        table = db.req_req
+        # Hide fields which don't make sense in a Create form
+        table.commit_status.readable = table.commit_status.writable = False
+        table.transit_status.readable = table.transit_status.writable = False
+        table.fulfil_status.readable = table.fulfil_status.writable = False
+        table.cancel.readable = table.cancel.writable = False
+        return
+
+    # Script to inject into Pages which include Request create forms
+    req_helptext_script = SCRIPT("""
+        $(function() {
+            var req_help_msg = '%s\\n\\n%s';
+            // Provide some default help text in the Message box if message is empty
+            if (!$('#req_req_comments').val()) {
+                $('#req_req_comments').addClass('default-text').attr({ value: req_help_msg }).focus(function(){
+                    if($(this).val() == req_help_msg){
+                        // Clear on click if still default
+                        $(this).val('').removeClass('default-text');
+                    }
+                });
+                $('form').submit( function() {
+                    // Do the normal form-submission tasks
+                    // @ToDo: Look to have this happen automatically
+                    // http://forum.jquery.com/topic/multiple-event-handlers-on-form-submit
+                    // http://api.jquery.com/bind/
+                    S3ClearNavigateAwayConfirm();
+
+                    if (($('#req_req_type').val() == 9) && ($('#req_req_comments').val() == req_help_msg)) {
+                        // Requests of type 'Other' need this field to be mandatory
+                        $('#req_req_comments').after('<div id="type__error" class="error" style="display: block;">%s</div>');
+                        // Reset the Navigation protection
+                        S3SetNavigateAwayConfirm()
+                        // Move focus to this field
+                        $('#req_req_comments').focus();
+                        // Prevent the Form's save from continuing
+                        return false;
+                    } else {
+                        // Allow the Form's save to continue
+                        return true;
+                    }
+                });
+            }
+        });
+        """ % (T('If the request is for type "Other", you should enter a summary of the request here.'),
+               T("For other types, the next screen will allow you to enter the relevant details..."),
+               T("Message field is required!"))
+        )
+    # ==========================================================================
+    def shn_req_rheader(r):
+        """ Resource Header for Requests """
+    
+        if r.representation == "html":
+            if r.name == "req":
+                req_record = r.record
+                if req_record:
+    
+                    tabs = [(T("Edit Details"), None)]
+                    if deployment_settings.has_module("inv"):
+                        tabs.append((T("Items"), "req_item"))
+    
+                    rheader_tabs = s3_rheader_tabs(r, tabs)
+                    
+                    site_id = request.vars.site_id
+                    if site_id:
+                        site_name = shn_site_represent(site_id)
+                        commit_btn = A( T("Commit from %s") % site_name,    
+                                        _href = URL( r=request,
+                                                     c = "req",
+                                                     f = "commit_req",
+                                                     args = [r.id],
+                                                     vars = dict(site_id = site_id)
+                                                    ),
+                                        _class = "action-btn"
+                                       )
+                    else:
+                        commit_btn = A( T("Commit"),     
+                                        _href = URL( r=request,
+                                                     c = "req",
+                                                     f = "commit",
+                                                     args = ["create"],
+                                                     vars = dict(req_id = r.id)
+                                                    ),
+                                        _class = "action-btn"
+                                       )
+
+    
+                    rheader = DIV( TABLE(
+                                       TR( TH( "%s: " % T("Date Requested")),
+                                           req_record.date_requested,
+                                           TH( "%s: " % T("Date Required")),
+                                           req_record.date_required,
+                                          ),
+                                       TR( TH( "%s: " % T("Requested By")),
+                                           shn_site_represent(req_record.site_id),
+                                          ),
+                                       TR( TH( "%s: " % T("Commit. Status")),
+                                           req_status_opts.get(req_record.commit_status),
+                                           TH( "%s: " % T("Transit. Status")),
+                                           req_status_opts.get(req_record.transit_status),
+                                           TH( "%s: " % T("Fulfil. Status")),
+                                           req_status_opts.get(req_record.fulfil_status)
+                                          ),
+                                       TR( TH( "%s: " % T("Comments")),
+                                           TD(req_record.comments, _colspan=3)
+                                          ),
+                                         ),
+                                    commit_btn,
+                                    rheader_tabs
+                                    )
+    
+                    return rheader
+                else:
+                    # No Record means that we are either a Create or List Create
+                    # Inject the helptext script
+                    return req_helptext_script
+        return None
+    #--------------------------------------------------------------------------
+    def s3_req_match():
+        """
+            Function to be called from controller functions to display all request as a tab 
+            for a site.
+            @ToDo: Needs to work with wh, shelters and hospitals
+                   Filter out requests from this site
+        """
+        tablename, id = request.vars.viewing.split(".")
+        site_id = db[tablename][id].site_id
+        response.s3.actions = [dict(url = str(URL( r=request,
+                                                   c = "req",
+                                                   f = "req",
+                                                   args = ["[id]","check"],
+                                                   vars = {"site_id": site_id}
+                                                   )
+                                               ),
+                                    _class = "action-btn",
+                                    label = str(T("Check")),
+                                    ),
+                               dict(url = str(URL( r=request,
+                                                   c = "req",
+                                                   f = "commit_req",
+                                                   args = ["[id]"],
+                                                   vars = {"site_id": site_id}
+                                                   )
+                                               ),
+                                    _class = "action-btn",
+                                    label = str(T("Commit")),
+                                    )
+                               
+                               ]
+        
+        rheader_dict = dict(org_office = shn_office_rheader,
+                            cr_shelter = shn_shelter_rheader,
+                            hms_hospital = shn_hms_hospital_rheader)
+
+        s3xrc.model.configure(db.req_req, insertable=False)
+        output = s3_rest_controller("req", "req",
+                                    method = "list",
+                                    rheader = rheader_dict[tablename])
+        output["title"] = s3.crud_strings[tablename]["title_display"]
+
+        return output
+    # -------------------------------------------------------------------------
+    def s3_req_check(r, **attr):
+        site_id = r.request.vars.site_id
+        site_name = shn_site_represent(site_id)
+        output = {}
+        output["title"] = s3.crud_strings.req_req.title_display
+        output["rheader"] = shn_req_rheader(r)
+        output["subtitle"] = T("Request Items") 
+        
+        #Get req_items & inv_items from this site
+        req_items = db( (db.req_req_item.req_id == r.id ) &
+                        (db.req_req_item.deleted == False ) #&
+                       ).select(db.req_req_item.id,
+                                db.req_req_item.item_id,
+                                db.req_req_item.quantity,
+                                db.req_req_item.item_pack_id,
+                                db.req_req_item.quantity_commit,
+                                db.req_req_item.quantity_transit,
+                                db.req_req_item.quantity_fulfil,
+                                )
+        inv_items = db( (db.inv_inv_item.site_id == site_id ) &
+                        (db.inv_inv_item.deleted == False ) #&
+                       ).select(db.inv_inv_item.item_id,
+                                db.inv_inv_item.quantity,
+                                db.inv_inv_item.item_pack_id,
+                                )
+        inv_items_dict = inv_items.as_dict(key = "item_id")
+
+        if len(req_items):
+            items = TABLE(THEAD(TR(TH(""),
+                                   TH(db.req_req_item.item_id.label),
+                                   TH(db.req_req_item.quantity.label),
+                                   TH(db.req_req_item.item_pack_id.label),
+                                   TH(db.req_req_item.quantity_commit.label),
+                                   TH(db.req_req_item.quantity_transit.label),
+                                   TH(db.req_req_item.quantity_fulfil.label),
+                                   TH(T("Quantity in %s's Inventory") % site_name)
+                                  )  
+                                ),
+                          _id = "list",
+                          _class = "dataTable display")
+    
+            for req_item in req_items:
+                # Convert inv item quantity to req item quantity
+                try:
+                    inv_item = Storage(inv_items_dict[req_item.item_id])
+                    inv_quantity = inv_item.quantity * \
+                                   inv_item.pack_quantity / \
+                                   req_item.pack_quantity
+                                   
+                except:
+                    inv_quantity = NONE
+                
+                items.append(TR( A(req_item.id),
+                                 shn_item_represent(req_item.item_id),
+                                 req_item.quantity,
+                                 shn_item_pack_represent(
+                                     req_item.item_pack_id),
+                                 req_item.quantity_commit,
+                                 req_item.quantity_transit,
+                                 req_item.quantity_fulfil,
+                                 inv_quantity,
+                                )
+                            )
+                output["items"] = items
+                response.s3.actions = [req_item_inv_item_btn]
+                response.s3.no_sspag = True # pag won't work 
+        else:
+            output["items"] = s3.crud_strings.req_req_item.msg_list_empty
+                
+        
+        response.view = "list.html"
+        response.s3.no_formats = True
+        
+                
+        return output
+
+    s3xrc.model.set_method(module, resourcename,
+                           method = "check", action=s3_req_check )
+    #==========================================================================
     if deployment_settings.has_module("inv"):
         #======================================================================
         # Request Items
 
-        #----------------------------------------------------------------------
-        # Redirect to the Items tabs after creation
-        # @ToDo: Move this to the controller & make it depend on the type of Request
-        s3xrc.model.configure(table,
-                          create_next = URL(r=request,
-                                            c="req",
-                                            f="req",
-                                            args=["[id]", "req_item"]))
-
-        
-        #----------------------------------------------------------------------
         resourcename = "req_item"
         tablename = "%s_%s" % (module, resourcename)
         table = db.define_table(tablename,
@@ -213,7 +506,7 @@ if deployment_settings.has_module(module):
         # pack_quantity virtual field
         table.virtualfields.append(item_pack_virtualfields(tablename = tablename))
 
-        # -----------------------------------------------------------------------------
+        # ---------------------------------------------------------------------
         def shn_req_quantity_represent(quantity, type):
             if quantity:
                 return TAG[""]( quantity,
@@ -225,11 +518,14 @@ if deployment_settings.has_module(module):
             else:
                 return quantity
 
-        table.quantity_commit.represent = lambda quantity_commit: shn_req_quantity_represent(quantity_commit, "commit")
-        table.quantity_fulfil.represent = lambda quantity_fulfil: shn_req_quantity_represent(quantity_fulfil, "fulfil")
-        table.quantity_transit.represent = lambda quantity_transit: shn_req_quantity_represent(quantity_transit, "transit")
+        table.quantity_commit.represent = lambda quantity_commit: \
+                        shn_req_quantity_represent(quantity_commit, "commit")
+        table.quantity_fulfil.represent = lambda quantity_fulfil: \
+                        shn_req_quantity_represent(quantity_fulfil, "fulfil")
+        table.quantity_transit.represent = lambda quantity_transit: \
+                        shn_req_quantity_represent(quantity_transit, "transit")
 
-        # -----------------------------------------------------------------------------
+        # ---------------------------------------------------------------------
         # CRUD strings
         ADD_REQUEST_ITEM = T("Add Item to Request")
         LIST_REQUEST_ITEM = T("List Request Items")
@@ -340,7 +636,16 @@ if deployment_settings.has_module(module):
             db.req_req[req_id] = status_update
 
         s3xrc.model.configure(table, onaccept=shn_req_item_onaccept)
-    
+
+        req_item_inv_item_btn = dict(url = str( URL( r=request,
+                                                     c = "req",
+                                                     f = "req_item_inv_item",
+                                                     args = ["[id]"]
+                                                    )
+                                                ),
+                                     _class = "action-btn",
+                                     label = str(T("Find All Matches")), # Change to Fulfil? Match?
+                                     )
     #==========================================================================
     # Commitments (Pledges)
     #
@@ -364,9 +669,9 @@ if deployment_settings.has_module(module):
                                   label = T("Date Available")),
 
                             #For site should be a virtual field
-                            #Field("for_site_id",
-                            #      db.org_site,
-                            #      ),
+                            Field("for_site_id",
+                                  db.org_site,
+                                  ),
                             person_id("committer_id",
                                       label = T("Committed By") ),
                             comments(),
@@ -436,19 +741,20 @@ if deployment_settings.has_module(module):
                                                 fk = "site_id",
                                                 pk = "site_id")
     )
-
+    
+    #==========================================================================
     if deployment_settings.has_module("inv"):
         #======================================================================
         # Commitment Items
 
-        #------------------------------------------------------------------------------
+        #----------------------------------------------------------------------
         # Redirect to the Items tabs after creation
         # @ToDo: Move this to the controller & make it depend on the type of Request
         s3xrc.model.configure(table,
                               create_next = URL(r=request, c="req", f="commit",
                                                 args=["[id]", "commit_item"]))
 
-        #------------------------------------------------------------------------------
+        #----------------------------------------------------------------------
         resourcename = "commit_item"
         tablename = "%s_%s" % (module, resourcename)
         table = db.define_table(tablename,
@@ -486,7 +792,6 @@ if deployment_settings.has_module(module):
 
         #----------------------------------------------------------------------
         # Commitment Items as component of Commitment
-        # Commitment Items as a component of Items
         s3xrc.model.add_component(module, resourcename,
                                   multiple=True,
                                   joinby=dict( req_commit = "commit_id" )
@@ -523,7 +828,7 @@ if deployment_settings.has_module(module):
             db.req_req_item[req_item_id] = dict(quantity_commit = quantity_commit)
 
             #Update status_commit of the req record
-            session.rcvars.req_req = r_req_item.req_id
+            session.rcvars.req_req_item = r_req_item.id
             shn_req_item_onaccept(None)
 
 

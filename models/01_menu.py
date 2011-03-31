@@ -103,7 +103,7 @@ admin_menu_options = [
         #[T("Roles"), False, URL(r=request, c="admin", f="group")],
         #[T("Membership"), False, URL(r=request, c="admin", f="membership")],
     ]],
-    [T("Database"), False, "#", [
+    [T("Database"), False, URL(r=request, c="appadmin", f="index"), [
         [T("Import"), False, URL(r=request, c="admin", f="import_data")],
         [T("Export"), False, URL(r=request, c="admin", f="export_data")],
         #[T("Import Jobs"), False, URL(r=request, c="admin", f="import_job")],

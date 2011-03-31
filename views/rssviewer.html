@@ -11,13 +11,12 @@
 <script type="text/javascript">
 function LoadDynamicFeedControl() {
   var feeds = [
-    {title: 'Eden',
-     url: 'http://eden.sahanafoundation.org/timeline?ticket=on&changeset=on&milestone=on&wiki=on&max=50&daysback=90&format=rss'
-    },
-    {title: 'Twitter',
-     url: 'http://twitter.com/statuses/user_timeline/22644942.rss'
-     //url: 'http://search.twitter.com/search.atom?q=%23eqnz'
-    }
+  {{counter = 0}}
+  {{for feed in deployment_settings.frontpage.rss:}}
+    {{counter += 1}}
+    {title: '{{=feed["title"]}}',
+     url: '{{=feed["url"]}}'}  {{if counter != len(deployment_settings.frontpage.rss):}},{{pass}}
+  {{pass}}
     ];
   var options = {
     // milliseconds before feed is reloaded (5 minutes)

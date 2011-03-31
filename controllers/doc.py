@@ -94,7 +94,7 @@ def shn_document_rheader(r):
     if r.representation == "html":
         doc_document = r.record
         if doc_document:
-            rheader_tabs = shn_rheader_tabs(r, shn_document_tabs(r))
+            rheader_tabs = s3_rheader_tabs(r, shn_document_tabs(r))
             table = db.doc_document
             rheader = DIV(B(T("Name") + ": "),doc_document.name,
                         TABLE(TR(

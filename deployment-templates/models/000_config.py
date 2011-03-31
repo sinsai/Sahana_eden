@@ -83,6 +83,21 @@ deployment_settings.mail.sender = "'Sahana' <sahana@your.org>"
 # This can be overridden for specific domains/organisations via the auth_domain table
 deployment_settings.mail.approver = "useradmin@your.org"
 
+# Frontpage settings
+# RSS feeds
+deployment_settings.frontpage.rss = [
+    {"title": "Eden",
+     # Trac timeline
+     "url": "http://eden.sahanafoundation.org/timeline?ticket=on&changeset=on&milestone=on&wiki=on&max=50&daysback=90&format=rss"
+    },
+    {"title": "Twitter",
+     # @SahanaFOSS
+     "url": "http://twitter.com/statuses/user_timeline/96591754.rss"
+     # Hashtag
+     #url: "http://search.twitter.com/search.atom?q=%23eqnz"
+    }
+]
+
 # Twitter settings:
 # Register an app at http://twitter.com/apps
 # (select Aplication Type: Client)
@@ -92,9 +107,6 @@ deployment_settings.twitter.oauth_consumer_key = ""
 deployment_settings.twitter.oauth_consumer_secret = ""
 
 # L10n settings
-# Uncomment this if the deployment is just in a few countries
-# (used in the GIS Location Selector)
-#deployment_settings.L10n.countries = ["PK"]
 #deployment_settings.L10n.default_country_code = 1
 # Languages used in the deployment (used for Language Toolbar & GIS Locations)
 # http://www.loc.gov/standards/iso639-2/php/code_list.php
@@ -131,6 +143,9 @@ deployment_settings.L10n.religions = {
 }
 
 # GIS (Map) settings
+# Uncomment this if the deployment is just in a few countries
+# (used in the GIS Location Selector)
+#deployment_settings.gis.countries = ["PK"]
 # Provide a tool to select locations via a map on all forms with location_id
 deployment_settings.gis.map_selector = True
 # Display Resources recorded to Admin-Level Locations on the map
@@ -402,20 +417,9 @@ deployment_settings.modules = OrderedDict([
             #restricted = False,
             #module_type = 10,
         #)),
-    # RMS is being replaced by Req
-    #("rms", Storage(
-    #        name_nice = T("RMS"),
-    #        description = T("Manage requests for assistance"),
-    #        restricted = False,
-    #        module_type = 10,
-    #        resources = Storage(
-    #            rms_req = {"importer" : True},
-    #        )
-    #    )),
     ("req", Storage(
             name_nice = T("Requests"),
-            # Assets & Staff to come
-            description = T("Manage requests for items and matches them against existing inventories"),
+            description = T("Manage requests for supplies, assets, staff or other resources. Matches against Inventories where supplies are requested."),
             restricted = False,
             module_type = 10,
         )),

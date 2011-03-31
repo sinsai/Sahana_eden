@@ -129,7 +129,7 @@ def shelter():
                                               orderby="instance_type",
                                               filter_opts=("pr_person",
                                                            "pr_group"))
-    
+
     s3xrc.model.configure(db.pr_presence,
                           # presence not deletable in this view! (need to register a check-out
                           # for the same person instead):
@@ -165,7 +165,6 @@ def shelter():
 
     return output
 
-
 def shn_shelter_prep(r):
     """
         Pre-processor for the REST Controller
@@ -175,11 +174,11 @@ def shn_shelter_prep(r):
         r.resource.add_filter(db.pr_presence.closed == False)
 
     # Filter out people which are already staff for this warehouse
-    shn_staff_prep(r) 
+    shn_staff_prep(r)
     if deployment_settings.has_module("inv"):
         # Filter out items which are already in this inventory
         shn_inv_prep(r)
-          
+
     # Cascade the organisation_id from the shelter to the staff
     if r.record:
         db.org_staff.organisation_id.default = r.record.organisation_id
@@ -238,53 +237,16 @@ def shn_shelter_prep(r):
                     msg_list_empty = T("No People currently registered in this shelter")
                 )
 
+            elif r.component.name == "req":
+                if r.method != "update" and r.method != "read":
+                    # Hide fields which don't make sense in a Create form
+                    # inc list_create (list_fields over-rides)
+                    shn_req_create_form_mods()
+
     return True
-
 # -----------------------------------------------------------------------------
-def shn_shelter_rheader(r, tabs=[]):
-
-    """ Resource Headers """
-
-    if r.representation == "html":
-        record = r.record
-        if record:
-            if not tabs:
-                tabs = [(T("Basic Details"), None),
-                        (T("People"), "presence"),
-                        (T("Staff"), "staff"),
-                    ]
-                if deployment_settings.has_module("assess"):
-                    tabs.append((T("Assessments"), "rat"))
-                if deployment_settings.has_module("req"):
-                    tabs.append((T("Requests"), "req"))
-                if deployment_settings.has_module("inv"):
-                    tabs = tabs + shn_show_inv_tabs(r)
-
-            rheader_tabs = shn_rheader_tabs(r, tabs)
-
-            if r.name == "shelter":
-                location = shn_gis_location_represent(record.location_id)
-
-                rheader = DIV(TABLE(
-                                    TR(
-                                        TH("%s: " % T("Name")), record.name
-                                      ),
-                                    TR(
-                                        TH("%s: " % T("Location")), location
-                                      ),
-                                    ),
-                              rheader_tabs)
-            else:
-                rheader = DIV(TABLE(
-                                    TR(
-                                        TH("%s: " % T("Name")), record.name
-                                      ),
-                                    ),
-                              rheader_tabs)
-
-            return rheader
-    return None
-
+def req_match():
+    return s3_req_match()
 # -----------------------------------------------------------------------------
 # This code provides urls of the form:
 # http://.../eden/cr/call/<service>/rpc/<method>/<id>

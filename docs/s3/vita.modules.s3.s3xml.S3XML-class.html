@@ -34,7 +34,7 @@
       <th class="navbar" align="right" width="100%">
         <table border="0" cellpadding="0" cellspacing="0">
           <tr><th class="navbar" align="center"
-            >S3</th>
+            ><a class="navbar" target="_top" href="http://eden.sahanafoundation.org/wiki/S3">S3</a></th>
           </tr></table></th>
   </tr>
 </table>
@@ -134,7 +134,7 @@ object --+
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3.s3xml.S3XML-class.html#transform" class="summary-sig-name">transform</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">tree</span>,
-        <span class="summary-sig-arg">template_path</span>,
+        <span class="summary-sig-arg">stylesheet_path</span>,
         <span class="summary-sig-arg">**args</span>)</span><br />
       Transform an element tree with XSLT</td>
           <td align="right" valign="top">
@@ -384,10 +384,36 @@ object --+
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3.s3xml.S3XML-class.html#get_fields" class="summary-sig-name">get_fields</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">prefix</span>,
-        <span class="summary-sig-arg">name</span>)</span><br />
+        <span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">parent</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">options</span>=<span class="summary-sig-default">False</span>,
+        <span class="summary-sig-arg">references</span>=<span class="summary-sig-default">False</span>,
+        <span class="summary-sig-arg">labels</span>=<span class="summary-sig-default">False</span>)</span><br />
       Get fields in a table as &lt;fields&gt; element</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3.s3xml-pysrc.html#S3XML.get_fields">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3xml.S3XML-class.html#get_struct" class="summary-sig-name">get_struct</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">prefix</span>,
+        <span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">parent</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">options</span>=<span class="summary-sig-default">True</span>,
+        <span class="summary-sig-arg">references</span>=<span class="summary-sig-default">False</span>)</span><br />
+      Get the table structure as XML tree</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3.s3xml-pysrc.html#S3XML.get_struct">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -458,7 +484,8 @@ object --+
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3.s3xml.S3XML-class.html#get_field_options" class="summary-sig-name">get_field_options</a>(<span class="summary-sig-arg">cls</span>,
         <span class="summary-sig-arg">table</span>,
-        <span class="summary-sig-arg">fieldname</span>)</span><br />
+        <span class="summary-sig-arg">fieldname</span>,
+        <span class="summary-sig-arg">parent</span>=<span class="summary-sig-default">None</span>)</span><br />
       Get options of a field as &lt;select&gt;</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3.s3xml-pysrc.html#S3XML.get_field_options">source&nbsp;code</a></span>
@@ -559,6 +586,29 @@ object --+
       Converts an element tree into JSON</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3.s3xml-pysrc.html#S3XML.tree2json">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3xml.S3XML-class.html#csv2tree" class="summary-sig-name">csv2tree</a>(<span class="summary-sig-arg">cls</span>,
+        <span class="summary-sig-arg">source</span>,
+        <span class="summary-sig-arg">resourcename</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">delimiter</span>=<span class="summary-sig-default">&quot;,&quot;</span>,
+        <span class="summary-sig-arg">quotechar</span>=<span class="summary-sig-default">'&quot;'</span>)</span><br />
+      Convert a table-form CSV source into an element tree, consisting of 
+      &lt;table name=&quot;format&quot;&gt;, &lt;row&gt; and &lt;col 
+      field=&quot;fieldname&quot;&gt; elements.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3.s3xml-pysrc.html#S3XML.csv2tree">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -727,14 +777,8 @@ object --+
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a href="vita.modules.s3.s3xml.S3XML-class.html#FeatureClass" class="summary-name">FeatureClass</a> = <code title="&quot;feature_class_id&quot;">&quot;feature_class_id&quot;</code>
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-        <a href="vita.modules.s3.s3xml.S3XML-class.html#IGNORE_FIELDS" class="summary-name">IGNORE_FIELDS</a> = <code title="[&quot;deleted&quot;, &quot;id&quot;, &quot;owned_by&quot;]">[&quot;deleted&quot;, &quot;id&quot;, &quot;owned_by&quot;]</code>
+        <a href="vita.modules.s3.s3xml.S3XML-class.html#IGNORE_FIELDS" class="summary-name">IGNORE_FIELDS</a> = <code title="[&quot;deleted&quot;, &quot;deleted_fk&quot;, &quot;v_record_status&quot;, &quot;v_duplicate_uid&quot;, &quot;id&quot;, \
+&quot;owned_by_role&quot;, &quot;owned_by_user&quot;]">[&quot;deleted&quot;, &quot;deleted_fk&quot;, &quot;v_record_status&quot;, &quot;<code class="variable-ellipsis">...</code></code>
     </td>
   </tr>
 <tr>
@@ -759,7 +803,7 @@ object --+
         <a href="vita.modules.s3.s3xml.S3XML-class.html#TAG" class="summary-name">TAG</a> = <code title="Storage(root= &quot;s3xml&quot;, resource= &quot;resource&quot;, reference= &quot;reference&quot;, d\
 ata= &quot;data&quot;, list= &quot;list&quot;, item= &quot;item&quot;, object= &quot;object&quot;, select= &quot;se\
 lect&quot;, field= &quot;field&quot;, option= &quot;option&quot;, options= &quot;options&quot;, fields= &quot;\
-fields&quot;)">Storage(root= &quot;s3xml&quot;, resource= &quot;resource&quot;, reference= <code class="variable-ellipsis">...</code></code>
+fields&quot;, table= &quot;table&quot;, row= &quot;row&quot;, col= &quot;col&quot;)">Storage(root= &quot;s3xml&quot;, resource= &quot;resource&quot;, reference= <code class="variable-ellipsis">...</code></code>
     </td>
   </tr>
 <tr>
@@ -772,7 +816,8 @@ l&quot;, filename= &quot;filename&quot;, error= &quot;error&quot;, start= &quot;
 t&quot;, success= &quot;success&quot;, results= &quot;results&quot;, lat= &quot;lat&quot;, latmin= &quot;latmi\
 n&quot;, latmax= &quot;latmax&quot;, lon= &quot;lon&quot;, lonmin= &quot;lonmin&quot;, lonmax= &quot;lonmax&quot;, \
 marker= &quot;marker&quot;, sym= &quot;sym&quot;, type= &quot;type&quot;, readable= &quot;readable&quot;, writ\
-able= &quot;writable&quot;, has_options= &quot;has_options&quot;)">Storage(id= &quot;id&quot;, name= &quot;name&quot;, table= &quot;table&quot;, fi<code class="variable-ellipsis">...</code></code>
+able= &quot;writable&quot;, has_options= &quot;has_options&quot;, tuid= &quot;tuid&quot;, label= &quot;la\
+bel&quot;, comment= &quot;comment&quot;)">Storage(id= &quot;id&quot;, name= &quot;name&quot;, table= &quot;table&quot;, fi<code class="variable-ellipsis">...</code></code>
     </td>
   </tr>
 <tr>
@@ -904,7 +949,7 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">transform</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">tree</span>,
-        <span class="sig-arg">template_path</span>,
+        <span class="sig-arg">stylesheet_path</span>,
         <span class="sig-arg">**args</span>)</span>
   </h3>
   </td><td align="right" valign="top"
@@ -917,7 +962,7 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>tree</code></strong> - the element tree</li>
-        <li><strong class="pname"><code>template_path</code></strong> - pathname of the XSLT stylesheet</li>
+        <li><strong class="pname"><code>stylesheet_path</code></strong> - pathname of the XSLT stylesheet</li>
         <li><strong class="pname"><code>args</code></strong> - dict of arguments to pass to the stylesheet</li>
     </ul></dd>
   </dl>
@@ -1332,7 +1377,8 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">get_field_options</span>(<span class="sig-arg">cls</span>,
         <span class="sig-arg">table</span>,
-        <span class="sig-arg">fieldname</span>)</span>
+        <span class="sig-arg">fieldname</span>,
+        <span class="sig-arg">parent</span>=<span class="sig-default">None</span>)</span>
     <br /><em class="fname">Class Method</em>
   </h3>
   </td><td align="right" valign="top"
@@ -1346,6 +1392,7 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>table</code></strong> - the table</li>
         <li><strong class="pname"><code>fieldname</code></strong> - the fieldname</li>
+        <li><strong class="pname"><code>parent</code></strong> - the parent element in the tree</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -1387,7 +1434,11 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">get_fields</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">prefix</span>,
-        <span class="sig-arg">name</span>)</span>
+        <span class="sig-arg">name</span>,
+        <span class="sig-arg">parent</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">options</span>=<span class="sig-default">False</span>,
+        <span class="sig-arg">references</span>=<span class="sig-default">False</span>,
+        <span class="sig-arg">labels</span>=<span class="sig-default">False</span>)</span>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vita.modules.s3.s3xml-pysrc.html#S3XML.get_fields">source&nbsp;code</a></span>&nbsp;
@@ -1400,6 +1451,45 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>prefix</code></strong> - the application prefix</li>
         <li><strong class="pname"><code>name</code></strong> - the resource name (without prefix)</li>
+        <li><strong class="pname"><code>parent</code></strong> - the parent element to append the tree to</li>
+        <li><strong class="pname"><code>options</code></strong> - include option lists in option fields</li>
+        <li><strong class="pname"><code>references</code></strong> - include option lists even in reference fields</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="get_struct"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_struct</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">prefix</span>,
+        <span class="sig-arg">name</span>,
+        <span class="sig-arg">parent</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">options</span>=<span class="sig-default">True</span>,
+        <span class="sig-arg">references</span>=<span class="sig-default">False</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3.s3xml-pysrc.html#S3XML.get_struct">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Get the table structure as XML tree</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>prefix</code></strong> - the application prefix</li>
+        <li><strong class="pname"><code>name</code></strong> - the tablename (without prefix)</li>
+        <li><strong class="pname"><code>parent</code></strong> - the parent element to append the tree to</li>
+        <li><strong class="pname"><code>options</code></strong> - include option lists in option fields</li>
+        <li><strong class="pname"><code>references</code></strong> - include option lists even in reference fields</li>
+    </ul></dd>
+    <dt>Raises:</dt>
+    <dd><ul class="nomargin-top">
+        <li><code><strong class='fraise'>AttributeError</strong></code> - in case the table doesn't exist</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -1543,6 +1633,39 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
   </dl>
 </td></tr></table>
 </div>
+<a name="csv2tree"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">csv2tree</span>(<span class="sig-arg">cls</span>,
+        <span class="sig-arg">source</span>,
+        <span class="sig-arg">resourcename</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">delimiter</span>=<span class="sig-default">&quot;,&quot;</span>,
+        <span class="sig-arg">quotechar</span>=<span class="sig-default">'&quot;'</span>)</span>
+    <br /><em class="fname">Class Method</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3.s3xml-pysrc.html#S3XML.csv2tree">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Convert a table-form CSV source into an element tree, consisting of 
+  &lt;table name=&quot;format&quot;&gt;, &lt;row&gt; and &lt;col 
+  field=&quot;fieldname&quot;&gt; elements.</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>source</code></strong> - the source (file-like object)</li>
+        <li><strong class="pname"><code>resourcename</code></strong> - the resource name</li>
+        <li><strong class="pname"><code>delimiter</code></strong> - delimiter for values</li>
+        <li><strong class="pname"><code>quotechar</code></strong> - quotation character</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
 <a name="json_message"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -1568,13 +1691,10 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
         <li><strong class="pname"><code>success</code></strong> - action succeeded or failed</li>
         <li><strong class="pname"><code>status_code</code></strong> - the HTTP status code</li>
         <li><strong class="pname"><code>message</code></strong> - the message text</li>
-        <li><strong class="pname"><code>tree</code></strong> - result tree to enclose</li>
+        <li><strong class="pname"><code>tree</code></strong> - result tree to enclose (as JSON)</li>
     </ul></dd>
   </dl>
-<div class="fields">      <p><strong>To Do (2.3):</strong>
-        extend to report number of results/successful imports
-      </p>
-</div></td></tr></table>
+</td></tr></table>
 </div>
 <br />
 <!-- ==================== CLASS VARIABLE DETAILS ==================== -->
@@ -1721,24 +1841,6 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
   </dl>
 </td></tr></table>
 </div>
-<a name="FeatureClass"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <h3 class="epydoc">FeatureClass</h3>
-  
-  <dl class="fields">
-  </dl>
-  <dl class="fields">
-    <dt>Value:</dt>
-      <dd><table><tr><td><pre class="variable">
-&quot;feature_class_id&quot;
-</pre></td></tr></table>
-</dd>
-  </dl>
-</td></tr></table>
-</div>
 <a name="IGNORE_FIELDS"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -1751,7 +1853,8 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
   <dl class="fields">
     <dt>Value:</dt>
       <dd><table><tr><td><pre class="variable">
-[&quot;deleted&quot;, &quot;id&quot;, &quot;owned_by&quot;]
+[&quot;deleted&quot;, &quot;deleted_fk&quot;, &quot;v_record_status&quot;, &quot;v_duplicate_uid&quot;, &quot;id&quot;, <span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+&quot;owned_by_role&quot;, &quot;owned_by_user&quot;]
 </pre></td></tr></table>
 </dd>
   </dl>
@@ -1809,7 +1912,7 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
 Storage(root= &quot;s3xml&quot;, resource= &quot;resource&quot;, reference= &quot;reference&quot;, d<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
 ata= &quot;data&quot;, list= &quot;list&quot;, item= &quot;item&quot;, object= &quot;object&quot;, select= &quot;se<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
 lect&quot;, field= &quot;field&quot;, option= &quot;option&quot;, options= &quot;options&quot;, fields= &quot;<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
-fields&quot;)
+fields&quot;, table= &quot;table&quot;, row= &quot;row&quot;, col= &quot;col&quot;)
 </pre></td></tr></table>
 </dd>
   </dl>
@@ -1833,7 +1936,8 @@ l&quot;, filename= &quot;filename&quot;, error= &quot;error&quot;, start= &quot;
 t&quot;, success= &quot;success&quot;, results= &quot;results&quot;, lat= &quot;lat&quot;, latmin= &quot;latmi<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
 n&quot;, latmax= &quot;latmax&quot;, lon= &quot;lon&quot;, lonmin= &quot;lonmin&quot;, lonmax= &quot;lonmax&quot;, <span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
 marker= &quot;marker&quot;, sym= &quot;sym&quot;, type= &quot;type&quot;, readable= &quot;readable&quot;, writ<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
-able= &quot;writable&quot;, has_options= &quot;has_options&quot;)
+able= &quot;writable&quot;, has_options= &quot;has_options&quot;, tuid= &quot;tuid&quot;, label= &quot;la<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+bel&quot;, comment= &quot;comment&quot;)
 </pre></td></tr></table>
 </dd>
   </dl>
@@ -1920,14 +2024,14 @@ Storage(resource= &quot;$&quot;, options= &quot;$o&quot;, reference= &quot;$k&qu
       <th class="navbar" align="right" width="100%">
         <table border="0" cellpadding="0" cellspacing="0">
           <tr><th class="navbar" align="center"
-            >S3</th>
+            ><a class="navbar" target="_top" href="http://eden.sahanafoundation.org/wiki/S3">S3</a></th>
           </tr></table></th>
   </tr>
 </table>
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Mon Jan 17 00:32:29 2011
+    Generated by Epydoc 3.0.1 on Tue Mar 29 14:25:42 2011
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

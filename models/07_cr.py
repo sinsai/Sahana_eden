@@ -4,6 +4,7 @@
     Shelter (Camp) Registry, model
 
     @author: Pat Tressel
+    @author: Fran Boon
 """
 
 module = "cr"
@@ -243,6 +244,57 @@ if deployment_settings.has_module(module):
                                        "shelter_service_id",
                                        "location_id",
                                        "person_id"])
+    
+    # -----------------------------------------------------------------------------
+    def shn_shelter_rheader(r, tabs=[]):
+    
+        """ Resource Headers """
+    
+        if r.representation == "html":
+            tablename, record = s3_rheader_resource(r)
+            if tablename == "cr_shelter" and record:
+                if not tabs:
+                    tabs = [(T("Basic Details"), None),
+                            (T("People"), "presence"),
+                            (T("Staff"), "staff"),
+                        ]
+                    if deployment_settings.has_module("assess"):
+                        tabs.append((T("Assessments"), "rat"))
+                    if deployment_settings.has_module("req"):
+                        tabs.append((T("Requests"), "req"))
+                        tabs.append((T("Match Requests"), "req_match/")) 
+                        tabs.append((T("Commit"), "commit"))
+                    if deployment_settings.has_module("inv"):
+                        tabs = tabs + shn_show_inv_tabs(r)
+    
+                rheader_tabs = s3_rheader_tabs(r, tabs)
+    
+                if r.name == "shelter":
+                    location = shn_gis_location_represent(record.location_id)
+    
+                    rheader = DIV(TABLE(
+                                        TR(
+                                            TH("%s: " % T("Name")), record.name
+                                          ),
+                                        TR(
+                                            TH("%s: " % T("Location")), location
+                                          ),
+                                        ),
+                                  rheader_tabs)
+                else:
+                    rheader = DIV(TABLE(
+                                        TR(
+                                            TH("%s: " % T("Name")), record.name
+                                          ),
+                                        ),
+                                  rheader_tabs)
+    
+                if r.component and r.component.name == "req":
+                    # Inject the helptext script
+                    rheader.append(req_helptext_script)
+    
+                return rheader
+        return None
 
     # Link to shelter from pr_presence
     table = db.pr_presence

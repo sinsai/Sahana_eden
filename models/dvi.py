@@ -479,7 +479,7 @@ if deployment_settings.has_module(module):
                 _next = r.here()
                 _same = r.same()
 
-                rheader_tabs = shn_rheader_tabs(r, tabs)
+                rheader_tabs = s3_rheader_tabs(r, tabs)
 
                 body = r.record
                 if body:

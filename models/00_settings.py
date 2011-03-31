@@ -12,7 +12,7 @@
 
 # Use response for one-off variables which are visible in views without explicit passing
 response.s3 = Storage()
-response.s3.countries = deployment_settings.get_L10n_countries()
+response.s3.countries = deployment_settings.get_gis_countries()
 response.s3.formats = Storage()
 response.s3.gis = Storage()
 
@@ -410,7 +410,10 @@ s3.messages.confirmation_email = "%s %s. %s." % (T("Welcome to the Sahana Portal
 
 # -----------------------------------------------------------------------------
 # List of Nations (ISO-3166-1 Country Codes)
-# @ToDo Add Telephone codes (need to convert to Storage())
+# @ToDo: Pull this list from the list of L0s in the database
+#  - or the same list as that is pre-populated from
+#  - don't want to have to maintain 2 sets of lists
+# @ToDo: Add Telephone codes (need to convert to Storage())
 #
 s3_list_of_nations = {
     "AF": "Afghanistan",

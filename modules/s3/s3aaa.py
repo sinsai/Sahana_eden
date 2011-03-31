@@ -377,6 +377,20 @@ class AuthS3(Auth):
 
 
     # -------------------------------------------------------------------------
+    def set_cookie(self):
+        """
+            Set a Cookie to the client browser so that we know this user has
+            registered & so we should present them with a login form instead
+            of a register form
+        """
+
+        response = self.environment.response
+
+        response.cookies["registered"] = "yes"
+        response.cookies["registered"]["expires"] = 365 * 24 * 3600    # 1 year
+        response.cookies["registered"]["path"] = "/"
+
+    # -------------------------------------------------------------------------
     def login(self,
               next=DEFAULT,
               onvalidation=DEFAULT,
@@ -497,6 +511,8 @@ class AuthS3(Auth):
                                    expiration=self.settings.expiration)
             self.user = user
             session.confirmation = self.messages.logged_in
+            # Set a Cookie to present user with login box by default
+            self.set_cookie()
         if log and self.user:
             self.log_event(log % self.user)
 
@@ -665,6 +681,9 @@ class AuthS3(Auth):
             else:
                 # No verification or approval needed
                 approved = True
+
+            # Set a Cookie to present user with login box by default
+            self.set_cookie()
 
             if approved:
                 user[form.vars.id] = dict(registration_key="")
@@ -2751,16 +2770,16 @@ class S3RoleManager(S3Method):
                                     _class=_class))
 
             # Tabs
-            tabs = [SPAN(A(CACL), _class="rheader_tab_here")]
+            tabs = [SPAN(A(CACL), _class="tab_here")]
             if auth.permission.use_facls:
                 _class = auth.permission.use_tacls and \
-                         "rheader_tab_other" or "rheader_tab_last"
+                         "tab_other" or "tab_last"
                 tabs.append(SPAN(A(FACL, _class="facl-tab"), _class=_class))
             if auth.permission.use_tacls:
                 tabs.append(SPAN(A(TACL, _class="tacl-tab"),
-                                 _class="rheader_tab_last"))
+                                 _class="tab_last"))
 
-            acl_forms.append(DIV(DIV(tabs, _id="rheader_tabs"),
+            acl_forms.append(DIV(DIV(tabs, _class="tabs"),
                                      TABLE(thead, TBODY(form_rows)),
                                      _id="controller-acls"))
 
@@ -2825,13 +2844,13 @@ class S3RoleManager(S3Method):
 
                 # Tabs to change to the other view
                 tabs = [SPAN(A(CACL, _class="cacl-tab"),
-                             _class="rheader_tab_other"),
-                        SPAN(A(FACL), _class="rheader_tab_here")]
+                             _class="tab_other"),
+                        SPAN(A(FACL), _class="tab_here")]
                 if auth.permission.use_tacls:
                     tabs.append(SPAN(A(TACL, _class="tacl-tab"),
-                                     _class="rheader_tab_last"))
+                                     _class="tab_last"))
 
-                acl_forms.append(DIV(DIV(tabs, _id="rheader_tabs"),
+                acl_forms.append(DIV(DIV(tabs, _class="tabs"),
                                          TABLE(thead, TBODY(form_rows)),
                                          _id="function-acls"))
 
@@ -2893,12 +2912,12 @@ class S3RoleManager(S3Method):
 
                 # Tabs
                 tabs = [SPAN(A(CACL, _class="cacl-tab"),
-                             _class="rheader_tab_other")]
+                             _class="tab_other")]
                 if auth.permission.use_facls:
                     tabs.append(SPAN(A(FACL, _class="facl-tab"),
-                                     _class="rheader_tab_other"))
-                tabs.append(SPAN(A(TACL), _class="rheader_tab_here"))
-                acl_forms.append(DIV(DIV(tabs, _id="rheader_tabs"),
+                                     _class="tab_other"))
+                tabs.append(SPAN(A(TACL), _class="tab_here"))
+                acl_forms.append(DIV(DIV(tabs, _class="tabs"),
                                      TABLE(thead, TBODY(form_rows)),
                                      _id="table-acls"))
 

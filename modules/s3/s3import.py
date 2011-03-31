@@ -268,7 +268,7 @@ class S3Importer(object):
         if success:
             return xml.json_message()
         else:
-            tree = xml.tree2json(tree)
+            tree = xml.tree2json(self.manager.error_tree)
             msg = xml.json_message(False, 400,
                                    message=self.manager.error,
                                    tree=tree)

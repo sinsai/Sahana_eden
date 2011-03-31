@@ -735,7 +735,7 @@ def gis_config_onaccept(form):
     """
     
     if form.request_vars.pe_id and form.vars.id:
-        gis.set_config(form.vars.id)
+        gis.set_config(form.vars.id, force_update=True)
 
 def gis_config_ondelete(form):
     """

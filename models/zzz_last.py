@@ -20,5 +20,5 @@ if deployment_settings.has_module("msg"):
 # prep functions.
 
 # Set the field options that depend on the currently selected gis_config,
-# and henace on a particular set of labels for the location hierarchy.
+# and hence on a particular set of labels for the location hierarchy.
 gis.set_config(session.s3.gis_config_id)

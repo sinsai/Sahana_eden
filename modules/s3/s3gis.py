@@ -773,14 +773,21 @@ class GIS(object):
     # with defaults from the gis_config table. So (and here's the ToDo) any
     # values that are needed for the site config should have a placeholder in
     # 000_config.py with a sample value, to serve as a guide.
-    def set_config(self, config_id, set_in_session=True):
+    def set_config(self, config_id, set_in_session=True, force_update=False):
         """
         Reads the specified GIS config from the DB, caches it in response.
         
         Passing in a false or non-existent id will cause the personal config,
         if any, to be used, else the site config (id 1), else values from
         deployment_settings or their fallback values defined in this class.
-        Does not include defaults from the gis_config table.
+        (Fallback does not include defaults from the gis_config table.)
+        
+        If force_update is true, the config will be read and stored in
+        response even if the specified config is the same as what's already
+        there. Used when the config was just written.
+        
+        If set_in_session is true (the normal case), the id of the config
+        that was used will be saved in the session.
         
         Returns the id of the config it actually used, if any. Normally, it
         stores the id in session.s3.gis_config_id, but if set_in_session is
@@ -804,7 +811,7 @@ class GIS(object):
         
         # If an id has been supplied, try it first. If it matches what's in
         # session / response, there's no work to do.
-        if config_id:
+        if config_id and not force_update:
             if session.s3.gis_config_id and \
                session.s3.gis_config_id == config_id and \
                response.s3.gis.config and \
@@ -1318,7 +1325,7 @@ class GIS(object):
         #elif deployment_settings.database.db_type == "mysql":
             # Do the calculation in MySQL to pull back only the relevant rows
             # Raw MySQL Formula from: http://blog.peoplesdns.com/archives/24
-            # PI = 3.141592653589793, mysqls pi() function returns 3.141593
+            # PI = 3.141592653589793, mysqlÂ’s pi() function returns 3.141593
             #pi = math.pi
             #query = """SELECT name, lat, lon, acos(SIN( PI()* 40.7383040 /180 )*SIN( PI()*lat/180 ))+(cos(PI()* 40.7383040 /180)*COS( PI()*lat/180) *COS(PI()*lon/180-PI()* -73.99319 /180))* 3963.191
             #AS distance

@@ -219,8 +219,8 @@ if deployment_settings.has_module(module):
     resourcename = "recv"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            Field("datetime",
-                                  "datetime",
+                            Field("date",
+                                  "date",
                                   label = T("Date Received"),
                                   writable = False,
                                   #readable = False # unless the record is locked
@@ -297,23 +297,23 @@ if deployment_settings.has_module(module):
     def shn_recv_represent(id):
         if id:
             inv_recv_row = db(db.inv_recv.id == id).\
-                              select(db.inv_recv.datetime,
+                              select(db.inv_recv.date,
                                      db.inv_recv.from_location_id,
                                      limitby=(0, 1))\
                               .first()
             return SPAN( shn_gis_location_represent( inv_recv_row.from_location_id),
                          " - ",
-                        inv_recv_row.datetime)
+                        inv_recv_row.date)
         else:
             return NONE
 
     # -------------------------------------------------------------------------
     # Reusable Field
-    recv_id = S3ReusableField("recv_id", db.inv_recv, sortby="datetime",
+    recv_id = S3ReusableField("recv_id", db.inv_recv, sortby="date",
                                  requires = IS_NULL_OR(IS_ONE_OF(db,
                                                                  "inv_recv.id",
                                                                  shn_recv_represent,
-                                                                 orderby="inv_recv.datetime", sort=True)),
+                                                                 orderby="inv_recv.date", sort=True)),
                                  represent = shn_recv_represent,
                                  label = T("Receive Shipment"),
                                  #comment = DIV(A(ADD_DISTRIBUTION, _class="colorbox", _href=URL(r=request, c="inv", f="distrib", args="create", vars=dict(format="popup")), _target="top", _title=ADD_DISTRIBUTION),
@@ -374,7 +374,7 @@ if deployment_settings.has_module(module):
                     method="range",
                     label=T("Date"),
                     comment=T("Search for a shipment received between these dates"),
-                    field=["datetime"]
+                    field=["date"]
                   ),
                   s3base.S3SearchSelectWidget(
                     name="recv_search_site",
@@ -420,7 +420,7 @@ if deployment_settings.has_module(module):
                           )
     # -------------------------------------------------------------------------
     def shn_inv_recv_form (xrequest, **attr):
-        db.inv_recv.datetime.readable = True
+        db.inv_recv.date.readable = True
         db.inv_recv.site_id.readable = True
         db.inv_recv.site_id.label = T("By Inventory")
         db.inv_recv.site_id.represent = shn_site_represent
@@ -435,7 +435,7 @@ if deployment_settings.has_module(module):
 
     # -------------------------------------------------------------------------
     def shn_inv_recv_donation_cert (xrequest, **attr):
-        db.inv_recv.datetime.readable = True
+        db.inv_recv.date.readable = True
         db.inv_recv.type.readable = False
         db.inv_recv.site_id.readable = True
         db.inv_recv.site_id.label = T("By Inventory")
@@ -670,26 +670,13 @@ if deployment_settings.has_module(module):
     )
 
     #======================================================================
-    def shn_location_id_to_site_id(r, field = "location_id"):
-        if r[field]:
-            return shn_get_db_field_value(db,
-                                          "org_site",
-                                          "site_id",
-                                          r[field],
-                                          "location_id")
-        else:
-            return None
-
-    #======================================================================
     # Send (Outgoing / Dispatch / etc)
     #
-    shn_to_location_id_to_site_id = lambda r, field = "to_location_id": \
-                                       shn_location_id_to_site_id(r,field)
     resourcename = "send"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            Field( "datetime",
-                                   "datetime",
+                            Field( "date",
+                                   "date",
                                    label = T("Date Sent")),
                             super_link(db.org_site,
                                        readable=True,
@@ -698,11 +685,6 @@ if deployment_settings.has_module(module):
                                        represent=shn_site_represent),
                             location_id( "to_location_id",
                                          label = T("To Location") ),
-                            Field("to_site_id",
-                                  db.org_site,
-                                  label = T("To Site"),
-                                  compute = shn_to_location_id_to_site_id
-                                  ),
                             Field("status",
                                   "integer",
                                   requires = IS_NULL_OR(IS_IN_SET(shipment_status)),
@@ -734,29 +716,29 @@ if deployment_settings.has_module(module):
         msg_record_created = T("Shipment Created"),
         msg_record_modified = T("Sent Shipment updated"),
         msg_record_deleted = T("Sent Shipment canceled"),
-        msg_list_empty = T("No Sent Shipments"))
+        msg_list_empty = T("No Sent Shipments"))  
 
     # ---------------------------------------------------------------------
     def shn_send_represent(id):
         if id:
             send_row = db(db.inv_send.id == id).\
-                              select(db.inv_send.datetime,
+                              select(db.inv_send.date,
                                      db.inv_send.to_location_id,
                                      limitby=(0, 1))\
                               .first()
             return SPAN( shn_gis_location_represent( send_row.to_location_id),
                          " - ",
-                        send_row.datetime)
+                        send_row.date)
         else:
             return NONE
 
     # ---------------------------------------------------------------------
     # Reusable Field
-    send_id = S3ReusableField( "send_id", db.inv_send, sortby="datetime",
+    send_id = S3ReusableField( "send_id", db.inv_send, sortby="date",
                                requires = IS_NULL_OR(IS_ONE_OF(db,
                                                                "inv_send.id",
                                                                shn_send_represent,
-                                                               orderby="inv_send_id.datetime",
+                                                               orderby="inv_send_id.date",
                                                                sort=True)),
                                represent = shn_send_represent,
                                label = T("Send Shipment"),
@@ -764,12 +746,51 @@ if deployment_settings.has_module(module):
                                )
 
     #----------------------------------------------------------------------
-    # Inv Send added as a component of Inventory Store in controller
+    # Inv Send added as a component of Inventory Store
     s3xrc.model.add_component(module,
                               resourcename,
                               multiple = True,
                               joinby = super_key(db.org_site)
                               )
+    #----------------------------------------------------------------------
+    # Inv Send Incoming as a simulated "component" of Inventory Store
+    def s3_inv_incoming():
+        tablename, id = request.vars.viewing.split(".")
+        record = db[tablename][id]
+        to_location_id = record.location_id
+        site_id = record.site_id
+        
+        response.s3.actions = [dict(url = str(URL(r=request,
+                                              c = "inv",
+                                              f = "recv_sent",
+                                              args = ["[id]"],
+                                              vars = dict(site_id = site_id)
+                                              )
+                                           ),
+                                    _class = "action-btn",
+                                    label = "Receive")
+                                ]
+        
+        rheader_dict = dict(org_office = shn_office_rheader,
+                            cr_shelter = shn_shelter_rheader,
+                            hms_hospital = shn_hms_hospital_rheader)
+        
+        response.s3.filter = (db.inv_send.status == SHIP_STATUS_SENT) & \
+                             (db.inv_send.to_location_id == to_location_id)
+
+        s3xrc.model.configure(db.inv_send, insertable=False)
+        # @ToDo: Probably need to adjust some more CRUD strings:
+        s3.crud_strings["inv_send"].update(
+            msg_record_modified = T("Incoming Shipment updated"),
+            msg_record_deleted = T("Incoming Shipment canceled"),
+            msg_list_empty = T("No Incoming Shipments"))
+        
+        output = s3_rest_controller("inv", "send",
+                                    method = "list",
+                                    rheader = rheader_dict[tablename])
+        output["title"] = s3.crud_strings[tablename]["title_display"]
+        
+        return output
     #----------------------------------------------------------------------
     # Redirect to the Items tabs after create & update
     url_send_items = URL(r=request, c="inv", f="send", args=["[id]",
@@ -793,7 +814,7 @@ if deployment_settings.has_module(module):
 
     # ---------------------------------------------------------------------
     def shn_inv_send_form (xrequest, **attr):
-        db.inv_recv.datetime.readable = True
+        db.inv_recv.date.readable = True
         return shn_component_form( xrequest,
                                    componentname = "send_item",
                                    formname = T("Consignment Note"),
@@ -868,53 +889,6 @@ if deployment_settings.has_module(module):
 
     #==========================================================================
     # Inventory Controller Helper functions
-
-    #--------------------------------------------------------------------------
-    def shn_add_dynamic_inv_components():
-        """
-            Add inv_send as component joinby field according to tab selected
-            and returns prep function
-        """
-        if "send" in request.args:
-            if request.get_vars.get("select","sent") == "incoming":
-                s3xrc.model.add_component(
-                    "inv",
-                    "send",
-                    multiple=True,
-                    joinby= {"org_site.site_id": "to_site_id" #super_key(db.org_site)
-                             }
-                    )
-
-                # Hide the Add button for incoming shipments
-                s3xrc.model.configure(db.inv_send, insertable=False)
-
-                # Probably need to adjust some more CRUD strings:
-                s3.crud_strings["inv_send"].update(
-                    msg_record_modified = T("Incoming Shipment updated"),
-                    msg_record_deleted = T("Incoming Shipment canceled"),
-                    msg_list_empty = T("No Incoming Shipments"))
-
-                response.s3.actions = [dict(url = str(URL(r=request,
-                                                      c = "inv",
-                                                      f = "recv_sent",
-                                                      args = ["[id]"]
-                                                      )
-                                                   ),
-                                            _class = "action-btn",
-                                            label = "Receive")
-                                        ]
-            else:
-                s3xrc.model.add_component(
-                    "inv",
-                    "send",
-                    multiple=True,
-                    joinby=super_key(db.org_site)
-                    )
-                s3.crud_strings["inv_send"].update(
-                    msg_record_modified = T("Sent Shipment updated"),
-                    msg_record_deleted = T("Sent Shipment canceled"),
-                    msg_list_empty = T("No Sent Shipments"))
-
     #--------------------------------------------------------------------------
     def shn_inv_prep(r):
         if "inv_item" in request.args:
@@ -934,7 +908,7 @@ if deployment_settings.has_module(module):
             request.get_vars.get("select", "sent") == "incoming":
             # Display only incoming shipments which haven't been received yet
             filter = (db.inv_send.status == SHIP_STATUS_SENT)
-            r.resource.add_component_filter("send", filter)
+            #r.resource.add_component_filter("send", filter)
 
     #--------------------------------------------------------------------------
     # Session dictionary to indicate if a site inv should be shown
@@ -958,11 +932,10 @@ if deployment_settings.has_module(module):
 
         if show_inv or r.request.function == "warehouse":
             inv_tabs = [(T("Inventory Items"), "inv_item"),
-                        #(T("Request"), "req"),                 # Added separately as not necessarily related to items
                         #(T("Match Requests"), "match_req"),                # Disabled as 'unsupported method'
-                        #(T("Incoming"), "send", dict(select="incoming")),  # Disabled as 'unsupported method'
+                        (T("Incoming"), "incoming/"),  # Disabled as 'unsupported method'
                         (T("Receive" ), "recv"),
-                        (T("Send"), "send", dict(select="sent")),          # Disabled as 'unsupported method'
+                        (T("Send"), "send", dict(select="sent")),
                         ]
             if r.request.function != "warehouse":
                 inv_tabs.append(("- %s" % T("Inventory"),

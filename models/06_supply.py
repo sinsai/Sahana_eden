@@ -117,6 +117,9 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
                                   length=128,
                                   label = T("Unit of Measure"),
                                   notnull=True),
+                            Field("consumable",
+                                  "boolean",
+                                  default = False),
                             comments(), # These comments do *not* pull through to an Inventory's Items or a Request's Items
                             migrate=migrate, *s3_meta_fields())
 

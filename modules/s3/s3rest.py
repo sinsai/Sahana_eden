@@ -1375,7 +1375,7 @@ class S3Resource(object):
 
         # Transformation mode?
         if "xsltmode" in r.request.vars:
-            args = dict(mode=request.vars["xsltmode"])
+            args = dict(xsltmode=r.request.vars["xsltmode"])
         else:
             args = dict()
 

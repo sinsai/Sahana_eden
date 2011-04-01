@@ -619,10 +619,11 @@ class GIS(object):
                 ancestors = self.get_parents(feature_id, feature=feature)
                 if ancestors:
                     for ancestor in ancestors:
-                        if names:
-                            results[ancestor.level] = ancestor.name
-                        else:
-                            results[ancestor.level] = ancestor.id
+                        if ancestor.level in ["L0", "L1", "L2", "L3", "L4"]:
+                            if names:
+                                results[ancestor.level] = ancestor.name
+                            else:
+                                results[ancestor.level] = ancestor.id
 
             if names:
                 # For the address_onvalidation we need to ensure we have form.vars

@@ -8,7 +8,6 @@ module = "gis"
 
 MARKER = T("Marker")
 
-gis_location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
 # Expose settings to views/modules
 _gis = response.s3.gis
 
@@ -65,8 +64,10 @@ marker_id = S3ReusableField("marker_id", db.gis_marker, sortby="name",
                                              _target="top",
                                              _title=ADD_MARKER),
                                        DIV( _class="tooltip",
-                                            _title="%s|%s" % (MARKER,
-                                                              T("Defines the icon used for display of features on interactive map & KML exports. A Marker assigned to an individual Location is set if there is a need to override the Marker assigned to the Feature Class. If neither are defined, then the Default Marker is used.")))),
+                                            _title="%s|%s|%s|%s" % (MARKER,
+                                                                    T("Defines the icon used for display of features on interactive map & KML exports."),
+                                                                    T("A Marker assigned to an individual Location is set if there is a need to override the Marker assigned to the Feature Class."),
+                                                                    T("If neither are defined, then the Default Marker is used.")))),
                              ondelete = "RESTRICT"
                             )
 
@@ -144,142 +145,6 @@ symbology_id = S3ReusableField("symbology_id", db.gis_symbology, sortby="name",
                                )
 
 # -----------------------------------------------------------------------------
-# GIS Config
-gis_config_layout_opts = {
-    1:T("window"),
-    2:T("embedded")
-    }
-opt_gis_layout = db.Table(db, "opt_gis_layout",
-                          Field("opt_gis_layout", "integer",
-                                requires = IS_IN_SET(gis_config_layout_opts,
-                                                     zero=None),
-                                default = 1,
-                                label = T("Layout"),
-                                represent = lambda opt: gis_config_layout_opts.get(opt,
-                                                                                   UNKNOWN_OPT)))
-# id=1 = Default settings
-resourcename = "config"
-tablename = "gis_config"
-table = db.define_table(tablename,
-                        super_link(db.pr_pentity), # pe_id
-                        Field("lat", "double"),
-                        Field("lon", "double"),
-                        Field("zoom", "integer"),
-                        Field("bbox_min_size", "double", default=0.01),
-                        Field("bbox_inset", "double", default=0.007),
-                        projection_id(),
-                        symbology_id(),
-                        marker_id(),
-                        Field("map_height", "integer", notnull=True),
-                        Field("map_width", "integer", notnull=True),
-                        Field("min_lon", "double", default=-180),
-                        Field("min_lat", "double", default=-90),
-                        Field("max_lon", "double", default=180),
-                        Field("max_lat", "double", default=90),
-                        Field("zoom_levels", "integer", default=22,
-                              notnull=True),
-                        Field("cluster_distance", "integer", default=5,
-                              notnull=True),
-                        Field("cluster_threshold", "integer", default=2,
-                              notnull=True),
-                        opt_gis_layout,
-                        Field("wmsbrowser_name", default="Web Map Service"),
-                        Field("wmsbrowser_url"),
-                        migrate=migrate,
-                        *(s3_timestamp() + s3_uid()))
-table.uuid.requires = IS_NOT_ONE_OF(db, "gis_config.uuid")
-table.pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.pe_id",
-                                            shn_pentity_represent))
-table.pe_id.readable = table.pe_id.writable = False
-table.lat.requires = IS_LAT()
-table.lon.requires = IS_LON()
-table.zoom.requires = IS_INT_IN_RANGE(1, 20)
-table.bbox_min_size.requires = IS_FLOAT_IN_RANGE(0, 90)
-table.bbox_inset.requires = IS_FLOAT_IN_RANGE(0, 90)
-table.map_height.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(160, 1024)]
-table.map_width.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(320, 1280)]
-table.min_lat.requires = IS_LAT()
-table.max_lat.requires = IS_LAT()
-table.min_lon.requires = IS_LON()
-table.max_lon.requires = IS_LON()
-table.zoom_levels.requires = IS_INT_IN_RANGE(1, 30)
-table.cluster_distance.requires = IS_INT_IN_RANGE(1, 30)
-table.cluster_threshold.requires = IS_INT_IN_RANGE(1, 10)
-table.lat.label = T("Latitude")
-table.lon.label = T("Longitude")
-table.zoom.label = T("Zoom")
-table.bbox_min_size.label = T("Bounding Box Size")
-table.bbox_inset.label = T("Bounding Box Insets")
-table.marker_id.label = T("Default Marker")
-table.map_height.label = T("Map Height")
-table.map_width.label = T("Map Width")
-table.zoom_levels.label = T("Zoom Levels")
-table.cluster_distance.label = T("Cluster Distance")
-table.cluster_threshold.label = T("Cluster Threshold")
-table.wmsbrowser_name.label = T("WMS Browser Name")
-table.wmsbrowser_url.label =  T("WMS Browser URL")
-# Defined here since Component
-table.lat.comment = DIV( _class="tooltip",
-                         _title="%s|%s" % (T("Latitude"),
-                                           T("Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
-table.lon.comment = DIV( _class="tooltip",
-                         _title="%s|%s" % (T("Longitude"),
-                                           T("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
-table.zoom.comment = DIV( _class="tooltip",
-                          _title="%s|%s" % (T("Zoom"),
-                                            T("How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
-table.bbox_min_size.comment = DIV( _class="tooltip",
-                                   _title="%s|%s" % (T("Minimum Bounding Box"),
-                                                     T("When a map is displayed that focuses on a collection of points, the map is zoomed to show just the region bounding the points. This value gives a minimum width and height in degrees for the region shown. Without this, a map showing a single point would not show any extent around that point. After the map is displayed, it can be zoomed as desired.")))
-table.bbox_inset.comment = DIV( _class="tooltip",
-                                _title="%s|%s" % (T("Bounding Box Insets"),
-                                                  T("When a map is displayed that focuses on a collection of points, the map is zoomed to show just the region bounding the points. This value adds a small mount of distance outside the points. Without this, the outermost points would be on the bounding box, and might not be visible.")))
-table.map_height.comment = DIV( _class="tooltip",
-                                _title="%s|%s" % (T("Height"),
-                                                  T("Default Height of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
-table.map_width.comment = DIV( _class="tooltip",
-                               _title="%s|%s" % (T("Width"),
-                                                 T("Default Width of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
-table.wmsbrowser_name.comment = DIV( _class="tooltip",
-                                     _title="%s|%s" % (T("WMS Browser Name"),
-                                                       T("The title of the WMS Browser panel in the Tools panel.")))
-table.wmsbrowser_url.comment = DIV( _class="tooltip",
-                                    _title="%s|%s" % (T("WMS Browser URL"),
-                                                      T("The URL for the GetCapabilities of a WMS Service whose layers you want accessible via the Map.")))
-ADD_CONFIG = T("Add Config")
-LIST_CONFIGS = T("List Configs")
-s3.crud_strings[tablename] = Storage(
-    title_create = ADD_CONFIG,
-    title_display = T("Config"),
-    title_list = T("Configs"),
-    title_update = T("Edit Config"),
-    title_search = T("Search Configs"),
-    subtitle_create = T("Add New Config"),
-    subtitle_list = LIST_CONFIGS,
-    label_list_button = LIST_CONFIGS,
-    label_create_button = ADD_CONFIG,
-    label_delete_button = T("Delete Config"),
-    msg_record_created = T("Config added"),
-    msg_record_modified = T("Config updated"),
-    msg_record_deleted = T("Config deleted"),
-    msg_list_empty = T("No Configs currently defined")
-)
-
-# Configs as component of Persons (Personalised configurations)
-s3xrc.model.add_component(module, resourcename,
-                          multiple=False,
-                          joinby=super_key(db.pr_pentity))
-
-s3xrc.model.configure(table,
-                      deletable=False,
-                      listadd=False,
-                      list_fields = ["lat",
-                                     "lon",
-                                     "zoom",
-                                     "projection_id",
-                                     "map_height",
-                                     "map_width"])
-# -----------------------------------------------------------------------------
 # GIS Feature Classes
 # These are used in groups (for display/export), for icons & for URLs to edit data
 # This is the list of GPS Markers for Garmin devices
@@ -355,7 +220,7 @@ def shn_gis_location_represent_row(location, showlink=True):
 
     if location.level:
         # @ToDo: Worth caching these?
-        level_name = deployment_settings.get_gis_locations_hierarchy(location.level)
+        level_name = gis.get_location_hierarchy(location.level)
     if location.level == "L0":
         # Countries don't have Parents & shouldn't be represented with Lat/Lon
         text = "%s (%s)" % (location.name, level_name)
@@ -495,14 +360,22 @@ table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % table)
 table.name_dummy.comment = DIV(_class="tooltip",
                                _title="%s|%s" % (T("Local Names"),
                                                  T("Names can be added in multiple languages")))
-table.level.requires = IS_NULL_OR(IS_IN_SET(gis_location_hierarchy))
-table.level.represent = lambda level: \
-    level and deployment_settings.get_gis_all_levels(level) or NONE
-table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id",
-                                             shn_gis_location_represent_row,
-                                             filterby="level",
-                                             filter_opts=["L0", "L1", "L2", "L3", "L4", "L5"],
-                                             orderby="gis_location.name"))
+
+# These need gis_config data, so are set or updated later.
+#table.level.requires = IS_NULL_OR(IS_IN_SET(gis.get_all_current_levels()))
+#table.level.represent = lambda level: \
+#    level and gis.get_all_current_levels(level) or NONE
+# Although the filter_opts here includes all allowed Ln keys, not just the
+# ones that are within the current hierarchy depth limit, this should not
+# let in any illegal parents, as the parent level was validated using the
+# current hierarchy limit.
+table.parent.requires = IS_NULL_OR(IS_ONE_OF(
+    db, "gis_location.id",
+    shn_gis_location_represent_row,
+    filterby="level",
+    #filter_opts=gis.get_hierarchy_level_keys(),
+    filter_opts=gis.allowed_hierarchy_level_keys,
+    orderby="gis_location.name"))
 
 table.parent.represent = shn_gis_location_represent
 table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts, zero=None)
@@ -521,8 +394,12 @@ table.geonames_id.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999999))
 CONVERSION_TOOL = T("Conversion Tool")
 table.lat.comment = DIV(_class="tooltip",
                         _id="gis_location_lat_tooltip",
-                        _title="%s|%s" % (T("Latitude & Longitude"),
-                                          T("Longitude is West - East (sideways). Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  These need to be added in Decimal Degrees.")))
+                        _title="%s|%s|%s|%s|%s|%s" % (T("Latitude & Longitude"),
+                                                      T("Longitude is West - East (sideways)."),
+                                                      T("Latitude is North-South (Up-Down)."),
+                                                      T("Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere."),
+                                                      T("Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas."),
+                                                      T("These need to be added in Decimal Degrees.")))
 table.lon.comment = A(CONVERSION_TOOL,
                       _style="cursor:pointer;",
                       _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."),
@@ -604,6 +481,353 @@ if response.s3.countries:
 #s3xrc.model.add_component(module, resourcename,
 #                          multiple=False,
 #                          joinby=dict(gis_location="parent"))
+
+# -----------------------------------------------------------------------------
+# GIS Config
+
+gis_config_layout_opts = {
+    1:T("window"),
+    2:T("embedded")
+    }
+opt_gis_layout = db.Table(db, "opt_gis_layout",
+                          Field("opt_gis_layout", "integer",
+                                requires = IS_IN_SET(gis_config_layout_opts,
+                                                     zero=None),
+                                default = 1,
+                                label = T("Layout"),
+                                represent = lambda opt: gis_config_layout_opts.get(opt,
+                                                                                   UNKNOWN_OPT)))
+# id=1 = Default settings
+
+# @ToDo: Include a field or fields for selected layers.
+
+resourcename = "config"
+tablename = "gis_config"
+table = db.define_table(tablename,
+                        super_link(db.pr_pentity), # pe_id
+                        # This is the region name, if this config represents a region,
+                        # or the person's name for a personal config, or a name denoting
+                        # "site config" for config # 1.  A name is needed as users will
+                        # now be looking at lists of configs, and need a way to pick out
+                        # the one they want to open.
+                        Field("name"),
+                        Field("lat", "double"),
+                        Field("lon", "double"),
+                        Field("zoom", "integer"),
+                        Field("bbox_min_size", "double", default=0.01),
+                        Field("bbox_inset", "double", default=0.007),
+                        projection_id(),
+                        symbology_id(),
+                        marker_id(),
+                        Field("map_height", "integer", notnull=True),
+                        Field("map_width", "integer", notnull=True),
+                        # @ToDo: Are these constants, or can they be changed?
+                        # If they're constants, move them out to s3base.GIS.
+                        Field("min_lon", "double", default=-180),
+                        Field("min_lat", "double", default=-90),
+                        Field("max_lon", "double", default=180),
+                        Field("max_lat", "double", default=90),
+                        Field("zoom_levels", "integer", default=22,
+                              notnull=True),
+                        Field("cluster_distance", "integer", default=5,
+                              notnull=True),
+                        Field("cluster_threshold", "integer", default=2,
+                              notnull=True),
+                        opt_gis_layout,
+                        Field("wmsbrowser_name", default="Web Map Service"),
+                        Field("wmsbrowser_url"),
+
+                        # Location hierarchy fields
+                        Field("L0"),
+                        Field("L1"),
+                        Field("L2"),
+                        Field("L3"),
+                        Field("L4"),
+                        Field("L5"),
+                        Field("strict_hierarchy", "boolean", default=False),
+                        Field("location_parent_required", "boolean", default=False),
+
+                        # Region fields
+                        # @ToDo: Currently any location is allowed to designate
+                        # a region. If we want to restrict to a subset of
+                        # locations (e.g. hierarchy, group, or has a polygon)
+                        # then add a field "filter" to IS_ONE_OF that takes
+                        # a function of one arg, which is the sql.Row for the
+                        # candidate record -- this should return true if the
+                        # record should be in the set. No, don't disturb the
+                        # other filter* args.
+                        location_id("region_location_id",
+                                    label = T("Region Location")),
+                        Field("show_region_in_menu", "boolean", default=False),
+                        Field("region_changed_timestamp", "datetime"),
+
+                        migrate=migrate,
+                        *(s3_timestamp() + s3_uid()))
+
+table.uuid.requires = IS_NOT_ONE_OF(db, "gis_config.uuid")
+table.pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.pe_id",
+                                            shn_pentity_represent))
+table.pe_id.readable = table.pe_id.writable = False
+table.lat.requires = IS_LAT()
+table.lon.requires = IS_LON()
+table.zoom.requires = IS_INT_IN_RANGE(1, 20)
+table.bbox_min_size.requires = IS_FLOAT_IN_RANGE(0, 90)
+table.bbox_inset.requires = IS_FLOAT_IN_RANGE(0, 90)
+table.map_height.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(160, 1024)]
+table.map_width.requires = [IS_NOT_EMPTY(), IS_INT_IN_RANGE(320, 1280)]
+table.min_lat.requires = IS_LAT()
+table.max_lat.requires = IS_LAT()
+table.min_lon.requires = IS_LON()
+table.max_lon.requires = IS_LON()
+table.zoom_levels.requires = IS_INT_IN_RANGE(1, 30)
+table.cluster_distance.requires = IS_INT_IN_RANGE(1, 30)
+table.cluster_threshold.requires = IS_INT_IN_RANGE(1, 10)
+table.name.label = T("Name")
+table.lat.label = T("Latitude")
+table.lon.label = T("Longitude")
+table.zoom.label = T("Zoom")
+table.bbox_min_size.label = T("Bounding Box Size")
+table.bbox_inset.label = T("Bounding Box Insets")
+table.marker_id.label = T("Default Marker")
+table.map_height.label = T("Map Height")
+table.map_width.label = T("Map Width")
+table.zoom_levels.label = T("Zoom Levels")
+table.cluster_distance.label = T("Cluster Distance")
+table.cluster_threshold.label = T("Cluster Threshold")
+table.wmsbrowser_name.label = T("WMS Browser Name")
+table.wmsbrowser_url.label =  T("WMS Browser URL")
+table.show_region_in_menu.label = T("Show Region in Menu?")
+table.L0.label = T("Hierarchy Level 0 Name (e.g. Country)")
+table.L1.label = T("Hierarchy Level 1 Name (e.g. Province)")
+table.L2.label = T("Hierarchy Level 2 Name")
+table.L3.label = T("Hierarchy Level 3 Name")
+table.L4.label = T("Hierarchy Level 4 Name")
+table.strict_hierarchy.label = T("Is this a strict hierarchy?")
+table.location_parent_required.label = T("Must a location have a parent location?")
+table.region_changed_timestamp.readable = False
+table.region_changed_timestamp.writable = False
+
+# Defined here since Component
+table.name.comment = DIV(
+    _class="tooltip",
+    _title="%s|%s" % (
+        T("Name"),
+        T("If this configuration represents a region for the Regions menu, give it a name to use in the menu. The name for a personal map configuration will be set to the user's name.")))
+table.lat.comment = DIV( _class="tooltip",
+                         _title="%s|%s|%s" % (T("Latitude"),
+                                              T("Latitude is North-South (Up-Down)."),
+                                              T("Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+table.lon.comment = DIV( _class="tooltip",
+                         _title="%s|%s|%s" % (T("Longitude"),
+                                              T("Longitude is West - East (sideways)."),
+                                              T("Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
+table.zoom.comment = DIV( _class="tooltip",
+                          _title="%s|%s" % (T("Zoom"),
+                                            T("How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
+table.bbox_min_size.comment = DIV( _class="tooltip",
+                                   _title="%s|%s|%s" % (T("Minimum Bounding Box"),
+                                                        T("When a map is displayed that focuses on a collection of points, the map is zoomed to show just the region bounding the points."),
+                                                        T("This value gives a minimum width and height in degrees for the region shown. Without this, a map showing a single point would not show any extent around that point. After the map is displayed, it can be zoomed as desired.")))
+table.bbox_inset.comment = DIV( _class="tooltip",
+                                _title="%s|%s|%s" % (T("Bounding Box Insets"),
+                                                     T("When a map is displayed that focuses on a collection of points, the map is zoomed to show just the region bounding the points."),
+                                                     T("This value adds a small mount of distance outside the points. Without this, the outermost points would be on the bounding box, and might not be visible.")))
+table.map_height.comment = DIV( _class="tooltip",
+                                _title="%s|%s|%s" % (T("Height"),
+                                                     T("Default Height of the map window."),
+                                                     T("In Window layout the map maximises to fill the window, so no need to set a large value here.")))
+table.map_width.comment = DIV( _class="tooltip",
+                               _title="%s|%s|%s" % (T("Width"),
+                                                    T("Default Width of the map window."),
+                                                    T("In Window layout the map maximises to fill the window, so no need to set a large value here.")))
+table.wmsbrowser_name.comment = DIV( _class="tooltip",
+                                     _title="%s|%s" % (T("WMS Browser Name"),
+                                                       T("The title of the WMS Browser panel in the Tools panel.")))
+table.wmsbrowser_url.comment = DIV( _class="tooltip",
+                                    _title="%s|%s" % (T("WMS Browser URL"),
+                                                      T("The URL for the GetCapabilities of a WMS Service whose layers you want accessible via the Map.")))
+table.L0.comment = DIV(
+    _class="tooltip",
+    _title="%s|%s" % (
+        T("Location Hierarchy Level 0 Name"),
+        T("Term for the top-level administrative division (typically Country).")))
+table.L1.comment = DIV(
+    _class="tooltip",
+    _title="%s|%s" % (
+        T("Location Hierarchy Level 1 Name"),
+        T("Term for the primary within-country administrative division (e.g. State or Province).")))
+table.L2.comment = DIV(
+    _class="tooltip",
+    _title="%s|%s" % (
+        T("Location Hierarchy Level 2 Name"),
+        T("Term for the secondary within-country administrative division (e.g. District).")))
+table.L3.comment = DIV(
+    _class="tooltip",
+    _title="%s|%s" % (
+        T("Location Hierarchy Level 3 Name"),
+        T("Term for the third-level within-country administrative division (e.g. City or Town).")))
+table.L4.comment = DIV(
+    _class="tooltip",
+    _title="%s|%s" % (
+        T("Location Hierarchy Level 4 Name"),
+        T("Term for the fourth-level within-country administrative division (e.g. Village, Neighborhood or Precinct).")))
+table.L5.comment = DIV(
+    _class="tooltip",
+    _title="%s|%s" % (
+        T("Location Hierarchy Level 5 Name"),
+        T("Term for the fifth-level within-country administrative division (e.g. a voting or postcode subdivision). This level is not often used.")))
+table.strict_hierarchy.comment = DIV(
+    _class="tooltip",
+    _title="%s|%s" % (
+        T("Is this a strict hierarchy?"),
+        T("Select this if all specific locations need a parent at the deepest level of the location hierarchy. For example, if 'district' is the smallest division in the hierarchy, then all specific locations would be required to have a district as a parent.")))
+table.location_parent_required.comment = DIV(
+    _class="tooltip",
+    _title="%s|%s" % (
+        T("Must a location have a parent location?"),
+        T("Select this if all specific locations need a parent location in the location hierarchy. This can assist in setting up a 'region' representing an affected area.")))
+table.show_region_in_menu.comment = DIV(
+    _class="tooltip",
+    _title="%s|%s" % (
+        T("Show Region in Menu?"),
+        T("Select to show this configuration in the Regions menu.")))
+table.region_location_id.comment = DIV(
+    _class="tooltip",
+    _title="%s|%s" % (
+        T("Region Location"),
+        T("A location that specifies the geographic area for this region. This can be a location from the location hierarchy, or a 'group location', or a location that has a boundary for the area.")))
+
+ADD_CONFIG = T("Add Map Configuration")
+LIST_CONFIGS = T("List Map Configurations")
+s3.crud_strings[tablename] = Storage(
+    title_create = ADD_CONFIG,
+    title_display = T("Map Configuration"),
+    title_list = T("Map Configurations"),
+    title_update = T("Edit Map Configuration"),
+    title_search = T("Search Map Configurations"),
+    subtitle_create = T("Add New Map Configuration"),
+    subtitle_list = LIST_CONFIGS,
+    label_list_button = LIST_CONFIGS,
+    label_create_button = ADD_CONFIG,
+    label_delete_button = T("Delete Map Configuration"),
+    msg_record_created = T("Map Configuration added"),
+    msg_record_modified = T("Map Configuration updated"),
+    msg_record_deleted = T("Map Configuration deleted"),
+    msg_list_empty = T("No Map Configurations currently defined")
+)
+
+def gis_config_onvalidation(form):
+    """
+        Check location hierarchy and region values. Add name for personal & site configs.
+
+        The hierarchy names must not have gaps. If the config is intended
+        for the region menu, it must have a region location and name to
+        show in the menu.
+    """
+    
+    gis.config_onvalidation(form.vars, form.errors)
+    if form.errors:
+        return
+    
+    # Infer a name for personal configs.
+    if form.request_vars.pe_id:
+        form.vars.name = shn_pentity_represent(form.request_vars.pe_id)
+
+# @ToDo: Is this desirable behavior, or let the user select it from the
+# region menu?
+def gis_config_onaccept(form):
+    """
+        If this is a personal config, set it as the current config.
+    """
+    
+    if form.request_vars.pe_id and form.vars.id:
+        gis.set_config(form.vars.id, force_update=True)
+
+def gis_config_ondelete(form):
+    """
+        If the selected config was deleted, revert to the site config.
+    """
+    
+    if form.record_id and session.s3.gis_config_id and \
+       form.record_id == session.s3.gis_config_id:
+        gis.set_config(1)
+
+def gis_config_prep_helper(r):
+    """
+        Helper for gis_config prep and others where gis_config is a component.
+        
+        Hide location hierarchy fields above max allowed. Table definitions may
+        include more levels than a particular site wants to allow. Rather than
+        changing the definitions, hide the extra levels.
+        
+        Set defaults from the site config -- static defaults are sparse (no map
+        size??) and may be annoyingly inappropriate (London??).
+    """
+    
+    table = db.gis_config
+    
+    table_max_level_num = int(reduce(
+        max, filter(lambda field: len(field) == 2 and field[0] == "L",
+                    table.fields))[1])
+    if table_max_level_num > gis.max_allowed_level_num:
+        for n in range(gis.max_allowed_level_num + 1, table_max_level_num + 1):
+            level = "L%d" % n
+            table[level].readable = table[level].writable = False
+    
+    row = db(table.id == 1).select(limitby=(0, 1)).first()
+    if row:
+        exclude = ["id", "name", "region_location_id", "show_region_in_menu",
+                   "region_changed_timestamp"]
+        exclude.extend(r.response.s3.all_meta_field_names)
+        for fieldname in table.fields:
+            if fieldname in row and fieldname not in exclude:
+                table[fieldname].default = row[fieldname]
+                
+# Configs as component of Persons (Personalised configurations)
+s3xrc.model.add_component(module, resourcename,
+                          multiple=False,
+                          joinby=super_key(db.pr_pentity))
+
+# @ToDo: Note the following is currently handled by including a name
+# field in the config (option 3 below).
+# Now that we have a reason to list configs, would be nice to
+# provide a name so the user can easily see whether each is a personal
+# config or a region.  For a person, would like to show their name,
+# which they might change, so storing a copy here is both redundant
+# and can go stale.  Doing a lookup on the fly adds db overhead on
+# each config use, which means each time a map is displayed, as well
+# as when configs are listed.  If we construct the name once when the
+# config is first stored in the session, that removes the db overhead
+# on map display as an issue.  An attempt to use web2py's virtual
+# fields shows that it is incompatible with our list code in s3crud,
+# which checks that the list fields are present in th table.  Virtual
+# fields are not accessible as table fields except via a select() of
+# the entire record -- they are not available via table.field nor
+# select(field).  Circumventing that lack would require introspection
+# and use of undocumented web2py internals, so woudl break if the
+# implementation of virtual fields changes.  Options are:  1) Add
+# support in web2py to expose virtual fields.  2) Add a "synthesized
+# field" option for our lists and perhaps forms.  This could consist
+# of a function plus a list of table fields to pass as arguments (e.g.
+# in a dict, to avoid positional argument issues).  This is easier to
+# implement just for lists, as adding it to crud forms in a "natural"
+# way means including it in a table definition, which implies adding
+# our own Table subclass.  3) Add a name field to gis_config, and fill
+# it in when the record is created.  Tolerate the fact that it can go
+# obsolete if the user changes their name, or a region name is changed.
+s3xrc.model.configure(table,
+                      onvalidation=gis_config_onvalidation,
+                      onaccept=gis_config_onaccept,
+                      delete_onaccept=gis_config_ondelete,
+                      update_ondelete=gis_config_ondelete,
+                      deletable=False,
+                      list_fields = ["name",
+                                     "lat",
+                                     "lon",
+                                     "zoom",
+                                     "projection_id",
+                                     "map_height",
+                                     "map_width"])
 
 # -----------------------------------------------------------------------------
 # Local Names
@@ -786,10 +1010,10 @@ def gis_location_onvalidation(form):
         # Check that parent is of a higher level (http://eden.sahanafoundation.org/ticket/450)
         if level[1:] < _parent.level[1:]:
             response.error = "%s: %s" % (T("Parent level should be higher than this record's level. Parent level is"),
-                                         gis_location_hierarchy[_parent.level])
+                                         gis.get_location_hierarchy()[_parent.level])
             form.errors["level"] = T("Level is higher than parent's")
             return
-    strict = deployment_settings.get_gis_strict_hierarchy()
+    strict = gis.get_strict_hierarchy()
     if strict:
         # Check Parents are in exact order
         if level == "L1" and len(_gis.countries) == 1:
@@ -800,23 +1024,26 @@ def gis_location_onvalidation(form):
             parent = ""
         elif not parent:
             # Parent is mandatory
-            response.error = "%s: %s" % (T("Parent needs to be set for locations of level"),
-                                         gis_location_hierarchy[level])
+            response.error = "%s: %s" % \
+                (T("Parent needs to be set for locations of level"),
+                gis.get_location_hierarchy()[level])
             form.errors["parent"] = T("Parent needs to be set")
             return
         elif not level:
             # Parents needs to be of level max_hierarchy
-            max_hierarchy = deployment_settings.get_gis_max_hierarchy()
+            max_hierarchy = gis.get_max_hierarchy_level()
             if _parent.level != max_hierarchy:
-                response.error = "%s: %s" % (T("Specific locations need to have a parent of level"),
-                                             gis_location_hierarchy[max_hierarchy])
+                response.error = "%s: %s" % \
+                    (T("Specific locations need to have a parent of level"),
+                    gis.get_location_hierarchy()[max_hierarchy])
                 form.errors["parent"] = T("Parent needs to be of the correct level")
                 return
         else:
             # Check that parent is of exactly next higher order
             if (int(level[1:]) - 1) != int(_parent.level[1:]):
-                response.error = "%s: %s" % (T("Locations of this level need to have a parent of level"),
-                                             gis_location_hierarchy["L%i" % (int(level[1:]) - 1)])
+                response.error = "%s: %s" % \
+                    (T("Locations of this level need to have a parent of level"),
+                    gis.get_location_hierarchy()["L%i" % (int(level[1:]) - 1)])
                 form.errors["parent"] = T("Parent needs to be of the correct level")
                 return
 

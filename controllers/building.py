@@ -16,7 +16,7 @@
     @ToDo: Hide fields for triage form server side
     - once print comes from controller then it will also skip these fields
     - less to download to browser (more scalable)
-    
+
     @ToDo: add other forms
 """
 
@@ -103,15 +103,15 @@ def nzseel1_rheader(r, tabs=[]):
         if r.name == "nzseel1":
             assess = r.record
             if assess:
-                rheader_tabs = shn_rheader_tabs(r, tabs)
+                rheader_tabs = s3_rheader_tabs(r, tabs)
                 location = assess.location_id
                 if location:
                     location = shn_gis_location_represent(location)
                 person = assess.person_id
                 if person:
                     pe_id = db(db.pr_person.id == person).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
-                    query = (db.pr_pe_contact.pe_id == pe_id) & (db.pr_pe_contact.contact_method == 2)
-                    mobile = db(query).select(db.pr_pe_contact.value, limitby=(0, 1)).first()
+                    query = (db.pr_contact.pe_id == pe_id) & (db.pr_contact.contact_method == 2)
+                    mobile = db(query).select(db.pr_contact.value, limitby=(0, 1)).first()
                     if mobile:
                         mobile = mobile.value
                     person = vita.fullname(person)
@@ -178,15 +178,15 @@ def nzseel2_rheader(r, tabs=[]):
         if r.name == "nzseel2":
             assess = r.record
             if assess:
-                rheader_tabs = shn_rheader_tabs(r, tabs)
+                rheader_tabs = s3_rheader_tabs(r, tabs)
                 location = assess.location_id
                 if location:
                     location = shn_gis_location_represent(location)
                 person = assess.person_id
                 if person:
                     pe_id = db(db.pr_person.id == person).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
-                    query = (db.pr_pe_contact.pe_id == pe_id) & (db.pr_pe_contact.contact_method == 2)
-                    mobile = db(query).select(db.pr_pe_contact.value, limitby=(0, 1)).first()
+                    query = (db.pr_contact.pe_id == pe_id) & (db.pr_contact.contact_method == 2)
+                    mobile = db(query).select(db.pr_contact.value, limitby=(0, 1)).first()
                     if mobile:
                         mobile = mobile.value
                     person = vita.fullname(person)
@@ -309,7 +309,7 @@ def timeline():
     creation = []
     # raw SQL command
     # select `date`, estimated_damage FROM building_nzseel1 WHERE deleted = "F" ORDER BY `date` DESC
-    
+
     table = db.building_nzseel1
     dbresult = db(table.deleted == False).select(table.date,
                                                  table.estimated_damage,
@@ -324,7 +324,7 @@ def timeline():
                                                  orderby=~table.created_on,
                                                 )
     creation = getformatedData(dbresult)
-    
+
     totals = [0, 0, 0, 0, 0, 0, 0, 0]
     for line in inspection:
         if line[0][1] == "Total":
@@ -334,7 +334,7 @@ def timeline():
     return dict(inspection=inspection,
                 creation=creation,
                 totals= totals
-                ) 
+                )
 
 # -----------------------------------------------------------------------------
 
@@ -360,7 +360,7 @@ def adminLevel():
         parent = row.gis_location.parent ##report[0]
         path   = row.gis_location.path #report[1]
         damage = row.building_nzseel1.estimated_damage #report[2]
-        
+
         if temp.has_key(parent):
             temp[parent][7] += 1
         else:
@@ -383,6 +383,6 @@ def adminLevel():
             name = T("Unknown")
         result.append((name,item))
     return dict(report=result,
-                ) 
+                )
 
 # -----------------------------------------------------------------------------

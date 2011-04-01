@@ -101,7 +101,7 @@ def shn_flood_rheader(r, tabs=[]):
         if r.name == "freport":
             report = r.record
             if report:
-                rheader_tabs = shn_rheader_tabs(r, tabs)
+                rheader_tabs = s3_rheader_tabs(r, tabs)
                 location = report.location_id
                 if location:
                     location = shn_gis_location_represent(location)

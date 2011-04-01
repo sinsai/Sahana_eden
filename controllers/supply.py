@@ -23,7 +23,7 @@ def item_category():
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    s3xrc.model.configure(table, 
+    s3xrc.model.configure(table,
                           listadd=False)
     return s3_rest_controller(prefix, resourcename)
 
@@ -34,7 +34,7 @@ def item_pack():
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    s3xrc.model.configure(table, 
+    s3xrc.model.configure(table,
                           listadd=False)
     return s3_rest_controller(prefix, resourcename)
 
@@ -50,10 +50,11 @@ def shn_item_rheader(r):
             tabs = [
                     (T("Edit Details"), None),
                     (T("Packs"), "item_pack"),
+                    (T("Alternative Items"), "item_alt"),
                     (T("In Inventories"), "store_item"),
-                    (T("Requested"), "ritem")            
-                   ]            
-            rheader_tabs = shn_rheader_tabs(r, tabs)
+                    (T("Requested"), "ritem")
+                   ]
+            rheader_tabs = s3_rheader_tabs(r, tabs)
             category = db(db.supply_item_category.id == item.item_category_id).select(db.supply_item_category.name,
                                                                                       limitby=(0, 1)).first().name
             rheader = DIV(TABLE(TR( TH(T("Name") + ": "), item.name,

@@ -200,6 +200,26 @@ def s3_meta_fields():
 
     return fields
 
+# -----------------------------------------------------------------------------
+# This list of meta fields is used to filter out items that are not normally
+# user-relevant. Used when a record is cached (e.g. in session or response).
+# In particular, it is used by GIS set_config and get_config, so those should
+# not be called prior to this definition.
+response.s3.all_meta_field_names = [field.name for field in
+    [meta_uuid(),
+     meta_mci(),
+     meta_deletion_status(),
+     meta_deletion_fk(),
+     meta_record_status(),
+     meta_duplicate_uid(),
+     meta_created_on(),
+     meta_modified_on(),
+     meta_created_by(),
+     meta_modified_by(),
+     meta_verified_by(),
+     meta_owned_by_user(),
+     meta_owned_by_role()]]
+
 # =============================================================================
 # Reusable roles fields for map layer permissions management (GIS)
 
@@ -332,9 +352,9 @@ resource = "setting"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                         meta_uuid(),
-                        Field("admin_name"),
-                        Field("admin_email"),
-                        Field("admin_tel"),
+                        #Field("admin_name"),
+                        #Field("admin_email"),
+                        #Field("admin_tel"),
                         Field("theme", db.admin_theme),
                         migrate=migrate, *s3_timestamp())
 

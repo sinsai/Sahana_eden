@@ -41,6 +41,9 @@ resourcename = "trackable"
 tablename = "sit_trackable"
 
 table = super_entity(tablename, "track_id", trackable_types,
+                     Field("track_timestmp", "datetime",
+                           readable=False,
+                           writable=False),
                      migrate=migrate)
 
 s3xrc.model.configure(table,

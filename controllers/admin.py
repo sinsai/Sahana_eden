@@ -78,10 +78,28 @@ def user():
     tablename = "auth_user"
     table = db[tablename]
 
-    # Model options
+    def disable_user(r):
+        if not r.id:
+            session.error = T("Can only disable 1 record at a time!")
+            redirect(URL(r=request, args=[]))
+
+        if r.id == session.auth.user.id: # we're trying to disable ourself
+            session.error = T("Cannot disable your own account!")
+            redirect(URL(r=request, args=[]))
+
+        table = auth.settings.table_user
+        query = (table.id == r.id)
+        db(query).update(registration_key = "disabled")
+        session.confirmation = T("User Account has been Disabled")
+        redirect(URL(r=request, args=[]))
+
+    # Custom Methods
     role_manager = s3base.S3RoleManager()
     s3xrc.model.set_method(module, resourcename, method="roles",
                            action=role_manager)
+
+    s3xrc.model.set_method(module, resourcename, method="disable",
+                           action=disable_user)
 
     # CRUD Strings
     ADD_USER = T("Add User")
@@ -112,23 +130,23 @@ def user():
                                                             "pending"]))
 
     # Pre-processor
-    def user_prep(jr):
-        if jr.method == "delete" and jr.http == "GET":
-            if jr.id == jr.session.auth.user.id: # we're trying to delete ourself
-                request.get_vars.update({"user.id":str(jr.id)})
-                jr.id = None
+    def user_prep(r):
+        if r.method == "delete" and r.http == "GET":
+            if r.id == session.auth.user.id: # we're trying to delete ourself
+                request.get_vars.update({"user.id":str(r.id)})
+                r.id = None
                 s3xrc.model.configure(table,
                                       delete_next = URL(r=request, c="default",
                                                         f="user/logout"))
                 s3.crud.confirm_delete = T("You are attempting to delete your own account - are you sure you want to proceed?")
 
-        elif jr.method == "update":
+        elif r.method == "update":
             # Send an email to user if their account is approved
             # (=moved from 'pending' to 'blank'(i.e. enabled))
             s3xrc.model.configure(table,
                                   onvalidation = lambda form: user_approve(form))
-        if jr.http == "GET" and not jr.method:
-            session.s3.cancel = jr.here()
+        if r.http == "GET" and not r.method:
+            session.s3.cancel = r.here()
         return True
     response.s3.prep = user_prep
 
@@ -139,11 +157,17 @@ def user():
                           create_onvalidation = user_create_onvalidation)
     output = s3_rest_controller(module, resourcename)
 
-    if response.s3.actions:
-        response.s3.actions.insert(1,
-                    dict(label=str(T("Roles")), _class="action-btn",
-                         url=str(URL(r=request, c="admin", f="user",
-                                     args=["[id]", "roles"]))))
+    response.s3.actions = [
+                            dict(label=str(UPDATE), _class="action-btn",
+                                 url=str(URL(r=request, c="admin", f="user",
+                                             args=["[id]"]))),
+                            dict(label=str(T("Roles")), _class="action-btn",
+                                 url=str(URL(r=request, c="admin", f="user",
+                                             args=["[id]", "roles"]))),
+                            dict(label=str(T("Disable")), _class="action-btn",
+                                 url=str(URL(r=request, c="admin", f="user",
+                                             args=["[id]", "disable"])))
+                          ]
     return output
 
 
@@ -505,7 +529,7 @@ def users():
                                      _value=T("Remove")))))
     items = DIV(FORM(TABLE(table_header,
                            TBODY(item_list),
-                           table_footer, _id="list", _class="display"),
+                           table_footer, _id="list", _class="dataTable display"),
                      _name="custom", _method="post",
                      _enctype="multipart/form-data",
                      _action=URL(r=request, f="group_remove_users",
@@ -735,16 +759,17 @@ def setting():
 
     """
         RESTful CRUD controller
-        
+         - just used to set the Theme
+
         @ToDo: Deprecate this - move to deployment_settings
     """
 
     tablename = "s3_%s" % resourcename
     table = db[tablename]
 
-    table.admin_name.label = T("Admin Name")
-    table.admin_email.label = T("Admin Email")
-    table.admin_tel.label = T("Admin Tel")
+    #table.admin_name.label = T("Admin Name")
+    #table.admin_email.label = T("Admin Email")
+    #table.admin_tel.label = T("Admin Tel")
     table.theme.label = T("Theme")
     table.theme.comment = DIV(A(T("Add Theme"), _class="colorbox",
                                 _href=URL(r=request, c="admin", f="theme",

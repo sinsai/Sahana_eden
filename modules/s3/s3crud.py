@@ -157,9 +157,7 @@ class S3CRUD(S3Method):
 
         if r.interactive:
 
-            # Form configuration
-            create_next = self._config("create_next")
-            subheadings = self._config("subheadings")
+            # Configure the HTML Form
 
             # Set view
             if representation in ("popup", "iframe"):
@@ -271,6 +269,7 @@ class S3CRUD(S3Method):
                                 format=representation)
 
             # Insert subheadings
+            subheadings = self._config("subheadings")
             if subheadings:
                 self.insert_subheadings(form, tablename, subheadings)
 
@@ -293,10 +292,14 @@ class S3CRUD(S3Method):
                 output.update(buttons)
 
             # Redirection
+            create_next = self._config("create_next")
             if representation in ("popup", "iframe"):
                 self.next = None
             elif not create_next:
-                self.next = r.there() #r.component and r.there() or r.here()
+                if session.s3.rapid_data_entry and not r.component:
+                    self.next = r.here()
+                else:
+                    self.next = r.there()
             else:
                 try:
                     self.next = create_next(self)
@@ -439,10 +442,10 @@ class S3CRUD(S3Method):
 
             # View
             if representation == "html":
-                self.response.view = self._view(r, "display.html")
+                response.view = self._view(r, "display.html")
                 output.update(item=item)
             elif representation in ("popup", "iframe"):
-                self.response.view = self._view(r, "popup.html")
+                response.view = self._view(r, "popup.html")
                 caller = attr.get("caller", None)
                 output.update(form=item, caller=caller)
 
@@ -567,9 +570,9 @@ class S3CRUD(S3Method):
 
             # Set view
             if representation == "html":
-                self.response.view = self._view(r, "update.html")
+                response.view = self._view(r, "update.html")
             elif representation in ("popup", "iframe"):
-                self.response.view = self._view(r, "popup.html")
+                response.view = self._view(r, "popup.html")
 
             # Title and subtitle
             if r.component:
@@ -742,7 +745,7 @@ class S3CRUD(S3Method):
             else:
                 r.error(404, self.manager.error, next=r.there())
             item = self.manager.xml.json_message(message=message)
-            self.response.view = "xml.html"
+            response.view = "xml.html"
             output.update(item=item)
 
         else:
@@ -830,7 +833,7 @@ class S3CRUD(S3Method):
                 session.s3.filter = request.get_vars
 
             # Custom view
-            self.response.view = self._view(r, "list.html")
+            response.view = self._view(r, "list.html")
 
             if insertable:
                 if listadd:
@@ -846,7 +849,7 @@ class S3CRUD(S3Method):
                                                        _id="show-add-btn")
                         output.update(showadd_btn=showadd_btn)
                         # Switch to list_create view
-                        self.response.view = self._view(r, "list_create.html")
+                        response.view = self._view(r, "list_create.html")
 
                 elif addbtn:
                     # Add an action-button linked to the create view
@@ -876,10 +879,11 @@ class S3CRUD(S3Method):
                                                          download_url=self.download_url,
                                                          as_page=True,
                                                          format=representation) or [])
-                    aadata.update(iTotalRecords=totalrows, iTotalDisplayRecords=totalrows)
-                    self.response.aadata = json(aadata)
-                    self.response.s3.start = 0
-                    self.response.s3.limit = 20
+                    aadata.update(iTotalRecords=totalrows,
+                                  iTotalDisplayRecords=totalrows)
+                    response.aadata = json(aadata)
+                    response.s3.start = 0
+                    response.s3.limit = 20
 
             # Title and subtitle
             if r.component:
@@ -897,7 +901,8 @@ class S3CRUD(S3Method):
                     available_records = self.db(self.table.id > 0)
                 #if available_records.count():
                 # This is faster:
-                if available_records.select(self.table.id, limitby=(0, 1)).first():
+                if available_records.select(self.table.id,
+                                            limitby=(0, 1)).first():
                     items = self.crud_string(self.tablename, "msg_no_match")
                 else:
                     items = self.crud_string(self.tablename, "msg_list_empty")
@@ -906,6 +911,7 @@ class S3CRUD(S3Method):
                     del output["showadd_btn"]
                     del output["subtitle"]
                     items = ""
+                    response.s3.no_formats = True
 
             # Update output
             output.update(items=items, sortby=sortby)
@@ -955,7 +961,7 @@ class S3CRUD(S3Method):
 
         elif representation == "plain":
             items = self.sqltable(fields, as_list=True)
-            self.response.view = "plain.html"
+            response.view = "plain.html"
             return dict(item=items)
 
         elif representation == "csv":
@@ -1019,7 +1025,7 @@ class S3CRUD(S3Method):
         if not fields:
             fields = [table.id]
 
-        attributes = dict()
+        attributes = dict(distinct=True)
 
         # Orderby
         if orderby is not None:
@@ -1056,7 +1062,7 @@ class S3CRUD(S3Method):
                               headers=headers,
                               linkto=linkto,
                               upload=download_url,
-                              _id="list", _class="display")
+                              _id="list", _class="dataTable display")
         return items
 
 

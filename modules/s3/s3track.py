@@ -197,7 +197,8 @@ class S3Trackable(object):
     def get_location(self, timestmp=None,
                      _fields=None,
                      _filter=None,
-                     as_rows=False):
+                     as_rows=False,
+                     exclude=[]):
         """
             Get the current location of the instance(s) (at the given time)
 
@@ -205,6 +206,7 @@ class S3Trackable(object):
             @param _fields: fields to retrieve from the location records (None for ALL)
             @param _filter: filter for the locations
             @param as_rows: return the result as Rows object
+            @param exclude: interlocks to break at (avoids circular check-ins)
 
             @returns: a location record, or a list of location records (if multiple)
         """
@@ -226,12 +228,14 @@ class S3Trackable(object):
                                                  limitby=(0, 1)).first()
                 if presence:
                     if presence.interlock:
+                        exclude = [r[self.TRACK_ID]] + exclude
                         tablename, record = presence.interlock.split(",", 1)
                         trackable = S3Trackable(self.db, tablename, record)
                         record = trackable.records.first()
                         if self.TRACK_ID not in record or \
-                           record[self.TRACK_ID] != r[self.TRACK_ID]:
-                            location = trackable.get_location(timestmp=timestmp)
+                           record[self.TRACK_ID] not in exclude:
+                            location = trackable.get_location(timestmp=timestmp,
+                                                              exclude=exclude)
                     elif presence.location_id:
                         query = (ltable.id == presence.location_id)
                         if _filter is not None:
@@ -306,6 +310,7 @@ class S3Trackable(object):
             elif r[self.TRACK_ID]:
                 data.update({self.TRACK_ID:r[self.TRACK_ID]})
                 ptable.insert(**data)
+                self.__update_timestamp(r[self.TRACK_ID], timestmp)
 
 
     # -------------------------------------------------------------------------
@@ -366,6 +371,7 @@ class S3Trackable(object):
                     continue
                 data.update({self.TRACK_ID:r[self.TRACK_ID]})
                 ptable.insert(**data)
+                self.__update_timestamp(r[self.TRACK_ID], timestmp)
 
 
     # -------------------------------------------------------------------------
@@ -431,6 +437,7 @@ class S3Trackable(object):
                             interlock=None)
                 data.update({self.TRACK_ID:r[self.TRACK_ID]})
                 ptable.insert(**data)
+                self.__update_timestamp(r[self.TRACK_ID], timestmp)
 
 
     # -------------------------------------------------------------------------
@@ -551,6 +558,23 @@ class S3Trackable(object):
         for r in self.records:
             if self.LOCATION_ID in r:
                 r[self.LOCATION_ID] = location
+
+
+    # -------------------------------------------------------------------------
+    def __update_timestamp(self, track_id, timestamp):
+        """
+            Update the timestamp of a trackable
+
+            @param track_id: the trackable ID (super-entity key)
+            @param timestamp: the timestamp
+        """
+
+        if timestamp is None:
+            timestamp = datetime.utcnow()
+        if track_id:
+            trackable = self.table[track_id]
+        if trackable:
+            trackable.update_record(track_timestmp=timestamp)
 
 
 # =============================================================================

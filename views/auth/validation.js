@@ -18,7 +18,11 @@ $(document).ready(function() {
             },
             password_two: {
                 required: true,
+              {{if request.cookies.has_key("registered"):}}
                 equalTo: '.password:last'
+              {{else:}}
+                equalTo: '.password:first'
+              {{pass}}
             }
         },
         messages: {

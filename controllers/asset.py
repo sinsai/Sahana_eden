@@ -19,12 +19,12 @@ response.menu_options = [
     [
         [T("List"), False, URL(r=request, c="asset", f="asset")],
         [T("Add"), False, URL(r=request, c="asset", f="asset", args="create")],
-    ]],    
+    ]],
     [T("Catalog Items"), False, URL(r=request, c="supply", f="item"),
     [
         [T("List"), False, URL(r=request, c="supply", f="item")],
         [T("Add"), False, URL(r=request, c="supply", f="item", args="create")],
-    ]],            
+    ]],
 ]
 
 def index():
@@ -44,10 +44,10 @@ def shn_asset_rheader(r):
         if asset:
             tabs = [
                     (T("Edit Details"), None),
-                    (T("Assignments"), "assign"),           
-                   ]            
-            rheader_tabs = shn_rheader_tabs(r, tabs)
-            
+                    (T("Assignments"), "assign"),
+                   ]
+            rheader_tabs = s3_rheader_tabs(r, tabs)
+
             item = db.asset_asset.item_id.represent(asset.item_id)
             rheader = DIV(TABLE(TR( TH("%s: " % T("Asset Number")),
                                     asset.number,

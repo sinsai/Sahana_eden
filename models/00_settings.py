@@ -12,7 +12,7 @@
 
 # Use response for one-off variables which are visible in views without explicit passing
 response.s3 = Storage()
-response.s3.countries = deployment_settings.get_L10n_countries()
+response.s3.countries = deployment_settings.get_gis_countries()
 response.s3.formats = Storage()
 response.s3.gis = Storage()
 
@@ -273,7 +273,7 @@ auth.messages.label_mobile_phone = T("Mobile Phone")
 auth.messages.help_mobile_phone = T("Entering a phone number is optional, but doing so allows you to subscribe to receive SMS messages.")
 # Require Admin approval for self-registered users
 auth.settings.registration_requires_approval = deployment_settings.get_auth_registration_requires_approval()
-auth.messages.registration_pending = T("Email address verified, however registration is still pending approval - please wait until confirmation received.")
+auth.messages.registration_pending = T("Registration is still pending approval from Approver (%s) - please wait until confirmation received.") % deployment_settings.get_mail_approver()
 auth.messages.registration_pending_approval = T("Account registered, however registration is still pending approval - please wait until confirmation received.")
 # Notify UserAdmin of new pending user registration to action
 if deployment_settings.get_auth_registration_requires_approval():
@@ -410,7 +410,10 @@ s3.messages.confirmation_email = "%s %s. %s." % (T("Welcome to the Sahana Portal
 
 # -----------------------------------------------------------------------------
 # List of Nations (ISO-3166-1 Country Codes)
-# @ToDo Add Telephone codes (need to convert to Storage())
+# @ToDo: Pull this list from the list of L0s in the database
+#  - or the same list as that is pre-populated from
+#  - don't want to have to maintain 2 sets of lists
+# @ToDo: Add Telephone codes (need to convert to Storage())
 #
 s3_list_of_nations = {
     "AF": "Afghanistan",

@@ -6,15 +6,14 @@
 # Session
 
 def s3_sessions():
-
-    """ Extend session to support:
+    """
+        Extend session to support:
             Multiple flash classes
             Roles caching
             Settings
                 Debug mode
                 Security mode
                 Audit modes
-
     """
 
     response.error = session.error
@@ -76,7 +75,6 @@ super_key = s3xrc.model.super_key
 
 # -----------------------------------------------------------------------------
 def s3_get_utc_offset():
-
     """ Get the current UTC offset for the client """
 
     offset = None
@@ -109,7 +107,6 @@ session.s3.utc_offset = s3_get_utc_offset()
 
 # -----------------------------------------------------------------------------
 def shn_user_utc_offset():
-
     """ for backward compatibility """
     return session.s3.utc_offset
 
@@ -164,10 +161,11 @@ shn_url_represent = lambda url: (url and [A(url, _href=url, _target="blank")] or
 # -----------------------------------------------------------------------------
 def s3_include_debug():
     """
-    Generates html to include:
-        the js scripts listed in ../static/scripts/tools/sahana.js.cfg
-        the css listed in ../static/scripts/tools/sahana.css.cfg
+        Generates html to include:
+            the js scripts listed in ../static/scripts/tools/sahana.js.cfg
+            the css listed in ../static/scripts/tools/sahana.css.cfg
     """
+
     # Disable printing
     class dummyStream:
         """ dummyStream behaves like a stream but does nothing. """
@@ -217,18 +215,9 @@ def s3_include_debug():
 
     return XML(include)
 
-# -----------------------------------------------------------------------------
-#def myname(user_id):
-
-    #""" Return the first name of the current user """
-
-    #user = db.auth_user[user_id]
-    #return user.first_name if user else NONE
-
 
 # -----------------------------------------------------------------------------
 def s3_logged_in_person():
-
     """ Get the person ID of the current user """
 
     if auth.s3_logged_in():
@@ -240,9 +229,9 @@ def s3_logged_in_person():
 
     return None
 
+
 # -----------------------------------------------------------------------------
 def unauthorised():
-
     """ Redirection upon unauthorized request (interactive!) """
 
     session.error = T("Not Authorised!")
@@ -251,11 +240,10 @@ def unauthorised():
 
 # -----------------------------------------------------------------------------
 def shn_abbreviate(word, size=48):
-
-    """ Abbreviate a string. For use as a .represent
+    """
+        Abbreviate a string. For use as a .represent
 
         see also: vita.truncate(self, text, length=48, nice=True)
-
     """
 
     if word:
@@ -275,8 +263,8 @@ def shn_action_buttons(r,
                        update_url=None,
                        delete_url=None,
                        copy_url=None):
-
-    """ Provide the usual Action Buttons for Column views.
+    """
+        Provide the usual Action Buttons for Column views.
         Allow customizing the urls, since this overwrites anything
         that would be inserted by shn_list via linkto.  The resource
         id should be represented by "[id]".
@@ -284,8 +272,8 @@ def shn_action_buttons(r,
         Designed to be called from a postp
 
         @note: standard action buttons will be inserted automatically unless already overridden
-        @note: If custom action buttons are already added, 
-               they will appear AFTER the standard action buttons 
+        @note: If custom action buttons are already added,
+               they will appear AFTER the standard action buttons
     """
 
     if r.component:
@@ -294,9 +282,9 @@ def shn_action_buttons(r,
         args = ["[id]"]
 
     prefix, name, table, tablename = r.target()
-    
+
     custom_actions = response.s3.actions
-        
+
     if s3_has_permission("update", table) and \
        not auth.permission.ownership_required(table, "update"):
         if not update_url:
@@ -333,7 +321,7 @@ def shn_action_buttons(r,
         response.s3.actions.append(
             dict(label=str(COPY), _class="action-btn", url=copy_url)
         )
-        
+
     if custom_actions:
         response.s3.actions = response.s3.actions + custom_actions
 
@@ -342,11 +330,10 @@ def shn_action_buttons(r,
 
 # -----------------------------------------------------------------------------
 def shn_compose_message(data, template):
-
-    """ Compose an SMS Message from an XSLT
+    """
+        Compose an SMS Message from an XSLT
 
         from FRP
-
     """
 
     if data:
@@ -372,8 +359,8 @@ def shn_compose_message(data, template):
 # -----------------------------------------------------------------------------
 def shn_crud_strings(table_name,
                      table_name_plural = None):
-
-    """ Creates the strings for the title of/in the various CRUD Forms.
+    """
+        Creates the strings for the title of/in the various CRUD Forms.
 
         @author: Michael Howden (michael@aidiq.com)
 
@@ -390,7 +377,6 @@ def shn_crud_strings(table_name,
 
         @example
             s3.crud_strings[<table_name>] = shn_crud_strings(<table_name>, <table_name_plural>)
-
     """
 
     if not table_name_plural:
@@ -423,7 +409,6 @@ def shn_crud_strings(table_name,
 
 # -----------------------------------------------------------------------------
 def shn_get_crud_string(tablename, name):
-
     """ Get the CRUD strings for a table """
 
     crud_strings = s3.crud_strings.get(tablename, s3.crud_strings)
@@ -435,7 +420,6 @@ def shn_get_crud_string(tablename, name):
 # -----------------------------------------------------------------------------
 def shn_import_table(table_name,
                      import_if_not_empty = False):
-
     """
         @author: Michael Howden (michael@aidiq.com)
 
@@ -459,7 +443,6 @@ def shn_import_table(table_name,
 
 # -----------------------------------------------------------------------------
 def shn_last_update(table, record_id):
-
     """ @todo: docstring?? """
 
     if table and record_id:
@@ -490,7 +473,6 @@ def shn_last_update(table, record_id):
 def shn_represent_file(file_name,
                        table,
                        field = "file"):
-
     """
         @author: Michael Howden (michael@aidiq.com)
 
@@ -526,7 +508,6 @@ def shn_represent_file(file_name,
 
 # -----------------------------------------------------------------------------
 def s3_represent_multiref(table, opt, represent=None, separator=", "):
-
     """ Produce a representation for a list:reference field. """
 
     if represent is None:
@@ -568,12 +549,11 @@ def s3_represent_multiref(table, opt, represent=None, separator=", "):
 
 # -----------------------------------------------------------------------------
 def shn_table_links(reference):
-
-    """ Return a dict of tables & their fields which have references to the
+    """
+        Return a dict of tables & their fields which have references to the
         specified table
 
         @deprecated: to be replaced by db[tablename]._referenced_by
-
     """
 
     tables = {}
@@ -590,14 +570,13 @@ def shn_table_links(reference):
 
 
 # -----------------------------------------------------------------------------
-def shn_rheader_tabs(r, tabs=[], paging=False):
-
-    """ Constructs a DIV of component links for a S3RESTRequest
+def s3_rheader_tabs(r, tabs=[], paging=False):
+    """
+        Constructs a DIV of component links for a S3RESTRequest
 
         @param tabs: the tabs as list of tuples (title, component_name, vars),
             where vars is optional
         @param paging: add paging buttons previous/next to the tabs
-
     """
 
     rheader_tabs = []
@@ -609,45 +588,66 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
         title, component = tabs[i][:2]
         vars_in_request = True
         if len(tabs[i]) > 2:
-            _vars = tabs[i][2]
+            _vars = Storage(tabs[i][2])
             for k,v in _vars.iteritems():
                 if r.request.vars.get(k) != v:
                     vars_in_request = False
                     break
+            if "viewing" in r.request.vars:
+                _vars.viewing = r.request.vars.viewing
         else:
             _vars = r.request.vars
 
-
+        here = False
         if component and component.find("/") > 0:
             function, component = component.split("/", 1)
             if not component:
                 component = None
         else:
-            function = r.request.function
+            if "viewing" in _vars:
+                tablename, record_id = _vars.viewing.split(".", 1)
+                function = tablename.split("_", 1)[1]
+            else:
+                function = r.request.function
+                record_id = r.id
+        if function == r.name or \
+           (function == r.request.function and "viewing" in request.vars):
+            here = True
 
         if i == len(tabs)-1:
-            tab = Storage(title=title, _class = "rheader_tab_last")
+            tab = Storage(title=title, _class = "tab_last")
         else:
-            tab = Storage(title=title, _class = "rheader_tab_other")
-        if i > 0 and tablist[i-1]._class == "rheader_tab_here":
+            tab = Storage(title=title, _class = "tab_other")
+        if i > 0 and tablist[i-1]._class == "tab_here":
             next = tab
 
         if component:
             if r.component and r.component.name == component and vars_in_request or \
                r.custom_action and r.method == component:
-                tab.update(_class = "rheader_tab_here")
+                tab.update(_class = "tab_here")
                 previous = i and tablist[i-1] or None
-            args = [r.id, component]
-            tab.update(_href=URL(r=request, f=function, args=args, vars=_vars))
-        else:
-            if not r.component and len(tabs[i]) <= 2:
-                tab.update(_class = "rheader_tab_here")
-                previous = i and tablist[i-1] or None
-            args = [r.id]
+            args = [record_id, component]
             vars = Storage(_vars)
-            # _next has no effect
-            #if not vars.get("_next", None):
-                #vars.update(_next=URL(r=request, f=function, args=args, vars=_vars))
+            if "viewing" in vars:
+                del vars["viewing"]
+            tab.update(_href=URL(r=request, f=function, args=args, vars=vars))
+        else:
+            if not r.component and len(tabs[i]) <= 2 and here:
+                tab.update(_class = "tab_here")
+                previous = i and tablist[i-1] or None
+            vars = Storage(_vars)
+            args = []
+            if function != r.name:
+                if "viewing" not in vars and r.id:
+                    vars.update(viewing="%s.%s" % (r.tablename, r.id))
+                #elif "viewing" in vars:
+                elif not tabs[i][1]:
+                    if "viewing" in vars:
+                        del vars["viewing"]
+                    args = [record_id]
+            else:
+                if "viewing" not in vars and record_id:
+                    args = [record_id]
             tab.update(_href=URL(r=request, f=function, args=args, vars=vars))
 
         tablist.append(tab)
@@ -656,40 +656,64 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
     if rheader_tabs:
         if paging:
             if next:
-                rheader_tabs.insert(0, SPAN(A(">", _href=next._href), _class="rheader_next_active"))
+                rheader_tabs.insert(0, SPAN(A(">", _href=next._href), _class="tab_next_active"))
             else:
-                rheader_tabs.insert(0, SPAN(">", _class="rheader_next_inactive"))
+                rheader_tabs.insert(0, SPAN(">", _class="tab_next_inactive"))
             if previous:
-                rheader_tabs.insert(0, SPAN(A("<", _href=previous._href), _class="rheader_prev_active"))
+                rheader_tabs.insert(0, SPAN(A("<", _href=previous._href), _class="tab_prev_active"))
             else:
-                rheader_tabs.insert(0, SPAN("<", _class="rheader_prev_inactive"))
-        rheader_tabs = DIV(rheader_tabs, _id="rheader_tabs")
+                rheader_tabs.insert(0, SPAN("<", _class="tab_prev_inactive"))
+        rheader_tabs = DIV(rheader_tabs, _class="tabs")
     else:
         rheader_tabs = ""
 
     return rheader_tabs
 
+
+# -----------------------------------------------------------------------------
+def s3_rheader_resource(r):
+    """
+        Identify the tablename and record ID for the rheader
+
+        @param r: the current S3Request
+
+    """
+
+    _vars = r.request.vars
+
+    if "viewing" in _vars:
+        tablename, record_id = _vars.viewing.rsplit(".", 1)
+        record = db[tablename][record_id]
+    else:
+        tablename = r.tablename
+        record = r.record
+
+    return (tablename, record)
+
+
+# -----------------------------------------------------------------------------
 def s3_sortOrderedDict(adict):
-        """
-            Sort an OrderedDict by Value
-            - assumes unique values
-        """
-        values = adict.values()
-        values.sort()
-        result = OrderedDict()
-        keys = adict.keys()
-        for value in values:
-            for key in keys:
-                if adict[key] == value:
-                    result[key] = value
-                    break
-        return result
+    """
+        Sort an OrderedDict by Value
+        - assumes unique values
+    """
+
+    values = adict.values()
+    values.sort()
+    result = OrderedDict()
+    keys = adict.keys()
+    for value in values:
+        for key in keys:
+            if adict[key] == value:
+                result[key] = value
+                break
+    return result
+
 
 # -----------------------------------------------------------------------------
 # CRUD functions
 # -----------------------------------------------------------------------------
 def shn_import_csv(file, table=None):
-
     """ Import CSV file into Database """
 
     if table:
@@ -703,7 +727,6 @@ def shn_import_csv(file, table=None):
 # shn_custom_view -------------------------------------------------------------
 #
 def shn_custom_view(r, default_name, format=None):
-
     """ Check for custom view """
 
     prefix = r.request.controller
@@ -736,13 +759,12 @@ def shn_custom_view(r, default_name, format=None):
 
 # -----------------------------------------------------------------------------
 def shn_copy(r, **attr):
-
-    """ Copy a record
+    """
+        Copy a record
 
         used as REST method handler for S3Resources
 
         @todo: move into S3CRUDHandler
-
     """
 
     redirect(URL(r=request, args="create", vars={"from_record":r.id}))
@@ -750,11 +772,10 @@ def shn_copy(r, **attr):
 
 # -----------------------------------------------------------------------------
 def shn_list_item(table, resource, action, main="name", extra=None):
-
-    """ Display nice names with clickable links & optional extra info
+    """
+        Display nice names with clickable links & optional extra info
 
         used in shn_search
-
     """
 
     item_list = [TD(A(table[main], _href=URL(r=request, f=resource, args=[table.id, action])))]
@@ -766,11 +787,10 @@ def shn_list_item(table, resource, action, main="name", extra=None):
 
 # -----------------------------------------------------------------------------
 def shn_represent_extra(table, module, resource, deletable=True, extra=None):
-
-    """ Display more than one extra field (separated by spaces)
+    """
+        Display more than one extra field (separated by spaces)
 
         used in shn_search
-
     """
 
     authorised = s3_has_permission("delete", table._tablename)
@@ -788,11 +808,10 @@ def shn_represent_extra(table, module, resource, deletable=True, extra=None):
 
 # -----------------------------------------------------------------------------
 def shn_represent(table, module, resource, deletable=True, main="name", extra=None):
-
-    """ Designed to be called via table.represent to make t2.search() output useful
+    """
+        Designed to be called via table.represent to make t2.search() output useful
 
         used in shn_search
-
     """
 
     db[table].represent = lambda table: \
@@ -809,15 +828,14 @@ def shn_represent(table, module, resource, deletable=True, main="name", extra=No
 
 # -----------------------------------------------------------------------------
 def shn_barchart (r, **attr):
-
-    """ Provide simple barcharts for resource attributes
+    """
+        Provide simple barcharts for resource attributes
         SVG representation uses the SaVaGe library
         Need to request a specific value to graph in request.vars
 
         used as REST method handler for S3Resources
 
         @todo: replace by a S3MethodHandler
-
     """
 
     # Get all the variables and format them if needed
@@ -895,8 +913,8 @@ def shn_barchart (r, **attr):
 
 # -----------------------------------------------------------------------------
 def s3_rest_controller(prefix, resourcename, **attr):
-
-    """ Helper function to apply the S3Resource REST interface (new version)
+    """
+        Helper function to apply the S3Resource REST interface (new version)
 
         @param prefix: the application prefix
         @param resourcename: the resource name (without prefix)
@@ -942,7 +960,6 @@ def s3_rest_controller(prefix, resourcename, **attr):
         onvalidation            Fallback for both create_onvalidation and update_onvalidation
         onaccept                Fallback for both create_onaccept and update_onaccept
         ondelete                Function/Lambda after record deletion
-
     """
 
     # Parse the request
@@ -952,7 +969,7 @@ def s3_rest_controller(prefix, resourcename, **attr):
     resource.set_handler("barchart", shn_barchart)
     resource.set_handler("merge", s3base.S3RecordMerger())
 
-    resource.set_handler("xforms", s3base.S3XForms())
+    resource.set_handler("s3ocr", s3base.S3OCR())
 
     # Execute the request
     output = resource.execute_request(r, **attr)

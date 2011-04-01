@@ -128,19 +128,26 @@ def person():
         #else:
             #print "No location found"
 
-        if r.component_name == "config":
+        if r.component_name == "config" and r.interactive:
             _config = db.gis_config
-            defaults = db(_config.id == 1).select(limitby=(0, 1)).first()
-            for key in defaults.keys():
-                if key not in ["id", "uuid", "mci", "update_record", "delete_record"]:
-                    _config[key].default = defaults[key]
+            # Name will be generated from person's name.
+            _config.name.readable = _config.name.writable = False
+            # Hide region fields.
+            _config.region_location_id.readable = _config.region_location_id.writable = False
+            _config.show_region_in_menu.readable = _config.show_region_in_menu.writable = False
+            _config.region_changed_timestamp.readable = _config.region_changed_timestamp.writable = False
+            # Common prep shared with gis config controller function.
+            gis_config_prep_helper(r)
+        
         if r.representation == "popup":
             # Hide "pe_label" and "missing" fields in person popups
             r.table.pe_label.readable = False
             r.table.pe_label.writable = False
             r.table.missing.readable = False
             r.table.missing.writable = False
+        
         return True
+    
     response.s3.prep = prep
 
     s3xrc.model.configure(db.pr_group_membership,
@@ -157,10 +164,10 @@ def person():
                                 extra="last_name",
                                 rheader=lambda r: shn_pr_rheader(r,
                                     tabs = [(T("Basic Details"), None),
-                                            (T("Images"), "image"),
-                                            (T("Identity"), "identity"),
                                             (T("Address"), "address"),
-                                            (T("Contact Data"), "pe_contact"),
+                                            (T("Contact Data"), "contact"),
+                                            (T("Identity"), "identity"),
+                                            (T("Images"), "image"),
                                             (T("Memberships"), "group_membership"),
                                             (T("Presence Log"), "presence"),
                                             (T("Subscriptions"), "pe_subscription"),
@@ -191,7 +198,7 @@ def group():
                 rheader=lambda r: shn_pr_rheader(r,
                     tabs = [(T("Group Details"), None),
                             (T("Address"), "address"),
-                            (T("Contact Data"), "pe_contact"),
+                            (T("Contact Data"), "contact"),
                             (T("Members"), "group_membership")]))
 
     shn_menu()
@@ -207,11 +214,11 @@ def image():
 
 
 # -----------------------------------------------------------------------------
-def pe_contact():
+def contact():
 
     """ RESTful CRUD controller """
 
-    table = db.pr_pe_contact
+    table = db.pr_contact
 
     table.pe_id.label = T("Person/Group")
     table.pe_id.readable = True
@@ -434,7 +441,7 @@ def person_duplicates():
 
     else:
         # Don't load records except via dataTables (saves duplicate loading & less confusing for user)
-        items = DIV((TABLE(table_header, TBODY(), _id="list", _class="display")))
+        items = DIV((TABLE(table_header, TBODY(), _id="list", _class="dataTable display")))
         return(dict(items=items))
 
 #----------------------------------------------------------------------------------------------------------

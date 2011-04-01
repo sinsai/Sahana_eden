@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-""" VITA Disaster Victim Identification, Controllers
+"""
+    Disaster Victim Identification, Controllers
 
     @author: nursix
-    @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
-
 """
 
 module = request.controller
@@ -29,15 +28,28 @@ if deployment_settings.modules[module].access:
 def shn_menu():
     response.menu_options = [
         #[T("Home"), False, URL(r=request, f="index")],
-        [T("Recovery"), False, None,[
-            [T("New Request"), False, aURL(p="create", r=request, f="recreq", args="create")],
-            [T("List Requests"), False, aURL(r=request, f="recreq")],
+        [T("Recovery Requests"), False, None,[
+            [T("New"),
+             False, aURL(p="create", r=request, f="recreq",
+                         args="create")],
+            [T("List Current"),
+             False, aURL(r=request, f="recreq",
+                         vars={"recreq.status":"1,2,3"})],
+            [T("List All"),
+             False, aURL(r=request, f="recreq")],
         ]],
         [T("Dead Body"), False, None,[
-            [T("New"), False, aURL(p="create", r=request, f="body", args="create")],
-            [T("Search"), False, aURL(r=request, f="body", args="search")],
-            [T("List all"), False, aURL(r=request, f="body")],
-            [T("List unidentified"), False, aURL(r=request, f="body", vars=dict(status="unidentified"))],
+            [T("New"),
+             False, aURL(p="create", r=request, f="body",
+                         args="create")],
+            [T("Search"),
+             False, aURL(r=request, f="body",
+                         args="search")],
+            [T("List all"),
+             False, aURL(r=request, f="body")],
+            [T("List unidentified"),
+             False, aURL(r=request, f="body",
+                         vars=dict(status="unidentified"))],
         ]],
         [T("Missing Persons"), False, None, [
             [T("List all"), False, aURL(r=request, f="person")],
@@ -52,18 +64,26 @@ def shn_menu():
         if record:
             label = record.pe_label
             response.menu_options[-2][-1].append(
-                [T("Candidate Matches for Body %s" % label), False, URL(r=request, f="person", vars=dict(match=record.id))]
+                [T("Candidate Matches for Body %s" % label),
+                 False, URL(r=request, f="person",
+                            vars=dict(match=record.id))]
             )
-            menu_selected.append(["%s: %s" % (T("Body"), label), False,
-                                 URL(r=request, f="body", args=[record.id])])
+            menu_selected.append(
+                ["%s: %s" % (T("Body"), label),
+                 False, URL(r=request, f="body",
+                            args=[record.id])]
+            )
     if session.rcvars and "pr_person" in session.rcvars:
         person = db.pr_person
         query = (person.id == session.rcvars["pr_person"])
         record = db(query).select(person.id, limitby=(0, 1)).first()
         if record:
             name = shn_pr_person_represent(record.id)
-            menu_selected.append(["%s: %s" % (T("Person"), name), False,
-                                 URL(r=request, f="person", args=[record.id])])
+            menu_selected.append(
+                ["%s: %s" % (T("Person"), name),
+                 False, URL(r=request, f="person",
+                        args=[record.id])]
+            )
     if menu_selected:
         menu_selected = [T("Open recent"), True, None, menu_selected]
         response.menu_options.append(menu_selected)
@@ -72,7 +92,6 @@ shn_menu()
 
 # -----------------------------------------------------------------------------
 def index():
-
     """ Module's Home Page """
 
     try:
@@ -85,7 +104,7 @@ def index():
     query = (db.dvi_body.deleted == False) & \
             (db.dvi_identification.pe_id == db.dvi_body.pe_id) & \
             (db.dvi_identification.deleted == False) & \
-            (db.dvi_identification.opt_dvi_id_status == 3)
+            (db.dvi_identification.status == 3)
     identified = db(query).count()
 
     status = [[str(T("identified")), int(identified)],
@@ -99,8 +118,7 @@ def index():
 
 # -----------------------------------------------------------------------------
 def recreq():
-
-    """ RESTful CRUD controller """
+    """ Recovery Requests List """
 
     resource = request.function
 
@@ -113,8 +131,7 @@ def recreq():
 
 # -----------------------------------------------------------------------------
 def body():
-
-    """ RESTful CRUD controller """
+    """ Dead Bodies Registry """
 
     resource = request.function
 
@@ -123,7 +140,7 @@ def body():
     status = request.get_vars.get("status", None)
     if status == "unidentified":
         query = (db.dvi_identification.deleted == False) & \
-                (db.dvi_identification.opt_dvi_id_status == 3)
+                (db.dvi_identification.status == 3)
         ids = db(query).select(db.dvi_identification.pe_id)
         ids = [i.pe_id for i in ids]
         if ids:
@@ -148,8 +165,7 @@ def body():
 
 # -----------------------------------------------------------------------------
 def person():
-
-    """ RESTful CRUD controller """
+    """ Missing Persons Registry (Match Finder) """
 
     resource = request.function
 
@@ -175,6 +191,7 @@ def person():
                                        "first_name",
                                        "middle_name",
                                        "last_name",
+                                       "picture",
                                        "gender",
                                        "age_group"])
 
@@ -238,7 +255,7 @@ def person():
                 (T("Images"), "image"),
                 (T("Identity"), "identity"),
                 (T("Address"), "address"),
-                (T("Contact Data"), "pe_contact"),
+                (T("Contact Data"), "contact"),
                 (T("Presence Log"), "presence"),
                ]
 
@@ -255,21 +272,20 @@ def person():
 
 # -----------------------------------------------------------------------------
 def download():
-
-    """ Download a file. """
+    """ File Download """
 
     return response.download(request, db)
 
 
 # -----------------------------------------------------------------------------
 def tooltip():
-
-    """ Ajax tooltips """
+    """ Ajax Tooltips """
 
     formfield = request.vars.get("formfield", None)
     if formfield:
         response.view = "pr/ajaxtips/%s.html" % formfield
     return dict()
+
 
 #
 # -----------------------------------------------------------------------------

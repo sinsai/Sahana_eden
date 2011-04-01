@@ -9,7 +9,11 @@
 <script src="/{{=request.application}}/static/scripts/S3/jquery.pstrength-min.1.2.js" type="text/javascript"></script>
 <script type="text/javascript">
 $(function() {
+  {{if request.cookies.has_key("registered"):}}
     $('.password:last').pstrength();
+  {{else:}}
+    $('.password:first').pstrength();
+  {{pass}}
 });
 {{include "auth/validation.js"}}
 </script>

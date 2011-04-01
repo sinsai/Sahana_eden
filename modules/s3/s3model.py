@@ -128,7 +128,8 @@ class S3ResourceModel(object):
             else:
                 nkey = hook._joinby
                 component = hook._component
-                if nkey and nkey in table.fields:
+                if nkey and nkey in table.fields and \
+                   str(component.table[nkey].type) == str(table[nkey].type):
                     return (component, nkey, nkey)
 
         return (None, None, None)
@@ -157,7 +158,8 @@ class S3ResourceModel(object):
                 else:
                     nkey = hook._joinby
                     component = hook._component
-                    if nkey and nkey in table.fields:
+                    if nkey and nkey in table.fields and \
+                       str(component.table[nkey].type) == str(table[nkey].type):
                         components.append((component, nkey, nkey))
 
         return components

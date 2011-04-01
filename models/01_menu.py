@@ -65,14 +65,18 @@ else:
                      vars={"person.uid" : auth.user.person_uuid})],
                 [T("Contact details"), False,
                  URL(request.application, c="pr", f="person",
-                     args="pe_contact",
+                     args="contact",
                      vars={"person.uid" : auth.user.person_uuid})],
                 [T("Subscriptions"), False,
                  URL(request.application, c="pr", f="person",
                      args="pe_subscription",
                      vars={"person.uid" : auth.user.person_uuid})],
                 [T("Change Password"), False,
-                 URL(request.application, "default", "user/change_password")]
+                 URL(request.application, "default", "user/change_password")],
+                ["----", False, None],
+                [(T("Rapid Data Entry"), "rapid_toggle",
+                  session.s3.rapid_data_entry is True),
+                 False, URL(request.application, "default", "rapid")]
             ]
         ]
 
@@ -103,7 +107,7 @@ admin_menu_options = [
         #[T("Roles"), False, URL(r=request, c="admin", f="group")],
         #[T("Membership"), False, URL(r=request, c="admin", f="membership")],
     ]],
-    [T("Database"), False, "#", [
+    [T("Database"), False, URL(r=request, c="appadmin", f="index"), [
         [T("Import"), False, URL(r=request, c="admin", f="import_data")],
         [T("Export"), False, URL(r=request, c="admin", f="export_data")],
         #[T("Import Jobs"), False, URL(r=request, c="admin", f="import_job")],

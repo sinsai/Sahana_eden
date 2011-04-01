@@ -29,10 +29,16 @@ if deployment_settings.has_module(prefix):
 
                             organisation_id(empty=False),
                             person_id(),
+                            Field("job_title",
+                                  label=T("Job Title")),
+                            Field("hrm", "boolean",
+                                  label=T("HR Manager"),
+                                  default=False),
+
                             super_link(db.org_site,
                                        label=T("Site"),
-                                       readable=True,
-                                       writable=True,
+                                       readable=False,
+                                       writable=False,
                                        sort=True,
                                        groupby="instance_type",
                                        represent=shn_site_represent),
@@ -49,9 +55,6 @@ if deployment_settings.has_module(prefix):
                                   label = T("Status"),
                                   represent = lambda opt: hrm_status_opts.get(opt, UNKNOWN_OPT)),
 
-                            Field("job_title",
-                                  label=T("Job Title")),
-
                             migrate=migrate, *s3_meta_fields())
 
     human_resource_id = S3ReusableField("human_resource_id", db.hrm_human_resource,
@@ -65,7 +68,7 @@ if deployment_settings.has_module(prefix):
 
     human_resource_search = s3base.S3Search(
                                 name="human_resource_search_simple",
-                                label=T("Name"),
+                                label=T("Name or Job Title"),
                                 comment=T("To search for a person, enter any of the first, middle or last names, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons."),
                                 field=["job_title",
                                        "person_id$first_name",
@@ -94,7 +97,7 @@ if deployment_settings.has_module(prefix):
                                   requires=IS_IN_SET(hrm_skill_category_opts, zero=None),
                                   notnull=True,
                                   label=T("Category"),
-                                  represent = lambda opt: hrm_skill_category_opts(opt, UNKNOWN_OPT)),
+                                  represent = lambda opt: hrm_skill_category_opts.get(opt, UNKNOWN_OPT)),
                             #Field("description"),
                             migrate=migrate, *s3_meta_fields())
 
@@ -142,7 +145,7 @@ if deployment_settings.has_module(prefix):
         7: T("Sunday")
     }
     weekdays_represent = lambda opt: ",".join([str(weekdays[o]) for o in opt])
-    
+
     from gluon.sqlhtml import CheckboxesWidget
 
     resourcename = "availability"

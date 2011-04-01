@@ -31,21 +31,19 @@
 
 """
 
+__all__ = ["S3OCR"]
+
 #========================== import section ====================================
 
-__all__ = ["s3ocr_generate_pdf", "s3ocr_get_languages", "S3XForms"]
-
 # Generic stuff
-import inspect
 import os
 import sys
 import uuid
+import re
 from StringIO import StringIO
+from htmlentitydefs import name2codepoint
 
-# Importing the xml stuff
-from xml.sax.handler import ContentHandler
-from xml.sax import make_parser
-from xml.dom.minidom import Document
+from lxml import etree
 
 # Importing reportlab stuff
 try:
@@ -60,8 +58,703 @@ try:
 except(ImportError):
     print >> sys.stderr, "S3 Debug: WARNING: S3OCR: reportlab has not been installed."
 
-from lxml import etree
 from s3rest import S3Method
+from s3cfg import S3Config
+
+#==========================================================================
+#================================= OCR API ================================
+#==========================================================================
+
+class S3OCR(S3Method):
+    """
+    Generate XForms and PDFs the s3 way
+    """
+
+    def apply_method(self,
+                     r,
+                     **attr):
+        """
+        S3Method's abstract method
+        """
+        
+        xml = self.manager.xml
+        self.r = r
+
+        # s3ocr_config - dict which stores ocr configuration
+        #                            settings for a resource)
+        s3ocr_config = attr.get("s3ocr_config", {})
+
+        # storing localised names of components
+        self.rheader_tabs = s3ocr_config.get("tabs", [])
+
+        # store custom pdf title (if any)
+        self.pdftitle = s3ocr_config.get("pdftitle", None)
+
+        # store components which have to be excluded
+        self.exclude_component_list = s3ocr_config.get("exclude_components", [])
+
+        # store individual field specific properties
+        self.custom_field_properties = s3ocr_config.get("field_properties", {})
+
+        # example field_properties
+        # field_properties = {
+        #     "%s_%s__%s" % (prefix, resourcename, fieldname): { fieldtype="",
+        #                                                        .
+        #                                                        .
+        #                                                        }
+        #     }
+
+        # store individual fieldtype specific properties
+        s3config = S3Config(self.T)
+        self.custom_fieldtype_properties = \
+            s3config.get_s3ocr_fieldtype_properties()
+
+        # example field_properties
+        # field_properties = {
+        #     fieldtype : { fieldtype="",
+        #                   .
+        #                   .
+        #                   }
+        #     }
+
+        # field type convention mapping from resource to pdf forms
+        self.generic_ocr_field_type = {
+            "string": "string", 
+            "text": "textbox", 
+            "boolean" : "boolean",
+            "double": "double",
+            "date": "date",
+            "datetime": "datetime",
+            "integer": "integer",
+            "list:integer": "multiselect",
+            "list:string": "multiselect",
+            "list:double": "multiselect",
+            "list:text": "multiselect",
+            }
+
+        # text for localisation
+        self.l10n = {
+            "datetime_hint": {
+                "date": self.T("fill in order: day(2) month(2) year(4)"),
+                "datetime": self.T("fill in order: hour(2) min(2) day(2) month(2) year(4)"),
+                },
+            "ocr_inst": {
+                "inst1": self.T("1. Fill the necessary fields in BLOCK CAPITAL letters."),
+                "inst2": self.T("2. Always use one box per letter and leave one box space to separate words."),
+                "inst3": self.T("3. Fill in the circles completely."),
+                },
+            "boolean": {
+                "yes": self.T("Yes"),
+                "no": self.T("No"),
+                },
+            "select": {
+                "multiselect": self.T("Select one or more option(s) that apply"),
+                "singleselect": self.T("Select any one option that apply"),
+                },
+            }
+
+        # check if debug mode is enabled
+        if r.request.vars.get("_debug", False) == "1":
+            self.debug = True
+        else:
+            self.debug = False
+
+        if self.debug:
+            content_disposition = "inline"
+        else:
+            content_disposition = "attachment"
+        
+        # serve the request
+        format = r.representation
+        if r.http == "GET":
+            if format == "xml":
+                output = self.s3ocr_etree()
+                self.response.view = "xml.html"
+                self.response.headers["Content-Type"] = "application/xml"
+                return xml.tostring(output, pretty_print=True)
+            elif format == "pdf":
+                output = self.pdf_manager()
+                self.response.view = None
+                self.response.headers["Content-Type"] = "application/pdf"
+                self.response.headers["Content-disposition"] = \
+                            "%s; filename=\"%s.pdf\"" % (content_disposition,
+                                                         self.tablename)
+                return output
+            else:
+                r.error(501, self.manager.ERROR.BAD_FORMAT)
+        elif r.http in ("POST","PUT"):
+            if format == "xml":
+                r.error(501, self.manager.ERROR.NOT_IMPLEMENTED)
+            elif format == "pdf":
+                r.error(501, self.manager.ERROR.NOT_IMPLEMENTED)
+            else:
+                r.error(501, self.manager.ERROR.BAD_FORMAT)
+        else:
+            r.error(501, self.manager.ERROR.BAD_METHOD)
+
+    def s3ocr_etree(self):
+        """
+        Optimise & Modifiy s3xml etree to and produce s3ocr etree
+        """
+
+        s3xml_etree = self.resource.struct(options=True,
+                                   references=True,
+                                   stylesheet=None,
+                                   as_json=False,
+                                   as_tree=True)
+        # xml tags
+        ITEXT = "label"
+        HINT = "comment"
+        TYPE = "type"
+        HASOPTIONS = "has_options"
+        LINES = "lines"
+        BOXES = "boxes"
+
+        # Components Localised Text added to the etree
+        # Convering s3xml to s3ocr_xml (nicer to traverse)
+        s3xml_root = s3xml_etree.getroot()
+        resource_element = s3xml_root.getchildren()[0]
+        s3ocr_root = etree.Element("s3ocr")
+
+        if self.r.component:     # if it is a component
+            component_sequence, components_l10n_dict = \
+                self.__rheader_tabs_sequence(self.r.tablename)
+            resource_element.set(ITEXT,
+                                 components_l10n_dict.get(None,
+                                                          self.resource.tablename))
+            s3ocr_root.append(resource_element)
+
+        else:                    # if it is main resource
+            componentetrees = []
+            # mres is main resource etree
+            mres = etree.Element("resource")
+            for attr in resource_element.attrib.keys():
+                mres.set(attr, resource_element.attrib.get(attr))
+            for field_element in resource_element:
+                if field_element.tag == "field":       # main resource fields
+                    mres.append(field_element)
+                elif field_element.tag == "resource":  # component resource
+                    componentetrees.append(field_element)
+
+            # Serialisation of Component List and l10n
+            component_sequence, components_l10n_dict = \
+                self.__rheader_tabs_sequence(self.r.tablename)
+
+            mres.set(ITEXT, components_l10n_dict.get(None,
+                                                     self.resource.tablename))
+
+            if component_sequence:
+                serialised_component_etrees = []
+                for eachcomponent in component_sequence:
+                    component_table = "%s_%s" % (self.prefix, eachcomponent)
+
+                    for eachtree in componentetrees:
+                        if eachtree.attrib.get("name", None) == component_table:
+                            # l10n strings are added and sequencing is done here
+                            eachtree.set(ITEXT,
+                                         components_l10n_dict.get(eachcomponent,
+                                                                  component_table))
+                            serialised_component_etrees.append(eachtree)
+            else:
+                serialised_component_etrees = componentetrees
+
+            # create s3ocr tree
+            s3ocr_root.append(mres)
+            for res in serialised_component_etrees:
+                s3ocr_root.append(res)
+
+        # remove fields which are not required
+        # loading user defined configuartions
+        FIELD_TYPE_LINES = { # mapping types with number of lines
+            "string": 2,
+            "textbox": 4,
+            "integer": 1,
+            "double": 1,
+            "date": 1,
+            "datetime": 1,
+            }
+        FIELD_TYPE_BOXES = { # mapping type with numboxes
+            "integer": 9,
+            "double": 16,
+            }
+        for eachresource in s3ocr_root.iterchildren():
+            resourcetablename = eachresource.attrib.get("name")
+
+            if eachresource.attrib.get("name") in self.exclude_component_list:
+                # excluded components are removed
+                s3ocr_root.remove(eachresource)
+                continue
+            for eachfield in eachresource.iterchildren():
+                fieldname = eachfield.attrib.get("name")
+                # fields which have to be displayed
+                fieldtype = eachfield.attrib.get(TYPE)
+                
+                # loading ocr specific fieldtypes
+                ocrfieldtype = self.generic_ocr_field_type.get(fieldtype,
+                                                               None)
+                if ocrfieldtype != None:
+                    eachfield.set(TYPE, ocrfieldtype)
+                    # refresh fieldtypes after update
+                    fieldtype = eachfield.attrib.get(TYPE)
+
+                # set num boxes and lines
+                fieldhasoptions = eachfield.attrib.get(HASOPTIONS)
+                if fieldhasoptions == "False":
+                    eachfield.set(LINES,
+                                  str(FIELD_TYPE_LINES.get(fieldtype,
+                                                           1)))
+                    if fieldtype in FIELD_TYPE_BOXES.keys():
+                        eachfield.set(BOXES,
+                                      str(FIELD_TYPE_BOXES.get(fieldtype)))
+
+                # if field is readable but not writable set default value
+                if eachfield.attrib.get("readable", "False") == "True" and \
+                        eachfield.attrib.get("writable", "False") == "False":
+                    try:
+                        fieldresourcename = \
+                            eachresource.attrib.get("name").split("%s_" %\
+                                                                      self.prefix)[1]
+                    except:
+                        fieldresourcename = \
+                            eachresource.attrib.get("name").split("_")[1]
+
+                    fieldresource = \
+                        self.resource.components.get(fieldresourcename, None)
+                    if not fieldresource:
+                        fieldresource = self.resource
+                    fieldname = eachfield.attrib.get("name")
+                    try:
+                        fielddefault = self.r.resource.table[fieldname].default
+                    except(KeyError):
+                        fielddefault = "None"
+                    eachfield.set("default",
+                                  fielddefault)
+
+                # load custom fieldtype specific settings
+                if fieldtype not in self.generic_ocr_field_type.values() \
+                        and fieldtype in self.custom_fieldtype_properties.keys():
+                    self.__update_custom_fieldtype_settings(eachfield)
+                    # refresh fieldtypes after update
+                    fieldtype = eachfield.attrib.get(TYPE)
+                
+                # for unknown field types
+                if fieldtype not in self.generic_ocr_field_type.values():
+                    eachfield.set(TYPE, "string")
+                    eachfield.set(HASOPTIONS, "False")
+                    eachfield.set(LINES, "2")
+                    # refresh fieldtypes after update
+                    fieldtype = eachfield.attrib.get(TYPE)
+                
+                # loading custom field specific settings
+                self.__update_custom_field_settings(eachfield,
+                                                    resourcetablename,
+                                                    fieldname)
+
+                # in ocr boolean fields should be shown as options
+                if fieldtype == "boolean":
+                    eachfield.set(HASOPTIONS, "True")
+
+                # fields removed which need not be displayed
+                if eachfield.attrib.get("readable", "False") == "False" and \
+                        eachfield.attrib.get("writable", "False") == "False":
+                    eachresource.remove(eachfield)
+                    continue
+            
+                if eachfield.attrib.get(HASOPTIONS, "False") == "True" and \
+                        eachfield.attrib.get(TYPE) != "boolean":
+                    s3ocrselect = eachfield.getchildren()[0]
+                    for eachoption in s3ocrselect.iterchildren():
+                        if eachoption.text == "" or eachoption.text == None:
+                            s3ocrselect.remove(eachoption)
+                            continue
+        return s3ocr_root
+
+    def pdf_manager(self):
+        """
+        Produces OCR Compatible PDF forms
+        """
+
+        s3ocr_root = self.s3ocr_etree() # get element s3xml
+
+        # define font size
+        titlefontsize = 18
+        sectionfontsize = 15
+        regularfontsize = 13
+        hintfontsize = 10
+        
+        # etree labels
+        ITEXT = "label"
+        HINT = "comment"
+        TYPE = "type"
+        HASOPTIONS = "has_options"
+        LINES = "lines"
+        BOXES = "boxes"
+
+        #l10n
+        l10n = self.l10n
+
+        # get pdf title
+        if self.pdftitle == None or self.pdftitle == "":
+            try:
+                pdftitle = self.manager.s3.crud_strings[\
+                    self.tablename].subtitle_list.decode("utf-8")
+            except:
+                pdftitle = self.resource.tablename
+        else:
+            pdftitle = self.pdftitle
+
+        # prepare pdf
+        form = Form()
+        form.decorate()
+
+        # set header
+        form.canvas.setTitle(pdftitle) # set pdf meta title
+        form.print_text([pdftitle,],
+                        fontsize=titlefontsize,
+                        style="center") # set pdf header title
+
+        form.print_text(
+            [
+                unicode(l10n.get("ocr_inst").get("inst1").decode("utf-8")),
+                unicode(l10n.get("ocr_inst").get("inst2").decode("utf-8")),
+                unicode(l10n.get("ocr_inst").get("inst3").decode("utf-8"))
+                ],
+            fontsize=regularfontsize,
+            gray=0)
+        form.linespace(3)
+        # printing the etree
+        for eachresource in s3ocr_root:
+            form.draw_line()
+            form.print_text([
+                    eachresource.attrib.get(ITEXT,
+                                            eachresource.attrib.get("name"))
+                    ],
+                            fontsize=sectionfontsize)
+            form.draw_line(nextline=1)
+            form.linespace(12) # line spacing between each field
+            for eachfield in eachresource.iterchildren():
+                fieldlabel = eachfield.attrib.get(ITEXT)
+                spacing = " " * 5
+                fieldhint = self.__trim(eachfield.attrib.get(HINT))
+                if fieldhint != "" and fieldhint != None:
+                    form.print_text(["%s%s( %s )" % \
+                                         (fieldlabel,
+                                          spacing,
+                                          fieldhint)],
+                                     fontsize=regularfontsize)
+                else:
+                    form.print_text([fieldlabel],
+                                     fontsize=regularfontsize)
+
+                if eachfield.attrib.get("readable", "False") == "True" and \
+                        eachfield.attrib.get("writable", "False") == "False":
+                    # if it is a readonly field
+                    form.print_text(
+                        [eachfield.attrib.get("default","No default Value")],
+                        seek=10,
+                        )
+                elif eachfield.attrib.get(HASOPTIONS) == "True":
+                    fieldtype = eachfield.attrib.get(TYPE)
+                    # if the field has to be shown with options
+                    if fieldtype == "boolean":
+                        form.nextline()
+                        form.resetx()
+                        bool_text = l10n.get("boolean")
+                        form.print_text(
+                            [bool_text.get("yes").decode("utf-8")],
+                            continuetext=1,
+                            seek=3,
+                            )
+                        # TODO: Store positions
+                        form.draw_circle(
+                            boxes=1,
+                            continuetext=1,
+                            gray=0.9,
+                            seek=10,
+                            fontsize=12,
+                            )
+                        form.print_text(
+                            [bool_text.get("no").decode("utf-8")],
+                            continuetext=1,
+                            seek=10,
+                            )
+                        # TODO: Store positions
+                        form.draw_circle(
+                            boxes=1,
+                            continuetext=1,
+                            gray=0.9,
+                            seek=10,
+                            fontsize=12,
+                            )
+                    else:
+                        if fieldtype == "multiselect":
+                            option_hint = l10n.get("select").get("multiselect")
+                        else:
+                            option_hint = l10n.get("select").get("singleselect")
+                        form.print_text(
+                            [option_hint.decode("utf-8")],
+                            fontsize=hintfontsize,
+                            gray=0.4,
+                            seek=3,
+                            )
+                        s3ocrselect = eachfield.getchildren()[0]
+                        form.nextline(regularfontsize)
+                        form.resetx() # move cursor to the front
+                        optionseek = 10
+                        # resting margin for options
+                        formmargin = form.marginsides
+                        form.marginsides = optionseek + formmargin
+                        for eachoption in s3ocrselect.iterchildren():
+                            form.print_text(
+                                [eachoption.text],
+                                continuetext=1,
+                                fontsize = regularfontsize,
+                                seek = 10,
+                                )
+                            # TODO: Store positions
+                            form.draw_circle(
+                                boxes=1,
+                                continuetext=1,
+                                gray=0.9,
+                                seek=10,
+                                fontsize=12,
+                                )
+                        # restoring orginal margin
+                        form.marginsides = formmargin
+                            
+                else:
+                    # if it is a text field
+                    fieldtype = eachfield.attrib.get(TYPE)
+                    BOXES_TYPES = ["string", "textbox", "integer",
+                                   "double", "date", "datetime",]
+                    if fieldtype in BOXES_TYPES:
+                        if fieldtype in ["string", "textbox"]:
+                            form.linespace(3)
+                            num_lines = int(eachfield.attrib.get("lines",
+                                                                     1))
+                            for eachline in xrange(num_lines):
+                                # TODO: Store positions
+                                form.draw_check_boxes(
+                                    completeline=1,
+                                    gray=0.9,
+                                    seek=3,
+                                    )
+                        elif fieldtype in ["integer", "double"]:
+                            num_boxes = int(eachfield.attrib.get("boxes",
+                                                                 9))
+                            form.linespace(3)
+                            # TODO: Store positions
+                            form.draw_check_boxes(
+                                boxes = num_boxes,
+                                gray=0.9,
+                                seek=3,
+                                )
+                        elif fieldtype in ["date", "datetime"]:
+                            # print hint
+                            hinttext = \
+                                l10n.get("datetime_hint").get(fieldtype).decode("utf-8")
+                            form.print_text(
+                                [hinttext],
+                                fontsize=hintfontsize,
+                                gray=0.4,
+                                seek=3,
+                                )
+                            form.linespace(8)
+                            datetime_continuetext = 0
+                            datetime_seek = 3
+                            if fieldtype == "datetime":
+                                datetime_continuetext = 1
+                                datetime_seek = 6
+                                #HH
+                                # TODO: Store positions
+                                form.draw_check_boxes(
+                                    boxes = 2,
+                                    gray=0.9,
+                                    seek = 3,
+                                    )
+                                #MM
+                                # TODO: Store positions
+                                form.draw_check_boxes(
+                                    boxes = 2,
+                                    gray=0.9,
+                                    continuetext=1,
+                                    seek = 4,
+                                    )
+                            # DD
+                            # TODO: Store positions
+                            form.draw_check_boxes(
+                                boxes = 2,
+                                gray=0.9,
+                                continuetext = datetime_continuetext,
+                                seek = datetime_seek,
+                                )
+                            # MM
+                            # TODO: Store positions
+                            form.draw_check_boxes(
+                                boxes = 2,
+                                gray=0.9,
+                                continuetext=1,
+                                seek = 4,
+                                )
+                            # YYYY
+                            # TODO: Store positions
+                            form.draw_check_boxes(
+                                boxes = 4,
+                                gray=0.9,
+                                continuetext=1,
+                                seek = 4,
+                                )
+                    else:
+                        self.r.error(501, self.manager.PARSE_ERROR)
+                        print sys.stderr("%s :invalid field type: %s" %\
+                                             (eachfield.attrib.get("name"),
+                                              fieldtype))
+        return form.save()
+
+    def __update_custom_fieldtype_settings(self,
+                                       eachfield, #field etree
+                                       ):
+        """
+        Update custom fieldtype specific settings into the etree
+        """
+
+        # xml attributes
+        TYPE = "type"
+        READABLE = "readable"
+        WRITABLE = "writable"
+        LABEL = "label"
+        HINT = "comment"
+        DEFAULT = "default"
+        LINES = "lines"
+        BOXES = "boxes"
+        HASOPTIONS = "has_options"
+
+        fieldtype = eachfield.attrib.get(TYPE)
+        field_property = self.custom_fieldtype_properties.get(fieldtype,  {})
+
+        cust_fieldtype = fieldtype_property.get("fieldtype", None)
+        cust_readable = fieldtype_property.get("readable", None)
+        cust_writable = fieldtype_property.get("writable", None)
+        cust_label = fieldtype_property.get("label", None)
+        cust_hint = fieldtype_property.get("hint", None)
+        cust_default = fieldtype_property.get("default", None)
+        cust_lines = fieldtype_property.get("lines", None)
+        cust_boxes = fieldtype_property.get("boxes", None)
+        cust_has_options = fieldtype_property.get("has_options", None)
+        cust_options = fieldtype_property.get("options", None)
+            
+        if cust_fieldtype:
+            if cust_fieldtype != None:
+                eachfield.set(TYPE, cust_fieldtype)
+            if cust_readable != None:
+                eachfield.set(READABLE, cust_readable)
+            if cust_writable != None:
+                eachfield.set(WRITABLE, cust_writable)
+            if cust_label != None:
+                eachfield.set(LABEL, cust_label)
+            if cust_hint != None:
+                eachfield.set(HINT, cust_hint)
+            if cust_default != None:
+                eachfield.set(DEFAULT, cust_default)
+            if cust_lines != None:
+                eachfield.set(LINES, cust_lines)
+            if cust_boxes != None:
+                eachfield.set(BOXES, cust_boxes)
+            if cust_has_options != None:
+                eachfield.set(HASOPTIONS, cust_has_options)
+            if cust_options != None:
+                opt_available = eachfield.getchildren()
+                if len(opt_available) == 0:
+                    eachfield.append(cust_options)
+                elif len(opt_available) == 1:
+                    eachfield.remove(opt_available[0])
+                    eachfield.append(cust_options)
+
+    def __update_custom_field_settings(self,
+                                       eachfield, #field etree
+                                       resourcetablename,
+                                       fieldname
+                                       ):
+        """
+        Update custom field specific settings into the etree
+        """
+
+        # xml attributes
+        TYPE = "type"
+        READABLE = "readable"
+        WRITABLE = "writable"
+        LABEL = "label"
+        HINT = "comment"
+        DEFAULT = "default"
+        LINES = "lines"
+        BOXES = "boxes"
+        HASOPTIONS = "has_options"
+
+        unikey = "%s__%s" % (resourcetablename, fieldname)
+        field_property = self.custom_field_properties.get(unikey,  {})
+
+        cust_fieldtype = field_property.get("fieldtype", None)
+        cust_readable = field_property.get("readable", None)
+        cust_writable = field_property.get("writable", None)
+        cust_label = field_property.get("label", None)
+        cust_hint = field_property.get("hint", None)
+        cust_default = field_property.get("default", None)
+        cust_lines = field_property.get("lines", None)
+        cust_boxes = field_property.get("boxes", None)
+        cust_has_options = field_property.get("has_options", None)
+        cust_options = field_property.get("options", None)
+
+        if cust_fieldtype:
+            if cust_fieldtype != None:
+                eachfield.set(TYPE, cust_fieldtype)
+            if cust_readable != None:
+                eachfield.set(READABLE, cust_readable)
+            if cust_writable != None:
+                eachfield.set(WRITABLE, cust_writable)
+            if cust_label != None:
+                eachfield.set(LABEL, cust_label)
+            if cust_hint != None:
+                eachfield.set(HINT, cust_hint)
+            if cust_default != None:
+                eachfield.set(DEFAULT, cust_default)
+            if cust_lines != None:
+                eachfield.set(LINES, cust_lines)
+            if cust_boxes != None:
+                eachfield.set(BOXES, cust_boxes)
+            if cust_has_options != None:
+                eachfield.set(HASOPTIONS, cust_has_options)
+            if cust_options != None:
+                opt_available = eachfield.getchildren()
+                if len(opt_available) == 0:
+                    eachfield.append(cust_options)
+                elif len(opt_available) == 1:
+                    eachfield.remove(opt_available[0])
+                    eachfield.append(cust_options)
+
+    def __rheader_tabs_sequence(self, resourcename):
+        """
+        Sequence of components is returned as a list
+        """
+
+        component_seq = []
+        component_l10n_dict = {}
+        rtabs = self.rheader_tabs
+        for eachel in rtabs:
+            if eachel[1] != None:
+                component_seq.append(eachel[1])
+            component_l10n_dict[eachel[1]] = eachel[0].decode("utf-8")
+        return component_seq, component_l10n_dict
+
+    def __trim(self, text):
+        """
+        Helper to trim off any enclosing paranthesis
+        """
+
+        if isinstance(text, str) and \
+                text[0] == "(" and \
+                text[-1] == ")":
+            text = text[1:-1]
+        return text
 
 
 #==============================================================================
@@ -172,23 +865,22 @@ for eachfont in fontlist:
         fontchecksequence.append(eachfont)
 
 
-
-
 #==========================================================================
 #=============== internal Class Definitions and functions =================
 #==========================================================================
 
 #======================== pdf layout from xform ===========================
 
-class Form:
+class Form(object):
     """ Form class to use reportlab to generate pdf """
 
-    def __init__(self, pdfname="ocrform.pdf", margintop=50, marginsides=50,
+    def __init__(self, pdfname="ocrform.pdf", margintop=65, marginsides=50,
                  **kw):
         """ Form initialization """
 
         self.pdfpath = kw.get("pdfpath", pdfname)
         self.verbose = kw.get("verbose", 0)
+        self.linespacing = kw.get("linespacing", 4)
         self.font = kw.get("typeface", "Helvetica")
         self.fontsize = kw.get("fontsize", 13)
         self.IObuffer = StringIO()
@@ -201,6 +893,9 @@ class Form:
         self.y = self.height - margintop
         self.lasty = self.height - margintop
         self.num = 1
+        self.gray = 0
+        self.pagebegin = 1
+        self.put_page_num()
 
     def barcode(self, uuid):
         """ Generate barcode of uuid """
@@ -214,57 +909,140 @@ class Form:
         """ Decorates the the form with the markers needed to align the form later """
 
         c = self.canvas
-        c.rect(20, 20, 20, 20, fill=1)
-        c.rect(self.width - 40, 20, 20, 20, fill=1)
-        c.rect(20, self.height - 40, 20, 20, fill=1)
-        c.rect(self.width/2 - 10, 20, 20, 20, fill=1)
-        c.rect(20, self.height/2 - 10, 20, 20, fill=1)
-        c.rect(self.width - 40, self.height - 40, 20, 20, fill=1)
-        c.rect(self.width - 40, self.height/2 - 10, 20, 20, fill=1)
+        c.rect(20, 20, 20, 20, fill=1)                              # bt lf
+        c.rect(self.width - 40, 20, 20, 20, fill=1)                 # bt rt
+        c.rect(20, self.height - 40, 20, 20, fill=1)                # tp lf
+        c.rect(self.width/2 - 10, 20, 20, 20, fill=1)               # bt md
+        c.rect(20, self.height/2 - 10, 20, 20, fill=1)              # md lf
+        c.rect(self.width - 40, self.height - 40, 20, 20, fill=1)   # tp rt
+        c.rect(self.width - 40, self.height/2 - 10, 20, 20, fill=1) # md rt
 
-    def print_text(self, lines, fontsize=12, gray=0, seek=0, continuetext=0,
+    def print_text(self,
+                   lines,
+                   fontsize=13,
+                   gray=0,
+                   seek=0,
+                   continuetext=0,
                    style="default"):
-        """ Give the lines to be printed as a list, set the font and grey level """
+        """
+        Give the lines to be printed as a list,
+        set the font and grey level 
+        """
 
-        c = self.canvas
         self.fontsize = fontsize
-        if style == "center":
-            self.x = self.width / 2
-        if seek > (self.width - (self.marginsides + self.fontsize)):
-            seek = 0
-        if seek != 0:
-            self.x = self.x + seek
-        if continuetext == 1:
-            self.x = self.lastx + seek
-            if seek == 0:
-                self.y = self.y + fontsize
+        self.gray = gray
+
+        if not continuetext and not self.pagebegin:
+                self.resetx()
+                self.nextline()
+
+        self.pagebegin = 0
+
+        if seek:
+            self.resetx(seek=seek)
+
+        numlines = len(lines)
+        loopcounter = 0
         for line in lines:
-            line = unicode(line)
-            if style == "center":
-                self.x = self.x - (len(line)) * self.fontsize / 2
-            if style == "right":
-                self.x = self.width - (self.marginsides + len(line) * self.fontsize)
-            if (self.width - self.marginsides - self.lastx) < 200:
-                self.x = self.marginsides
-                if continuetext == 1:
-                    self.y = self.y - 2 * fontsize
+            loopcounter += 1
+            line = self.__html_unescape(unicode(line))
+            
+            # alignment
+            if not continuetext:
+                if style == "center":
+                    self.x = \
+                        (self.width - (len(line) * (self.fontsize / 2)))/2
+                elif style == "right":
+                    self.x = \
+                        ((self.width - self.marginsides) -\
+                             ((len(line)+3) * (self.fontsize / 2)))
+            if continuetext:
+                # wrapping multiline options
+                if (self.width - self.marginsides - self.x) < 100:
+                    self.resetx()
+                    self.nextline()
             if (self.y - self.fontsize) < 50:
                 self.set_new_page()
             for char in line:
-                font=self.selectfont(char)
-                t = c.beginText(self.x, self.y)
-                t.setFont(font, fontsize)
-                t.setFillGray(gray)
-                t.textOut(char)
-                c.drawText(t)
+                t = self.writechar(char)
                 self.x = t.getX()
-                self.lastx = t.getX()
-            self.y = self.y - fontsize
-            self.lasty = self.y
-        self.x = self.marginsides
+                self.y = t.getY()
+                # text wrapping -> TODO: word wrapping
+                if self.x > (self.width - self.marginsides - self.fontsize):
+                    self.writechar("-")
+                    self.nextline()
+                    self.resetx(self.fontsize)
+            if not continuetext and loopcounter != numlines:
+                self.nextline()
+                self.resetx()
+
+    def writechar(self, char=" "):
+        """
+        Writes one character on canvas
+        """
+
+        font=self.selectfont(char)
+        t = self.canvas.beginText(self.x, self.y)
+        t.setFont(font, self.fontsize)
+        t.setFillGray(self.gray)
+        t.textOut(char)
+        self.canvas.drawText(t)
+        return t
+
+    def nextline(self, fontsize=0):
+        """
+        Moves the y cursor down one line
+        """
+
+        if fontsize != 0:
+            self.fontsize = fontsize
+
+        if self.pagebegin == 0:
+            self.y = self.y - (self.fontsize + self.linespacing)
+            if self.y < self.margintop:
+                self.set_new_page()
+
+        self.pagebegin = 0
+
+    def resetx(self, offset=0, seek=None):
+        """
+        Moves the x cursor with offset
+        """
+
+        if seek == None:
+            self.x = self.marginsides + offset
+        else:
+            self.x += seek
+        lastvalidx = self.width - (self.marginsides + (self.fontsize / 2))
+        writablex = self.width - (2 * self.marginsides)
+        if self.x > lastvalidx:
+            currentx = self.x - self.marginsides
+            remx = currentx % writablex
+            self.x = remx + self.marginsides
+            numlines = int(currentx / writablex)
+            for line in xrange(numlines):
+                self.nextline()
+
+    def __html_unescape(self, text):
+        """
+        Helper function, unscape any html special characters
+        """
+
+        return re.sub("&(%s);" % "|".join(name2codepoint),
+                      lambda m: unichr(name2codepoint[m.group(1)]),
+                      text)
+
+    def linespace(self, spacing=2):
+        """
+        Moves the y cursor down by given units
+        """
+        if self.pagebegin == 0:
+            self.y -= spacing
+        self.pagebegin = 0
 
     def selectfont(self, char):
         """ Select font according to the input character """
+
         charcode = ord(char)
         for font in fontchecksequence:
             for fontrange in fontmapping[font]:
@@ -272,11 +1050,23 @@ class Form:
                     return font
         return "Helvetica"  # fallback, if no thirdparty font is installed
 
-    def draw_check_boxes(self, boxes=1, completeline=0, lines=0, seek=0,
-                         continuetext=0, fontsize=0, gray=0, style="",
-                         isdate=0, isdatetime=0):
+    def draw_check_boxes(self,
+                         boxes=1,
+                         completeline=0,
+                         lines=0,
+                         seek=0,
+                         continuetext=0,
+                         fontsize=15,
+                         gray=0,
+                         style="",
+                         ):
         """ Function to draw check boxes default no of boxes = 1 """
 
+        if not continuetext and not self.pagebegin:
+            self.resetx()
+            self.nextline()
+        self.pagebegin = 0
+        self.fontsize = fontsize
         c = self.canvas
         c.setLineWidth(0.90)
         c.setStrokeGray(gray)
@@ -288,11 +1078,11 @@ class Form:
             seek = 0
         if (self.y - self.fontsize) < 40:
             self.set_new_page()
-        if continuetext == 1:
-            self.y = self.y + self.fontsize
-            self.x = self.lastx
-        else:
-            self.x = self.marginsides
+        #if continuetext == 1:
+        #    self.y = self.y + self.fontsize
+        #    self.x = self.lastx
+        #else:
+        #    self.x = self.marginsides
         if seek != 0:
             self.x = self.x + seek
         if fontsize == 0:
@@ -307,77 +1097,90 @@ class Form:
             if self.x > (self.width - (self.marginsides + self.fontsize)):
                 break
         self.lastx = self.x
-        self.x = self.marginsides
-        self.y = self.y - self.fontsize
-        if isdate:
-            t = c.beginText(self.x, self.y)
-            t.setFont(Helvetica, 13)
-            t.setFillGray(0)
-            t.textOut("   D  D  M  M  Y  Y  Y  Y")
-            c.drawText(t)
-            self.y = self.y - fontsize
-            self.lastx = t.getX()
-            self.lasty = self.y
-        if isdatetime:
-            t = c.beginText(self.x, self.y)
-            t.setFont(Helvetica, 12.5)
-            t.setFillGray(0.4)
-            t.textOut("   D  D  M  M  Y  Y  Y  Y -H  H :M  M")
-            c.drawText(t)
-            self.y = self.y - fontsize
-            self.lastx = t.getX()
-            self.lasty = self.y
+        #self.x = self.marginsides
+        #self.y = self.y - self.fontsize
+        #if isdate:
+        #    t = c.beginText(self.x, self.y)
+        #    t.setFont(Helvetica, 13)
+        #    t.setFillGray(0)
+        #    t.textOut("   D  D  M  M  Y  Y  Y  Y")
+        #    c.drawText(t)
+        #    self.y = self.y - fontsize
+        #    self.lastx = t.getX()
+        #    self.lasty = self.y
+        #if isdatetime:
+        #    t = c.beginText(self.x, self.y)
+        #    t.setFont(Helvetica, 12.5)
+        #    t.setFillGray(0.4)
+        #    t.textOut("   D  D  M  M  Y  Y  Y  Y -H  H :M  M")
+        #    c.drawText(t)
+        #    self.y = self.y - fontsize
+        #    self.lastx = t.getX()
+        #    self.lasty = self.y
         self.lastx = self.x
-        self.x = self.marginsides
-        self.y = self.y - 13
 
-    def draw_circle(self, boxes=1, completeline=0, lines=0, seek=0,
-                    continuetext=0, fontsize=0, gray=0, style=""):
+    def draw_circle(self,
+                    boxes=1,
+                    completeline=0,
+                    lines=0,
+                    seek=0,
+                    continuetext=0,
+                    fontsize=0,
+                    gray=0,
+                    style=""):
         """ Draw circles on the form """
 
         c = self.canvas
         c.setLineWidth(0.90)
         c.setStrokeGray(gray)
-        if style == "center":
-            self.x = self.width / 2
-        elif style == "right":
-            self.x = self.width - self.marginsides - self.fontsize
-        if seek > (self.width - (self.marginsides + self.fontsize)):
-            seek = 0
-        if (self.y - self.fontsize) < 40:
-            self.set_new_page()
-        if continuetext == 1:
-            self.y = self.y + self.fontsize
-            self.x = self.lastx
-        else:
-            self.x = self.marginsides
-        if seek != 0:
-            self.x = self.x + seek
-        if fontsize == 0:
-            fontsize = self.fontsize
-        else:
-            self.fontsize = fontsize
-        if completeline == 1:
-            boxes = int(self.width / self.fontsize)
-        for i in range(boxes):
+        self.resetx(seek=seek)
+        #if style == "center":
+        #    self.x = self.width / 2
+        #elif style == "right":
+        #    self.x = self.width - self.marginsides - self.fontsize
+        #if seek > (self.width - (self.marginsides + self.fontsize)):
+        #    seek = 0
+        #if (self.y - self.fontsize) < 40:
+        #    self.set_new_page()
+        #if continuetext == 1:
+        #    self.y = self.y + self.fontsize
+        #    self.x = self.lastx
+        #else:
+        #    self.x = self.marginsides
+        #if seek != 0:
+        #    self.x = self.x + seek
+        #if fontsize == 0:
+        #    fontsize = self.fontsize
+        #else:
+        #    self.fontsize = fontsize
+        #if completeline == 1:
+        #    boxes = int(self.width / self.fontsize)
+        for eachcircle in xrange(boxes):
             c.circle(self.x + self.fontsize/2, self.y + self.fontsize/2,
                      self.fontsize/2, fill = 0)
-            self.x = self.x + self.fontsize
-            if self.x > (self.width - (self.marginsides + self.fontsize)):
-                break
-        self.lastx = self.x
-        self.x = self.marginsides
-        self.y = self.y - self.fontsize
+            self.resetx(seek=self.fontsize)
+            self.resetx(seek=seek)
+        #    if self.x > (self.width - (self.marginsides + self.fontsize)):
+        #        break
+        #self.lastx = self.x
+        #self.x = self.marginsides
+        #self.y = self.y - self.fontsize
 
-    def draw_line(self, gray=0):
+    def draw_line(self, gray=0, nextline=0):
         """ Function to draw a straight line """
 
+        self.fontsize = 4
+        if nextline:
+            self.nextline()
+        else:
+            self.linespace(8)
+        self.resetx()
         c = self.canvas
         c.setStrokeGray(gray)
-        c.setLineWidth(0.40)
-        self.y = self.y - (self.fontsize)
+        c.setLineWidth(1)
+        #self.y = self.y + self.linespacing + (self.fontsize/2)
         c.line(self.x, self.y, self.width - self.x, self.y)
-        self.y = self.y - (self.fontsize)
+        self.y = self.y + (self.linespacing)
 
     def set_new_page(self):
         """
@@ -391,11 +1194,30 @@ class Form:
         self.x = self.marginsides
         self.lastx = self.marginsides
         self.y = self.height - self.margintop
-        self.print_text(["Page %s" % unicode(self.num)], fontsize=8,
-                        style="right")
-        self.x = self.marginsides
-        self.lastx = self.x
-        self.y = self.y - 32
+        #self.print_text(["Page %s" % unicode(self.num)], fontsize=8,
+        #                style="right")
+        self.put_page_num()
+        #self.x = self.marginsides
+        #self.lastx = self.x
+        #self.y = self.y - 32
+        self.pagebegin = 1
+
+    def put_page_num(self):
+        x, y = self.x, self.y
+        fontsize = self.fontsize
+
+        self.fontsize = 10
+        text = "page%s" % self.num
+        self.x = self.width - \
+            (((len(text)+2)*(self.fontsize/2)) + self.marginsides)
+        self.y = 25
+        for char in text:
+            t = self.writechar(char)
+            self.x = t.getX()
+            self.y = t.getY()
+
+        self.fontsize = fontsize
+        self.x, self.y = x, y
 
     def set_title(self, title = "FORM"):
         """ Sets the title of the pdf. """
@@ -409,961 +1231,3 @@ class Form:
         pdf = self.IObuffer.getvalue()
         self.IObuffer.close()
         return pdf
-
-
-#========== xml.sax.ContentHandler instance for layout parsing ============
-
-class FormHandler(ContentHandler):
-
-    def __init__(self, form, uid, lang="eng"):
-        """ Form initialization and preparation """
-
-        self.form = form
-        self.input = 0
-        self.select = 0
-        self.label = 0
-        self.value = 0
-        self.read = 0
-        self.item = 0
-        self.model = 0
-        self.itext = 0
-        self.hint = 0
-        self.translation = 0
-        self.translang = ""
-        self.translist = []
-        self.text = 0
-        self.textid, self.texttype = ["", ""]
-        self.lang = lang
-        self.printtext = ""
-        self.title = ""
-        self.ref = ""
-        self.initial = 1
-        self.single = 0
-        self.multiple = 0
-        self.uuid = uid
-        #print self.uuid
-        self.form.decorate()
-        self.page = 1
-        self.xmlcreate()
-        self.name = ""
-        self.dict = {}
-        self.pdf = ""
-        self.xmls = {}
-        self.labelTrans = ""
-        self.customfields = {"location_id":4,\
-                                 "staff_id":2,\
-                                 "staff2_id":2,\
-                                 } # fields having custom sizes
-        self.readonly = ""
-        self.default = ""
-
-    def xmlcreate(self):
-        """ Creates the xml """
-
-        self.doc = Document()
-        self.xmltitle = "%s_%s_%s.xml" % (str(self.uuid), self.lang,
-                                          str(self.page))
-        self.root = self.doc.createElement("guide")
-        self.doc.appendChild(self.root)
-        if self.initial == 0:
-            if self.single == 1:
-                element = "select1"
-            elif self.multiple == 1:
-                element = "select"
-            elif self.input == 1:
-                element = "input"
-            self.child1 = self.doc.createElement(element)
-            self.child1.setAttribute("ref", self.ref)
-            self.root.appendChild(self.child1)
-        if self.initial == 1:
-            self.initial = 0
-
-    def xmlsave(self):
-        """ Save the xml """
-
-        self.xmls[self.xmltitle] = self.doc.toprettyxml(indent = "    ")
-
-    def startElement(self, name, attrs):
-        """ Parses the starting element and then check what to read """
-
-        self.element = name
-        self.title = ""
-        self.value_ch = ""
-        if not str(name).find(":") == -1:
-            name = name.split(":")[1]
-        if name == "input":
-            self.input = 1
-            self.ref = attrs.get("ref")
-            self.readonly = attrs.get("readonly", "")
-            self.default = attrs.get("default", "")
-            #if not str(self.ref).find("/") == -1:
-            #    ref = str(self.ref).split("/")[-1]
-            #    if ref in self.hiddenfields:
-            #        self.protectedfield = 1
-            self.child1 = self.doc.createElement(name)
-            self.child1.setAttribute("ref", self.ref)
-            if self.ref in self.dict:
-                self.child1.setAttribute("type", self.dict[self.ref])
-                self.type = self.dict[self.ref]
-            else:
-                self.child1.setAttribute("type", "string")
-                self.type = "string"
-            self.root.appendChild(self.child1)
-        elif name == "label":
-            self.label = 1
-            self.labelref = attrs.get("ref")
-            if self.select != 1:
-                self.child2 = self.doc.createElement("location")
-                self.child1.appendChild(self.child2)
-            elif self.select == 1 and self.item == 1:
-                self.child2 = self.doc.createElement("location")
-                self.child1.appendChild(self.child2)
-        elif name == "select" or name == "select1":
-            self.select = 1
-            self.read = 1
-            self.ref = attrs.get("ref")
-            self.child1 = self.doc.createElement(name)
-            self.child1.setAttribute("ref", self.ref)
-            self.root.appendChild(self.child1)
-            if name == "select":
-                self.form.print_text(["", "", unicode(" Multiple select: "), ""],
-                                     fontsize=10, gray=0)
-                self.multiple = 1
-            else:
-                self.form.print_text(["", "", unicode("Single select: "), ""],
-                                     fontsize=10, gray=0)
-                self.single = 1
-        elif name == "item":
-            self.item = 1
-        elif name == "value":
-            self.value = 1
-        elif name == "bind":
-            self.dict[str(attrs.get("nodeset"))] = str(attrs.get("type"))
-        elif name == "itext":
-            self.itext = 1
-        elif name == "translation":
-            self.translation = 1
-            self.translang = attrs.get("lang")
-        elif name == "text":
-            self.text = 1
-            if attrs.get("id") == "title":
-                self.textid = "title"
-                self.texttype = "string"
-            else:
-                self.textid, self.texttype = attrs.get("id").split(":")
-        elif name == "model":
-            self.model = 1
-        elif name == "hint":
-            self.hint = 1
-
-    def characters(self, ch):
-        """ Deal with the data """
-
-        if self.item == 1 and self.value == 1 and self.select == 1:
-            self.value_ch += ch
-        elif self.itext == 1 and self.translation == 1 and self.text == 1:
-            self.value_ch += ch
-        else:
-            self.title += ch
-
-    def endElement(self, name):
-        """ It specifies the operations to do on closing the element """
-
-        if self.form.lasty < 100:
-            self.form.set_new_page()
-            self.xmlsave()
-            self.page += 1
-            self.xmlcreate()
-        if not str(name).find(":") == -1:
-            name = name.split(":")[1]
-        #if name == "title":
-        if name == "head":
-            if self.model == 0:
-                #self.form.barcode(self.uuid) # not needed till ocr is functional
-                for trtuple in self.translist:
-                    if trtuple[0] == "title":
-                        self.printtext = trtuple[2]
-                self.form.set_title(unicode(self.printtext))
-                #self.form.set_title(str(self.title))
-                self.form.print_text([unicode(self.printtext)], fontsize=18,
-                                     style="center")
-                #self.form.print_text([unicode(self.title)], fontsize=18, style="center")
-                self.form.print_text([unicode("1. Fill the necessary fields in BLOCK CAPITAL letters."),
-                                      unicode("2. Always use one box per letter and leave one box space to separate words."),
-                                      unicode("3. Fill in the circles completely.")],
-                                      fontsize=13, gray=0)
-                self.form.draw_line()
-                # self.form.print_text([unicode(self.uuid)], fontsize=10, gray=0)
-        elif name == "input":
-            self.input = 0
-            #self.protectedfield = 0
-            self.type = ""
-            self.readonly = ""
-            self.default = ""
-        elif name == "select" or name == "select1":
-            self.select = 0
-            self.multiple = 0
-            self.single = 0
-            self.read = 0
-            self.form.print_text([" ",])
-        elif name == "label":
-            if self.input == 1: #and self.protectedfield != 1:
-                for trtuple in self.translist:
-                    if trtuple[0] == self.ref and trtuple[1] == "label":
-                        self.printtext = trtuple[2]
-                self.form.print_text([" ", " %s " % unicode(self.printtext), " "])
-                self.child3 = self.doc.createTextNode("%s,%s" % (str(self.form.lastx),
-                                                                 str(self.form.lasty)))
-                self.child2.appendChild(self.child3)
-                self.child2.setAttribute("font", str(16))
-                if self.readonly == "true":
-                    self.form.print_text(["   %s " % unicode(self.default)])
-                elif self.ref == "age":
-                    self.form.draw_check_boxes(boxes=2, completeline=0,
-                                               continuetext=0, gray=0.9,
-                                               fontsize=16, seek=10)
-                    self.child2.setAttribute("boxes", str(2))
-                elif self.type == "date":
-                    self.form.draw_check_boxes(boxes=8, completeline=0,
-                                               continuetext=0, gray=0.9,
-                                               fontsize=16, seek=10, isdate=1)
-                    self.child2.setAttribute("boxes", str(8))
-                elif self.type == "datetime":
-                    self.form.draw_check_boxes(boxes=12, completeline=0,
-                                               continuetext=0, gray=0.9,
-                                               fontsize=16, seek=10, isdatetime=1)
-                    self.child2.setAttribute("boxes", str(12))
-                elif self.type == "int":
-                    count = (self.form.width - 2 * self.form.marginsides) / 32
-                    self.form.draw_check_boxes(boxes=1, completeline=1,
-                                               continuetext=0, gray=0.9,
-                                               fontsize=16, seek=10)
-                    self.child2.setAttribute("boxes", str(count))
-                elif self.type == "text":
-                    count = (self.form.width - 2 * self.form.marginsides) / 16
-                    self.child2.setAttribute("boxes", str(int(count)))
-                    self.child2.setAttribute("lines", "4")
-                    for i in xrange(4):
-                        self.form.draw_check_boxes(boxes=1, completeline=1,
-                                                   continuetext=0, gray=0.9,
-                                                   fontsize=16, seek=10)
-                        if self.form.lasty < 100:
-                            self.form.set_new_page()
-                            self.xmlsave()
-                            self.page += 1
-                            self.xmlcreate()
-                else:
-                    if not str(self.ref).find("/") == -1:
-                        ref = str(self.ref).split("/")[-1]
-                        if ref in self.customfields.keys():
-                            numlines = self.customfields[ref]
-                        else:
-                            # Minimum of 2 lines
-                            numlines = 2
-                    count = (self.form.width - 2 * self.form.marginsides) / 16
-                    self.child2.setAttribute("boxes", str(int(count)))
-                    self.child2.setAttribute("lines", str(numlines))
-                    for i in xrange(numlines):
-                        self.form.draw_check_boxes(boxes=1, completeline=1,
-                                                   continuetext=0, gray=0.9,
-                                                   fontsize=16, seek=10)
-                        if self.form.lasty < 100:
-                            self.form.set_new_page()
-                            self.xmlsave()
-                            self.page += 1
-                            self.xmlcreate()
-            elif self.item == 1 and self.select == 1:
-                labelid, labeltype = self.labelref.split("'")[1].split("&")[0].split(":")
-                for trtuple in self.translist:
-                    if trtuple[0] == labelid and trtuple[1] == labeltype:
-                        self.printtext = trtuple[2]
-                if self.printtext != "None" and self.printtext != "Unknown":
-                    self.form.print_text(["     %s" % unicode(self.printtext)],
-                                         continuetext = 1)
-                    x = self.form.lastx
-                    y = self.form.lasty
-                    self.form.draw_circle(boxes=1, continuetext=1, gray=0.9,
-                                          fontsize=12, seek=10)
-                    self.labelTrans = "Trans"
-                else:
-                    self.labelTrans = "NoTrans"
-            elif self.read == 1 and self.select == 1:
-                labelid, labeltype = self.labelref.split("'")[1].split("&")[0].split(":")
-                for trtuple in self.translist:
-                    if trtuple[0] == labelid and trtuple[1] == labeltype:
-                        self.printtext = trtuple[2]
-                self.form.print_text([" %s " % unicode(self.printtext), " ", " "])
-                self.read = 0
-            self.label= 0
-            self.labelref = ""
-            labelid, labeltype = ["", ""]
-            trtuple = ("", "", "")
-            self.printtext = ""
-        elif name == "value":
-            self.value = 0
-            if self.select == 1:
-                self.child3 = self.doc.createTextNode("%s,%s" % (str(self.form.lastx - 12),
-                                                                 str(self.form.lasty)))
-                self.child2.appendChild(self.child3)
-                self.child2.setAttribute("value", str(self.value_ch))
-                self.child2.setAttribute("font", str(12))
-                self.child2.setAttribute("boxes", str(1))
-                if self.item == 1 and self.labelTrans == "NoTrans":
-                    self.printtext = str(self.value_ch)
-                    self.form.print_text(["     " + unicode(self.printtext)],
-                                         continuetext = 1)
-                    x = self.form.lastx
-                    y = self.form.lasty
-                    self.form.draw_circle(boxes=1, continuetext=1, gray=0.9,
-                                          fontsize=12, seek=10)
-                    self.labelTrans == ""
-            if self.itext == 1 and self.translation == 1 and self.text == 1 and \
-                                                    self.translang == self.lang:
-                self.translist.append((self.textid, self.texttype,
-                                       unicode(self.value_ch)))
-            self.value_ch = ""
-        elif name == "item":
-            self.item = 0
-        elif name == "itext":
-            self.itext = 0
-        elif name == "translation":
-            self.translation = 0
-            self.translang = ""
-        elif name == "text":
-            self.name = 0
-            self.textid, self.texttype = ["", ""]
-        elif name == "model":
-            self.model = 0
-        elif name == "hint":
-            for trtuple in self.translist:
-                    if trtuple[0] == self.ref and trtuple[1] == "hint":
-                        self.printtext = trtuple[2]
-            if self.printtext not in ["None", "Unkown"]:
-                self.form.print_text([" %s " % unicode(self.printtext), " ", " "],
-                                     fontsize=10)
-            self.hint = 0
-        elif name == "html":
-            self.translist = [] # clearing the translation mapping
-            #print "End, saving with the filename %s" % str(self.form.pdfpath)
-            self.xmlsave()
-            self.pdf = self.form.save()
-        self.title = ""
-
-    def get_files(self):
-        """ Returns pdf text and layout xml text as dict """
-        return self.pdf, self.xmls
-
-
-#== xml.sax.ContentHandler instance to find available languages in xform ==
-
-class LangHandler(ContentHandler):
-    """ To retrieve list of available languages """
-
-    def __init__(self):
-        """ Form initialization and preparation"""
-
-        self.itext = 0
-        self.translation = 0
-        self.lang = []
-
-    def startElement(self, name, attrs):
-        """ Parses the starting element and then check what to read """
-
-        if not str(name).find(":") == -1:
-            name = name.split(":")[1]
-        if name == "translation":
-            if self.translation == 0 and self.itext == 1:
-                self.translation= 1
-                self.lang.append(str(attrs.get("lang")))
-        elif name == "itext":
-            self.itext = 1
-
-    def endElement(self, name):
-        """ It specifies the operations to do on closing the element """
-
-        if not str(name).find(":") == -1:
-            name = name.split(":")[1]
-        if name == "translation":
-            self.translation = 0
-        elif name == "itext":
-            self.itext = 0
-
-    def get_lang(self):
-        """ Return list of available languages in the xform """
-
-        return self.lang
-
-
-def _open_anything(source):
-    """ Read anything link/file/string """
-
-    import urllib
-    try:
-        return urllib.urlopen(source)
-    except (IOError, OSError):
-        pass
-    try:
-        return open(source, "r")
-    except (IOError, OSError):
-        pass
-    return StringIO(str(source))
-
-
-#==========================================================================
-#================================= OCR API ================================
-#==========================================================================
-
-class S3XForms(S3Method):
-    """
-    Generate XForms and PDFs the s3 way
-    """
-
-    def apply_method(self, r, **attr):
-        """
-        S3Method's abstract method
-        """
-        
-        self.response.view = "xml.html"
-        xml = self.manager.xml
-        self.error = r.error
-        
-        format = r.representation
-        if r.http == "GET":
-            if format == "xml":
-                output = self.xforms_create()
-                self.response.headers["Content-Type"] = "application/xml"
-                return xml.tostring(output)
-            elif format == "pdf":
-                output = self.pdf_manager()
-                self.response.view = None
-                self.response.headers["Content-Type"] = "application/pdf"
-                self.response.headers["Content-disposition"] = \
-                            "attachment; filename=\"%s.pdf\"" % self.tablename
-                return output
-            else:
-                r.error(501, self.manager.ERROR.BAD_FORMAT)
-        elif r.http in ("POST","PUT"):
-            if format == "xml":
-                raise HTTP(501, body="method not implimented")
-            elif format == "pdf":
-                raise HTTP(501, body="method not implimented")
-            else:
-                r.error(501, self.manager.ERROR.BAD_FORMAT)
-        else:
-            r.error(501, self.manager.ERROR.BAD_METHOD)
-
-    def xforms_create(self):
-        """
-        Generate Valid XML for XForms
-        """
-
-        # variables used in lxml
-        XFORMS_NAMESPACE = "http://www.w3.org/2002/xforms"
-        XHTML_NAMESPACE = "http://www.w3.org/1999/xhtml"
-        XMLEVENTS_NAMESPACE = "http://www.w3.org/2001/xml-events"
-        XMLSCHEMA_NAMESPACE = "http://www.w3.org/2001/XMLSchema"
-        JAVAROSA_NAMESPACE = "http://openrosa.org/javarosa"
-
-        XFORMS = "{%s}" % XFORMS_NAMESPACE
-        XHTML = "{%s}" % XHTML_NAMESPACE
-        XMLEVENTS = "{%s}" % XMLEVENTS_NAMESPACE
-        XMLSCHEMA = "{%s}" % XMLSCHEMA_NAMESPACE
-        JAVAROSA = "{%s}" % JAVAROSA_NAMESPACE
-
-        NSMAP = {
-            None : XFORMS_NAMESPACE,
-            "h" : XHTML_NAMESPACE,
-            "ev": XMLEVENTS_NAMESPACE,
-            "xsd": XMLSCHEMA_NAMESPACE,
-            "jr": JAVAROSA_NAMESPACE,
-            }
-
-        # variables for table
-        _table = self.tablename
-        table = self.db[_table]
-
-        fields = self._get_fields()
-
-
-        # create element tree ------------------------------------------
-        root = etree.Element("%shtml" % XHTML, nsmap=NSMAP)
-        
-        #html
-        head = etree.SubElement(root, "%shead" % XHTML)
-        body = etree.SubElement(root, "%sbody" % XHTML)
-        
-        ##head
-        ###title
-        title = etree.SubElement(head, "%stitle" % XHTML)
-        title.text = self.tablename
-        model = etree.SubElement(head, "%smodel" % XFORMS)
-        ###model
-        instance = etree.SubElement(model, "%sinstance" % XFORMS)
-        ####instance
-        self._generate_instance(fields, instance)
-        ####bind
-        self._generate_bindings(fields, model)
-        ####itext
-        itext = etree.SubElement(model, "%sitext" % XFORMS)
-        #####translation
-        #has to be differed
-        ##body
-        ###controllers
-        translation = self._generate_controllers(fields, body)
-        itext.append(translation) # differed translation tree
-
-        #print str(etree.tostring(root, encoding="UTF-8", pretty_print=True))
-        return root
-
-    def _get_fields(self):
-        """Generate fields for the resource"""
-
-        _table = self.tablename
-        table = self.db[_table]
-        
-        fields_list = []
-        
-        for field in table.fields:
-            if field in [ "id", "created_on", "modified_on",
-                          "uuid", "mci", "deleted", "created_by",
-                          "modified_by", "deleted_fk", "owned_by_role",
-                          "owned_by_user" ]:
-                pass
-            elif table[field].writable == False and table[field].readable == False:
-                pass
-            else:
-                fields_list.append(field)
-
-        return fields_list
-
-    def _generate_instance(self, fields, instance):
-        """
-            Generates etree for instance for the resource
-        """
-
-        _table = self.tablename
-        table = self.db[_table]
-        XFORMS_NAMESPACE = "http://www.w3.org/2002/xforms"
-        XFORMS = XFORMS = "{%s}" % XFORMS_NAMESPACE
-
-        tabletitle = etree.SubElement(instance,
-                                      "%s%s" % (XFORMS, self.tablename),
-                                      xmlns="")
-        for fieldname in fields:
-            instChild = etree.SubElement(tabletitle, "%s%s" % (XFORMS, fieldname))
-            if table[fieldname].default:
-                if inspect.isroutine(table[fieldname].default):
-                    instChild.text = unicode(table[fieldname].default())
-                else:
-                    instChild.text = unicode(table[fieldname].default)
-        
-
-    def _generate_bindings(self, fields, model):
-        """
-            Generates etree for bindings for the resource
-        """
-
-        _table = self.tablename
-        table = self.db[_table]
-        XFORMS_NAMESPACE = "http://www.w3.org/2002/xforms"
-        XFORMS = XFORMS = "{%s}" % XFORMS_NAMESPACE
-
-        for field in fields:
-            required = ""
-            _type = ""
-            constraint = ""
-
-            if "IS_NOT_EMPTY" in str(table[field].requires):
-                required = "true()"
-            else:
-                required = "false()"
-
-            if table[field].type == "string":
-                _type = "string"
-            elif table[field].type == "double":
-                _type = "decimal"
-            elif table[field].type == "date":
-                _type = "date"
-            # Collect doesn't support datetime yet
-            elif table[field].type == "datetime":
-                _type = "datetime"
-            elif table[field].type == "integer":
-                _type = "int"
-            elif table[field].type == "boolean":
-                _type = "boolean"
-            elif table[field].type == "upload": # For images
-                _type = "binary"
-            elif table[field].type == "text":
-                _type = "text"
-            else:
-                # Unknown type
-                _type = "string"
-
-            if self._uses_requirement("IS_INT_IN_RANGE",
-                                      table[field]) \
-                    or self._uses_requirement("IS_FLOAT_IN_RANGE",
-                                              table[field]):
-
-                if hasattr(table[field].requires, "other"):
-                    maximum = table[field].requires.other.maximum
-                    minimum = table[field].requires.other.minimum
-                else:
-                    maximum = table[field].requires.maximum
-                    minimum = table[field].requires.minimum
-                if minimum is None:
-                    constraint = "(. < %s)" % str(maximum)
-                elif maximum is None:
-                    constraint = "(. > %s)" % minimum
-                else:
-                    constraint = "(. > %s and . < %s)" % (minimum,
-                                                          maximum)
-            elif self._uses_requirement("IS_IN_SET", table[field]):
-                _type = ""
-
-            ref = "/%s/%s" % (_table, field)
-
-            if _type != "":
-                if constraint != "":
-                    model.append(etree.Element("%sbind" % XFORMS,
-                                               nodeset=ref,
-                                               required=required,
-                                               type=_type,
-                                               constraint=constraint))
-                else:
-                    model.append(etree.Element("%sbind" % XFORMS,
-                                               nodeset=ref,
-                                               required=required,
-                                               type=_type))
-            else:
-                model.append(etree.Element("%sbind" % XFORMS,
-                                           nodeset=ref,
-                                           required=required))
-
-        return
-
-    def _generate_controllers(self, fields, body):
-        """
-        Generates etree for conntrollers and translation values
-        for the resource
-        """
-
-        _table = self.tablename
-        table = self.db[_table]
-        XFORMS_NAMESPACE = "http://www.w3.org/2002/xforms"
-        XFORMS = XFORMS = "{%s}" % XFORMS_NAMESPACE
-
-        translation = etree.Element("%stranslation" % XFORMS, lang="eng")
-
-        # Store resource title
-        try:
-            translation.append(self._textvalue("title",
-                                               self.manager.s3.crud_strings[_table].subtitle_list.read()))
-        except(KeyError):
-            translation.append(self._textvalue("title", self.tablename))
-        for field in fields:
-            ref = "/%s/%s" % (_table, field)
-
-            translation.append(self._textvalue("%s:label" % ref,
-                                               self._get_str(table[field].label)))
-            translation.append(self._textvalue("%s:hint" % ref,
-                                               self._get_str(table[field].comment)))
-
-            if hasattr(table[field].requires, "option"):
-                item_list = []
-                for option in table[field].requires.theset:
-                    items_list.append(self._itemlabelvalue(valuetext=self._get_str(option),
-                                                           labeltext=self._get_str(option)))
-                controller = self._get_controller("select1",
-                                                  kargs={"items_list":items_list,
-                                                         "ref":ref})
-                #controllers_list.append(TAG["select1"](items_list, _ref=field))
-
-            elif self._uses_requirement("IS_IN_SET",
-                                        table[field]): # Defined below
-                if hasattr(table[field].requires, "other"):
-                    insetrequires = table[field].requires.other
-                else:
-                    insetrequires = table[field].requires
-                theset = insetrequires.theset
-                items_list=[]
-
-                option_num = 0 # for formatting something like "jr:itext('stuff:option0')"
-                for option in theset:
-                    if table[field].type == "integer":
-                        option = int(option)
-                    option_ref = "%s:option%s" % (ref, str(option_num))
-                    items_list.append(self._itemlabelvalue(valuetext=self._get_str(option),
-                                                           labelref="jr:itext('%s')" % option_ref))
-                    translation.append(self._textvalue(option_ref,
-                                                       self._get_str(insetrequires.labels[theset.index(str(option))])))
-                    option_num += 1
-                if insetrequires.multiple:
-                    controller = self._get_controller("select",
-                                                      kargs={"items_list":items_list,
-                                                       "ref":ref,
-                                                       "labelref":"jr:itext('%s:label')" % ref,
-                                                       "hintref":"jr:itext('%s:hint')" % ref,
-                                                       })
-                else:
-                    controller = self._get_controller("select1",
-                                                      kargs={"items_list":items_list,
-                                                       "ref":ref,
-                                                       "labelref":"jr:itext('%s:label')" % ref,
-                                                       "hintref":"jr:itext('%s:hint')" % ref,
-                                                       })
-
-            elif table[field].type == "boolean": # Using select1, is there an easier way to do this?
-                items_list=[]
-                
-                # True option
-                items_list.append(self._itemlabelvalue(valuetext=str(1),
-                                                       labelref="jr:itext('%s:option0')" % ref))
-                translation.append(self._textvalue("%s:option0" % ref,
-                                                   "True"))
-
-                # False option
-                items_list.append(self._itemlabelvalue(valuetext=str(0),
-                                                       labelref="jr:itext('%s:option1')" % ref))
-                translation.append(self._textvalue("%s:option1" % ref,
-                                                   "False"))
-                
-                controller = self._get_controller("select1",
-                                                  kargs={"items_list":items_list,
-                                                   "ref":ref,
-                                                   "labelref":"jr:itext('%s:label')" % ref,
-                                                   "hintref":"jr:itext('%s:hint')" % ref,
-                                                   })
-
-            elif table[field].type == "upload": # For uploading images
-                controller = self._get_controller("upload",
-                                                  kargs={"ref":ref,
-                                                   "labelref":"jr:itext('%s:label')" % ref,
-                                                   "hintref":"jr:itext('%s:hint')" % ref,
-                                                   "mediatype":"image/*",
-                                                   })
-            elif table[field].writable == False:
-                controller = self._get_controller("input",
-                                                  kargs={"ref":ref,
-                                                   "labeltext":self._get_str(table[field].label),
-                                                   "readonly":"true",
-                                                   "default":self._get_str(table[field].default),
-                                                   })
-            else:
-                # Normal Input field
-                controller = self._get_controller("input",
-                                                  kargs={"ref":ref,
-                                                   "labeltext":self._get_str(table[field].label),
-                                                   })
-
-            body.append(controller)
-
-        return translation
-            
-    def _get_str(self, obj):
-        if inspect.isroutine(obj):
-            # This is a function, so call it now
-            obj = obj()
-
-        try:
-            text = obj.read()
-        except(AttributeError):
-            try:
-                # This is a Help Tooltip
-                text = obj.elements()[1].attributes["_title"]
-                try:
-                    text =  text.split("|")[1]
-                except(IndexError):
-                    pass
-            except(AttributeError, IndexError):
-                text = obj
-        if text == None:
-            text = ""
-        return str(text)
-
-    def _textvalue(self, textid, valuetext):
-        """
-        simple helper function
-        """
-
-        XFORMS_NAMESPACE = "http://www.w3.org/2002/xforms"
-        XFORMS = XFORMS = "{%s}" % XFORMS_NAMESPACE
-
-        text = etree.Element("%stext" % XFORMS, id=textid)
-        value = etree.SubElement(text, "%svalue" % XFORMS)
-        value.text = unicode(valuetext, 'utf8')
-
-        return text
-
-    def _itemlabelvalue(self, valuetext, labeltext=None, labelref=None):
-        """
-        simple helper function
-        """
-
-        XFORMS_NAMESPACE = "http://www.w3.org/2002/xforms"
-        XFORMS = XFORMS = "{%s}" % XFORMS_NAMESPACE
-
-        item = etree.Element("%sitem" % XFORMS)
-        if labeltext != None:
-            label = etree.SubElement(item, "%slabel" % XFORMS)
-            value = etree.SubElement(item, "%svalue" % XFORMS)
-            label.text = unicode(labeltext, 'utf8')
-            value.text = unicode(valuetext, 'utf8')
-        elif labelref != None:
-            label = etree.SubElement(item,
-                                     "%slabel" % XFORMS,
-                                     ref=labelref)
-            value = etree.SubElement(item, "%svalue" % XFORMS)
-            value.text = unicode(valuetext, 'utf8')
-        return item
-
-    def _get_controller(self, controller_name, kargs, ref="",
-                        labeltext="", readonly="", default="",
-                        items_list = [], hintref="",
-                        labelref=""):
-        """
-        simple helper function
-        """
-
-        XFORMS_NAMESPACE = "http://www.w3.org/2002/xforms"
-        XFORMS = XFORMS = "{%s}" % XFORMS_NAMESPACE
-
-        ref = str(kargs.get("ref", ""))
-
-        if controller_name == "input":
-            labeltext = str(kargs.get("labeltext", ""))
-            readonly = str(kargs.get("readonly", False))
-            defaulttext = str(kargs.get("default", ""))
-            if readonly == "true":
-                controller = etree.Element("%s%s" % (XFORMS,
-                                                     controller_name),
-                                           ref=ref,
-                                           readonly="true",
-                                           default=defaulttext)
-            else:
-                controller = etree.Element("%s%s" % (XFORMS,
-                                                     controller_name),
-                                           ref=ref)
-            label = etree.SubElement(controller, "%slabel" % XFORMS)
-            label.text = unicode(labeltext, 'utf8')
-        elif controller_name == "select1" or controller_name == "select":
-            items = kargs.get("items_list", [])
-            labelref = str(kargs.get("labelref", ""))
-            hintref = str(kargs.get("hintref", ""))
-            controller = etree.Element("%s%s" % (XFORMS,
-                                                 controller_name),
-                                       ref=ref)
-            if labelref != None:
-                label = etree.SubElement(controller,
-                                         "%slabel" % XFORMS,
-                                         ref=labelref)
-            if hintref != None:
-                hint = etree.SubElement(controller,
-                                        "%shint" % XFORMS,
-                                        ref=hintref)
-            for item in items:
-                controller.append(item)
-        elif controller_name == "upload":
-            labelref = str(kargs.get("labelref", ""))
-            hintref = str(kargs.get("hintref", ""))
-            controller = etree.Element("%s%s" % (XFORMS,
-                                                 controller_name),
-                                       ref=ref)
-            if labelref != None:
-                label = etree.SubElement(controller,
-                                         "%slabel" % XFORMS,
-                                         ref=labelref)
-            if hintref != None:
-                hint = etree.SubElement(controller,
-                                        "%shint" % XFORMS,
-                                        ref=hintref)
-
-        return controller
-
-    def pdf_manager(self):
-        """
-        Generate PDFs for the resource
-        @TODO: ocr implementation would require
-               if (no pdf) : generate + store(db) + deliver
-               elif (pdf exists) : retrive(db) + deliver
-        """
-        xforms = self.xforms_create()
-        xforms = etree.tostring(xforms,
-                                encoding="UTF-8",
-                                pretty_print=True)
-
-        uid = uuid.uuid1()
-        xmls = {}
-        form = Form(pdfname = "%s.pdf" % str(uid))
-        formhandler = FormHandler(form, uid, "eng")
-        saxparser = make_parser()
-        saxparser.setContentHandler(formhandler)
-        saxparser.parse(_open_anything(xforms))
-        pdf, xmls = formhandler.get_files()
-
-        return pdf
-
-    def _uses_requirement(self, requirement, field):
-        """
-        Check if a given database field uses the specified requirement
-        (IS_IN_SET, IS_INT_IN_RANGE, etc)
-        """
-        if hasattr(field.requires, "other") \
-                or requirement in str(field.requires):
-            if hasattr(field.requires, "other"):
-                if requirement in str(field.requires.other):
-                    return True
-            elif requirement in str(field.requires):
-                return True
-        return False
-
-def s3ocr_generate_pdf(xform, pdflang):
-    """ Generates pdf/xml files out of xform with language support """
-
-    uid = uuid.uuid1()
-    pdfs = {}
-    xmls = {}
-    form = Form(pdfname = "%s.pdf" % str(uid))
-    formhandler = FormHandler(form, uid, pdflang)
-    saxparser = make_parser()
-    saxparser.setContentHandler(formhandler)
-    datasource = _open_anything(xform)
-    saxparser.parse(datasource)
-    pdf, xmls = formhandler.get_files()
-    pdfs["%s_%s/pdf" % (str(uid), str(pdflang))] = pdf
-    return pdfs, xmls
-
-
-def s3ocr_get_languages(xform):
-    """ Shows the languages supported by given xform """
-
-    formhandler = LangHandler()
-    saxparser = make_parser()
-    saxparser.setContentHandler(formhandler)
-    datasource = _open_anything(xform)
-    saxparser.parse(datasource)
-    langlist = formhandler.get_lang()
-    return langlist
-
-
-if __name__ == "__main__":
-
-    if len(sys.argv) == 1:
-        sys.exit("Usage: python xforms2pdf.py filename.xml language")
-
-    xform = sys.argv[1]
-    if len(sys.argv) < 3:
-        lang = "eng"
-    else:
-        lang = str(sys.argv[2])
-        avail_langs = s3ocr_get_languages(xform)
-        if lang not in avail_langs:
-            sys.exit("Required Language '%s' is not available, available languages are:\n%s" % (lang, str(avail_langs)))
-    pdfs, xmls = s3ocr_generate_pdf(xform, "eng")
-    for i in pdfs.keys():
-            f = open(i, "w")
-            f.write(pdfs[i])
-            f.close()
-    for i in xmls.keys():
-            f = open(i, "w")
-            f.write(xmls[i])
-            f.close()

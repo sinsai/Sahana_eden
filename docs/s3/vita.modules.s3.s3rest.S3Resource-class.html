@@ -34,7 +34,7 @@
       <th class="navbar" align="right" width="100%">
         <table border="0" cellpadding="0" cellspacing="0">
           <tr><th class="navbar" align="center"
-            >S3</th>
+            ><a class="navbar" target="_top" href="http://eden.sahanafoundation.org/wiki/S3">S3</a></th>
           </tr></table></th>
   </tr>
 </table>
@@ -204,6 +204,25 @@ object --+
       Extend the current query by a filter query</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3.s3rest-pysrc.html#S3Resource.add_filter">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3rest.S3Resource-class.html#add_component_filter" class="summary-sig-name">add_component_filter</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">filter</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Extend the filter query of a particular component</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3.s3rest-pysrc.html#S3Resource.add_component_filter">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -763,7 +782,8 @@ object --+
           <td><span class="summary-sig"><a href="vita.modules.s3.s3rest.S3Resource-class.html#__put_tree" class="summary-sig-name" onclick="show_private();">__put_tree</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">r</span>,
         <span class="summary-sig-arg">**attr</span>)</span><br />
-      Import XML/JSON data</td>
+      Import data using the XML Importer (transformable XML/JSON/CSV 
+      formats)</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3.s3rest-pysrc.html#S3Resource.__put_tree">source&nbsp;code</a></span>
             
@@ -780,7 +800,7 @@ object --+
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3.s3rest.S3Resource-class.html#export_xml" class="summary-sig-name">export_xml</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">template</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">stylesheet</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">as_json</span>=<span class="summary-sig-default">False</span>,
         <span class="summary-sig-arg">pretty_print</span>=<span class="summary-sig-default">False</span>,
         <span class="summary-sig-arg">**args</span>)</span><br />
@@ -804,7 +824,7 @@ object --+
         <span class="summary-sig-arg">source</span>,
         <span class="summary-sig-arg">files</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">id</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">template</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">stylesheet</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">as_json</span>=<span class="summary-sig-default">False</span>,
         <span class="summary-sig-arg">ignore_errors</span>=<span class="summary-sig-default">False</span>,
         <span class="summary-sig-arg">**args</span>)</span><br />
@@ -826,7 +846,7 @@ object --+
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3.s3rest.S3Resource-class.html#push" class="summary-sig-name">push</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">url</span>,
-        <span class="summary-sig-arg">template</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">stylesheet</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">as_json</span>=<span class="summary-sig-default">False</span>,
         <span class="summary-sig-arg">xsltmode</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">start</span>=<span class="summary-sig-default">None</span>,
@@ -861,7 +881,7 @@ object --+
         <span class="summary-sig-arg">password</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">proxy</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">as_json</span>=<span class="summary-sig-default">False</span>,
-        <span class="summary-sig-arg">template</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">stylesheet</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">ignore_errors</span>=<span class="summary-sig-default">False</span>,
         <span class="summary-sig-arg">**args</span>)</span><br />
       Fetch XML data from a remote URL into the current resource</td>
@@ -906,6 +926,28 @@ object --+
       Export a list of fields in the resource as element tree</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3.s3rest-pysrc.html#S3Resource.fields">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3.s3rest.S3Resource-class.html#struct" class="summary-sig-name">struct</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">options</span>=<span class="summary-sig-default">False</span>,
+        <span class="summary-sig-arg">references</span>=<span class="summary-sig-default">False</span>,
+        <span class="summary-sig-arg">stylesheet</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">as_json</span>=<span class="summary-sig-default">False</span>,
+        <span class="summary-sig-arg">as_tree</span>=<span class="summary-sig-default">False</span>)</span><br />
+      Get the structure of the resource</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3.s3rest-pysrc.html#S3Resource.struct">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -1249,6 +1291,32 @@ object --+
   </dl>
 </td></tr></table>
 </div>
+<a name="add_component_filter"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">add_component_filter</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">name</span>,
+        <span class="sig-arg">filter</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3.s3rest-pysrc.html#S3Resource.add_component_filter">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Extend the filter query of a particular component</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>name</code></strong> - the name of the component</li>
+        <li><strong class="pname"><code>filter</code></strong> - a web2py Query object</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
 <a name="get_query"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -1426,6 +1494,9 @@ object --+
         audit
         </li>
       </ul>
+      <p><strong>Status:</strong>
+        uncompleted
+      </p>
 </div></td></tr></table>
 </div>
 <a name="search_simple"></a>
@@ -1984,7 +2055,8 @@ object --+
     </td>
   </tr></table>
   
-  <p>Import XML/JSON data</p>
+  <p>Import data using the XML Importer (transformable XML/JSON/CSV 
+  formats)</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
@@ -1992,10 +2064,7 @@ object --+
         <li><strong class="pname"><code>attr</code></strong> - the request attributes</li>
     </ul></dd>
   </dl>
-<div class="fields">      <p><strong>To Do:</strong>
-        use the importer!
-      </p>
-</div></td></tr></table>
+</td></tr></table>
 </div>
 <a name="export_xml"></a>
 <div>
@@ -2005,7 +2074,7 @@ object --+
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">export_xml</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">template</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">stylesheet</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">as_json</span>=<span class="sig-default">False</span>,
         <span class="sig-arg">pretty_print</span>=<span class="sig-default">False</span>,
         <span class="sig-arg">**args</span>)</span>
@@ -2019,7 +2088,7 @@ object --+
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>template</code></strong> - path to the XSLT stylesheet (if not native S3-XML)</li>
+        <li><strong class="pname"><code>stylesheet</code></strong> - path to the XSLT stylesheet (if not native S3-XML)</li>
         <li><strong class="pname"><code>as_json</code></strong> - convert the output into JSON</li>
         <li><strong class="pname"><code>pretty_print</code></strong> - insert newlines/indentation in the output</li>
         <li><strong class="pname"><code>args</code></strong> - arguments to pass to the XSLT stylesheet</li>
@@ -2040,7 +2109,7 @@ object --+
         <span class="sig-arg">source</span>,
         <span class="sig-arg">files</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">id</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">template</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">stylesheet</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">as_json</span>=<span class="sig-default">False</span>,
         <span class="sig-arg">ignore_errors</span>=<span class="sig-default">False</span>,
         <span class="sig-arg">**args</span>)</span>
@@ -2057,10 +2126,10 @@ object --+
         <li><strong class="pname"><code>source</code></strong> - the XML source (or ElementTree)</li>
         <li><strong class="pname"><code>files</code></strong> - file attachments as {filename:file}</li>
         <li><strong class="pname"><code>id</code></strong> - the ID or list of IDs of records to update (None for all)</li>
-        <li><strong class="pname"><code>template</code></strong> - the XSLT template</li>
+        <li><strong class="pname"><code>stylesheet</code></strong> - the XSLT stylesheet</li>
         <li><strong class="pname"><code>as_json</code></strong> - the source is JSONified XML</li>
         <li><strong class="pname"><code>ignore_errors</code></strong> - do not stop on errors (skip invalid elements)</li>
-        <li><strong class="pname"><code>args</code></strong> - arguments to pass to the XSLT template</li>
+        <li><strong class="pname"><code>args</code></strong> - arguments to pass to the XSLT stylesheet</li>
     </ul></dd>
     <dt>Returns:</dt>
         <dd>a JSON message as string</dd>
@@ -2084,7 +2153,7 @@ object --+
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">push</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">url</span>,
-        <span class="sig-arg">template</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">stylesheet</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">as_json</span>=<span class="sig-default">False</span>,
         <span class="sig-arg">xsltmode</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">start</span>=<span class="sig-default">None</span>,
@@ -2108,7 +2177,7 @@ object --+
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>url</code></strong> - the URL to push to</li>
-        <li><strong class="pname"><code>template</code></strong> - path to the XSLT stylesheet to be used by the exporter</li>
+        <li><strong class="pname"><code>stylesheet</code></strong> - path to the XSLT stylesheet to be used by the exporter</li>
         <li><strong class="pname"><code>as_json</code></strong> - convert the output into JSON before push</li>
         <li><strong class="pname"><code>xsltmode</code></strong> - &quot;mode&quot; parameter for the XSLT stylesheet</li>
         <li><strong class="pname"><code>start</code></strong> - index of the first record to export (slicing)</li>
@@ -2141,7 +2210,7 @@ object --+
         <span class="sig-arg">password</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">proxy</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">as_json</span>=<span class="sig-default">False</span>,
-        <span class="sig-arg">template</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">stylesheet</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">ignore_errors</span>=<span class="sig-default">False</span>,
         <span class="sig-arg">**args</span>)</span>
   </h3>
@@ -2158,7 +2227,7 @@ object --+
         <li><strong class="pname"><code>username</code></strong> - username to authenticate at the peer site</li>
         <li><strong class="pname"><code>password</code></strong> - password to authenticate at the peer site</li>
         <li><strong class="pname"><code>proxy</code></strong> - URL of the proxy server to use</li>
-        <li><strong class="pname"><code>template</code></strong> - path to the XSLT stylesheet to transform the data</li>
+        <li><strong class="pname"><code>stylesheet</code></strong> - path to the XSLT stylesheet to transform the data</li>
         <li><strong class="pname"><code>as_json</code></strong> - source is JSONified XML</li>
         <li><strong class="pname"><code>ignore_errors</code></strong> - skip invalid records</li>
     </ul></dd>
@@ -2218,6 +2287,37 @@ object --+
         <li><strong class="pname"><code>component</code></strong> - name of the component to lookup the fields (None for primary 
           table)</li>
         <li><strong class="pname"><code>as_json</code></strong> - convert the output XML into JSON</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="struct"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">struct</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">options</span>=<span class="sig-default">False</span>,
+        <span class="sig-arg">references</span>=<span class="sig-default">False</span>,
+        <span class="sig-arg">stylesheet</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">as_json</span>=<span class="sig-default">False</span>,
+        <span class="sig-arg">as_tree</span>=<span class="sig-default">False</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3.s3rest-pysrc.html#S3Resource.struct">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Get the structure of the resource</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>options</code></strong> - include option lists in option fields</li>
+        <li><strong class="pname"><code>references</code></strong> - include option lists even for reference fields</li>
+        <li><strong class="pname"><code>stylesheet</code></strong> - the stylesheet to use for transformation</li>
+        <li><strong class="pname"><code>as_json</code></strong> - convert into JSON after transformation</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -2398,14 +2498,14 @@ object --+
       <th class="navbar" align="right" width="100%">
         <table border="0" cellpadding="0" cellspacing="0">
           <tr><th class="navbar" align="center"
-            >S3</th>
+            ><a class="navbar" target="_top" href="http://eden.sahanafoundation.org/wiki/S3">S3</a></th>
           </tr></table></th>
   </tr>
 </table>
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Mon Jan 17 00:32:28 2011
+    Generated by Epydoc 3.0.1 on Tue Mar 29 14:25:41 2011
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

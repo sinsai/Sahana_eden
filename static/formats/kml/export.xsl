@@ -6,7 +6,7 @@
 
          KML Export Templates for S3XRC
 
-         Copyright (c) 2010 Sahana Software Foundation
+         Copyright (c) 2010-11 Sahana Software Foundation
 
          Permission is hereby granted, free of charge, to any person
          obtaining a copy of this software and associated documentation

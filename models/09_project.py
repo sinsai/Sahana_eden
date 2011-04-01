@@ -297,7 +297,7 @@ if deployment_settings.has_module("project"):
                         TH("Start date"),
                         TH("End date"),
                         TH("Budgeted Cost"))),
-                        TBODY(records), _id="list", _class="display"))
+                        TBODY(records), _id="list", _class="dataTable display"))
                 else:
                         items = T(NONE)
 
@@ -326,7 +326,7 @@ if deployment_settings.has_module("project"):
 
         if r.representation == "html":
 
-            rheader_tabs = shn_rheader_tabs(r, tabs)
+            rheader_tabs = s3_rheader_tabs(r, tabs)
 
             if r.name == "project":
 

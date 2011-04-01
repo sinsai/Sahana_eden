@@ -3,10 +3,9 @@
 """
     Organisation Registry
 """
-#==============================================================================
+
 module = "org"
 
-#==============================================================================
 org_menu = [
     [T("Organizations"), False, URL(r=request, c="org", f="organisation"),[
         [T("List"), False, URL(r=request, c="org", f="organisation")],
@@ -177,7 +176,7 @@ table = db.define_table(tablename,
                         Field("website", label = T("Website"),
                               requires = IS_NULL_OR(IS_URL()),
                               represent = shn_url_represent),
-                        Field("twitter"),   # deprecated by pe_contact component
+                        Field("twitter"),   # deprecated by contact component
                         Field("donation_phone", label = T("Donation Phone #"),
                               requires = shn_phone_requires),
                         comments(),
@@ -243,7 +242,7 @@ organisation_comment = DIV(A(ADD_ORGANIZATION,
                            _title=ADD_ORGANIZATION),
                          DIV(DIV(_class="tooltip",
                                  _title="%s|%s" % (ADD_ORGANIZATION,
-                                                   T("Enter some characters to bring up a list of possible matches.")))))
+                                                   T("Enter some characters to bring up a list of possible matches")))))
                                                    # Replace with this one if using dropdowns & not autocompletes
                                                    #T("If you don't see the Organization in the list, you can add a new one by clicking link 'Add Organization'.")))))
 
@@ -382,27 +381,31 @@ table = super_entity(tablename,
 
 # -----------------------------------------------------------------------------
 def shn_site_represent(id, default_label="[no label]"):
-
     """ Represent a site in option fields or list views """
 
     site_str = T("None (no such record)")
-
     site_table = db.org_site
-    site = db(site_table.site_id == id).select(site_table.instance_type,
-                                               limitby=(0, 1)).first()
-    if not site:
-        return site_str
+
+    if isinstance(id, Row) and "instance_type" in id:
+        # Do not repeat the lookup if already done by IS_ONE_OF
+        site = id
+    else:
+        site = db(site_table._id == id).select(site_table.instance_type,
+                                               limitby=(0,1)).first()
+        if not site:
+            return site_str
 
     instance_type = site.instance_type
-    instance_type_nice = site_table.instance_type.represent(instance_type)
-
-    table = db.get(instance_type, None)
-    if not table:
+    try:
+        table = db[instance_type]
+    except:
         return site_str
 
     # All the current types of sites have a required "name" field that can
     # serve as their representation.
     record = db(table.site_id == id).select(table.name, limitby=(0, 1)).first()
+
+    instance_type_nice = site_table.instance_type.represent(instance_type)
 
     if record:
         site_str = "%s (%s)" % (record.name, instance_type_nice)
@@ -411,6 +414,14 @@ def shn_site_represent(id, default_label="[no label]"):
         site_str = "[site %d] (%s)" % (id, instance_type_nice)
 
     return site_str
+
+# -----------------------------------------------------------------------------
+site_id = super_link( db.org_site,
+                      writable = True,
+                      readable = True,
+                      label = T("Site"),
+                      represent = shn_site_represent
+                      )
 
 # -----------------------------------------------------------------------------
 def shn_create_record_roles(form, tablename):
@@ -441,12 +452,20 @@ def shn_create_record_roles(form, tablename):
     cf = tablename.split("_")
     c = cf[0]
     f = cf[1]
+
+    url = "%s/%s" % (deployment_settings.get_base_public_url(),
+                     URL(r = request,
+                         c = c,
+                         f = f,
+                         args = [id]) )
+
     # Create the Staff Role for this resource
     staff_role_id = auth.s3_create_role( "%s_%s Staff of %s" % (tablename,
                                                                 id,
                                                                 recordname),
-                                         "Staff Role for record id %s in table %s" % (id,
-                                                                                      tablename),
+                                         "Staff Role for record id %s in table %s (%s)" % (id,
+                                                                                           tablename,
+                                                                                           url),
                                          dict(c=c, f=f,
                                               uacl=acl.NONE, oacl=staff_acl)
                                         )
@@ -454,14 +473,18 @@ def shn_create_record_roles(form, tablename):
     supervisor_role_id = auth.s3_create_role( "%s_%s Supervisors of %s" % (tablename,
                                                                            id,
                                                                            recordname),
-                                              "Supervisor Role for record id %s in table %s" % (id,
-                                                                                                tablename),
+                                              "Supervisor Role for record id %s in table %s (%s)" % (id,
+                                                                                                     tablename,
+                                                                                                     url),
                                               dict(c=c, f=f,
                                                    uacl=acl.NONE,
                                                    oacl=supervisor_acl)
                                             )
     # Set the resource's owned_by_role to the staff role
     db(table.id == id).update(owned_by_role = staff_role_id)
+    # Update owned_by_role in site super_entity
+    s3xrc.model.update_super(table, {"id":id})
+
 
     # Add user to the staff & supervisor roles
     auth.add_membership(staff_role_id)
@@ -566,6 +589,39 @@ def shn_component_copy_role_func(component_name, resource_name, fk, pk = "id"):
         return None
 
 STAFF_HELP = T("If Staff have login accounts then they are given access to edit the details of the")
+
+# -----------------------------------------------------------------------------
+def shn_site_based_permissions( table,
+                                error_msg = T("You do not have permission for any site to perform this action.")):
+    """
+        Sets the site_id validator limited to sites which the current user
+        has update permission for
+        If there are no sites that the user has permission for,
+        prevents create & update & gives an warning if the user tries to
+    """
+    q = auth.s3_accessible_query("update", db.org_site)
+    rows = db(q).select(db.org_site.site_id)
+    filter_opts = [row.site_id for row in rows]
+    if filter_opts:
+        table.site_id.requires = IS_ONE_OF(db, "org_site.site_id",
+                                           shn_site_represent,
+                                           filterby = "site_id",
+                                           filter_opts = filter_opts
+                                           )
+    else:
+        if "update" in request.args or "create" in request.args:
+            # Trying to create or update
+            # If they do no have permission to any sites
+            session.error = T("%s Create a new site or ensure that you have permissions for an existing site.")\
+                            % error_msg
+            redirect(URL(r = request,
+                         c = "default",
+                         f = "index"
+                         )
+                     )
+        else:
+            # Remove the list add button
+            s3xrc.model.configure(table, insertable = False)
 #==============================================================================
 # Offices
 #
@@ -605,20 +661,21 @@ table = db.define_table(tablename,
                               writable=False), # Populated from location_id
                         Field("address", "text", label=T("Address"),
                               writable=False), # Populated from location_id
+                        # Labels that need gis_config data are set later.
                         Field("L4",
-                              label=deployment_settings.get_gis_locations_hierarchy("L4"),
+                              #label=gis.get_location_hierarchy("L4"),
                               writable=False), # Populated from location_id
                         Field("L3",
-                              label=deployment_settings.get_gis_locations_hierarchy("L3"),
+                              #label=gis.get_location_hierarchy("L3"),
                               writable=False), # Populated from location_id
                         Field("L2",
-                              label=deployment_settings.get_gis_locations_hierarchy("L2"),
+                              #label=gis.get_location_hierarchy("L2"),
                               writable=False), # Populated from location_id
                         Field("L1",
-                              label=deployment_settings.get_gis_locations_hierarchy("L1"),
+                              #label=gis.get_location_hierarchy("L1"),
                               writable=False), # Populated from location_id
                         Field("L0",
-                              label=deployment_settings.get_gis_locations_hierarchy("L0"),
+                              #label=gis.get_location_hierarchy("L0"),
                               writable=False), # Populated from location_id
                         Field("postcode", label=T("Postcode"), writable=False), # Populated from location_id
                         Field("phone1", label = T("Phone 1"),
@@ -725,24 +782,29 @@ def shn_office_rheader(r, tabs=[]):
     """ Office/Warehouse page headers """
 
     if r.representation == "html":
+        
+        tablename, record = s3_rheader_resource(r)
+        if tablename == "org_office" and record:
+            office = record
+    
+            tabs = [(T("Basic Details"), None),
+                    (T("Contact Data"), "contact"),
+                    (T("Staff"), "staff")
+                    ]
+    
+            if deployment_settings.has_module("req"):
+                tabs.append((T("Requests"), "req"))
+                tabs.append((T("Match Requests"), "req_match/")) 
+                tabs.append((T("Commit"), "commit"))
 
-        if r.record is None:
-            # List or Create form: rheader makes no sense here
-            return None
+            if deployment_settings.has_module("inv"):
+                tabs = tabs + shn_show_inv_tabs(r)
 
-        tabs = [(T("Basic Details"), None),
-                (T("Contact Data"), "pe_contact"),
-                (T("Staff"), "staff"),
-                ]
+            rheader_tabs = s3_rheader_tabs(r, tabs)
 
-        rheader_tabs = shn_rheader_tabs(r, tabs + shn_show_inv_tabs(r))
-
-        office = r.record
-        if office:
-            organisation = db(db.org_organisation.id == office.organisation_id
-                              ).select(db.org_organisation.name,
-                                       limitby=(0, 1)
-                                       ).first()
+            query = (db.org_organisation.id == office.organisation_id)
+            organisation = db(query).select(db.org_organisation.name,
+                                            limitby=(0, 1)).first()
             if organisation:
                 org_name = organisation.name
             else:
@@ -760,16 +822,20 @@ def shn_office_rheader(r, tabs=[]):
                              TH("%s: " % T("Location")),
                              shn_gis_location_represent(office.location_id),
                              ),
-                          #TR(#TH(A(T("Edit Office"),
-                          #   #    _href=URL(r=request, c="org", f="office", args=[r.id, "update"], vars={"_next": _next})))
+                          #TR(TH(A(T("Edit Office"),
+                          #        _href=URL(r=request, c="org", f="office",
+                          #                  args=[r.id, "update"],
+                          #                  vars={"_next": _next})))
                           #   )
                               ),
                           rheader_tabs)
 
+            if r.component and r.component.name == "req":
+                # Inject the helptext script
+                rheader.append(req_helptext_script)
+
             return rheader
-
     return None
-
 #==============================================================================
 # Staff
 # Many-to-Many Persons to Offices & Projects with also the Title & Manager that
@@ -910,7 +976,7 @@ staff_id = S3ReusableField("staff_id", db.org_staff, sortby="name",
                            ondelete = "RESTRICT"
                         )
 
-# Staff as component of Orgs & Projects
+# Staff as component of Orgs (& Projects)
 s3xrc.model.add_component(module, resourcename,
                           multiple=True,
                           joinby=dict(org_organisation="organisation_id",
@@ -972,7 +1038,7 @@ else:
 
 DOMAIN_HELP = T("If a user verifies that they own an Email Address with this domain, the Approver field is used to determine whether & by whom further approval is required.")
 APPROVER_HELP = T("The Email Address to which approval requests are sent (normally this would be a Group mail rather than an individual). If the field is blank then requests are approved automatically if the domain matches.")
-    
+
 table = db.define_table(tablename,
                         organisation_id(comment=DIV(_class="tooltip",
                                                     _title="%s|%s" % (T("Organization"),

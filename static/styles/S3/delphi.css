@@ -1,0 +1,36 @@
+@charset "UTF-8";
+
+/* Delphi Decision Maker */
+.delphi_wide li { padding: 5px 20px;
+                  font-weight: bold; }
+
+.delphi_wide tr td { padding: 4px 30px;
+                     border-bottom: 1px dotted; }
+.delphi_wide thead { font-weight: bold; }
+#delphi_pairs tr td { padding: 12px 30px; }
+#delphi_problem_header a,
+#delphi_problem_header strong { font-size: 105%;
+                                float: right;
+                                padding: 3px 10px;
+                                margin: 1px; }
+.delphi_post_title { background: #729fcf;
+                     padding: 3px 5px; }
+.delphi_post { border: 1px dotted;
+               margin: 5px 10px;
+               padding: 2px; }
+.delphi_post blockquote { margin: 2px 10px; }
+.delphi_quote { cursor: pointer;
+                color: white;
+                font-weight: bold;
+                font-size: 85%;
+                padding: 1px 5px; }
+.delphi_q1 { border-left: 4px solid #edd400;
+             padding-left: 10px;
+             color: #555753; }
+.delphi_q2 { border-left: 4px solid #3465a4; padding-left: 20px; color: #888a85; }
+.delphi_q3 { border-left: 4px solid #73d216; padding-left: 30px; color: #555753; }
+.delphi_q4 { border-left: 4px solid #f57900; padding-left: 40px; color: #888a85; }
+.delphi_q5 { border-left: 4px solid #ef2929; padding-left: 50px; color: #555753; }
+.delphi_q6 { border-left: 4px solid #75507b; padding-left: 60px; color: #888a85; }
+.delphi_post_text {	display: none; }
+.delphi_post_dbtitle { font-weight: bold;}

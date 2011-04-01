@@ -39,6 +39,7 @@ __all__ = ["S3ResourceController", "S3ImportJob"]
 
 import sys, datetime, time
 
+from copy import deepcopy
 from gluon.sql import Field
 from gluon.storage import Storage
 from gluon.html import URL, A
@@ -168,17 +169,16 @@ class S3ResourceController(object):
                         parent=None,
                         components=None):
         """
-        Defines a resource
+            Defines a resource
 
-        @param prefix: the application prefix
-        @param name: the resource name (without application prefix)
-        @param id: record ID or list of record IDs
-        @param uid: record UID or list of record UIDs
-        @param filter: web2py query to filter the resource query
-        @param vars: dict of URL query parameters
-        @param parent: the parent resource (if this is a component)
-        @param components: list of component (names)
-
+            @param prefix: the application prefix
+            @param name: the resource name (without application prefix)
+            @param id: record ID or list of record IDs
+            @param uid: record UID or list of record UIDs
+            @param filter: web2py query to filter the resource query
+            @param vars: dict of URL query parameters
+            @param parent: the parent resource (if this is a component)
+            @param components: list of component (names)
         """
 
         resource = S3Resource(self, prefix, name,
@@ -195,12 +195,11 @@ class S3ResourceController(object):
     # -------------------------------------------------------------------------
     def parse_request(self, prefix, name):
         """
-        Parse an HTTP request and generate the corresponding S3Request and
-        S3Resource objects.
+            Parse an HTTP request and generate the corresponding S3Request and
+            S3Resource objects.
 
-        @param prefix: the module prefix of the resource
-        @param name: the resource name (without prefix)
-
+            @param prefix: the module prefix of the resource
+            @param name: the resource name (without prefix)
         """
 
         self.error = None
@@ -220,12 +219,11 @@ class S3ResourceController(object):
 
     def __fields(self, table, skip=[]):
         """
-        Find all readable fields in a table and split them into reference
-        and non-reference fields
+            Find all readable fields in a table and split them into reference
+            and non-reference fields
 
-        @param table: the DB table
-        @param skip: list of field names to skip
-
+            @param table: the DB table
+            @param skip: list of field names to skip
         """
 
         fields = filter(lambda f:
@@ -261,17 +259,16 @@ class S3ResourceController(object):
                      joblist=None,
                      lookahead=True):
         """
-        Builds a list of import jobs from an element
+            Builds a list of import jobs from an element
 
-        @param resource: the resource name (=tablename)
-        @param element: the element
-        @param id: target record ID
-        @param validate: validate hook (function to validate record)
-        @param tree: the element tree of the source
-        @param directory: the resource directory of the tree
-        @param joblist: the job list for the import
-        @param lookahead: resolve any references
-
+            @param resource: the resource name (=tablename)
+            @param element: the element
+            @param id: target record ID
+            @param validate: validate hook (function to validate record)
+            @param tree: the element tree of the source
+            @param directory: the resource directory of the tree
+            @param joblist: the job list for the import
+            @param lookahead: resolve any references
         """
 
         imports = []
@@ -355,14 +352,13 @@ class S3ResourceController(object):
     @staticmethod
     def __directory(d, l, k, v, e={}):
         """
-        Converts a list of dicts into a directory
+            Converts a list of dicts into a directory
 
-        @param d: the directory
-        @param l: the list
-        @param k: the key field
-        @param v: the value field
-        @param e: directory of elements to exclude
-
+            @param d: the directory
+            @param l: the list
+            @param k: the key field
+            @param v: the value field
+            @param e: directory of elements to exclude
         """
 
         if not d:
@@ -391,11 +387,10 @@ class S3ResourceController(object):
 
     def get_session(self, prefix, name):
         """
-        Reads the last record ID for a resource from a session
+            Reads the last record ID for a resource from a session
 
-        @param prefix: the prefix of the resource name (=module name)
-        @param name: the name of the resource (=without prefix)
-
+            @param prefix: the prefix of the resource name (=module name)
+            @param name: the name of the resource (=without prefix)
         """
 
         session = self.session
@@ -410,12 +405,11 @@ class S3ResourceController(object):
     # -------------------------------------------------------------------------
     def store_session(self, prefix, name, id):
         """
-        Stores a record ID for a resource in a session
+            Stores a record ID for a resource in a session
 
-        @param prefix: the prefix of the resource name (=module name)
-        @param name: the name of the resource (=without prefix)
-        @param id: the ID to store
-
+            @param prefix: the prefix of the resource name (=module name)
+            @param name: the name of the resource (=without prefix)
+            @param id: the ID to store
         """
 
         session = self.session
@@ -432,11 +426,10 @@ class S3ResourceController(object):
     # -------------------------------------------------------------------------
     def clear_session(self, prefix=None, name=None):
         """
-        Clears one or all record IDs stored in a session
+            Clears one or all record IDs stored in a session
 
-        @param prefix: the prefix of the resource name (=module name)
-        @param name: the name of the resource (=without prefix)
-
+            @param prefix: the prefix of the resource name (=module name)
+            @param name: the name of the resource (=without prefix)
         """
 
         session = self.session
@@ -456,19 +449,22 @@ class S3ResourceController(object):
 
     def validate(self, table, record, fieldname, value):
         """
-        Validates a single value
+            Validates a single value
 
-        @param table: the DB table
-        @param record: the existing DB record
-        @param fieldname: name of the field
-        @param value: value to check
+            @param table: the DB table
+            @param record: the existing DB record
+            @param fieldname: name of the field
+            @param value: value to check
 
-        @todo 2.3: make static method
-        @todo 2.3: move into model
-
+            @todo 2.3: make static method
+            @todo 2.3: move into model
         """
 
-        field = table.get(fieldname, None)
+        try:
+            field = table[fieldname]
+        except:
+            raise AttributeError("No field %s in %s" % (fieldname, table._tablename))
+
         if field:
             if record:
                 v = record.get(fieldname, None)
@@ -480,8 +476,6 @@ class S3ResourceController(object):
                 return (None, None)
             else:
                 return (value, error)
-        else:
-            raise AttributeError("No field %s in %s" % (fieldname, table._tablename))
 
 
     # -------------------------------------------------------------------------
@@ -492,15 +486,14 @@ class S3ResourceController(object):
                   strip_markup=False,
                   xml_escape=False):
         """
-        Represent a field value
+            Represent a field value
 
-        @param field: the field (Field)
-        @param value: the value
-        @param record: record to retrieve the value from
-        @param linkto: function or format string to link an ID column
-        @param strip_markup: strip away markup from representation
-        @param xml_escape: XML-escape the output
-
+            @param field: the field (Field)
+            @param value: the value
+            @param record: record to retrieve the value from
+            @param linkto: function or format string to link an ID column
+            @param strip_markup: strip away markup from representation
+            @param xml_escape: XML-escape the output
         """
 
         NONE = str(self.T("None")).decode("utf-8")
@@ -573,15 +566,14 @@ class S3ResourceController(object):
     # -------------------------------------------------------------------------
     def original(self, table, record):
         """
-        Find the original record for a possible duplicate:
-            - if the record contains a UUID, then only that UUID is used
-              to match the record with an existing DB record
-            - otherwise, if the record contains some values for unique fields,
-              all of them must match the same existing DB record
+            Find the original record for a possible duplicate:
+                - if the record contains a UUID, then only that UUID is used
+                  to match the record with an existing DB record
+                - otherwise, if the record contains some values for unique
+                  fields, all of them must match the same existing DB record
 
-        @param table: the table
-        @param record: the record as dict or S3XML Element
-
+            @param table: the table
+            @param record: the record as dict or S3XML Element
         """
 
         # Get primary keys
@@ -639,16 +631,15 @@ class S3ResourceController(object):
     # -------------------------------------------------------------------------
     def match(self, tree, table, id):
         """
-        Find the matching element for a record
+            Find the matching element for a record
 
-        @param tree: the S3XML element tree
-        @param table: the table
-        @param id: the record ID or a list of record IDs
+            @param tree: the S3XML element tree
+            @param table: the table
+            @param id: the record ID or a list of record IDs
 
-        @returns: a list of matching elements
+            @returns: a list of matching elements
 
-        @todo 2.3: implement this and use in import_tree()
-
+            @todo 2.3: implement this and use in import_tree()
         """
 
         return NotImplementedError
@@ -665,21 +656,20 @@ class S3ResourceController(object):
                     show_urls=True,
                     dereference=True):
         """
-        Export a resource as S3XML element tree
+            Export a resource as S3XML element tree
 
-        @param resource: the resource
-        @param skip: list of fieldnames to skip
-        @param audit: audit hook function
-        @param start: index of the first record to export
-        @param limit: maximum number of records to export
-        @param marker: URL of the GIS default marker
-        @param msince: to export only records which have been modified
-            after that date/time (minimum modification date/time)
-        @param show_urls: show URLs in resource elements
-        @param dereference: export referenced resources in the tree
+            @param resource: the resource
+            @param skip: list of fieldnames to skip
+            @param audit: audit hook function
+            @param start: index of the first record to export
+            @param limit: maximum number of records to export
+            @param marker: URL of the GIS default marker
+            @param msince: to export only records which have been modified
+                after that date/time (minimum modification date/time)
+            @param show_urls: show URLs in resource elements
+            @param dereference: export referenced resources in the tree
 
-        @todo 2.3: move into S3Resource
-
+            @todo 2.3: move into S3Resource
         """
 
         prefix = resource.prefix
@@ -884,16 +874,16 @@ class S3ResourceController(object):
     def import_tree(self, resource, id, tree,
                     ignore_errors=False):
         """
-        Imports data from an S3XML element tree into a resource
+            Imports data from an S3XML element tree into a resource
 
-        @param resource: the resource
-        @param id: record ID or list of record IDs to update
-        @param tree: the element tree
-        @param ignore_errors: continue at errors (=skip invalid elements)
-
+            @param resource: the resource
+            @param id: record ID or list of record IDs to update
+            @param tree: the element tree
+            @param ignore_errors: continue at errors (=skip invalid elements)
         """
 
         self.error = None
+        self.error_tree = etree.Element("s3xml")
 
         # Call the tree-resolver to cleanup the tree
         if self.tree_resolve:
@@ -962,6 +952,7 @@ class S3ResourceController(object):
             else:
                 if self.error:
                     error = self.error
+                    self.error_tree.append(deepcopy(element))
                     self.error = None
                 continue
 
@@ -1024,6 +1015,7 @@ class S3ResourceController(object):
                 imports.extend(jobs)
             else:
                 error = self.error
+                self.error_tree.append(deepcopy(element))
                 self.error = None
 
         if error:
@@ -1043,6 +1035,7 @@ class S3ResourceController(object):
                         if not job.element.get(self.xml.ATTRIBUTE.error):
                             job.element.set(self.xml.ATTRIBUTE.error,
                                             str(self.error).decode("utf-8"))
+                            self.error_tree.append(deepcopy(job.element))
                     if ignore_errors:
                         continue
                     else:
@@ -1054,7 +1047,8 @@ class S3ResourceController(object):
 # *****************************************************************************
 class S3ImportJob(object):
 
-    """ Helper class for data imports
+    """
+        Helper class for data imports
 
         @param manager: the S3ResourceController
         @param prefix: prefix of the resource name (=module name)
@@ -1066,7 +1060,6 @@ class S3ImportJob(object):
         @param directory: resource directory of the input tree
         @param onvalidation: extra function to validate records
         @param onaccept: callback function for committed importes
-
     """
 
     METHOD = Storage(
@@ -1172,10 +1165,10 @@ class S3ImportJob(object):
 
     def get_resolution(self, field):
 
-        """ Find Sync resolution for a particular field in this record
+        """
+            Find Sync resolution for a particular field in this record
 
             @param field: the field name
-
         """
 
         if isinstance(self.resolution, dict):
@@ -1382,11 +1375,11 @@ class S3ImportJob(object):
     # -------------------------------------------------------------------------
     def writeback(self, field, value):
 
-        """ Update a field in the record
+        """
+            Update a field in the record
 
             @param field: field name
             @param value: value to write
-
         """
 
         if self.id and self.permitted:
@@ -1405,10 +1398,10 @@ class S3ImportJob(object):
 # *****************************************************************************
 class S3QueryBuilder(object):
 
-    """ Query Builder
+    """
+        Query Builder
 
         @param manager: the S3ResourceController
-
     """
 
     def __init__(self, manager):
@@ -1419,12 +1412,11 @@ class S3QueryBuilder(object):
     # -------------------------------------------------------------------------
     def parse_bbox_query(self, resource, vars):
         """
-        Build a BBOX filter query
-        Syntax ?bbox{.fkfield}=minLon,minLat,maxLon,maxLat
+            Build a BBOX filter query
+            Syntax ?bbox{.fkfield}=minLon,minLat,maxLon,maxLat
 
-        @param resource: the resource
-        @param vars: dict of URL vars
-
+            @param resource: the resource
+            @param vars: dict of URL vars
         """
 
         db = resource.db
@@ -1475,12 +1467,12 @@ class S3QueryBuilder(object):
     def parse_url_rlinks(self, resource, vars):
 
         """
-        Parse URL resource link queries. Syntax:
-        ?linked{.<component>}.<from|to>.<table>={link_class},<ANY|ALL|list_of_ids>
+            Parse URL resource link queries. Syntax:
+            ?linked{.<component>}.<from|to>.<table>={link_class},
+                <ANY|ALL|list_of_ids>
 
-        @param resource: the resource
-        @param vars: dict of URL vars
-
+            @param resource: the resource
+            @param vars: dict of URL vars
         """
 
         linker = self.manager.linker
@@ -1544,11 +1536,11 @@ class S3QueryBuilder(object):
     @staticmethod
     def parse_url_context(resource, vars):
 
-        """ Parse URL context queries
+        """
+            Parse URL context queries
 
             @param resource: the resource
             @param vars: dict of URL vars
-
         """
 
         table = resource.table
@@ -1594,11 +1586,11 @@ class S3QueryBuilder(object):
     # -------------------------------------------------------------------------
     def parse_url_query(self, resource, vars):
 
-        """ Parse URL query
+        """
+            Parse URL query
 
             @param resource: the resource
             @param vars: dict of URL vars
-
         """
 
         db = resource.db
@@ -1740,14 +1732,14 @@ class S3QueryBuilder(object):
     # -------------------------------------------------------------------------
     def query(self, resource, id=None, uid=None, filter=None, vars=None):
 
-        """ Query builder
+        """
+            Query builder
 
             @param resource: the resource
             @param id: record ID or list of record IDs to include
             @param uid: record UID or list of record UIDs to include
             @param filter: filtering query (DAL only)
             @param vars: dict of URL query variables
-
         """
 
         # Initialize
@@ -2001,4 +1993,4 @@ class S3QueryBuilder(object):
         return mquery
 
 
-# *****************************************************************************
+# END *************************************************************************

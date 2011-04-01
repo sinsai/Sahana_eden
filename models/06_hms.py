@@ -11,7 +11,7 @@ if deployment_settings.has_module(module):
 
     from gluon.sql import Row
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Hospitals
     #
 
@@ -197,8 +197,27 @@ if deployment_settings.has_module(module):
     table.non_medical_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
     table.access_status.label = T("Road Conditions")
 
-    # Reusable field for other tables to reference
+    # CRUD Strings
+    LIST_HOSPITALS = T("List Hospitals")
     ADD_HOSPITAL = T("Add Hospital")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_HOSPITAL,
+        title_display = T("Hospital Details"),
+        title_list = LIST_HOSPITALS,
+        title_update = T("Edit Hospital"),
+        title_search = T("Find Hospital"),
+        subtitle_create = T("Add New Hospital"),
+        subtitle_list = T("Hospitals"),
+        label_list_button = LIST_HOSPITALS,
+        label_create_button = ADD_HOSPITAL,
+        label_delete_button = T("Delete Hospital"),
+        msg_record_created = T("Hospital information added"),
+        msg_record_modified = T("Hospital information updated"),
+        msg_record_deleted = T("Hospital information deleted"),
+        msg_list_empty = T("No Hospitals currently registered"))
+
+    # Reusable field for other tables to reference
+    
     shn_hospital_id_comment = DIV(A(ADD_HOSPITAL,
                                     _class="colorbox",
                                     _href=URL(r=request,
@@ -212,7 +231,7 @@ if deployment_settings.has_module(module):
                                           _title="%s|%s" % (T("Hospital"),
                                                             T("If you don't see the Hospital in the list, you can add a new one by clicking link 'Add Hospital'.")))))
                                                             # If using Autocomplete Widget
-                                                            #T("Enter some characters to bring up a list of possible matches.")))))
+                                                            #T("Enter some characters to bring up a list of possible matches")))))
     hospital_id = S3ReusableField("hospital_id", db.hms_hospital, sortby="name",
                                   requires = IS_NULL_OR(IS_ONE_OF(db, "hms_hospital.id", "%(name)s")),
                                   represent = lambda id: (id and
@@ -240,8 +259,69 @@ if deployment_settings.has_module(module):
                                        "security_status",
                                        "total_beds",
                                        "available_beds"])
+    # -------------------------------------------------------------------------
+    def shn_hms_hospital_rheader(r, tabs=[]):
+    
+        """ Page header for component resources """
+    
+        rheader = None
+        if r.representation == "html":
+            tablename, record = s3_rheader_resource(r)
+            if tablename == "hms_hospital" and record:
+                hospital = record
+                if not tabs:
+                    tabs = [(T("Status Report"), ""),
+                            (T("Services"), "services"),
+                            (T("Contacts"), "contact"),
+                            (T("Bed Capacity"), "bed_capacity"),
+                            (T("Cholera Treatment Capability"),
+                             "ctc_capability"), # @ToDo: make this a deployemnt_setting?
+                            (T("Activity Report"), "activity"),
+                            (T("Images"), "image"),
+                            (T("Staff"), "staff")]
 
-    # -----------------------------------------------------------------------------
+                    if deployment_settings.has_module("req"):
+                        tabs.append((T("Requests"), "req"))
+                        tabs.append((T("Match Requests"), "req_match/")) 
+                        tabs.append((T("Commit"), "commit"))
+                    if deployment_settings.has_module("inv"):
+                        tabs = tabs + shn_show_inv_tabs(r)
+
+                rheader_tabs = s3_rheader_tabs(r, tabs)
+
+                table = db.hms_hospital
+
+                rheader = DIV(TABLE(
+
+                    TR(TH("%s: " % T("Name")),
+                        hospital.name,
+                        TH("%s: " % T("EMS Status")),
+                        "%s" % table.ems_status.represent(hospital.ems_status)),
+
+                    TR(TH("%s: " % T("Location")),
+                        db.gis_location[hospital.location_id] and \
+                            db.gis_location[hospital.location_id].name or "unknown",
+                        TH("%s: " % T("Facility Status")),
+                        "%s" % table.facility_status.represent(hospital.facility_status)),
+
+                    TR(TH("%s: " % T("Total Beds")),
+                        hospital.total_beds,
+                        TH("%s: " % T("Clinical Status")),
+                        "%s" % table.clinical_status.represent(hospital.clinical_status)),
+
+                    TR(TH("%s: " % T("Available Beds")),
+                        hospital.available_beds,
+                        TH("%s: " % T("Security Status")),
+                        "%s" % table.security_status.represent(hospital.security_status))
+
+                        ), rheader_tabs)
+
+            if rheader and r.component and r.component.name == "req":
+                # Inject the helptext script
+                rheader.append(req_helptext_script)
+
+        return rheader
+    # -------------------------------------------------------------------------
     # Contacts
     #
     resourcename = "contact"
@@ -309,7 +389,7 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Contact information deleted"),
         msg_list_empty = T("No contacts currently registered"))
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Activity
     #
     resourcename = "activity"
@@ -403,7 +483,7 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Report deleted"),
         msg_list_empty = T("No reports currently available"))
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Bed Capacity
     #
     hms_bed_type_opts = {
@@ -559,7 +639,7 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Unit deleted"),
         msg_list_empty = T("No units currently registered"))
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Services
     #
     resourcename = "services"
@@ -625,7 +705,7 @@ if deployment_settings.has_module(module):
                           list_fields = ["id"],
                           main="hospital_id", extra="id")
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Cholera Treatment Capability
     #
     hms_problem_types = {
@@ -767,7 +847,7 @@ if deployment_settings.has_module(module):
             "Current Problems": "problem_types",
             "Comments": "comments"})
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Images
     #
     hms_image_type_opts = {
@@ -845,7 +925,7 @@ if deployment_settings.has_module(module):
                                        "description",
                                        "tags"])
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Resources (multiple) - TODO: to be completed!
     #
     resourcename = "resources"
@@ -885,7 +965,7 @@ if deployment_settings.has_module(module):
                           list_fields=["id"],
                           main="hospital_id", extra="id")
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Hospital Search Method
     #
     hms_hospital_search = s3base.S3Search(
@@ -900,15 +980,23 @@ if deployment_settings.has_module(module):
                     field=["gov_uuid", "name", "aka1", "aka2",
                         "organisation_id$name", "organisation_id$acronym"]
                   ),
-                  ## for testing:
+                  # for testing:
+                  s3base.S3SearchSelectWidget(
+                    name="hospital_facility_type",
+                    label=T("Facility Type"),
+                    field=["facility_type"]
+                  ),
+                  # for testing:
                   s3base.S3SearchMinMaxWidget(
                     name="hospital_search_bedcount",
                     method="range",
-                    #label=T("Total Beds"),
+                    label=T("Total Beds"),
                     comment=T("Select a range for the number of total beds"),
                     field=["total_beds"]
-                  )
+                  ),
         ))
 
     # Set as standard search method for hospitals
     s3xrc.model.configure(db.hms_hospital, search_method=hms_hospital_search)
+
+# END =========================================================================

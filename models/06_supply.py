@@ -117,6 +117,9 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
                                   length=128,
                                   label = T("Unit of Measure"),
                                   notnull=True),
+                            Field("consumable",
+                                  "boolean",
+                                  default = False),
                             comments(), # These comments do *not* pull through to an Inventory's Items or a Request's Items
                             migrate=migrate, *s3_meta_fields())
 
@@ -238,18 +241,18 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
                             comments(),
                             migrate=migrate, *s3_meta_fields())
     # CRUD strings
-    ADD_ITEM_PACKET = T("Add Item Pack")
-    LIST_ITEM_PACKET = T("List Item Packs")
+    ADD_ITEM_PACK = T("Add Item Pack")
+    LIST_ITEM_PACK = T("List Item Packs")
     s3.crud_strings[tablename] = Storage(
-        title_create = ADD_ITEM_PACKET,
+        title_create = ADD_ITEM_PACK,
         title_display = T("Item Pack Details"),
-        title_list = LIST_ITEM_PACKET,
+        title_list = LIST_ITEM_PACK,
         title_update = T("Edit Item Pack"),
         title_search = T("Search Item Packs"),
         subtitle_create = T("Add New Item Pack"),
         subtitle_list = T("Item Packs"),
-        label_list_button = LIST_ITEM_PACKET,
-        label_create_button = ADD_ITEM_PACKET,
+        label_list_button = LIST_ITEM_PACK,
+        label_create_button = ADD_ITEM_PACK,
         label_delete_button = T("Delete Item Pack"),
         msg_record_created = T("Item Pack added"),
         msg_record_modified = T("Item Pack updated"),
@@ -276,16 +279,16 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
 
     # Reusable Field
     item_pack_id = S3ReusableField("item_pack_id", db.supply_item_pack, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db,
-                                                "supply_item_pack.id",
-                                                shn_item_pack_represent,
-                                                sort=True)),
+                requires = IS_ONE_OF(db,
+                                     "supply_item_pack.id",
+                                     shn_item_pack_represent,
+                                     sort=True),
                 represent = shn_item_pack_represent,
                 label = T("Pack"),
                 comment = DIV(DIV( _class="tooltip",
                                    _title="%s|%s" % (T("Item Packs"),
                                                      T("The way in which an item is normally distributed"))),
-                              A( ADD_ITEM_PACKET,
+                              A( ADD_ITEM_PACK,
                                  _class="colorbox",
                                  _href=URL(r=request,
                                            c="supply",
@@ -334,12 +337,91 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
             else:
                 return None
 
-    #Packs as component of Items
+    # Packs as component of Items
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(supply_item="item_id"))
 
-     #==============================================================================
+    #==============================================================================
+    # Alternative Item
+    #
+    resourcename = "item_alt"
+    tablename = "%s_%s" % (module, resourcename)
+    table = db.define_table(tablename,
+                            item_id(notnull=True),
+                            Field("quantity", 
+                                  "double", 
+                                  comment = DIV( _class = "tooltip",
+                                                 _title = "%s|%s" % 
+                                                         (T("Quantity"),
+                                                          T("The number of Units of Measure of the Alternative Items which is equal to One Unit of Measure of the Item")
+                                                          )
+                                                ),
+                                  default = 1,
+                                  notnull=True),
+                            item_id("alt_item_id",
+                                    notnull=True),
+                            comments(),
+                            migrate=migrate, *s3_meta_fields())
+
+    # CRUD strings
+    ADD_ALT_ITEM = T("Add Alternative Item")
+    LIST_ALT_ITEM = T("List Alternative Items")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_ALT_ITEM,
+        title_display = T("Alternative Item Details"),
+        title_list = LIST_ALT_ITEM,
+        title_update = T("Edit Alternative Item"),
+        title_search = T("Search Alternative Items"),
+        subtitle_create = T("Add New Alternative Item"),
+        subtitle_list = T("Alternative Items"),
+        label_list_button = LIST_ALT_ITEM,
+        label_create_button = ADD_ALT_ITEM,
+        label_delete_button = T("Delete Alternative Item"),
+        msg_record_created = T("Alternative Item added"),
+        msg_record_modified = T("Alternative Item updated"),
+        msg_record_deleted = T("Alternative Item deleted"),
+        msg_list_empty = T("No Alternative Items currently registered"))
+
+    def shn_item_alt_represent(id):
+        try:
+            return shn_item_represent(db.supply_item_alt[id].item_id)
+        except:
+            return NONE
+
+    # Reusable Field - probably not needed
+    item_alt_id = S3ReusableField("item_alt_id", db.supply_item_alt, sortby="name",
+                requires = IS_NULL_OR(IS_ONE_OF(db,
+                                                "supply_item_alt.id",
+                                                shn_item_alt_represent,
+                                                sort=True)),
+                represent = shn_item_alt_represent,
+                label = T("Alternative Item"),
+                comment = DIV(DIV( _class="tooltip",
+                                   _title="%s|%s" % (T("Alternative Item"),
+                                                     T("An item which can be used in place of another item"))),
+                              A( ADD_ALT_ITEM,
+                                 _class="colorbox",
+                                 _href=URL(r=request,
+                                           c="supply",
+                                           f="item_alt",
+                                           args="create",
+                                           vars=dict(format="popup")
+                                           ),
+                                 _target="top",
+                                 _id = "item_alt_add",
+                                 _style = "display: none",
+                                 ),
+                              ),
+                ondelete = "RESTRICT"
+                )
+
+    # Alternative Items as component of Items
+    s3xrc.model.add_component(module, resourcename,
+                              multiple=True,
+                              joinby=dict(supply_item="item_id"))
+
+    #==========================================================================
     def shn_supply_item_add (quantity_1, pack_quantity_1,
                              quantity_2, pack_quantity_2,):
         """
@@ -353,3 +435,5 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
             return ((quantity_1*pack_quantity_1) +
                     (quantity_2*pack_quantity_2)
                     ) / pack_quantity_1
+
+# END =========================================================================

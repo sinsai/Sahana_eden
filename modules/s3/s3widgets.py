@@ -256,6 +256,8 @@ class S3AutocompleteWidget(FormWidget):
 
     def __call__(self ,field, value, **attributes):
 
+        request = self.request
+    
         default = dict(
             _type = "text",
             value = (value != None and str(value)) or "",
@@ -268,7 +270,10 @@ class S3AutocompleteWidget(FormWidget):
         real_input = str(field).replace(".", "_")
         dummy_input = "dummy_%s" % real_input
         fieldname = self.fieldname
-        url = URL(r=self.request, c=self.prefix, f=self.resourcename, args="search.json", vars={"filter":"~", "field":fieldname})
+        url = URL(r=request, c=self.prefix, f=self.resourcename,
+                  args="search.json",
+                  vars={"filter":"~",
+                        "field":fieldname})
 
         js_autocomplete = """
         (function() {
@@ -277,6 +282,14 @@ class S3AutocompleteWidget(FormWidget):
             $('#%s').autocomplete({
                 source: '%s',
                 minLength: %d,
+                search: function(event, ui) {
+                    $( '#%s_throbber' ).removeClass('hidden').show();
+                    return true;
+                },
+                response: function(event, ui, content) {
+                    $( '#%s_throbber' ).hide();
+                    return content;
+                },
                 focus: function( event, ui ) {
                     $( '#%s' ).val( ui.item.%s );
                     return false;
@@ -284,7 +297,17 @@ class S3AutocompleteWidget(FormWidget):
                 select: function( event, ui ) {
                     $( '#%s' ).val( ui.item.%s );
                     $( '#%s' ).val( ui.item.id );
-                    """ % (dummy_input, dummy_input, url, self.min_length, dummy_input, fieldname, dummy_input, fieldname, real_input) + self.post_process + """
+                    """ % (dummy_input,
+                           dummy_input,
+                           url,
+                           self.min_length,
+                           dummy_input,
+                           dummy_input,
+                           dummy_input,
+                           fieldname,
+                           dummy_input,
+                           fieldname,
+                           real_input) + self.post_process + """
                     data.accept = true;
                     return false;
                 }
@@ -311,7 +334,12 @@ class S3AutocompleteWidget(FormWidget):
                 data.accept = false;
             });
         })();
-        """ % (fieldname, dummy_input, dummy_input, real_input, dummy_input, dummy_input)
+        """ % (fieldname,
+               dummy_input,
+               dummy_input,
+               real_input,
+               dummy_input,
+               dummy_input)
 
         if value:
             text = str(field.represent(default["value"]))
@@ -332,6 +360,11 @@ class S3AutocompleteWidget(FormWidget):
 
         return TAG[""](
                         INPUT(_id=dummy_input, _value=represent),
+                        IMG(_src="/%s/static/img/ajax-loader.gif" % \
+                                 request.application,
+                            _height=32, _width=32,
+                            _id="%s_throbber" % dummy_input,
+                            _class="throbber hidden"),
                         INPUT(**attr),
                         SCRIPT(js_autocomplete)
                       )
@@ -374,6 +407,8 @@ class S3LocationAutocompleteWidget(FormWidget):
 
     def __call__(self ,field, value, **attributes):
 
+        request = self.request
+
         default = dict(
             _type = "text",
             value = (value != None and str(value)) or "",
@@ -386,20 +421,24 @@ class S3LocationAutocompleteWidget(FormWidget):
         real_input = str(field).replace(".", "_")
         dummy_input = "dummy_%s" % real_input
         fieldname = self.fieldname
-        url = URL(r=self.request, c=self.prefix, f=self.resourcename, args="search.json", vars={"filter":"~", "field":fieldname, "exclude_field":"level", "exclude_value":"XX"})
+        url = URL(r=request, c=self.prefix, f=self.resourcename,
+                  args="search.json",
+                  vars={"filter":"~",
+                        "field":fieldname,
+                        "exclude_field":"level",
+                        "exclude_value":"XX"})
 
         # Which Levels do we have in our hierarchy & what are their Labels?
-        deployment_settings = self.deployment_settings
-        location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
+        location_hierarchy = get.get_location_hierarchy()
         try:
             # Ignore the bad bulk-imported data
             del location_hierarchy["XX"]
         except KeyError:
             pass
         # What is the maximum level of hierarchy?
-        #max_hierarchy = deployment_settings.get_gis_max_hierarchy()
+        #max_hierarchy = gis.get_max_hierarchy_level()
         # Is full hierarchy mandatory?
-        #strict = deployment_settings.get_gis_strict_hierarchy()
+        #strict = gis.get_strict_hierarchy()
 
         post_process = self.post_process
         if not post_process:
@@ -413,6 +452,14 @@ class S3LocationAutocompleteWidget(FormWidget):
             $('#%s').autocomplete({
                 source: '%s',
                 minLength: %d,
+                search: function(event, ui) {
+                    $( '#%s_throbber' ).removeClass('hidden').show();
+                    return true;
+                },
+                response: function(event, ui, content) {
+                    $( '#%s_throbber' ).hide();
+                    return content;
+                },
                 focus: function( event, ui ) {
                     $( '#%s' ).val( ui.item.name );
                     return false;
@@ -420,7 +467,15 @@ class S3LocationAutocompleteWidget(FormWidget):
                 select: function( event, ui ) {
                     $( '#%s' ).val( ui.item.name );
                     $( '#%s' ).val( ui.item.id );
-                    """ % (dummy_input, dummy_input, url, self.min_length, dummy_input, dummy_input, real_input) + post_process + """
+                    """ % (dummy_input,
+                           dummy_input,
+                           url,
+                           self.min_length,
+                           dummy_input,
+                           dummy_input,
+                           dummy_input,
+                           dummy_input,
+                           real_input) + post_process + """
                     data.accept = true;
                     return false;
                 }
@@ -469,6 +524,11 @@ class S3LocationAutocompleteWidget(FormWidget):
 
         return TAG[""](
                         INPUT(_id=dummy_input, _value=represent),
+                        IMG(_src="/%s/static/img/ajax-loader.gif" % \
+                                 request.application,
+                            _height=32, _width=32,
+                            _id="%s_throbber" % dummy_input,
+                            _class="throbber hidden"),
                         INPUT(**attr),
                         SCRIPT(js_autocomplete)
                       )
@@ -495,6 +555,8 @@ class S3PersonAutocompleteWidget(FormWidget):
 
     def __call__(self ,field, value, **attributes):
 
+        request = self.request
+
         default = dict(
             _type = "text",
             value = (value != None and str(value)) or "",
@@ -506,7 +568,9 @@ class S3PersonAutocompleteWidget(FormWidget):
 
         real_input = str(field).replace(".", "_")
         dummy_input = "dummy_%s" % real_input
-        url = URL(r=self.request, c="pr", f="person", args="search.json", vars={"filter":"~"})
+        url = URL(r=request, c="pr", f="person",
+                  args="search.json",
+                  vars={"filter":"~"})
 
         js_autocomplete = """
         (function() {
@@ -515,6 +579,14 @@ class S3PersonAutocompleteWidget(FormWidget):
             $('#%s').autocomplete({
                 source: '%s',
                 minLength: %d,
+                search: function(event, ui) {
+                    $( '#%s_throbber' ).removeClass('hidden').show();
+                    return true;
+                },
+                response: function(event, ui, content) {
+                    $( '#%s_throbber' ).hide();
+                    return content;
+                },
                 focus: function( event, ui ) {
                     var name = '';
                     if (ui.item.first_name != null) {
@@ -542,7 +614,15 @@ class S3PersonAutocompleteWidget(FormWidget):
                     }
                     $( '#%s' ).val( name );
                     $( '#%s' ).val( ui.item.id );
-                    """ % (dummy_input, dummy_input, url, self.min_length, dummy_input, dummy_input, real_input) + self.post_process + """
+                    """ % (dummy_input,
+                           dummy_input,
+                           url,
+                           self.min_length,
+                           dummy_input,
+                           dummy_input,
+                           dummy_input,
+                           dummy_input,
+                           real_input) + self.post_process + """
                     data.accept = true;
                     return false;
                 }
@@ -601,10 +681,464 @@ class S3PersonAutocompleteWidget(FormWidget):
 
         return TAG[""](
                         INPUT(_id=dummy_input, _value=represent),
+                        IMG(_src="/%s/static/img/ajax-loader.gif" % \
+                                 request.application,
+                            _height=32, _width=32,
+                            _id="%s_throbber" % dummy_input,
+                            _class="throbber hidden"),
                         INPUT(**attr),
                         SCRIPT(js_autocomplete)
                       )
 
+
+# -----------------------------------------------------------------------------
+class S3LocationSelectorWidget2(FormWidget):
+
+    """
+        Renders a gis_location SELECT to allow inline display/editing of linked fields.
+
+        Create form
+            Active Tab: Add New Location
+                Country Dropdown (to set the Number & Labels of Hierarchy)
+                Building Name
+                Street Address (Line1/Line2?)
+                    Trigger a geocoder lookup onblur
+                Postcode
+                Mode Strict:
+                    Lx as dropdowns. Default label is 'Select previous to populate this dropdown' (Fixme!)
+                Mode not Strict (default):
+                    L2-L5 as Autocompletes which create missing locations automatically
+                    L1 as Dropdown? (Have a gis_config setting to inform whether this is populated for a given L0)
+                Map:
+                    Inline or Popup? (Deployment Option?)
+                    Set Map Viewport to default on best currently selected Hierarchy
+                Lat Lon
+            Inactive Tab: Search Existing Locations
+                Needs 2 modes:
+                    Specific Locations only - for Sites/Incidents
+                    Hierarchies ok (can specify which) - for Projects/Documents
+                Hierarchical Filters above the Search Box
+                    Search is filtered to values shown
+                    Filters default to any hierarchy selected on the Create tab?
+                We should save the Add tab data when opening the Search so that we can go back to that Tab & add after all (e.g. if specific not found)
+                We should save the Search tab data when re-opening the Add tab
+                    Do we have different fieldnames so can just use hide/unhide?
+                    Do we save the settings to keep same fieldnames?
+                        Flag to know which mode we're in currently
+
+        Update form
+            Update form has uuid set server-side & hence S3.gis.uuid set client-side
+            If location is not shared by other resources:
+                Active Tab: Fields are editable for this location
+                Inactive Tab: Move to an existing Location
+            If location is shared by other resources: <- assume this mode for now
+                Active Tab: Fields are readable for this location
+                Inactive Tab: Edit this shared Location
+                Inactive Tab: Move to an existing Location
+
+        @author: Fran Boon (fran@aidiq.com)
+
+        @see: http://eden.sahanafoundation.org/wiki/BluePrintGISLocationSelector
+    """
+
+    def __init__(self,
+                 db,
+                 gis,
+                 deployment_settings,
+                 request,
+                 response,
+                 T,
+                 ):
+
+        self.db = db
+        self.gis = gis
+        self.deployment_settings = deployment_settings
+        self.request = request
+        self.response = response
+        self.T = T
+
+    def __call__(self, field, value, **attributes):
+
+        db = self.db
+        gis = self.gis
+        deployment_settings = self.deployment_settings
+        request = self.request
+        response = self.response
+        T = self.T
+        locations = db.gis_location
+
+        # Main Input
+        default = dict(_type = "text",
+                       value = (value != None and str(value)) or "")
+        attr = StringWidget._attributes(field, default, **attributes)
+        # Hide the real field
+        attr["_class"] = "hidden"
+
+        # Read Options
+        # Are we restricted to just certain countries?
+        countries = response.s3.gis.countries
+        # Should we use a Map-based selector?
+        map_selector = deployment_settings.get_gis_map_selector()
+        # Navigate Away Confirm?
+        if deployment_settings.get_ui_navigate_away_confirm():
+            navigate_away_confirm = "true"
+        else:
+            navigate_away_confirm = "false"
+
+        # Localised Strings
+        select_location = T("Select a location")
+
+        map_popup = ""
+        if value:
+            mode = "update"
+            # Read current record
+            this_location = db(locations.id == value).select(locations.uuid,
+                                                             locations.name,
+                                                             locations.level,
+                                                             locations.lat,
+                                                             locations.lon,
+                                                             locations.addr_street,
+                                                             locations.addr_postcode,
+                                                             locations.parent,
+                                                             locations.path,
+                                                             limitby=(0, 1)).first()
+            uuid = this_location.uuid
+            level = this_location.level
+            default[level] = value
+            lat = this_location.lat
+            lon = this_location.lon
+            addr_street = this_location.addr_street or ""
+            addr_street_encoded = ""
+            if addr_street:
+                addr_street_encoded = addr_street.replace("\r\n",
+                                                          "%0d").replace("\r",
+                                                                         "%0d").replace("\n",
+                                                                                        "%0d")
+            postcode = this_location.addr_postcode
+            parent = this_location.parent
+            path = this_location.path
+
+            # Populate default with Names of ancestors at each level
+            gis.get_parent_per_level(default, value, feature=this_location, names=True)
+
+            if level and not level == "XX":
+                # If within the locations hierarchy then don't populate the visible name box
+                represent = ""
+            else:
+                represent = this_location.name
+
+            if map_selector:
+                config = gis.get_config()
+                zoom = config.zoom
+                if lat is None or lon is None:
+                    map_lat = config.lat
+                    map_lon = config.lon
+                else:
+                    map_lat = lat
+                    map_lon = lon
+
+                layername = T("Location")
+                popup_label = ""
+                layer = gis.get_feature_layer("gis",
+                                              "location",
+                                              layername,
+                                              popup_label,
+                                              id=value)
+                if layer:
+                    feature_queries = [layer]
+                else:
+                    feature_queries = []
+                map_popup = gis.show_map(
+                                         lat = map_lat,
+                                         lon = map_lon,
+                                         # Same as a single zoom on a cluster
+                                         zoom = zoom + 2,
+                                         feature_queries = feature_queries,
+                                         #add_feature = True,
+                                         #add_feature_active = False,
+                                         toolbar = True,
+                                         collapsed = True,
+                                         search = True,
+                                         window = True,
+                                         window_hide = True
+                                        )
+                # @ToDo: Check if this location is shared by other resources
+                # (If it is then we shouldn't let the user edit without caution)
+                # List of Tables with a location_id reference
+                #tables = locations._referenced_by
+                # Maybe just try hard-deleting the record to trigger an IntegrityError
+                # For now assume it is a shared location
+
+        else:
+            # No default value
+            mode = "create"
+            uuid = ""
+            represent = ""
+            level = None
+            lat = ""
+            lon = ""
+            addr_street = ""
+            addr_street_encoded = ""
+            postcode = ""
+            if map_selector:
+                map_popup = gis.show_map(
+                                         add_feature = True,
+                                         add_feature_active = True,
+                                         toolbar = True,
+                                         collapsed = True,
+                                         search = True,
+                                         window = True,
+                                         window_hide = True
+                                        )
+            
+        # Which Levels do we have in our hierarchy & what are their initial Labels?
+        # @ToDo: If we have hardcoded country or one from the value then we can lookup what options we should use for that location
+        #if value["L0"]:
+        #elif len(countries) == 1:
+        #else:
+        # Default
+        location_hierarchy = get.get_location_hierarchy()
+
+        # Components to inject into Form
+        divider = TR(TD(_class="subheading"))
+        section_label = TR(TD(B("%s:" % field.label)))
+        
+        # Tabs to select between the modes
+        add_button = A(T("Create New Location"),
+                       _style="cursor:pointer; cursor:hand",
+                       _id="gis_location_add-btn")
+
+        search_button = A(T("Select Existing Location"),
+                          _style="cursor:pointer; cursor:hand",
+                          _id="gis_location_search-btn")
+
+        tabs = DIV(SPAN(add_button, _id="gis_loc_add_tab", _class="tab_here"),
+                   SPAN(search_button, _id="gis_loc_search_tab",
+                        _class="tab_last"),
+                   _class="tabs")
+        tab_rows = TR(tabs)
+
+        # L0 selector
+        level = "L0"
+        L0_rows = ""
+        if value:
+            # Read-only
+            widget = INPUT(value=default[level],
+                           _id="gis_location_%s" % level,
+                           _disabled="disabled")
+        elif len(countries) == 1:
+            # Hard-coded country
+            L0_rows = INPUT(_id="gis_location_%s" % level, _class="hidden")
+        else:
+            attr_dropdown = OptionsWidget._attributes(field,
+                                                      dict(_type = "int",
+                                                           value = ""),
+                                                      **attributes)
+            requires = IS_ONE_OF(db, "gis_location.id", repr_select,
+                                 filterby = "level",
+                                 filter_opts = (level,),
+                                 orderby = "gis_location.name",
+                                 sort = True,
+                                 zero = "%s..." % select_location)
+            if countries:
+                # Use the list of countries from deployment_settings instead of from db
+                options = []
+                for country in countries:
+                    options.append((countries[country].id,
+                                    countries[country].name))
+            else:
+                # Prepopulate top-level dropdown from db
+                if hasattr(requires, "options"):
+                    options = requires.options()
+                    if options.__len__() == 2:
+                        # If there is only a single country available then pre-select it
+                        options = [options[1]]
+                else:
+                    raise SyntaxError, "widget cannot determine options of %s" \
+                                       % field
+            opts = [OPTION(v, _value=k) for (k, v) in options]
+            attr_dropdown["_id"] = "gis_location_%s" % level
+            # Need to blank the name to prevent it from appearing in form.vars & requiring validation
+            attr_dropdown["_name"] = ""
+            widget = SELECT(*opts, **attr_dropdown)
+        if not L0_rows:
+            label = LABEL("%s:" % location_hierarchy[level])
+            L0_rows = DIV(TR(TD(label),
+                             _id="gis_location_%s_label__row" % level),
+                          TR(TD(widget),
+                             _id="gis_location_%s__row" % level))
+
+        name_label = T("Building Name")
+        street_label = T("Street Address")
+        postcode_label = T("Postcode")
+        lat_label = T("Latitude")
+        lon_label = T("Longitude")
+        autocomplete_help = T("Enter some characters to bring up a list of possible matches.")
+        new_help = T("If not found, you can have a new location created.")
+        def ac_help_widget(level):
+            return DIV( _class="tooltip",
+                        _title="%s|%s|%s" % (location_hierarchy[level], autocomplete_help, new_help))
+
+        hidden = ""
+        throbber = "/%s/static/img/ajax-loader.gif" % request.application
+        Lx_rows = DIV()
+        levels = ["L5", "L4", "L3", "L2", "L1"]
+        if value:
+            # Read-only
+            name_widget = INPUT(value=represent,
+                                _id="gis_location_name",
+                                _disabled="disabled")
+            street_widget = TEXTAREA(value=addr_street,
+                                     _id="gis_location_street",
+                                     _disabled="disabled")
+            postcode_widget = INPUT(value=postcode,
+                                    _id="gis_location_postcode",
+                                    _disabled="disabled")
+            lat_widget = INPUT(value=lat,
+                               _id="gis_location_lat",
+                               _disabled="disabled")
+            lon_widget = INPUT(value=lon,
+                               _id="gis_location_lon",
+                               _disabled="disabled")
+            for level in levels:
+                if level not in location_hierarchy:
+                    # Skip levels not in hierarchy
+                    continue
+                label = LABEL("%s:" % location_hierarchy[level])
+                row = TR(TD(label),
+                         _id="gis_location_%s_label__row" % level)
+                Lx_rows.append(row)
+                widget = INPUT(value=default[level],
+                               _id="gis_location_%s" % level,
+                               _disabled="disabled")
+                row = TR(TD(widget),
+                         _id="gis_location_%s__row" % level)
+                Lx_rows.append(row)
+                
+        else:
+            name_widget = INPUT(_id="gis_location_name")
+            street_widget = TEXTAREA(_id="gis_location_street")
+            postcode_widget = INPUT(_id="gis_location_postcode")
+            lat_widget = INPUT(_id="gis_location_lat")
+            lon_widget = INPUT(_id="gis_location_lon")
+            for level in levels:
+                if level not in location_hierarchy:
+                    # Skip levels not in hierarchy
+                    continue
+                if len(countries) == 1:
+                    # Q: Make the L1 selector into a dropdown?
+                    # deployment_setting? Based on flag in the region table to say that we have this populated?
+                    pass
+                elif level in ["L5", "L4", "L3"]:
+                    # Have the levels ready, but don't display them until the Country Selector has run
+                    # so that we know which location hierarchy levels/labels to use
+                    hidden = "hidden"
+                label = LABEL("%s:" % location_hierarchy[level])
+                row = TR(TD(label),
+                         _class=hidden,
+                         _id="gis_location_%s_label__row" % level)
+                Lx_rows.append(row)
+                widget = DIV(INPUT(_id="gis_location_%s" % level,
+                                      _class="hidden"),
+                                INPUT(_id="gis_location_%s_ac" % level),
+                                IMG(_src=throbber,
+                                    _height=32, _width=32,
+                                    _id="gis_location_%s_throbber" % level,
+                                _class="throbber hidden"))
+                row = TR(TD(widget),
+                         TD(ac_help_widget(level)),
+                         _class=hidden,
+                         _id="gis_location_%s__row" % level)
+                Lx_rows.append(row)
+                
+        name_rows = DIV(TR(LABEL("%s:" % name_label),
+                           _id="gis_location_name_label__row"),
+                        TR(name_widget,
+                           _id="gis_location_name__row"))
+        street_rows = DIV(TR(LABEL("%s:" % street_label),
+                             _id="gis_location_street_label__row"),
+                          TR(street_widget,
+                             _id="gis_location_street__row"))
+        postcode_rows = DIV(TR(LABEL("%s:" % postcode_label),
+                               _id="gis_location_postcode_label__row"),
+                            TR(postcode_widget,
+                               _id="gis_location_postcode__row"))
+
+        latlon_help = locations.lat.comment
+        converter_button = locations.lon.comment
+        converter_button = ""
+        latlon_rows = DIV(TR(LABEL("%s:" % lat_label),
+                               _id="gis_location_lat_label__row"),
+                          TR(TD(lat_widget), TD(latlon_help),
+                               _id="gis_location_lat__row"),
+                          TR(LABEL("%s:" % lon_label),
+                               _id="gis_location_lon_label__row"),
+                          TR(TD(lon_widget), TD(converter_button),
+                               _id="gis_location_lon__row"))
+
+        if map_selector:
+            if value:
+                map_button = A(T("View on Map"),
+                               _style="cursor:pointer; cursor:hand",
+                               _id="gis_location_map-btn")
+            else:
+                map_button = A(T("Place on Map"),
+                               _style="cursor:pointer; cursor:hand",
+                               _id="gis_location_map-btn")
+        else:
+            map_button = ""
+
+        autocomplete = DIV(INPUT(_id="gis_location_autocomplete"),
+                           IMG(_src=throbber,
+                               _height=32, _width=32,
+                               _id="gis_location_autocomplete_throbber",
+                               _class="throbber hidden"),
+                            _id="gis_location_autocomplete_div",
+                           _class="hidden")
+
+        # Settings to be read by static/scripts/S3/s3.locationselector.widget.js
+        js_location_selector = """
+    S3.gis.mode = '%s';
+    S3.gis.uuid = '%s';
+    S3.gis.name = '%s';
+    S3.gis.addr_street = '%s';
+    S3.gis.postcode = '%s';
+    S3.gis.lat = '%s';
+    S3.gis.lon = '%s';
+    var s3_gis_location_id = '%s';
+    var s3_gis_url = '%s';
+    var s3_navigate_away_confirm = %s;
+    """ % (
+            mode,
+            uuid,
+            represent,
+            addr_street_encoded,
+            postcode,
+            lat,
+            lon,
+            attr["_id"],                    # Name of the real location field
+            URL(r=request, c="gis", f="location"),
+            navigate_away_confirm           # Currently unused
+          )
+        
+        # The overall layout of the components
+        return TAG[""](
+                        TR(INPUT(**attr)),  # Real input, which is hidden
+                        divider,
+                        #section_label,
+                        tab_rows,          # When ready
+                        L0_rows,
+                        TR(map_popup),
+                        name_rows,
+                        street_rows,
+                        postcode_rows,
+                        Lx_rows,
+                        TR(map_button),
+                        latlon_rows,
+                        divider,
+                        SCRIPT(js_location_selector)
+                      )
+        
 
 # -----------------------------------------------------------------------------
 class S3LocationSelectorWidget(FormWidget):
@@ -614,7 +1148,7 @@ class S3LocationSelectorWidget(FormWidget):
             - new location can be specified as:
                 - a simple name (hopefully within hierarchy)
                 - manual Lat/Lon entry (with optional GPS Coordinate Converter)
-                - Geocoder lookup
+                - Geocoder lookup (@ToDo)
                 - Select location from Map
 
         @author: Fran Boon (fran@aidiq.com)
@@ -622,6 +1156,8 @@ class S3LocationSelectorWidget(FormWidget):
         @see: http://eden.sahanafoundation.org/wiki/BluePrintGISLocationSelector
 
         @ToDo: Need to allow Projects/Documents to be linked to a generic Lx Location.
+        @ToDo: Make the Search Locations' Dropdowns into Search Filters
+        @ToDo: Don't do separate AJAX calls to populate the Hierarchy levels when a location is found - simply get in the 1 pull
     """
 
     def __init__(self,
@@ -676,7 +1212,7 @@ class S3LocationSelectorWidget(FormWidget):
         # Should we use a Map-based selector?
         map_selector = deployment_settings.get_gis_map_selector()
         # Which Levels do we have in our hierarchy & what are their Labels?
-        location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
+        location_hierarchy = gis.get_location_hierarchy()
         # No longer needed
         #try:
         #    # Ignore the bad bulk-imported data
@@ -684,10 +1220,10 @@ class S3LocationSelectorWidget(FormWidget):
         #except KeyError:
         #    pass
         # What is the maximum level of hierarchy?
-        max_hierarchy = deployment_settings.get_gis_max_hierarchy()
+        max_hierarchy = gis.get_max_hierarchy_level()
         # Is full hierarchy mandatory?
-        #strict = deployment_settings.get_gis_strict_hierarchy()
-        # @ToDo: Do soem client-side validation based on this flag
+        #strict = gis.get_strict_hierarchy()
+        # @ToDo: Do some client-side validation based on this flag
 
         # Navigate Away Confirm?
         if deployment_settings.get_ui_navigate_away_confirm():
@@ -742,7 +1278,7 @@ class S3LocationSelectorWidget(FormWidget):
             parent = this_location.parent
             path = this_location.path
 
-            # Get ids of ancestors at each level.
+            # Populate default with IDs of ancestors at each level
             gis.get_parent_per_level(default, value, feature=this_location)
 
             # Provide the representation for the current/default Value
@@ -938,7 +1474,7 @@ class S3LocationSelectorWidget(FormWidget):
                 elif current or _parent:
                     # Dropdown or one above this one contains a current value
                     # Read values from db
-                    options = [("", "Select a location...")]
+                    options = [("", "%s..." % T("Select a location"))]
                     if level:
                         query = (locations.level == level) & deleted
                     else:
@@ -953,7 +1489,7 @@ class S3LocationSelectorWidget(FormWidget):
 
                 else:
                     # We don't want to pre-populate the dropdown - it will be pulled dynamically via AJAX when the parent dropdown is selected
-                    options = [("", loading_locations)]
+                    options = [("", "%s..." % loading_locations)]
 
             opts = [OPTION(v, _value=k) for (k, v) in options]
 
@@ -1160,16 +1696,25 @@ class S3LocationSelectorWidget(FormWidget):
         lat_widget = INPUT(_id="gis_location_lat", _value=lat)
         lon_widget = INPUT(_id="gis_location_lon", _value=lon)
 
-        autocomplete = DIV(LABEL("%s:" % T("Search")),
+        autocomplete = DIV(LABEL("%s:" % T("Enter some characters to bring up a list of possible matches")),
                            BR(),
                            INPUT(_id="gis_location_autocomplete"),
-                           _id="gis_location_autocomplete_div",
+                           IMG(_src="/%s/static/img/ajax-loader.gif" % \
+                                    request.application,
+                               _height=32, _width=32,
+                               _id="gis_location_autocomplete_throbber",
+                               _class="throbber hidden"),
+                            _id="gis_location_autocomplete_div",
                            _class="hidden")
 
         # Buttons
         search_button = A(T("Search Existing Locations"),
                           _style="cursor:pointer; cursor:hand",
                           _id="gis_location_search-btn")
+        # A copy of the label to keep position without being a link
+        search_button_label = DIV(T("Search Existing Locations"),
+                                  _id="gis_location_search-btn-label",
+                                  _class="hidden")
 
         add_button = A(T("Create New Location"),
                        _style="cursor:pointer; cursor:hand",
@@ -1301,13 +1846,14 @@ class S3LocationSelectorWidget(FormWidget):
         lon_rows = DIV(lon_label,
                        TR(lon_widget, converter_button,
                           _id="gis_location_lon_row", _class="hidden"))
-        divider = TR("------------------------------------------------------------------")
+        divider = TR(TD(_class="subheading"))
 
         # The overall layout of the components
         return TAG[""](
                         #divider,           # This is in the widget, so underneath the label :/ Add in JS? 'Sections'?
                         TR(INPUT(**attr)),  # Real input, which is hidden
-                        TR(TD(search_button, autocomplete)),
+                        TR(TD(search_button, search_button_label,
+                              autocomplete)),
                         dropdowns,
                         TR(TD(add_button, cancel_button)),
                         TR(gps_converter_popup),

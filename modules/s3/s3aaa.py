@@ -167,7 +167,7 @@ class AuthS3(Auth):
         if not settings.table_user:
             passfield = settings.password_field
             if settings.username_field:
-                # with username
+                # with username (not used by default in Sahana)
                 settings.table_user = db.define_table(
                     settings.table_user_name,
                     Field("first_name", length=128, default="",
@@ -190,12 +190,14 @@ class AuthS3(Auth):
                     Field("reset_password_key", length=512,
                           writable=False, readable=False, default="",
                           label=messages.label_registration_key),
+                    Field("deleted", "boolean", writable=False,
+                          readable=False, default=False),
                     Field("timestmp", "datetime", writable=False,
                           readable=False, default=""),
                     migrate = self.__get_migrate(settings.table_user_name,
                                                  migrate))
             else:
-                # with email-address
+                # with email-address (Sahana default)
                 settings.table_user = db.define_table(
                     settings.table_user_name,
                     Field("first_name", length=128, default="",
@@ -217,6 +219,8 @@ class AuthS3(Auth):
                     Field("reset_password_key", length=512,
                           writable=False, readable=False, default="",
                           label=messages.label_registration_key),
+                    Field("deleted", "boolean", writable=False,
+                          readable=False, default=False),
                     Field("timestmp", "datetime", writable=False,
                           readable=False, default=""),
                     migrate = self.__get_migrate(settings.table_user_name,
@@ -373,6 +377,20 @@ class AuthS3(Auth):
 
 
     # -------------------------------------------------------------------------
+    def set_cookie(self):
+        """
+            Set a Cookie to the client browser so that we know this user has
+            registered & so we should present them with a login form instead
+            of a register form
+        """
+
+        response = self.environment.response
+
+        response.cookies["registered"] = "yes"
+        response.cookies["registered"]["expires"] = 365 * 24 * 3600    # 1 year
+        response.cookies["registered"]["path"] = "/"
+
+    # -------------------------------------------------------------------------
     def login(self,
               next=DEFAULT,
               onvalidation=DEFAULT,
@@ -493,6 +511,8 @@ class AuthS3(Auth):
                                    expiration=self.settings.expiration)
             self.user = user
             session.confirmation = self.messages.logged_in
+            # Set a Cookie to present user with login box by default
+            self.set_cookie()
         if log and self.user:
             self.log_event(log % self.user)
 
@@ -662,6 +682,9 @@ class AuthS3(Auth):
                 # No verification or approval needed
                 approved = True
 
+            # Set a Cookie to present user with login box by default
+            self.set_cookie()
+
             if approved:
                 user[form.vars.id] = dict(registration_key="")
                 session.confirmation = messages.registration_successful
@@ -721,7 +744,7 @@ class AuthS3(Auth):
         authenticated = self.id_group("Authenticated")
         self.add_membership(authenticated, form.vars.id)
 
-        # Add to Person Registry and Email/Mobile to pr_pe_contact
+        # Add to Person Registry and Email/Mobile to pr_contact
         person_id = self.s3_link_to_person(user=form.vars)
 
         organisation_id = form.vars.get("organisation",
@@ -758,7 +781,7 @@ class AuthS3(Auth):
         db = self.db
         utable = self.settings.table_user
         ptable = db.pr_person
-        ctable = db.pr_pe_contact
+        ctable = db.pr_contact
         etable = db.pr_pentity
         ttable = db.sit_trackable
 
@@ -806,13 +829,13 @@ class AuthS3(Auth):
                         db(utable.id == user.id).update(person_uuid=person_uuid)
                         db(etable.id == pe_id).update(uuid=person_uuid)
                         db(ttable.id == track_id).update(uuid=person_uuid)
-                        # Add the email to pr_pe_contact
+                        # Add the email to pr_contact
                         ctable.insert(
                                 pe_id = pe_id,
                                 contact_method = 1,
                                 priority = 1,
                                 value = email)
-                        # Add the mobile to pr_pe_contact
+                        # Add the mobile to pr_contact
                         mobile = self.environment.request.vars.get("mobile",
                                                                    None)
                         if mobile:
@@ -1010,18 +1033,16 @@ class AuthS3(Auth):
                 # This staff is a component of a site instance
                 table = db[tablename]
                 query = (table.site_id == site_id)
-                site_staff_role_id = db(query).select(table.owned_by_role,
-                                                      limitby=(0, 1)).first().owned_by_role
-                try:
-                    table = db.org_site
-                    id = site_id
-                    record = db(table.id == id).select(table.name,
-                                                       limitby=(0, 1)).first()
-                    recordname = record.name
-                except:
-                    recordname = ""
+                record = db(query).select(table.owned_by_role,
+                                          table.id,
+                                          table.name,
+                                          limitby=(0, 1)).first()
+                id = record.id
+                recordname = record.name or ""
+                site_staff_role_id = record.owned_by_role
+
                 site_supervisor_role = "%s_%s Supervisors of %s" % (tablename,
-                                                                    site_id,
+                                                                    id,
                                                                     recordname)
                 table = db[self.settings.table_group]
                 query = (table.role == site_supervisor_role)
@@ -1229,8 +1250,9 @@ class AuthS3(Auth):
                 authorised = self.s3_has_role("Editor")
                 if not authorised and self.user and "owned_by_user" in table:
                     # Creator of Record is allowed to Edit
-                    record = db(table.id == record_id).select(table.owned_by_user,
-                                                              limitby=(0, 1)).first()
+                    query = (table.id == record_id)
+                    record = db(query).select(table.owned_by_user,
+                                              limitby=(0, 1)).first()
                     if record and self.user.id == record.owned_by_user:
                         authorised = True
 
@@ -2579,7 +2601,7 @@ class S3RoleManager(S3Method):
             tbody = TBODY(trows)
 
             # Aggregate list
-            items = TABLE(thead, tbody, _id="list", _class="display")
+            items = TABLE(thead, tbody, _id="list", _class="dataTable display")
             output.update(items=items, sortby=[[1, 'asc']])
 
             # Add-button
@@ -2642,7 +2664,8 @@ class S3RoleManager(S3Method):
                 role_desc = None
 
             # Form helpers ----------------------------------------------------
-            mandatory = lambda l: DIV(l, XML("&nbsp;"), SPAN("*", _class="req"))
+            mandatory = lambda l: DIV(l, XML("&nbsp;"),
+                                      SPAN("*", _class="req"))
             acl_table.oacl.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
             acl_table.uacl.requires = IS_ACL(auth.permission.PERMISSION_OPTS)
             acl_widget = lambda f, n, v: S3ACLWidget.widget(acl_table[f], v,
@@ -2655,7 +2678,8 @@ class S3RoleManager(S3Method):
             using_default = SPAN(T("using default"), _class="using-default")
             delete_acl = lambda _id: _id is not None and \
                                      A(T("Delete"),
-                                       _href = URL(r=request, c="admin", f="acl",
+                                       _href = URL(r=request,
+                                                   c="admin", f="acl",
                                                    args=[_id, "delete"],
                                                    vars=dict(_next=r.here())),
                                        _class = "delete-btn") or using_default
@@ -2746,16 +2770,16 @@ class S3RoleManager(S3Method):
                                     _class=_class))
 
             # Tabs
-            tabs = [SPAN(A(CACL), _class="rheader_tab_here")]
+            tabs = [SPAN(A(CACL), _class="tab_here")]
             if auth.permission.use_facls:
                 _class = auth.permission.use_tacls and \
-                         "rheader_tab_other" or "rheader_tab_last"
+                         "tab_other" or "tab_last"
                 tabs.append(SPAN(A(FACL, _class="facl-tab"), _class=_class))
             if auth.permission.use_tacls:
                 tabs.append(SPAN(A(TACL, _class="tacl-tab"),
-                                 _class="rheader_tab_last"))
+                                 _class="tab_last"))
 
-            acl_forms.append(DIV(DIV(tabs, _id="rheader_tabs"),
+            acl_forms.append(DIV(DIV(tabs, _class="tabs"),
                                      TABLE(thead, TBODY(form_rows)),
                                      _id="controller-acls"))
 
@@ -2807,7 +2831,8 @@ class S3RoleManager(S3Method):
                 # Row to enter a new controller ACL
                 _class = i % 2 and "even" or "odd"
                 c_opts = [OPTION("", _value=None, _selected="selected")] + \
-                        [OPTION(self.controllers[c].name_nice, _value=c) for c in controllers]
+                         [OPTION(self.controllers[c].name_nice,
+                                 _value=c) for c in controllers]
                 c_select = SELECT(_name="new_controller", *c_opts)
 
                 form_rows.append(TR(
@@ -2819,13 +2844,13 @@ class S3RoleManager(S3Method):
 
                 # Tabs to change to the other view
                 tabs = [SPAN(A(CACL, _class="cacl-tab"),
-                             _class="rheader_tab_other"),
-                        SPAN(A(FACL), _class="rheader_tab_here")]
+                             _class="tab_other"),
+                        SPAN(A(FACL), _class="tab_here")]
                 if auth.permission.use_tacls:
                     tabs.append(SPAN(A(TACL, _class="tacl-tab"),
-                                     _class="rheader_tab_last"))
+                                     _class="tab_last"))
 
-                acl_forms.append(DIV(DIV(tabs, _id="rheader_tabs"),
+                acl_forms.append(DIV(DIV(tabs, _class="tabs"),
                                          TABLE(thead, TBODY(form_rows)),
                                          _id="function-acls"))
 
@@ -2878,7 +2903,8 @@ class S3RoleManager(S3Method):
                 all_tables = [t._tablename for t in self.db]
                 form_rows.append(TR(
                     TD(INPUT(_type="text", _name="new_table",
-                            requires=IS_EMPTY_OR(IS_IN_SET(all_tables, zero=None,
+                            requires=IS_EMPTY_OR(IS_IN_SET(all_tables,
+                                                           zero=None,
                                         error_message=T("Undefined Table"))))),
                     TD(acl_widget("uacl", "new_t_uacl", auth.permission.NONE)),
                     TD(acl_widget("oacl", "new_t_oacl", auth.permission.NONE)),
@@ -2886,12 +2912,12 @@ class S3RoleManager(S3Method):
 
                 # Tabs
                 tabs = [SPAN(A(CACL, _class="cacl-tab"),
-                             _class="rheader_tab_other")]
+                             _class="tab_other")]
                 if auth.permission.use_facls:
                     tabs.append(SPAN(A(FACL, _class="facl-tab"),
-                                     _class="rheader_tab_other"))
-                tabs.append(SPAN(A(TACL), _class="rheader_tab_here"))
-                acl_forms.append(DIV(DIV(tabs, _id="rheader_tabs"),
+                                     _class="tab_other"))
+                tabs.append(SPAN(A(TACL), _class="tab_here"))
+                acl_forms.append(DIV(DIV(tabs, _class="tabs"),
                                      TABLE(thead, TBODY(form_rows)),
                                      _id="table-acls"))
 
@@ -3073,9 +3099,11 @@ class S3RoleManager(S3Method):
                 username = user.email
                 query = (mtable.user_id == user_id)
                 memberships = db(query).select()
-                memberships = Storage([(str(m.group_id), m.id) for m in memberships])
+                memberships = Storage([(str(m.group_id),
+                                        m.id) for m in memberships])
                 roles = db().select(gtable.id, gtable.role)
-                roles = Storage([(str(g.id), " %s" % g.role) for g in roles if g.id not in (2, 3)])
+                roles = Storage([(str(g.id),
+                                  " %s" % g.role) for g in roles if g.id not in (2, 3)])
                 field = Storage(name="roles",
                                 requires = IS_IN_SET(roles, multiple=True))
                 widget = CheckboxesWidget.widget(field, memberships.keys())
@@ -3158,7 +3186,8 @@ class S3RoleManager(S3Method):
                 assigned = db(mtable.group_id == role_id).select(mtable.ALL)
 
                 assigned_users = [row.user_id for row in assigned]
-                unassigned_users = [(row.id, row) for row in users if row.id not in assigned_users]
+                unassigned_users = [(row.id,
+                                     row) for row in users if row.id not in assigned_users]
 
                 # Delete form
                 if assigned_users:
@@ -3174,10 +3203,12 @@ class S3RoleManager(S3Method):
                         _class = i % 2 and "even" or "odd"
                         i += 1
                         trow = TR(TD(A(), _name="Id"),
-                                  TD("%s %s" % (user.first_name, user.last_name)),
+                                  TD("%s %s" % (user.first_name,
+                                                user.last_name)),
                                   TD(user[username]),
-                                  TD(INPUT(_type="checkbox", _name="d_%s" % user.id,
-                                                                            _class="remove_item")),
+                                  TD(INPUT(_type="checkbox",
+                                           _name="d_%s" % user.id,
+                                           _class="remove_item")),
                                 _class=_class)
                         trows.append(trow)
                     trows.append(TR(TD(), TD(), TD(),
@@ -3186,17 +3217,20 @@ class S3RoleManager(S3Method):
                                          _value=T("Remove")))))
                     tbody = TBODY(trows)
                     del_form = TABLE(thead, tbody, _id="list",
-                                     _class="display")
+                                     _class="dataTable display")
                 else:
                     del_form = T("No users with this role")
 
-                del_form = FORM(DIV(del_form, _id="table-container"), _name="del_form")
+                del_form = FORM(DIV(del_form, _id="table-container"),
+                                    _name="del_form")
 
                 # Add form
                 uname = lambda u: "%s: %s %s" % (u.id, u.first_name, u.last_name)
-                u_opts = [OPTION(uname(u[1]), _value=u[0]) for u in unassigned_users]
+                u_opts = [OPTION(uname(u[1]),
+                          _value=u[0]) for u in unassigned_users]
                 if u_opts:
-                    u_opts = [OPTION("", _value=None, _selected="selected")] + u_opts
+                    u_opts = [OPTION("",
+                              _value=None, _selected="selected")] + u_opts
                     u_select = DIV(TABLE(TR(
                                     TD(SELECT(_name="new_user", *u_opts)),
                                     TD(INPUT(_type="submit",
@@ -3207,7 +3241,8 @@ class S3RoleManager(S3Method):
                 add_form = FORM(DIV(u_select), _name="add_form")
 
                 # Process delete form
-                if del_form.accepts(request.post_vars, session, formname="del_form"):
+                if del_form.accepts(request.post_vars,
+                                    session, formname="del_form"):
                     del_ids = [v[2:] for v in del_form.vars
                                      if v[:2] == "d_" and del_form.vars[v] == "on"]
                     db((mtable.group_id == role_id) &
@@ -3215,7 +3250,8 @@ class S3RoleManager(S3Method):
                     redirect(r.here())
 
                 # Process add form
-                if add_form.accepts(request.post_vars, session, formname="add_form"):
+                if add_form.accepts(request.post_vars,
+                                    session, formname="add_form"):
                     if add_form.vars.new_user:
                         mtable.insert(group_id=role_id,
                                       user_id=add_form.vars.new_user)

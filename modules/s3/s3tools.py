@@ -258,7 +258,7 @@ class MENUS3(DIV):
                 if link == False:
                     continue
                 if not link:
-                        link = "#null"
+                    link = "#null"
                 if right:
                     style = "float: right;"
                 else:
@@ -282,9 +282,24 @@ class MENUS3(DIV):
                 (name, right, link) = item[:3]
                 if link == False:
                     continue
+                elif not link:
+                    link = "#null"
                 if name == "----":
                     # Horizontal line as separator
                     li = LI(HR(), _class="menu_separator")
+                elif isinstance(name, tuple) and link:
+                    if link:
+                        _onchange="var val=$('#%s:checked').length; $.getS3('%s'+'?val='+val, null, false, null, false, false);" % (name[1], link)
+                    else:
+                        _onchange=None
+                    if len(name)>2:
+                        value=name[2]
+                    else:
+                        value=False
+                    li = LI(A(INPUT(_type="checkbox",
+                                  _id=name[1],
+                                  value=value, _onchange=_onchange),
+                              " %s" % name[0], _nowrap="nowrap"))
                 else:
                     li = LI(A(name, _href=link))
                 div.append(li)

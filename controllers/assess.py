@@ -196,18 +196,20 @@ def rat():
     # Over-ride the listadd since we're not a component here
     s3xrc.model.configure(table, create_next="", listadd=True)
 
-    rheader = lambda r: shn_rat_rheader(r,
-                                        tabs = [(T("Identification"), None),
-                                                (T("Demographic"), "section2"),
-                                                (T("Shelter & Essential NFIs"), "section3"),
-                                                (T("WatSan"), "section4"),
-                                                (T("Health"), "section5"),
-                                                (T("Nutrition"), "section6"),
-                                                (T("Livelihood"), "section7"),
-                                                (T("Education"), "section8"),
-                                                (T("Protection"), "section9") ])
+    tabs = [(T("Identification"), None),
+            (T("Demographic"), "section2"),
+            (T("Shelter & Essential NFIs"), "section3"),
+            (T("WatSan"), "section4"),
+            (T("Health"), "section5"),
+            (T("Nutrition"), "section6"),
+            (T("Livelihood"), "section7"),
+            (T("Education"), "section8"),
+            (T("Protection"), "section9") ]
 
-    output = s3_rest_controller(prefix, resourcename, rheader=rheader)
+    rheader = lambda r: shn_rat_rheader(r,
+                                        tabs)
+
+    output = s3_rest_controller(prefix, resourcename, rheader=rheader, s3ocr_config={"tabs": tabs})
 
     response.extra_styles = ["S3/rat.css"]
     return output
@@ -222,7 +224,7 @@ def shn_rat_rheader(r, tabs=[]):
         if r.name == "rat":
             report = r.record
             if report:
-                rheader_tabs = shn_rheader_tabs(r, tabs, paging=True)
+                rheader_tabs = s3_rheader_tabs(r, tabs, paging=True)
                 location = report.location_id
                 if location:
                     location = shn_gis_location_represent(location)
@@ -277,7 +279,7 @@ def shn_assess_rheader(r, tabs=[]):
 
     if r.representation == "html":
 
-        rheader_tabs = shn_rheader_tabs(r, tabs)
+        rheader_tabs = s3_rheader_tabs(r, tabs)
 
         assess = r.record
 
@@ -556,7 +558,7 @@ def custom_assess(custom_assess_fields, location_id=None):
                       _type = "submit"),
                )
     assess_id = None
-    
+
     form_accepted = form.accepts(request.vars, session)
     if form_accepted:
         record_dict = {"organisation_id" : session.s3.organisation_id}

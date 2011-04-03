@@ -1772,7 +1772,7 @@ class S3QueryBuilder(object):
 
         # Deletion status
         if deletion_status in table.fields:
-            remaining = (table[deletion_status] == False)
+            remaining = (table[deletion_status] != True)
             mquery = remaining & mquery
 
         # Component Query

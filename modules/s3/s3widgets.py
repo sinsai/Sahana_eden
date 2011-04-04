@@ -429,7 +429,7 @@ class S3LocationAutocompleteWidget(FormWidget):
                         "exclude_value":"XX"})
 
         # Which Levels do we have in our hierarchy & what are their Labels?
-        location_hierarchy = get.get_location_hierarchy()
+        location_hierarchy = self.deployment_settings.gis.location_hierarchy
         try:
             # Ignore the bad bulk-imported data
             del location_hierarchy["XX"]
@@ -897,7 +897,7 @@ class S3LocationSelectorWidget2(FormWidget):
         #elif len(countries) == 1:
         #else:
         # Default
-        location_hierarchy = get.get_location_hierarchy()
+        location_hierarchy = gis.get_location_hierarchy()
 
         # Components to inject into Form
         divider = TR(TD(_class="subheading"))

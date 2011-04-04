@@ -1237,11 +1237,11 @@ if populate:
     # Authorization
     # User Roles (uses native Web2Py Auth Groups)
     acl = auth.permission
-    table = auth.settings.table_group_name
+    table = db[auth.settings.table_group_name]
     default_acl = deployment_settings.get_aaa_default_acl()
     default_uacl = deployment_settings.get_aaa_default_uacl()
     default_oacl = deployment_settings.get_aaa_default_oacl()
-    if not db(db[table].id > 0).select(table.id, limitby=(0, 1)).first():
+    if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
         create_role = auth.s3_create_role
         # Do not remove or change order of these 5 definitions (System Roles):
         create_role("Administrator", "System Administrator - can access & make changes to any data")
@@ -1275,8 +1275,8 @@ if populate:
 
     # Security Defaults for all tables (if using 'full' security policy: i.e. native Web2Py)
     if session.s3.security_policy not in (1, 2, 3, 4, 5):
-        table = auth.settings.table_permission_name
-        if not db(db[table].id > 0).select(table.id, limitby=(0, 1)).first():
+        table = db[auth.settings.table_permission_name]
+        if not db(table.id > 0).select(table.id, limitby=(0, 1)).first():
             # For performance we only populate this once (at system startup)
             # => need to populate manually when adding new tables to the database! (less RAD)
             authenticated = auth.id_group("Authenticated")

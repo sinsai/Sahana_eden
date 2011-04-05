@@ -574,8 +574,18 @@ class IS_UTC_DATETIME(Validator):
                 return (dt_utc, None)
 
     def formatter(self, value):
-        # Always format with trailing UTC offset
-        return value.strftime(str(self.format)) + " +0000"
+
+        format="%Y-%m-%d %H:%M:%S"
+        offset = IS_UTC_OFFSET.get_offset_value(self.utc_offset)
+
+        if not value:
+            return "-"
+        elif offset:
+            dt = value + timedelta(seconds=offset)
+            return dt.strftime(str(format))
+        else:
+            dt = value
+            return dt.strftime(str(format)) + " +0000"
 
 
 # -----------------------------------------------------------------------------

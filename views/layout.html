@@ -71,7 +71,7 @@ $(document).ready(function() {
 	// Web2Py Layer
     $("input[type='checkbox'].delete").click(function() { if(this.checked) if(!confirm("{{=T('Sure you want to delete this object?')}}")) this.checked=false; });
     try { $('input.datetime').focus( function() {Calendar.setup({
-         inputField:this.id, ifFormat:"{{=T('%Y-%m-%d %H:%M:%S')}}", showsTime: true, timeFormat: '24'
+         inputField:this.id, ifFormat:"{{='%Y-%m-%d %H:%M:%S'}}", showsTime: true, timeFormat: '24'
     }); }); } catch(e) {};
     
     // S3 Layer

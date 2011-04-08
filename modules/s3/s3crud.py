@@ -43,7 +43,7 @@ from gluon.storage import Storage
 from gluon.html import *
 from gluon.http import HTTP, redirect
 from gluon.serializers import json
-from gluon.sql import Field, Row
+from gluon.dal import Field, Row
 from gluon.validators import IS_EMPTY_OR
 from gluon.tools import callback
 
@@ -941,12 +941,20 @@ class S3CRUD(S3Method):
             # Echo
             sEcho = int(vars.sEcho or 0)
 
+            if r.method == "search":
+                if not orderby:
+                    orderby = fields[0]
+                distinct = True
+            else:
+                distinct = False
+
             # Get the list
             items = self.sqltable(fields=fields,
                                   left=left,
                                   start=start,
                                   limit=limit,
                                   orderby=orderby,
+                                  distinct=distinct,
                                   linkto=linkto,
                                   download_url=self.download_url,
                                   as_page=True,
@@ -997,6 +1005,7 @@ class S3CRUD(S3Method):
                  start=0,
                  limit=None,
                  orderby=None,
+                 distinct=False,
                  linkto=None,
                  download_url=None,
                  as_page=False,
@@ -1010,6 +1019,7 @@ class S3CRUD(S3Method):
         @param start: index of the first record to display
         @param limit: maximum number of records to display
         @param orderby: orderby for the query
+        @param distinct: distinct for the query
         @param linkto: hook to link record IDs
         @param download_url: the default download URL of the application
         @param as_page: return the list as JSON page
@@ -1025,7 +1035,7 @@ class S3CRUD(S3Method):
         if not fields:
             fields = [table.id]
 
-        attributes = dict(distinct=True)
+        attributes = dict(distinct=distinct)
 
         # Orderby
         if orderby is not None:

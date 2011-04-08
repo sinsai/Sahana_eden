@@ -139,7 +139,7 @@ class S3SearchWidget(object):
                 if not component:
                     continue
                 ktable = component.resource.table
-                tablename = component.resource.tablename
+                ktablename = component.resource.tablename
                 pkey = component.pkey
                 fkey = component.fkey
                 # Do not add queries for empty tables
@@ -916,11 +916,14 @@ class S3Search(S3CRUD):
                 fields = []
             if fields[0].name != table.fields[0]:
                 fields.insert(0, table[table.fields[0]])
+            if not orderby:
+                orderby = fields[0]
 
             # Get the result table
             items = self.sqltable(fields=fields,
                                   limit=limit,
                                   orderby=orderby,
+                                  distinct=True,
                                   linkto=linkto,
                                   download_url=self.download_url,
                                   format=representation)
@@ -930,14 +933,15 @@ class S3Search(S3CRUD):
                 totalrows = self.resource.count()
                 if totalrows:
                     aadata = dict(aaData =
-                                self.sqltable(fields=fields,
-                                              start=0,
-                                              limit=20,
-                                              orderby=orderby,
-                                              linkto=linkto,
-                                              download_url=self.download_url,
-                                              as_page=True,
-                                              format=representation) or [])
+                                  self.sqltable(fields=fields,
+                                                start=0,
+                                                limit=20,
+                                                orderby=orderby,
+                                                distinct=True,
+                                                linkto=linkto,
+                                                download_url=self.download_url,
+                                                as_page=True,
+                                                format=representation) or [])
                     aadata.update(iTotalRecords=totalrows,
                                   iTotalDisplayRecords=totalrows)
                     response.aadata = json(aadata)

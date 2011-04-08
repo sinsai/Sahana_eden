@@ -947,9 +947,9 @@ def s3_pr_presence_onvalidation(form):
 
 s3xrc.model.configure(table,
     super_entity = db.sit_situation,
-    onvalidation = lambda form: s3_pr_presence_onvalidation(form),
-    onaccept = lambda form: vita.presence_onaccept(form),
-    delete_onaccept = lambda row: vita.presence_onaccept(row),
+    onvalidation = s3_pr_presence_onvalidation,
+    onaccept = vita.presence_accept,
+    delete_onaccept = vita.presence_accept,
     list_fields = [
         "id",
         "datetime",

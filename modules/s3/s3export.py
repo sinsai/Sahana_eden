@@ -211,6 +211,7 @@ class S3Exporter(object):
             from reportlab.lib.units import cm
             from reportlab.lib.pagesizes import A4
             from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+            from reportlab.pdfbase import pdfmetrics
         except ImportError:
             session.error = self.ERROR.REPORTLAB_ERROR
             redirect(URL(r=request, extension=""))
@@ -220,7 +221,7 @@ class S3Exporter(object):
             from geraldo import Report, ReportBand, Label, ObjectValue, SystemField, landscape, BAND_WIDTH
             from geraldo.generators import PDFGenerator
         except ImportError:
-            session.error = self. ERROR.GERALDO_ERROR
+            session.error = self.ERROR.GERALDO_ERROR
             redirect(URL(r=request, extension=""))
 
         # Get records
@@ -243,6 +244,13 @@ class S3Exporter(object):
         if not fields:
             fields = [table.id]
 
+        if "SazanamiGothic" in pdfmetrics.getRegisteredFontNames():
+            font_name = "SazanamiGothic"
+            widget_style = {"fontName": "SazanamiGothic"}
+        else:
+            font_name = "Helvetica-Bold"
+            widget_style = {}
+
         # Export
         _elements = [ SystemField(
                             expression = "%(report_title)s",
@@ -250,7 +258,7 @@ class S3Exporter(object):
                             left = 0,
                             width = BAND_WIDTH,
                             style = {
-                                "fontName": "Helvetica-Bold",
+                                "fontName": font_name,
                                 "fontSize": 14,
                                 "alignment": TA_CENTER
                                 }
@@ -269,8 +277,11 @@ class S3Exporter(object):
 
         for field in fields:
             # Append label
-            label = Label(text=xml.xml_encode(str(field.label))[:16].decode("utf-8"),
-                          top=0.8*cm, left=LEFTMARGIN*cm)
+            label = Label(text = xml.xml_encode(str(field.label)).decode("utf-8")[:16],
+                          top = 0.8 * cm,
+                          left = LEFTMARGIN * cm,
+                          style = widget_style
+                          )
             _elements.append(label)
 
             # Append value
@@ -278,7 +289,9 @@ class S3Exporter(object):
                                 left = LEFTMARGIN * cm,
                                 width = COLWIDTH * cm,
                                 get_value = lambda instance, column = field.name: \
-                                            _represent(column, instance[column]))
+                                            _represent(column, instance[column]),
+                                style = widget_style
+                                )
             detailElements.append(value)
 
             # Increase left margin

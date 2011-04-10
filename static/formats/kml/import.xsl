@@ -56,9 +56,8 @@
         <xsl:when test="$country='jp'">-->
             <!-- Currently set to those for the Japan Shelters feed -->
             <xsl:variable name="L1">Prefecture</xsl:variable>
-            <xsl:variable name="L2">Area</xsl:variable>
-            <xsl:variable name="L3">City</xsl:variable>
-            <xsl:variable name="L4">District</xsl:variable>
+            <xsl:variable name="L2">City</xsl:variable>
+            <xsl:variable name="L3">District</xsl:variable>
         <!--</xsl:when>
         <xsl:otherwise>
             <xsl:variable name="L1">Province</xsl:variable>

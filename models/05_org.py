@@ -146,7 +146,7 @@ org_organisation_type_opts = {
     3:T("International NGO"),
     4:T("Donor"),               # Don't change this number without changing organisation_popup.html
     6:T("National NGO"),
-    7:"UN",
+    7:T("UN"),
     8:T("International Organization"),
     9:T("Military"),
     10:T("Private"),

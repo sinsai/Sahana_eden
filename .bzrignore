@@ -1,6 +1,7 @@
 .git
 .gitignore
 cache/*
+compiled/*
 cron/crontab
 databases/*
 errors/*

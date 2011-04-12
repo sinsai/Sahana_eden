@@ -211,6 +211,19 @@ def shn_shelter_prep(r):
                 db.pr_presence.location_id.default = r.record.location_id
                 db.pr_presence.location_id.comment = ""
                 db.pr_presence.proc_desc.readable = db.pr_presence.proc_desc.writable = False
+                # AT: Add Person
+                db.pr_presence.pe_id.comment = \
+                    DIV(shn_person_comment(T('Add Person'),T('Register Person into this Shelter')),
+                        DIV(A(s3.crud_strings.pr_group.label_create_button,
+                              _class="colorbox",
+                              _href=URL(r=request, c="pr", f="group", args="create", vars=dict(format="popup")),
+                              _target="top",
+                              _title=s3.crud_strings.pr_group.label_create_button),
+                            DIV(_class="tooltip",
+                                _title="%s|%s" % (T("Create Group Entry"),
+                                                  T("Create a group entry in the registry.")))
+                            )
+                        )
                 # Set defaults
                 db.pr_presence.datetime.default = request.utcnow
                 db.pr_presence.observer.default = s3_logged_in_person()

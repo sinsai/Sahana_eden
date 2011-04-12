@@ -164,9 +164,12 @@ def req_item_inv_item():
                        ).select(db.supply_item_alt.alt_item_id)
     alt_item_ids = [alt_item_row.alt_item_id for alt_item_row in alt_item_rows]
 
-    response.s3.filter = (db.inv_inv_item.item_id.belongs(alt_item_ids))
-    inv_items_alt = s3_rest_controller("inv", "inv_item")
-    output["items_alt"] = inv_items_alt["items"]
+    if alt_item_ids:
+        response.s3.filter = (db.inv_inv_item.item_id.belongs(alt_item_ids))
+        inv_items_alt = s3_rest_controller("inv", "inv_item")
+        output["items_alt"] = inv_items_alt["items"]
+    else:
+        output["items_alt"] = None
 
     response.view = "req/req_item_inv_item.html"
     response.s3.actions = [dict(url = str(URL( r=request,

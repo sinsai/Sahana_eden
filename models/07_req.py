@@ -392,7 +392,8 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
         output = s3_rest_controller("req", "req",
                                     method = "list",
                                     rheader = rheader_dict[tablename])
-        output["title"] = s3.crud_strings[tablename]["title_display"]
+        if isinstance(output, dict):
+            output["title"] = s3.crud_strings[tablename]["title_display"]
 
         return output
     # -------------------------------------------------------------------------

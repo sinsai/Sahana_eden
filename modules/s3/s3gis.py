@@ -1722,7 +1722,10 @@ class GIS(object):
                 except:
                     uuid = ""
             else:
-                uuid = ""
+                try:
+                    uuid = row.pop("UUID")
+                except:
+                    uuid = ""
 
             # What level are we?
             if name5:

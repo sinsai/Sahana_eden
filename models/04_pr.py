@@ -245,6 +245,7 @@ pr_person_search = s3base.S3PersonSearch(
                    "first_name",
                    "middle_name",
                    "last_name",
+                   "local_name",
                    "identity.value"])
 
 s3xrc.model.configure(table,
@@ -254,6 +255,7 @@ s3xrc.model.configure(table,
                         "first_name",
                         "middle_name",
                         "last_name",
+                        "local_name",
                         "picture",
                         "gender",
                         "age_group"

@@ -311,6 +311,8 @@ class S3ResourceController(object):
         (prefix, name) = resource.split("_", 1)
         onvalidation = self.model.get_config(table, "onvalidation")
         onaccept = self.model.get_config(table, "onaccept")
+        create_onaccept = self.model.get_config(table, "create_onaccept")
+        update_onaccept = self.model.get_config(table, "update_onaccept")
         job = S3ImportJob(self, prefix, name, id,
                           record=record,
                           original=original,
@@ -319,7 +321,9 @@ class S3ResourceController(object):
                           rmap=rmap,
                           directory=directory,
                           onvalidation=onvalidation,
-                          onaccept=onaccept)
+                          onaccept=onaccept,
+                          create_onaccept=create_onaccept,
+                          update_onaccept=update_onaccept)
 
         # Create a job list
         if joblist is not None:
@@ -1089,7 +1093,9 @@ class S3ImportJob(object):
                  rmap=None,
                  directory=None,
                  onvalidation=None,
-                 onaccept=None):
+                 onaccept=None,
+                 create_onaccept=None,
+                 update_onaccept=None):
 
         self.manager = manager
         self.db = manager.db
@@ -1126,10 +1132,14 @@ class S3ImportJob(object):
 
         self.onvalidation = onvalidation
         self.onaccept = onaccept
+        self.create_onaccept = create_onaccept
+        self.update_onaccept = update_onaccept
 
         self.accepted = True
         self.permitted = True
         self.committed = False
+        self.created = False
+        self.updated = False
 
         self.uid = self.record.get(self.UID, None)
         self.mci = self.record.get(self.MCI, 2)
@@ -1278,6 +1288,7 @@ class S3ImportJob(object):
                             return False
                         if success:
                             self.committed = True
+                            self.updated = True
                     else:
                         self.committed = True
 
@@ -1306,6 +1317,7 @@ class S3ImportJob(object):
                         if success:
                             self.id = success
                             self.committed = True
+                            self.created = True
 
                 # Audit + onaccept on successful commits
                 if self.committed:
@@ -1316,6 +1328,10 @@ class S3ImportJob(object):
                     model.update_super(self.table, form.vars)
                     if self.onaccept:
                         callback(self.onaccept, form, tablename=self.tablename)
+                    if self.created and self.create_onaccept:
+                        callback(self.create_onaccept, form, tablename=self.tablename)
+                    if self.updated and self.update_onaccept:
+                        callback(self.update_onaccept, form, tablename=self.tablename)
 
         # Commit components
         if self.id and self.components and not skip_components:

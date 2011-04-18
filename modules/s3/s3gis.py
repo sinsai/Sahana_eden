@@ -1727,6 +1727,11 @@ class GIS(object):
                 except:
                     uuid = ""
 
+            try:
+                code = row.pop("CODE")
+            except:
+                code = ""
+
             # What level are we?
             if name5:
                 level = "L5"
@@ -1785,25 +1790,36 @@ class GIS(object):
 
             # Locate Parent
             # @ToDo: Extend to search alternate names
+            parent_id = None
+            path = ""
             if parent:
                 # Hack for Pakistan
                 if parent == "Jammu Kashmir":
                     parent = "Pakistan"
 
                 if grandparent:
-                    _grandparent = db(_locations.name == grandparent).select(_locations.id, limitby=(0, 1), cache=cache).first()
+                    _grandparent = db(_locations.name == grandparent).select(_locations.id, _locations.path, limitby=(0, 1), cache=cache).first()
                     if _grandparent:
-                        _parent = db((_locations.name == parent) & (_locations.parent == _grandparent.id)).select(_locations.id, limitby=(0, 1), cache=cache).first()
+                        _parent = db((_locations.name == parent) & (_locations.parent == _grandparent.id)).select(_locations.id, _locations.path, limitby=(0, 1), cache=cache).first()
+                        if _grandparent.path:
+                            path = "%s/" % _grandparent.path
+                        else:
+                            path = "%s/" % _grandparent.id
                     else:
-                        _parent = db(_locations.name == parent).select(_locations.id, limitby=(0, 1), cache=cache).first()
+                        _parent = db(_locations.name == parent).select(_locations.id, _locations.path, limitby=(0, 1), cache=cache).first()
                 else:
-                    _parent = db(_locations.name == parent).select(_locations.id, limitby=(0, 1), cache=cache).first()
+                    _parent = db(_locations.name == parent).select(_locations.id, _locations.path, limitby=(0, 1), cache=cache).first()
                 if _parent:
                     parent_id = _parent.id
+                    if _parent.path:
+                        path = "%s/" % _parent.path
+                    else:
+                        path += "%s/" % _parent.id
                 else:
                     s3_debug("Location", name)
                     s3_debug("Parent cannot be found", parent)
                     parent = ""
+                    path = ""
 
             # Check for duplicates
             query = (_locations.name == name) & (_locations.level == level) & (_locations.parent == parent_id)
@@ -1812,17 +1828,21 @@ class GIS(object):
             if duplicate:
                 s3_debug("Location", name)
                 s3_debug("Duplicate - updating...")
+                path += str(duplicate.first().id)
                 # Update with any new information
                 if uuid:
-                    db(query).update(lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type, uuid=uuid)
+                    db(query).update(lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type, uuid=uuid, path=path, code=code)
                 else:
-                    db(query).update(lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type)
+                    db(query).update(lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type, path=path, code=code)
             else:
                 # Create new entry in database
                 if uuid:
-                    _locations.insert(name=name, level=level, parent=parent_id, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type, uuid=uuid)
+                    location_id = _locations.insert(name=name, level=level, parent=parent_id, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type, uuid=uuid, code=code)
                 else:
-                    _locations.insert(name=name, level=level, parent=parent_id, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type)
+                    location_id = _locations.insert(name=name, level=level, parent=parent_id, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type, code=code)
+
+                path += str(location_id)
+                db(_locations.id == location_id).update(path=path)
 
         # Better to give user control, can then dry-run
         #db.commit()

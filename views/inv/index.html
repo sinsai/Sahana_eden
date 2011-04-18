@@ -11,7 +11,7 @@
 {{pass}}
 {{=A(T("Offices"), _href=URL(r=request, c="org", f="office"))}}</li>
 {{if deployment_settings.has_module("cr"):}}
-{{=LI(A(T("Shelters")), _href=URL(r=request, c="cr", f="shelter")))}}
+{{=LI(A(T("Shelters"), _href=URL(r=request, c="cr", f="shelter")))}}
 {{pass}}
 {{if deployment_settings.has_module("hms"):}}
 {{=LI(A(T("Hospitals"), _href=URL(r=request, c="hms", f="hospital")))}}

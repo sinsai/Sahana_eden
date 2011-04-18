@@ -9,10 +9,14 @@
 
 """
 
-prefix = request.controller
+module = request.controller
 resourcename = request.function
 
-response.menu_options = inv_menu
+if not (deployment_settings.has_module("inv") or deployment_settings.has_module("asset")):
+    session.error = T("Module disabled!")
+    redirect(URL(r=request, c="default", f="index"))
+
+response.menu_options = inv_menu # Defined in inv model
 
 #==============================================================================
 #@auth.s3_requires_membership(1)
@@ -20,26 +24,36 @@ def item_category():
 
     """ RESTful CRUD controller """
 
-    tablename = "%s_%s" % (prefix, resourcename)
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     s3xrc.model.configure(table,
                           listadd=False)
-    return s3_rest_controller(prefix, resourcename)
+    return s3_rest_controller(module, resourcename)
 
 def item_pack():
 
     """ RESTful CRUD controller """
 
-    tablename = "%s_%s" % (prefix, resourcename)
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
     s3xrc.model.configure(table,
                           listadd=False)
-    return s3_rest_controller(prefix, resourcename)
+    return s3_rest_controller(module, resourcename)
 
 
 #==============================================================================
+def item():
+
+    """ RESTful CRUD controller """
+
+    tablename = "%s_%s" % (module, resourcename)
+    table = db[tablename]
+
+    return s3_rest_controller(module, resourcename, rheader=shn_item_rheader)
+
+#------------------------------------------------------------------------------
 def shn_item_rheader(r):
 
     """ Resource Header for Items """
@@ -55,10 +69,15 @@ def shn_item_rheader(r):
                     (T("Requested"), "ritem")
                    ]
             rheader_tabs = s3_rheader_tabs(r, tabs)
-            category = db(db.supply_item_category.id == item.item_category_id).select(db.supply_item_category.name,
-                                                                                      limitby=(0, 1)).first().name
-            rheader = DIV(TABLE(TR( TH(T("Name") + ": "), item.name,
-                                    TH(T("Category") + ": "),   category,
+            query = (db.supply_item_category.id == item.item_category_id)
+            category = db(query).select(db.supply_item_category.name,
+                                        limitby=(0, 1)).first()
+            if category:
+                category = category.name
+            else:
+                category = NONE
+            rheader = DIV(TABLE(TR( TH("%s: " % T("Name")), item.name,
+                                    TH("%s: " % T("Category")), category,
                                   ),
                                ),
                           rheader_tabs
@@ -66,15 +85,4 @@ def shn_item_rheader(r):
             return rheader
     return None
 
-
-#==============================================================================
-def item():
-
-    """ RESTful CRUD controller """
-
-    tablename = "%s_%s" % (prefix, resourcename)
-    table = db[tablename]
-
-    return s3_rest_controller(prefix, resourcename, rheader=shn_item_rheader)
-
-#==============================================================================
+# END =========================================================================

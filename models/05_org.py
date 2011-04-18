@@ -246,6 +246,9 @@ organisation_comment = DIV(A(ADD_ORGANIZATION,
                                                    # Replace with this one if using dropdowns & not autocompletes
                                                    #T("If you don't see the Organization in the list, you can add a new one by clicking link 'Add Organization'.")))))
 
+from_organisation_comment = copy.deepcopy(organisation_comment)
+from_organisation_comment[0]["_href"] = organisation_comment[0]["_href"].replace("popup", "popup&child=from_organisation_id")
+
 organisation_id = S3ReusableField("organisation_id", db.org_organisation, sortby="name",
                                   requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id",
                                                                   shn_organisation_represent,
@@ -376,14 +379,13 @@ table = super_entity(tablename,
                      Field("name", label=T("Name")),
                      location_id(),
                      organisation_id(),
-                     *s3_ownerstamp(),
-                     migrate=migrate)
+                     migrate=migrate, *s3_ownerstamp())
 
 # -----------------------------------------------------------------------------
-def shn_site_represent(id, default_label="[no label]"):
+def shn_site_represent(id, default_label="[no label]", link = True):
     """ Represent a site in option fields or list views """
 
-    site_str = T("None (no such record)")
+    site_str = "-" # T("None (no such record)")
     site_table = db.org_site
 
     if isinstance(id, Row) and "instance_type" in id:
@@ -403,9 +405,22 @@ def shn_site_represent(id, default_label="[no label]"):
 
     # All the current types of sites have a required "name" field that can
     # serve as their representation.
-    record = db(table.site_id == id).select(table.name, limitby=(0, 1)).first()
+    query = (table.site_id == id)
+    if instance_type == "org_office":
+        record = db(query).select(table.id,
+                                  table.type,
+                                  table.name, limitby=(0, 1)).first()
+    else:
+        record = db(query).select(table.id,
+                                  table.name, limitby=(0, 1)).first()
 
     instance_type_nice = site_table.instance_type.represent(instance_type)
+
+    try:
+        if instance_type == "org_office" and record.type == 5:
+             instance_type_nice = T("Warehouse")
+    except:
+        pass
 
     if record:
         site_str = "%s (%s)" % (record.name, instance_type_nice)
@@ -535,17 +550,19 @@ def shn_update_record_roles(form, tablename):
 
     table = db[auth.settings.table_group]
     staff_role_id = owned_by_role
-    staff_role_name_old = table[staff_role_id].role
-    prefix, throw = staff_role_name_old.split(" Staff of ", 1)
-    staff_role_name = "%s Staff of %s" % (prefix,
-                                          name)
-    supervisor_role_name_old = staff_role_name_old.replace("Staff",
-                                                           "Supervisors")
-    supervisor_role_name = "%s Supervisors of %s" % (prefix,
-                                                     name)
-    # Rename the roles
-    db(table.id == staff_role_id).update(role=staff_role_name)
-    db(table.role == supervisor_role_name_old).update(role=supervisor_role_name)
+    if staff_role_id:
+        staff_role_name_old = table[staff_role_id].role
+        prefix, throw = staff_role_name_old.split(" Staff of ", 1)
+        staff_role_name = "%s Staff of %s" % (prefix,
+                                              name)
+        supervisor_role_name_old = staff_role_name_old.replace("Staff",
+                                                               "Supervisors")
+        supervisor_role_name = "%s Supervisors of %s" % (prefix,
+                                                         name)
+        # Rename the roles
+        db(table.id == staff_role_id).update(role=staff_role_name)
+        query = (table.role == supervisor_role_name_old)
+        db(query).update(role=supervisor_role_name)
 
 # -----------------------------------------------------------------------------
 def shn_component_copy_role(form,
@@ -599,8 +616,8 @@ def shn_site_based_permissions( table,
         If there are no sites that the user has permission for,
         prevents create & update & gives an warning if the user tries to
     """
-    q = auth.s3_accessible_query("update", db.org_site)
-    rows = db(q).select(db.org_site.site_id)
+    query = auth.s3_accessible_query("update", db.org_site)
+    rows = db(query).select(db.org_site.site_id)
     filter_opts = [row.site_id for row in rows]
     if filter_opts:
         table.site_id.requires = IS_ONE_OF(db, "org_site.site_id",
@@ -715,9 +732,14 @@ table.uuid.requires = IS_NOT_ONE_OF(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_ONE_OF(db, "%s.name" % tablename)]
 table.type.requires = IS_NULL_OR(IS_IN_SET(org_office_type_opts))
 table.type.represent = lambda opt: org_office_type_opts.get(opt, UNKNOWN_OPT)
-table.office_id.requires = IS_NULL_OR(IS_ONE_OF(db, "org_office.id", "%(name)s"))
+table.office_id.requires = IS_NULL_OR(IS_ONE_OF(db, "org_office.id",
+                                                "%(name)s",
+                                                filterby = "type",
+                                                filter_opts = [1, 2, 3, 4] # All bar '5' (Warehouse)
+                                                ))
 table.office_id.represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name,
                                                                                limitby=(0, 1)).first().name] or [NONE])[0]
+
 
 # CRUD strings
 ADD_OFFICE = T("Add Office")
@@ -737,6 +759,25 @@ s3.crud_strings[tablename] = Storage(
     msg_record_modified = T("Office updated"),
     msg_record_deleted = T("Office deleted"),
     msg_list_empty = T("No Offices currently registered"))
+
+# CRUD strings
+ADD_WH = T("Add Warehouse")
+LIST_WH = T("List Warehouses")
+s3_warehouse_crud_strings = Storage(
+    title_create = ADD_WH,
+    title_display = T("Warehouse Details"),
+    title_list = LIST_WH,
+    title_update = T("Edit Warehouse"),
+    title_search = T("Search Warehouses"),
+    subtitle_create = T("Add New Warehouse"),
+    subtitle_list = T("Warehouses"),
+    label_list_button = LIST_WH,
+    label_create_button = ADD_WH,
+    label_delete_button = T("Delete Warehouse"),
+    msg_record_created = T("Warehouse added"),
+    msg_record_modified = T("Warehouse updated"),
+    msg_record_deleted = T("Warehouse deleted"),
+    msg_list_empty = T("No Warehouses currently registered"))
 
 # Reusable field for other tables to reference
 office_id = S3ReusableField("office_id", db.org_office, sortby="default/indexname",
@@ -875,7 +916,7 @@ table = db.define_table(tablename,
                               comment = DIV( _class="tooltip",
                                              _title="%s|%s" % (T("Focal Point"),
                                                                T("The contact person for this organization.")))),
-                        #project_id(),
+                        #project_id(),  # Not yet defined
                         #Field("slots", "integer", default=1),
                         # Wait for Bugeting integration
                         #Field("payrate", "double", default=0.0),

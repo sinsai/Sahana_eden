@@ -80,7 +80,7 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
                                         label = T("Requested By Site"),
                                         represent = shn_site_represent
                                         ),                            
-                            Field("date_requested",
+                            Field("date", #DO NOT CHANGE THIS
                                   "date",
                                   label = T("Date Requested"),
                                   default = request.utcnow),
@@ -116,7 +116,8 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
                                        label = T("Fulfil. Status"),
                                        ),
                             Field("cancel",
-                                  "boolean"),
+                                  "boolean",
+                                  default = False),
                             comments(label=T("Message"), comment=""),
                             migrate=migrate, *s3_meta_fields())
 
@@ -141,14 +142,16 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
 
     # Represent
     def shn_req_represent(id, link = True):
-        id = int(id)
+        id = int(id) if id else None
         if id:
             query = (db.req_req.id == id)
-            req_row = db(query).select(db.req_req.date_requested,
+            req_row = db(query).select(db.req_req.date,
                                        db.req_req.site_id,
                                        limitby=(0, 1)).first()
-            req = "%s - %s" % (shn_site_represent(req_row.site_id),
-                               req_row.date_requested)
+            req = "%s - %s" % (shn_site_represent(req_row.site_id,
+                                                  link = False),
+                               req_row.date)
+
             if link:
                 return A(req,
                          _href = URL(r = request,
@@ -168,7 +171,7 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
                                                   lambda id: 
                                                     shn_req_represent(id,
                                                                       False),
-                                                  orderby="req_req.date_requested",
+                                                  orderby="req_req.date",
                                                   sort=True),
                              represent = shn_req_represent,
                              label = T("Request"),
@@ -220,7 +223,7 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
     s3xrc.model.configure(table,
                           onaccept = shn_req_onaccept,
                           list_fields = ["site_id",
-                                         "date_requested",
+                                         "date",
                                          "date_required",
                                          "priority",
                                          "type",
@@ -235,8 +238,8 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
             Function to be called from REST prep functions
              - main module & site components
         """
-        table = db.req_req
         # Hide fields which don't make sense in a Create form
+        table = db.req_req
         table.commit_status.readable = table.commit_status.writable = False
         table.transit_status.readable = table.transit_status.writable = False
         table.fulfil_status.readable = table.fulfil_status.writable = False
@@ -262,15 +265,23 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
                     // http://api.jquery.com/bind/
                     S3ClearNavigateAwayConfirm();
 
-                    if (($('#req_req_type').val() == 9) && ($('#req_req_comments').val() == req_help_msg)) {
-                        // Requests of type 'Other' need this field to be mandatory
-                        $('#req_req_comments').after('<div id="type__error" class="error" style="display: block;">%s</div>');
-                        // Reset the Navigation protection
-                        S3SetNavigateAwayConfirm()
-                        // Move focus to this field
-                        $('#req_req_comments').focus();
-                        // Prevent the Form's save from continuing
-                        return false;
+                    if ($('#req_req_comments').val() == req_help_msg) {
+                        // Default Message still showing
+                        if ($('#req_req_type').val() == 9) {
+                            // Requests of type 'Other' need this field to be mandatory
+                            $('#req_req_comments').after('<div id="type__error" class="error" style="display: block;">%s</div>');
+                            // Reset the Navigation protection
+                            S3SetNavigateAwayConfirm();
+                            // Move focus to this field
+                            $('#req_req_comments').focus();
+                            // Prevent the Form's save from continuing
+                            return false;
+                        } else {
+                            // Clear the default message
+                            $('#req_req_comments').val('');
+                            // Allow the Form's save to continue
+                            return true;
+                        }
                     } else {
                         // Allow the Form's save to continue
                         return true;
@@ -299,8 +310,9 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
                     
                     site_id = request.vars.site_id
                     if site_id:
-                        site_name = shn_site_represent(site_id)
-                        commit_btn = A( T("Commit from %s") % site_name,    
+                        site_name = shn_site_represent(site_id, link = False)
+                        commit_btn = TAG[""](
+                                    A( T("Commit from %s") % site_name,    
                                         _href = URL( r=request,
                                                      c = "req",
                                                      f = "commit_req",
@@ -308,7 +320,17 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
                                                      vars = dict(site_id = site_id)
                                                     ),
                                         _class = "action-btn"
+                                       ),
+                                    A( T("Send from %s") % site_name,    
+                                        _href = URL( r=request,
+                                                     c = "req",
+                                                     f = "send_req",
+                                                     args = [r.id],
+                                                     vars = dict(site_id = site_id)
+                                                    ),
+                                        _class = "action-btn"
                                        )
+                                    )
                     else:
                         commit_btn = A( T("Commit"),     
                                         _href = URL( r=request,
@@ -322,25 +344,29 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
 
     
                     rheader = DIV( TABLE(
-                                       TR( TH( "%s: " % T("Date Requested")),
-                                           req_record.date_requested,
-                                           TH( "%s: " % T("Date Required")),
-                                           req_record.date_required,
-                                          ),
-                                       TR( TH( "%s: " % T("Requested By")),
-                                           shn_site_represent(req_record.site_id),
-                                          ),
-                                       TR( TH( "%s: " % T("Commit. Status")),
-                                           req_status_opts.get(req_record.commit_status),
-                                           TH( "%s: " % T("Transit. Status")),
-                                           req_status_opts.get(req_record.transit_status),
-                                           TH( "%s: " % T("Fulfil. Status")),
-                                           req_status_opts.get(req_record.fulfil_status)
-                                          ),
-                                       TR( TH( "%s: " % T("Comments")),
-                                           TD(req_record.comments, _colspan=3)
-                                          ),
-                                         ),
+                                       TR(
+                                        TH( "%s: " % T("Date Required")),
+                                        req_record.date_required,
+                                        TH( "%s: " % T("Commitment Status")),
+                                        req_status_opts.get(req_record.commit_status, ""),
+                                        ),
+                                       TR(
+                                        TH( "%s: " % T("Date Requested")),
+                                        req_record.date,
+                                        TH( "%s: " % T("Transit Status")),
+                                        req_status_opts.get(req_record.transit_status, ""),   
+                                        ),
+                                       TR(
+                                        TH( "%s: " % T("Requested By")),
+                                        shn_site_represent(req_record.site_id),
+                                        TH( "%s: " % T("Fulfillment Status")),
+                                        req_status_opts.get(req_record.fulfil_status, "")
+                                        ),
+                                       TR(
+                                        TH( "%s: " % T("Comments")),
+                                        TD(req_record.comments or "", _colspan=3)
+                                        ),
+                                    ),
                                     commit_btn,
                                     rheader_tabs
                                     )
@@ -380,6 +406,16 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
                                                ),
                                     _class = "action-btn",
                                     label = str(T("Commit")),
+                                    ),
+                               dict(url = str(URL( r=request,
+                                                   c = "req",
+                                                   f = "send_req",
+                                                   args = ["[id]"],
+                                                   vars = {"site_id": site_id}
+                                                   )
+                                               ),
+                                    _class = "action-btn",
+                                    label = str(T("Send")),
                                     )
                                
                                ]
@@ -399,7 +435,7 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
     # -------------------------------------------------------------------------
     def s3_req_check(r, **attr):
         site_id = r.request.vars.site_id
-        site_name = shn_site_represent(site_id)
+        site_name = shn_site_represent(site_id, link = False)
         output = {}
         output["title"] = s3.crud_strings.req_req.title_display
         output["rheader"] = shn_req_rheader(r)
@@ -592,10 +628,14 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
             Partial = some items have quantity > 0
             Complete = quantity_x = quantity(requested) for ALL items
             """
-            # Update owned_by_role to the req's owned_by_role
-            shn_component_copy_role_func(component_name = "req_req_item",
-                                         resource_name = "req_req",
-                                         fk = "req_id")(form)
+            try:
+                # Update owned_by_role to the req's owned_by_role
+                shn_component_copy_role_func(component_name = "req_req_item",
+                                             resource_name = "req_req",
+                                             fk = "req_id")(form)
+            except:
+                # Staff Permissions not active
+                pass
 
             req_id = session.rcvars.req_req
 
@@ -648,7 +688,7 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
                                      )
     #==========================================================================
     # Commitments (Pledges)
-    #
+    # @ToDo: Update the req_item_id in the commit_item if the req_id of the commit is changed  
 
     resourcename = "commit"
     tablename = "%s_%s" % (module, resourcename)
@@ -660,19 +700,15 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
                                         represent = shn_site_represent
                                         ),
                             req_id(),
-                            Field("date_requested",
+                            Field("date",
                                   "date",
+                                  default = request.utcnow,
                                   label = T("Date")),
-                            
                             Field("date_available",
                                   "date",
                                   label = T("Date Available")),
-
-                            #For site should be a virtual field
-                            Field("for_site_id",
-                                  db.org_site,
-                                  ),
                             person_id("committer_id",
+                                      default = s3_logged_in_person(),
                                       label = T("Committed By") ),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
@@ -700,12 +736,12 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
     # -----------------------------------------------------------------------------
     def shn_commit_represent(id):
         if id:
-            r = db(db.req_commit.id == id).select(db.req_commit.date_requested,
+            r = db(db.req_commit.id == id).select(db.req_commit.date,
                                                    db.req_commit.site_id,
                                                    limitby=(0, 1)).first()
             return "%s - %s" % \
                     ( shn_site_represent(r.site_id),
-                      r.date_requested
+                      r.date
                      )
         else:
             return NONE

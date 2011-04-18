@@ -40,13 +40,22 @@ if deployment_settings.has_module(module):
                 [
                     [T("List"), False, aURL(r=request, c="inv", f="send")],
                     [T("Add"), False, aURL(r=request, c="inv", f="send", args="create")],
-                ]]
+                ]],
+                # Catalog Items moved to be next to the Item Categories
+                [T("Catalog Items"), False, URL(r=request, c="supply", f="item"),
+                    [
+                        [T("List"), False, URL(r=request, c="supply", f="item")],
+                        [T("Add"), False, URL(r=request, c="supply", f="item", args="create")],
+                        [T("Search"), False, URL(r=request, c="supply", f="item", args="search")],
+                    ]
+                ],
+                
             ]
     if s3_has_role(1):
         inv_menu.append(
-            [T("Item Categories"), False, aURL(r=request, c="supply", f="item_category"),[
-                [T("List"), False, aURL(r=request, c="supply", f="item_category")],
-                [T("Add"), False, aURL(r=request, c="supply", f="item_category", args="create")]
+            [T("Item Categories"), False, URL(r=request, c="supply", f="item_category"),[
+                [T("List"), False, URL(r=request, c="supply", f="item_category")],
+                [T("Add"), False, URL(r=request, c="supply", f="item_category", args="create")]
             ]]
         )
 
@@ -145,13 +154,10 @@ if deployment_settings.has_module(module):
                               multiple=True,
                               joinby=dict(supply_item_pack = "item_pack_id"))
     #--------------------------------------------------------------------------
-    # Recv Search Method
+    # Item Search Method
     #
     shn_inv_item_search = s3base.S3Search(
-        #name="shn_item_search",
-        #label=T("Name and/or ID"),
-        #comment=T("To search for a hospital, enter any of the names or IDs of the hospital, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all hospitals."),
-        #field=["gov_uuid", "name", "aka1", "aka2"],
+        # Advanced Search only
         advanced=(s3base.S3SearchSimpleWidget(
                     name="inv_item_search_text",
                     label=T("Search"),
@@ -166,12 +172,13 @@ if deployment_settings.has_module(module):
                     label=T("Site"),
                     field=["site_id"],
                     represent ="%(name)s",
+                    comment=T("If none are selected, then all are searched."),
                     cols = 2
                   ),
                   s3base.S3SearchMinMaxWidget(
                     name="inv_item_search_expiry_date",
                     method="range",
-                    label=T("Expiry_Date"),
+                    label=T("Expiry Date"),
                     field=["expiry_date"]
                   ),
         ))
@@ -223,6 +230,7 @@ if deployment_settings.has_module(module):
                                   "date",
                                   label = T("Date Received"),
                                   writable = False,
+                                  represent = lambda date: date or NONE
                                   #readable = False # unless the record is locked
                                   ),
                             Field("type",
@@ -232,16 +240,20 @@ if deployment_settings.has_module(module):
                                   label = T("Type"),
                                   default = 0,
                                   ),
+                            person_id(name = "recipient_id",
+                                      label = T("Received By"),
+                                      default = s3_logged_in_person()),
                             super_link(db.org_site,
-                                       readable=True,
+                                       readable = True,
                                        writable = True,
                                        label=T("By Inventory"),
                                        represent=shn_site_represent),
                             organisation_id("from_organisation_id",
-                                            label = T("From Organization")),
+                                            label = T("From Organization"),
+                                            comment = from_organisation_comment),
+                            Field("from_person"), # Text field, because lookup to pr_person record is unnecessarily complex workflow
                             location_id("from_location_id",
                                         label = T("From Location")),
-                            Field("from_person"), # Text field, because lookup to pr_person record is unnecessary complex workflow
                             Field("status",
                                   "integer",
                                   requires = IS_NULL_OR(IS_IN_SET(shipment_status)),
@@ -266,8 +278,6 @@ if deployment_settings.has_module(module):
                                   widget = radio_widget,
                                   label = T("Certificate Status"),
                                   ),
-                            person_id(name = "recipient_id",
-                                      label = T("Received By")),
                             comments(),
                             migrate=migrate, *s3_meta_fields()
                             )
@@ -332,11 +342,6 @@ if deployment_settings.has_module(module):
     # Recv Search Method
     #
     shn_recv_search = s3base.S3Search(
-        #name="shn_item_search",
-        #label=T("Name and/or ID"),
-        #comment=T("To search for a hospital, enter any of the names or IDs of the hospital, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all hospitals."),
-        #field=["gov_uuid", "name", "aka1", "aka2"],
-
         simple=(s3base.S3SearchSimpleWidget(
                     name="recv_search_text_simple",
                     label=T("Search"),
@@ -346,7 +351,7 @@ if deployment_settings.has_module(module):
                             "from_organisation_id#name",
                             "from_organisation_id#acronym",
                             "from_location_id#name",
-                            "from_location_id",
+                            #"from_location_id",            # Integer blows up the search as Postgres cannot lower() it
                             "recipient_id#first_name",
                             "recipient_id#middle_name",
                             "recipient_id#last_name",
@@ -363,6 +368,7 @@ if deployment_settings.has_module(module):
                             "from_organisation_id#acronym",
                             "from_location_id#name",
                             "from_location_id",
+                            #"from_location_id",            # Integer blows up the search as Postgres cannot lower() it
                             "recipient_id#first_name",
                             "recipient_id#middle_name",
                             "recipient_id#last_name",
@@ -466,13 +472,16 @@ if deployment_settings.has_module(module):
         import StringIO
         from gluon.contenttype import contenttype
 
+        REPORTLAB_ERROR = T("ReportLab not installed")
+        GERALDO_ERROR = T("Geraldo not installed")
+
         # Import ReportLab
         try:
             from reportlab.lib.units import cm
             from reportlab.lib.pagesizes import A4
             from reportlab.lib.enums import TA_CENTER, TA_RIGHT
         except ImportError:
-            session.error = self.ERROR.REPORTLAB_ERROR
+            session.error = REPORTLAB_ERROR
             redirect(URL(r=request, extension=""))
 
         # Import Geraldo
@@ -480,7 +489,7 @@ if deployment_settings.has_module(module):
             from geraldo import Report, ReportBand, Label, ObjectValue, SystemField, landscape, BAND_WIDTH
             from geraldo.generators import PDFGenerator
         except ImportError:
-            session.error = self. ERROR.GERALDO_ERROR
+            session.error = GERALDO_ERROR
             redirect(URL(r=request, extension=""))
 
         # Create output stream
@@ -519,8 +528,8 @@ if deployment_settings.has_module(module):
                 continue
             header_ele.append(Label(text= clean_str( field.label ),
                                        top= (TITLEHEIGHT + line * LINEHEIGTH) * cm,
-                                       left=LEFTMARGIN*cm,
-                                       width=LABELWIDTH*cm,
+                                       left=LEFTMARGIN * cm,
+                                       width=LABELWIDTH * cm,
                                        style={'fontName': 'Helvetica-Bold'})
                               )
             value = xrequest.record[field.name]
@@ -532,7 +541,7 @@ if deployment_settings.has_module(module):
                                             ),
                                        top= (TITLEHEIGHT + line * LINEHEIGTH) * cm,
                                        left=(LEFTMARGIN + LABELWIDTH) * cm,
-                                       width=VALUEWIDTH*cm,
+                                       width=VALUEWIDTH * cm,
                                        style={'fontName': 'Helvetica'})
                               )
             line += 1
@@ -581,7 +590,7 @@ if deployment_settings.has_module(module):
             title = clean_str ( formname )
             page_size = A4
             class band_page_header(ReportBand):
-                height = (TITLEHEIGHT + (line+1) * LINEHEIGTH) * cm
+                height = (TITLEHEIGHT + (line + 1) * LINEHEIGTH) * cm
                 auto_expand_height = True
                 elements = header_ele
                 borders = {"bottom": True}
@@ -590,7 +599,7 @@ if deployment_settings.has_module(module):
                 elements = [
                     Label(text="%s" % request.utcnow.date(), top=0.1*cm, left=0),
                     SystemField(expression="Page: %(page_number)d of %(page_count)d",
-                                           top=0.1*cm,
+                                           top=0.1 * cm,
                                            width=BAND_WIDTH,
                                            style={"alignment": TA_RIGHT}),
                 ]
@@ -760,17 +769,6 @@ if deployment_settings.has_module(module):
         to_location_id = record.location_id
         site_id = record.site_id
         
-        response.s3.actions = [dict(url = str(URL(r=request,
-                                              c = "inv",
-                                              f = "recv_sent",
-                                              args = ["[id]"],
-                                              vars = dict(site_id = site_id)
-                                              )
-                                           ),
-                                    _class = "action-btn",
-                                    label = "Receive")
-                                ]
-        
         rheader_dict = dict(org_office = shn_office_rheader,
                             cr_shelter = shn_shelter_rheader,
                             hms_hospital = shn_hms_hospital_rheader)
@@ -779,6 +777,27 @@ if deployment_settings.has_module(module):
                              (db.inv_send.to_location_id == to_location_id)
 
         s3xrc.model.configure(db.inv_send, insertable=False)
+        
+        response.s3.actions = [dict(url = str(URL(r=request,
+                                                  c = "inv",
+                                                  f = "send",
+                                                  args = ["[id]", "send_item"],
+                                                  vars = dict(site_id = site_id)
+                                                  )
+                                               ),
+                                    _class = "action-btn",
+                                    label = "Review"),
+                               dict(url = str(URL(r=request,
+                                                  c = "inv",
+                                                  f = "recv_sent",
+                                                  args = ["[id]"],
+                                                  vars = dict(site_id = site_id)
+                                                  )
+                                               ),
+                                    _class = "action-btn",
+                                    label = "Receive"),
+                               ]
+        
         # @ToDo: Probably need to adjust some more CRUD strings:
         s3.crud_strings["inv_send"].update(
             msg_record_modified = T("Incoming Shipment updated"),
@@ -789,7 +808,7 @@ if deployment_settings.has_module(module):
                                     method = "list",
                                     rheader = rheader_dict[tablename])
         output["title"] = s3.crud_strings[tablename]["title_display"]
-        
+
         return output
     #----------------------------------------------------------------------
     # Redirect to the Items tabs after create & update
@@ -930,10 +949,14 @@ if deployment_settings.has_module(module):
         else:
             show_inv = session.s3.show_inv.get("%s_%s" %  (r.name, r.id))
 
-        if show_inv or r.request.function == "warehouse":
+        try:
+            type = r.record.type
+        except:
+            type = None
+        if show_inv or \
+           r.request.function == "warehouse" or type == 5: # 5 = Warehouse
             inv_tabs = [(T("Inventory Items"), "inv_item"),
-                        #(T("Match Requests"), "match_req"),                # Disabled as 'unsupported method'
-                        (T("Incoming"), "incoming/"),  # Disabled as 'unsupported method'
+                        (T("Incoming"), "incoming/"),
                         (T("Receive" ), "recv"),
                         (T("Send"), "send", dict(select="sent")),
                         ]

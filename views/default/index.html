@@ -1,21 +1,86 @@
 {{extend "layout.html"}}
+<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false&hl=ja"></script>
+<script type="text/javascript">
+ $(document).ready(function() {
+  var latlng = new google.maps.LatLng(39.095963, 140.778809);
+  var myOptions = {
+    zoom: 7,
+    center: latlng,
+    mapTypeId: google.maps.MapTypeId.ROADMAP
+  };
+  var map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+
+  var kmlLayer = {};
+  var kmlUrl = {};
+  kmlUrl['shelter'] = '{{=request.env.http_host}}/{{=request.application}}/cr/shelter.kml';
+  kmlUrl['hospital'] = '{{=request.env.http_host}}/{{=request.application}}/hms/hospital.kml';
+
+  var show_klm = function(type) {
+   if (!kmlLayer[type]) {
+    kmlLayer[type] = new google.maps.KmlLayer(kmlUrl[type], {preserveViewport: true});
+   }
+   kmlLayer[type].setMap(map);
+  };
+  
+  $('#a_shelters').click(function() {
+   show_klm('shelters')
+  });
+  $('#a_hospital').click(function() {
+   show_klm('hospital')
+  });
+
+  var data = {
+   iDisplayStart: 0,
+   iDisplayLength: 5,
+   iSortingCols: 1,
+   iSortCol_0: 2,
+   sSortDir_0: 'desc'
+  };
+  
+  $.ajaxSetup({
+   jsonp: null,
+   jsonpCallback: null
+  });
+
+  $.getJSON(S3.Ap + "/req/req.aaData", data, function(json) {
+     $.each(json.aaData, function(index, record) {
+      $("#tbody_requests").append($("<tr><td>" + record[0].replace('.aaData','').replace(/>\d+</,'>'+record[1]+'<') + "</td><td>" + record[2] + "</td><td>" + record[3] + "</td></tr>"));
+     })
+  });
+
+});
+</script>
+
 <div id='home'>
 <h2>{{=title}}</h2>
-{{try:}}
-  {{=menu_boxes}}
-{{except:}}
-{{pass}}
-</div>
 
 {{if 2 not in session.s3.roles:}}
+    {{if self_registration:}}
+  <div style="text-align: right; width:100%;">
+   {{=P(T("If you would like to help, then please"),A(T("Sign-up for Account"), _href=URL(r=request, f="user", args="register"), _id="sign-up-now", _class="action-lnk"))}}
+  </div>
+  <script type="text/javascript">
+    $(document).ready(function() {
+     // Change register/login links to avoid page reload, make back button work.
+     $('#sign-up-now').attr('href', '#register');
+
+     // Redirect Register Button to unhide
+     $('#sign-up-now').click(function() {
+        // Unhide register form
+        $('#register_form').removeClass('hide');
+     });
+    });
+  </script>
+    {{pass}}
+
     {{if not self_registration or registered:}}
-        <div id='login_form'>
+        <div id='login_form' class='hide'>
             {{=login_div}}
             {{include "auth/_login.html"}}
         </div>
     {{pass}}
     {{if self_registration:}}
-        <div id='register_form' {{if registered:}}class='hide'{{pass}}>
+        <div id='register_form' class='hide'>
             {{=register_div}}
             {{include "auth/_register.html"}}
         </div>
@@ -27,19 +92,57 @@
       </div>
     {{pass}}
 {{pass}}
-    
-<div id='about'>
-    <!--
-    <p>
-    {{=T("Contact")}}: Name of Public Information person
-    <br/>{{=T("Email")}}: Public Information email address
-    <br/>{{=T("Telephone")}}: Public Information telephone number
-    </p>
+
+<div class="menu_box">
+  <div class="menu_div" style="width:50%">
+   <div>
+    <div class="menu_div">
+     <a id="a_shelters" class="menu-box-l">
+      <div class="menu-box-r">{{=T('Shelters')}}</div>
+     </a>
+     <a href="/{{=request.application}}/cr/shelter">{{=T('List Shelters')}}</a>
+    </div>
+    <div class="menu_div">
+     <a id="a_hospital" class="menu-box-l">
+      <div class="menu-box-r">{{=T('Hospital')}}</div>
+     </a>
+     <a href="/{{=request.application}}/hms/hospital">{{=T('List Hospitals')}}</a>
+    </div>
+   </div>
+   <div id="map_canvas" style="width:100%; height:480px"></div>
+  </div>
+  <div class="menu_div" style="width:5%"></div>
+  <div class="menu_div" style="width:45%">
+   <h3>{{=T("Requests")}}</h3>
+   <table id="table_requests" class="display">
+    <thead>
+     <tr><th></th>&nbsp;<th>{{=T('Date Requested')}}</th><th>{{=T('Date Required')}}</th></tr>
+    </thead>
+    <tbody id="tbody_requests"></tbody>
+   </table>
+   <div style="text-align: right;">
+    <a href="/{{=request.application}}/req/req">{{=T('List Requests')}}</a>
+   </div>
+   <!-- Request Items -----------------------------
+   <h3>{{=T("Request Items")}}</h3>
+   <table id="table_request_items" class="display">
+    <thead>
+     <tr><th></th>&nbsp;<th>{{=T('Date Requested')}}</th><th>{{=T('Date Required')}}</th></tr>
+    </thead>
+    <tbody id="tbody_request_items"></tbody>
+   </table>
+   <div style="text-align: right;">
+    <a href="/{{=request.application}}/req/req_item">{{=T('List Request Items')}}</a>
+   </div>
     -->
-    <p>
-    {{=T("For more details on the Sahana Eden system, see the")}} <a href="http://eden.sahanafoundation.org" target="_blank">{{=T("Sahana Eden Website")}}</a>
-    <br/>{{=T("For live help from the Sahana community on using this application, go to")}} <a href="http://eden.sahanafoundation.org/wiki/Chat" target="_blank">{{=T("Sahana Community Chat")}}</a>
-    </p>
+  </div>
+</div>
+</div>
+
+<div id='about'>
+    {{if deployment_settings.frontpage.about:}}
+    <p>{{=deployment_settings.frontpage.about}}</p>
+    {{pass}}
     <p>&nbsp;</p>
 </div>
 

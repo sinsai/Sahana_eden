@@ -325,7 +325,7 @@ class IS_ONE_OF_EMPTY(Validator):
 
                 if self.theset:
                     if not [x for x in values if not x in self.theset]:
-                        return ("|%s|" % "|".join(values), None)
+                        return (values, None)
                     else:
                         return (value, self.error_message)
                 else:
@@ -340,7 +340,7 @@ class IS_ONE_OF_EMPTY(Validator):
                                 (deleted_q & (query)) or deleted_q
                     if self.dbset(query).count() < 1:
                         return (value, self.error_message)
-                    return ("|%s|" % "|".join(values), None)
+                    return (values, None)
             elif self.theset:
                 if value in self.theset:
                     if self._and:

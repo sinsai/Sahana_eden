@@ -58,6 +58,7 @@
             <xsl:variable name="L1">Prefecture</xsl:variable>
             <xsl:variable name="L2">City</xsl:variable>
             <xsl:variable name="L3">District</xsl:variable>
+            <xsl:variable name="L4">__Dummy__</xsl:variable>
         <!--</xsl:when>
         <xsl:otherwise>
             <xsl:variable name="L1">Province</xsl:variable>

@@ -89,7 +89,7 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
                 requires = IS_NULL_OR(IS_ONE_OF(db, "supply_brand.id",
                                                 "%(name)s",
                                                 sort=True)),
-                represent = lambda id: shn_get_db_field_value(db=db, table="supply_brand", field="name", look_up=id),
+                represent = lambda id: shn_get_db_field_value(db=db, table="supply_brand", field="name", look_up=id) or NONE,
                 label = T("Brand"),
                 comment = DIV( _class="tooltip",
                                _title="%s|%s" % (T("Brand"),
@@ -116,7 +116,12 @@ if deployment_settings.has_module("inv") or deployment_settings.has_module("asse
                             Field("um",
                                   length=128,
                                   label = T("Unit of Measure"),
-                                  notnull=True),
+                                  notnull=True,
+                                  default = "piece"),
+                            # @ToDo: Replace this with an 'Asset' flag instead?
+                            # - Orgs have Asset policies, not consumable policies
+                            # - We have an Asset module, not a consumables module
+                            # - 'Cooking Utensils' are neither Consumable nor an Asset
                             Field("consumable",
                                   "boolean",
                                   default = False),

@@ -13,6 +13,7 @@ import re
 import time
 import traceback
 import uuid
+import copy
 
 from lxml import etree
 

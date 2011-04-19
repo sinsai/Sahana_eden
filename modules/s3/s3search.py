@@ -502,6 +502,9 @@ class S3SearchSelectWidget(S3SearchWidget):
             # Find unique values of options for that field
             rows = resource.select(field, groupby=resource.table[field])
             opt_keys = [row[field] for row in rows if row[field] != None]
+            if opt_keys == []:
+                # Skip this filter (ugly & confusing to have a label without any usable options)
+                return None
 
         # Always use the represent of the widget, of present
         represent = self.attr.represent
@@ -544,7 +547,7 @@ class S3SearchSelectWidget(S3SearchWidget):
                                             multiple=True)
                         )
 
-        if len(opt_list) > 50:
+        if len(opt_list) > 20:
             # Collapse into a list widget if there are too many options
             widget = MultipleOptionsWidget().widget(field, None)
         else:
@@ -554,8 +557,6 @@ class S3SearchSelectWidget(S3SearchWidget):
             else:
                 widget = CheckboxesWidget().widget(field, None)
         return widget
-
-        return ""
 
 
     def query(self, resource, value):
@@ -775,6 +776,10 @@ class S3Search(S3CRUD):
         if self.__advanced:
             trows = []
             for name, widget in self.__advanced:
+                _widget = widget.widget(resource, vars)
+                if _widget is None:
+                    # Skip this widget as we have nothing but the label
+                    continue
                 label = widget.field
                 if isinstance(label, (list, tuple)) and len(label):
                     label = label[0]
@@ -792,7 +797,7 @@ class S3Search(S3CRUD):
                                  #_value=on)
                         #),
                         TD("%s: " % label, _class="w2p_fl"),
-                        widget.widget(resource, vars)
+                        _widget
                        )
                 if comment:
                     tr.append(DIV(DIV(_class="tooltip",

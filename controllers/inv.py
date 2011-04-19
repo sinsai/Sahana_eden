@@ -1075,7 +1075,7 @@ def send_commit():
     r_commit = db.req_commit[commit_id]
 
     # User must have permissions over site which is sending
-    (prefix, resourcename, id) = auth.s3_site_resource(site_id)
+    (prefix, resourcename, id) = auth.s3_site_resource(r_commit.site_id)
     if not auth.s3_has_permission("update",
                                   db["%s_%s" % (prefix, resourcename)],
                                   record_id=id):

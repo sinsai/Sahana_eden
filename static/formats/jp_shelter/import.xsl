@@ -109,6 +109,9 @@
             <xsl:for-each select="./kml:Data[@name=$L2]">
                 <xsl:call-template name="detail"/>
             </xsl:for-each>
+            <xsl:for-each select="./kml:Data[@name=$L3]">
+                <xsl:call-template name="detail"/>
+            </xsl:for-each>
             <xsl:value-of select="$separator"/>
             <xsl:for-each select="./kml:Data[@name='Name']">
                 <xsl:call-template name="detail"/>
@@ -202,6 +205,9 @@
                 <xsl:for-each select="./kml:ExtendedData/kml:Data[@name=$L2]">
                     <xsl:call-template name="detail"/>
                 </xsl:for-each>
+                <xsl:for-each select="./kml:ExtendedData/kml:Data[@name=$L3]">
+                    <xsl:call-template name="detail"/>
+                </xsl:for-each>
                 <xsl:value-of select="$separator"/>
                 <xsl:for-each select="./kml:ExtendedData/kml:Data[@name='Name']">
                     <xsl:call-template name="detail"/>
@@ -221,12 +227,7 @@
                         <xsl:call-template name="detail"/>
                     </xsl:for-each>
                     <xsl:for-each select="./kml:ExtendedData/kml:Data[@name=$L2]">
-                        <xsl:variable name="location_L2">
-                            <xsl:call-template name="detail"/>
-                        </xsl:variable>
-                        <xsl:if test="$location_L2">
-                            <xsl:value-of select="$location_L2"/>
-                        </xsl:if>
+                        <xsl:call-template name="detail"/>
                     </xsl:for-each>
                 </xsl:attribute>
             </reference>

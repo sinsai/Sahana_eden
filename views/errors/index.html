@@ -15,7 +15,7 @@
         <li>Details - {{=details}}</li>
         <li>You may want to <a href='http://eden.sahanafoundation.org/report'>report a bug</a> about this issue.</li>
         {{ if not res.ticket in (None,'None'): }}
-            <li>View ticket for this problem here - <a href='/{{=app}}/admin/ticket/{{=res.ticket}}' target='_blank'>{{=res.ticket}}</a></li>
+            <li>View ticket for this problem here - <span class="req">{{=res.ticket}}</span></li>
         {{pass}}
     </ul>
 </div>

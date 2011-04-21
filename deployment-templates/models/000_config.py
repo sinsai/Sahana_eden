@@ -97,6 +97,22 @@ deployment_settings.frontpage.rss = [
      #url: "http://search.twitter.com/search.atom?q=%23eqnz"
     }
 ]
+# about sahana
+deployment_settings.frontpage.about = [
+    {"text": T("For more details on the Sahana Eden system, see the")},
+    {"text": T("Sahana Eden Website"),
+     "href": "http://eden.sahanafoundation.org"},
+    {"text": T("For live help from the Sahana community on using this application, go to")},
+    {"text": T("Sahana Community Chat"),
+     "href": "http://eden.sahanafoundation.org/wiki/Chat"}
+]
+# kml for frontpage map
+deployment_settings.frontpage.kml = [
+#    {"name": "shelter",
+#     "url": "uri/to/shelter.kml"},
+#    {"name": "hospital",
+#     "url": "uri/to/hospital.kml"}
+]
 
 # Twitter settings:
 # Register an app at http://twitter.com/apps

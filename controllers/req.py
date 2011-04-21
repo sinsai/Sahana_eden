@@ -73,8 +73,15 @@ def req():
         if r.interactive:
             if r.method != "update" and r.method != "read":
                 # Hide fields which don't make sense in a Create form
-                # inc list_create (list_fields over-rides)
+                # - includes one embedded in list_create
+                # - list_fields over-rides, so still visible within list itself
                 shn_req_create_form_mods()
+                # Request_items only applicable to the main Request Controller
+                table = db.req_req_item
+                table.quantity_commit.readable = table.quantity_commit.writable = False
+                table.quantity_transit.readable = table.quantity_commit.writable = False
+                table.quantity_fulfil.readable = table.quantity_commit.writable = False
+
         return True
     response.s3.prep = prep
 
@@ -93,6 +100,19 @@ def req():
 def req_item():
     tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
+
+    def prep(r):
+        if r.interactive:
+            if r.method != "update" and r.method != "read":
+                # Hide fields which don't make sense in a Create form
+                # - includes one embedded in list_create
+                # - list_fields over-rides, so still visible within list itself
+                table.quantity_commit.readable = table.quantity_commit.writable = False
+                table.quantity_transit.readable = table.quantity_commit.writable = False
+                table.quantity_fulfil.readable = table.quantity_commit.writable = False
+
+        return True
+    response.s3.prep = prep
 
     output = s3_rest_controller( module,
                                  resourcename,
@@ -133,7 +153,7 @@ def req_item_inv_item():
                                    ),
                                 TR(
                                     TH( "%s: " % T("Date Requested") ),
-                                    req.date_requested,
+                                    req.date,
                                     TH( T("Quantity Committed")),
                                     req_item.quantity_commit,
                                    ),
@@ -234,15 +254,14 @@ def shn_commit_rheader(r):
                                                   ]
                                                  )
                 #req_record = db.req_req[commit_record.req_id]
-                #for_site_id = req_record.site_id
-                #req_date = req_record.date_requested
+                #req_date = req_record.date
                 rheader = DIV( TABLE( TR( TH( "%s: " % T("Request")),
                                           shn_req_represent(commit_record.req_id),
                                          ),
                                       TR( TH( "%s: " % T("Committing Inventory")),
                                           shn_site_represent(commit_record.site_id),
                                           TH( "%s: " % T("Commit Date")),
-                                          commit_record.date_requested,
+                                          commit_record.date,
                                           ),
                                        TR( TH( "%s: " % T("Comments")),
                                            TD(commit_record.comments, _colspan=3)
@@ -305,53 +324,49 @@ def commit_req():
                  )
 
     # Create a new commit record
-    commit_id = db.req_commit.insert( date_requested = request.utcnow,
-                                       req_id = req_id,
-                                       site_id = site_id,
-                                       for_site_id = r_req.site_id
+    commit_id = db.req_commit.insert( date = request.utcnow,
+                                      req_id = req_id,
+                                      site_id = site_id,
                                       )
 
-    # Only populate commit items if we know the site committing
-    if site_id:
-        # Only select items which are in the warehouse
-        req_items = db( (db.req_req_item.req_id == req_id) & \
-                        (db.req_req_item.quantity_fulfil < db.req_req_item.quantity) & \
-                        (db.inv_inv_item.site_id == site_id) & \
-                        (db.req_req_item.item_id == db.inv_inv_item.item_id) & \
-                        (db.req_req_item.deleted == False)  & \
-                       (db.inv_inv_item.deleted == False)
-                       ).select(db.req_req_item.id,
-                                db.req_req_item.quantity,
-                                db.req_req_item.item_pack_id,
-                                db.inv_inv_item.item_id,
-                                db.inv_inv_item.quantity,
-                                db.inv_inv_item.item_pack_id)
+    # Only select items which are in the warehouse
+    req_items = db( (db.req_req_item.req_id == req_id) & \
+                    (db.req_req_item.quantity_fulfil < db.req_req_item.quantity) & \
+                    (db.inv_inv_item.site_id == site_id) & \
+                    (db.req_req_item.item_id == db.inv_inv_item.item_id) & \
+                    (db.req_req_item.deleted == False)  & \
+                   (db.inv_inv_item.deleted == False)
+                   ).select(db.req_req_item.id,
+                            db.req_req_item.quantity,
+                            db.req_req_item.item_pack_id,
+                            db.inv_inv_item.item_id,
+                            db.inv_inv_item.quantity,
+                            db.inv_inv_item.item_pack_id)
 
-        for req_item in req_items:
-            req_item_quantity = req_item.req_req_item.quantity * \
-                            req_item.req_req_item.pack_quantity
+    for req_item in req_items:
+        req_item_quantity = req_item.req_req_item.quantity * \
+                        req_item.req_req_item.pack_quantity
 
-            inv_item_quantity = req_item.inv_inv_item.quantity * \
-                            req_item.inv_inv_item.pack_quantity
+        inv_item_quantity = req_item.inv_inv_item.quantity * \
+                        req_item.inv_inv_item.pack_quantity
 
-            if inv_item_quantity > req_item_quantity:
-                commit_item_quantity = req_item_quantity
-            else:
-                commit_item_quantity = inv_item_quantity
-            commit_item_quantity = commit_item_quantity / req_item.req_req_item.pack_quantity
+        if inv_item_quantity > req_item_quantity:
+            commit_item_quantity = req_item_quantity
+        else:
+            commit_item_quantity = inv_item_quantity
+        commit_item_quantity = commit_item_quantity / req_item.req_req_item.pack_quantity
 
-            if commit_item_quantity:
-                commit_item_id = db.req_commit_item.insert( commit_id = commit_id,
-                                            req_item_id = req_item.req_req_item.id,
-                                            item_pack_id = req_item.req_req_item.item_pack_id,
-                                            quantity = commit_item_quantity
-                                           )
+        if commit_item_quantity:
+            commit_item_id = db.req_commit_item.insert( commit_id = commit_id,
+                                        req_item_id = req_item.req_req_item.id,
+                                        item_pack_id = req_item.req_req_item.item_pack_id,
+                                        quantity = commit_item_quantity
+                                       )
 
-                # Update the req_item.commit_quantity  & req.commit_status
-                session.rcvars.req_commit_item = commit_item_id
-                shn_commit_item_onaccept(None)
+            # Update the req_item.commit_quantity  & req.commit_status
+            session.rcvars.req_commit_item = commit_item_id
+            shn_commit_item_onaccept(None)
 
-    # Redirect to commit
     redirect(URL(r = request,
                  c = "req",
                  f = "commit",
@@ -359,16 +374,95 @@ def commit_req():
                  )
              )
 
-#==============================================================================
+#==============================================================================#
+def send_req():
+    """
+        function to send items according to a request.
+        copy data from a req into a send
+        arg: req_id
+        vars: site_id
+    """
+    req_id = request.args[0]
+    r_req = db.req_req[req_id]
+    site_id = request.vars.get("site_id")
+
+    # User must have permissions over site which is sending
+    (prefix, resourcename, id) = auth.s3_site_resource(site_id)
+    if not site_id or not auth.s3_has_permission("update",
+                                              db["%s_%s" % (prefix,
+                                                            resourcename)],
+                                              record_id=id):
+        session.error = T("You do no have permission to send this shipment.")
+        redirect(URL(r = request,
+                     c = "req",
+                     f = "req",
+                     args = [req_id],
+                     )
+                 )
+    
+    to_location_id = db.org_site[r_req.site_id].location_id
+
+    # Create a new send record
+    send_id = db.inv_send.insert( date = request.utcnow,
+                                  site_id = site_id,
+                                  to_location_id = to_location_id,
+                                  )
+
+    # Only select items which are in the warehouse
+    req_items = db( (db.req_req_item.req_id == req_id) & \
+                    (db.req_req_item.quantity_fulfil < db.req_req_item.quantity) & \
+                    (db.inv_inv_item.site_id == site_id) & \
+                    (db.req_req_item.item_id == db.inv_inv_item.item_id) & \
+                    (db.req_req_item.deleted == False)  & \
+                   (db.inv_inv_item.deleted == False)
+                   ).select(db.req_req_item.id,
+                            db.req_req_item.quantity,
+                            db.req_req_item.item_pack_id,
+                            db.inv_inv_item.id,
+                            db.inv_inv_item.item_id,
+                            db.inv_inv_item.quantity,
+                            db.inv_inv_item.item_pack_id)
+
+    for req_item in req_items:
+        req_item_quantity = req_item.req_req_item.quantity * \
+                        req_item.req_req_item.pack_quantity
+
+        inv_item_quantity = req_item.inv_inv_item.quantity * \
+                        req_item.inv_inv_item.pack_quantity
+
+        if inv_item_quantity > req_item_quantity:
+            send_item_quantity = req_item_quantity
+        else:
+            send_item_quantity = inv_item_quantity
+        send_item_quantity = send_item_quantity / req_item.req_req_item.pack_quantity
+
+        if send_item_quantity:
+            send_item_id = db.inv_send_item.insert( send_id = send_id,
+                                                    inv_item_id = req_item.inv_inv_item.id,
+                                                    req_item_id = req_item.req_req_item.id,
+                                                    item_pack_id = req_item.req_req_item.item_pack_id,
+                                                    quantity = send_item_quantity
+                                                    )
+    # Redirect to commit
+    redirect(URL(r = request,
+                 c = "inv",
+                 f = "send",
+                 args = [send_id, "send_item"]
+                 )
+             )
+#==============================================================================#
 def commit_item_json():
     response.headers["Content-Type"] = "application/json"
-    #db.req_commit.date_requested.represent = lambda dt: dt[:10]
+    #db.req_commit.date.represent = lambda dt: dt[:10]
     records =  db( (db.req_commit_item.req_item_id == request.args[0]) & \
                    (db.req_commit.id == db.req_commit_item.commit_id) & \
+                   (db.req_commit.site_id == db.org_site.id) & \
                    (db.req_commit_item.deleted == False )
                   ).select(db.req_commit.id,
+                           db.req_commit.date,
+                           db.org_site.name,
                            db.req_commit_item.quantity,
-                           db.req_commit.date_requested,
+                           orderby = db.req_commit.date
                            )
     json_str = "[%s,%s" % ( json.dumps(dict(id = str(T("Committed")),
                                             quantity = "#"

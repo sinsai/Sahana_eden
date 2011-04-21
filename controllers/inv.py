@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
 """
-    Inventory (Warehouse) Management
+    Inventory Management
 
     @author: Michael Howden (michael@sahanafoundation.org)
     @date-created: 2010-08-16
 
-    A module to record inventories of items at a location (site)
+    A module to record inventories of items at a locations (sites),
+    including Warehouses, Offices, Shelters & Hospitals
+    
 """
 
 module = request.controller
@@ -18,7 +20,7 @@ if not deployment_settings.has_module(module):
 
 response.menu_options = inv_menu
 
-#==============================================================================
+#------------------------------------------------------------------------------
 def index():
     """
         Application Home page
@@ -34,6 +36,7 @@ def office():
         Required to ensure the tabs work from req_match
     """
     return warehouse()
+
 def warehouse():
     """
         RESTful CRUD controller
@@ -44,6 +47,8 @@ def warehouse():
     resourcename = "office"
     tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
+    
+    s3.crud_strings[tablename] = s3_warehouse_crud_strings
 
     # Type is Warehouse
     table.type.default = 5 # Warehouse
@@ -52,26 +57,14 @@ def warehouse():
     # Only show warehouses
     response.s3.filter = (db.org_office.type == 5)
 
+    # Remove type from list_fields
+    list_fields = s3xrc.model.get_config(db.org_office, "list_fields")
+    list_fields.remove("type")
+    s3xrc.model.configure(table, list_fields=list_fields)
+
     def prep(r):
         if r.interactive:
-            # CRUD strings
-            ADD_WH = T("Add Warehouse")
-            LIST_WH = T("List Warehouses")
-            s3.crud_strings[tablename] = Storage(
-                title_create = ADD_WH,
-                title_display = T("Warehouse Details"),
-                title_list = LIST_WH,
-                title_update = T("Edit Warehouse"),
-                title_search = T("Search Warehouses"),
-                subtitle_create = T("Add New Warehouse"),
-                subtitle_list = T("Warehouses"),
-                label_list_button = LIST_WH,
-                label_create_button = ADD_WH,
-                label_delete_button = T("Delete Warehouse"),
-                msg_record_created = T("Warehouse added"),
-                msg_record_modified = T("Warehouse updated"),
-                msg_record_deleted = T("Warehouse deleted"),
-                msg_list_empty = T("No Warehouses currently registered"))
+
 
             if r.method != "read":
                 # Don't want to see in Create forms
@@ -121,7 +114,13 @@ def warehouse():
     output = s3_rest_controller(module, resourcename, rheader=rheader)
 
     return output
+
 #==============================================================================
+def incoming():
+    """ Simulated component tab for Inventories """
+    return s3_inv_incoming()
+
+# -----------------------------------------------------------------------------
 def req_match():
     s3.crud_strings.org_office.title_display = T("Warehouse Details")
     return s3_req_match()
@@ -181,14 +180,21 @@ def shn_recv_rheader(r):
                 rheader = DIV( TABLE(
                                    TR( TH( "%s: " % T("Date")),
                                        recv_record.date,
+                                       TH( "%s: " % T("From Organisation")),
+                                       shn_organisation_represent(recv_record.from_organisation_id),
                                       ),
-                                   TR( TH( "%s: " % T("By")),
+                                   TR( TH( "%s: " % T("By Site")),
                                        shn_site_represent(recv_record.site_id),
-                                       TH( "%s: " % T("From")),
+                                       TH( "%s: " % T("From Person")),
+                                       recv_record.from_person,
+                                      ),
+                                   TR( TH( "%s: " % T("By Person")),
+                                       vita.fullname(recv_record.recipient_id),
+                                       TH( "%s: " % T("From Location")),
                                        shn_gis_location_represent(recv_record.from_location_id),
                                       ),
                                    TR( TH( "%s: " % T("Comments")),
-                                       TD(recv_record.comments, _colspan=3)
+                                       TD(recv_record.comments, _colspan=2),
                                       ),
                                      )
                                 )
@@ -270,42 +276,6 @@ def recv_item():
     return output
 
 #==============================================================================
-class QUANTITY_INV_ITEM:
-    def __init__(self,
-                 inv_item_id,
-                 item_pack_id):
-        self.inv_item_id = inv_item_id
-        self.item_pack_id = item_pack_id
-    def __call__(self, value):
-        error = "Invalid Quantity" # @todo: better error catching
-        inv_item_record = db( (db.inv_inv_item.id == self.inv_item_id) & \
-                              (db.inv_inv_item.item_pack_id == db.supply_item_pack.id)
-                               ).select(db.inv_inv_item.quantity,
-                                        db.supply_item_pack.quantity,
-                                        db.supply_item_pack.name,
-                                        limitby = (0, 1)).first() # @todo: this should be a virtual field
-        if inv_item_record and value:
-            send_quantity = float(value) * shn_get_db_field_value(db,
-                                                           "supply_item_pack",
-                                                           "quantity",
-                                                           self.item_pack_id
-                                                           )
-            inv_quantity = inv_item_record.inv_inv_item.quantity * \
-                             inv_item_record.supply_item_pack.quantity
-            if send_quantity > inv_quantity:
-                return (value,
-                        "Only %s %s (%s) in the Inventory." %
-                        (inv_quantity,
-                         inv_item_record.supply_item_pack.name,
-                         inv_item_record.supply_item_pack.quantity)
-                        )
-            else:
-                return (value, None)
-        else:
-            return (value, error)
-    def formatter(self, value):
-        return value
-#------------------------------------------------------------------------------
 def send():
     """ RESTful CRUD controller """
     tablename = "%s_%s" % (module, resourcename)
@@ -317,7 +287,8 @@ def send():
 
     # Set Validator for checking against the number of items in the warehouse
     if (request.vars.inv_item_id):
-        db.inv_send_item.quantity.requires = QUANTITY_INV_ITEM(request.vars.inv_item_id,
+        db.inv_send_item.quantity.requires = QUANTITY_INV_ITEM(db,
+                                                               request.vars.inv_item_id,
                                                                request.vars.item_pack_id)
 
     def prep(r):
@@ -398,7 +369,24 @@ def shn_send_rheader(r):
                                                   db.inv_send,
                                                   record_id=send_record.id):
                             if send_record.status == SHIP_STATUS_SENT:
-                                if "received" in request.vars:
+                                if "site_id" in request.vars:
+                                    receive_btn = A( T("Receive Shipment"),
+                                                    _href = URL(r = request,
+                                                                c = "inv",
+                                                                f = "recv_sent",
+                                                                args = [send_record.id],
+                                                                vars = request.vars
+                                                                ),
+                                                    _id = "send_receive",
+                                                    _class = "action-btn",
+                                                    _title = "Receive this shipment"
+                                                    )
+
+                                    #receive_btn_confirm = SCRIPT("S3ConfirmClick('#send_receive', '%s')"
+                                    #                             % T("Receive this shipment?") )
+                                    rheader.append(receive_btn)
+                                    #rheader.append(receive_btn_confirm)
+                                elif "received" in request.vars:
                                     db.inv_send[send_record.id] = \
                                         dict(status = SHIP_STATUS_RECEIVED)
                                 else:
@@ -466,7 +454,7 @@ def req_items_for_inv(site_id, quantity_type):
                             db.req_req_item.quantity,
                             db.req_req_item["quantity_%s" % quantity_type],
                             db.req_req_item.item_pack_id,
-                            orderby = db.req_req.date_required | db.req_req.date_requested,
+                            orderby = db.req_req.date_required | db.req_req.date,
                             #groupby = db.req_req_item.item_id
                             )
 
@@ -613,14 +601,15 @@ def recv_process():
                                  )
 
     # Update status_fulfil of the req record(s)
-    for req_id in update_req_id:
+    for req_id, req_item_id in update_req_id:
         if req_id:
             session.rcvars.req_req = req_id
+            session.rcvars.req_req_item = req_item_id
             shn_req_item_onaccept(None)
 
     session.confirmation = T("Shipment Items received by Inventory")
 
-    # Go to the Site which has received these items
+    # Go to the Inventory of the Site which has received these items
     (prefix, resourcename, id) = auth.s3_site_resource(site_id)
 
     redirect(URL(r = request,
@@ -1012,7 +1001,7 @@ def recv_sent():
 
     r_send = db.inv_send[send_id]
 
-    if r_send.status != SHIP_STATUS_IN_PROCESS:
+    if r_send.status != SHIP_STATUS_SENT:
         session.error = T("This shipment has already been received.")
 
     if session.error:
@@ -1042,14 +1031,17 @@ def recv_sent():
                      (db.inv_send_item.deleted == False)
                      ).select(db.inv_inv_item.item_id,
                               db.inv_send_item.item_pack_id,
-                              db.inv_send_item.quantity)
+                              db.inv_send_item.quantity,
+                              db.inv_send_item.req_item_id,)
 
     # Copy items from send to recv
     for sent_item in sent_items:
         db.inv_recv_item.insert(recv_id = recv_id,
                                 item_id = sent_item.inv_inv_item.item_id,
                                 item_pack_id = sent_item.inv_send_item.item_pack_id,
-                                quantity = sent_item.inv_send_item.quantity)
+                                quantity = sent_item.inv_send_item.quantity,
+                                req_item_id = sent_item.inv_send_item.req_item_id)
+
 
     # Flag shipment as received as received
     db.inv_send[send_id] = dict(status = SHIP_STATUS_RECEIVED)
@@ -1066,7 +1058,7 @@ def send_commit():
     """
         function to send items according to a commit.
         copy data from a commit into a send
-        arg: req_id
+        arg: commit_id
         @ToDo: This function needs to be able to detect the site to send the items from,
         site_id is currently undefined and this will not work.
     """
@@ -1086,8 +1078,15 @@ def send_commit():
                      args = [commit_id],
                      )
                  )
+    
+    to_location_id = db( (db.req_req.id == r_commit.req_id) &
+                         (db.org_site.id == db.req_req.site_id)
+                        ).select(db.org_site.location_id,
+                                 limitby = (0,1)
+                                 ).first().location_id
+                                 
+
     # Create a new send record
-    to_location_id = db.org_site[r_commit.for_site_id].location_id
     send_id = db.inv_send.insert( date = request.utcnow,
                                   site_id = r_commit.site_id,
                                   to_location_id = to_location_id,
@@ -1103,13 +1102,15 @@ def send_commit():
                    ).select( db.inv_inv_item.id,
                              db.req_commit_item.quantity,
                              db.req_commit_item.item_pack_id,
+                             db.req_commit_item.req_item_id,
                             )
 
     for commit_item in commit_items:
         send_item_id = db.inv_send_item.insert( send_id = send_id,
                                                 inv_item_id = commit_item.inv_inv_item.id,
                                                 quantity = commit_item.req_commit_item.quantity,
-                                                item_pack_id = commit_item.req_commit_item.item_pack_id
+                                                item_pack_id = commit_item.req_commit_item.item_pack_id,
+                                                req_item_id = commit_item.req_commit_item.req_item_id,
                                                 )
 
     # Redirect to send
@@ -1124,11 +1125,14 @@ def recv_item_json():
     response.headers["Content-Type"] = "application/json"
     db.inv_recv.date.represent = lambda dt: dt[:10]
     records =  db( (db.inv_recv_item.req_item_id == request.args[0]) & \
-                   (db.inv_recv.id == db.inv_recv_item.inv_recv_id) & \
+                   (db.inv_recv.id == db.inv_recv_item.recv_id) & \
+                   (db.inv_recv.site_id == db.org_site.id) & \
+                   (db.inv_recv.status == SHIP_STATUS_RECEIVED) & \
                    (db.inv_recv_item.deleted == False )
                   ).select(db.inv_recv.id,
-                           db.inv_recv_item.quantity,
                            db.inv_recv.date,
+                           db.org_site.name,
+                           db.inv_recv_item.quantity,
                            )
     json_str = "[%s,%s" % ( json.dumps(dict(id = str(T("Received")),
                                             quantity = "#"
@@ -1143,10 +1147,13 @@ def send_item_json():
     db.inv_send.date.represent = lambda dt: dt[:10]
     records =  db( (db.inv_send_item.req_item_id == request.args[0]) & \
                    (db.inv_send.id == db.inv_send_item.send_id) & \
+                   (db.inv_send.site_id == db.org_site.id) & \
+                   (db.inv_send.status == SHIP_STATUS_SENT ) & \
                    (db.inv_send_item.deleted == False )
                   ).select(db.inv_send.id,
-                           db.inv_send_item.quantity,
                            db.inv_send.date,
+                           db.org_site.name,
+                           db.inv_send_item.quantity,
                            )
     json_str = "[%s,%s" % ( json.dumps(dict(id = str(T("Sent")),
                                             quantity = "#"

@@ -1005,7 +1005,7 @@ if deployment_settings.has_module(module):
     table.health_services_available_types.requires = IS_EMPTY_OR(IS_IN_SET(rat_health_services_types,
                                                                            zero=None, multiple=True))
     table.health_services_available_types.represent = lambda opt: \
-        shn_rat_represent_multiple(rat_health_service_types, opt)
+        shn_rat_represent_multiple(rat_health_services_types, opt)
 
     shn_rat_label_and_tooltip(table.staff_number_doctors,
         "Number of doctors actively working",

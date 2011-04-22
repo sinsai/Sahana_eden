@@ -283,19 +283,21 @@ s3xrc.model.configure(table,
 def shn_donor_represent(donor_ids):
     if not donor_ids:
         return NONE
-    elif "|" in str(donor_ids):
-        query = (db.org_organisation.id == id)
-        donors = [db(query).select(db.org_organisation.name,
-                                   limitby=(0, 1)).first().name for id in donor_ids.split("|") if id]
-        return ", ".join(donors)
+    elif isinstance(donor_ids, (list, tuple)):
+        query = (db.org_organisation.id.belongs(donor_ids))
+        donors = db(query).select(db.org_organisation.name)
+        return ", ".join([donor.name for donor in donors])
     else:
         query = (db.org_organisation.id == donor_ids)
-        return db(query).select(db.org_organisation.name,
-                                limitby=(0, 1)).first().name
+        donor = db(query).select(db.org_organisation.name,
+                                 limitby=(0, 1)).first()
+        return donor and donor.name or NONE
 
 ADD_DONOR = T("Add Donor")
 ADD_DONOR_HELP = T("The Donor(s) for this project. Multiple values can be selected by holding down the 'Control' key.")
-donor_id = S3ReusableField("donor_id", db.org_organisation, sortby="name",
+donor_id = S3ReusableField("donor_id",
+                           "list:reference org_organisation",
+                           sortby="name",
                            requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id",
                                                            "%(name)s",
                                                            multiple=True,

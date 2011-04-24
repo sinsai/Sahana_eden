@@ -430,7 +430,10 @@ class S3Resource(object):
         settings = self.manager.s3.crud
         archive_not_delete = settings.archive_not_delete
 
-        records = self.select(self.table.id)
+        if "uuid" in self.table.fields:
+            records = self.select(self.table.id, self.table.uuid)
+        else:
+            records = self.select(self.table.id)
 
         numrows = 0
         for row in records:

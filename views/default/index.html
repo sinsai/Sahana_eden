@@ -1,5 +1,5 @@
 {{extend "layout.html"}}
-<script type="text/javascript" src="http://maps.google.co.jp/maps/api/js?sensor=false"></script>
+<script src="http://www.openlayers.org/api/OpenLayers.js"></script>
 <script type="text/javascript">
   var SJP = {};
   SJP.kmlUrl = {
@@ -14,49 +14,126 @@
 </script>
 <script type="text/javascript">
  $(document).ready(function() {
-  var latlng = new google.maps.LatLng(39.095963, 140.778809);
-  var myOptions = {
-    zoom: 8,
-    center: latlng,
-    mapTypeControl: true,
-    mapTypeControlOptions: {style: google.maps.MapTypeControlStyle.DROPDOWN_MENU},
-    mapTypeId: google.maps.MapTypeId.ROADMAP
-  };
-  var map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
 
-  var kmlLayer = {};
- 
-  $('input:checkbox').click(function() {
-   var name = $(this).attr('name');
-   if ($(this).attr('checked')) {
-    if (SJP.kmlUrl[name]) {
-     if (!kmlLayer[name]) {
-      kmlLayer[name] = new google.maps.KmlLayer(SJP.kmlUrl[name], {preserveViewport: true});
-     }
-     kmlLayer[name].setMap(map);
-    }
-   } else if(kmlLayer[name]) {
-     kmlLayer[name].setMap(null);
-   }
-  });
-
-  var data = {
-   iDisplayStart: 0,
-   iDisplayLength: 5,
-   iSortingCols: 1,
-   iSortCol_0: 2,
-   sSortDir_0: 'desc'
-  };
-  
+  // Allopathy against bug of jquery.ajax
   $.ajaxSetup({
    jsonp: null,
    jsonpCallback: null
   });
 
-  $.getJSON(S3.Ap + '/req/req.aaData', data, function(json) {
-     $.each(json.aaData, function(index, record) {
-      $("#tbody_requests").append($("<tr><td>" + record[0].replace('.aaData','').replace(/>\d+</,'>'+record[1]+'<') + "</td><td>" + record[2] + "</td><td>" + record[3] + "</td></tr>"));
-     })
+  var req_data = {
+   iDisplayStart: 0,
+   iDisplayLength: 5,
+   iSortingCols: 1,
+   iSortCol_0: 2,
+   sSortDir_0: 'desc'
+  }
+  
+  $.getJSON(S3.Ap + '/req/req.aaData', req_data, function(json) {
+   $.each(json.aaData, function(index, record) {
+    $('#tbody_requests').append($('<tr><td>' + record[0].replace('.aaData','').replace(/>\d+</,'>'+record[1]+'<') + '</td><td>' + record[2] + '</td><td>' + record[3] + '</td></tr>'));
+   })
+  });
+
+    var lnglat = new OpenLayers.LonLat(140.778809, 39.095963).transform(
+        new OpenLayers.Projection("EPSG:4326"),
+        new OpenLayers.Projection("EPSG:900913")
+    );
+    var map = new OpenLayers.Map('map_canvas', {
+        center: lnglat,
+        layers: [new OpenLayers.Layer.OSM()],
+        zoom: 7
+    });
+
+    var kmlLayers = {};
+    var format_kml = new OpenLayers.Format.KML({
+        extractStyles: true,
+        extractAttributes: true,
+        maxDepth: 2
+    });
+    var selectControl = {};
+
+    var re = /^https?:\/\/([-\w]+\.?)+(\/[-\w_.!~*'();\/?:@&=+$,%#]*)?$/;
+
+    var makeKml = function (name) {
+        var protocol = new OpenLayers.Protocol.HTTP({
+            url: SJP.kmlUrl[name],
+            format: format_kml
+        });
+        kmlLayers[name] = new OpenLayers.Layer.Vector(name, {
+          strategies: [new OpenLayers.Strategy.Fixed()],
+          protocol: protocol
+        });
+        map.addLayer(kmlLayers[name]);
+
+        var currentControl;
+        var onFeatureSelect = function(feature) {
+            if (feature.popup) {
+                return;
+            }
+            var content = '<div style="overflow:auto;width:100%;">';
+            var name = feature.attributes.name;
+            if (name) {
+                content += '<h5>' + name + '</h5>';
+            }
+            var desc = feature.attributes.description;
+            if (desc) {
+                if (desc.match(re)) {
+                    content += '<a href="' + RegExp.lastMatch + '">' + (name || RegExp.lastMatch) + '</a>';
+                } else {
+                    content += desc;
+                }
+            }
+            content += '</div>';
+
+            var centerPoint = feature.geometry.getBounds().getCenterLonLat();
+            var onPopupClose = function(event) {
+                currentControl.unselect(feature);
+            }
+            var popup = new OpenLayers.Popup.FramedCloud('kmlpopup',
+                centerPoint,
+                new OpenLayers.Size(200, 200),
+                content,
+                null,
+                true,
+                onPopupClose
+            );
+
+            feature.popup = popup;
+            //popup.feature = feature;
+            map.addPopup(popup);
+        }
+
+        var onFeatureUnselect = function(feature) {
+            if (feature.popup) {
+                map.removePopup(feature.popup);
+                feature.destroyPopup();
+                //feature.popup.destroy();
+                delete feature.popup;
+            }
+        }
+
+        currentControl = new OpenLayers.Control.SelectFeature(kmlLayers[name], {
+            onSelect: onFeatureSelect, 
+            onUnselect: onFeatureUnselect,
+        });
+        map.addControl(currentControl);
+        currentControl.activate();
+    }
+
+  $('input:checkbox').click(function() {
+   var name = $(this).attr('name');
+   if ($(this).attr('checked')) {
+    if (SJP.kmlUrl[name]) {
+     if (!kmlLayers[name]) {
+      makeKml(name);
+     } else {
+      kmlLayers[name].display(true);
+     }
+    }
+   } else if(kmlLayers[name]) {
+      kmlLayers[name].display(false);
+   }
   });
 
   // Change register/login links to avoid page reload, make back button work.

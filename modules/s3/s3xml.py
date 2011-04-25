@@ -716,13 +716,12 @@ class S3XML(object):
                 multiple = True
             else:
                 continue
+            ktable = self.db[ktablename]
 
             resource = r.get(self.ATTRIBUTE.resource, None)
             if not resource or resource != ktablename:
-                continue
-            ktable = self.db.get(resource, None)
-            if not ktable or "id" not in ktable.fields:
-                continue
+                if field != ktable._id.name:
+                    continue
 
             uids = r.get(self.UID, None)
             attr = self.UID

@@ -51,6 +51,7 @@ from gluon.tools import callback
 from lxml import etree
 from s3tools import SQLTABLES3
 from s3import import S3Importer
+from s3validators import IS_ONE_OF
 
 # *****************************************************************************
 class S3Resource(object):
@@ -1211,12 +1212,18 @@ class S3Resource(object):
         else:
             fields = None
 
+        only_last = False
+
+        if "only_last" in r.request.get_vars:
+            only_last = r.request.get_vars["only_last"]
+
         if r.representation == "xml":
             return self.options(component=r.component_name,
                                 fields=fields)
         elif r.representation == "s3json":
             return self.options(component=r.component_name,
                                 fields=fields,
+                                only_last=only_last,
                                 as_json=True)
         else:
             r.error(501, self.ERROR.BAD_FORMAT)
@@ -1709,17 +1716,35 @@ class S3Resource(object):
         @param fields: list of names of fields for which the options
             are requested, None for all fields (which have options)
         @param as_json: convert the output into JSON
-
+        @param only_last: Obtain the latest record (performance bug fix, 
+            timeout at s3_tb_refresh for non-dropdown form fields)
         """
 
         if component is not None:
             c = self.components.get(component, None)
             if c:
-                tree = c.resource.options(fields=fields, as_json=as_json)
+                tree = c.resource.options(fields=fields, only_last=only_last, as_json=as_json)
                 return tree
             else:
                 raise AttributeError
         else:
+            if as_json and only_last and len(fields) == 1:
+                component_tablename = "%s_%s" % (self.prefix, self.name)
+                field = self.db[component_tablename][fields[0]]
+                req = field.requires
+                if isinstance(req, IS_EMPTY_OR):
+                    req = req.other
+                assert(isinstance(req, IS_ONE_OF))
+                rows = self.db().select(
+                    self.db[req.ktable][req.kfield],
+                    orderby=~self.db[req.ktable][req.kfield],
+                    limitby=(0, 1))
+                res = []
+                for row in rows:
+                    val = row[req.kfield]
+                    res.append({ "@value" : val, "$" : field.represent(val) })
+                return json.dumps({ 'option' : res })
+
             tree = self.xml.get_options(self.prefix,
                                         self.name,
                                         fields=fields)

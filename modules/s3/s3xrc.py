@@ -233,8 +233,8 @@ class S3ResourceController(object):
                         str(table[f].type) != "id",
                         table.fields)
 
-        if self.show_ids and "id" not in fields:
-            fields.insert(0, "id")
+        if self.show_ids and table._id.name not in fields:
+            fields.insert(0,  table._id.name)
 
         rfields = filter(lambda f:
                          (str(table[f].type).startswith("reference") or
@@ -309,10 +309,16 @@ class S3ResourceController(object):
 
         # Create an import job
         (prefix, name) = resource.split("_", 1)
-        onvalidation = self.model.get_config(table, "onvalidation")
-        onaccept = self.model.get_config(table, "onaccept")
-        create_onaccept = self.model.get_config(table, "create_onaccept")
-        update_onaccept = self.model.get_config(table, "update_onaccept")
+        onvalidation = dict(
+            create=self.model.get_config(table, "create_onvalidation",
+                   self.model.get_config(table, "onvalidation")),
+            update=self.model.get_config(table, "update_onvalidation",
+                   self.model.get_config(table, "onvalidation")))
+        onaccept = dict(
+            create=self.model.get_config(table, "create_onaccept",
+                   self.model.get_config(table, "onaccept")),
+            update=self.model.get_config(table, "update_onaccept",
+                   self.model.get_config(table, "onaccept")))
         job = S3ImportJob(self, prefix, name, id,
                           record=record,
                           original=original,
@@ -321,9 +327,7 @@ class S3ResourceController(object):
                           rmap=rmap,
                           directory=directory,
                           onvalidation=onvalidation,
-                          onaccept=onaccept,
-                          create_onaccept=create_onaccept,
-                          update_onaccept=update_onaccept)
+                          onaccept=onaccept)
 
         # Create a job list
         if joblist is not None:
@@ -1062,8 +1066,10 @@ class S3ImportJob(object):
         @param element: the corresponding element from the element tree
         @param rmap: map of references for this record
         @param directory: resource directory of the input tree
-        @param onvalidation: extra function to validate records
-        @param onaccept: callback function for committed importes
+        @param onvalidation: extra functions to validate records
+                             as dict(create=function, update=function)
+        @param onaccept: callback functions for committed importes
+                         as dict(create=function, update=function)
     """
 
     METHOD = Storage(
@@ -1093,9 +1099,7 @@ class S3ImportJob(object):
                  rmap=None,
                  directory=None,
                  onvalidation=None,
-                 onaccept=None,
-                 create_onaccept=None,
-                 update_onaccept=None):
+                 onaccept=None):
 
         self.manager = manager
         self.db = manager.db
@@ -1132,14 +1136,10 @@ class S3ImportJob(object):
 
         self.onvalidation = onvalidation
         self.onaccept = onaccept
-        self.create_onaccept = create_onaccept
-        self.update_onaccept = update_onaccept
 
         self.accepted = True
         self.permitted = True
         self.committed = False
-        self.created = False
-        self.updated = False
 
         self.uid = self.record.get(self.UID, None)
         self.mci = self.record.get(self.MCI, 2)
@@ -1214,7 +1214,7 @@ class S3ImportJob(object):
                     form.vars.id = self.id
                 form.errors = Storage()
                 if self.onvalidation:
-                    callback(self.onvalidation, form, tablename=self.tablename)
+                    callback(self.onvalidation[self.method], form, tablename=self.tablename)
                 if form.errors:
                     for k in form.errors:
                         e = self.element.findall("data[@field='%s']" % k)
@@ -1288,7 +1288,6 @@ class S3ImportJob(object):
                             return False
                         if success:
                             self.committed = True
-                            self.updated = True
                     else:
                         self.committed = True
 
@@ -1317,7 +1316,6 @@ class S3ImportJob(object):
                         if success:
                             self.id = success
                             self.committed = True
-                            self.created = True
 
                 # Audit + onaccept on successful commits
                 if self.committed:
@@ -1327,11 +1325,7 @@ class S3ImportJob(object):
                                    form=form, record=self.id, representation="xml")
                     model.update_super(self.table, form.vars)
                     if self.onaccept:
-                        callback(self.onaccept, form, tablename=self.tablename)
-                    if self.created and self.create_onaccept:
-                        callback(self.create_onaccept, form, tablename=self.tablename)
-                    if self.updated and self.update_onaccept:
-                        callback(self.update_onaccept, form, tablename=self.tablename)
+                        callback(self.onaccept[self.method], form, tablename=self.tablename)
 
         # Commit components
         if self.id and self.components and not skip_components:
@@ -1364,10 +1358,17 @@ class S3ImportJob(object):
             for r in self.rmap:
                 fieldtype = str(self.table[r.field].type)
                 multiple = False
-                if fieldtype.startswith("list:reference"):
+                if fieldtype[:9] == "reference":
+                    ktablename = fieldtype[10:]
+                elif fieldtype[:14] == "list:reference":
+                    ktablename = fieldtype[15:]
                     multiple = True
+                else:
+                    continue
+                ktable = self.db[ktablename]
+                _id = ktable._id.name
                 if r.entry:
-                    id = r.entry.get("id", None)
+                    id = r.entry.get(_id, None)
                     if not id:
                         job = r.entry.get("job", None)
                         if job:

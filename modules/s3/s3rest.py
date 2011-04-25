@@ -1707,7 +1707,7 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def options(self, component=None, fields=None, as_json=False):
+    def options(self, component=None, fields=None, only_last=False, as_json=False):
         """
         Export field options of this resource as element tree
 

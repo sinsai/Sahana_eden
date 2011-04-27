@@ -279,6 +279,7 @@ class S3AutocompleteWidget(FormWidget):
         (function() {
             var data = { val:$('#%s').val(), accept:false };
 
+            $(document).ready(function() {
             $('#%s').autocomplete({
                 source: '%s',
                 minLength: %d,
@@ -333,6 +334,7 @@ class S3AutocompleteWidget(FormWidget):
 
                 data.accept = false;
             });
+            }); // document.ready
         })();
         """ % (fieldname,
                dummy_input,
@@ -449,6 +451,7 @@ class S3LocationAutocompleteWidget(FormWidget):
         (function() {
             var data = { val:$('#%s').val(), accept:false };
 
+            $(document).ready(function() {
             $('#%s').autocomplete({
                 source: '%s',
                 minLength: %d,
@@ -502,6 +505,7 @@ class S3LocationAutocompleteWidget(FormWidget):
 
                 data.accept = false;
             });
+            }); // document.ready
         })();
         """ % (dummy_input, dummy_input, real_input, dummy_input, dummy_input)
 
@@ -576,6 +580,7 @@ class S3PersonAutocompleteWidget(FormWidget):
         (function() {
             var data = { val:$('#%s').val(), accept:false };
 
+            $(document).ready(function() {
             $('#%s').autocomplete({
                 source: '%s',
                 minLength: %d,
@@ -658,6 +663,7 @@ class S3PersonAutocompleteWidget(FormWidget):
 
                 data.accept = false;
             });
+            }); // document.ready
         })();
         """ % (dummy_input, dummy_input, real_input, dummy_input, dummy_input)
 

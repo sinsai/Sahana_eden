@@ -396,6 +396,7 @@ class S3LocationAutocompleteWidget(FormWidget):
                  prefix="gis",
                  resourcename="location",
                  fieldname="name",
+                 level="",
                  post_process = "",
                  min_length=2):
 
@@ -404,6 +405,7 @@ class S3LocationAutocompleteWidget(FormWidget):
         self.prefix = prefix
         self.resourcename = resourcename
         self.fieldname = fieldname
+        self.level = level
         self.post_process = post_process
         self.min_length = min_length
 
@@ -423,12 +425,34 @@ class S3LocationAutocompleteWidget(FormWidget):
         real_input = str(field).replace(".", "_")
         dummy_input = "dummy_%s" % real_input
         fieldname = self.fieldname
-        url = URL(r=request, c=self.prefix, f=self.resourcename,
-                  args="search.json",
-                  vars={"filter":"~",
-                        "field":fieldname,
-                        "exclude_field":"level",
-                        "exclude_value":"XX"})
+        level = self.level
+        if level:
+            if isinstance(level, list):
+                levels = ""
+                counter = 0
+                for _level in level:
+                    levels += _level
+                    if counter < len(level):
+                        levels += "|"
+                    counter += 1
+                url = URL(r=request, c=self.prefix, f=self.resourcename,
+                          args="search.json",
+                          vars={"filter":"~",
+                                "field":fieldname,
+                                "level":levels})
+            else:
+                url = URL(r=request, c=self.prefix, f=self.resourcename,
+                          args="search.json",
+                          vars={"filter":"~",
+                                "field":fieldname,
+                                "level":level})
+        else:
+            url = URL(r=request, c=self.prefix, f=self.resourcename,
+                      args="search.json",
+                      vars={"filter":"~",
+                            "field":fieldname,
+                            "exclude_field":"level",
+                            "exclude_value":"XX"})
 
         # Which Levels do we have in our hierarchy & what are their Labels?
         location_hierarchy = self.deployment_settings.gis.location_hierarchy

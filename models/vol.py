@@ -40,7 +40,12 @@ if deployment_settings.has_module(module):
                                                            # This is likely to be customised for the deployment
                                                            filter_opts=["GR", "L0", "L1", "L2", "L3"],
                                                            orderby="gis_location.name"),
-                                        widget=None),
+                                        # For smaller numbers of Locations use simple Dropdown
+                                        #widget=None,
+                                        # For larger numbers of Locations
+                                        widget=S3LocationAutocompleteWidget(request, deployment_settings,
+                                                                            level=["GR", "L0", "L1", "L2", "L3"])
+                                        ),
                             Field("status", "integer",
                                 requires = IS_IN_SET(vol_volunteer_status_opts, zero=None),
                                 # default = 1,
@@ -58,11 +63,12 @@ if deployment_settings.has_module(module):
 
     # Representation function
     def shn_vol_volunteer_represent(id):
-        person = db((db.vol_volunteer.id == id) & (db.pr_person.id == db.vol_volunteer.person_id)).select(
-                    db.pr_person.first_name,
-                    db.pr_person.middle_name,
-                    db.pr_person.last_name,
-                    limitby=(0, 1))
+        query = (db.vol_volunteer.id == id) & \
+                (db.pr_person.id == db.vol_volunteer.person_id)
+        person = db(query).select(db.pr_person.first_name,
+                                  db.pr_person.middle_name,
+                                  db.pr_person.last_name,
+                                  limitby=(0, 1))
         if person:
             return vita.fullname(person.first())
         else:

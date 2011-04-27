@@ -1095,6 +1095,8 @@ class S3LocationSearch(S3Search):
             if "level" in _vars and _vars.level:
                 if _vars.level == "null":
                     level = None
+                elif "|" in _vars.level:
+                    level = _vars.level.split("|")
                 else:
                     level = str.upper(_vars.level)
             else:
@@ -1149,9 +1151,15 @@ class S3LocationSearch(S3Search):
                     query = (field.lower().like("%" + value + "%"))
 
                 if level:
-                    # New LocationSelector
                     resource.add_filter(query)
-                    query = (table.level == level)
+                    # New LocationSelector or Autocomplete
+                    if isinstance (level, list):
+                        query = (table.level.belongs(level))
+                    elif str.upper(level) == "NULLNONE":
+                        level = None
+                        query = (table.level == level)
+                    else:
+                        query = (table.level == level)
 
                 if parent:
                     # New LocationSelector

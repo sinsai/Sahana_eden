@@ -171,7 +171,8 @@ table { border-collapse: collapse }
 
 #modulenav { position: relative;
              margin: 0px; 
-             padding-right: 0.7%; }
+             padding-right: 0.7%; 
+						 z-index: 10;  }
 #modulenav,
 #modulenav li,
 #modulenav ul { list-style: none; }

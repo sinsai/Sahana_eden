@@ -373,6 +373,7 @@ table { border-collapse: collapse }
     float: left;
     width: 100%;         /* width of whole page */
     overflow: hidden;    /* This chops off any overhanging divs */
+    z-index: 0;          /* This keeps drop down menus visible on maps */
 }
 
 /* common column settings */

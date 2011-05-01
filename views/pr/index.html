@@ -70,9 +70,8 @@ $(document).ready(function(){
 {{pass}}
 <script type="text/javascript" language="javascript">//<![CDATA[
 $(document).ready(function(){
-    var gender = {{try:}}[{{for g_opt in pr_gender_opts:}}[{{count = db((db.pr_person.deleted == False) & (db.pr_person.gender == g_opt)).count()}}'{{=XML(pr_gender_opts[g_opt])}}',{{=XML(int(count))}}],{{pass}}]{{except:}}1{{pass}};
-    var age = {{try:}}[{{for a_opt in pr_age_group_opts:}}[{{count = db((db.pr_person.deleted == False) & (db.pr_person.age_group == a_opt)).count()}}'{{=XML(pr_age_group_opts[a_opt])}}',{{=XML(int(count))}}],{{pass}}]{{except:}}0{{pass}};
-
+    var gender = {{try:}}{{=XML(gender)}}{{except:}}0{{pass}};
+    var age = {{try:}}{{=XML(age)}}{{except:}}0{{pass}};
 
     if ( gender ) {
         var plot1 = $.jqplot('chart1', [gender], {

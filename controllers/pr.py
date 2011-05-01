@@ -55,7 +55,7 @@ def shn_menu():
 
 shn_menu()
 
-
+import contrib.simplejson as simplejson
 # -----------------------------------------------------------------------------
 def index():
 
@@ -90,7 +90,7 @@ def index():
                 age.append([str(pr_age_group_opts[a_opt]), int(count)])
 
             total = int(db(db.pr_person.deleted == False).count())
-            output.update(module_name=module_name, gender=gender, age=age, total=total)
+            output.update(module_name=module_name, gender=simplejson.dumps(gender), age=simplejson.dumps(age), total=total)
         if r.representation in shn_interactive_view_formats:
             if not r.component:
                 label = READ

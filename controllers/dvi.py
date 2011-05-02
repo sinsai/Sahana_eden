@@ -90,7 +90,6 @@ def shn_menu():
 
 shn_menu()
 
-import contrib.simplejson as simplejson
 # -----------------------------------------------------------------------------
 def index():
     """ Module's Home Page """
@@ -114,7 +113,7 @@ def index():
     response.title = module_name
     return dict(module_name=module_name,
                 total=total,
-                status=simplejson.dumps(status))
+                status=json.dumps(status))
 
 
 # -----------------------------------------------------------------------------

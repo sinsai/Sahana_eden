@@ -123,7 +123,7 @@ def office():
         if r.representation == "popup":
             organisation = request.vars.organisation_id or session.s3.organisation_id or ""
             if organisation:
-                table.organisation_id.default = organisation
+                r.table.organisation_id.default = organisation
 
         # Cascade the organisation_id from the office to the staff
         if r.record:

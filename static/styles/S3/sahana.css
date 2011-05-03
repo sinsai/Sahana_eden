@@ -866,6 +866,7 @@ div#last_update {
     border-left: 1px solid #c6d1f5;
     border-top: 1px solid #c6d1f5;
     padding: 2px 4px 2px 4px;
+    white-space: nowrap;
 }
 .delete-btn:hover,
 .action-btn:hover {

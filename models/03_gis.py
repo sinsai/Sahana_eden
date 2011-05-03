@@ -729,9 +729,13 @@ def gis_config_onvalidation(form):
     if form.errors:
         return
     
-    # Infer a name for personal configs.
-    if form.request_vars.pe_id:
-        form.vars.name = shn_pentity_represent(form.request_vars.pe_id)
+    try:
+        # Infer a name for personal configs.
+        if "pe_id" in form.request_vars:
+            form.vars.name = shn_pentity_represent(form.request_vars.pe_id)
+    except:
+        # AJAX Save of Viewport from Map
+        pass
 
 # @ToDo: Is this desirable behavior, or let the user select it from the
 # region menu?
@@ -740,8 +744,13 @@ def gis_config_onaccept(form):
         If this is a personal config, set it as the current config.
     """
     
-    if form.request_vars.pe_id and form.vars.id:
-        gis.set_config(form.vars.id, force_update=True)
+    try:
+        if form.request_vars.pe_id and form.vars.id:
+            gis.set_config(form.vars.id, force_update=True)
+    except:
+        # AJAX Save of Viewport from Map
+        pass
+
 
 def gis_config_ondelete(form):
     """

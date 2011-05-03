@@ -437,7 +437,7 @@ def person():
                                           onaccept=address_onaccept)
         else:
             # Only display active volunteers
-            response.s3.filter = (table.id == db.vol_volunteer.person_id) & \
+            response.s3.filter = (r.table.id == db.vol_volunteer.person_id) & \
                                  (db.vol_volunteer.status == 1)
             # Alternate approach: Don't display Staff (Creates Duplicate Rows!)
             #query = (db.org_staff.id > 0)

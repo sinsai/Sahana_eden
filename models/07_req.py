@@ -686,6 +686,23 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
                                      _class = "action-btn",
                                      label = str(T("Find All Matches")), # Change to Fulfil? Match?
                                      )
+
+    # trunk.2090
+    s3xrc.model.configure( table,
+                           create_next = URL(r=request, c="req", f="req_item_inv_item",
+                                                args=["[id]"]),
+                           list_fields = [ "id",
+                                           "item_id",
+                                           "item_pack_id",
+                                           "site_id",
+                                           "quantity",
+                                           "quantity_commit",
+                                           "quantity_transit",
+                                           "quantity_fulfil",
+                                           "comments",
+                                           ],
+                          ) 
+
     #==========================================================================
     # Commitments (Pledges)
     # @ToDo: Update the req_item_id in the commit_item if the req_id of the commit is changed  

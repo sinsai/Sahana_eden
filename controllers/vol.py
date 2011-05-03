@@ -44,12 +44,14 @@ def shn_menu():
         selection = db.pr_group[group_id]
         if selection:
             team_name = shn_pr_group_represent(group_id)
+            menu_teams_sub = [[T("View On Map"), False, aURL(r=request, f="view_team_map", args=[group_id])]]
+            if deployment_settings.has_module("msg"):
+                menu_teams_sub.append([T("Send Notification"), False, aURL(r=request, f="compose_group", vars={"group_id":group_id})])
+
             menu_teams = [
-                ["%s: %s" % (T("Team"), team_name), False, aURL(r=request, f="group", args=[group_id, "read"]),[
-                    [T("View On Map"), False, aURL(r=request, f="view_team_map", args=[group_id])],
-                    [T("Send Notification"), False, aURL(r=request, f="compose_group", vars={"group_id":group_id})],
-                    #[T("Find Volunteers"), False, aURL(r=request, f="skillSearch")],
-                ]],
+                ["%s: %s" % (T("Team"), team_name), False, aURL(r=request, f="group", args=[group_id, "read"]),
+                 menu_teams_sub,
+                ],
             ]
             menu.extend(menu_teams)
 
@@ -67,13 +69,18 @@ def shn_menu():
         selection = db.pr_person[person_id]
         if selection:
             person_name = shn_pr_person_represent(person_id)
-            menu_person = [
-                ["%s: %s" % (T("Person"), person_name), False, aURL(r=request, f="person", args=[person_id, "read"]),[
+            menu_person_sub = [
                     # The default tab is pr_person, which is fine here.
                     [T("Show Details"), False, aURL(r=request, f="person", args=[person_id])],
                     [T("View On Map"), False, aURL(r=request, f="view_map", args=[person_id])],
-                    [T("Send Notification"), False, URL(r=request, f="compose_person", vars={"person_id":person_id})],
-                ]],
+                ]
+            if deployment_settings.has_module("msg"):
+                menu_person_sub.append([T("Send Notification"), False, URL(r=request, f="compose_person", vars={"person_id":person_id})])
+
+            menu_person = [
+                ["%s: %s" % (T("Person"), person_name), False, aURL(r=request, f="person", args=[person_id, "read"]),
+                 menu_person_sub,
+                ],
             ]
             menu.extend(menu_person)
     menu_skills = [

@@ -20,13 +20,20 @@ pr_pe_types = Storage(
     dvi_body = T("Body")
 )
 
+
+pr_pentity_search = s3base.S3PentitySearch(
+            name="pentity_search_simple",
+            label=T("Name and/or ID"),
+            comment=T(""),
+            field=["pe_label"])
+
 resourcename = "pentity"
 tablename = "pr_pentity"
 table = super_entity(tablename, "pe_id", pr_pe_types,
                      Field("pe_label", length=128),
                      migrate=migrate)
 
-s3xrc.model.configure(table, editable=False, deletable=False, listadd=False)
+s3xrc.model.configure(table, editable=False, deletable=False, listadd=False, search_method=pr_pentity_search)
 
 # -----------------------------------------------------------------------------
 def shn_pentity_represent(id, default_label="[No ID Tag]"):
@@ -95,6 +102,8 @@ def shn_pentity_represent(id, default_label="[No ID Tag]"):
 
     return pe_str
 
+# -----------------------------------------------------------------------------
+pr_pentity_search.pentity_represent = shn_pentity_represent
 
 # -----------------------------------------------------------------------------
 pe_label = S3ReusableField("pe_label", length=128,

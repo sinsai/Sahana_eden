@@ -36,6 +36,7 @@
 """
 
 import re
+import gluon.contrib.simplejson as jsonlib
 
 from gluon.storage import Storage
 from gluon.http import HTTP
@@ -55,7 +56,8 @@ __all__ = ["S3SearchWidget",
            "S3SearchLocationWidget",
            "S3Search",
            "S3LocationSearch",
-           "S3PersonSearch"]
+           "S3PersonSearch",
+           "S3PentitySearch"]
 
 # *****************************************************************************
 class S3SearchWidget(object):
@@ -1279,5 +1281,92 @@ class S3PersonSearch(S3Search):
         response.headers["Content-Type"] = "application/json"
         return output
 
+# *****************************************************************************
+class S3PentitySearch(S3Search):
+    """
+        Search method with specifics for person records (full name search)
+    """
+
+    def search_json(self, r, **attr):
+        """
+            Legacy JSON search method (for autocomplete-widgets)
+
+            @param r: the S3Request
+            @param attr: request attributes
+        """
+
+    
+        xml = self.manager.xml
+
+        output = None
+        request = self.request
+        response = self.response
+        resource = self.resource
+        table = self.table
+
+        # Query comes in pre-filtered to accessible & deletion_status
+        # Respect response.s3.filter
+        resource.add_filter(response.s3.filter)
+
+        _vars = request.vars # should be request.get_vars?
+
+        # JQueryUI Autocomplete uses "term" instead of "value"
+        # (old JQuery Autocomplete uses "q" instead of "value")
+        value = _vars.value or _vars.term or _vars.q or None
+
+        # We want to do case-insensitive searches
+        # (default anyway on MySQL/SQLite, but not PostgreSQL)
+        value = value.lower()
+
+        filter = _vars.filter
+        limit = int(_vars.limit or 0)
+
+        # Fields to return
+        if filter and value:
+
+            field = self.db.pr_person.first_name
+            field2 = self.db.pr_person.middle_name
+            field3 = self.db.pr_person.last_name
+
+            if filter == "~":
+                # pr_person Autocomplete
+                if " " in value:
+                    value1, value2 = value.split(" ", 1)
+                    query = (field.lower().like("%" + value1 + "%")) & \
+                            (field2.lower().like("%" + value2 + "%")) | \
+                            (field3.lower().like("%" + value2 + "%"))
+                else:
+                    query = ((field.lower().like("%" + value + "%")) | \
+                            (field2.lower().like("%" + value + "%")) | \
+                            (field3.lower().like("%" + value + "%")))
+            else:
+                output = xml.json_message(False, 400, "Unsupported filter! Supported filters: ~")
+                raise HTTP(400, body=output)
+
+        resource.add_filter(query)
+        resource.add_filter(self.db.pr_person.pe_id == table.pe_id)
+
+        output = resource.exporter.json(resource, start=0, limit=limit,
+                                        fields=[table.pe_id], orderby=field)
+        items = jsonlib.loads(output)
+
+        # AT: group
+        if filter and value:
+            field = self.db.pr_group.name
+            query = field.lower().like("%" + value + "%")
+            resource.clear_query()
+            resource.add_filter(query)
+            resource.add_filter(self.db.pr_group.pe_id == table.pe_id)
+            output = resource.exporter.json(resource, start=0, limit=limit,
+                                        fields=[table.pe_id], orderby=field)
+            items += jsonlib.loads(output)
+
+        items = [ { 'id' : item[u'pe_id'], 
+                    'name' : self.pentity_represent(item[u'pe_id']) } 
+                  for item in items ]
+        output = jsonlib.dumps(items)
+
+        response.headers["Content-Type"] = "application/json"
+        return output
 
 # *****************************************************************************

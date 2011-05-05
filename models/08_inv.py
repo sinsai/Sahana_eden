@@ -940,9 +940,12 @@ if deployment_settings.has_module(module):
 
             @ToDo: Make these Expand/Contract without a server-side call
         """
-        try:
-            show_inv = eval(r.request.vars.show_inv)
-        except:
+        show_inv = r.request.get_vars.show_inv
+        if show_inv == "True":
+            show_inv = True
+        elif show_inv == "False":
+            show_inv = False
+        else:
             show_inv = None
         if show_inv == True or show_inv == False:
             session.s3.show_inv["%s_%s" %  (r.name, r.id)] = show_inv

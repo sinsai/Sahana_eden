@@ -637,7 +637,12 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
                 # Staff Permissions not active
                 pass
 
-            req_id = session.rcvars.req_req
+            if form.vars.req_id:
+                req_id = form.vars.req_id
+            elif "rcvars" in session and session.rcvars.req_req:
+                req_id = session.rcvars.req_req
+            else:
+                raise Exception('can not get req_id')
 
             is_none = dict(commit = True,
                            transit = True,

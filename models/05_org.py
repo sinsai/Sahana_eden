@@ -933,15 +933,18 @@ table.person_id.requires = IS_ONE_OF( db, "pr_person.id",
                                       error_message="Person must be specified!")
 
 def shn_org_staff_represent(staff_id):
-    staff = db(db.org_staff.id == staff_id).select(db.org_staff.title,
-                                                   db.org_office.name,
-                                                   db.pr_person.first_name,
-                                                   db.pr_person.middle_name,
-                                                   db.pr_person.last_name,
-                                                   #@TODO: Fix this (use site_id not office_id)
-                                                   #left = [db.pr_person.on(db.pr_person.id == db.org_staff.person_id),
-                                                   #        db.org_office.on(db.org_office.id == db.org_staff.office_id)]
-                                                  ).first()
+    query = (db.org_staff.id == staff_id) #& \
+            #(db.org_staff.person_id == db.pr_person.id) # person_id is required, isn't it?
+    staff = db(query).select(db.org_staff.title,
+                             db.org_office.name,
+                             db.pr_person.first_name,
+                             db.pr_person.middle_name,
+                             db.pr_person.last_name,
+                             left = [db.pr_person.on(db.pr_person.id == db.org_staff.person_id),
+                                     db.org_site.on(db.org_site.site_id == db.org_staff.site_id),
+                                     db.org_office.on(db.org_office.uuid == db.org_site.uuid)]
+                             ).first()
+
     if staff:
         title = staff.org_staff.title
         office = staff.org_office.name

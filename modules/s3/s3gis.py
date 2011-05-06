@@ -856,7 +856,7 @@ class GIS(object):
                               (_projection.id == _config.projection_id)
                     row = db(query).select(limitby=(0, 1)).first()
                 if row:
-                    config_id = row.id
+                    config_id = row["gis_config"].id
                 else:
                     # No personal config or not logged in. Use site default.
                     config_id = 1

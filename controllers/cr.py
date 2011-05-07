@@ -224,6 +224,7 @@ def shn_shelter_prep(r):
                                                   T("Create a group entry in the registry.")))
                             )
                         )
+                db.pr_presence.pe_id.widget = S3AutocompleteWidget(request, 'pr', 'pentity')
                 # Set defaults
                 db.pr_presence.datetime.default = request.utcnow
                 db.pr_presence.observer.default = s3_logged_in_person()

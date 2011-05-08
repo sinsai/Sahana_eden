@@ -85,6 +85,7 @@ def organisation():
     # Post-processor
     def postp(r, output):
         if r.component_name == "staff" and \
+                isinstance(output, dict) and \
                 deployment_settings.get_aaa_has_staff_permissions():
             addheader = "%s %s." % (STAFF_HELP,
                                     T("Organization"))
@@ -165,6 +166,7 @@ def office():
     # Post-processor
     def postp(r, output):
         if r.component_name == "staff" and \
+                isinstance(output, dict) and \
                 deployment_settings.get_aaa_has_staff_permissions():
             addheader = "%s %s." % (STAFF_HELP,
                                     T("Office"))

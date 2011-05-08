@@ -165,7 +165,7 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
             return NONE
 
     # Reusable Field
-    req_id = S3ReusableField("req_id", db.req_req, sortby="request_date",
+    req_id = S3ReusableField("req_id", db.req_req, sortby="date",
                              requires = IS_ONE_OF(db,
                                                   "req_req.id",
                                                   lambda id: 

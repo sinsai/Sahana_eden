@@ -49,10 +49,16 @@ function s3_gis_dropdown_select(level, force) {
         // Pull down contents of new level of hierarchy by AJAX
         if (level == s3_gis_maxlevel) {
             // Next level = ""
-            var this_url  = s3_gis_url + '/search.json?filter=%3D&field=level&value=nullnone&parent=' + new_id;
+            var this_url  = s3_gis_url + '/search.json?filter=%3D&field=level&value=nullnone';
+            if (new_id) {
+            	this_url += '&parent=' + new_id;
+            }
         } else {
             // Next level = Level + 1
-            var this_url  = s3_gis_url + '/search.json?filter=%3D&field=level&value=L' + (level + 1) + '&parent=' + new_id;
+            var this_url  = s3_gis_url + '/search.json?filter=%3D&field=level&value=L' + (level + 1);
+            if (new_id) {
+            	this_url += '&parent=' + new_id;
+            }
         }
         var options;
         var s3_gis_load_locations = function(data, status) {

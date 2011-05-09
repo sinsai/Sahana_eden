@@ -939,7 +939,7 @@ def gis_location_onvalidation(form):
             location_is_group = response.s3.location_is_group
         else:
             old_location = get_location_info()
-            location_is_group = location.level == "GR"
+            location_is_group = old_location.level == "GR"
         if location_is_group:
             if not _gis.edit_GR:
                 response.error = record_error

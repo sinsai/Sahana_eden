@@ -390,7 +390,14 @@ class S3CRUD(S3Method):
         if not list_fields:
             fields = self.resource.readable_fields()
         else:
-            fields = [table[f] for f in list_fields if f in table.fields]
+            # AT:
+            fields = []
+            for f in list_fields:
+                if '.' in f:
+                    tab, col = f.split('.')
+                    fields.append(self.db.get(tab,None)[col])
+                elif f in table.fields:
+                    fields.append(table[f])
         if not fields:
             fields = []
         if fields[0].name != table.fields[0]:
@@ -815,7 +822,14 @@ class S3CRUD(S3Method):
         if not list_fields:
             fields = self.resource.readable_fields()
         else:
-            fields = [table[f] for f in list_fields if f in table.fields]
+            # AT:
+            fields = []
+            for f in list_fields:
+                if '.' in f:
+                    tab, col = f.split('.')
+                    fields.append(self.db.get(tab,None)[col])
+                elif f in table.fields:
+                    fields.append(table[f])            
         if not fields:
             fields = []
         if fields[0].name != table.fields[0]:
@@ -924,6 +938,9 @@ class S3CRUD(S3Method):
             if session.s3.filter is not None:
                 self.resource.build_query(filter=response.s3.filter,
                                           vars=session.s3.filter)
+                #AT: tentative
+                if self.name in self.manager.model.filters:
+                    self.resource.add_filter(self.manager.model.filters[self.name])
 
             displayrows = totalrows = self.resource.count()
 

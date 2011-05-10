@@ -60,10 +60,11 @@ class S3ResourceModel(object):
         self.config = Storage()
         self.methods = {}
         self.cmethods = {}
+        self.filters = {}
 
     # Components ==============================================================
 
-    def add_component(self, prefix, name, joinby=None, multiple=True):
+    def add_component(self, prefix, name, joinby=None, filterby=None, multiple=True):
         """
             Define a component join
 
@@ -71,6 +72,8 @@ class S3ResourceModel(object):
             @param name: name of the component (=without prefix)
             @param joinby: join key, or dict of join keys
         """
+        if filterby:
+            self.filters[name] = filterby
 
         if joinby:
             tablename = "%s_%s" % (prefix, name)
@@ -101,8 +104,9 @@ class S3ResourceModel(object):
                 raise SyntaxError("Invalid join key(s)")
             self.components[name] = hook
             return component
-        else:
-            raise SyntaxError("Join key(s) must be defined.")
+
+        if not (joinby or filterby):
+             raise SyntaxError("Join key(s) must be defined.")
 
 
     # -------------------------------------------------------------------------

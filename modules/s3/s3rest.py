@@ -2126,6 +2126,13 @@ class S3Request(object):
                     raise KeyError(manager.error)
 
 
+
+        if self.component_name in manager.model.filters:
+            self.resource.add_filter(manager.model.filters[self.component_name])
+
+        if self.name in manager.model.filters:
+            self.resource.add_filter(manager.model.filters[self.name])
+                
     # -------------------------------------------------------------------------
     def unauthorised(self):
         """

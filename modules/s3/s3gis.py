@@ -2705,9 +2705,9 @@ OpenLayers.Util.extend( selectPdfControl, {
             toggleGroup: 'controls',
             allowDepress: true,
             enableToggle: true,
-            pressed: """ + draw_depress + """
+            pressed: %s
         });
-        """ % T("Add Point")
+        """ % (T("Add Point"), draw_depress)
 
 
             if None:

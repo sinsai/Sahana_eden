@@ -512,3 +512,44 @@ deployment_settings.modules = OrderedDict([
     #        module_type = 10
     #    )),
 ])
+
+# AT:
+# custom views
+
+deployment_settings.views = Storage()
+
+deployment_settings.views.pr_presence = Storage(
+    list_fields = [ 'id',
+                    'pr_person.last_name',
+                    'pr_person.first_name',
+                    'pr_person.gender',
+                    'pr_person.age_group',
+                    'orig_id',
+                    'presence_condition',
+                    'datetime', 
+                    'shelter_id', 
+                    'comment'],
+    list_filter = lambda db : db.pr_presence.pe_id == db.pr_person.pe_id
+    )
+
+deployment_settings.views.cr_shelter = Storage(
+    list_fields = ["id",
+                   "name",
+                   "shelter_type_id",
+                   "population",
+                   "capacity",
+                   "address",
+                   "phone"],
+    list_filter = lambda db : None
+    )
+
+deployment_settings.views.pr_person = Storage(
+    list_fields = [ 'id',
+                    'last_name',
+                    'first_name',
+                    'gender',
+                    'age_group',
+                    'location_id',
+                    'comments'],
+    list_filter = lambda db : None
+    )

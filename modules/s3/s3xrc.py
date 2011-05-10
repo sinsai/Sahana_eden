@@ -41,6 +41,7 @@ import sys, datetime, time
 
 from copy import deepcopy
 from gluon.sql import Field
+from gluon.dal import Row
 from gluon.storage import Storage
 from gluon.html import URL, A
 from gluon.http import HTTP, redirect
@@ -138,7 +139,7 @@ class S3ResourceController(object):
 
         # Helpers
         self.query_builder = S3QueryBuilder(self)
-        self.model = S3ResourceModel(self.db)
+        self.model = S3ResourceModel(self.db, environment.deployment_settings.views)
         self.linker = S3ResourceLinker(self)
         self.crud = S3CRUD()
         self.search = S3Search
@@ -503,10 +504,15 @@ class S3ResourceController(object):
         NONE = str(self.T("None")).decode("utf-8")
         cache = self.cache
         fname = field.name
+        tname = field.tablename
 
         # Get the value
         if record is not None:
-            text = val = record[fname]
+            if tname in record and type(record[tname]) is Row:
+                # AT: Row { table0: <Row { field0 : value0, ...} > , table1 : } if row coming from multiple tables
+                text = val = record[tname][fname]
+            else:
+                text = val = record[fname]
         else:
             text = val = value
 

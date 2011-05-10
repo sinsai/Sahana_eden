@@ -41,7 +41,6 @@
     <!-- Location Hierarchy fieldnames -->
     <xsl:variable name="L1">Prefecture</xsl:variable>
     <xsl:variable name="L2">City</xsl:variable>
-    <xsl:variable name="L3">District</xsl:variable>
 
     <xsl:variable name="prefix_shelter">shelter:</xsl:variable>
     <xsl:variable name="prefix_location">JP-</xsl:variable>
@@ -56,11 +55,6 @@
         name="L2"
         match="//kml:Placemark"
         use="./kml:ExtendedData/kml:Data[@name=$L2]/kml:value/text()"/>
-
-    <xsl:key
-        name="L3"
-        match="//kml:Placemark"
-        use="./kml:ExtendedData/kml:Data[@name=$L3]/kml:value/text()"/>
 
     <!-- ****************************************************************** -->
     <xsl:template match="/">
@@ -109,28 +103,17 @@
             <xsl:for-each select="./kml:Data[@name=$L2]">
                 <xsl:call-template name="detail"/>
             </xsl:for-each>
-            <xsl:for-each select="./kml:Data[@name=$L3]">
-                <xsl:call-template name="detail"/>
-            </xsl:for-each>
             <xsl:value-of select="$separator"/>
             <xsl:for-each select="./kml:Data[@name='Name']">
                 <xsl:call-template name="detail"/>
             </xsl:for-each>
         </xsl:attribute>
 
-        <!-- Format produced by Google Fusion
-        e.g. Japan feed: http://www.google.com/intl/ja/crisisresponse/japanquake2011_shelter.kmz -->
         <xsl:for-each select="./kml:Data[@name='Name']">
             <data field="name">
                 <xsl:call-template name="detail"/>
             </data>
         </xsl:for-each>
-        <xsl:for-each select="./kml:Data[@name='Notes']">
-            <data field="comments">
-                <xsl:call-template name="detail"/>
-            </data>
-        </xsl:for-each>
-
         <xsl:for-each select="./kml:Data[@name='Population']">
             <data field="population">
                 <xsl:call-template name="integer"/>
@@ -141,37 +124,25 @@
                 <xsl:call-template name="integer"/>
             </data>
         </xsl:for-each>
-        <xsl:for-each select="./kml:Data[@name='Source']">
+        <data field="comments">
+            <xsl:for-each select="./kml:Data[@name='Notes']">
+                <xsl:call-template name="detail"/>
+            </xsl:for-each>
+            <xsl:for-each select="./kml:Data[@name='LastUpdate']">
+                <xsl:variable name="x">
+                    <xsl:call-template name="detail"/>
+                </xsl:variable>
+                <xsl:if test="$x">
+                    <xsl:text> LastUpdate:</xsl:text>
+                    <xsl:value-of select="$x"/>
+                </xsl:if>
+            </xsl:for-each>
+        </data>
+        <xsl:for-each select="./kml:Data[@name='Sources']">
             <data field="source">
                 <xsl:call-template name="detail"/>
             </data>
         </xsl:for-each>
-        <data field="L0">
-            <xsl:text>Japan</xsl:text>
-        </data>
-        <xsl:for-each select="./kml:Data[@name=$L1]">
-            <data field="L1">
-                <xsl:call-template name="detail"/>
-            </data>
-        </xsl:for-each>
-        <xsl:for-each select="./kml:Data[@name=$L2]">
-            <data field="L2">
-                <xsl:call-template name="detail"/>
-            </data>
-        </xsl:for-each>
-        <xsl:for-each select="./kml:Data[@name=$L3]">
-            <data field="L3">
-                <xsl:call-template name="detail"/>
-            </data>
-        </xsl:for-each>
-        <!-- Date needs converting -->
-        <!--
-        <xsl:for-each select="./kml:Data[@name='UpdateDate']">
-            <xsl:attribute name="modified_on">
-                <xsl:call-template name="detail"/>
-             </xsl:attribute>
-        </xsl:for-each>
-        -->
 
     </xsl:template>
 
@@ -205,9 +176,6 @@
                 <xsl:for-each select="./kml:ExtendedData/kml:Data[@name=$L2]">
                     <xsl:call-template name="detail"/>
                 </xsl:for-each>
-                <xsl:for-each select="./kml:ExtendedData/kml:Data[@name=$L3]">
-                    <xsl:call-template name="detail"/>
-                </xsl:for-each>
                 <xsl:value-of select="$separator"/>
                 <xsl:for-each select="./kml:ExtendedData/kml:Data[@name='Name']">
                     <xsl:call-template name="detail"/>
@@ -219,6 +187,11 @@
                     <xsl:call-template name="detail"/>
                 </xsl:for-each>
             </data>
+            <data field="addr_street">
+                <xsl:for-each select="./kml:ExtendedData/kml:Data[@name='Address']">
+                    <xsl:call-template name="detail"/>
+                </xsl:for-each>
+            </data>
 
             <reference field="parent" resource="gis_location">
                 <xsl:attribute name="uuid">
@@ -227,7 +200,7 @@
                         <xsl:call-template name="detail"/>
                     </xsl:for-each>
                     <xsl:for-each select="./kml:ExtendedData/kml:Data[@name=$L2]">
-                        <xsl:call-template name="detail"/>
+                        <xsl:call-template name="city"/>
                     </xsl:for-each>
                 </xsl:attribute>
             </reference>
@@ -241,48 +214,31 @@
     </xsl:template>
 
     <!-- ****************************************************************** -->
+    <xsl:template name="city">
+        <xsl:variable name="x">
+            <xsl:value-of select="./kml:value/text()"/>
+        </xsl:variable>
+
+        <xsl:choose>
+            <xsl:when test="contains($x,'郡')">
+                <xsl:choose>
+                    <xsl:when test="contains($x,'市') and substring-after($x,'市')=''">
+                        <xsl:value-of select="$x" />
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:value-of select="substring-after($x,'郡')" />
+                    </xsl:otherwise>
+                </xsl:choose>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:value-of select="$x" />
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:template>
+
+    <!-- ****************************************************************** -->
     <!-- Locations Hierarchy -->
     <xsl:template name="locations">
-        <resource name="gis_location" uuid="JP-青森県青森市"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県弘前市"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県八戸市"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県黒石市"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県五所川原市"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県十和田市"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県三沢市"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県むつ市"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県つがる市"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県平川市"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県平内町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県今別町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県蓬田村"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県外ヶ浜町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県鰺ヶ沢町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県深浦町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県西目屋村"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県藤崎町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県大鰐町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県田舎館村"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県板柳町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県鶴田町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県中泊町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県野辺地町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県七戸町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県六戸町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県横浜町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県東北町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県六ケ所村"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県おいらせ町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県大間町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県東通村"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県風間浦村"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県佐井村"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県三戸町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県五戸町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県田子町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県南部町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県階上町"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県新郷村"><reference field="parent" resource="gis_location" uuid="JP-青森県"/></resource>
         <resource name="gis_location" uuid="JP-岩手県盛岡市"><reference field="parent" resource="gis_location" uuid="JP-岩手県"/></resource>
         <resource name="gis_location" uuid="JP-岩手県宮古市"><reference field="parent" resource="gis_location" uuid="JP-岩手県"/></resource>
         <resource name="gis_location" uuid="JP-岩手県大船渡市"><reference field="parent" resource="gis_location" uuid="JP-岩手県"/></resource>
@@ -551,6 +507,85 @@
         <resource name="gis_location" uuid="JP-栃木県高根沢町"><reference field="parent" resource="gis_location" uuid="JP-栃木県"/></resource>
         <resource name="gis_location" uuid="JP-栃木県那須町"><reference field="parent" resource="gis_location" uuid="JP-栃木県"/></resource>
         <resource name="gis_location" uuid="JP-栃木県那珂川町"><reference field="parent" resource="gis_location" uuid="JP-栃木県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県さいたま市西区"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県さいたま市北区"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県さいたま市大宮区"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県さいたま市見沼区"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県さいたま市中央区"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県さいたま市桜区"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県さいたま市浦和区"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県さいたま市南区"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県さいたま市緑区"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県さいたま市岩槻区"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県川越市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県熊谷市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県川口市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県行田市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県秩父市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県所沢市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県飯能市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県加須市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県本庄市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県東松山市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県春日部市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県狭山市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県羽生市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県鴻巣市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県深谷市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県上尾市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県草加市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県越谷市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県蕨市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県戸田市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県入間市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県鳩ヶ谷市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県朝霞市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県志木市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県和光市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県新座市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県桶川市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県久喜市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県北本市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県八潮市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県富士見市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県三郷市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県蓮田市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県坂戸市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県幸手市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県鶴ヶ島市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県日高市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県吉川市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県ふじみ野市"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県伊奈町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県三芳町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県毛呂山町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県越生町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県滑川町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県嵐山町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県小川町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県川島町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県吉見町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県鳩山町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県ときがわ町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県横瀬町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県皆野町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県長瀞町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県小鹿野町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県東秩父村"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県美里町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県神川町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県上里町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県寄居町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県騎西町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県北川辺町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県大利根町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県宮代町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県白岡町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県菖蒲町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県栗橋町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県鷲宮町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県杉戸町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県松伏町"><reference field="parent" resource="gis_location" uuid="JP-埼玉県"/></resource>
         <resource name="gis_location" uuid="JP-新潟県新潟市北区"><reference field="parent" resource="gis_location" uuid="JP-新潟県"/></resource>
         <resource name="gis_location" uuid="JP-新潟県新潟市東区"><reference field="parent" resource="gis_location" uuid="JP-新潟県"/></resource>
         <resource name="gis_location" uuid="JP-新潟県新潟市中央区"><reference field="parent" resource="gis_location" uuid="JP-新潟県"/></resource>
@@ -589,87 +624,6 @@
         <resource name="gis_location" uuid="JP-新潟県刈羽村"><reference field="parent" resource="gis_location" uuid="JP-新潟県"/></resource>
         <resource name="gis_location" uuid="JP-新潟県関川村"><reference field="parent" resource="gis_location" uuid="JP-新潟県"/></resource>
         <resource name="gis_location" uuid="JP-新潟県粟島浦村"><reference field="parent" resource="gis_location" uuid="JP-新潟県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県長野市"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県松本市"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県上田市"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県岡谷市"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県飯田市"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県諏訪市"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県須坂市"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県小諸市"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県伊那市"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県駒ヶ根市"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県中野市"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県大町市"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県飯山市"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県茅野市"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県塩尻市"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県佐久市"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県千曲市"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県東御市"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県安曇野市"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県小海町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県川上村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県南牧村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県南相木村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県北相木村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県佐久穂町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県軽井沢町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県御代田町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県立科町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県青木村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県長和町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県下諏訪町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県富士見町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県原村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県辰野町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県箕輪町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県飯島町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県南箕輪村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県中川村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県宮田村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県松川町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県高森町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県阿南町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県阿智村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県平谷村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県根羽村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県下條村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県売木村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県天龍村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県泰阜村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県喬木村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県豊丘村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県大鹿村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県上松町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県南木曽町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県木祖村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県王滝村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県大桑村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県木曽町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県麻績村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県生坂村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県波田町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県山形村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県朝日村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県筑北村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県池田町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県松川村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県白馬村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県小谷村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県坂城町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県小布施町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県高山村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県山ノ内町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県木島平村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県野沢温泉村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県信州新町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県信濃町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県小川村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県中条村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県飯綱町"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-長野県栄村"><reference field="parent" resource="gis_location" uuid="JP-長野県"/></resource>
-        <resource name="gis_location" uuid="JP-青森県"><reference field="parent" resource="gis_location" uuid="www.sahanafoundation.org/COUNTRY-JP"/></resource>
         <resource name="gis_location" uuid="JP-岩手県"><reference field="parent" resource="gis_location" uuid="www.sahanafoundation.org/COUNTRY-JP"/></resource>
         <resource name="gis_location" uuid="JP-宮城県"><reference field="parent" resource="gis_location" uuid="www.sahanafoundation.org/COUNTRY-JP"/></resource>
         <resource name="gis_location" uuid="JP-秋田県"><reference field="parent" resource="gis_location" uuid="www.sahanafoundation.org/COUNTRY-JP"/></resource>
@@ -677,8 +631,8 @@
         <resource name="gis_location" uuid="JP-福島県"><reference field="parent" resource="gis_location" uuid="www.sahanafoundation.org/COUNTRY-JP"/></resource>
         <resource name="gis_location" uuid="JP-茨城県"><reference field="parent" resource="gis_location" uuid="www.sahanafoundation.org/COUNTRY-JP"/></resource>
         <resource name="gis_location" uuid="JP-栃木県"><reference field="parent" resource="gis_location" uuid="www.sahanafoundation.org/COUNTRY-JP"/></resource>
+        <resource name="gis_location" uuid="JP-埼玉県"><reference field="parent" resource="gis_location" uuid="www.sahanafoundation.org/COUNTRY-JP"/></resource>
         <resource name="gis_location" uuid="JP-新潟県"><reference field="parent" resource="gis_location" uuid="www.sahanafoundation.org/COUNTRY-JP"/></resource>
-        <resource name="gis_location" uuid="JP-長野県"><reference field="parent" resource="gis_location" uuid="www.sahanafoundation.org/COUNTRY-JP"/></resource>
         <resource name="gis_location" uuid="www.sahanafoundation.org/COUNTRY-JP"></resource>
     </xsl:template>
 

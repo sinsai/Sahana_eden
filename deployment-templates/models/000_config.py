@@ -86,15 +86,15 @@ deployment_settings.mail.approver = "useradmin@your.org"
 # Frontpage settings
 # RSS feeds
 deployment_settings.frontpage.rss = [
-    {"title": "Eden",
-     # Trac timeline
-     "url": "http://eden.sahanafoundation.org/timeline?ticket=on&changeset=on&milestone=on&wiki=on&max=50&daysback=90&format=rss"
+    {"title": "Sahana Japan Team",
+     # RSS Feed
+     "url": "https://sites.google.com/site/sahanajapanteam/activity.xml"
     },
     {"title": "Twitter",
-     # @SahanaFOSS
-     "url": "http://twitter.com/statuses/user_timeline/96591754.rss"
+     # @SahanaJP
+     "url": "http://twitter.com/statuses/user_timeline/264612123.rss"
      # Hashtag
-     #url: "http://search.twitter.com/search.atom?q=%23eqnz"
+     #url: "http://twitter.com/#!/search/%23sahanajp"
     }
 ]
 # about sahana
@@ -128,22 +128,22 @@ deployment_settings.twitter.oauth_consumer_secret = ""
 # http://www.loc.gov/standards/iso639-2/php/code_list.php
 deployment_settings.L10n.languages = {
     "en":T("English"),
-    "el":T("Greek"),
+    #"el":T("Greek"),
     "es":T("Spanish"),
     #"fr":T("French"),
     #"pa":T("Punjabi"),
     #"ps":T("Pashto"),
     #"sd":T("Sindhi"),
     "ja":T("Japanese"),
-    "ur":T("Urdu"),
+    #"ur":T("Urdu"),
     "zh-tw":T("Chinese (Taiwan)"),
 }
 # Default language for Language Toolbar (& GIS Locations in future)
-deployment_settings.L10n.default_language = "en"
+deployment_settings.L10n.default_language = "ja"
 # Display the language toolbar
 deployment_settings.L10n.display_toolbar = True
 # Default timezone for users
-deployment_settings.L10n.utc_offset = "UTC +0000"
+deployment_settings.L10n.utc_offset = "UTC +0900"
 # Religions used in Person Registry
 # @ToDo: find a better code
 # http://eden.sahanafoundation.org/ticket/594
@@ -161,7 +161,7 @@ deployment_settings.L10n.religions = {
 # GIS (Map) settings
 # Uncomment this if the deployment is just in a few countries
 # (used in the GIS Location Selector)
-#deployment_settings.gis.countries = ["PK"]
+deployment_settings.gis.countries = ["JP"]
 # Provide a tool to select locations via a map on all forms with location_id
 deployment_settings.gis.map_selector = True
 # Display Resources recorded to Admin-Level Locations on the map
@@ -187,7 +187,7 @@ deployment_settings.gis.location_hierarchy = OrderedDict([
     #("L5", T("Neighbourhood")),  # Currently not supported by testSuite
 ])
 # Maximum hierarchy levels to allow for any map configuration.
-deployment_settings.gis.max_allowed_hierarchy_level = "L4"
+deployment_settings.gis.max_allowed_hierarchy_level = "L3"
 # If the site's default hierarchy needs more than the default maximum levels, 
 # allow other map configurations to have that many levels.
 deployment_settings.gis.max_allowed_hierarchy_level = \
@@ -202,10 +202,10 @@ deployment_settings.gis.default_symbology = "US"
 deployment_settings.gis.default_config_values = Storage(
     name = "Site Map Configuration",
     # Where the map is centered:
-    lat = "51.8",
-    lon = "-1.3",
+    lat = "38.5",
+    lon = "140.6",
     # How close to zoom in initially -- larger is closer.
-    zoom = 7,
+    zoom = 8,
     zoom_levels = 22,
     bbox_min_size = 0.01,
     bbox_inset = 0.007,
@@ -265,7 +265,7 @@ deployment_settings.osm.oauth_consumer_secret = ""
 #deployment_settings.security.map = True
 # Security Policy (defaults to 1 = Simple)
 # http://eden.sahanafoundation.org/wiki/S3AAA#System-widePolicy
-#deployment_settings.security.policy = 4 # Function-ACLs
+deployment_settings.security.policy = 4 # Function-ACLs
 # Should users be allowed to register themselves?
 deployment_settings.security.self_registration = True
 # Use 'soft' deletes
@@ -397,17 +397,17 @@ deployment_settings.modules = OrderedDict([
             module_type = 10
         )),
     # NB Budget module depends on Project Tracking Module
-    ("budget", Storage(
-            name_nice = T("Budgeting Module"),
-            description = T("Allows a Budget to be drawn up"),
-            restricted = False,
-            module_type = 10,
-            resources = Storage(
-                budget_item = {"importer" : True},
-                budget_kit = {"importer" : True},
-                budget_bundle = {"importer" : True},
-            )
-        )),
+    #("budget", Storage(
+    #        name_nice = T("Budgeting Module"),
+    #        description = T("Allows a Budget to be drawn up"),
+    #        restricted = False,
+    #        module_type = 10,
+    #        resources = Storage(
+    #            budget_item = {"importer" : True},
+    #            budget_kit = {"importer" : True},
+    #            budget_bundle = {"importer" : True},
+    #        )
+    #    )),
     ("inv", Storage(
             name_nice = T("Inventory Management"),
             description = T("Receiving and Sending Items"),
@@ -469,12 +469,12 @@ deployment_settings.modules = OrderedDict([
             restricted = False,
             module_type = 2,
         )),
-    ("building", Storage(
-            name_nice = T("Building Assessments"),
-            description = T("Building Safety Assessments"),
-            restricted = False,
-            module_type = 10,
-        )),
+    #("building", Storage(
+    #        name_nice = T("Building Assessments"),
+    #        description = T("Building Safety Assessments"),
+    #        restricted = False,
+    #        module_type = 10,
+    #    )),
     #("delphi", Storage(
     #        name_nice = T("Delphi Decision Maker"),
     #        description = T("Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list."),

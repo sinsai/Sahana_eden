@@ -1742,7 +1742,10 @@ class S3Resource(object):
                 res = []
                 for row in rows:
                     val = row[req.kfield]
-                    res.append({ "@value" : val, "$" : field.represent(val) })
+                    represent = field.represent(val)
+                    if isinstance(represent, A):
+                        represent = represent.components[0]
+                    res.append({ "@value" : val, "$" : represent })
                 return json.dumps({ 'option' : res })
 
             tree = self.xml.get_options(self.prefix,

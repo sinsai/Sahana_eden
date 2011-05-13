@@ -316,6 +316,9 @@ table = db.define_table(tablename,
                         Field("level", length=2, label = T("Level")),
                         Field("parent", "reference gis_location",
                               label = T("Parent"),
+                              # For larger numbers of Locations
+                              widget=S3LocationAutocompleteWidget(request, deployment_settings,
+                                                                  level=gis.allowed_hierarchy_level_keys),
                               ondelete = "RESTRICT"),                   # This form of hierarchy may not work on all Databases
                         Field("path", length=500,
                               label = T("Path"),
@@ -404,6 +407,9 @@ table.lon.comment = A(CONVERSION_TOOL,
                       _style="cursor:pointer;",
                       _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."),
                       _id="gis_location_converter-btn")
+
+# Not use location group
+table.members.writable = table.members.readable = False
 
 table.members.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id",
                                               shn_gis_location_represent_row,

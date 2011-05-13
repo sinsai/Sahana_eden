@@ -610,6 +610,8 @@ class S3Search(S3CRUD):
     """
         RESTful Search Method for S3Resources
     """
+    MAX_RESULTS = 1000
+    MAX_SEARCH_RESULTS = 200
 
     def __init__(self, simple=None, advanced=None, any=False, **args):
         """
@@ -1207,12 +1209,20 @@ class S3LocationSearch(S3Search):
         resource.add_filter(query)
 
         limit = _vars.limit
-        if limit:
-            output = resource.exporter.json(resource, start=0, limit=int(limit),
-                                            fields=fields, orderby=field)
-        else:
-            output = resource.exporter.json(resource,
-                                            fields=fields, orderby=field)
+        if filter == "~":
+            if (not limit or limit > self.MAX_SEARCH_RESULTS) and resource.count() > self.MAX_SEARCH_RESULTS:
+                output = json([dict(id='', name='Search results are over %d. Please input more characters.' % self.MAX_SEARCH_RESULTS)])
+        elif not parent:
+            if (not limit or limit > self.MAX_RESULTS) and resource.count() > self.MAX_RESULTS:
+                output = json([])
+
+        if output is None:
+            if limit:
+                output = resource.exporter.json(resource, start=0, limit=int(limit),
+                                                fields=fields, orderby=field)
+            else:
+                output = resource.exporter.json(resource,
+                                                fields=fields, orderby=field)
 
         response.headers["Content-Type"] = "application/json"
         return output

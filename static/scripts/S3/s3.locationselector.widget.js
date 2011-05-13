@@ -1014,6 +1014,9 @@ $(function(){
                             $('#gis_location_L4').val( s3_gis_l4 );
                             // Open the Specific dropdown filtered to this parent
                             s3_gis_dropdown_select(4, true);
+                            if (undefined == $('#gis_location_ option[value=' + s3_gis_id + ']')[0]) {
+                            	$('#gis_location_').append(new Option(ui.item.name, s3_gis_id));
+                            }
                             // Set the Specific dropdown to this value
                             $('#gis_location_').val( s3_gis_id );
                         }

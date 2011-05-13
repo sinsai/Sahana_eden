@@ -117,6 +117,8 @@ function s3_tb_refresh() {
         var dropdown = options.length
         if ( dropdown ) {
             var append = [];
+        } else {
+            url += '&only_last=1'
         }
         var value_high = 1;
         var represent_high = '';

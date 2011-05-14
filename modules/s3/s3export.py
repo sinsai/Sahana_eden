@@ -375,21 +375,30 @@ class S3Exporter(object):
 
         output = StringIO.StringIO()
 
-        items = db(query).select(table.ALL)
+        # items = db(query).select(table.ALL)
+
+        fields = None
+        if list_fields:
+            # AT:
+            fields = []
+            for f in list_fields:
+                if '.' in f:
+                    tab, col = f.split('.')
+                    fields.append(self.db.get(tab,None)[col])
+                elif f in table.fields:
+                    fields.append(table[f])
+        if fields and len(fields) == 0:
+            fields.append(table.id)
+        if not fields:
+            fields = [table[f] for f in table.fields if table[f].readable]
+
+        items = db(query).select(*fields)
 
         book = xlwt.Workbook(encoding="utf-8")
         sheet1 = book.add_sheet(str(table))
         # Header row
         row0 = sheet1.row(0)
         cell = 0
-
-        fields = None
-        if list_fields:
-            fields = [table[f] for f in list_fields if table[f].readable]
-        if fields and len(fields) == 0:
-            fields.append(table.id)
-        if not fields:
-            fields = [table[f] for f in table.fields if table[f].readable]
 
         for field in fields:
             row0.write(cell, str(field.label), xlwt.easyxf("font: bold True;"))

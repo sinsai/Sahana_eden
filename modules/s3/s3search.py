@@ -60,6 +60,9 @@ __all__ = ["S3SearchWidget",
            "S3PentitySearch"]
 
 # *****************************************************************************
+MAX_RESULTS = 1000
+MAX_SEARCH_RESULTS = 200
+
 class S3SearchWidget(object):
     """
         Search Widget for interactive search (base class)
@@ -610,8 +613,6 @@ class S3Search(S3CRUD):
     """
         RESTful Search Method for S3Resources
     """
-    MAX_RESULTS = 1000
-    MAX_SEARCH_RESULTS = 200
 
     def __init__(self, simple=None, advanced=None, any=False, **args):
         """
@@ -991,6 +992,8 @@ class S3Search(S3CRUD):
 
         _vars = request.vars
 
+        limit = int(_vars.limit or 0)
+
         output = None
 
         # JQueryUI Autocomplete uses "term" instead of "value"
@@ -1000,8 +1003,6 @@ class S3Search(S3CRUD):
         # We want to do case-insensitive searches
         # (default anyway on MySQL/SQLite, but not PostgreSQL)
         value = value.lower()
-
-        limit = int(_vars.limit or 0)
 
         if _vars.field and _vars.filter and value:
             fieldname = str.lower(_vars.field)
@@ -1035,8 +1036,17 @@ class S3Search(S3CRUD):
                 raise HTTP(400, body=output)
 
             resource.add_filter(query)
-            output = resource.exporter.json(resource, start=0, limit=limit,
-                                            fields=fields, orderby=field)
+
+            if filter == "~":
+                if (not limit or limit > MAX_SEARCH_RESULTS) and resource.count() > MAX_SEARCH_RESULTS:
+                   output = json([dict(id="", name="Search results are over %d. Please input more characters." % MAX_SEARCH_RESULTS)])
+
+            if output is None:
+                output = resource.exporter.json(resource,
+                                                start=0,
+                                                limit=limit,
+                                                fields=fields,
+                                                orderby=field)
             response.headers["Content-Type"] = "application/json"
 
         else:
@@ -1074,6 +1084,8 @@ class S3LocationSearch(S3Search):
         resource.add_filter(response.s3.filter)
 
         _vars = request.vars
+
+        limit = int(_vars.limit or 0)
 
         # JQueryUI Autocomplete uses "term" instead of "value"
         # (old JQuery Autocomplete uses "q" instead of "value")
@@ -1208,12 +1220,11 @@ class S3LocationSearch(S3Search):
 
         resource.add_filter(query)
 
-        limit = _vars.limit
         if filter == "~":
-            if (not limit or limit > self.MAX_SEARCH_RESULTS) and resource.count() > self.MAX_SEARCH_RESULTS:
-                output = json([dict(id='', name='Search results are over %d. Please input more characters.' % self.MAX_SEARCH_RESULTS)])
+            if (not limit or limit > MAX_SEARCH_RESULTS) and resource.count() > MAX_SEARCH_RESULTS:
+                output = json([dict(id="", name="Search results are over %d. Please input more characters." % MAX_SEARCH_RESULTS)])
         elif not parent:
-            if (not limit or limit > self.MAX_RESULTS) and resource.count() > self.MAX_RESULTS:
+            if (not limit or limit > MAX_RESULTS) and resource.count() > MAX_RESULTS:
                 output = json([])
 
         if output is None:
@@ -1293,8 +1304,17 @@ class S3PersonSearch(S3Search):
                 raise HTTP(400, body=output)
 
         resource.add_filter(query)
-        output = resource.exporter.json(resource, start=0, limit=limit,
-                                        fields=fields, orderby=field)
+
+        if filter == "~":
+            if (not limit or limit > MAX_SEARCH_RESULTS) and resource.count() > MAX_SEARCH_RESULTS:
+               output = json([dict(id="", name="Search results are over %d. Please input more characters." % MAX_SEARCH_RESULTS)])
+
+        if output is None:
+            output = resource.exporter.json(resource,
+                                            start=0,
+                                            limit=limit,
+                                            fields=fields,
+                                            orderby=field)
 
         response.headers["Content-Type"] = "application/json"
         return output
@@ -1302,7 +1322,7 @@ class S3PersonSearch(S3Search):
 # *****************************************************************************
 class S3PentitySearch(S3Search):
     """
-        Search method with specifics for person records (full name search)
+        Search method with specifics for Pentity records (full name search)
     """
 
     def search_json(self, r, **attr):

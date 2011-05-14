@@ -408,9 +408,6 @@ table.lon.comment = A(CONVERSION_TOOL,
                       _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."),
                       _id="gis_location_converter-btn")
 
-# Not use location group
-table.members.writable = table.members.readable = False
-
 table.members.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id",
                                               shn_gis_location_represent_row,
                                               multiple=True))

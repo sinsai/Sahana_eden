@@ -15,6 +15,8 @@ response.menu_options = [
         #[T("List"), False, URL(r=request, f="location")],
         [T("Search"), False, URL(r=request, f="location", args="search")],
         [T("Add"), False, URL(r=request, f="location", args="create")],
+        #[T("Add Location"), False, URL(r=request, f="location", args="create")],
+        #[T("Add Location Group"), False, URL(r=request, f="location", args="create", vars={"group": 1})],
         #[T("Geocode"), False, URL(r=request, f="geocode_manual")],
     ]],
     [T("Fullscreen Map"), False, URL(r=request, f="map_viewing_client")],
@@ -202,6 +204,9 @@ def location():
                 response.s3.location_is_group = False
 
         if r.interactive:
+            if not "group" in r.request.vars:
+                # Hide the Members List (a big download when many records are entered)
+                table.members.writable = table.members.readable = False
             # Don't show street address, postcode for hierarchy on read or update.
             if r.method != "create" and r.id:
                 try:

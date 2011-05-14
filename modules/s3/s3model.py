@@ -48,7 +48,7 @@ class S3ResourceModel(object):
         S3 Model extensions
     """
 
-    def __init__(self, db):
+    def __init__(self, db, views):
         """
             Constructor
 
@@ -60,6 +60,8 @@ class S3ResourceModel(object):
         self.config = Storage()
         self.methods = {}
         self.cmethods = {}
+        self.filters = {}
+        self.views = views
 
     # Components ==============================================================
 
@@ -308,8 +310,11 @@ class S3ResourceModel(object):
 
         cfg = self.config.get(table._tablename, Storage())
         cfg.update(attr)
+        if self.views and table._tablename in self.views:
+            cfg.list_fields = self.views[table._tablename].list_fields
+            _, name = table._tablename.split("_", 1)
+            self.filters[name] = self.views[table._tablename].list_filter(self.db)
         self.config[table._tablename] = cfg
-
 
     # -------------------------------------------------------------------------
     def get_config(self, table, key, default=None):

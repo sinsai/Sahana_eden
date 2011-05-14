@@ -324,10 +324,10 @@ def commit_req():
                  )
 
     # Create a new commit record
-    commit_id = db.req_commit.insert( date = request.utcnow,
-                                      req_id = req_id,
-                                      site_id = site_id,
-                                      )
+    # commit_id = db.req_commit.insert( date = request.utcnow,
+    #                                   req_id = req_id,
+    #                                   site_id = site_id,
+    #                                   )
 
     # Only select items which are in the warehouse
     req_items = db( (db.req_req_item.req_id == req_id) & \
@@ -343,6 +343,8 @@ def commit_req():
                             db.inv_inv_item.quantity,
                             db.inv_inv_item.item_pack_id)
 
+    commit_id = None
+
     for req_item in req_items:
         req_item_quantity = req_item.req_req_item.quantity * \
                         req_item.req_req_item.pack_quantity
@@ -357,6 +359,12 @@ def commit_req():
         commit_item_quantity = commit_item_quantity / req_item.req_req_item.pack_quantity
 
         if commit_item_quantity:
+            if not commit_id:
+                commit_id = db.req_commit.insert( date = request.utcnow,
+                                                  req_id = req_id,
+                                                  site_id = site_id,
+                                                  )
+
             commit_item_id = db.req_commit_item.insert( commit_id = commit_id,
                                         req_item_id = req_item.req_req_item.id,
                                         item_pack_id = req_item.req_req_item.item_pack_id,
@@ -367,12 +375,22 @@ def commit_req():
             session.rcvars.req_commit_item = commit_item_id
             shn_commit_item_onaccept(None)
 
-    redirect(URL(r = request,
-                 c = "req",
-                 f = "commit",
-                 args = [commit_id, "commit_item"]
+    if commit_id:
+        redirect(URL(r = request,
+                     c = "req",
+                     f = "commit",
+                     args = [commit_id, "commit_item"]
+                     )
                  )
-             )
+    else:
+        session.error = T("No matching items for this request")
+        office_id = db(db.org_office.site_id == site_id).select(
+                        db.org_office.id,
+                        limitby=(0, 1))[0]
+        redirect(URL(r = request,
+                     c = "inv",
+                     f = "req_match", 
+                     vars = dict(viewing = ("org_office.%i" % office_id))))
 
 #==============================================================================#
 def send_req():

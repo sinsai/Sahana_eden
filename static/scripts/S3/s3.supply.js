@@ -159,7 +159,7 @@ $(document).ready(function() {
 			
 			//Get the req_item_id
 			var UpdateURL = $('.action-btn', DIV.parent().parent().parent()).attr('href');
-			var re = /req_item\/(.*)\//i;
+			var re = /req_item\/([0-9]+)/i;
 			var req_item_id = re.exec(UpdateURL)[1];
 			var url = S3.Ap.concat('/', App, '/', ShipmentType, '_item_json/', req_item_id);	
 			//var url = S3.Ap.concat('/', App, '/', ShipmentType, '_item.s3json?/', 

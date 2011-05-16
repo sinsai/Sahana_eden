@@ -808,7 +808,7 @@ class S3CRUD(S3Method):
             try:
                 start = int(start)
                 limit = int(limit)
-            except ValueError:
+            except (ValueError, TypeError):# TypeError if start is None
                 start = None
                 limit = None # use default
         else:

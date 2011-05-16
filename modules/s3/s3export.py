@@ -91,7 +91,8 @@ class S3Exporter(object):
             dereference=True,
             stylesheet=None,
             as_json=False,
-            pretty_print=False, **args):
+            pretty_print=False,
+            allow_all=False, **args):
         """
         Export a resource as S3XML
 
@@ -107,6 +108,8 @@ class S3Exporter(object):
         @param stylesheet: path to the XSLT stylesheet (if required)
         @param as_json: represent the XML tree as JSON
         @param pretty_print: insert newlines/indentation in the output
+        @param allow_all: bool: allow to return all records even if
+                          number of records is over limiting value
         @param args: dict of arguments to pass to the XSLT stylesheet
 
         """
@@ -115,6 +118,9 @@ class S3Exporter(object):
 
         args = Storage(args)
         xml = self.manager.xml
+
+        if not allow_all:
+            limit = self._overwrite_limit(start, limit)
 
         # Export as element tree
         tree = self.manager.export_tree(resource,
@@ -175,7 +181,13 @@ class S3Exporter(object):
             response.headers["Content-Type"] = contenttype(".csv")
             response.headers["Content-disposition"] = "attachment; filename=%s" % filename
 
-        return str(db(query).select())
+        limit = self._overwrite_limit()
+        if limit is None:
+            rows = db(query).select()
+        else:
+            rows = db(query).select(resource.table.ALL, limitby=(0, limit))
+
+        return str(rows)
 
 
     # -------------------------------------------------------------------------
@@ -462,6 +474,7 @@ class S3Exporter(object):
         if orderby is not None:
             attributes.update(orderby=orderby)
 
+        limit = self._overwrite_limit(start, limit)
         limitby = resource.limitby(start=start, limit=limit)
         if limitby is not None:
             attributes.update(limitby=limitby)
@@ -474,5 +487,17 @@ class S3Exporter(object):
 
         return rows.json()
 
+
+    # -------------------------------------------------------------------------
+    def _overwrite_limit(self, start=None, limit=None):
+        max_results = self.manager.auth.deployment_settings.get_limiter('exporter')
+
+        if max_results is None \
+          or (limit and limit <= max_results) \
+          or (not limit and start is not None) \
+          or self.manager.auth.s3_has_role(1):
+            return limit
+
+        return max_results
 
 # *****************************************************************************

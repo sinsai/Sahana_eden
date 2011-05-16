@@ -308,3 +308,10 @@ class S3Config(Storage):
         #        }
             }
         return fieldtype_properties
+
+    # limit response for scalability
+    def get_limiter(self, key):
+        if self.limiter:
+            return self.limiter.get(key, None)
+        else:
+            return None

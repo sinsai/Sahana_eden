@@ -1435,7 +1435,8 @@ class S3Resource(object):
         return exporter(self,
                         stylesheet=stylesheet,
                         as_json=as_json,
-                        pretty_print=pretty_print, **args)
+                        pretty_print=pretty_print,
+                        allow_all=True, **args)
 
 
     # -------------------------------------------------------------------------

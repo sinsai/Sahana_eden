@@ -567,3 +567,8 @@ deployment_settings.views.org_organisation = Storage(
     list_filter = lambda db : None
     )
 """
+
+deployment_settings.limiter = Storage()
+
+#Example of limiter
+#deployment_settings.limiter.exporter = 1000

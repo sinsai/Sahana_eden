@@ -637,7 +637,7 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
                 # Staff Permissions not active
                 pass
 
-            if form.vars.req_id:
+            if form and form.vars.req_id:
                 req_id = form.vars.req_id
             elif "rcvars" in session and session.rcvars.req_req:
                 req_id = session.rcvars.req_req
@@ -887,6 +887,7 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("inv
 
             #Update status_commit of the req record
             session.rcvars.req_req_item = r_req_item.id
+            session.rcvars.req_req = r_req_item.req_id
             shn_req_item_onaccept(None)
 
 

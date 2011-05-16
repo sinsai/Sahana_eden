@@ -151,8 +151,8 @@ def inv_item_quantity():
 #------------------------------------------------------------------------------
 def inv_item_packs():
     response.headers["Content-Type"] = "text/x-json"
-    return db( (db.inv_inv_item.id == request.args[0]) & \
-               (db.inv_inv_item.item_id == db.supply_item_pack.item_id)
+    return db( (db.req_req_item.id == request.args[0]) & \
+               (db.req_req_item.item_id == db.supply_item_pack.item_id)
               ).select( db.supply_item_pack.id,
                         db.supply_item_pack.name,
                         db.supply_item_pack.quantity).json()

@@ -1043,13 +1043,16 @@ class S3XML(object):
                            p = None
                 else:
                     p = None
-                opts = self.get_field_options(table, f, parent=p)
                 field.set(self.ATTRIBUTE.name, f)
                 field.set(self.ATTRIBUTE.type, ftype)
                 field.set(self.ATTRIBUTE.readable, str(readable))
                 field.set(self.ATTRIBUTE.writable, str(writable))
-                has_options = str(opts is not None and
-                                  len(opts) and True or False)
+                if p is None:
+                    has_options = self.has_option(table, f) and 'True' or 'False'
+                else:
+                    opts = self.get_field_options(table, f, parent=p)
+                    has_options = str(opts is not None and
+                                      len(opts) and True or False)
                 field.set(self.ATTRIBUTE.has_options, has_options)
                 if labels:
                     label = str(table[f].label).decode("utf-8")
@@ -1431,5 +1434,32 @@ class S3XML(object):
 
         return "%s}" % output
 
+
+    # -------------------------------------------------------------------------
+    @classmethod
+    def has_option(cls, table, fieldname):
+        """
+        Return the field has options or not
+
+        @param table: the table
+        @param fieldname: the fieldname
+        @return: bool
+
+        """
+
+        ret = False
+        if fieldname in table.fields:
+            field = table[fieldname]
+            requires = field.requires
+            if not isinstance(requires, (list, tuple)):
+                requires = [requires]
+            if requires:
+                r = requires[0]
+                if isinstance(r, IS_EMPTY_OR):
+                    r = r.other
+
+                ret = hasattr(r, 'options')
+
+        return ret
 
 # *****************************************************************************

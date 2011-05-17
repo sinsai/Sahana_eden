@@ -18,6 +18,7 @@ import re
 # For file moves
 import shutil
 import os
+from os.path import abspath, basename, dirname
 
 def mergeCSS(inputFilenames, outputFilename):
     output = ""
@@ -80,6 +81,31 @@ def compressCSS(inputFilename, outputFilename):
 
     file(outputFilename, "w").write(_output)
     return
+
+def setPath():
+    filename = 'colorbox.css'
+
+    static_path = dirname(dirname(dirname(abspath(__file__))))
+    target = os.path.join(static_path, 'styles', 'S3', filename)
+    app = basename(dirname(static_path))
+    if app != 'eden':
+        f = file(target, 'r')
+        output = f.read()
+        f.close()
+
+        output = re.sub(r'src=\/\w+\/static\/', 'src=/%s/static/' % app, output)
+        f = file(filename, 'w')
+        f.write(output)
+        f.close()
+
+        # Move files to correct locations
+        print "Deleting old %s." % filename
+        try:
+            os.remove(target)
+        except:
+            pass
+        print "Moving new %s." % filename
+        shutil.move(filename, target)
 
 def dojs(dogis = False):
     """ Minifies the JavaScript """
@@ -272,6 +298,9 @@ def docss():
         listCSS.append("../../styles/%s" % file)
 
     outputFilenameCSS = "sahana.min.css"
+
+    # Set real path
+    setPath()
 
     # Merge CSS files
     print "Merging Core styles."

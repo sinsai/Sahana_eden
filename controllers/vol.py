@@ -60,6 +60,7 @@ def shn_menu():
             [T("List"), False, aURL(r=request, f="person")],
             [T("Search"), False, aURL(r=request, f="person", args=["search"])],
             [T("Add"), False, aURL(p="create", r=request, f="person", args="create")],
+            [T("Gantt Chart"), False, aURL(r=request, f="gantt")],
             #[T("Find Volunteers"), False, aURL(r=request, f="skillSearch")],
         ]]
     ]
@@ -1342,3 +1343,113 @@ def compose_group():
                            title_name="Send a message to a team of volunteers")
 
 # -----------------------------------------------------------------------------
+def gantt():
+    period = 14
+    today = datetime.date.today()
+    end_day = today + datetime.timedelta(period)
+
+    query = (db.vol_volunteer.status == 1) \
+          & (db.vol_volunteer.date_avail_start <= end_day) \
+          & (db.vol_volunteer.date_avail_end >= today)
+
+    if "location_id" in request.vars:
+        try:
+            location_id = int(request.vars.location_id)
+        except (TypeError, ValueError):
+            raise HTTP(400)
+
+        query = query & (db.vol_volunteer.location_id == location_id)
+    else:
+        location_id = None
+
+    rows = db(query).select(db.vol_volunteer.location_id,
+                            db.vol_volunteer.date_avail_start,
+                            db.vol_volunteer.date_avail_end,
+                            db.pr_person.id,
+                            db.pr_person.first_name,
+                            db.pr_person.last_name,
+                            db.pr_person.gender,
+                            db.gis_location.name,
+                            left=[db.pr_person.on(db.pr_person.id == db.vol_volunteer.person_id),
+                                  db.gis_location.on(db.gis_location.id == db.vol_volunteer.location_id)],
+                            orderby=[db.vol_volunteer.location_id, db.pr_person.id])
+    
+    if len(rows) > 0:
+        chart = TABLE(_class='display gantt')
+
+        # Header
+        tr = TR(TH(' '))
+        tr.append(TH('%d/%d' % (today.month, today.day)))
+        days = [today]
+
+        for x in range(1, period - 1):
+            next_day = today + datetime.timedelta(x)
+            tr.append(TH('%d/%d' % (next_day.month, next_day.day)))
+            days.append(next_day)
+
+        tr.append(TH('%d/%d' % (end_day.month, end_day.day)))
+        days.append(end_day)
+        chart.append(THEAD(tr))
+
+        # Init counter
+        counter = [0 for x in range(period)]
+        cnt_fem = counter[:]
+        cnt_mal = counter[:]
+
+        # Table Body
+        body = TBODY()
+        for vol in rows:
+            # Group by location
+            if vol.vol_volunteer.location_id != location_id:
+                location_id = vol.vol_volunteer.location_id
+                body.append(TR(TD(A(vol.gis_location.name,
+                                    _href = URL(r=request,
+                                                vars={'location_id':location_id})),
+                                  _colspan = period + 1,
+                                  _class = 'location')))
+
+            tr = TR()
+            tr.append(TH(A('%s %s' % (vol.pr_person.first_name,
+                                      vol.pr_person.last_name),
+                           _href = URL(r=request,
+                                       f='person',
+                                       args=[vol.pr_person.id]))))
+            for x in range(0, period):
+                if vol.vol_volunteer.date_avail_start <= days[x] \
+                 and vol.vol_volunteer.date_avail_end >= days[x]:
+                    counter[x] += 1
+                    td = TD('*')
+                    if vol.pr_person.gender == 2:
+                        td.update(_class='fem')
+                        cnt_fem[x] += 1
+                    elif vol.pr_person.gender == 3:
+                        td.update(_class='mal')
+                        cnt_mal[x] += 1
+                else:
+                    td = TD(' ')
+                tr.append(td)
+
+            body.append(tr)
+
+        chart.append(body)
+
+        # Footer
+        total = TR(TH(T('Total')))
+        total_fem = TR(TH(T("female")))
+        total_mal = TR(TH(T("male")))
+        for x in range(0, period):
+            total.append(TD(counter[x]))
+            total_fem.append(TD(cnt_fem[x]))
+            total_mal.append(TD(cnt_mal[x]))
+
+        chart.append(TFOOT(total, total_fem, total_mal))
+    else:
+        chart = None
+
+    if "location_id" in request.vars and chart:
+        title = '%s - %s' % (T('Gantt Chart'), vol.gis_location.name)
+    else:
+        title = T('Gantt Chart')
+    
+    output = dict(title = title, chart = chart)
+    return output

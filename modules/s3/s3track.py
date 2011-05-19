@@ -186,7 +186,8 @@ class S3Trackable(object):
                 fields.append(cls.TRACK_ID)
                 return fields
             elif hasattr(trackable, "update_record") or \
-                    isinstance(trackable, Table):
+                 isinstance(trackable, Table) or \
+                 isinstance(trackable, Row):
                 return fields
         except:
             pass

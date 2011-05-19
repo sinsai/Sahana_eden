@@ -1,0 +1,27 @@
+{{extend "layout.html"}}
+<style type="text/css">
+table.gantt thead th {
+ padding: 3px 10px;
+ cursor: auto;
+}
+table.gantt tbody th {
+ white-space: nowrap;
+}
+td.location {
+ text-align: center;
+}
+td.fem {
+ background-color:#FFCCFF;
+}
+td.mal {
+ background-color:#D3D6FF;
+}
+table.gantt tfoot {
+ border-top: solid 5px #FFFFFF;
+}
+table.gantt tfoot td {
+ background-color:#EEEEEE;
+}
+</style>
+<h1>{{=title}}</h1>
+{{if chart:}}{{=chart}}{{pass}}

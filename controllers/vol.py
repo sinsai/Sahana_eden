@@ -1346,7 +1346,7 @@ def compose_group():
 def gantt():
     period = 14
     today = datetime.date.today()
-    end_day = today + datetime.timedelta(period)
+    end_day = today + datetime.timedelta(period - 1)
 
     query = (db.vol_volunteer.status == 1) \
           & (db.vol_volunteer.date_avail_start <= end_day) \

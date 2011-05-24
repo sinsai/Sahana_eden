@@ -135,8 +135,8 @@ def activity():
     table = db[tablename]
 
     tabs = [
-            (T("Details"), None),
-            (T("Requests"), "req"),
+            #(T("Details"), None),
+            #(T("Requests"), "req"),
             #(T("Shipments To"), "rms_req"),
            ]
     rheader = lambda r: shn_activity_rheader(r, tabs)

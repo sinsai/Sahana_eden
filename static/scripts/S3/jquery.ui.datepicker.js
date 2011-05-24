@@ -1,5 +1,5 @@
 /*
- * jQuery UI Datepicker @VERSION
+ * jQuery UI Datepicker 1.8.12
  *
  * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
  * Dual licensed under the MIT or GPL Version 2 licenses.
@@ -12,7 +12,7 @@
  */
 (function( $, undefined ) {
 
-$.extend($.ui, { datepicker: { version: "@VERSION" } });
+$.extend($.ui, { datepicker: { version: "1.8.12" } });
 
 var PROP_NAME = 'datepicker';
 var dpuuid = new Date().getTime();
@@ -656,9 +656,7 @@ $.extend(Datepicker.prototype, {
 				}
 			};
 			inst.dpDiv.zIndex($(input).zIndex()+1);
-
-			// DEPRECATED: after BC for 1.8.x $.effects[ showAnim ] is not needed
-			if ( $.effects && ( $.effects.effect[ showAnim ] || $.effects[ showAnim ] ) )
+			if ($.effects && $.effects[showAnim])
 				inst.dpDiv.show(showAnim, $.datepicker._get(inst, 'showOptions'), duration, postProcess);
 			else
 				inst.dpDiv[showAnim || 'show']((showAnim ? duration : null), postProcess);
@@ -783,9 +781,7 @@ $.extend(Datepicker.prototype, {
 				$.datepicker._tidyDialog(inst);
 				this._curInst = null;
 			};
-
-			// DEPRECATED: after BC for 1.8.x $.effects[ showAnim ] is not needed
-			if ( $.effects && ( $.effects.effect[ showAnim ] || $.effects[ showAnim ] ) )
+			if ($.effects && $.effects[showAnim])
 				inst.dpDiv.hide(showAnim, $.datepicker._get(inst, 'showOptions'), duration, postProcess);
 			else
 				inst.dpDiv[(showAnim == 'slideDown' ? 'slideUp' :
@@ -1579,40 +1575,42 @@ $.extend(Datepicker.prototype, {
 		if (!showMonthAfterYear)
 			html += monthHtml + (secondary || !(changeMonth && changeYear) ? '&#xa0;' : '');
 		// year selection
-		inst.yearshtml = '';
-		if (secondary || !changeYear)
-			html += '<span class="ui-datepicker-year">' + drawYear + '</span>';
-		else {
-			// determine range of years to display
-			var years = this._get(inst, 'yearRange').split(':');
-			var thisYear = new Date().getFullYear();
-			var determineYear = function(value) {
-				var year = (value.match(/c[+-].*/) ? drawYear + parseInt(value.substring(1), 10) :
-					(value.match(/[+-].*/) ? thisYear + parseInt(value, 10) :
-					parseInt(value, 10)));
-				return (isNaN(year) ? thisYear : year);
-			};
-			var year = determineYear(years[0]);
-			var endYear = Math.max(year, determineYear(years[1] || ''));
-			year = (minDate ? Math.max(year, minDate.getFullYear()) : year);
-			endYear = (maxDate ? Math.min(endYear, maxDate.getFullYear()) : endYear);
-			inst.yearshtml += '<select class="ui-datepicker-year" ' +
-				'onchange="DP_jQuery_' + dpuuid + '.datepicker._selectMonthYear(\'#' + inst.id + '\', this, \'Y\');" ' +
-				'onclick="DP_jQuery_' + dpuuid + '.datepicker._clickMonthYear(\'#' + inst.id + '\');"' +
-				'>';
-			for (; year <= endYear; year++) {
-				inst.yearshtml += '<option value="' + year + '"' +
-					(year == drawYear ? ' selected="selected"' : '') +
-					'>' + year + '</option>';
-			}
-			inst.yearshtml += '</select>';
-			//when showing there is no need for later update
-			if( ! $.browser.mozilla ){
-				html += inst.yearshtml;
-				inst.yearshtml = null;
-			} else {
-				// will be replaced later with inst.yearshtml
-				html += '<select class="ui-datepicker-year"><option value="' + drawYear + '" selected="selected">' + drawYear + '</option></select>';
+		if ( !inst.yearshtml ) {
+			inst.yearshtml = '';
+			if (secondary || !changeYear)
+				html += '<span class="ui-datepicker-year">' + drawYear + '</span>';
+			else {
+				// determine range of years to display
+				var years = this._get(inst, 'yearRange').split(':');
+				var thisYear = new Date().getFullYear();
+				var determineYear = function(value) {
+					var year = (value.match(/c[+-].*/) ? drawYear + parseInt(value.substring(1), 10) :
+						(value.match(/[+-].*/) ? thisYear + parseInt(value, 10) :
+						parseInt(value, 10)));
+					return (isNaN(year) ? thisYear : year);
+				};
+				var year = determineYear(years[0]);
+				var endYear = Math.max(year, determineYear(years[1] || ''));
+				year = (minDate ? Math.max(year, minDate.getFullYear()) : year);
+				endYear = (maxDate ? Math.min(endYear, maxDate.getFullYear()) : endYear);
+				inst.yearshtml += '<select class="ui-datepicker-year" ' +
+					'onchange="DP_jQuery_' + dpuuid + '.datepicker._selectMonthYear(\'#' + inst.id + '\', this, \'Y\');" ' +
+					'onclick="DP_jQuery_' + dpuuid + '.datepicker._clickMonthYear(\'#' + inst.id + '\');"' +
+					'>';
+				for (; year <= endYear; year++) {
+					inst.yearshtml += '<option value="' + year + '"' +
+						(year == drawYear ? ' selected="selected"' : '') +
+						'>' + year + '</option>';
+				}
+				inst.yearshtml += '</select>';
+				//when showing there is no need for later update
+				if( ! $.browser.mozilla ){
+					html += inst.yearshtml;
+					inst.yearshtml = null;
+				} else {
+					// will be replaced later with inst.yearshtml
+					html += '<select class="ui-datepicker-year"><option value="' + drawYear + '" selected="selected">' + drawYear + '</option></select>';
+				}
 			}
 		}
 		html += this._get(inst, 'yearSuffix');
@@ -1768,7 +1766,7 @@ $.fn.datepicker = function(options){
 $.datepicker = new Datepicker(); // singleton instance
 $.datepicker.initialized = false;
 $.datepicker.uuid = new Date().getTime();
-$.datepicker.version = "@VERSION";
+$.datepicker.version = "1.8.12";
 
 // Workaround for #4055
 // Add another global to avoid noConflict issues with inline event handlers

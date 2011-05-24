@@ -251,5 +251,7 @@ $(document).ready(function() {
             return false;
         }
     });
+    // Delay in milliseconds (to prevent too many AJAX calls)
+    $('.dataTable').dataTable().fnSetFilteringDelay(1000);
 });
 //]]></script>

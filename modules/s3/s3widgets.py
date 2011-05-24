@@ -244,6 +244,7 @@ class S3AutocompleteWidget(FormWidget):
                  resourcename,
                  fieldname="name",
                  post_process = "",
+                 delay = 1000, # milliseconds
                  min_length=2):
 
         self.request = request
@@ -251,6 +252,7 @@ class S3AutocompleteWidget(FormWidget):
         self.resourcename = resourcename
         self.fieldname = fieldname
         self.post_process = post_process
+        self.delay = delay
         self.min_length = min_length
 
 
@@ -282,6 +284,7 @@ class S3AutocompleteWidget(FormWidget):
             $(document).ready(function() {
             $('#%s').autocomplete({
                 source: '%s',
+                delay: %d,
                 minLength: %d,
                 search: function(event, ui) {
                     $( '#%s_throbber' ).removeClass('hidden').show();
@@ -301,6 +304,7 @@ class S3AutocompleteWidget(FormWidget):
                     """ % (dummy_input,
                            dummy_input,
                            url,
+                           self.delay,
                            self.min_length,
                            dummy_input,
                            dummy_input,
@@ -398,6 +402,7 @@ class S3LocationAutocompleteWidget(FormWidget):
                  fieldname="name",
                  level="",
                  post_process = "",
+                 delay = 1000, # milliseconds
                  min_length=2):
 
         self.request = request
@@ -407,6 +412,7 @@ class S3LocationAutocompleteWidget(FormWidget):
         self.fieldname = fieldname
         self.level = level
         self.post_process = post_process
+        self.delay = delay
         self.min_length = min_length
 
     def __call__(self ,field, value, **attributes):
@@ -478,6 +484,7 @@ class S3LocationAutocompleteWidget(FormWidget):
             $(document).ready(function() {
             $('#%s').autocomplete({
                 source: '%s',
+                delay: %d,
                 minLength: %d,
                 search: function(event, ui) {
                     $( '#%s_throbber' ).removeClass('hidden').show();
@@ -497,6 +504,7 @@ class S3LocationAutocompleteWidget(FormWidget):
                     """ % (dummy_input,
                            dummy_input,
                            url,
+                           self.delay,
                            self.min_length,
                            dummy_input,
                            dummy_input,
@@ -574,12 +582,13 @@ class S3PersonAutocompleteWidget(FormWidget):
     def __init__(self,
                  request,
                  post_process = "",
+                 delay = 1000, # milliseconds
                  min_length=2):
 
         self.request = request
         self.post_process = post_process
+        self.delay = delay
         self.min_length = min_length
-
 
     def __call__(self ,field, value, **attributes):
 
@@ -607,6 +616,7 @@ class S3PersonAutocompleteWidget(FormWidget):
             $(document).ready(function() {
             $('#%s').autocomplete({
                 source: '%s',
+                delay: %d,
                 minLength: %d,
                 search: function(event, ui) {
                     $( '#%s_throbber' ).removeClass('hidden').show();
@@ -646,6 +656,7 @@ class S3PersonAutocompleteWidget(FormWidget):
                     """ % (dummy_input,
                            dummy_input,
                            url,
+                           self.delay,
                            self.min_length,
                            dummy_input,
                            dummy_input,

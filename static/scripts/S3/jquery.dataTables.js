@@ -1,6 +1,6 @@
 /*
  * File:        jquery.dataTables.js
- * Version:     1.7.5
+ * Version:     1.7.6
  * Description: Paginate, search and sort HTML tables
  * Author:      Allan Jardine (www.sprymedia.co.uk)
  * Created:     28/3/2008
@@ -68,7 +68,7 @@
 	 * Notes:    Allowed format is a.b.c.d.e where:
 	 *   a:int, b:int, c:int, d:string(dev|beta), e:int. d and e are optional
 	 */
-	_oExt.sVersion = "1.7.5";
+	_oExt.sVersion = "1.7.6";
 	
 	/*
 	 * Variable: sErrMode
@@ -318,7 +318,7 @@
 				nPaging.appendChild( nPrevious );
 				nPaging.appendChild( nNext );
 				
-				$(nPrevious).click( function() {
+				$(nPrevious).bind( 'click.DT', function() {
 					if ( oSettings.oApi._fnPageChange( oSettings, "previous" ) )
 					{
 						/* Only draw when the page has actually changed */
@@ -326,7 +326,7 @@
 					}
 				} );
 				
-				$(nNext).click( function() {
+				$(nNext).bind( 'click.DT', function() {
 					if ( oSettings.oApi._fnPageChange( oSettings, "next" ) )
 					{
 						fnCallbackDraw( oSettings );
@@ -334,8 +334,8 @@
 				} );
 				
 				/* Take the brutal approach to cancelling text selection */
-				$(nPrevious).bind( 'selectstart', function () { return false; } );
-				$(nNext).bind( 'selectstart', function () { return false; } );
+				$(nPrevious).bind( 'selectstart.DT', function () { return false; } );
+				$(nNext).bind( 'selectstart.DT', function () { return false; } );
 				
 				/* ID the first elements only */
 				if ( oSettings.sTableId !== '' && typeof oSettings.aanFeatures.p == "undefined" )
@@ -425,28 +425,28 @@
 				nPaging.appendChild( nNext );
 				nPaging.appendChild( nLast );
 				
-				$(nFirst).click( function () {
+				$(nFirst).bind( 'click.DT', function () {
 					if ( oSettings.oApi._fnPageChange( oSettings, "first" ) )
 					{
 						fnCallbackDraw( oSettings );
 					}
 				} );
 				
-				$(nPrevious).click( function() {
+				$(nPrevious).bind( 'click.DT', function() {
 					if ( oSettings.oApi._fnPageChange( oSettings, "previous" ) )
 					{
 						fnCallbackDraw( oSettings );
 					}
 				} );
 				
-				$(nNext).click( function() {
+				$(nNext).bind( 'click.DT', function() {
 					if ( oSettings.oApi._fnPageChange( oSettings, "next" ) )
 					{
 						fnCallbackDraw( oSettings );
 					}
 				} );
 				
-				$(nLast).click( function() {
+				$(nLast).bind( 'click.DT', function() {
 					if ( oSettings.oApi._fnPageChange( oSettings, "last" ) )
 					{
 						fnCallbackDraw( oSettings );
@@ -455,8 +455,8 @@
 				
 				/* Take the brutal approach to cancelling text selection */
 				$('span', nPaging)
-					.bind( 'mousedown', function () { return false; } )
-					.bind( 'selectstart', function () { return false; } );
+					.bind( 'mousedown.DT', function () { return false; } )
+					.bind( 'selectstart.DT', function () { return false; } );
 				
 				/* ID the first elements only */
 				if ( oSettings.sTableId !== '' && typeof oSettings.aanFeatures.p == "undefined" )
@@ -551,13 +551,13 @@
 						continue;
 					}
 					
-					/* Build up the dynamic list forst - html and listeners */
+					/* Build up the dynamic list first - html and listeners */
 					var qjPaginateList = $('span:eq(2)', an[i]);
 					qjPaginateList.html( sList );
-					$('span', qjPaginateList).click( fnClick ).bind( 'mousedown', fnFalse )
-						.bind( 'selectstart', fnFalse );
+					$('span', qjPaginateList).bind( 'click.DT', fnClick ).bind( 'mousedown.DT', fnFalse )
+						.bind( 'selectstart.DT', fnFalse );
 					
-					/* Update the 'premanent botton's classes */
+					/* Update the 'permanent button's classes */
 					anButtons = an[i].getElementsByTagName('span');
 					anStatic = [
 						anButtons[0], anButtons[1], 
@@ -840,7 +840,7 @@
 	 * Function: dataTable
 	 * Purpose:  DataTables information
 	 * Returns:  -
-	 * Inputs:   object:oInit - initalisation options for the table
+	 * Inputs:   object:oInit - initialisation options for the table
 	 */
 	$.fn.dataTable = function( oInit )
 	{
@@ -1762,7 +1762,7 @@
 			{
 				var iRow = (typeof mRow == 'object') ? 
 					_fnNodeToDataIndex(oSettings, mRow) : mRow;
-				return oSettings.aoData[iRow]._aData;
+				return ( (aRowData = oSettings.aoData[iRow]) ? aRowData._aData : null);
 			}
 			return _fnGetDataMaster( oSettings );
 		};
@@ -1782,7 +1782,7 @@
 			
 			if ( typeof iRow != 'undefined' )
 			{
-				return oSettings.aoData[iRow].nTr;
+				return ( (aRowData = oSettings.aoData[iRow]) ? aRowData.nTr : null );
 			}
 			return _fnGetTrNodes( oSettings );
 		};
@@ -1873,6 +1873,10 @@
 					oSettings.aoData[iRow].nTr.getElementsByTagName('td')[iVisibleColumn].innerHTML = 
 						sDisplay;
 				}
+				else
+				{
+					oSettings.aoData[iRow]._anHidden[iColumn].innerHTML = sDisplay;
+				}
 			}
 			else
 			{
@@ -1908,6 +1912,10 @@
 					{
 						oSettings.aoData[iRow].nTr.getElementsByTagName('td')[iVisibleColumn].innerHTML = 
 							sDisplay;
+					}
+					else
+					{
+						oSettings.aoData[iRow]._anHidden[i].innerHTML = sDisplay;
 					}
 				}
 			}
@@ -2130,6 +2138,9 @@
 			/* Flag to note that the table is currently being destoryed - no action should be taken */
 			oSettings.bDestroying = true;
 			
+			/* Blitz all DT events */
+			$(oSettings.nTableWrapper).find('*').andSelf().unbind('.DT');
+			
 			/* Restore hidden columns */
 			for ( i=0, iLen=oSettings.aoColumns.length ; i<iLen ; i++ )
 			{
@@ -2214,7 +2225,7 @@
 		};
 		
 		/*
-		 * Function: _fnAjustColumnSizing
+		 * Function: fnAjustColumnSizing
 		 * Purpose:  Update tale sizing based on content. This would most likely be used for scrolling
 		 *   and will typically need a redraw after it.
 		 * Returns:  -
@@ -2953,7 +2964,7 @@
 						_fnSortAttachListener( oSettings, oSettings.aoColumns[i].nTh, i );
 						
 						/* Take the brutal approach to cancelling text selection in header */
-						$(oSettings.aoColumns[i].nTh).mousedown( fnNoSelect );
+						$(oSettings.aoColumns[i].nTh).bind( 'mousedown.DT', fnNoSelect );
 					}
 					else
 					{
@@ -3621,6 +3632,7 @@
 			}
 			
 			nScrollHead.style.border = "0";
+			nScrollHead.style.width = "100%";
 			nScrollFoot.style.border = "0";
 			nScrollHeadInner.style.width = "150%"; /* will be overwritten */
 			
@@ -3858,6 +3870,7 @@
 					oStyle.paddingBottom = "0";
 					oStyle.borderTopWidth = "0";
 					oStyle.borderBottomWidth = "0";
+					oStyle.height = 0;
 					
 					iWidth = $(nSizer).width();
 					nToSize.style.width = _fnStringToCss( iWidth );
@@ -3939,7 +3952,6 @@
 			var iOuterWidth = $(o.nTable).outerWidth();
 			nScrollHeadTable.style.width = _fnStringToCss( iOuterWidth );
 			nScrollHeadInner.style.width = _fnStringToCss( iOuterWidth+o.oScroll.iBarWidth );
-			nScrollHeadInner.parentNode.style.width = _fnStringToCss( $(nScrollBody).width() );
 			
 			if ( o.nTFoot !== null )
 			{
@@ -4004,7 +4016,7 @@
 			
 			var jqFilter = $("input", nFilter);
 			jqFilter.val( oSettings.oPreviousSearch.sSearch.replace('"','&quot;') );
-			jqFilter.keyup( function(e) {
+			jqFilter.bind( 'keyup.DT', function(e) {
 				/* Update all other filter input elements for the new display */
 				var n = oSettings.aanFeatures.f;
 				for ( var i=0, iLen=n.length ; i<iLen ; i++ )
@@ -4026,7 +4038,7 @@
 				}
 			} );
 			
-			jqFilter.keypress( function(e) {
+			jqFilter.bind( 'keypress.DT', function(e) {
 				/* Prevent default */
 				if ( e.keyCode == 13 )
 				{
@@ -4467,7 +4479,7 @@
 		 */
 		function _fnSortAttachListener ( oSettings, nNode, iDataIndex, fnCallback )
 		{
-			$(nNode).click( function (e) {
+			$(nNode).bind( 'click.DT', function (e) {
 				/* If the column is not sortable - don't to anything */
 				if ( oSettings.aoColumns[iDataIndex].bSortable === false )
 				{
@@ -4996,7 +5008,7 @@
 			 */
 			$('select option[value="'+oSettings._iDisplayLength+'"]',nLength).attr("selected",true);
 			
-			$('select', nLength).change( function(e) {
+			$('select', nLength).bind( 'change.DT', function(e) {
 				var iVal = $(this).val();
 				
 				/* Update all other length options for the new display */
@@ -5405,7 +5417,7 @@
 				{
 					if ( oSettings.aoColumns[i].bVisible )
 					{
-						iWidth = $(oNodes[iCorrector]).width();
+						iWidth = $(oNodes[iCorrector]).outerWidth();
 						if ( iWidth !== null && iWidth > 0 )
 						{
 							oSettings.aoColumns[i].sWidth = _fnStringToCss( iWidth );
@@ -6441,11 +6453,13 @@
 				return;
 			}
 			
-			/* Store 'this' in the settings object for later retrieval */
-			oSettings.oInstance = _that;
-			
 			/* Set the table node */
 			oSettings.nTable = this;
+			
+			/* Keep a reference to the 'this' instance for the table. Note that if this table is being
+			 * created with others, we retrieve a unique instance to ease API access.
+			 */
+			oSettings.oInstance = _that.length == 1 ? _that : $(this).dataTable();
 			
 			/* Bind the API functions to the settings, so we can perform actions whenever oSettings is
 			 * available
@@ -6625,7 +6639,7 @@
 			
 			/* Remove row stripe classes if they are already on the table row */
 			var bStripeRemove = false;
-			var anRows = $('tbody>tr', this);
+			var anRows = $('>tbody>tr', this);
 			for ( i=0, iLen=oSettings.asStripClasses.length ; i<iLen ; i++ )
 			{
 				if ( anRows.filter(":lt(2)").hasClass( oSettings.asStripClasses[i]) )
@@ -6846,3 +6860,43 @@
 		});
 	};
 })(jQuery, window, document);
+
+// Plugin from http://datatables.net/plug-ins/api
+jQuery.fn.dataTableExt.oApi.fnSetFilteringDelay = function ( oSettings, iDelay ) {
+	/*
+	 * Inputs:      object:oSettings - dataTables settings object - automatically given
+	 *              integer:iDelay - delay in milliseconds
+	 * Usage:       $('#example').dataTable().fnSetFilteringDelay(250);
+	 * Author:      Zygimantas Berziunas (www.zygimantas.com) and Allan Jardine
+	 * License:     GPL v2 or BSD 3 point style
+	 * Contact:     zygimantas.berziunas /AT\ hotmail.com
+	 */
+	var
+		_that = this,
+		iDelay = (typeof iDelay == 'undefined') ? 250 : iDelay;
+	
+	this.each( function ( i ) {
+		$.fn.dataTableExt.iApiIndex = i;
+		var
+			$this = this, 
+			oTimerId = null, 
+			sPreviousSearch = null,
+			anControl = $( 'input', _that.fnSettings().aanFeatures.f );
+		
+			anControl.unbind( 'keyup' ).bind( 'keyup', function() {
+			var $$this = $this;
+
+			if (sPreviousSearch === null || sPreviousSearch != anControl.val()) {
+				window.clearTimeout(oTimerId);
+				sPreviousSearch = anControl.val();	
+				oTimerId = window.setTimeout(function() {
+					$.fn.dataTableExt.iApiIndex = i;
+					_that.fnFilter( anControl.val() );
+				}, iDelay);
+			}
+		});
+		
+		return this;
+	} );
+	return this;
+}

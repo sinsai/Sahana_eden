@@ -600,6 +600,7 @@ $(function(){
         $('#gis_location_autocomplete').autocomplete({
             // Search across all locations bar only those from unreliable imports
             source: s3_gis_url + '/search.json?filter=~&field=name&exclude_field=level&exclude_value=XX',
+            delay: 1000,
             minLength: 2,
             search: function(event, ui) {
                 $( '#gis_location_autocomplete_throbber' ).removeClass('hidden').show();

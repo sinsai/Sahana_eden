@@ -1182,6 +1182,8 @@ class S3LocationSearch(S3Search):
                     resource.add_filter(query)
                     query = (table.parent == parent)
 
+                orderby = field
+
             elif filter == "=":
                 if field.type.split(" ")[0] in \
                    ["reference", "id", "float", "integer"]:
@@ -1209,6 +1211,9 @@ class S3LocationSearch(S3Search):
                           table.lon,
                           table.addr_street,
                           table.addr_postcode]
+
+                orderby = 'gis_location.code'
+
             else:
                 output = xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =")
                 raise HTTP(400, body=output)
@@ -1230,10 +1235,10 @@ class S3LocationSearch(S3Search):
         if output is None:
             if limit:
                 output = resource.exporter.json(resource, start=0, limit=int(limit),
-                                                fields=fields, orderby=field)
+                                                fields=fields, orderby=orderby)
             else:
                 output = resource.exporter.json(resource,
-                                                fields=fields, orderby=field)
+                                                fields=fields, orderby=orderby)
 
         response.headers["Content-Type"] = "application/json"
         return output

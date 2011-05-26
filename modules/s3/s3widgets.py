@@ -1436,8 +1436,8 @@ class S3LocationSelectorWidget(FormWidget):
             requires = IS_ONE_OF(db, "gis_location.id", repr_select,
                                  filterby = "level",
                                  filter_opts = (level,),
-                                 orderby = "gis_location.name",
-                                 sort = True,
+                                 orderby = "gis_location.code",
+                                 sort = False,
                                  zero = "%s..." % select_location)
             if not required:
                 requires = IS_NULL_OR(requires)

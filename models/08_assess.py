@@ -1933,4 +1933,9 @@ if deployment_settings.has_module(module):
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
     # -----------------------------------------------------------------------------
-    # END
+else:
+    def assess_id(**arguments):
+        """ Allow FKs to be added safely to other models in case module disabled """
+        return Field("assess_id", "integer", readable=False, writable=False)
+
+# END =========================================================================

@@ -403,3 +403,9 @@ if deployment_settings.has_module(module):
 
 
     # -----------------------------------------------------------------------------
+else:
+    def incident_id(**arguments):
+        """ Allow FKs to be added safely to other models in case module disabled """
+        return Field("incident_id", "integer", readable=False, writable=False)
+
+# END =========================================================================

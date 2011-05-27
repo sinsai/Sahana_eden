@@ -999,4 +999,9 @@ if deployment_settings.has_module(module):
     # Set as standard search method for hospitals
     s3xrc.model.configure(db.hms_hospital, search_method=hms_hospital_search)
 
+else:
+    def hospital_id(**arguments):
+        """ Allow FKs to be added safely to other models in case module disabled """
+        return Field("hospital_id", "integer", readable=False, writable=False)
+
 # END =========================================================================

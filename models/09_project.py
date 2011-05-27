@@ -599,3 +599,12 @@ if deployment_settings.has_module("project"):
                                        "status"],
                           main="subject", extra="description")
 
+else:
+    def project_id(**arguments):
+        """ Allow FKs to be added safely to other models in case module disabled """
+        return Field("project_id", "integer", readable=False, writable=False)
+    def activity_id(**arguments):
+        """ Allow FKs to be added safely to other models in case module disabled """
+        return Field("activity_id", "integer", readable=False, writable=False)
+
+# END =========================================================================

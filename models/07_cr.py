@@ -321,4 +321,9 @@ if deployment_settings.has_module(module):
                               multiple=True,
                               joinby=dict(cr_shelter="shelter_id"))
 
-# END -------------------------------------------------------------------------
+else:
+    def shelter_id(**arguments):
+        """ Allow FKs to be added safely to other models in case module disabled """
+        return Field("shelter_id", "integer", readable=False, writable=False)
+
+# END =========================================================================

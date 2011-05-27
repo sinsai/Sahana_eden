@@ -1140,3 +1140,55 @@ Ext.onReady(function(){
         });
     }
 });
+
+//------------------------------------
+$(document).ready(function() {
+  $('#gis_location_addr_street').after($('<button/>',{'type':'button','text':'Search'})
+    .click(function(e) {
+        var addr = $('#gis_location_addr_street').val();
+        if (addr.length < 2) {
+        	e.preventDefault();
+        	return;
+        }
+        var url = "http://geo.search.olp.yahooapis.jp/OpenLocalPlatform/V1/geoCoder?callback=?";
+        var data = {
+          'appid': '0Z1nFkmxg674oboTaUzdfJRSGpTJ6JF6aBxp3mZevNkw0F1ugu8nO17023D8dZFGPTqCUJysNjg-',
+          'output': "json",
+          'query': addr
+        }
+        $('#GeoResultMenu').remove();
+        $.getJSON(url, data, function(json) {
+        	if (!json || !json.Feature) {
+        		$('#gis_location_addr_street_row').after(
+        			$('<div/>', {
+    	            	'id': 'GeoResultMenu',
+        				'class': 'ui-menu ui-widget ui-widget-content ui-corner-all',
+        				'text': 'No Result matching the query...'
+        			})
+        		);
+        		return;
+        	}
+            var items = [];
+            $.each(json.Feature, function(k, v) {
+                items.push('<li class="ui-menu-item"><a id="GeoResult_' + k + '" class="ui-corner-all">' + v.Name + '</a></li>');
+            });
+            $('#gis_location_addr_street_row').after(
+	            $('<ul/>', {
+	            	'id': 'GeoResultMenu',
+	                'class': 'ui-menu ui-widget ui-widget-content ui-corner-all',
+	                'html': items.join('')
+            }));
+            $('#GeoResultMenu a').click(function () {
+                var coordinates = json.Feature[this.id.substr(10) - 0].Geometry.Coordinates.split(',');
+                $('#gis_location_lat').val(coordinates[1]);
+                $('#gis_location_lon').val(coordinates[0]);
+                $('#gis_location_addr_street').val($(this).text());
+                mapPanel.center = new OpenLayers.LonLat(coordinates[0], coordinates[1])
+                                          .transform(proj4326, projection_current);
+                $('#GeoResultMenu').remove();
+            });
+        });//getJSON
+        e.preventDefault();
+    })//click
+  );//after
+});//ready

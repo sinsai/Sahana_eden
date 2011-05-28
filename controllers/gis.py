@@ -375,6 +375,9 @@ def location_duplicates():
         @ToDo: Extend to being able to check locations for which we have no Lat<>Lon info (i.e. just names & parents)
     """
 
+    if not auth.s3_has_role(1):
+        redirect(URL(r=request, c="default", f="index"))
+    
     # @ToDo: Set this via the UI & pass in as a var
     dupe_distance = 50 # km
 

@@ -88,7 +88,7 @@ if deployment_settings.has_module("project"):
     table.assess_id.readable = table.assess_id.writable = False
 
     table.value.label = "#"
-    table.value.represent = lambda value: "%d" % value
+    table.value.represent = lambda value: value is not None and "%d" % value or '-'
 
     # CRUD strings
     ADD_BASELINE = T("Add Need")
@@ -359,7 +359,7 @@ if deployment_settings.has_module("project"):
                             ),
                         TR(
                             TH("%s: " % T("Status")),
-                            project_project_status_opts[project.status],
+                            project_project_status_opts.get(project.status, UNKNOWN_OPT),
                             TH("%s: " % T("Cluster(s)")),
                             sectors,
                             #TH(A(T("Edit Project"),

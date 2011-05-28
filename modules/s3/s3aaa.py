@@ -55,7 +55,7 @@ from gluon.contrib.simplejson.ordered_dict import OrderedDict
 
 from s3rest import S3Method
 from s3widgets import S3ACLWidget
-from s3validators import IS_ACL
+from s3validators import IS_ACL, IS_ONE_OF
 
 DEFAULT = lambda: None
 table_field = re.compile("[\w_]+\.[\w_]+")
@@ -612,10 +612,17 @@ class AuthS3(Auth):
         # S3: Insert Organisation field into form
         # @ToDo: Widget (ideally Combobox for < 50 entries)
         if deployment_settings.get_auth_registration_requests_organisation():
+            organisations = db(db.org_organisation.deleted != True).select(db.org_organisation.id, db.org_organisation.name)
+            options = [OPTION(r.name, _value=r.id) for r in organisations]
             form[0].insert(-4,
                            TR(TD(LABEL("%s:" % messages.label_organisation),
                                        _class="w2p_fl"),
-                                 INPUT(_name="organisation", _id="organisation"),
+                              TD(SELECT(OPTION(""), *options,
+                                        _name="organisation",
+                                        _id="organisation",
+                                        requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id"))
+                                        ),
+                                 _class="w2p_fw"),
                               TD(DIV(_class="tooltip",
                                      _title="%s|%s" % (messages.label_organisation,
                                                        messages.help_organisation)))))

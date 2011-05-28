@@ -889,7 +889,7 @@ class S3Resource(object):
                     r.record = self._rows.first()
                 else:
                     model = self.manager.model
-                    if self.search.interactive_search:
+                    if hasattr(self.search, "search_interactive"):
                         redirect(URL(r=r.request, f=self.name, args="search",
                                      vars={"_next": r.same()}))
                     else:

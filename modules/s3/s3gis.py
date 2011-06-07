@@ -4062,20 +4062,30 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
 
         function loadDetails(url, id, popup) {
-            $.get(
-                    url,
-                    function(data) {
+            $.ajax({
+                    'url': url,
+                    'success': function(data) {
                         $('#' + id + '_contentDiv').html(data);
                         popup.updateSize();
                     },
-                    'html'
-                );
+                    'error': function(request, status, error) {
+                        if (error=='UNAUTHORIZED') {
+                            msg = '%s';
+                        } else {
+                            msg = request.responseText;
+                        }
+                        $('#' + id + '_contentDiv').html(msg);
+                        popup.updateSize();
+                    },
+                    'dataType':'html'
+                });
         }
 
         """ % (T("There are multiple records at this location"), uuid_from_fid,
                T("Loading"),
                URL(r=request, c="static", f="img", args="ajax-loader.gif"),
-               uuid_from_fid)
+               uuid_from_fid,
+               T('Requires login'))
             # Draft Features
             # This is currently used just to select the Lat/Lon for a Location, so no Features pre-loaded
             if add_feature:

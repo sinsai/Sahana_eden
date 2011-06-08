@@ -930,7 +930,7 @@ table.person_id.requires = IS_ONE_OF( db, "pr_person.id",
                                       shn_pr_person_represent,
                                       orderby="pr_person.first_name",
                                       sort=True,
-                                      error_message="Person must be specified!")
+                                      error_message=T("Person must be specified!"))
 
 def shn_org_staff_represent(staff_id):
     query = (db.org_staff.id == staff_id) #& \

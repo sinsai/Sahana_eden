@@ -184,6 +184,7 @@ def shn_shelter_prep(r):
     if r.record:
         db.org_staff.organisation_id.default = r.record.organisation_id
         db.org_staff.organisation_id.writable = False
+        db.org_staff.organisation_id.comment = None
 
     if r.interactive:
         if r.method != "read":

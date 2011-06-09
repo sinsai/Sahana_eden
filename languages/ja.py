@@ -3058,6 +3058,7 @@
 'Person details updated': '人物情報を更新しました',
 'Person interviewed': 'インタビュー担当者',
 'Person missing': '行方不明中',
+'Person must be specified!': '登録がありません',
 'Person reporting': 'レポート報告者',
 'Person who has actually seen the person/group.': '人物/グループで実際に目撃された人物情報',
 'Person who is reporting about the presence.': 'この所在報告を行った人物です。',

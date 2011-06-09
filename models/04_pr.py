@@ -303,7 +303,7 @@ person_id = S3ReusableField("person_id", db.pr_person,
                                         shn_pr_person_represent,
                                         orderby="pr_person.first_name",
                                         sort=True,
-                                        error_message="Person must be specified!")),
+                                        error_message=T("Person must be specified!"))),
                             represent = lambda id: (id and \
                                         [shn_pr_person_represent(id)] or [NONE])[0],
                             label = T("Person"),

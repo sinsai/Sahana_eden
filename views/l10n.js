@@ -11,3 +11,4 @@ S3.i18n.unsaved_changes = "{{=T("You have unsaved changes. Click Cancel now, the
 S3.i18n.close_map = '{{=T("Close map")}}';	
 S3.i18n.no_packs = '{{=T("No Packs for Item")}}';
 S3.i18n.in_inv = '{{=T("in Inv.")}}';
+S3.i18n.input_number = '{{=T("Please enter the number only")}}';

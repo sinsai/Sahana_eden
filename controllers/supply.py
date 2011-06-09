@@ -42,6 +42,11 @@ def item_pack():
                           listadd=False)
     return s3_rest_controller(module, resourcename)
 
+#------------------------------------------------------------------------------
+def brand():
+    """ RESTful CRUD controller """
+
+    return s3_rest_controller(module, resourcename)
 
 #==============================================================================
 def item():

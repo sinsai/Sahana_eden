@@ -3104,6 +3104,7 @@
 'Please enter a First Name': '苗字を入力してください',
 'Please enter a valid email address': '有効な電子メールアドレスを入力してください。',
 'Please enter the first few letters of the Person/Group for the autocomplete.': '自動入力するには人物あるいはグループの最初の数文字を入力してください',
+'Please enter the number only': '半角数字で入力してください',
 'Please enter the recipient': '受取担当者を入力してください',
 'Please fill this!': 'ここに入力してください',
 'Please provide the URL of the page you are referring to, a description of what you expected to happen & what actually happened. If a ticket was issued then please provide the Ticket ID.': '言及先のURLを明示し、期待する結果と実際に発生した結果を記述してください。不具合チケットが発行された場合は、そのチケットIDも記載してください。',

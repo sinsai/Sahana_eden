@@ -27,8 +27,22 @@ function web2py_ajax_init() {
   jQuery('.flash').click(function() { jQuery(this).fadeOut('slow'); return false; });
   jQuery('input.string').attr('size',50);
   jQuery('textarea.text').attr('cols',50).attr('rows',10);
-  jQuery('input.integer').keyup(function(){this.value=this.value.reverse().replace(/[^0-9\-]|\-(?=.)/g,'').reverse();});
-  jQuery('input.double').keyup(function(){this.value=this.value.reverse().replace(/[^0-9\-\.]|[\-](?=.)|[\.](?=[0-9]*[\.])/g,'').reverse();});
+  //jQuery('input.integer').keyup(function(){this.value=this.value.reverse().replace(/[^0-9\-]|\-(?=.)/g,'').reverse();});
+  //jQuery('input.double').keyup(function(){this.value=this.value.reverse().replace(/[^0-9\-\.]|[\-](?=.)|[\.](?=[0-9]*[\.])/g,'').reverse();});
+  jQuery('input.integer').blur(function(){
+    $('#'+this.id+'__error').remove();
+    if (this.value.reverse().search(/[^0-9\-]|\-(?=.)/) > -1){
+      this.value=this.value.reverse().replace(/[^0-9\-]|\-(?=.)/g,'').reverse();
+      $(this).after($('<div/>',{'id':this.id+'__error','text':S3.i18n.input_number,'class':'error'}));
+    }
+  });
+  jQuery('input.double').blur(function(){
+    $('#'+this.id+'__error').remove();
+    if (this.value.reverse().search(/[^0-9\-\.]|[\-](?=.)|[\.](?=[0-9]*[\.])/) > -1){
+      this.value=this.value.reverse().replace(/[^0-9\-\.]|[\-](?=.)|[\.](?=[0-9]*[\.])/g,'').reverse();
+      $(this).after($('<div/>',{'id':this.id+'__error','text':S3.i18n.input_number,'class':'error'}));
+    }
+  });
   //try { jQuery('input.time').timeEntry(); } catch(e) {};
 };
 jQuery(document).ready(function() {

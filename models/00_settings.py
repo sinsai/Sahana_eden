@@ -257,7 +257,7 @@ auth.settings.expiration = 28800  # seconds
 auth.settings.registration_requires_verification = deployment_settings.get_auth_registration_requires_verification()
 # Email settings for registration verification
 auth.settings.mailer = mail
-auth.messages.verify_email = "%s %s/%s/default/user/verify_email/%s %s" % (T("Click on the link"),
+auth.messages.verify_email = "%s\n %s/%s/default/user/verify_email/%s \n%s" % (T("Click on the link"),
                                                                            deployment_settings.get_base_public_url(),
                                                                            request.application,
                                                                            "%(key)s",

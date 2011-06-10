@@ -48,6 +48,7 @@ from gluon.storage import Storage
 from gluon.contenttype import contenttype
 
 from lxml import etree
+import re
 
 # *****************************************************************************
 class S3Exporter(object):
@@ -238,7 +239,7 @@ class S3Exporter(object):
 
         # Get records
         query = resource.get_query()
-        records = db(query).select(table.ALL)
+        records = db(query).select(table.ALL, orderby=table._id)
         if not records:
             session.warning = self.ERROR.NO_RECORDS
             redirect(URL(r=request, extension=""))
@@ -258,7 +259,8 @@ class S3Exporter(object):
 
         if "SazanamiGothic" in pdfmetrics.getRegisteredFontNames():
             font_name = "SazanamiGothic"
-            widget_style = {"fontName": "SazanamiGothic"}
+            widget_style = {"fontName": "SazanamiGothic",
+                            'wordWrap': True}
         else:
             font_name = "Helvetica-Bold"
             widget_style = {}
@@ -281,11 +283,35 @@ class S3Exporter(object):
 
         represent = self.manager.represent
 
-        _represent = lambda field, value, table=table: \
-                     represent(table[field],
-                               value=value,
-                               strip_markup=True,
-                               xml_escape=True)
+        #_represent = lambda field, value, table=table: \
+        #             represent(table[field],
+        #                       value=value,
+        #                       strip_markup=True,
+        #                       xml_escape=True)
+
+        def _represent(field, value):
+            rep = represent(table[field],
+                            value=value,
+                            strip_markup=True,
+                            xml_escape=True)
+            prog = re.compile(r"[^ -~]")
+            ret = ''
+            for part in rep.split():
+                if prog.search(part):
+                    s = 7
+                else:
+                    s = 14
+
+                if len(part) > s:
+                    i = 0
+                    while True:
+                        ret += part[i:i+s] + "\n"
+                        i += s
+                        if i > len(part):
+                            break
+                else:
+                    ret += part + "\n"
+            return ret
 
         for field in fields:
             # Append label

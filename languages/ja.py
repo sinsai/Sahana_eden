@@ -2102,6 +2102,7 @@
 'Item deleted': '物資を削除しました',
 'Item updated': '救援物資を更新しました',
 'Items': '救援物資',
+'Japan': '日本',
 'Japanese': '日本語',
 'Jerry can': 'ジェリ缶',
 'Jew': 'ユダヤ教徒',

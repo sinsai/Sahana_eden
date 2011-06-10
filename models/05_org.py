@@ -197,6 +197,10 @@ table.donation_phone.comment = DIV( _class="tooltip",
 table.twitter.comment = DIV( _class="tooltip",
                              _title="%s|%s" % (T("Twitter"),
                                                T("Twitter ID or #hashtag")))
+_countries = deployment_settings.get_gis_countries()
+if _countries and _countries[0] in s3_list_of_nations:
+    table.country.default = _countries[0]
+
 # CRUD strings
 ADD_ORGANIZATION = T("Add Organization")
 LIST_ORGANIZATIONS = T("List Organizations")

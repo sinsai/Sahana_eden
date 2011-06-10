@@ -525,7 +525,7 @@ s3_list_of_nations = {
     "IL": "Israel",
     "IT": "Italy",
     "JM": "Jamaica",
-    "JP": "Japan",
+    "JP": T("Japan"),
     "JE": "Jersey",
     "JO": "Jordan",
     "KZ": "Kazakhstan",

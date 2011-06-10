@@ -96,29 +96,30 @@ class AuthS3(Auth):
 
         self.deployment_settings = deployment_settings
         self.session = self.environment.session
+        T = self.environment.T
 
         self.settings.lock_keys = False
         self.settings.username_field = False
         self.settings.lock_keys = True
         self.messages.lock_keys = False
         self.messages.registration_pending_approval = "Account registered, however registration is still pending approval - please wait until confirmation received."
-        self.messages.email_approver_failed = "Failed to send mail to Approver - see if you can notify them manually!"
-        self.messages.email_sent = "Verification Email sent - please check your email to validate. If you do not receive this email please check you junk email or spam filters"
-        self.messages.email_verified = "Email verified - you can now login"
-        self.messages.duplicate_email = "This email address is already in use"
-        self.messages.registration_disabled = "Registration Disabled!'"
-        self.messages.registration_verifying = "You haven't yet Verified your account - please check your email"
-        self.messages.label_utc_offset = "UTC Offset"
-        self.messages.help_utc_offset = "The time difference between UTC and your timezone, specify as +HHMM for eastern or -HHMM for western timezones."
+        self.messages.email_approver_failed = T("Failed to send mail to Approver - see if you can notify them manually!")
+        self.messages.email_sent = T("Verification Email sent - please check your email to validate. If you do not receive this email please check you junk email or spam filters")
+        self.messages.email_verified = T("Email verified - you can now login")
+        self.messages.duplicate_email = T("This email address is already in use")
+        self.messages.registration_disabled = T("Registration Disabled!")
+        self.messages.registration_verifying = T("You haven't yet Verified your account - please check your email")
+        self.messages.label_utc_offset = T("UTC Offset")
+        self.messages.help_utc_offset = T("The time difference between UTC and your timezone, specify as +HHMM for eastern or -HHMM for western timezones.")
         self.messages.label_mobile_phone = "Mobile Phone"
         self.messages.help_mobile_phone = "Entering a phone number is optional, but doing so allows you to subscribe to receive SMS messages."
-        self.messages.label_organisation = "Organisation"
-        self.messages.help_organisation = "Entering an Organisation is optional, but doing so directs you to the appropriate approver & means you automatically get the appropriate permissions."
+        self.messages.label_organisation = T("Organisation")
+        self.messages.help_organisation = T("Entering an Organisation is optional, but doing so directs you to the appropriate approver & means you automatically get the appropriate permissions.")
         self.messages.lock_keys = True
+        self.messages.verify_email_subject = T("Email verification")
 
         self.permission = S3Permission(self, environment)
 
-        T = self.environment.T
         self.org_site_types = Storage(
                                 cr_shelter = T("Shelter"),
                                 org_office = T("Office"),
@@ -654,6 +655,9 @@ class AuthS3(Auth):
                 # Ensure that we add to the correct Organisation
                 approver, organisation_id = self.s3_approver(form.vars)
                 form.vars.organisation = organisation_id
+                # Pass Organisation_ID to Next Step
+                if organisation_id:
+                    key = "%s?organisation=%s" % (key, organisation_id)
 
                 # Send the Verification email
                 if not settings.mailer or \
@@ -925,11 +929,71 @@ class AuthS3(Auth):
         user = db(table_user.registration_key == key).select().first()
         if not user:
             raise HTTP(404)
+
+        organisation = environment.request.vars.get("organisation", '')
+        if organisation:
+            try:
+                organisation = int(organisation)
+                user["organisation"] = organisation
+            except:
+                pass
+
         # S3: Lookup the Approver
         approver, organisation_id = self.s3_approver(user)
-        if settings.registration_requires_approval and approver:
-            user.update_record(registration_key = "pending")
-            environment.session.flash = messages.registration_pending
+        T = environment.T
+
+        if environment.request.args[1] == "approve":
+            if not self.s3_logged_in():
+                request = environment.request
+                next = URL(r=request, args=request.args, vars=request.get_vars)
+                redirect("%s?_next=%s" % (settings.login_url, urllib.quote(next)))
+
+            if not self.s3_has_role(1):
+                s = db(table_user.id == self.user.id).select(table_user.email).first()
+                if s.email != approver:
+                    raise HTTP(403)
+
+            user.update_record(registration_key = "")
+            environment.session.flash = T("User %(first_name)s %(last_name)s Approved") % user
+
+            settings.mailer.send(to = user.email,
+                                 subject = T("Your Account is Approved"),
+                                 message = T("Your Account is Approved - you can now login\n %s%s/") % (deployment_settings.get_base_public_url(),settings.login_url))
+            log = 'User %(id)s Approved'
+            next = self.url(f="index")
+
+        elif settings.registration_requires_approval and approver:
+            key = str(uuid.uuid4())
+            user.update_record(registration_key = key)
+            environment.session.flash = T('Email address verified, however registration is still pending approval - please wait until confirmation received.')
+            if organisation_id:
+                s = db(db.org_organisation.id == organisation_id).select(db.org_organisation.name).first()
+                organisation_name = 'Staff of %s' % s.name
+            else:
+                organisation_name = ''
+
+            if not settings.mailer.send(to = approver,
+                                        subject = T("Sahana Login Approval Pending"),
+                                        message = """%s 
+
+%s %s 
+Email: %s 
+%s
+
+%s 
+%s/%s/default/user/verify_email/approve/%s?organisation=%s
+                                        """ % (T("Your action is required. Please approve user"),
+                                               user.first_name, user.last_name,
+                                               user.email,
+                                               organisation_name,
+                                               T("Click on the link"),
+                                               deployment_settings.get_base_public_url(),
+                                               environment.request.application,
+                                               key,
+                                               organisation_id or '')):
+                session.error = messages.email_approver_failed
+
+            next = self.url(f="index")
         else:
             user.update_record(registration_key = "")
             environment.session.flash = messages.email_verified
@@ -942,9 +1006,9 @@ class AuthS3(Auth):
         if log:
             self.log_event(log % user)
 
-        if approver:
-            user.approver = approver
-            callback(onaccept, user)
+#        if approver:
+#            user.approver = approver
+#            callback(onaccept, user)
 
         redirect(next)
 

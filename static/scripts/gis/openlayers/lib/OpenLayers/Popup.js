@@ -443,7 +443,9 @@ OpenLayers.Popup = OpenLayers.Class({
      * Makes the popup invisible.
      */
     hide: function() {
-        this.div.style.display = 'none';
+        if (this.div) {
+            this.div.style.display = 'none';
+        }
     },
 
     /**
